@@ -31,9 +31,10 @@ namespace OHOS::DataShare {
 using namespace OHOS::NativeRdb;
 class RdbDelegate final : public DBDelegate {
 public:
-    explicit RdbDelegate(const DistributedData::StoreMetaData &meta, int version,
-        bool registerFunction, const std::string &extUri, const std::string &backup);
+    explicit RdbDelegate();
     ~RdbDelegate();
+    bool Init(const DistributedData::StoreMetaData &meta, int version,
+        bool registerFunction, const std::string &extUri, const std::string &backup) override;
     std::pair<int, std::shared_ptr<DataShareResultSet>> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns,
         int32_t callingPid, uint32_t callingTokenId) override;
@@ -59,13 +60,15 @@ private:
     static constexpr int RETRY = 3;
     static constexpr const char *DUAL_WRITE = "dualWrite";
     static constexpr const char *PERIODIC = "periodic";
-    uint32_t tokenId_;
-    std::string bundleName_;
-    std::string storeName_;
-    int32_t haMode_;
-    std::string extUri_;
-    std::string backup_;
-    std::string user_;
+    uint32_t tokenId_ = 0;
+    std::string bundleName_ = "";
+    std::string storeName_ = "";
+    int32_t haMode_ = 0;
+    std::string extUri_ = "";
+    std::string backup_ = "";
+    std::string user_ = "";
+    std::mutex initMutex_;
+    bool isInited_ = false;
 };
 class DefaultOpenCallback : public RdbOpenCallback {
 public:

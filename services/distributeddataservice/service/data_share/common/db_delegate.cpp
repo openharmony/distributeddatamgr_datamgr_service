@@ -46,12 +46,7 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
             it->second->time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
             return !stores.empty();
         }
-        store = std::make_shared<RdbDelegate>(metaData, NO_CHANGE_VERSION, true, extUri, backup);
-        if (store->IsInvalid()) {
-            store = nullptr;
-            ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
-            return false;
-        }
+        store = std::make_shared<RdbDelegate>();
         auto entity = std::make_shared<Entity>(store, metaData);
         stores.emplace(metaData.storeId, entity);
         StartTimer(metaData.isEncrypt);
@@ -62,7 +57,24 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
     } else {
         stores_.Compute(metaData.tokenId, storeFunc);
     }
-    return store;
+
+    // rdbStore is initialized outside the ConcurrentMap, because this maybe a time-consuming operation.
+    bool success = store->Init(metaData, NO_CHANGE_VERSION, true, extUri, backup);
+    if (success) {
+        return store;
+    }
+    ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
+    auto eraseFunc = [&metaData]
+        (auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
+        stores.erase(metaData.storeId);
+        return !stores.empty();
+    };
+    if (metaData.isEncrypt) {
+        storesEncrypt_.Compute(metaData.tokenId, eraseFunc);
+    } else {
+        stores_.Compute(metaData.tokenId, eraseFunc);
+    }
+    return nullptr;
 }
 
 void DBDelegate::SetExecutorPool(std::shared_ptr<ExecutorPool> executor)

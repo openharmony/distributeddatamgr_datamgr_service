@@ -163,7 +163,8 @@ HWTEST_F(DataShareCommonTest, InsertEx001, TestSize.Level1)
     bool registerFunction = false;
     std::string extUri = "uri";
     std::string backup = "backup";
-    RdbDelegate rdbDelegate(metaData, version, registerFunction, extUri, backup);
+    RdbDelegate rdbDelegate;
+    rdbDelegate.Init(metaData, version, registerFunction, extUri, backup);
     rdbDelegate.store_ = nullptr;
     std::string tableName = "";
     DataShare::DataShareValuesBucket valuesBucket;
@@ -196,7 +197,8 @@ HWTEST_F(DataShareCommonTest, UpdateEx001, TestSize.Level1)
     bool registerFunction = false;
     std::string extUri = "uri";
     std::string backup = "backup";
-    RdbDelegate rdbDelegate(metaData, version, registerFunction, extUri, backup);
+    RdbDelegate rdbDelegate;
+    rdbDelegate.Init(metaData, version, registerFunction, extUri, backup);
     rdbDelegate.store_ = nullptr;
     std::string tableName = "";
     DataShare::DataShareValuesBucket valuesBucket;
@@ -230,7 +232,8 @@ HWTEST_F(DataShareCommonTest, DeleteEx001, TestSize.Level1)
     bool registerFunction = false;
     std::string extUri = "uri";
     std::string backup = "backup";
-    RdbDelegate rdbDelegate(metaData, version, registerFunction, extUri, backup);
+    RdbDelegate rdbDelegate;
+    rdbDelegate.Init(metaData, version, registerFunction, extUri, backup);
     rdbDelegate.store_ = nullptr;
     std::string tableName = "";
     DataSharePredicates predicate;
@@ -261,7 +264,8 @@ HWTEST_F(DataShareCommonTest, Query001, TestSize.Level1)
     bool registerFunction = false;
     std::string extUri = "uri";
     std::string backup = "backup";
-    RdbDelegate rdbDelegate(metaData, version, registerFunction, extUri, backup);
+    RdbDelegate rdbDelegate;
+    rdbDelegate.Init(metaData, version, registerFunction, extUri, backup);
     rdbDelegate.store_ = nullptr;
     std::string tableName = "";
     DataSharePredicates predicate;
@@ -295,7 +299,8 @@ HWTEST_F(DataShareCommonTest, Query002, TestSize.Level1)
     bool registerFunction = false;
     std::string extUri = "uri";
     std::string backup = "backup";
-    RdbDelegate rdbDelegate(metaData, version, registerFunction, extUri, backup);
+    RdbDelegate rdbDelegate;
+    rdbDelegate.Init(metaData, version, registerFunction, extUri, backup);
     rdbDelegate.store_ = nullptr;
     std::string sql = "testsql";
     std::vector<std::string> selectionArgs;
@@ -326,7 +331,8 @@ HWTEST_F(DataShareCommonTest, QuerySql001, TestSize.Level1)
     bool registerFunction = false;
     std::string extUri = "uri";
     std::string backup = "backup";
-    RdbDelegate rdbDelegate(metaData, version, registerFunction, extUri, backup);
+    RdbDelegate rdbDelegate;
+    rdbDelegate.Init(metaData, version, registerFunction, extUri, backup);
     rdbDelegate.store_ = nullptr;
     std::string sql = "testsql";
     auto result = rdbDelegate.QuerySql(sql);
@@ -356,7 +362,8 @@ HWTEST_F(DataShareCommonTest, UpdateSql001, TestSize.Level1)
     bool registerFunction = false;
     std::string extUri = "uri";
     std::string backup = "backup";
-    RdbDelegate rdbDelegate(metaData, version, registerFunction, extUri, backup);
+    RdbDelegate rdbDelegate;
+    rdbDelegate.Init(metaData, version, registerFunction, extUri, backup);
     rdbDelegate.store_ = nullptr;
     std::string sql = "testsql";
     auto result = rdbDelegate.UpdateSql(sql);
@@ -563,5 +570,43 @@ HWTEST_F(DataShareCommonTest, ClearTimer003, TestSize.Level1)
     manager.ClearTimer();
     EXPECT_TRUE(manager.timerCache_.empty());
     ZLOGI("ClearTimer003 end");
+}
+
+/**
+ * @tc.name: DBDelegateTest001
+ * @tc.desc: do nothing when delegate already inited
+ * @tc.type: FUNC
+ */
+HWTEST_F(DataShareCommonTest, DBDelegateTest001, TestSize.Level0) {
+    RdbDelegate delegate;
+    DistributedData::StoreMetaData meta;
+    meta.tokenId = 1;
+
+    delegate.isInited_ = true;
+    delegate.Init({}, 0, false, "extUri", "backup");
+
+    EXPECT_TRUE(delegate.isInited_);
+    EXPECT_EQ(delegate.tokenId_, 0);
+    EXPECT_EQ(delegate.extUri_, "");
+    EXPECT_EQ(delegate.backup_, "");
+}
+
+/**
+ * @tc.name  : DBDelegateTest002
+ * @tc.number: init members in delegate init
+ * @tc.type: FUNC
+ */
+HWTEST_F(DataShareCommonTest, DBDelegateTest002, TestSize.Level0) {
+    RdbDelegate delegate;
+    DistributedData::StoreMetaData meta;
+    meta.tokenId = 1;
+
+    delegate.isInited_ = false;
+    delegate.Init(meta, 0, false, "extUri", "backup");
+
+    EXPECT_FALSE(delegate.isInited_);
+    EXPECT_EQ(delegate.tokenId_, meta.tokenId);
+    EXPECT_EQ(delegate.extUri_, "extUri");
+    EXPECT_EQ(delegate.backup_, "backup");
 }
 } // namespace OHOS::Test
