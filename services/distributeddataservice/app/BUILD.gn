@@ -38,8 +38,6 @@ ohos_sa_profile("distributeddata_profile") {
 config("module_private_config") {
   visibility = [ ":*" ]
   include_dirs = [
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatasvc/include",
-    "${kv_store_path}/frameworks/innerkitsimpl/distributeddatafwk/include",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/permission",
     "${data_service_path}/adapter/include/screen",
