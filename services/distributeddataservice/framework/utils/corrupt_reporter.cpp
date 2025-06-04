@@ -35,7 +35,7 @@ bool CorruptReporter::CreateCorruptedFlag(const std::string &path, const std::st
     if (access(flagFileName.c_str(), F_OK) == 0) {
         return true;
     }
-    int fd = creat(flagFileName.c_str(), S_IRWXU | S_IRWXG);
+    int fd = creat(flagFileName.c_str(), S_IRUSR | S_IWUSR);
     if (fd == -1) {
         ZLOGW("Create corrupted flag fail, flagFileName:%{public}s, errno:%{public}d",
             Anonymous::Change(flagFileName).c_str(), errno);
