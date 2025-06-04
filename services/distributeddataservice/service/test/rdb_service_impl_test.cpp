@@ -263,6 +263,45 @@ HWTEST_F(RdbServiceImplTest, ObtainDistributedTableName001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: RemoteQuery001
+ * @tc.desc: test RemoteQuery, param invalid.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, RemoteQuery001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.hapName_ = "test/test";
+    std::vector<std::string> selectionArgs;
+    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    auto ret = service.RemoteQuery(param, deviceId, "", selectionArgs);
+    EXPECT_EQ(ret.first, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), false), true);
+}
+
+/**
+ * @tc.name: RemoteQuery002
+ * @tc.desc: test RemoteQuery, when CheckAccess fails.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, RemoteQuery002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    std::vector<std::string> selectionArgs;
+    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    auto ret = service.RemoteQuery(param, deviceId, "", selectionArgs);
+    EXPECT_EQ(ret.first, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), false), true);
+}
+
+/**
 * @tc.name: TransferStringToHex001
 * @tc.desc: test TransferStringToHex, param empty.
 * @tc.type: FUNC
@@ -624,6 +663,100 @@ HWTEST_F(RdbServiceImplTest, OnReady002, TestSize.Level0)
 }
 
 /**
+ * @tc.name: AfterOpen001
+ * @tc.desc: Test AfterOpen when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, AfterOpen001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.hapName_ = "test/test";
+    int32_t result = service.AfterOpen(param);
+
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: AfterOpen002
+ * @tc.desc: Test AfterOpen when CheckAccess not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, AfterOpen002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    int32_t result = service.AfterOpen(param);
+
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: AfterOpen003
+ * @tc.desc: Test AfterOpen when CheckAccess pass and CheckParam pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, AfterOpen003, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, false), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    int32_t result = service.AfterOpen(param);
+
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), false), true);
+}
+
+/**
+ * @tc.name: NotifyDataChange001
+ * @tc.desc: Test NotifyDataChange when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, NotifyDataChange001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.hapName_ = "test/test";
+    RdbChangedData rdbChangedData;
+    RdbNotifyConfig rdbNotifyConfig;
+    int32_t result = service.NotifyDataChange(param, rdbChangedData, rdbNotifyConfig);
+
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: NotifyDataChange002
+ * @tc.desc: Test NotifyDataChange when CheckAccess not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, NotifyDataChange002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    RdbChangedData rdbChangedData;
+    RdbNotifyConfig rdbNotifyConfig;
+    int32_t result = service.NotifyDataChange(param, rdbChangedData, rdbNotifyConfig);
+
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
  * @tc.name: SetSearchable001
  * @tc.desc: Test SetSearchable when CheckAccess fails.
  * @tc.type: FUNC
@@ -806,6 +939,27 @@ HWTEST_F(RdbServiceImplTest, GetPassword005, TestSize.Level0)
 }
 
 /**
+ * @tc.name: GetPassword006
+ * @tc.desc: Test GetPassword when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, GetPassword006, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.hapName_ = "test/test";
+    std::vector<std::vector<uint8_t>> password;
+
+    int32_t result = service.GetPassword(param, password);
+
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
  * @tc.name: SetDistributedTables001
  * @tc.desc: Test SetDistributedTables when CheckAccess not pass.
  * @tc.type: FUNC
@@ -847,6 +1001,30 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables002, TestSize.Level0)
 }
 
 /**
+ * @tc.name: SetDistributedTables003
+ * @tc.desc: Test SetDistributedTables when type is search.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    param.hapName_ = "test/test";
+    std::vector<std::string> tables;
+    std::vector<OHOS::DistributedRdb::Reference> references;
+
+    int32_t result =
+        service.SetDistributedTables(param, tables, references, false,
+                                     DistributedTableType::DISTRIBUTED_SEARCH);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
  * @tc.name: Sync001
  * @tc.desc: Test Sync when CheckAccess not pass.
  * @tc.type: FUNC
@@ -862,6 +1040,96 @@ HWTEST_F(RdbServiceImplTest, Sync001, TestSize.Level0)
 
     int32_t result = service.Sync(param, option, predicates, nullptr);
     EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: Sync002
+ * @tc.desc: Test Sync when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, Sync002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.hapName_ = "test/test";
+    RdbService::Option option {};
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: BeforeOpen001
+ * @tc.desc: Test BeforeOpen when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, BeforeOpen001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.hapName_ = "test/test";
+    int32_t result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: BeforeOpen002
+ * @tc.desc: Test BeforeOpen when checkacess not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, BeforeOpen002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    int32_t result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: BeforeOpen003
+ * @tc.desc: Test BeforeOpen when checkacess pass and CheckParam pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, BeforeOpen003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    int32_t result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_NO_META);
+}
+
+/**
+ * @tc.name: BeforeOpen004
+ * @tc.desc: Test BeforeOpen when checkacess pass and CheckParam pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, BeforeOpen004, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    int32_t result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
 }
 
 /**
@@ -944,6 +1212,86 @@ HWTEST_F(RdbServiceImplTest, GetDfxInfo001, TestSize.Level0)
     int32_t result = service.GetDfxInfo(param, dfxInfo);
     EXPECT_EQ(result, RDB_ERROR);
 }
+
+/**
+ * @tc.name: GetDfxInfo002
+ * @tc.desc: Test GetDfxInfo when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, GetDfxInfo002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.hapName_ = "test/test";
+    DistributedRdb::RdbDfxInfo dfxInfo;
+    int32_t result = service.GetDfxInfo(param, dfxInfo);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: GetDfxInfo003
+ * @tc.desc: Test GetDfxInfo when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, GetDfxInfo003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    DistributedRdb::RdbDfxInfo dfxInfo;
+    int32_t result = service.GetDfxInfo(param, dfxInfo);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: GetDfxInfo004
+ * @tc.desc: Test GetDfxInfo when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, GetDfxInfo004, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, false), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    DistributedRdb::RdbDfxInfo dfxInfo;
+    int32_t result = service.GetDfxInfo(param, dfxInfo);
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), false), true);
+}
+
+/**
+ * @tc.name: GetDfxInfo005
+ * @tc.desc: Test GetDfxInfo when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, GetDfxInfo005, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, false), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetDfxInfoKey(), metaData_, false), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    DistributedRdb::RdbDfxInfo dfxInfo;
+    int32_t result = service.GetDfxInfo(param, dfxInfo);
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), false), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetDfxInfoKey(), false), true);
+}
+
 /**
  * @tc.name: LockCloudContainer001
  * @tc.desc: Test LockCloudContainer when CheckAccess fails.
@@ -1048,6 +1396,28 @@ HWTEST_F(RdbServiceImplTest, GetDebugInfo001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: GetDebugInfo002
+ * @tc.desc: Test GetDebugInfo when CheckSyncParam fails.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, GetDebugInfo002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.hapName_ = "test/test";
+    std::map<std::string, RdbDebugInfo> debugInfo;
+
+    int32_t result = service.GetDebugInfo(param, debugInfo);
+
+    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_TRUE(debugInfo.empty());
+}
+
+/**
  * @tc.name: VerifyPromiseInfo001
  * @tc.desc: Test VerifyPromiseInfo when LoadMeta fails.
  * @tc.type: FUNC
@@ -1101,6 +1471,293 @@ HWTEST_F(RdbServiceImplTest, VerifyPromiseInfo002, TestSize.Level0)
     EXPECT_EQ(result, RDB_OK);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyLocal(), true), true);
+}
+
+/**
+ * @tc.name: CheckParam001
+ * @tc.desc: Test VerifyPromiseInfo when bundleName_ contain '/'.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, CheckParam001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = "test/test";
+    param.hapName_ = "test";
+    param.storeName_ = "test";
+    param.user_ = "test";
+    param.customDir_ = "test";
+
+    bool result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+    param.bundleName_ = "..";
+
+    result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+
+    param.bundleName_ = "test\\..test";
+
+    result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: CheckParam002
+ * @tc.desc: Test VerifyPromiseInfo when hapName_ contain '/'.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, CheckParam002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = "test";
+    param.hapName_ = "test/test";
+    param.storeName_ = "test";
+    param.user_ = "test";
+    param.customDir_ = "test";
+
+    bool result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+    param.hapName_ = "..";
+
+    result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+    
+    param.hapName_ = "test\\..test";
+
+    result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: CheckParam003
+ * @tc.desc: Test CheckParam when user_ contain '/'.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, CheckParam003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = "test";
+    param.hapName_ = "test";
+    param.storeName_ = "test";
+    param.user_ = "test/test";
+    param.customDir_ = "test";
+
+    bool result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+
+    param.user_ = "..";
+
+    result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+    param.user_ = "test\\..test";
+
+    result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: CheckParam004
+ * @tc.desc: Test CheckParam.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, CheckParam004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = "test";
+    param.hapName_ = "test";
+    param.storeName_ = "test";
+    param.user_ = "test";
+    param.customDir_ = "test";
+
+    bool result = service.CheckParam(param);
+
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name: CheckParam005
+ * @tc.desc: Test VerifyPromiseInfo when storename contain '/'.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, CheckParam005, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = "test";
+    param.hapName_ = "test";
+    param.storeName_ = "test/test";
+    param.user_ = "test";
+    param.customDir_ = "test";
+
+    bool result = service.CheckParam(param);
+
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: CheckParam006
+ * @tc.desc: Test VerifyPromiseInfo when customDir is invalid.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, CheckParam006, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = "test";
+    param.hapName_ = "test";
+    param.storeName_ = "test";
+    param.user_ = "test";
+    param.customDir_ = "test/../../test/../../../";
+    bool result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/../test/../../../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/../../../test/../../../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/./../../test/../../../../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/.../../../test/../../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+
+    param.customDir_ = "test/test/../../../test/test/../test/../../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+
+    param.customDir_ = "test/test/../../../../../test/test/test/";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+
+    param.customDir_ = "/test";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test//////////////////..///////../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+
+    param.customDir_ = "test/..//////////////////..///////../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/..//////////////////..///////../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/..////./././///////////..///////../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/..////./././//////////////////../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name: CheckParam007
+ * @tc.desc: Test VerifyPromiseInfo when customDir is invalid and hapname is empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, CheckParam007, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = "test";
+    param.hapName_ = "";
+    param.storeName_ = "test";
+    param.user_ = "test";
+    param.customDir_ = "test/../../test/../../../";
+    bool result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/../test/../../../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/../../../test/../../../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/../../../test/../../../../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/.../../test/../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+
+    param.customDir_ = "test/test/../../../test/test/../test/../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+
+    param.customDir_ = "test/test/../../../../../test/test/test/";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+
+    param.customDir_ = "/test";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test//////////////////..///////../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
+
+    param.customDir_ = "test/..//////////////////..///////../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/..//////////////////..///////../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/..////./././///////////..///////../../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, false);
+
+    param.customDir_ = "test/..////./././///////////////////../";
+    result = service.CheckParam(param);
+    EXPECT_EQ(result, true);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
