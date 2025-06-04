@@ -500,9 +500,9 @@ bool RuntimeStore::SaveMetaData()
         return false;
     }
     saveMeta.user = std::to_string(foregroundUserId);
-    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta); // or use constant value
+    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
-        ZLOGE("Create directory error, dataDir: %{public}s.", saveMeta.dataDir.c_str()); // log or not?
+        ZLOGE("Create directory error, dataDir: %{public}s.", Anonymous::Change(saveMeta.dataDir).c_str());
         return false;
     }
 
