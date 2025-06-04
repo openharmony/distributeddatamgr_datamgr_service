@@ -18,7 +18,6 @@ config("module_public_config") {
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/account",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
@@ -27,7 +26,6 @@ config("module_public_config") {
     "${data_service_path}/service/udmf/utd",
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/bootstrap/include",
-
   ]
 }
 
