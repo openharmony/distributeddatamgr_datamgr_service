@@ -36,12 +36,16 @@ class DataShareServiceStub::QosManager {
 public:
     QosManager()
     {
+#ifndef IS_EMULATOR
         // set thread qos QOS_USER_INTERACTIVE
         QOS::SetThreadQos(QOS::QosLevel::QOS_USER_INTERACTIVE);
+#endif
     }
     ~QosManager()
     {
+#ifndef IS_EMULATOR
         QOS::ResetThreadQos();
+#endif
     }
 };
 
@@ -351,9 +355,6 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
 {
     // set thread qos
     DataShareServiceStub::QosManager qos;
-    // check thread qos
-    QOS::QosLevel curLevel;
-    int qosRet = QOS::GetThreadQos(curLevel);
 
     int tryTimes = TRY_TIMES;
     while (!isReady_.load() && tryTimes > 0) {
@@ -373,8 +374,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         code = code - DATA_SHARE_CMD_SYSTEM_CODE;
     }
     if (code != DATA_SHARE_SERVICE_CMD_QUERY && code != DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS) {
-        ZLOGI("code:%{public}u, callingPid:%{public}d, qosRet:%{public}d, curLevel:%{public}d",
-            code, callingPid, qosRet, curLevel);
+        ZLOGI("code:%{public}u, callingPid:%{public}d", code, callingPid);
     }
     if (!CheckInterfaceToken(data)) {
         DataShareThreadLocal::CleanFromSystemApp();

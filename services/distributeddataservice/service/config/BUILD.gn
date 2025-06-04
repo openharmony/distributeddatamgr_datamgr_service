@@ -61,6 +61,7 @@ ohos_source_set("distributeddata_config") {
   external_deps = [
     "hilog:libhilog",
     "cJSON:cjson",
+    "kv_store:datamgr_common",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

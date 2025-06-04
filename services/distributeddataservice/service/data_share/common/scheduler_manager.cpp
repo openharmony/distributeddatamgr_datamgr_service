@@ -258,7 +258,7 @@ void SchedulerManager::GenRemindTimerFuncParams(
 {
     auto index = schedulerSQL.find(REMIND_TIMER_FUNC);
     if (index == std::string::npos) {
-        ZLOGW("not find remindTimer, sql is %{public}s", schedulerSQL.c_str());
+        ZLOGW("not find remindTimer, sql is %{public}s", URIUtils::Anonymous(schedulerSQL).c_str());
         return;
     }
     index += REMIND_TIMER_FUNC_LEN;

@@ -50,6 +50,7 @@ ohos_source_set("distributeddata_crypto") {
     "dmsfwk:distributed_sdk",
     "hilog:libhilog",
     "huks:libhukssdk",
+    "kv_store:datamgr_common",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

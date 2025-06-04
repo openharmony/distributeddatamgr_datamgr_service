@@ -1312,5 +1312,17 @@ void ObjectStoreManager::DeleteSnapshot(const std::string& bundleName, const std
     });
     snapshots_.Erase(snapshotKey);
 }
+
+int32_t ObjectStoreManager::AutoLaunchStore()
+{
+    int32_t status = Open();
+    if (status != OBJECT_SUCCESS) {
+        ZLOGE("Open fail %{public}d", status);
+        return status;
+    }
+    CloseAfterMinute();
+    ZLOGI("Auto launch, close after a minute");
+    return OBJECT_SUCCESS;
+}
 } // namespace DistributedObject
 } // namespace OHOS

@@ -324,13 +324,10 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
             continue;
         }
         if (storeMeta.bundleName == DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
-            int32_t status = DistributedObject::ObjectStoreManager::GetInstance()->Open();
+            int32_t status = DistributedObject::ObjectStoreManager::GetInstance()->AutoLaunchStore();
             if (status != OBJECT_SUCCESS) {
-                ZLOGE("Open fail %{public}d", status);
                 continue;
             }
-            DistributedObject::ObjectStoreManager::GetInstance()->CloseAfterMinute();
-            ZLOGI("Auto launch, close after a minute");
             return OBJECT_SUCCESS;
         }
     }

@@ -100,8 +100,6 @@ public:
     void NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
         const std::string& srcNetworkId = "");
     void NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId = "");
-    void CloseAfterMinute();
-    int32_t Open();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     UriToSnapshot GetSnapShots(const std::string &bundleName, const std::string &storeName);
     int32_t BindAsset(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
@@ -109,6 +107,7 @@ public:
     int32_t OnAssetChanged(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
          const std::string& deviceId, const ObjectStore::Asset& asset);
     void DeleteSnapshot(const std::string &bundleName, const std::string &sessionId);
+    int32_t AutoLaunchStore();
 private:
     constexpr static const char *SEPERATOR = "_";
     constexpr static const char *TIME_REGEX = "_\\d{10}_p_";
@@ -183,6 +182,8 @@ private:
     void PullAssets(const std::map<std::string, ObjectRecord>& data, const SaveInfo& saveInfo);
     std::map<std::string, ObjectRecord> GetObjectData(const ObjectRecord& changedData, SaveInfo& saveInfo,
         bool& hasAsset);
+    void CloseAfterMinute();
+    int32_t Open();
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;
