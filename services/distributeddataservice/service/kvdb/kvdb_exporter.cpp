@@ -20,6 +20,7 @@
 #include "directory/directory_manager.h"
 #include "kvdb_general_store.h"
 #include "log_print.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedDataDfx;
@@ -42,7 +43,8 @@ void KVDBExporter::Exporter(const StoreMetaData &meta, const std::string &backup
         }
         dbStatus = delegate->CheckIntegrity();
         if (dbStatus != DistributedDB::DBStatus::OK) {
-            ZLOGE("CheckIntegrity fail, dbStatus:%{public}d, backupPath:%{public}s", dbStatus, backupPath.c_str());
+            ZLOGE("CheckIntegrity fail, dbStatus:%{public}d, backupPath:%{public}s", dbStatus,
+                Anonymous::Change(backupPath).c_str());
             result = false;
             return;
         }
