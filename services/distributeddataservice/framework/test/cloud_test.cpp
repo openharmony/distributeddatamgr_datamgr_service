@@ -546,16 +546,4 @@ HWTEST_F(CloudEventTest, GetEventId, TestSize.Level0)
     auto ret = event.GetEventId();
     EXPECT_EQ(ret, evtId);
 }
-
-/**
-* @tc.name: IsLocked
-* @tc.desc: test IsLocked function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(ScreenManagerTest, IsLocked, TestSize.Level0)
-{
-    ASSERT_FALSE(ScreenManager::GetInstance()->IsLocked());
-}
 } // namespace OHOS::Test

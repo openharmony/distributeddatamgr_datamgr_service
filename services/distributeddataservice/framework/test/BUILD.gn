@@ -122,6 +122,7 @@ ohos_unittest("ServiceUtilsTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "cJSON:cjson",
+    "kv_store:datamgr_common",
   ]
 
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
@@ -176,6 +177,10 @@ ohos_unittest("AssetLoaderTest") {
   sources = [ "asset_loader_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("BackupRuleManagerTest") {
@@ -183,6 +188,10 @@ ohos_unittest("BackupRuleManagerTest") {
   sources = [ "backup_rule_manager_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("BindEventTest") {
@@ -190,6 +199,10 @@ ohos_unittest("BindEventTest") {
   sources = [ "bind_event_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("CloudInfoTest") {
@@ -209,6 +222,10 @@ ohos_unittest("EventTest") {
   sources = [ "event_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("GeneralStoreTest") {
@@ -251,6 +268,7 @@ ohos_unittest("MetaDataManagerTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "cJSON:cjson",
+    "kv_store:datamgr_common",
   ]
 
   deps = [
@@ -264,7 +282,11 @@ ohos_unittest("StoreMetaDataLocalTest") {
   sources = [ "store_meta_data_local_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
-  external_deps = [ "cJSON:cjson" ]
+  
+  external_deps = [
+    "cJSON:cjson",
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("ConstantTest") {
@@ -272,6 +294,10 @@ ohos_unittest("ConstantTest") {
   sources = [ "constant_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("CryptoTest") {
@@ -279,6 +305,10 @@ ohos_unittest("CryptoTest") {
   sources = [ "crypto_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "kv_store:datamgr_common",
+  ]
 }
 
 ohos_unittest("ServiceMetaDataTest") {
@@ -332,6 +362,14 @@ ohos_unittest("ServiceMetaDataTest") {
   ]
 }
 
+ohos_unittest("ScreenManagerTest") {
+  module_out_path = module_output_path
+  sources = [ "screen_manager_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [ "kv_store:datamgr_common" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -351,6 +389,7 @@ group("unittest") {
     ":FeatureTest",
     ":GeneralStoreTest",
     ":MetaDataManagerTest",
+    ":ScreenManagerTest",
     ":SerializableTest",
     ":ServiceMetaDataTest",
     ":ServiceUtilsTest",

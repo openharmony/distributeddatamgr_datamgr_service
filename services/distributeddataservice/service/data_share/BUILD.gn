@@ -24,15 +24,15 @@ config("module_public_config") {
     "../../adapter/include",
     "../../app/src",
     "../../framework/include",
-    "${datashare_path}/frameworks/native/common/include",
-    "${datashare_path}/interfaces/inner_api/common/include",
-    "${datashare_path}/interfaces/inner_api/consumer/include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/service/config/include",
     "../common",
     "../crypto/include",
     "../permission/include",
   ]
+  if (is_emulator) {
+    defines = [ "IS_EMULATOR" ]
+  }
 }
 group("build_module") {
   deps = [ ":data_share_service" ]
@@ -123,6 +123,7 @@ ohos_source_set("data_share_service") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "data_share:datashare_common",
+    "data_share:datashare_common_lite",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",

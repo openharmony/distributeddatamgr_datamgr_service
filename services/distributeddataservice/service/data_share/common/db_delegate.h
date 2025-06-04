@@ -37,6 +37,8 @@ public:
     using Filter = std::function<bool(const std::string &user)>;
     static std::shared_ptr<DBDelegate> Create(DistributedData::StoreMetaData &metaData,
         const std::string &extUri = "", const std::string &backup = "");
+    virtual bool Init(const DistributedData::StoreMetaData &meta, int version,
+        bool registerFunction, const std::string &extUri, const std::string &backup) = 0;
     static void Close(const Filter &filter);
     virtual std::pair<int, std::shared_ptr<DataShareResultSet>> Query(const std::string &tableName,
         const DataSharePredicates &predicates, const std::vector<std::string> &columns,

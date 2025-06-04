@@ -475,6 +475,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "ipc:ipc_core",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "kv_store:datamgr_common",
   ]
 
   deps = [
@@ -613,16 +614,11 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "object_asset_loader_test.cpp",
   ]
 
-  include_dirs = [
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -652,16 +648,11 @@ ohos_unittest("ObjectAssetMachineTest") {
     "object_asset_machine_test.cpp",
   ]
 
-  include_dirs = [
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -743,9 +734,6 @@ ohos_unittest("ObjectManagerTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/service/common",
     "${data_service_path}/service/test/mock",
-    "${dataobject_path}/interfaces/innerkits",
-    "${dataobject_path}/frameworks/innerkitsimpl/include",
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
   ]
 
   configs = [ ":module_private_config" ]
@@ -755,6 +743,7 @@ ohos_unittest("ObjectManagerTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "data_object:data_object_inner",
     "data_object:distributeddataobject_impl",
     "dataclassification:data_transit_mgr",
     "dfs_service:cloudsync_asset_kit_inner",
@@ -794,16 +783,11 @@ ohos_unittest("ObjectSnapshotTest") {
     "object_snapshot_test.cpp",
   ]
 
-  include_dirs = [
-    "${dataobject_path}/frameworks/innerkitsimpl/include/common",
-    "${dataobject_path}/interfaces/innerkits",
-    "${relational_store_path}/interfaces/inner_api/common_type/include",
-  ]
-
   configs = [ ":module_private_config" ]
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -909,7 +893,9 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
+    "kv_store:distributeddata_mgr",
     "openssl:libcrypto_shared",
     "samgr:samgr_proxy",
     "safwk:system_ability_fwk",
@@ -1025,6 +1011,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
+    "data_share:datashare_common_lite",
     "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
     "googletest:gtest_main",
@@ -1397,6 +1384,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
+    "kv_store:datamgr_common",
     "udmf:udmf_client",
   ]
 }
