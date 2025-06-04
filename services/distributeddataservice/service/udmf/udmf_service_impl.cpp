@@ -1144,12 +1144,13 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     return E_OK;
 }
 
-bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
+bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &devices)
 {
     using namespace OHOS::DistributedData;
     bool isAfterMeta = false;
-    for (const auto &uuid : uuids) {
+    for (const auto &device : devices) {
         auto metaData = meta;
+        auto uuid = DeviceManagerAdapter::GetInstance().ToUUID(device);
         metaData.deviceId = uuid;
         CapMetaData capMeta;
         auto capKey = CapMetaRow::GetKeyFor(uuid);

@@ -39,7 +39,7 @@ using DmAdapter = DistributedData::DeviceManagerAdapter;
 using DBManager = DistributedDB::KvStoreDelegateManager;
 constexpr const int ALIGN_WIDTH = 8;
 constexpr const char *DEFAULT_USERID = "0";
-constexpr static const char *UDMF_DRAG_STORE = "drag";
+constexpr const char *UDMF_DRAG_STORE = "drag";
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
     auto handler = std::make_shared<RouteHeadHandlerImpl>(info);
