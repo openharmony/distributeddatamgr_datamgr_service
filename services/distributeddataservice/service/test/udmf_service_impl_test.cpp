@@ -18,18 +18,41 @@
 #include "gtest/gtest.h"
 #include "error_code.h"
 #include "text.h"
-
+#include "mock/access_token_mock.h"
+#include "mock/meta_data_manager_mock.h"
 using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
 namespace OHOS::UDMF {
 using namespace testing::ext;
 class UdmfServiceImplTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {}
-    static void TearDownTestCase(void) {}
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
+    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
+    static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
     void SetUp() {}
     void TearDown() {}
 };
+void UdmfServiceImplTest::SetUpTestCase() 
+{
+    accTokenMock = std::make_shared<AccessTokenKitMock>();
+    BAccessTokenKit::accessTokenkit = accTokenMock;
+    metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+    BMetaDataManager::metaDataManager = metaDataManagerMock;
+    metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
+    BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
+}
 
+void UdmfServiceImplTest::TearDownTestCase(void)
+{
+    accTokenMock = nullptr;
+    BAccessTokenKit::accessTokenkit = nullptr;
+    metaDataManagerMock = nullptr;
+    BMetaDataManager::metaDataManager = nullptr;
+    metaDataMock = nullptr;
+    BMetaData<StoreMetaData>::metaDataManager = nullptr;
+}
 /**
 * @tc.name: SaveData001
 * @tc.desc: Abnormal test of SaveData, unifiedData is invalid
@@ -239,5 +262,23 @@ HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level1)
     EXPECT_TRUE(data.IsNeedTransferToEntries());
     int recordSize = 2;
     EXPECT_EQ(data.GetRecords().size(), recordSize);
+}
+
+/**
+* @tc.name: IsNeedMetaSyncTest001
+* @tc.desc: IsNeedMetaSync test
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, IsNeedMetaSyncTest001, TestSize.Level0)
+{
+    UdmfServiceImpl udmfServiceImpl;
+    StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
+    std::vector<std::string> devices = {"remote_device"};
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(true))
+        .WillRepeatedly(testing::Return(true));
+    auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
+    EXPECT_EQ(isNeedSync, true);
 }
 }; // namespace UDMF

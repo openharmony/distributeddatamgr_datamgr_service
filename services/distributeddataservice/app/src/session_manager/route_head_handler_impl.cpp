@@ -524,6 +524,6 @@ bool RouteHeadHandlerImpl::UnPackAccountId(uint8_t **data, uint32_t leftSize)
 
 bool RouteHeadHandlerImpl::IsUdmfStore()
 {
-    return (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ == UDMF_DRAG_STORE)
+    return (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ == UDMF_DRAG_STORE);
 }
 } // namespace OHOS::DistributedData

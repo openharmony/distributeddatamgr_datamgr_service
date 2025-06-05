@@ -1152,6 +1152,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/service/test/mock",
   ]
 
   cflags = [
@@ -1162,6 +1163,7 @@ ohos_unittest("UdmfServiceImplTest") {
   deps = [
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/udmf:udmf_server",
+    "mock:distributeddata_mock_static",
   ]
 
   external_deps = [
@@ -1172,6 +1174,8 @@ ohos_unittest("UdmfServiceImplTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
     "googletest:gtest_main",
     "hilog:libhilog",
     "cJSON:cjson",

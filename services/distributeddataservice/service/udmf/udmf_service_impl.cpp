@@ -1172,6 +1172,5 @@ bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
     }
     return isAfterMeta;
 }
-
 } // namespace UDMF
 } // namespace OHOS
