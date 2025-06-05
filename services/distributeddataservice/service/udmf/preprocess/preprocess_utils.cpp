@@ -72,6 +72,7 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
     runtime.recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
     runtime.tokenId = option.tokenId;
     runtime.sdkVersion = GetSdkVersionByToken(option.tokenId);
+    runtime.visibility = option.visibility;
     data.SetRuntime(runtime);
     return E_OK;
 }
