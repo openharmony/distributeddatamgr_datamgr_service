@@ -52,7 +52,7 @@ public:
     void UpdateExpireTime(bool async = true);
     int32_t GetSoftBusError();
     Status ReuseConnect(const ISocketListener *listener);
-    const std::string& GetNetworkId() const;
+    std::string GetNetworkId() const;
     void UpdateNetworkId(const std::string &networkId);
 
 private:
@@ -89,6 +89,7 @@ private:
     static constexpr uint32_t QOS_COUNTS[QOS_BUTT] = { BR_QOS_COUNT, HML_QOS_COUNT, REUSE_QOS_COUNT };
     std::atomic_bool isOpening_ = false;
     mutable std::mutex mutex_;
+    mutable std::mutex networkIdMutex_;
     uint32_t type_ = QOS_HML;
     PipeInfo pipe_;
     DeviceId device_;
