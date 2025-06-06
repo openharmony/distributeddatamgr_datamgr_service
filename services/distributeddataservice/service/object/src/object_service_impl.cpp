@@ -260,6 +260,31 @@ int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundl
     return OBJECT_SUCCESS;
 }
 
+int32_t ObjectServiceImpl::RegisterProgressObserver(
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
+    }
+    auto pid = IPCSkeleton::GetCallingPid();
+    ObjectStoreManager::GetInstance()->RegisterProgressObserverCallback(bundleName, sessionId, pid, tokenId, callback);
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectServiceImpl::UnregisterProgressObserver(const std::string &bundleName, const std::string &sessionId)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
+    }
+    auto pid = IPCSkeleton::GetCallingPid();
+    ObjectStoreManager::GetInstance()->UnregisterProgressObserverCallback(bundleName, pid, tokenId, sessionId);
+    return OBJECT_SUCCESS;
+}
+
 int32_t ObjectServiceImpl::DeleteSnapshot(const std::string &bundleName, const std::string &sessionId)
 {
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
@@ -339,6 +364,7 @@ int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, con
     ZLOGI("ObjectServiceImpl::OnAppExit uid=%{public}d, pid=%{public}d, tokenId=%{public}d, bundleName=%{public}s",
           uid, pid, tokenId, appId.c_str());
     ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(appId, pid, tokenId);
+    ObjectStoreManager::GetInstance()->UnregisterProgressObserverCallback(appId, pid, tokenId);
     return FeatureSystem::STUB_SUCCESS;
 }
 

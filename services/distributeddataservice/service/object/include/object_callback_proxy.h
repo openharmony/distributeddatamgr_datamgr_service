@@ -80,6 +80,20 @@ public:
 private:
     static inline BrokerDelegator<ObjectChangeCallbackProxy> delegator_;
 };
+
+class ObjectProgressCallbackProxyBroker : public IObjectProgressCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectProgressCallback");
+};
+
+class ObjectProgressCallbackProxy : public IRemoteProxy<ObjectProgressCallbackProxyBroker> {
+public:
+    explicit ObjectProgressCallbackProxy(const sptr<IRemoteObject> &impl);
+    ~ObjectProgressCallbackProxy() = default;
+    void Completed(int32_t progress) override;
+private:
+    static inline BrokerDelegator<ObjectProgressCallbackProxy> delegator_;
+};
 } // namespace DistributedObject
 } // namespace OHOS
 #endif // DISTRIBUTEDDATAMGR_OBJECT_CALLBACK_PROXY_H

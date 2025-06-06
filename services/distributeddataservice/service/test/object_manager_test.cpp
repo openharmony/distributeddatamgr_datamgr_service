@@ -1111,4 +1111,115 @@ HWTEST_F(ObjectManagerTest, InitUserMeta001, TestSize.Level1)
     auto status = manager->InitUserMeta();
     ASSERT_EQ(status, DistributedObject::OBJECT_SUCCESS);
 }
+
+/**
+* @tc.name: registerAndUnregisterProgressObserverCallback001
+* @tc.desc: test RegisterProgressObserverCallback and UnregisterProgressObserverCallback.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ObjectManagerTest, registerAndUnregisterProgressObserverCallback001, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    sptr<IRemoteObject> callback;
+    manager->RegisterProgressObserverCallback(bundleName_, sessionId_, pid_, tokenId_, callback);
+    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager->processCallbacks_.Find(tokenId_).second;
+    std::string objectKey = bundleName_ + sessionId_;
+    ASSERT_NE(progressCallbackInfo.observers_.find(objectKey), progressCallbackInfo.observers_.end());
+    manager->UnregisterProgressObserverCallback(bundleName_, pid_, tokenId_, sessionId_);
+    progressCallbackInfo = manager->processCallbacks_.Find(tokenId_).second;
+    ASSERT_EQ(progressCallbackInfo.observers_.find(objectKey), progressCallbackInfo.observers_.end());
+}
+
+/**
+* @tc.name: registerAndUnregisterProgressObserverCallback002
+* @tc.desc: abnormal use cases.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ObjectManagerTest, registerAndUnregisterProgressObserverCallback002, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    sptr<IRemoteObject> callback;
+    uint32_t tokenId = 101;
+    manager->RegisterProgressObserverCallback("", sessionId_, pid_, tokenId, callback);
+    manager->RegisterProgressObserverCallback(bundleName_, "", pid_, tokenId, callback);
+    manager->RegisterProgressObserverCallback("", "", pid_, tokenId, callback);
+    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager->processCallbacks_.Find(tokenId_).second;
+    progressCallbackInfo.pid = pid_;
+    manager->RegisterProgressObserverCallback(bundleName_, sessionId_, pid_, tokenId_, callback);
+    ASSERT_EQ(manager->processCallbacks_.Find(tokenId).first, false);
+    manager->UnregisterProgressObserverCallback("", pid_, tokenId, sessionId_);
+    manager->UnregisterProgressObserverCallback("", pid_, tokenId, "");
+    manager->UnregisterProgressObserverCallback(bundleName_, pid_, tokenId, "");
+}
+
+/**
+* @tc.name: NotifyAssetsRecvProgress001
+* @tc.desc: NotifyAssetsRecvProgress test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ObjectManagerTest, NotifyAssetsRecvProgress001, TestSize.Level0)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = bundleName_ + sessionId_;
+    std::string errProgress = "errProgress";
+    int32_t progress = 100;
+    ASSERT_EQ(manager->assetsRecvProgress_.Find(objectKey).first, true);
+    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager->processCallbacks_.Find(tokenId_).second;
+    manager->NotifyAssetsRecvProgress(errProgress, progress);
+    manager->assetsRecvProgress_.Clear();
+    manager->assetsRecvProgress_.Insert(objectKey, progress);
+    progressCallbackInfo.observers_.clear();
+    manager->NotifyAssetsRecvProgress(errProgress, progress);
+}
+
+/**
+* @tc.name: OnRecvProgress001
+* @tc.desc: OnRecvProgress test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, OnRecvProgress001, TestSize.Level1)
+{
+    std::string srcNetworkId = "srcNetworkId";
+    sptr<AssetObj> assetObj = nullptr;
+    uint64_t totalBytes = 100;
+    uint64_t processBytes = 100;
+    ObjectAssetsRecvListener listener;
+    int32_t ret = listener.OnRecvProgress(srcNetworkId, assetObj, totalBytes, processBytes);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_INNER_ERROR);
+    uint64_t totalBytes_01 = 0;
+    ret = listener.OnRecvProgress(srcNetworkId, assetObj, totalBytes_01, processBytes);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_INNER_ERROR);
+    sptr<AssetObj> assetObj_1 = new AssetObj();
+    ret = listener.OnRecvProgress(srcNetworkId, assetObj_1, totalBytes_01, processBytes);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_INNER_ERROR);
+    ret = listener.OnRecvProgress(srcNetworkId, assetObj_1, totalBytes, processBytes);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: OnFinished002
+* @tc.desc: OnFinished test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, OnFinished002, TestSize.Level1)
+{
+    std::string srcNetworkId = "srcNetworkId";
+    ObjectAssetsRecvListener listener;
+    sptr<AssetObj> assetObj_1 = new AssetObj();
+    assetObj_1->dstBundleName_ = bundleName_;
+    assetObj_1->srcBundleName_ = bundleName_;
+    assetObj_1->dstNetworkId_ = "1";
+    assetObj_1->sessionId_ = "123";
+    int32_t result = 100;
+    auto ret = listener.OnFinished(srcNetworkId, assetObj_1, result);
+    int32_t result_1 = 0;
+    ret = listener.OnFinished(srcNetworkId, assetObj_1, result_1);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
+}
 } // namespace OHOS::Test

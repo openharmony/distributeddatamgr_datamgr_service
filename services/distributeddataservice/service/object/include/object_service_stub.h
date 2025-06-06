@@ -37,6 +37,8 @@ private:
     int32_t ObjectStoreBindAssetOnRemote(MessageParcel &data, MessageParcel &reply);
     int32_t OnDeleteSnapshot(MessageParcel &data, MessageParcel &reply);
     int32_t OnIsContinue(MessageParcel &data, MessageParcel &reply);
+    int32_t OnSubscribeProgress(MessageParcel &data, MessageParcel &reply);
+    int32_t OnUnsubscribeProgress(MessageParcel &data, MessageParcel &reply);
     using RequestHandle = int (ObjectServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[static_cast<uint32_t>(ObjectCode::OBJECTSTORE_SERVICE_CMD_MAX)] = {
         &ObjectServiceStub::ObjectStoreSaveOnRemote,
@@ -48,6 +50,8 @@ private:
         &ObjectServiceStub::ObjectStoreBindAssetOnRemote,
         &ObjectServiceStub::OnDeleteSnapshot,
         &ObjectServiceStub::OnIsContinue,
+        &ObjectServiceStub::OnSubscribeProgress,
+        &ObjectServiceStub::OnUnsubscribeProgress,
     };
 };
 } // namespace OHOS::DistributedRdb

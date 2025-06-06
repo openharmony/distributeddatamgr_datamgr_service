@@ -45,6 +45,8 @@ using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 using ValueProxy = OHOS::DistributedData::ValueProxy;
 using DistributedFileDaemonManager = Storage::DistributedFile::DistributedFileDaemonManager;
 constexpr const char *SAVE_INFO = "p_###SAVEINFO###";
+constexpr int32_t PROGRESS_MAX = 100;
+constexpr int32_t PROGRESS_INVALID = -1;
 ObjectStoreManager::ObjectStoreManager()
 {
     ZLOGI("ObjectStoreManager construct");
@@ -318,6 +320,7 @@ int32_t ObjectStoreManager::Clear()
     }
     result = RevokeSaveToStore("");
     callbacks_.Clear();
+    processCallbacks_.Clear();
     Close();
     return result;
 }
@@ -386,14 +389,81 @@ void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, c
     }));
 }
 
-void ObjectStoreManager::UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
-                                                  const std::string &sessionId)
+void ObjectStoreManager::UnregisterRemoteCallback(
+    const std::string &bundleName, pid_t pid, uint32_t tokenId, const std::string &sessionId)
 {
     if (bundleName.empty()) {
         ZLOGD("bundleName is empty");
         return;
     }
     callbacks_.Compute(tokenId, ([pid, &sessionId, &bundleName](const uint32_t key, CallbackInfo &value) {
+        if (value.pid != pid) {
+            return true;
+        }
+        if (sessionId.empty()) {
+            return false;
+        }
+        std::string prefix = bundleName + sessionId;
+        for (auto it = value.observers_.begin(); it != value.observers_.end();) {
+            if ((*it).first == prefix) {
+                it = value.observers_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+        return true;
+    }));
+}
+
+void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bundleName, const std::string &sessionId,
+    pid_t pid, uint32_t tokenId, sptr<IRemoteObject> callback)
+{
+    if (bundleName.empty() || sessionId.empty()) {
+        ZLOGD("ObjectStoreManager::RegisterProgressObserverCallback empty bundleName = %{public}s, sessionId = "
+              "%{public}s",
+            bundleName.c_str(), DistributedData::Anonymous::Change(sessionId).c_str());
+        return;
+    }
+    auto proxy = iface_cast<ObjectProgressCallbackProxy>(callback);
+    std::string objectKey = bundleName + sessionId;
+    sptr<ObjectProgressCallbackProxy> observer;
+    processCallbacks_.Compute(
+        tokenId, ([pid, &proxy, &objectKey, &observer](const uint32_t key, ProgressCallbackInfo &value) {
+            if (value.pid != pid) {
+                value = ProgressCallbackInfo{ pid };
+            }
+            value.observers_.insert_or_assign(objectKey, proxy);
+            observer = value.observers_[objectKey];
+            return !value.observers_.empty();
+        }));
+    int32_t progress = PROGRESS_INVALID;
+    {
+        std::lock_guard<std::mutex> lock(progressMutex_);
+        auto it = progressInfo_.find(objectKey);
+        if (it == progressInfo_.end()) {
+            return;
+        }
+        progress = it->second;
+    }
+    if (observer != nullptr && progress != PROGRESS_INVALID) {
+        observer->Completed(progress);
+    }
+    if (progress == PROGRESS_MAX) {
+        assetsRecvProgress_.Erase(objectKey);
+        std::lock_guard<std::mutex> lock(progressMutex_);
+        progressInfo_.erase(objectKey);
+    }
+}
+
+void ObjectStoreManager::UnregisterProgressObserverCallback(
+    const std::string &bundleName, pid_t pid, uint32_t tokenId, const std::string &sessionId)
+{
+    if (bundleName.empty()) {
+        ZLOGD("bundleName is empty");
+        return;
+    }
+    processCallbacks_.Compute(
+        tokenId, ([pid, &sessionId, &bundleName](const uint32_t key, ProgressCallbackInfo &value) {
         if (value.pid != pid) {
             return true;
         }
@@ -570,8 +640,42 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, ObjectRecord>& d
     }
 }
 
-void ObjectStoreManager::NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
-    const std::string& srcNetworkId)
+void ObjectStoreManager::NotifyAssetsRecvProgress(const std::string &objectKey, int32_t progress)
+{
+    assetsRecvProgress_.InsertOrAssign(objectKey, progress);
+    std::list<sptr<ObjectProgressCallbackProxy>> observers;
+    bool flag = false;
+    processCallbacks_.ForEach(
+        [&objectKey, &observers, &flag](uint32_t tokenId, const ProgressCallbackInfo &value) {
+            if (value.observers_.empty()) {
+                flag = true;
+                return false;
+            }
+            auto it = value.observers_.find(objectKey);
+            if (it != value.observers_.end()) {
+                observers.push_back(it->second);
+            }
+            return false;
+        });
+    if (flag) {
+        std::lock_guard<std::mutex> lock(progressMutex_);
+        progressInfo_.insert_or_assign(objectKey, progress);
+    }
+    for (auto &observer : observers) {
+        if (observer == nullptr) {
+            continue;
+        }
+        observer->Completed(progress);
+    }
+    if (!observers.empty() && progress == PROGRESS_MAX) {
+        assetsRecvProgress_.Erase(objectKey);
+        std::lock_guard<std::mutex> lock(progressMutex_);
+        progressInfo_.erase(objectKey);
+    }
+}
+
+void ObjectStoreManager::NotifyAssetsReady(
+    const std::string &objectKey, const std::string &bundleName, const std::string &srcNetworkId)
 {
     restoreStatus_.ComputeIfAbsent(
         objectKey, [](const std::string& key) -> auto {

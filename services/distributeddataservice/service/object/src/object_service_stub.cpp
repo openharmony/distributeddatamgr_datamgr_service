@@ -164,6 +164,41 @@ int32_t ObjectServiceStub::OnUnsubscribeRequest(MessageParcel &data, MessageParc
     return 0;
 }
 
+int32_t ObjectServiceStub::OnSubscribeProgress(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sessionId;
+    std::string bundleName;
+    sptr<IRemoteObject> obj;
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, obj) || obj == nullptr) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s, callback is nullptr: %{public}d",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(), obj == nullptr);
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = RegisterProgressObserver(bundleName, sessionId, obj);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return status;
+}
+
+int32_t ObjectServiceStub::OnUnsubscribeProgress(MessageParcel &data, MessageParcel &reply)
+{
+    std::string sessionId;
+    std::string bundleName;
+    if (!ITypesUtil::Unmarshal(data, bundleName, sessionId)) {
+        ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s",
+            DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = UnregisterProgressObserver(bundleName, sessionId);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return status;
+}
+
 int32_t ObjectServiceStub::OnDeleteSnapshot(MessageParcel &data, MessageParcel &reply)
 {
     std::string sessionId;
