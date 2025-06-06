@@ -325,7 +325,7 @@ bool BackupManager::RemoveFile(const std::string &path)
         return true;
     }
     if (remove(path.c_str()) != 0) {
-        ZLOGE("remove error:%{public}d, path:%{public}s", errno, path.c_str());
+        ZLOGE("remove error:%{public}d, path:%{public}s", errno, StoreUtil::Anonymous(path).c_str());
         return false;
     }
     return true;
