@@ -22,13 +22,13 @@
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_extra_data.h"
 #include "cloud/cloud_info.h"
+#include "cloud_notifier_proxy.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sharing_center.h"
 #include "cloud/subscription.h"
 #include "cloud_service_stub.h"
 #include "dfx/dfx_types.h"
 #include "feature/static_acts.h"
-#include "rdb_notifier_proxy.h"
 #include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "sync_manager.h"
@@ -135,7 +135,7 @@ private:
 
     struct SyncAgent {
         SyncAgent() = default;
-        std::map<std::string, sptr<RdbNotifierProxy>> notifiers_;
+        sptr<CloudNotifierProxy> notifier_;
     };
     using SyncAgents = std::map<int32_t, SyncAgent>;
 
@@ -167,7 +167,7 @@ private:
     static std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
 
-    void OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, uint32_t seqNum, Details &&result);
+    void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
     std::map<std::string, StatisticInfos> ExecuteStatistics(

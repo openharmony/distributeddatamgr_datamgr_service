@@ -1237,9 +1237,10 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user, CloudSyncScene scene)
 int32_t CloudServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
 {
     ZLOGI("tokenId=%{public}x, pid=%{public}d, uid=%{public}d", tokenId, pid, uid);
-    syncAgents_.ComputeIfPresent(tokenId, [pid, &bundleName](auto, SyncAgents &syncAgents) {
+    syncAgents_.ComputeIfPresent(tokenId, [pid](auto, SyncAgents &syncAgents) {
         auto it = syncAgents.find(pid);
         if (it != syncAgents.end()) {
+            it->second.notifier_ = nullptr;
             syncAgents.erase(pid);
         }
         return !syncAgents.empty();
@@ -1253,18 +1254,15 @@ int32_t CloudServiceImpl::InitNotifier(const std::string &bundleName, sptr<IRemo
         ZLOGE("no notifier, bundleName:%{public}s", bundleName.c_str());
         return INVALID_ARGUMENT;
     }
-    auto notifierProxy = iface_cast<RdbNotifierProxy>(notifier);
+    auto notifierProxy = iface_cast<CloudNotifierProxy>(notifier);
     pid_t pid = IPCSkeleton::GetCallingPid();
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    syncAgents_.Compute(tokenId, [bundleName, notifierProxy, pid](auto, SyncAgents &agents) {
-        auto agent = agents.find(pid);
-        if (agent == agents.end()) {
-            SyncAgent temp;
-            temp.notifiers_.emplace(bundleName, notifierProxy);
-            agents.emplace(pid, temp);
-        } else {
-            agent->second.notifiers_.emplace(bundleName, notifierProxy);
+    syncAgents_.Compute(tokenId, [notifierProxy, pid](auto, SyncAgents &agents) {
+        auto [it, success] = agents.try_emplace(pid, SyncAgent());
+        if (it == agents.end()) {
+            return true;
         }
+        it->second.notifier_ = notifierProxy;
         return true;
     });
     return SUCCESS;
@@ -1285,17 +1283,14 @@ Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
     return dbDetails;
 }
 
-void CloudServiceImpl::OnAsyncComplete(const StoreInfo &storeInfo, pid_t pid, uint32_t seqNum, Details &&result)
+void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
 {
-    ZLOGI("tokenId=%{public}x, pid=%{public}d, seqnum=%{public}u", storeInfo.tokenId, pid, seqNum);
-    sptr<RdbNotifierProxy> notifier = nullptr;
-    syncAgents_.ComputeIfPresent(storeInfo.tokenId, [&notifier, pid, storeInfo](auto, SyncAgents &syncAgents) {
+    ZLOGI("tokenId=%{public}x, pid=%{public}d, seqnum=%{public}u", tokenId, pid, seqNum);
+    sptr<CloudNotifierProxy> notifier = nullptr;
+    syncAgents_.ComputeIfPresent(tokenId, [&notifier, pid](auto, SyncAgents &syncAgents) {
         auto it = syncAgents.find(pid);
         if (it != syncAgents.end()) {
-            auto iter = it->second.notifiers_.find(storeInfo.bundleName);
-            if (iter != it->second.notifiers_.end()) {
-                notifier = iter->second;
-            }
+            notifier = it->second.notifier_;
         }
         return true;
     });
@@ -1318,8 +1313,9 @@ int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::st
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = storeId;
     auto pid = IPCSkeleton::GetCallingPid();
-    GenAsync asyncCallback = [this, storeInfo, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
-        OnAsyncComplete(storeInfo, pid, seqNum, HandleGenDetails(result));
+    GenAsync asyncCallback =
+        [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
+        OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
     };
     auto highMode = GeneralStore::MANUAL_SYNC_MODE;
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
