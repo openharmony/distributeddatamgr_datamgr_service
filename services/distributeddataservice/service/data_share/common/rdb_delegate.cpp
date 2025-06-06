@@ -35,6 +35,7 @@
 #include "db_delegate.h"
 #include "log_debug.h"
 #include "ipc_skeleton.h"
+#include "common_utils.h"
 
 namespace OHOS::DataShare {
 constexpr static int32_t MAX_RESULTSET_COUNT = 32;
@@ -236,7 +237,6 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
         return std::make_pair(errCode_, nullptr);
     }
     int count = resultSetCount.fetch_add(1);
-    ZLOGD_MACRO("start query %{public}d", count);
     if (count >= MAX_RESULTSET_COUNT && IsLimit(count, callingPid, callingTokenId)) {
         resultSetCount--;
         return std::make_pair(E_RESULTSET_BUSY, nullptr);
@@ -260,14 +260,15 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
         ++value;
         return true;
     });
-    int64_t beginTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
+    int64_t beginTime = GetSystemTime();
     auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
-    std::shared_ptr<DataShareResultSet> result = { new DataShareResultSet(bridge), [callingPid, beginTime](auto p) {
-        ZLOGD_MACRO("release resultset");
+    auto resultSetPtr = new (std::nothrow) DataShareResultSet(bridge);
+    if (resultSetPtr == nullptr) {
+        return std::make_pair(E_ERROR, nullptr);
+    }
+    auto result = std::shared_ptr<DataShareResultSet>(resultSetPtr, [callingPid, beginTime](auto p) {
         resultSetCount--;
-        int64_t endTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        int64_t endTime = GetSystemTime();
         if (endTime - beginTime > TIMEOUT_TIME) {
             ZLOGE("pid %{public}d query time is %{public}" PRId64 ", %{public}d resultSet is used.", callingPid,
                 (endTime - beginTime), resultSetCount.load());
@@ -277,7 +278,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
             return value > 0;
         });
         delete p;
-    }};
+    });
     return std::make_pair(E_OK, result);
 }
 

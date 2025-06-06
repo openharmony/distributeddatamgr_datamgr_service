@@ -197,7 +197,7 @@ void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId, int32
 
 std::shared_ptr<BundleMgrProxy> BundleMgrProxy::GetInstance()
 {
-    static std::shared_ptr<BundleMgrProxy> proxy(new BundleMgrProxy());
+    static std::shared_ptr<BundleMgrProxy> proxy = std::make_shared<BundleMgrProxy>();
     return proxy;
 }
 
