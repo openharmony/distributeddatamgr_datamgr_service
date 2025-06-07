@@ -44,16 +44,18 @@ public:
     static constexpr int64_t USER_TEST = 100;
     static constexpr int64_t TEST_SUB_ID = 100;
     static constexpr uint32_t CUREEENT_USER_ID = 123;
+    static constexpr uint32_t NATIVE_USER_ID = 0;
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
+    void SetSelfTokenInfo(int32_t user);
     void SetUp();
     void TearDown();
 };
 
-void DataShareServiceImplTest::SetUp(void)
+void DataShareServiceImplTest::SetSelfTokenInfo(int32_t user)
 {
     HapInfoParams info = {
-        .userID = USER_TEST,
+        .userID = user,
         .bundleName = "ohos.datasharetest.demo",
         .instIndex = 0,
         .appIDDesc = "ohos.datasharetest.demo"
@@ -87,6 +89,10 @@ void DataShareServiceImplTest::SetUp(void)
     auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
         info.userID, info.bundleName, info.instIndex);
     SetSelfTokenID(testTokenId);
+}
+void DataShareServiceImplTest::SetUp(void)
+{
+    SetSelfTokenInfo(USER_TEST);
 }
 
 void DataShareServiceImplTest::TearDown(void)
@@ -490,5 +496,25 @@ HWTEST_F(DataShareServiceImplTest, GetCallerInfo002, TestSize.Level1)
     auto result = dataShareServiceImpl.GetCallerInfo(BUNDLE_NAME, appIndex);
     EXPECT_EQ(result.first, false);
     ZLOGI("DataShareServiceImplTest GetCallerInfo002 end");
+}
+
+/**
+* @tc.name: GetSilentProxyStatus001
+* @tc.desc: test GetSilentProxyStatus001 function while creating helper
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, GetSilentProxyStatus001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus001 start");
+    SetSelfTokenInfo(NATIVE_USER_ID);
+    DataShareServiceImpl dataShareServiceImpl;
+    auto result = dataShareServiceImpl.GetSilentProxyStatus(SLIENT_ACCESS_URI, true);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+
+    result = dataShareServiceImpl.GetSilentProxyStatus(SLIENT_ACCESS_URI + "?user=100", true);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+    SetSelfTokenInfo(USER_TEST);
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus001 end");
 }
 } // namespace OHOS::Test
