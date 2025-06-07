@@ -61,7 +61,7 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
         return E_ERROR;
     }
     std::string bundleName;
-    if (GetAlterableBundleNameByTokenId(option.tokenId, bundleName)) {
+    if (!GetAlterableBundleNameByTokenId(option.tokenId, bundleName)) {
         ZLOGE("GetAlterableBundleNameByTokenId failed.");
         return E_ERROR;
     }
@@ -503,7 +503,7 @@ bool PreProcessUtils::GetAlterableBundleNameByTokenId(uint32_t tokenId, std::str
         return GetDirByBundleNameAndAppIndex(hapInfo.bundleName, hapInfo.instIndex, bundleName);
     }
     if (UTILS::IsTokenNative()) {
-        ZLOGD("TypeATokenTypeEnum is TOKEN_HAP");
+        ZLOGI("TypeATokenTypeEnum is TOKEN_NATIVE");
         std::string processName;
         if (GetNativeProcessNameByToken(tokenId, processName)) {
             bundleName = processName;

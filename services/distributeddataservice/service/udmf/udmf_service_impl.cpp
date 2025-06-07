@@ -400,7 +400,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
-    if (PreProcessUtils::GetAlterableBundleNameByTokenId(query.tokenId, bundleName)) {
+    if (!PreProcessUtils::GetAlterableBundleNameByTokenId(query.tokenId, bundleName)) {
         ZLOGE("GetAlterableBundleNameByTokenId failed.");
         return E_ERROR;
     }
@@ -1043,7 +1043,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 {
     std::string bundleName;
     auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    if (PreProcessUtils::GetAlterableBundleNameByTokenId(tokenId, bundleName)) {
+    if (!PreProcessUtils::GetAlterableBundleNameByTokenId(tokenId, bundleName)) {
         ZLOGE("GetAlterableBundleNameByTokenId failed.");
         return E_ERROR;
     }

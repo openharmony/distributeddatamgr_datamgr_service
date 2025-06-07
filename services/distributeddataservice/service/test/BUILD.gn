@@ -1371,6 +1371,8 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "googletest:gmock_main",
@@ -1378,6 +1380,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
+    "ipc:ipc_core",
     "kv_store:datamgr_common",
     "udmf:udmf_client",
   ]
