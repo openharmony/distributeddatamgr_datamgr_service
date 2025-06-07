@@ -395,14 +395,8 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
 int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifiedData)
 {
     UnifiedKey key(query.key);
-    if (!unifiedData.IsValid() || !key.IsValid()) {
-        ZLOGE("data or key is invalid,key=%{public}s", query.key.c_str());
-        return E_INVALID_PARAMETERS;
-    }
-    std::string intention = FindIntentionMap(query.intention);
-    if (!IsValidOptionsNonDrag(key, intention) ||
-        key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
-        ZLOGE("Invlid param :key.intention:%{public}s, intention:%{public}s", key.intention.c_str(), intention.c_str());
+    if (!IsValidInput(query, unifiedData, key)) {
+        ZLOGE("Invalid input, key = %{public}s", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
@@ -1153,6 +1147,22 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     it.second->HandleDelayObserver(key, dataLoadInfo);
     dataLoadCallback_.Erase(key);
     return E_OK;
+}
+
+bool UdmfServiceImpl::IsValidInput(const QueryOption &query, UnifiedData &unifiedData, UnifiedKey &key)
+{
+    if (!unifiedData.IsValid() || !key.IsValid()) {
+        ZLOGE("Data or key is invalid, key = %{public}s", query.key.c_str());
+        return false;
+    }
+    std::string intention = FindIntentionMap(query.intention);
+    if (!IsValidOptionsNonDrag(key, intention) ||
+        key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
+        ZLOGE("Invalid params: key.intention = %{public}s, intention = %{public}s",
+            key.intention.c_str(), intention.c_str());
+        return false;
+    }
+    return true;
 }
 } // namespace UDMF
 } // namespace OHOS

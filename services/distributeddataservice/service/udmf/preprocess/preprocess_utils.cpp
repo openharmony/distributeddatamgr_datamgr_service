@@ -514,7 +514,8 @@ bool PreProcessUtils::GetAlterableBundleNameByTokenId(uint32_t tokenId, std::str
     return false;
 }
 
-bool PreProcessUtils::GetDirByBundleNameAndAppIndex(const std::string &bundleName, int32_t appIndex, std::string &dirName)
+bool PreProcessUtils::GetDirByBundleNameAndAppIndex(const std::string &bundleName, int32_t appIndex,
+    std::string &dirName)
 {
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {
