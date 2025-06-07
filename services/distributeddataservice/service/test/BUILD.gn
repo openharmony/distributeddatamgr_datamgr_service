@@ -80,6 +80,8 @@ ohos_unittest("CloudDataTest") {
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
+    "hilog:libhilog",
+    "ipc:ipc_core",
     "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
@@ -132,6 +134,8 @@ ohos_unittest("CloudServiceImplTest") {
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
+    "hilog:libhilog",
+    "ipc:ipc_core",
     "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
@@ -248,8 +252,9 @@ ohos_unittest("DirectoryManagerTest") {
     "ability_base:base",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
+    "access_token:libnativetoken_shared",
     "c_utils:utils",
+    "cJSON:cjson",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
@@ -829,7 +834,7 @@ ohos_unittest("MetaDataTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
+    "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
@@ -878,7 +883,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "ability_base:base",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
+    "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -1078,7 +1083,7 @@ ohos_unittest("KvdbServiceImplTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
+    "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
@@ -1378,6 +1383,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
+    "hilog:libhilog",
     "kv_store:datamgr_common",
     "udmf:udmf_client",
   ]

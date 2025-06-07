@@ -59,6 +59,7 @@ ohos_source_set("distributeddata_matrix") {
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "cJSON:cjson",
+    "c_utils:utils",
     "kv_store:datamgr_common",
   ]
   subsystem_name = "distributeddatamgr"
