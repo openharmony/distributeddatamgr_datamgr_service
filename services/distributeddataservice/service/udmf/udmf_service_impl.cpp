@@ -573,7 +573,6 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
-
     RegisterAsyncProcessInfo(query.key);
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
@@ -597,14 +596,16 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
     int32_t userId = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
     StoreMetaData meta = StoreMetaData(std::to_string(userId), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
-    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {})) {
+    auto uuids = DmAdapter::GetInstance().ToUUID(devices);
+    if (IsNeedMetaSync(meta, uuids) && !MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] 
+        (auto &results) {
+            if (store->Sync(devices, callback) != E_OK) {
+                ZLOGE("Store sync failed");
+                RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+                    BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
+        }
+    })) {
         ZLOGW("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
-    }
-    if (store->Sync(devices, callback) != E_OK) {
-        ZLOGE("Store sync failed:%{public}s", key.intention.c_str());
-        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
-        return E_DB_ERROR;
     }
     return E_OK;
 }
@@ -1144,13 +1145,12 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     return E_OK;
 }
 
-bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &devices)
+bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
 {
     using namespace OHOS::DistributedData;
     bool isAfterMeta = false;
-    for (const auto &device : devices) {
+    for (const auto &uuid : uuids) {
         auto metaData = meta;
-        auto uuid = DeviceManagerAdapter::GetInstance().ToUUID(device);
         metaData.deviceId = uuid;
         CapMetaData capMeta;
         auto capKey = CapMetaRow::GetKeyFor(uuid);

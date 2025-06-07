@@ -13,17 +13,52 @@
 * limitations under the License.
 */
 
+#include "metadata/meta_data_manager.h"
 #define LOG_TAG "UdmfServiceImplTest"
 #include "udmf_service_impl.h"
 #include "gtest/gtest.h"
 #include "error_code.h"
 #include "text.h"
+#include "accesstoken_kit.h"
+#include "bootstrap.h"
+#include "device_manager_adapter.h"
+#include "executor_pool.h"
+#include "ipc_skeleton.h"
 #include "mock/access_token_mock.h"
 #include "mock/meta_data_manager_mock.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+#include "kvstore_meta_manager.h"
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
-namespace OHOS::UDMF {
+using namespace OHOS::UDMF;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using namespace testing::ext;
+
+namespace OHOS::Test {
+namespace DistributedDataTest {
+static void GrantPermissionNative()
+{
+    const char **perms = new const char *[3];
+    perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
+    perms[1] = "ohos.permission.ACCESS_SERVICE_DM";
+    perms[2] = "ohos.permission.MONITOR_DEVICE_NETWORK_STATE"; // perms[2] is a permission parameter
+    TokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 3,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "distributed_data_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    AccessTokenKit::ReloadNativeTokenInfo();
+    delete[] perms;
+}
+
 class UdmfServiceImplTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -36,6 +71,18 @@ public:
 };
 void UdmfServiceImplTest::SetUpTestCase() 
 {
+    GrantPermissionNative();
+    DistributedData::Bootstrap::GetInstance().LoadComponents();
+    DistributedData::Bootstrap::GetInstance().LoadDirectory();
+    DistributedData::Bootstrap::GetInstance().LoadCheckers();
+    size_t max = 2;
+    size_t min = 1;
+    auto executors = std::make_shared<OHOS::ExecutorPool>(max, min);
+    DmAdapter::GetInstance().Init(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
     metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
@@ -59,7 +106,7 @@ void UdmfServiceImplTest::TearDownTestCase(void)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, SaveData001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, SaveData001, TestSize.Level0)
 {
     CustomOption option;
     UnifiedData data;
@@ -76,7 +123,7 @@ HWTEST_F(UdmfServiceImplTest, SaveData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, RetrieveData001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, RetrieveData001, TestSize.Level0)
 {
     QueryOption query;
     UnifiedData data;
@@ -92,7 +139,7 @@ HWTEST_F(UdmfServiceImplTest, RetrieveData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, IsPermissionInCache002, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, IsPermissionInCache002, TestSize.Level0)
 {
     QueryOption query;
     UdmfServiceImpl udmfServiceImpl;
@@ -106,7 +153,7 @@ HWTEST_F(UdmfServiceImplTest, IsPermissionInCache002, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, UpdateData001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, UpdateData001, TestSize.Level0)
 {
     QueryOption query;
     UnifiedData data;
@@ -121,7 +168,7 @@ HWTEST_F(UdmfServiceImplTest, UpdateData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, GetSummary001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, GetSummary001, TestSize.Level0)
 {
     QueryOption query;
     Summary summary;
@@ -136,7 +183,7 @@ HWTEST_F(UdmfServiceImplTest, GetSummary001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, Sync001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, Sync001, TestSize.Level0)
 {
     QueryOption query;
     std::vector<std::string> devices = {"device1"};
@@ -151,7 +198,7 @@ HWTEST_F(UdmfServiceImplTest, Sync001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, IsRemoteData001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, IsRemoteData001, TestSize.Level0)
 {
     QueryOption query;
     bool result = false;
@@ -166,7 +213,7 @@ HWTEST_F(UdmfServiceImplTest, IsRemoteData001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, SetAppShareOption001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, SetAppShareOption001, TestSize.Level0)
 {
     std::string intention = "";
     int32_t shareOption = 1;
@@ -182,7 +229,7 @@ HWTEST_F(UdmfServiceImplTest, SetAppShareOption001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, SetAppShareOption002, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, SetAppShareOption002, TestSize.Level0)
 {
     std::string intention = "intention";
     int32_t shareOption = 4;
@@ -197,7 +244,7 @@ HWTEST_F(UdmfServiceImplTest, SetAppShareOption002, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, SetAppShareOption003, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, SetAppShareOption003, TestSize.Level0)
 {
     std::string intention = "intention";
     int32_t shareOption = 3;
@@ -212,7 +259,7 @@ HWTEST_F(UdmfServiceImplTest, SetAppShareOption003, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, SetAppShareOption004, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, SetAppShareOption004, TestSize.Level0)
 {
     std::string intention = "intention";
     int32_t shareOption = -1;
@@ -227,14 +274,14 @@ HWTEST_F(UdmfServiceImplTest, SetAppShareOption004, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level0)
 {
     uint32_t code = 4;
     std::string user = "OH_USER_test";
     std::string account = "OH_ACCOUNT_test";
     UdmfServiceImpl udmfServiceImpl;
     auto status = udmfServiceImpl.OnUserChange(code, user, account);
-    ASSERT_EQ(status, E_OK);
+    ASSERT_EQ(status, UDMF::E_OK);
     auto sizeAfter = StoreCache::GetInstance().stores_.Size();
     ASSERT_EQ(sizeAfter, 0);
 }
@@ -245,7 +292,7 @@ HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level1)
+HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level0)
 {
     UnifiedData data;
     QueryOption query;
@@ -276,9 +323,96 @@ HWTEST_F(UdmfServiceImplTest, IsNeedMetaSyncTest001, TestSize.Level0)
     std::vector<std::string> devices = {"remote_device"};
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(true))
-        .WillRepeatedly(testing::Return(true));
+        .WillOnce(testing::Return(false))
+        .WillOnce(testing::Return(false));
     auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false))
+        .WillOnce(testing::Return(true));
+    isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
+    EXPECT_EQ(isNeedSync, false);
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(true))
+        .WillOnce(testing::Return(false));
+    isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
+    EXPECT_EQ(isNeedSync, false);
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(true))
+        .WillOnce(testing::Return(true));
+    isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
+    EXPECT_EQ(isNeedSync, false);
 }
-}; // namespace UDMF
+
+/**
+* @tc.name: SyncTest001
+* @tc.desc: IsNeedMetaSync test matrix mask
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, IsNeedMetaSyncTest002, TestSize.Level0)
+{
+    QueryOption query;
+    query.key = "test_key";
+    query.tokenId = 1;
+    query.intention  = UD_INTENTION_DRAG;
+    UdmfServiceImpl udmfServiceImpl;
+    StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
+    std::vector<std::string> devices = {"remote_device"};
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false))
+        .WillOnce(testing::Return(false));
+    auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
+    EXPECT_EQ(isNeedSync, true);
+
+    // mock mask
+}
+
+/**
+* @tc.name: SyncTest001
+* @tc.desc: sync test
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, SyncTest001, TestSize.Level0)
+{
+    QueryOption query;
+    query.key = "test_key";
+    query.tokenId = 1;
+    query.intention  = UD_INTENTION_DRAG;
+    UdmfServiceImpl udmfServiceImpl;
+    StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
+    std::vector<std::string> devices = {"remote_device"};
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false))
+        .WillOnce(testing::Return(false));
+    auto ret = udmfServiceImpl.Sync(query, devices);
+    EXPECT_EQ(ret, UDMF::E_OK);
+}
+
+/**
+ * @tc.name: ResolveAutoLaunch001
+ * @tc.desc: ResolveAutoLaunch test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ResolveAutoLaunch001, TestSize.Level0)
+{
+    auto store = StoreCache::GetInstance().GetStore("drag");
+    auto ret = store->Init();
+    EXPECT_EQ(ret, UDMF::E_OK);
+
+    DistributedDB::AutoLaunchParam param {
+        .userId = "100",
+        .appId = "distributeddata",
+        .storeId = "drag",
+    };
+    std::string identifier = "identifier";
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    ret = udmfServiceImpl->ResolveAutoLaunch(identifier, param);
+    EXPECT_EQ(ret, UDMF::E_OK);
+}
+} // DistributedDataTest
+}; 

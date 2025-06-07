@@ -131,7 +131,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         return DistributedDB::OK;
     }
     if (udmfStore && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
-        ZLOGI("ignore older version device for udmf");
+        ZLOGI("ignore older version device for udmf or object");
         return DistributedDB::OK;
     }
     if (!session_.IsValid()) {
@@ -294,7 +294,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
         return false;
     }
     if (udmfStore && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
-        ZLOGI("ignore older version device for udmf");
+        ZLOGI("ignore older version device for udmf or object");
         return false;
     }
 

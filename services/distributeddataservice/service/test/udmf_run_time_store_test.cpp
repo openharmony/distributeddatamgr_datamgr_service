@@ -118,7 +118,7 @@ void UdmfRunTimeStoreTest::GetRandomValue(std::vector<uint8_t>& value, uint32_t 
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, PutEntries001, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries001, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -151,7 +151,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, PutEntries002, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries002, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -184,7 +184,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries002, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, PutEntries003, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries003, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -218,7 +218,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries003, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, PutEntries004, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries004, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -259,7 +259,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries004, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, PutEntries005, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PutEntries005, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -305,7 +305,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries005, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries001, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries001, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -346,7 +346,7 @@ HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries002, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries002, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -389,7 +389,7 @@ HWTEST_F(UdmfRunTimeStoreTest, DeleteEntries002, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Init, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Init, TestSize.Level0)
 {
     auto dvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
     auto uuid = DeviceManagerAdapter::GetInstance().GetUuidByNetworkId(EMPTY_DEVICE_ID);
@@ -406,7 +406,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Init, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Get001, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Get001, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -441,7 +441,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Get001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Get002, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Get002, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -474,7 +474,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Get002, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -513,7 +513,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -557,7 +557,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetDetailsFromUData01, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Sync01, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Sync01, TestSize.Level0)
 {
     std::vector<std::string> devices = {"device"};
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
@@ -573,7 +573,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Sync01, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Sync02, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Sync02, TestSize.Level0)
 {
     std::vector<std::string> devices = { };
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
@@ -589,7 +589,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Sync02, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Sync03, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Sync03, TestSize.Level0)
 {
     std::vector<std::string> devices = { "device" };
     ProcessCallback callback;
@@ -606,7 +606,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Sync03, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Sync04, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Sync04, TestSize.Level0)
 {
     std::vector<std::string> devices = { };
     ProcessCallback callback;
@@ -623,7 +623,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Sync04, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Clear01, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Clear01, TestSize.Level0)
 {
     static constexpr const char *DATA_PREFIX = "udmf://";
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
@@ -639,7 +639,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Clear01, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, Close01, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, Close01, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     EXPECT_NO_FATAL_FAILURE(store->Close());
@@ -652,7 +652,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Close01, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level0)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
@@ -677,7 +677,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, GetRuntime001, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, GetRuntime001, TestSize.Level0)
 {
     UnifiedData inputData;
     CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
@@ -703,7 +703,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetRuntime001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, GetRuntime002, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, GetRuntime002, TestSize.Level0)
 {
     UnifiedData inputData;
     CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
@@ -718,6 +718,22 @@ HWTEST_F(UdmfRunTimeStoreTest, GetRuntime002, TestSize.Level1)
     Runtime outRuntime;
     status = store->GetRuntime(key, outRuntime);
     EXPECT_EQ(status, E_NOT_FOUND);
+}
+
+/**
+* @tc.name: SaveMetaData001
+* @tc.desc: Abnormal testcase of GetRuntime
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, SaveMetaData001, TestSize.Level0)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    
+    result = store->Init();
+    EXPECT_TRUE(result);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

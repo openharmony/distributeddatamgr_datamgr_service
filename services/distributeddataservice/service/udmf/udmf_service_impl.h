@@ -77,7 +77,7 @@ private:
     bool IsFileMangerIntention(const std::string &intention);
     std::string FindIntentionMap(const Intention &queryintention);
     bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
-    bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &devices);
+    bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
 
     class Factory {
     public:
