@@ -90,6 +90,7 @@ constexpr int MAX_DOWNLOAD_ASSETS_COUNT = 50;
 constexpr int MAX_DOWNLOAD_TASK = 5;
 constexpr int KEY_SIZE = 32;
 constexpr int AES_256_NONCE_SIZE = 32;
+constexpr int MAX_CLIENT_DEATH_OBSERVER_SIZE = 16;
 
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
     : SystemAbility(runOnCreate), clients_()
@@ -851,8 +852,12 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::Reset()
 bool KvStoreDataService::KvStoreClientDeathObserverImpl::Insert(sptr<IRemoteObject> observer,
     const std::string &featureName)
 {
-    observer->AddDeathRecipient(deathRecipient_);
-    return observerProxy_.insert_or_assign(featureName, std::move(observer)).second;
+    if (observerProxy_.size() < MAX_CLIENT_DEATH_OBSERVER_SIZE &&
+        observerProxy_.insert_or_assign(featureName, observer).second) {
+        observer->AddDeathRecipient(deathRecipient_);
+        return true;
+    }
+    return false;
 }
 
 bool KvStoreDataService::KvStoreClientDeathObserverImpl::Delete(const std::string &featureName)
