@@ -95,7 +95,7 @@
                 "cJSON",
                 "dmsfwk",
                 "data_object",
-                "init",
+                "init"
             ],
             "third_party": [
                 "libuv",
