@@ -26,9 +26,13 @@
 #include "message_parcel.h"
 #include "securec.h"
 #include "token_setproc.h"
+#include "screen/screen_manager.h"
+#include "sync_strategies/network_sync_strategy.h"
+#include "metadata/store_debug_info.h"
 
 using namespace OHOS::CloudData;
 using namespace OHOS::Security::AccessToken;
+using namespace OHOS::DistributedData;
 
 namespace OHOS {
 constexpr int USER_ID = 100;
@@ -67,6 +71,84 @@ void AllocAndSetHapToken()
     SetSelfTokenID(tokenID.tokenIDEx);
 }
 
+void TestScreenManager(FuzzedDataProvider &provider)
+{
+   ScreenManager::GetInstance()->Subscribe(nullptr);
+   ScreenManager::GetInstance()->Unsubscribe(nullptr);
+   ScreenManager::GetInstance()->BindExecutor(nullptr);
+   ScreenManager::GetInstance()->SubscribeScreenEvent();
+   ScreenManager::GetInstance()->UnsubscribeScreenEvent();
+}
+
+void SyncStrategiesFuzz(FuzzedDataProvider &provider)
+{
+  int32_t user = provider.ConsumeIntegral<int32_t>();
+  std::string bundleName = provider.ConsumeRandomLengthString(); 
+  NetworkSyncStrategy strategy;
+  StoreInfo storeInfo;
+  storeInfo.user = user;
+  storeInfo.bundleName = bundleName;
+  strategy.CheckSyncAction(storeInfo);
+}
+
+void SyncStrategiesFuzz001(FuzzedDataProvider &provider)
+{
+    uint32_t strategy = provider.ConsumeIntegral<uint32_t>(); 
+    NetworkSyncStrategy strategyInstance;
+    strategyInstance.Check(strategy);
+}
+
+void SyncStrategiesFuzz002(FuzzedDataProvider &provider)
+{
+    int32_t user = provider.ConsumeIntegral<int32_t>();
+    std::string bundleName = provider.ConsumeRandomLengthString();
+    NetworkSyncStrategy strategyInstance;
+    strategyInstance.GetStrategy(user, bundleName);
+    strategyInstance.Getkey(user);
+    NetworkSyncStrategy::StrategyInfo info;
+    info.user = 1;
+    info.bundleName = "StrategyInfo";
+    info.Marshal(nullptr);
+    Serializable::json node;
+    std::string key = provider.ConsumeRandomLengthString();
+    std::string valueStr = provider.ConsumeRandomLengthString();
+    int valueInt = provider.ConsumeIntegral<int>();
+    float valueFloat = provider.ConsumeFloatingPoint<float>();
+    bool valueBool = provider.ConsumeBool();
+    int valueRange = provider.ConsumeIntegralInRange<int>(0, 100);
+    node[key] = valueStr;
+    node["integer"] = valueInt;
+    node["float"] = valueFloat;
+    node["bool"] = valueBool;
+    node["range"] = valueRange;
+    info.Marshal(node);
+    info.Unmarshal(node);
+}
+
+void StoreDebugInfoFuzz(FuzzedDataProvider &provider)
+{
+    StoreDebugInfo::FileInfo fileInfo;
+    StoreDebugInfo debugInfo;
+    std::string fileName = "fileName";
+    debugInfo.fileInfos.insert(std::make_pair(fileName, fileInfo));
+    Serializable::json node;
+    std::string key = provider.ConsumeRandomLengthString();
+    std::string valueStr = provider.ConsumeRandomLengthString();
+    int valueInt = provider.ConsumeIntegral<int>();
+    float valueFloat = provider.ConsumeFloatingPoint<float>();
+    bool valueBool = provider.ConsumeBool();
+    int valueRange = provider.ConsumeIntegralInRange<int>(0, 100);
+    node[key] = valueStr;
+    node["integer"] = valueInt;
+    node["float"] = valueFloat;
+    node["bool"] = valueBool;
+    node["range"] = valueRange;
+    fileInfo.Marshal(node);
+    fileInfo.Unmarshal(node);
+    debugInfo.Marshal(node);
+    debugInfo.Unmarshal(node);
+}
+
 bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<CloudServiceImpl> cloudServiceImpl = std::make_shared<CloudServiceImpl>();
@@ -93,6 +175,11 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
+    OHOS::TestScreenManager(provider);
+    OHOS::SyncStrategiesFuzz(provider);
+    OHOS::SyncStrategiesFuzz001(provider);
+    OHOS::SyncStrategiesFuzz002(provider);
+    OHOS::StoreDebugInfoFuzz(provider);
     OHOS::OnRemoteRequestFuzz(provider);
     return 0;
 }

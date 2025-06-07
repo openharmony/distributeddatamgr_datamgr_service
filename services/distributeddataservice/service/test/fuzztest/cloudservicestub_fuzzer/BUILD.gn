@@ -31,6 +31,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/rdb",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include",
   ]
 
   fuzz_config_file = "${data_service_path}/service/test/fuzztest/cloudservicestub_fuzzer"
@@ -40,6 +41,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
+    "-fno-access-control",
   ]
 
   sources = [
