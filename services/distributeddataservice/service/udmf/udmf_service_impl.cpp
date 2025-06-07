@@ -406,7 +406,10 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
-    PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
+    if (PreProcessUtils::GetAlterableBundleNameByTokenId(query.tokenId, bundleName)) {
+        ZLOGE("GetAlterableBundleNameByTokenId failed.");
+        return E_ERROR;
+    }
     if (key.bundleName != bundleName && !HasDatahubPriviledge(bundleName)) {
         ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
@@ -1046,7 +1049,10 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 {
     std::string bundleName;
     auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName);
+    if (PreProcessUtils::GetAlterableBundleNameByTokenId(tokenId, bundleName)) {
+        ZLOGE("GetAlterableBundleNameByTokenId failed.");
+        return E_ERROR;
+    }
     UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, dataLoadInfo.sequenceKey);
     key = udkey.GetUnifiedKey();
     dataLoadCallback_.Insert(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));

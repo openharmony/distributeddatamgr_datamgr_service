@@ -18,11 +18,15 @@
 
 #include <sstream>
 
+#include "bundle_info.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "dds_trace.h"
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
 #include "device_manager_adapter.h"
+#include "iservice_registry.h"
 #include "log_print.h"
+#include "system_ability_definition.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
 #include "remote_file_share.h"
@@ -57,7 +61,10 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
         return E_ERROR;
     }
     std::string bundleName;
-    GetHapBundleNameByToken(option.tokenId, bundleName);
+    if (GetAlterableBundleNameByTokenId(option.tokenId, bundleName)) {
+        ZLOGE("GetAlterableBundleNameByTokenId failed.");
+        return E_ERROR;
+    }
     std::string intention = it->second;
     UnifiedKey key(intention, bundleName, GenerateId());
     Privilege privilege;
@@ -486,6 +493,50 @@ std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
         return "";
     }
     return std::to_string(hapTokenInfo.apiVersion);
+}
+
+bool PreProcessUtils::GetAlterableBundleNameByTokenId(uint32_t tokenId, std::string &bundleName)
+{
+    Security::AccessToken::HapTokenInfo hapInfo;
+    if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
+        == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
+        return GetDirByBundleNameAndAppIndex(hapInfo.bundleName, hapInfo.instIndex, bundleName);
+    }
+    if (UTILS::IsTokenNative()) {
+        ZLOGD("TypeATokenTypeEnum is TOKEN_HAP");
+        std::string processName;
+        if (GetNativeProcessNameByToken(tokenId, processName)) {
+            bundleName = processName;
+            return true;
+        }
+    }
+    ZLOGE("Get bundle name faild.");
+    return false;
+}
+
+bool PreProcessUtils::GetDirByBundleNameAndAppIndex(const std::string &bundleName, int32_t appIndex, std::string &dirName)
+{
+    auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (samgrProxy == nullptr) {
+        ZLOGE("Failed to get system ability mgr.");
+        return false;
+    }
+    auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (bundleMgrProxy == nullptr) {
+        ZLOGE("Failed to Get BMS SA.");
+        return false;
+    }
+    auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
+    if (bundleManager == nullptr) {
+        ZLOGE("Failed to get bundle manager");
+        return false;
+    }
+    auto ret = bundleManager->GetDirByBundleNameAndAppIndex(bundleName, appIndex, dirName);
+    if (ret != ERR_OK) {
+        ZLOGE("GetDirByBundleNameAndAppIndex failed, ret:%{public}d", ret);
+        return false;
+    }
+    return true;
 }
 } // namespace UDMF
 } // namespace OHOS
