@@ -541,9 +541,9 @@ bool PreProcessUtils::GetSpecificBundleName(const std::string &bundleName, int32
         ZLOGE("Failed to get bundle manager");
         return false;
     }
-    auto ret = bundleManager->GetSpecificBundleName(bundleName, appIndex, dirName);
+    auto ret = bundleManager->GetDirByBundleNameAndAppIndex(bundleName, appIndex, dirName);
     if (ret != ERR_OK) {
-        ZLOGE("GetSpecificBundleName failed, ret:%{public}d", ret);
+        ZLOGE("GetDirByBundleNameAndAppIndex failed, ret:%{public}d", ret);
         return false;
     }
     return true;
