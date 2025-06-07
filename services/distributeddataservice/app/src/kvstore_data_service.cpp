@@ -483,12 +483,14 @@ bool KvStoreDataService::WriteBackupInfo(const std::string &content, const std::
     FILE *fp = fopen(backupPath.c_str(), "w");
 
     if (!fp) {
-        ZLOGE("Secret key backup file fopen failed, path: %{public}s, errno: %{public}d", backupPath.c_str(), errno);
+        ZLOGE("Secret key backup file fopen failed, path: %{public}s, errno: %{public}d",
+            Anonymous::Change(backupPath).c_str(), errno);
         return false;
     }
     size_t ret = fwrite(content.c_str(), 1, content.length(), fp);
     if (ret != content.length()) {
-        ZLOGE("Secret key backup file fwrite failed, path: %{public}s, errno: %{public}d", backupPath.c_str(), errno);
+        ZLOGE("Secret key backup file fwrite failed, path: %{public}s, errno: %{public}d",
+            Anonymous::Change(backupPath).c_str(), errno);
         (void)fclose(fp);
         return false;
     }

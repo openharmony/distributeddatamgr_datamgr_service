@@ -737,7 +737,8 @@ Status KVDBServiceImpl::AfterCreate(
         ZLOGI("update status:%{public}d appId:%{public}s storeId:%{public}s inst:%{public}d "
               "type:%{public}d->%{public}d dir:%{public}s dataType:%{public}d->%{public}d",
             dbStatus, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId,
-            oldMeta.storeType, metaData.storeType, metaData.dataDir.c_str(), oldMeta.dataType, metaData.dataType);
+            oldMeta.storeType, metaData.storeType, Anonymous::Change(metaData.dataDir).c_str(),
+            oldMeta.dataType, metaData.dataType);
         if (dbStatus != DBStatus::OK) {
             status = STORE_UPGRADE_FAILED;
         }
@@ -766,7 +767,8 @@ Status KVDBServiceImpl::AfterCreate(
     }
     ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s "
         "isCreated:%{public}d dataType:%{public}d", appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
-        metaData.instanceId, metaData.storeType, metaData.dataDir.c_str(), isCreated, metaData.dataType);
+        metaData.instanceId, metaData.storeType, Anonymous::Change(metaData.dataDir).c_str(), isCreated,
+        metaData.dataType);
     return status;
 }
 
@@ -1140,7 +1142,7 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     if (store == nullptr) {
         ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s storeId length:%{public}zu dir:%{public}s",
             meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
-            meta.storeId.size(), meta.dataDir.c_str());
+            meta.storeId.size(), Anonymous::Change(meta.dataDir).c_str());
         RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_FAILED, ERROR_CODE, Status::ERROR, BIZ_STATE, END,
             SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
             std::to_string(info.syncId), DATA_TYPE, meta.dataType);
@@ -1492,7 +1494,7 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     auto store = AutoCache::GetInstance().GetStore(metaData, watcher);
     if (store == nullptr) {
         ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s dir:%{public}s", metaData.bundleName.c_str(),
-            Anonymous::Change(metaData.storeId).c_str(), metaData.dataDir.c_str());
+            Anonymous::Change(metaData.storeId).c_str(), Anonymous::Change(metaData.dataDir).c_str());
         return Status::ERROR;
     }
 
