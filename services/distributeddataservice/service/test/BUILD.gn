@@ -1326,6 +1326,8 @@ ohos_unittest("UdmfPreProcessUtilsTest") {
   external_deps = [
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "googletest:gtest_main",
@@ -1382,6 +1384,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "hitrace:libhitracechain",
     "ipc:ipc_core",
     "kv_store:datamgr_common",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 }

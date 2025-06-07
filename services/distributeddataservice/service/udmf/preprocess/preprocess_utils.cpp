@@ -19,7 +19,6 @@
 #include <sstream>
 
 #include "bundle_info.h"
-#include "bundlemgr/bundle_mgr_proxy.h"
 #include "dds_trace.h"
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
@@ -500,7 +499,7 @@ bool PreProcessUtils::GetAlterableBundleNameByTokenId(uint32_t tokenId, std::str
     Security::AccessToken::HapTokenInfo hapInfo;
     if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
         == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
-        return GetDirByBundleNameAndAppIndex(hapInfo.bundleName, hapInfo.instIndex, bundleName);
+        return GetSpecificBundleName(hapInfo.bundleName, hapInfo.instIndex, bundleName);
     }
     if (UTILS::IsTokenNative()) {
         ZLOGI("TypeATokenTypeEnum is TOKEN_NATIVE");
@@ -514,27 +513,37 @@ bool PreProcessUtils::GetAlterableBundleNameByTokenId(uint32_t tokenId, std::str
     return false;
 }
 
-bool PreProcessUtils::GetDirByBundleNameAndAppIndex(const std::string &bundleName, int32_t appIndex,
-    std::string &dirName)
+sptr<AppExecFwk::IBundleMgr> PreProcessUtils::GetBundleMgr()
 {
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {
         ZLOGE("Failed to get system ability mgr.");
-        return false;
+        return nullptr;
     }
     auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (bundleMgrProxy == nullptr) {
         ZLOGE("Failed to Get BMS SA.");
-        return false;
+        return nullptr;
     }
     auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
     if (bundleManager == nullptr) {
         ZLOGE("Failed to get bundle manager");
+        return nullptr;
+    }
+    return bundleManager;
+}
+
+bool PreProcessUtils::GetSpecificBundleName(const std::string &bundleName, int32_t appIndex,
+    std::string &dirName)
+{
+    auto bundleManager = GetBundleMgr();
+    if (bundleManager == nullptr) {
+        ZLOGE("Failed to get bundle manager");
         return false;
     }
-    auto ret = bundleManager->GetDirByBundleNameAndAppIndex(bundleName, appIndex, dirName);
+    auto ret = bundleManager->GetSpecificBundleName(bundleName, appIndex, dirName);
     if (ret != ERR_OK) {
-        ZLOGE("GetDirByBundleNameAndAppIndex failed, ret:%{public}d", ret);
+        ZLOGE("GetSpecificBundleName failed, ret:%{public}d", ret);
         return false;
     }
     return true;

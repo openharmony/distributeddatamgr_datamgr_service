@@ -899,17 +899,7 @@ bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
         && deviceInfo.deviceType != DEVICE_TYPE_2IN1) {
         return false;
     }
-    auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgrProxy == nullptr) {
-        ZLOGE("Failed to get system ability mgr.");
-        return false;
-    }
-    auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (bundleMgrProxy == nullptr) {
-        ZLOGE("Failed to Get BMS SA.");
-        return false;
-    }
-    auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
+    auto bundleManager = PreProcessUtils::GetBundleMgr();
     if (bundleManager == nullptr) {
         ZLOGE("Failed to get bundle manager");
         return false;
@@ -1156,8 +1146,7 @@ bool UdmfServiceImpl::IsValidInput(const QueryOption &query, UnifiedData &unifie
         return false;
     }
     std::string intention = FindIntentionMap(query.intention);
-    if (!IsValidOptionsNonDrag(key, intention) ||
-        key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
+    if (!IsValidOptionsNonDrag(key, intention) || key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
         ZLOGE("Invalid params: key.intention = %{public}s, intention = %{public}s",
             key.intention.c_str(), intention.c_str());
         return false;
