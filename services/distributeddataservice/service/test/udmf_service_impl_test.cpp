@@ -365,3 +365,79 @@ HWTEST_F(UdmfServiceImplTest, ResolveAutoLaunch001, TestSize.Level0)
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
+ * @tc.name: IsValidInput001
+ * @tc.desc: invalid unifiedData
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsValidInput001, TestSize.Level1)
+{
+    QueryOption query;
+    UnifiedData unifiedData;
+    UnifiedKey key;
+
+    UdmfServiceImpl impl;
+    bool result = impl.IsValidInput(query, unifiedData, key);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: IsValidInput002
+ * @tc.desc: invalid key
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsValidInput002, TestSize.Level1)
+{
+    QueryOption query;
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    UnifiedKey key;
+
+    UdmfServiceImpl impl;
+    bool result = impl.IsValidInput(query, unifiedData, key);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: IsValidInput003
+ * @tc.desc: valid input
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsValidInput003, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.key = "udmf://DataHub/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7";
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    UnifiedKey key("udmf://DataHub/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7");
+    EXPECT_TRUE(key.IsValid());
+
+    UdmfServiceImpl impl;
+    bool result = impl.IsValidInput(query, unifiedData, key);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: IsValidInput004
+ * @tc.desc: invalid intention
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsValidInput004, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DRAG;
+    UnifiedData unifiedData;
+    UnifiedKey key("udmf://drag/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7");
+
+    UdmfServiceImpl impl;
+    bool result = impl.IsValidInput(query, unifiedData, key);
+    EXPECT_FALSE(result);
+}
+
+}; // namespace UDMF

@@ -613,7 +613,11 @@ void DataShareServiceImpl::SubscribeCommonEvent()
         ZLOGE("System mgr is nullptr");
         return;
     }
-    sptr<SystemAbilityStatusChangeListener> callback(new SystemAbilityStatusChangeListener());
+    sptr<SystemAbilityStatusChangeListener> callback(new (std::nothrow)SystemAbilityStatusChangeListener());
+    if (callback == nullptr) {
+        ZLOGE("new SystemAbilityStatusChangeListener failed! no memory");
+        return;
+    }
     systemManager->SubscribeSystemAbility(COMMON_EVENT_SERVICE_ID, callback);
 }
 
@@ -624,7 +628,11 @@ void DataShareServiceImpl::SubscribeConcurrentTask()
         ZLOGE("System mgr is nullptr");
         return;
     }
-    sptr<SystemAbilityStatusChangeListener> callback(new SystemAbilityStatusChangeListener());
+    sptr<SystemAbilityStatusChangeListener> callback(new (std::nothrow)SystemAbilityStatusChangeListener());
+    if (callback == nullptr) {
+        ZLOGE("new SystemAbilityStatusChangeListener failed! no memory");
+        return;
+    }
     systemManager->SubscribeSystemAbility(CONCURRENT_TASK_SERVICE_ID, callback);
 }
 

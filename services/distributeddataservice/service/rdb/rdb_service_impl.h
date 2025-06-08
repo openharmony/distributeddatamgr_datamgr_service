@@ -192,6 +192,12 @@ private:
 
     bool CheckAccess(const std::string& bundleName, const std::string& storeName);
 
+    bool CheckInvalidPath(const std::string& param);
+
+    bool CheckCustomDir(const std::string &customDir, int32_t upLimit);
+
+    bool CheckParam(const RdbSyncerParam &param);
+
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const StoreMetaData &storeMetaData);

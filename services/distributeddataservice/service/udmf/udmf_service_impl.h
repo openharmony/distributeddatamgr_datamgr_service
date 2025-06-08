@@ -79,6 +79,7 @@ private:
     bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
     bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
 
+    bool IsValidInput(const QueryOption &query, UnifiedData &unifiedData, UnifiedKey &key);
     class Factory {
     public:
         Factory();

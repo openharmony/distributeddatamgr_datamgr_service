@@ -29,7 +29,7 @@ public:
 
 /**
 * @tc.name: RuntimeDataImputation001
-* @tc.desc: Abnormal test of RuntimeDataImputation, option is invalid
+* @tc.desc: Abnormal test of FillRuntimeInfo, option is invalid
 * @tc.type: FUNC
 * @tc.require:
 */
@@ -38,7 +38,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, RuntimeDataImputation001, TestSize.Level1)
     UnifiedData data;
     CustomOption option;
     PreProcessUtils preProcessUtils;
-    int32_t ret = preProcessUtils.RuntimeDataImputation(data, option);
+    int32_t ret = preProcessUtils.FillRuntimeInfo(data, option);
     EXPECT_EQ(ret, E_ERROR);
 }
 

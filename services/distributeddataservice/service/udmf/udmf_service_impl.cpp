@@ -135,7 +135,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     }
 
     // imput runtime info before put it into store and save one privilege
-    if (PreProcessUtils::RuntimeDataImputation(unifiedData, option) != E_OK) {
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
@@ -379,13 +379,18 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
         ZLOGW("DataSet empty,key:%{public}s,intention:%{public}d", query.key.c_str(), query.intention);
         return E_OK;
     }
-    if (!IsFileMangerSa() && ProcessData(query, dataSet) != E_OK) {
+    for (auto &data : dataSet) {
+        if (query.intention == Intention::UD_INTENTION_DATA_HUB &&
+            data.GetRuntime()->visibility == VISIBILITY_OWN_PROCESS &&
+            query.tokenId != data.GetRuntime()->tokenId) {
+            continue;
+        } else {
+            unifiedDataSet.push_back(std::move(data));
+        }
+    }
+    if (!IsFileMangerSa() && ProcessData(query, unifiedDataSet) != E_OK) {
         ZLOGE("Query no permission.");
         return E_NO_PERMISSION;
-    }
-    for (auto &data : dataSet) {
-        PreProcessUtils::SetRemoteData(data);
-        unifiedDataSet.push_back(data);
     }
     return E_OK;
 }
@@ -393,18 +398,15 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
 int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifiedData)
 {
     UnifiedKey key(query.key);
-    if (!unifiedData.IsValid() || !key.IsValid()) {
-        ZLOGE("data or key is invalid,key=%{public}s", query.key.c_str());
-        return E_INVALID_PARAMETERS;
-    }
-    std::string intention = FindIntentionMap(query.intention);
-    if (!IsValidOptionsNonDrag(key, intention) ||
-        key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
-        ZLOGE("Invlid param :key.intention:%{public}s, intention:%{public}s", key.intention.c_str(), intention.c_str());
+    if (!IsValidInput(query, unifiedData, key)) {
+        ZLOGE("Invalid input, key = %{public}s", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
-    PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, bundleName)) {
+        ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", query.tokenId);
+        return E_ERROR;
+    }
     if (key.bundleName != bundleName && !HasDatahubPriviledge(bundleName)) {
         ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
@@ -903,17 +905,7 @@ bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
         && deviceInfo.deviceType != DEVICE_TYPE_2IN1) {
         return false;
     }
-    auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgrProxy == nullptr) {
-        ZLOGE("Failed to get system ability mgr.");
-        return false;
-    }
-    auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (bundleMgrProxy == nullptr) {
-        ZLOGE("Failed to Get BMS SA.");
-        return false;
-    }
-    auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
+    auto bundleManager = PreProcessUtils::GetBundleMgr();
     if (bundleManager == nullptr) {
         ZLOGE("Failed to get bundle manager");
         return false;
@@ -1047,7 +1039,10 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 {
     std::string bundleName;
     auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName);
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(tokenId, bundleName)) {
+        ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", tokenId);
+        return E_ERROR;
+    }
     UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, dataLoadInfo.sequenceKey);
     key = udkey.GetUnifiedKey();
     dataLoadCallback_.Insert(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
@@ -1073,7 +1068,7 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         .intention = UD_INTENTION_DRAG,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
     };
-    if (PreProcessUtils::RuntimeDataImputation(unifiedData, option) != E_OK) {
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
@@ -1176,6 +1171,19 @@ bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
         }
     }
     return isAfterMeta;
+bool UdmfServiceImpl::IsValidInput(const QueryOption &query, UnifiedData &unifiedData, UnifiedKey &key)
+{
+    if (!unifiedData.IsValid() || !key.IsValid()) {
+        ZLOGE("Data or key is invalid, key = %{public}s", query.key.c_str());
+        return false;
+    }
+    std::string intention = FindIntentionMap(query.intention);
+    if (!IsValidOptionsNonDrag(key, intention) || key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
+        ZLOGE("Invalid params: key.intention = %{public}s, intention = %{public}s",
+            key.intention.c_str(), intention.c_str());
+        return false;
+    }
+    return true;
 }
 } // namespace UDMF
 } // namespace OHOS

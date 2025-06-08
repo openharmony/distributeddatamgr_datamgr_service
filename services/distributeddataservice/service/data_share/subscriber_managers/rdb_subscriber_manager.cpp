@@ -187,7 +187,7 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId, uint32_t callerPid)
 int RdbSubscriberManager::Disable(const Key &key, uint32_t firstCallerTokenId)
 {
     bool isAllDisabled = true;
-    auto result =
+    bool result =
         rdbCache_.ComputeIfPresent(key, [&firstCallerTokenId, &isAllDisabled, this](const auto &key,
             std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
@@ -204,7 +204,7 @@ int RdbSubscriberManager::Disable(const Key &key, uint32_t firstCallerTokenId)
     if (isAllDisabled) {
         SchedulerManager::GetInstance().Disable(key);
     }
-    if (result != E_OK) {
+    if (!result) {
         ZLOGE("disable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
             DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
     }
@@ -215,7 +215,7 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
 {
     bool isChanged = false;
     DistributedData::StoreMetaData metaData;
-    auto result = rdbCache_.ComputeIfPresent(key, [&context, &metaData, &isChanged, this](const auto &key,
+    bool result = rdbCache_.ComputeIfPresent(key, [&context, &metaData, &isChanged, this](const auto &key,
         std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end(); it++) {
             if (it->firstCallerTokenId != context->callerTokenId) {
@@ -239,7 +239,7 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
     if (isChanged) {
         SchedulerManager::GetInstance().Enable(key, context->visitedUserId, metaData);
     }
-    if (result != E_OK) {
+    if (!result) {
         ZLOGE("enable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
             DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
     }

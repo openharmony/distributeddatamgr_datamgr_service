@@ -84,7 +84,7 @@ void PublishedDataSubscriberManager::Delete(uint32_t callerTokenId, uint32_t cal
 
 int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_t firstCallerTokenId)
 {
-    auto result =
+    bool result =
         publishedDataCache_.ComputeIfPresent(key, [&firstCallerTokenId](const auto &key,
             std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
@@ -95,7 +95,7 @@ int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_
             }
             return true;
         });
-    if (result != E_OK) {
+    if (!result) {
         ZLOGE("disable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
             DistributedData::Anonymous::Change(key.key).c_str(), key.bundleName.c_str(), key.subscriberId);
     }
@@ -104,7 +104,7 @@ int PublishedDataSubscriberManager::Disable(const PublishedDataKey &key, uint32_
 
 int PublishedDataSubscriberManager::Enable(const PublishedDataKey &key, uint32_t firstCallerTokenId)
 {
-    auto result =
+    bool result =
         publishedDataCache_.ComputeIfPresent(key, [&firstCallerTokenId](const auto &key,
             std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end(); it++) {
@@ -114,7 +114,7 @@ int PublishedDataSubscriberManager::Enable(const PublishedDataKey &key, uint32_t
             }
             return true;
         });
-    if (result != E_OK) {
+    if (!result) {
         ZLOGE("enable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
             DistributedData::Anonymous::Change(key.key).c_str(), key.bundleName.c_str(), key.subscriberId);
     }
