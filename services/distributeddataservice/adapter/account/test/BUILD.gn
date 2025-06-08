@@ -44,7 +44,6 @@ ohos_unittest("AccountDelegateTest") {
     "access_token:libtoken_setproc",
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
-    "cJSON:cjson",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",

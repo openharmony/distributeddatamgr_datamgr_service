@@ -50,7 +50,6 @@ ohos_unittest("CheckerManagerTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "c_utils:utils",
-    "cJSON:cjson",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
