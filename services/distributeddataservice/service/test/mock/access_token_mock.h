@@ -26,6 +26,7 @@ class BAccessTokenKit {
 public:
     virtual ATokenTypeEnum GetTokenTypeFlag(AccessTokenID) = 0;
     virtual int GetHapTokenInfo(AccessTokenID, HapTokenInfo&) = 0;
+    virtual int GetNativeTokenInfo(AccessTokenID, NativeTokenInfo&) = 0;
     virtual int VerifyAccessToken(AccessTokenID, const std::string&) = 0;
     BAccessTokenKit() = default;
     virtual ~BAccessTokenKit() = default;
@@ -37,6 +38,7 @@ class AccessTokenKitMock : public BAccessTokenKit {
 public:
     MOCK_METHOD(ATokenTypeEnum, GetTokenTypeFlag, (AccessTokenID));
     MOCK_METHOD(int, GetHapTokenInfo, (AccessTokenID, HapTokenInfo&));
+    MOCK_METHOD(int, GetNativeTokenInfo, (AccessTokenID, NativeTokenInfo&));
     MOCK_METHOD(int, VerifyAccessToken, (AccessTokenID, const std::string&));
 };
 }
