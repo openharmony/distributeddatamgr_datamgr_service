@@ -43,6 +43,7 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "device_manager:devicemanagersdk",
     "dsoftbus:softbus_client",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]

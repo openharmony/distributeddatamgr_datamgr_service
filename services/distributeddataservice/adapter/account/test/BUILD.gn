@@ -40,7 +40,7 @@ ohos_unittest("AccountDelegateTest") {
     "ability_base:base",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
+    "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
