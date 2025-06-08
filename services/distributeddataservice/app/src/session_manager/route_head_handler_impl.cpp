@@ -39,7 +39,6 @@ using DmAdapter = DistributedData::DeviceManagerAdapter;
 using DBManager = DistributedDB::KvStoreDelegateManager;
 constexpr const int ALIGN_WIDTH = 8;
 constexpr const char *DEFAULT_USERID = "0";
-constexpr const char *UDMF_DRAG_STORE = "drag";
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
     auto handler = std::make_shared<RouteHeadHandlerImpl>(info);
@@ -74,7 +73,7 @@ void RouteHeadHandlerImpl::Init()
             userId_ = DEFAULT_USERID;
         }
     }
-    if (IsUdmfStore()) {
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()) {
         int foregroundUserId = 0;
         AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
         userId_ = std::to_string(foregroundUserId);
@@ -102,8 +101,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 {
     ZLOGD("begin");
     headSize = 0;
-    bool udmfStore = IsUdmfStore();
-    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && !udmfStore) {
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ == Bootstrap::GetInstance().GetMetaDBName()) {
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
@@ -130,7 +128,8 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("ignore older version device");
         return DistributedDB::OK;
     }
-    if (udmfStore && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
+        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
         ZLOGI("ignore older version device for udmf or object");
         return DistributedDB::OK;
     }
@@ -287,13 +286,13 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
     }
     
     bool flag = false;
-    bool udmfStore = IsUdmfStore();
     auto peerCap = UpgradeManager::GetInstance().GetCapability(device, flag);
     if (!flag) {
         ZLOGI("get peer cap failed");
         return false;
     }
-    if (udmfStore && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
+        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
         ZLOGI("ignore older version device for udmf or object");
         return false;
     }
@@ -520,10 +519,5 @@ bool RouteHeadHandlerImpl::UnPackAccountId(uint8_t **data, uint32_t leftSize)
     }
     session_.accountId = std::string(accountId->accountId, accountIdLen);
     return true;
-}
-
-bool RouteHeadHandlerImpl::IsUdmfStore()
-{
-    return (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ == UDMF_DRAG_STORE);
 }
 } // namespace OHOS::DistributedData

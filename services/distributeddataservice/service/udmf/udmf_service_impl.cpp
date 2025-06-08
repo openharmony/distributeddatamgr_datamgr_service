@@ -563,7 +563,6 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
 {
-    ZLOGD("start");
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::IDLE, BizState::DFX_BEGIN);
     UnifiedKey key(query.key);
@@ -594,10 +593,10 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     };
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
-    int32_t userId = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
-    StoreMetaData meta = StoreMetaData(std::to_string(userId), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
+    int32_t id = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
+    StoreMetaData meta = StoreMetaData(std::to_string(id), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
-    if (IsNeedMetaSync(meta, uuids) && !MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] 
+    if (IsNeedMetaSync(meta, uuids) && !MetaDataManager::GetInstance().Sync(uuids, [devices, callback, store]
         (auto &results) {
             if (store->Sync(devices, callback) != E_OK) {
                 ZLOGE("Store sync failed");
@@ -606,6 +605,12 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         }
     })) {
         ZLOGW("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
+    }
+    if (store->Sync(devices, callback) != E_OK) {
+        ZLOGE("Store sync failed");
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
+        return UDMF::E_DB_ERROR;
     }
     return E_OK;
 }

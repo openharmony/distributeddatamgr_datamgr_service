@@ -92,7 +92,6 @@ private:
     bool UnPackStoreId(uint8_t **data, uint32_t leftSize);
     bool UnPackAccountId(uint8_t **data, uint32_t leftSize);
     std::string ParseStoreId(const std::string &deviceId, const std::string &label);
-    bool IsUdmfStore();
     std::string userId_;
     std::string appId_;
     std::string storeId_;

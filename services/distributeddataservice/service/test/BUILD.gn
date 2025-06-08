@@ -1149,6 +1149,64 @@ ohos_unittest("UdmfServiceImplTest") {
   include_dirs = [
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf",
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/service/udmf/preprocess",
+    "${data_service_path}/service/udmf/permission",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
+    "dsoftbus:softbus_client",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "image_framework:image",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "openssl:libcrypto_shared",
+    "samgr:samgr_proxy",
+    "safwk:system_ability_fwk",
+    "udmf:udmf_client",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
+
+  defines = [
+    "private=public",
+    "protected=public",
+  ]
+}
+
+ohos_unittest("UdmfServiceImplMockTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/framework/feature/feature_system.cpp",
+    "udmf_service_impl_mock_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf/preprocess",
@@ -1181,7 +1239,6 @@ ohos_unittest("UdmfServiceImplTest") {
     "dataclassification:data_transit_mgr",
     "device_manager:devicemanagersdk",
     "googletest:gmock_main",
-    "googletest:gtest_main",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -1890,6 +1947,7 @@ group("unittest") {
       ":UdmfPreProcessUtilsMockTest",
       ":UdmfPreProcessUtilsTest",
       ":UdmfRunTimeStoreTest",
+      ":UdmfServiceImplMockTest",
       ":UdmfServiceImplTest",
       ":UdmfServiceStubMockTest",
       ":UdmfServiceStubTest",

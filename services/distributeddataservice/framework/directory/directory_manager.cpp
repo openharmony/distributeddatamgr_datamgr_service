@@ -181,9 +181,7 @@ std::string DirectoryManager::GetArea(const StoreMetaData &metaData) const
 std::string DirectoryManager::GetUserId(const StoreMetaData &metaData) const
 {
     auto type = AccessTokenKit::GetTokenTypeFlag(metaData.tokenId);
-    if ((type == TOKEN_NATIVE || type == TOKEN_SHELL) && (metaData.user == StoreMetaData::ROOT_USER) &&
-        (metaData.storeType < StoreMetaData::StoreType::STORE_UDMF_BEGIN ||
-        metaData.storeType >= StoreMetaData::StoreType::STORE_UDMF_END)) {
+    if ((type == TOKEN_NATIVE || type == TOKEN_SHELL) && (metaData.user == StoreMetaData::ROOT_USER)) {
         return "public";
     }
     return metaData.user;
