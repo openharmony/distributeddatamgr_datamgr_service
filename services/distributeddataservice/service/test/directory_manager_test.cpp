@@ -205,10 +205,7 @@ HWTEST_F(DirectoryManagerTest, GetUdmfStorePath, TestSize.Level0)
     metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     metaData.storeId = "drag";
     metaData.securityLevel = SecurityLevel::S2;
-    metaData.area = 1;
-    metaData.storeType = 0;
     metaData.tokenId = GetAccessTokenId(&tokenParam_);
-    metaData.appId = "ohos.test.demo_09AEF01D";
     metaData.area = DistributedKv::Area::EL2;
     metaData.uid = static_cast<int32_t>(getuid());
     metaData.storeType = StoreMetaData::StoreType::STORE_UDMF_BEGIN;
