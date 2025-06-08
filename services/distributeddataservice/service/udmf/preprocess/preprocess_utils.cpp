@@ -60,8 +60,8 @@ int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &
         return E_ERROR;
     }
     std::string bundleName;
-    if (!GetAlterableBundleNameByTokenId(option.tokenId, bundleName)) {
-        ZLOGE("GetAlterableBundleNameByTokenId failed.");
+    if (!GetSpecificBundleNameByTokenId(option.tokenId, bundleName)) {
+        ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", option.tokenId);
         return E_ERROR;
     }
     std::string intention = it->second;
@@ -494,7 +494,7 @@ std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
     return std::to_string(hapTokenInfo.apiVersion);
 }
 
-bool PreProcessUtils::GetAlterableBundleNameByTokenId(uint32_t tokenId, std::string &bundleName)
+bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &bundleName)
 {
     Security::AccessToken::HapTokenInfo hapInfo;
     if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
@@ -505,11 +505,11 @@ bool PreProcessUtils::GetAlterableBundleNameByTokenId(uint32_t tokenId, std::str
         ZLOGI("TypeATokenTypeEnum is TOKEN_NATIVE");
         std::string processName;
         if (GetNativeProcessNameByToken(tokenId, processName)) {
-            bundleName = processName;
+            bundleName = std::move(processName);
             return true;
         }
     }
-    ZLOGE("Get bundle name faild.");
+    ZLOGE("Get bundle name faild, tokenid:%{public}u", tokenId);
     return false;
 }
 
@@ -534,16 +534,17 @@ sptr<AppExecFwk::IBundleMgr> PreProcessUtils::GetBundleMgr()
 }
 
 bool PreProcessUtils::GetSpecificBundleName(const std::string &bundleName, int32_t appIndex,
-    std::string &dirName)
+    std::string &specificBundleName)
 {
     auto bundleManager = GetBundleMgr();
     if (bundleManager == nullptr) {
-        ZLOGE("Failed to get bundle manager");
+        ZLOGE("Failed to get bundle manager, bundleName:%{public}s, appIndex:%{public}d", bundleName.c_str(), appIndex);
         return false;
     }
-    auto ret = bundleManager->GetDirByBundleNameAndAppIndex(bundleName, appIndex, dirName);
+    auto ret = bundleManager->GetDirByBundleNameAndAppIndex(bundleName, appIndex, specificBundleName);
     if (ret != ERR_OK) {
-        ZLOGE("GetDirByBundleNameAndAppIndex failed, ret:%{public}d", ret);
+        ZLOGE("GetDirByBundleNameAndAppIndex failed, ret:%{public}d, bundleName:%{public}s, appIndex:%{public}d",
+            ret, bundleName.c_str(), appIndex);
         return false;
     }
     return true;

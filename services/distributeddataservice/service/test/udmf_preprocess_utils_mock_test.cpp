@@ -78,7 +78,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, GetInstIndex001, TestSize.Level1)
 
 /**
 * @tc.name: GetAlterableBundleNameByTokenId001
-* @tc.desc: Abnormal test of GetAlterableBundleNameByTokenId
+* @tc.desc: Abnormal test of GetSpecificBundleNameByTokenId
 * @tc.type: FUNC
 * @tc.require:
 */
@@ -89,13 +89,13 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, GetAlterableBundleNameByTokenId001, TestSi
     EXPECT_CALL(*accessTokenKitMock, GetTokenTypeFlag(_)).WillOnce(Return(TOKEN_SHELL));
     std::string bundleName = "";
     PreProcessUtils preProcessUtils;
-    bool ret = preProcessUtils.GetAlterableBundleNameByTokenId(tokenId, bundleName);
+    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, bundleName);
     EXPECT_EQ(ret, false);
 }
 
 /**
 * @tc.name: GetAlterableBundleNameByTokenId002
-* @tc.desc: Normal test of GetAlterableBundleNameByTokenId for native
+* @tc.desc: Normal test of GetSpecificBundleNameByTokenId for native
 * @tc.type: FUNC
 * @tc.require:
 */
@@ -107,13 +107,13 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, GetAlterableBundleNameByTokenId002, TestSi
     EXPECT_CALL(*accessTokenKitMock, GetNativeTokenInfo(_, _)).WillOnce(Return(RET_SUCCESS));
     std::string bundleName = "";
     PreProcessUtils preProcessUtils;
-    bool ret = preProcessUtils.GetAlterableBundleNameByTokenId(tokenId, bundleName);
+    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, bundleName);
     EXPECT_EQ(ret, true);
 }
 
 /**
 * @tc.name: GetAlterableBundleNameByTokenId003
-* @tc.desc: Normal test of GetAlterableBundleNameByTokenId for hap
+* @tc.desc: Normal test of GetSpecificBundleNameByTokenId for hap
 * @tc.type: FUNC
 * @tc.require:
 */
@@ -123,7 +123,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, GetAlterableBundleNameByTokenId003, TestSi
     EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillOnce(Return(RET_SUCCESS));
     std::string bundleName = "";
     PreProcessUtils preProcessUtils;
-    bool ret = preProcessUtils.GetAlterableBundleNameByTokenId(tokenId, bundleName);
+    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, bundleName);
     EXPECT_EQ(ret, true);
 }
 }; // namespace UDMF
