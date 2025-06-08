@@ -578,7 +578,8 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     return StoreSync(key, query, devices);
 }
 
-int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &query, const std::vector<std::string> &devices)
+int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &query,
+    const std::vector<std::string> &devices)
 {
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
@@ -609,7 +610,7 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
                 ZLOGE("Store sync failed");
                 RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
                     BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
-            }
+        }
     })) {
         ZLOGW("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
     }

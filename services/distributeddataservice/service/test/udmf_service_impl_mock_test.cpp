@@ -46,7 +46,7 @@ public:
     void SetUp() {}
     void TearDown() {}
 };
-void UdmfServiceImplTest::SetUpTestCase() 
+void UdmfServiceImplTest::SetUpTestCase()
 {
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
