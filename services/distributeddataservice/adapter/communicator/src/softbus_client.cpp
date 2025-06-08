@@ -125,7 +125,8 @@ int32_t SoftBusClient::CreateSocket() const
     SocketInfo socketInfo;
     std::string peerName = pipe_.pipeId;
     socketInfo.peerName = const_cast<char *>(peerName.c_str());
-    socketInfo.peerNetworkId = const_cast<char *>(networkId_.c_str());
+    auto networkId = GetNetworkId();
+    socketInfo.peerNetworkId = const_cast<char *>(networkId.c_str());
     std::string clientName = pipe_.pipeId;
     socketInfo.name = const_cast<char *>(clientName.c_str());
     std::string pkgName = "ohos.distributeddata";
@@ -155,8 +156,10 @@ Status SoftBusClient::CheckStatus()
 int32_t SoftBusClient::Open(int32_t socket, uint32_t type, const ISocketListener *listener, bool async)
 {
     int32_t status = ::Bind(socket, QOS_INFOS[type % QOS_BUTT], QOS_COUNTS[type % QOS_BUTT], listener);
-    ZLOGI("Bind %{public}s,session:%{public}s,socketId:%{public}d",
-        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket);
+    auto networkId = GetNetworkId();
+    ZLOGI("Bind device:%{public}s,session:%{public}s,socketId:%{public}d,networkId:%{public}s",
+        KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket,
+        KvStoreUtils::ToBeAnonymous(networkId).c_str());
 
     if (status != 0) {
         ZLOGE("[Bind] device:%{public}s socket failed, session:%{public}s,result:%{public}d",
@@ -176,7 +179,7 @@ int32_t SoftBusClient::Open(int32_t socket, uint32_t type, const ISocketListener
     UpdateBindInfo(socket, mtu, status, async);
     ZLOGI("open %{public}s, session:%{public}s success, socket:%{public}d",
         KvStoreUtils::ToBeAnonymous(device_.deviceId).c_str(), pipe_.pipeId.c_str(), socket_);
-    ConnectManager::GetInstance()->OnSessionOpen(networkId_);
+    ConnectManager::GetInstance()->OnSessionOpen(networkId);
     return status;
 }
 
@@ -256,8 +259,15 @@ Status SoftBusClient::ReuseConnect(const ISocketListener *listener)
     return status == SOFTBUS_OK ? Status::SUCCESS : Status::NETWORK_ERROR;
 }
 
-const std::string& SoftBusClient::GetNetworkId() const
+std::string SoftBusClient::GetNetworkId() const
 {
+    std::lock_guard<std::mutex> lock(networkIdMutex_);
     return networkId_;
+}
+
+void SoftBusClient::UpdateNetworkId(const std::string& networkId)
+{
+    std::lock_guard<std::mutex> lock(networkIdMutex_);
+    networkId_ = networkId;
 }
 } // namespace OHOS::AppDistributedKv
