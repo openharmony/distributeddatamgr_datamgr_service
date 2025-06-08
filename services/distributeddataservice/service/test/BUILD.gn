@@ -1179,6 +1179,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "kv_store:distributeddata_mgr",
     "openssl:libcrypto_shared",
     "samgr:samgr_proxy",
     "safwk:system_ability_fwk",
@@ -1245,8 +1246,10 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "kv_store:distributeddata_mgr",
     "relational_store:native_rdb",
     "samgr:samgr_proxy",
+    "safwk:system_ability_fwk",
     "udmf:udmf_client",
   ]
 }

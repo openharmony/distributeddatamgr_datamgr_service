@@ -13,9 +13,7 @@
 * limitations under the License.
 */
 
-#include "error_code.h"
 #define LOG_TAG "UdmfServiceImplTest"
-#include <openssl/rand.h>
 #include "udmf_service_impl.h"
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
@@ -86,12 +84,7 @@ public:
     void SetUp(){};
     void TearDown(){};
 
-    const uint32_t MAX_KEY_SIZE = 1024;
-    const uint32_t MAX_VALUE_SIZE = 4 * 1024 * 1024;
     const std::string STORE_ID = "drag";
-    const std::string KEY_PREFIX = "TEST_";
-    const std::string EMPTY_DEVICE_ID = "";
-    static constexpr size_t tempUdataRecordSize = 1;
 };
 
 /**
@@ -281,31 +274,6 @@ HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
 }
 
 /**
-* @tc.name: TransferToEntriesIfNeedTest001
-* @tc.desc: TransferToEntriesIfNeed test
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level1)
-{
-    UnifiedData data;
-    QueryOption query;
-    auto record1 = std::make_shared<UnifiedRecord>();
-    auto record2 = std::make_shared<UnifiedRecord>();
-    data.AddRecord(record1);
-    data.AddRecord(record2);
-    auto properties = std::make_shared<UnifiedDataProperties>();
-    properties->tag = "records_to_entries_data_format";
-    data.SetProperties(properties);
-    query.tokenId = 1;
-    UdmfServiceImpl udmfServiceImpl;
-    udmfServiceImpl.TransferToEntriesIfNeed(query, data);
-    EXPECT_TRUE(data.IsNeedTransferToEntries());
-    int recordSize = 2;
-    EXPECT_EQ(data.GetRecords().size(), recordSize);
-}
-
-/**
 * @tc.name: SaveMetaData001
 * @tc.desc: Abnormal testcase of GetRuntime
 * @tc.type: FUNC
@@ -343,7 +311,7 @@ HWTEST_F(UdmfServiceImplTest, SyncTest001, TestSize.Level0)
 
 /**
 * @tc.name: ResolveAutoLaunch001
-* @tc.desc: 
+* @tc.desc: test ResolveAutoLaunch
 * @tc.type: FUNC
 * @tc.require:
 */
@@ -363,5 +331,31 @@ HWTEST_F(UdmfServiceImplTest, ResolveAutoLaunch001, TestSize.Level0)
     auto ret = udmfServiceImpl->ResolveAutoLaunch(identifier, param);
     EXPECT_EQ(ret, UDMF::E_OK);
 }
+
+/**
+* @tc.name: TransferToEntriesIfNeedTest001
+* @tc.desc: TransferToEntriesIfNeed test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level1)
+{
+    UnifiedData data;
+    QueryOption query;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    data.AddRecord(record1);
+    data.AddRecord(record2);
+    auto properties = std::make_shared<UnifiedDataProperties>();
+    properties->tag = "records_to_entries_data_format";
+    data.SetProperties(properties);
+    query.tokenId = 1;
+    UdmfServiceImpl udmfServiceImpl;
+    udmfServiceImpl.TransferToEntriesIfNeed(query, data);
+    EXPECT_TRUE(data.IsNeedTransferToEntries());
+    int recordSize = 2;
+    EXPECT_EQ(data.GetRecords().size(), recordSize);
+}
+
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

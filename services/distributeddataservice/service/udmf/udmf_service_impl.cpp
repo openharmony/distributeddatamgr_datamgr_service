@@ -573,6 +573,11 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         return E_INVALID_PARAMETERS;
     }
     RegisterAsyncProcessInfo(query.key);
+    return StoreSync(key, query, devices);
+}
+
+int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &query, const std::vector<std::string> &devices)
+{
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
@@ -596,13 +601,13 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
     int32_t id = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
     StoreMetaData meta = StoreMetaData(std::to_string(id), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
-    if (IsNeedMetaSync(meta, uuids) && !MetaDataManager::GetInstance().Sync(uuids, [devices, callback, store]
-        (auto &results) {
+    if (IsNeedMetaSync(meta, uuids) && !MetaDataManager::GetInstance().Sync(uuids,
+        [devices, callback, store] (auto &results) {
             if (store->Sync(devices, callback) != E_OK) {
                 ZLOGE("Store sync failed");
                 RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
                     BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
-        }
+            }
     })) {
         ZLOGW("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
     }
@@ -613,6 +618,34 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         return UDMF::E_DB_ERROR;
     }
     return E_OK;
+}
+
+bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
+{
+    using namespace OHOS::DistributedData;
+    bool isAfterMeta = false;
+    for (const auto &uuid : uuids) {
+        auto metaData = meta;
+        metaData.deviceId = uuid;
+        CapMetaData capMeta;
+        auto capKey = CapMetaRow::GetKeyFor(uuid);
+        if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
+        if ((mask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuid);
+        if ((localMask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+    }
+    return isAfterMeta;
 }
 
 int32_t UdmfServiceImpl::IsRemoteData(const QueryOption &query, bool &result)
@@ -1148,34 +1181,6 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     it.second->HandleDelayObserver(key, dataLoadInfo);
     dataLoadCallback_.Erase(key);
     return E_OK;
-}
-
-bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
-{
-    using namespace OHOS::DistributedData;
-    bool isAfterMeta = false;
-    for (const auto &uuid : uuids) {
-        auto metaData = meta;
-        metaData.deviceId = uuid;
-        CapMetaData capMeta;
-        auto capKey = CapMetaRow::GetKeyFor(uuid);
-        if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
-            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
-            isAfterMeta = true;
-            break;
-        }
-        auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
-        if ((mask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
-            isAfterMeta = true;
-            break;
-        }
-        auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuid);
-        if ((localMask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
-            isAfterMeta = true;
-            break;
-        }
-    }
-    return isAfterMeta;
 }
 } // namespace UDMF
 } // namespace OHOS

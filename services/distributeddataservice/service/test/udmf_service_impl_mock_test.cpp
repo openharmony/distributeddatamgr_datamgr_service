@@ -13,7 +13,6 @@
 * limitations under the License.
 */
 
-#include "metadata/meta_data_manager.h"
 #define LOG_TAG "UdmfServiceImplTest"
 #include "udmf_service_impl.h"
 #include "gtest/gtest.h"
@@ -172,5 +171,5 @@ HWTEST_F(UdmfServiceImplTest, ResolveAutoLaunchTest001, TestSize.Level0)
     ret = udmfServiceImpl->ResolveAutoLaunch(identifier, param);
     EXPECT_EQ(ret, UDMF::E_NOT_FOUND);
 }
-} // DistributedDataTest
-}; 
+}; // DistributedDataTest
+}; // namespace OHOS::Test
