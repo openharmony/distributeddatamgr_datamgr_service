@@ -438,37 +438,28 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test4, TestSize.Level1)
   * @tc.desc: test get udmf store
   * @tc.type: FUNC
   * @tc.require:
-  * @tc.author: illybyy
   */
-HWTEST_F(SessionManagerTest, PackAndUnPack05, TestSize.Level1)
+HWTEST_F(SessionManagerTest, GetHeadDataSize_Test5, TestSize.Level0)
 {
+    DeviceInfo deviceInfo;
+    deviceInfo.osType = OH_OS_TYPE;
+    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceInfo(_)).WillRepeatedly(Return(deviceInfo));
+
     const DistributedDB::ExtendInfo info = {
         .appId = "distributeddata", .storeId = "drag", .userId = "100", .dstTarget = PEER_DEVICE_ID
     };
     auto sendHandler = RouteHeadHandlerImpl::Create(info);
     ASSERT_NE(sendHandler, nullptr);
 
-
     CapMetaData capMetaData;
-    capMetaData.version = CapMetaData::INVALID_VERSION;
-
-    auto peerCapMetaKey = CapMetaRow::GetKeyFor(PEER_DEVICE_ID);
-    MetaDataManager::GetInstance().SaveMeta({ peerCapMetaKey.begin(), peerCapMetaKey.end() }, capMetaData);
-
-
-    uint32_t routeHeadSize = 0;
-    sendHandler->GetHeadDataSize(routeHeadSize);
-    ASSERT_NE(routeHeadSize, 0);
-    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(routeHeadSize);
-    sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
-
-    std::vector<DistributedDB::UserInfo> users;
-    auto recvHandler = RouteHeadHandlerImpl::Create({});
-    ASSERT_NE(recvHandler, nullptr);
-    uint32_t parseSize = 0;
-    std::string device = "from_device";
-    recvHandler->ParseHeadDataLen(data.get(), routeHeadSize, parseSize, device);
-    EXPECT_EQ(routeHeadSize, parseSize);
+    capMetaData.version = CapMetaData::CURRENT_VERSION;
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<1>(capMetaData), Return(true)));
+    uint32_t headSize = 0;
+    auto status = sendHandler->GetHeadDataSize(headSize);
+    EXPECT_EQ(status, DistributedDB::OK);
+    EXPECT_EQ(headSize, 0);
 }
 /**
   * @tc.name: ParseHeadDataUserTest001

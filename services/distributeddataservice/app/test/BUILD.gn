@@ -368,7 +368,6 @@ ohos_unittest("UpgradeManagerTest") {
   part_name = "datamgr_service"
 }
 
-
 ###############################################################################
 
 group("unittest") {

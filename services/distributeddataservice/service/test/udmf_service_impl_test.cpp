@@ -281,6 +281,31 @@ HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
 }
 
 /**
+* @tc.name: TransferToEntriesIfNeedTest001
+* @tc.desc: TransferToEntriesIfNeed test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level1)
+{
+    UnifiedData data;
+    QueryOption query;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    data.AddRecord(record1);
+    data.AddRecord(record2);
+    auto properties = std::make_shared<UnifiedDataProperties>();
+    properties->tag = "records_to_entries_data_format";
+    data.SetProperties(properties);
+    query.tokenId = 1;
+    UdmfServiceImpl udmfServiceImpl;
+    udmfServiceImpl.TransferToEntriesIfNeed(query, data);
+    EXPECT_TRUE(data.IsNeedTransferToEntries());
+    int recordSize = 2;
+    EXPECT_EQ(data.GetRecords().size(), recordSize);
+}
+
+/**
 * @tc.name: SaveMetaData001
 * @tc.desc: Abnormal testcase of GetRuntime
 * @tc.type: FUNC
