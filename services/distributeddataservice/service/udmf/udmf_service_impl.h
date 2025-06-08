@@ -79,6 +79,7 @@ private:
     bool IsFileMangerIntention(const std::string &intention);
     std::string FindIntentionMap(const Intention &queryintention);
     bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
+    bool IsValidInput(const QueryOption &query, UnifiedData &unifiedData, UnifiedKey &key);
     class Factory {
     public:
         Factory();

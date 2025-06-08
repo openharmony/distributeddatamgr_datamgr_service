@@ -1177,5 +1177,20 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     dataLoadCallback_.Erase(key);
     return E_OK;
 }
+
+bool UdmfServiceImpl::IsValidInput(const QueryOption &query, UnifiedData &unifiedData, UnifiedKey &key)
+{
+    if (!unifiedData.IsValid() || !key.IsValid()) {
+        ZLOGE("Data or key is invalid, key = %{public}s", query.key.c_str());
+        return false;
+    }
+    std::string intention = FindIntentionMap(query.intention);
+    if (!IsValidOptionsNonDrag(key, intention) || key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DATA_HUB)) {
+        ZLOGE("Invalid params: key.intention = %{public}s, intention = %{public}s",
+            key.intention.c_str(), intention.c_str());
+        return false;
+    }
+    return true;
+}
 } // namespace UDMF
 } // namespace OHOS
