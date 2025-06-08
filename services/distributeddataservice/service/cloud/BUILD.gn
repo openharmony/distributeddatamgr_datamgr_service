@@ -71,7 +71,7 @@ ohos_source_set("distributeddata_cloud") {
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "cJSON:cjson",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",

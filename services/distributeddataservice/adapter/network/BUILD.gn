@@ -54,7 +54,7 @@ ohos_source_set("distributeddata_network") {
       "c_utils:utils",
       "device_manager:devicemanagersdk",
       "hilog:libhilog",
-      "ipc:ipc_core",
+      "ipc:ipc_single",
       "netmanager_base:net_conn_manager_if",
     ]
   } else {
