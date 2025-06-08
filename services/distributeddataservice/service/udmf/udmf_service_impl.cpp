@@ -132,7 +132,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     }
 
     // imput runtime info before put it into store and save one privilege
-    if (PreProcessUtils::RuntimeDataImputation(unifiedData, option) != E_OK) {
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
@@ -1062,7 +1062,7 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         .intention = UD_INTENTION_DRAG,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
     };
-    if (PreProcessUtils::RuntimeDataImputation(unifiedData, option) != E_OK) {
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }

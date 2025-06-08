@@ -53,7 +53,7 @@ using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 using namespace RadarReporter;
 
-int32_t PreProcessUtils::RuntimeDataImputation(UnifiedData &data, CustomOption &option)
+int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option)
 {
     auto it = UD_INTENTION_MAP.find(option.intention);
     if (it == UD_INTENTION_MAP.end()) {

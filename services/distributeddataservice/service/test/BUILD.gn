@@ -1382,7 +1382,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "kv_store:datamgr_common",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
