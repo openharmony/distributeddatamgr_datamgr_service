@@ -15,13 +15,14 @@
 #ifndef UDMF_PREPROCESS_UTILS_H
 #define UDMF_PREPROCESS_UTILS_H
 
+#include "bundlemgr/bundle_mgr_proxy.h"
 #include "unified_data.h"
 
 namespace OHOS {
 namespace UDMF {
 class PreProcessUtils {
 public:
-    static int32_t RuntimeDataImputation(UnifiedData &data, CustomOption &option);
+    static int32_t FillRuntimeInfo(UnifiedData &data, CustomOption &option);
     static std::string GenerateId();
     static time_t GetTimestamp();
     static int32_t GetHapUidByToken(uint32_t tokenId, int &userId);
@@ -42,11 +43,14 @@ public:
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
+    static bool GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &bundleName);
+    static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();
 private:
     static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);
     static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data);
     static bool IsFileType(std::shared_ptr<UnifiedRecord> record);
     static std::string GetSdkVersionByToken(uint32_t tokenId);
+    static bool GetSpecificBundleName(const std::string &bundleName, int32_t appIndex, std::string &specificBundleName);
 };
 } // namespace UDMF
 } // namespace OHOS

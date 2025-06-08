@@ -681,7 +681,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetRuntime001, TestSize.Level1)
 {
     UnifiedData inputData;
     CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
-    auto status = PreProcessUtils::RuntimeDataImputation(inputData, option);
+    auto status = PreProcessUtils::FillRuntimeInfo(inputData, option);
     EXPECT_EQ(status, E_OK);
     auto key = inputData.GetRuntime()->key.GetUnifiedKey();
 
@@ -707,7 +707,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetRuntime002, TestSize.Level1)
 {
     UnifiedData inputData;
     CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
-    auto status = PreProcessUtils::RuntimeDataImputation(inputData, option);
+    auto status = PreProcessUtils::FillRuntimeInfo(inputData, option);
     EXPECT_EQ(status, E_OK);
     auto key = inputData.GetRuntime()->key.GetUnifiedKey();
 
