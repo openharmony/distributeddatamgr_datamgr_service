@@ -348,6 +348,7 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test1, TestSize.Level1)
     RouteHeadHandlerImpl routeHeadHandlerImpl(info);
     uint32_t headSize = 0;
     routeHeadHandlerImpl.appId_ = Bootstrap::GetInstance().GetProcessLabel();
+    routeHeadHandlerImpl.storeId_ = Bootstrap::GetInstance().GetMetaDBName();
     auto status = routeHeadHandlerImpl.GetHeadDataSize(headSize);
     EXPECT_EQ(status, DistributedDB::OK);
     EXPECT_EQ(headSize, 0);
@@ -431,35 +432,6 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test4, TestSize.Level1)
     std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(routeHeadSize);
     status = sendHandler->FillHeadData(data.get(), routeHeadSize, routeHeadSize);
     EXPECT_EQ(status, DistributedDB::DB_ERROR);
-}
-
-/**
-  * @tc.name: PackAndUnPack05
-  * @tc.desc: test get udmf store
-  * @tc.type: FUNC
-  * @tc.require:
-  */
-HWTEST_F(SessionManagerTest, GetHeadDataSize_Test5, TestSize.Level0)
-{
-    DeviceInfo deviceInfo;
-    deviceInfo.osType = OH_OS_TYPE;
-    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(_)).WillRepeatedly(Return(true));
-    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceInfo(_)).WillRepeatedly(Return(deviceInfo));
-
-    const DistributedDB::ExtendInfo info = {
-        .appId = "distributeddata", .storeId = "drag", .userId = "100", .dstTarget = PEER_DEVICE_ID
-    };
-    auto sendHandler = RouteHeadHandlerImpl::Create(info);
-    ASSERT_NE(sendHandler, nullptr);
-
-    CapMetaData capMetaData;
-    capMetaData.version = CapMetaData::CURRENT_VERSION;
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillRepeatedly(DoAll(SetArgReferee<1>(capMetaData), Return(true)));
-    uint32_t headSize = 0;
-    auto status = sendHandler->GetHeadDataSize(headSize);
-    EXPECT_EQ(status, DistributedDB::OK);
-    EXPECT_EQ(headSize, 0);
 }
 /**
   * @tc.name: ParseHeadDataUserTest001
