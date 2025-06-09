@@ -49,6 +49,8 @@ using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
 namespace OHOS::Test {
 namespace DistributedDataTest {
+static constexpr const char *INVALID_APPID = "invalid_kvdb_store_test";
+
 class KVDBGeneralStoreTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -67,7 +69,6 @@ protected:
 
 std::shared_ptr<DBStoreMock> KVDBGeneralStoreTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 static const uint32_t KEY_LENGTH = 32;
-static const uint32_t ENCRYPT_KEY_LENGTH = 48;
 
 void KVDBGeneralStoreTest::InitMetaData()
 {
@@ -104,7 +105,11 @@ void KVDBGeneralStoreTest::SetUp()
     InitMetaData();
 }
 
-void KVDBGeneralStoreTest::TearDown() {}
+void KVDBGeneralStoreTest::TearDown()
+{
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+}
 
 class MockGeneralWatcher : public DistributedData::GeneralWatcher {
 public:
@@ -150,14 +155,43 @@ public:
 
 /**
 * @tc.name: GetDBPasswordTest_001
-* @tc.desc: GetDBPassword from meta.
+* @tc.desc: get password with all exception branch
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: Hollokin
 */
 HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_001, TestSize.Level0)
 {
-    ZLOGI("GetDBPasswordTest start");
+    metaData_.isEncrypt = false;
+    auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    ASSERT_EQ(dbPassword.GetSize(), 0);
+
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+
+    metaData_.isEncrypt = true;
+    dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    ASSERT_EQ(dbPassword.GetSize(), 0);
+
+    SecretKeyMetaData secretKey;
+    auto result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true);
+    ASSERT_TRUE(result);
+    dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    ASSERT_EQ(dbPassword.GetSize(), 0);
+
+    std::vector<uint8_t> randomKey = Random(KEY_LENGTH);
+    ASSERT_FALSE(randomKey.empty());
+    secretKey.sKey = randomKey;
+    result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true);
+    ASSERT_TRUE(result);
+    dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    ASSERT_EQ(dbPassword.GetSize(), 0);
+}
+
+/**
+* @tc.name: GetDBPasswordTest_002
+* @tc.desc: GetDBPassword from meta.
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_002, TestSize.Level0)
+{
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true));
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), metaData_, true));
@@ -166,13 +200,11 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetDBPasswordTest_002
+* @tc.name: GetDBPasswordTest_003
 * @tc.desc: GetDBPassword from encrypt meta.
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: Hollokin
 */
-HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_002, TestSize.Level0)
+HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_003, TestSize.Level0)
 {
     ZLOGI("GetDBPasswordTest_002 start");
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
@@ -183,15 +215,49 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_002, TestSize.Level0)
     EXPECT_EQ(errCode, CryptoManager::ErrCode::SUCCESS);
 
     std::vector<uint8_t> randomKey = Random(KEY_LENGTH);
+    ASSERT_FALSE(randomKey.empty());
     SecretKeyMetaData secretKey;
     secretKey.storeType = metaData_.storeType;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
-    EXPECT_EQ(secretKey.sKey.size(), ENCRYPT_KEY_LENGTH);
+    CryptoManager::CryptoParams encryptParams = { .area = metaData_.area, .userId = metaData_.user };
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(randomKey, encryptParams);
+    ASSERT_FALSE(secretKey.sKey.empty());
+    ASSERT_FALSE(encryptParams.nonce.empty());
+    secretKey.area = metaData_.area;
+    secretKey.nonce = encryptParams.nonce;
     EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true));
 
     auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
     ASSERT_TRUE(dbPassword.GetSize() != 0);
     randomKey.assign(randomKey.size(), 0);
+}
+
+/**
+* @tc.name: GetDBPasswordTest_004
+* @tc.desc: get password with exception branch
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, GetDBPasswordTest_004, TestSize.Level0)
+{
+    metaData_.bundleName = INVALID_APPID;
+    auto dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    ASSERT_EQ(dbPassword.GetSize(), 0);
+
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+
+    SecretKeyMetaData secretKey;
+    auto result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true);
+    ASSERT_TRUE(result);
+    dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    ASSERT_EQ(dbPassword.GetSize(), 0);
+
+    auto key = Random(KEY_LENGTH);
+    ASSERT_FALSE(key.empty());
+    secretKey.sKey = key;
+    result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true);
+    ASSERT_TRUE(result);
+    dbPassword = KVDBGeneralStore::GetDBPassword(metaData_);
+    ASSERT_EQ(dbPassword.GetSize(), 0);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetSecretKey(), true);
 }
 
 /**

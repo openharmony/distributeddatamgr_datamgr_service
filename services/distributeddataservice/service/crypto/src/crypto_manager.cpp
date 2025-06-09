@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #define LOG_TAG "CryptoManager"
+
 #include "crypto_manager.h"
 
 #include <cstring>
@@ -23,7 +24,13 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "securec.h"
+
 namespace OHOS::DistributedData {
+static constexpr int32_t NONCE_SIZE = 12;
+static constexpr const char *ROOT_KEY_ALIAS = "distributed_db_root_key";
+static constexpr const char *HKS_BLOB_TYPE_NONCE = "Z5s0Bo571KoqwIi6";
+static constexpr const char *HKS_BLOB_TYPE_AAD = "distributeddata";
+
 using system_clock = std::chrono::system_clock;
 
 CryptoManager::CryptoManager()
@@ -51,10 +58,22 @@ struct HksParam aes256Param[] = {
     { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
 };
 
-bool AddHksParams(HksParamSet *params, const CryptoManager::ParamConfig &paramConfig,
-    const std::vector<uint8_t> &vecAad)
+bool AddHksParams(HksParamSet *params, CryptoManager::ParamConfig &paramConfig)
 {
-    struct HksBlob blobAad = { uint32_t(vecAad.size()), const_cast<uint8_t *>(vecAad.data()) };
+    if (paramConfig.nonce.empty()) {
+        uint8_t nonce[NONCE_SIZE] = {0};
+        struct HksBlob blobNonce = { .size = NONCE_SIZE, .data = nonce };
+        auto result = HksGenerateRandom(nullptr, &blobNonce);
+        if (result != HKS_SUCCESS) {
+            ZLOGE("HksGenerateRandom failed with error %{public}d", result);
+            return false;
+        }
+        std::vector<uint8_t> nonceContent(blobNonce.data, blobNonce.data + blobNonce.size);
+        paramConfig.nonce = nonceContent;
+    }
+
+    struct HksBlob blobAad = { uint32_t(paramConfig.aadValue.size()),
+        const_cast<uint8_t *>(paramConfig.aadValue.data()) };
     std::vector<HksParam> hksParam = {
         { .tag = HKS_TAG_PURPOSE, .uint32Param = paramConfig.purpose },
         { .tag = HKS_TAG_NONCE,
@@ -62,6 +81,7 @@ bool AddHksParams(HksParamSet *params, const CryptoManager::ParamConfig &paramCo
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = blobAad },
         { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = paramConfig.storageLevel },
     };
+
     if (paramConfig.storageLevel > HKS_AUTH_STORAGE_LEVEL_DE) {
         hksParam.emplace_back(
             HksParam { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = std::atoi(paramConfig.userId.c_str()) });
@@ -201,44 +221,30 @@ int32_t CryptoManager::PrepareRootKey(uint32_t storageLevel, const std::string &
         userId.c_str(), status);
     return status;
 }
-std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId)
-{
-    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
-    return Encrypt(key, area, userId, encryptParams);
-}
 
-std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key)
+std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &password, CryptoParams &encryptParams)
 {
-    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
-    return Encrypt(key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams);
-}
-
-std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, const EncryptParams &encryptParams)
-{
-    return Encrypt(key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams);
-}
-
-std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int32_t area, const std::string &userId,
-    const EncryptParams &encryptParams)
-{
-    uint32_t storageLevel = GetStorageLevel(area);
-    if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
+    encryptParams.area = encryptParams.area < 0 ? Area::EL1 : encryptParams.area;
+    uint32_t storageLevel = GetStorageLevel(encryptParams.area);
+    if (PrepareRootKey(storageLevel, encryptParams.userId) != ErrCode::SUCCESS) {
         return {};
     }
 
     struct HksParamSet *params = nullptr;
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
-        ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
+        ZLOGE("HksInitParamSet failed with error %{public}d", ret);
         return {};
     }
+
     ParamConfig paramConfig = {
-        .nonce = encryptParams.nonce,
         .purpose = HKS_KEY_PURPOSE_ENCRYPT,
         .storageLevel = storageLevel,
-        .userId = userId
+        .userId = encryptParams.userId,
+        .nonce = encryptParams.nonce,
+        .aadValue = vecAad_
     };
-    if (!AddHksParams(params, paramConfig, vecAad_)) {
+    if (!AddHksParams(params, paramConfig)) {
         return {};
     }
     ret = HksBuildParamSet(&params);
@@ -248,12 +254,14 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
         return {};
     }
 
+    if (encryptParams.keyAlias.empty()) {
+        encryptParams.keyAlias = vecRootKeyAlias_;
+    }
+    struct HksBlob keyName = { uint32_t(encryptParams.keyAlias.size()),
+        const_cast<uint8_t *>(encryptParams.keyAlias.data())};
+    struct HksBlob plainKey = { uint32_t(password.size()), const_cast<uint8_t *>(password.data()) };
     uint8_t cipherBuf[256] = { 0 };
     struct HksBlob cipherText = { sizeof(cipherBuf), cipherBuf };
-    struct HksBlob keyName = {
-        uint32_t(encryptParams.keyAlias.size()),
-        const_cast<uint8_t *>(encryptParams.keyAlias.data())};
-    struct HksBlob plainKey = { uint32_t(key.size()), const_cast<uint8_t *>(key.data()) };
     ret = HksEncrypt(&keyName, params, &plainKey, &cipherText);
     (void)HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
@@ -261,110 +269,83 @@ std::vector<uint8_t> CryptoManager::Encrypt(const std::vector<uint8_t> &key, int
         return {};
     }
 
+    if (encryptParams.nonce.empty()) {
+        encryptParams.nonce = paramConfig.nonce;
+    }
     std::vector<uint8_t> encryptedKey(cipherText.data, cipherText.data + cipherText.size);
     std::fill(cipherBuf, cipherBuf + sizeof(cipherBuf), 0);
     return encryptedKey;
 }
 
-bool CryptoManager::UpdateSecretKey(const StoreMetaData &meta, const std::vector<uint8_t> &key,
-    SecretKeyType secretKeyType)
+std::vector<uint8_t> CryptoManager::Decrypt(const std::vector<uint8_t> &source, CryptoParams &decryptParams)
 {
-    if (!meta.isEncrypt) {
-        return false;
+    uint32_t storageLevel = GetStorageLevel(decryptParams.area);
+    if (PrepareRootKey(storageLevel, decryptParams.userId) != ErrCode::SUCCESS) {
+        return {};
     }
-    SecretKeyMetaData secretKey;
-    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
-    secretKey.storeType = meta.storeType;
-    secretKey.area = meta.area;
-    secretKey.sKey = Encrypt(key, meta.area, meta.user, encryptParams);
-    auto time = system_clock::to_time_t(system_clock::now());
-    secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
-    if (secretKeyType == LOCAL_SECRET_KEY) {
-        return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), secretKey, true);
-    } else {
-        return MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true);
-    }
-}
 
-bool CryptoManager::Decrypt(const StoreMetaData &meta, SecretKeyMetaData &secretKeyMeta, std::vector<uint8_t> &key,
-    SecretKeyType secretKeyType)
-{
-    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
-    if (secretKeyMeta.area < 0) {
-        ZLOGI("Decrypt old secret key");
-        if (Decrypt(secretKeyMeta.sKey, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams)) {
-            StoreMetaData metaData;
-            if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true)) {
-                ZLOGI("Upgrade secret key");
-                UpdateSecretKey(metaData, key, secretKeyType);
-            }
-            return true;
-        }
-    } else {
-        return Decrypt(secretKeyMeta.sKey, key, secretKeyMeta.area, meta.user, encryptParams);
-    }
-    return false;
-}
-
-bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, int32_t area,
-    const std::string &userId)
-{
-    EncryptParams encryptParams = { .keyAlias = vecRootKeyAlias_, .nonce = vecNonce_ };
-    return Decrypt(source, key, area, userId, encryptParams);
-}
-
-bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key, const EncryptParams &encryptParams)
-{
-    return Decrypt(source, key, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER, encryptParams);
-}
-
-bool CryptoManager::Decrypt(std::vector<uint8_t> &source, std::vector<uint8_t> &key,
-    int32_t area, const std::string &userId, const EncryptParams &encryptParams)
-{
-    uint32_t storageLevel = GetStorageLevel(area);
-    if (PrepareRootKey(storageLevel, userId) != ErrCode::SUCCESS) {
-        return false;
-    }
     struct HksParamSet *params = nullptr;
     int32_t ret = HksInitParamSet(&params);
     if (ret != HKS_SUCCESS) {
-        ZLOGE("HksInitParamSet() failed with error %{public}d", ret);
-        return false;
+        ZLOGE("HksInitParamSet failed with error %{public}d", ret);
+        return {};
     }
 
     ParamConfig paramConfig = {
-        .nonce = encryptParams.nonce,
         .purpose = HKS_KEY_PURPOSE_DECRYPT,
         .storageLevel = storageLevel,
-        .userId = userId
+        .userId = decryptParams.userId,
+        .nonce = decryptParams.nonce.empty() ? vecNonce_ : decryptParams.nonce,
+        .aadValue = vecAad_
     };
-    if (!AddHksParams(params, paramConfig, vecAad_)) {
-        return false;
+    if (!AddHksParams(params, paramConfig)) {
+        return {};
     }
-
     ret = HksBuildParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksBuildParamSet failed with error %{public}d", ret);
         HksFreeParamSet(&params);
-        return false;
+        return {};
     }
 
+    if (decryptParams.keyAlias.empty()) {
+        decryptParams.keyAlias = vecRootKeyAlias_;
+    }
+    struct HksBlob keyName = { uint32_t(decryptParams.keyAlias.size()),
+        const_cast<uint8_t *>(decryptParams.keyAlias.data()) };
+    struct HksBlob encryptedKeyBlob = { uint32_t(source.size()), const_cast<uint8_t*>(source.data()) };
     uint8_t plainBuf[256] = { 0 };
     struct HksBlob plainKeyBlob = { sizeof(plainBuf), plainBuf };
-    struct HksBlob encryptedKeyBlob = { uint32_t(source.size()), source.data() };
-    struct HksBlob keyName = { uint32_t(encryptParams.keyAlias.size()),
-        const_cast<uint8_t *>(encryptParams.keyAlias.data()) };
 
     ret = HksDecrypt(&keyName, params, &encryptedKeyBlob, &plainKeyBlob);
     (void)HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
         ZLOGE("HksDecrypt failed with error %{public}d", ret);
-        return false;
+        return {};
     }
+    std::vector<uint8_t> password(plainKeyBlob.data, plainKeyBlob.data + plainKeyBlob.size);
+    return password;
+}
 
-    key.assign(plainKeyBlob.data, plainKeyBlob.data + plainKeyBlob.size);
-    std::fill(plainBuf, plainBuf + sizeof(plainBuf), 0);
-    return true;
+void CryptoManager::UpdateSecretMeta(const std::vector<uint8_t> &password, const StoreMetaData &metaData,
+    const std::string &metaKey, SecretKeyMetaData &secretKey)
+{
+    if (password.empty() || (!secretKey.nonce.empty() && secretKey.area >= 0)) {
+        return;
+    }
+    CryptoParams encryptParams = { .area = metaData.area, .userId = metaData.user,
+        .nonce = secretKey.nonce };
+    auto encryptKey = Encrypt(password, encryptParams);
+    if (encryptKey.empty()) {
+        return;
+    }
+    secretKey.sKey = encryptKey;
+    secretKey.nonce = encryptParams.nonce;
+    secretKey.area = metaData.area;
+    auto time = system_clock::to_time_t(system_clock::now());
+    secretKey.time = { reinterpret_cast<uint8_t *>(&time),
+        reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
+    MetaDataManager::GetInstance().SaveMeta(metaKey, secretKey, true);
 }
 
 bool BuildImportKeyParams(struct HksParamSet *&params)

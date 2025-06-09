@@ -559,13 +559,14 @@ std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, Se
     if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
         return {};
     };
-    std::vector<uint8_t> password;
-    if (!CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, password)) {
+    CryptoManager::CryptoParams decryptParams = { .area = secretKeyMeta.area, .userId = metaData.user,
+        .nonce = secretKeyMeta.nonce };
+    auto password = CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptParams);
+    if (password.empty()) {
         return {};
-    };
-
+    }
     auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
-    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
+    CryptoManager::CryptoParams encryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
     auto reEncryptedKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
     password.assign(password.size(), 0);
     if (reEncryptedKey.size() == 0) {
@@ -681,32 +682,38 @@ bool KvStoreDataService::ParseSecretKeyFile(MessageParcel &data, SecretKeyBackup
 bool KvStoreDataService::RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId,
     const std::vector<uint8_t> &iv)
 {
-    StoreMetaData metaData;
-    metaData.bundleName = item.bundleName;
-    metaData.storeId = item.dbName;
-    metaData.user = item.user == "0" ? "0" : userId;
-    metaData.instanceId = item.instanceId;
     auto sKey = DistributedData::Base64::Decode(item.sKey);
-    std::vector<uint8_t> rawKey;
-    
     auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
-    CryptoManager::EncryptParams encryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
-    if (!CryptoManager::GetInstance().Decrypt(sKey, rawKey, encryptParams)) {
+    CryptoManager::CryptoParams decryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
+    auto rawKey = CryptoManager::GetInstance().Decrypt(sKey, decryptParams);
+    if (rawKey.empty()) {
         ZLOGE("Decrypt failed, bundleName:%{public}s, storeName:%{public}s, storeType:%{public}d",
             item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.storeType);
         sKey.assign(sKey.size(), 0);
         rawKey.assign(rawKey.size(), 0);
         return false;
     }
+
+    StoreMetaData metaData;
+    metaData.bundleName = item.bundleName;
+    metaData.storeId = item.dbName;
+    metaData.user = item.user == "0" ? "0" : userId;
+    metaData.instanceId = item.instanceId;
+
     SecretKeyMetaData secretKey;
-    secretKey.storeType = item.storeType;
-    if (item.area < 0) {
-        secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey, DEFAULT_ENCRYPTION_LEVEL, DEFAULT_USER);
-    } else {
-        secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey, item.area, userId);
-        secretKey.area = item.area;
+    CryptoManager::CryptoParams encryptParams = { .area = item.area, .userId = metaData.user };
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(rawKey, encryptParams);
+    if (secretKey.sKey.empty()) {
+        ZLOGE("Encrypt failed, bundleName:%{public}s, storeName:%{public}s, storeType:%{public}d",
+            item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.storeType);
+        sKey.assign(sKey.size(), 0);
+        rawKey.assign(rawKey.size(), 0);
     }
+    secretKey.storeType = item.storeType;
+    secretKey.nonce = encryptParams.nonce;
+    secretKey.area = item.area;
     secretKey.time = { item.time.begin(), item.time.end() };
+
     sKey.assign(sKey.size(), 0);
     rawKey.assign(rawKey.size(), 0);
     return MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true);

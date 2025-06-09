@@ -276,10 +276,12 @@ ohos_unittest("CryptoManagerTest") {
     "ability_base:base",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
     "access_token:libnativetoken",
     "c_utils:utils",
     "googletest:gtest_main",
     "hilog:libhilog",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -1042,6 +1044,66 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+  ]
+}
+
+ohos_unittest("KvdbServicePasswordTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "kvdb_service_password_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/framework/include/cloud",
+    "${data_service_path}/framework/include/eventcenter",
+    "${data_service_path}/service/test/mock",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
+    "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb",
+    "mock:distributeddata_mock_static",
   ]
 }
 
@@ -1993,6 +2055,7 @@ group("unittest") {
       ":KVDBGeneralStoreAbnormalTest",
       ":KVDBGeneralStoreTest",
       ":KvdbServiceImplTest",
+      ":KvdbServicePasswordTest",
       ":QueryHelperUnitTest",
       ":UpgradeMockTest",
       ":UserDelegateMockTest",

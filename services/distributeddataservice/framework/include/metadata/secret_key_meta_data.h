@@ -21,8 +21,10 @@ namespace DistributedData {
 struct API_EXPORT SecretKeyMetaData final : public Serializable {
     std::vector<uint8_t> time {};
     std::vector<uint8_t> sKey {};
+    std::vector<uint8_t> nonce {};
     int32_t storeType = 0;
     int32_t area = -1;
+
     API_EXPORT SecretKeyMetaData();
     API_EXPORT ~SecretKeyMetaData();
     API_EXPORT bool Marshal(json &node) const override;

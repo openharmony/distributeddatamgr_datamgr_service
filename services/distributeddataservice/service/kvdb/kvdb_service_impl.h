@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "concurrent_map.h"
+#include "crypto_manager.h"
 #include "device_matrix.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"
@@ -95,6 +96,7 @@ private:
     using DBMode = DistributedDB::SyncMode;
     using Action = OHOS::DistributedData::MetaDataManager::Action;
     using GeneralError = DistributedData::GeneralError;
+    using CryptoManager = DistributedData::CryptoManager;
     enum SyncAction {
         ACTION_SYNC,
         ACTION_SUBSCRIBE,
@@ -161,6 +163,8 @@ private:
     bool CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
         const StoreMetaData &storeMeta);
     std::string GenerateKey(const std::string &userId, const std::string &storeId) const;
+    std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
+    void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

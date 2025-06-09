@@ -82,13 +82,19 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
     config.SetBundleName(meta.bundleName);
     if (meta.isEncrypt) {
         DistributedData::SecretKeyMetaData secretKeyMeta;
-        if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKeyMeta, true)) {
+        auto metaKey = meta.GetSecretKey();
+        if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(metaKey, secretKeyMeta, true) ||
+            secretKeyMeta.sKey.empty()) {
             return std::make_pair(E_DB_NOT_EXIST, config);
         }
-        std::vector<uint8_t> decryptKey;
-        if (!DistributedData::CryptoManager::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey)) {
+        DistributedData::CryptoManager::CryptoParams decryptParams = { .area = secretKeyMeta.area,
+            .userId = meta.user, .nonce = secretKeyMeta.nonce };
+        auto decryptKey = DistributedData::CryptoManager::GetInstance().Decrypt(secretKeyMeta.sKey, decryptParams);
+        if (decryptKey.empty()) {
             return std::make_pair(E_ERROR, config);
-        };
+        }
+        // update secret key of area or nonce
+        DistributedData::CryptoManager::GetInstance().UpdateSecretMeta(decryptKey, meta, metaKey, secretKeyMeta);
         config.SetEncryptKey(decryptKey);
         std::fill(decryptKey.begin(), decryptKey.end(), 0);
     }

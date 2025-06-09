@@ -966,29 +966,6 @@ HWTEST_F(KvdbServiceImplTest, UnsubscribeTest001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetBackupPasswordTest001
-* @tc.desc: GetBackupPassword test
-* @tc.type: FUNC
-* @tc.author: wangbin
-*/
-HWTEST_F(KvdbServiceImplTest, GetBackupPasswordTest001, TestSize.Level0)
-{
-    auto status = manager.GetSingleKvStore(create, appId, storeId, kvStore);
-    ASSERT_NE(kvStore, nullptr);
-    ASSERT_EQ(status, Status::SUCCESS);
-    std::vector<std::vector<uint8_t>> password;
-    status = kvdbServiceImpl_->GetBackupPassword(
-        appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
-    ASSERT_EQ(status, Status::ERROR);
-    status = kvdbServiceImpl_->GetBackupPassword(
-        appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
-    ASSERT_EQ(status, Status::ERROR);
-    status = kvdbServiceImpl_->GetBackupPassword(
-        appId, storeId, 0, password, DistributedKv::KVDBService::PasswordType::BUTTON);
-    ASSERT_EQ(status, Status::ERROR);
-}
-
-/**
 * @tc.name: BeforeCreateTest001
 * @tc.desc: BeforeCreate test
 * @tc.type: FUNC
