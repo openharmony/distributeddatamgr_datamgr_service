@@ -83,7 +83,7 @@ void TestScreenManager(FuzzedDataProvider &provider)
 void SyncStrategiesFuzz(FuzzedDataProvider &provider)
 {
     int32_t user = provider.ConsumeIntegral<int32_t>();
-    std::string bundleName = provider.ConsumeRandomLengthString(); 
+    std::string bundleName = provider.ConsumeRandomLengthString();
     NetworkSyncStrategy strategy;
     StoreInfo storeInfo;
     storeInfo.user = user;
