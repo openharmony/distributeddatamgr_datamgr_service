@@ -1153,13 +1153,11 @@ HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level1)
  */
 HWTEST_F(CloudDataTest, InitNotifier001, TestSize.Level1)
 {
-    std::string bundleName = "";
     sptr<IRemoteObject> notifier = nullptr;
-    auto ret = cloudServiceImpl_->InitNotifier(bundleName, notifier);
+    auto ret = cloudServiceImpl_->InitNotifier(notifier);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
 
-    bundleName = "bundleName";
-    ret = cloudServiceImpl_->InitNotifier(bundleName, notifier);
+    ret = cloudServiceImpl_->InitNotifier(notifier);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
 }
 

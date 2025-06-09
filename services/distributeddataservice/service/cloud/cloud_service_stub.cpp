@@ -345,14 +345,12 @@ int32_t CloudServiceStub::OnCloudSync(MessageParcel &data, MessageParcel &reply)
 
 int32_t CloudServiceStub::OnInitNotifier(MessageParcel &data, MessageParcel &reply)
 {
-    std::string bundleName;
     sptr<IRemoteObject> notifier = nullptr;
-    if (!ITypesUtil::Unmarshal(data, bundleName, notifier) || notifier == nullptr) {
-        ZLOGE("Unmarshal failed, bundleName:%{public}s, notifier is nullptr?[%{public}u]",
-            bundleName.c_str(), notifier == nullptr);
+    if (!ITypesUtil::Unmarshal(data, notifier) || notifier == nullptr) {
+        ZLOGE("Unmarshal failed, notifier is nullptr?[%{public}u]", notifier == nullptr);
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto status = InitNotifier(bundleName, notifier);
+    auto status = InitNotifier(notifier);
     return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData

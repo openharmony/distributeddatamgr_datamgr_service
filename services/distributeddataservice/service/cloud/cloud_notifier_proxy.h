@@ -32,7 +32,7 @@ public:
     explicit CloudNotifierProxy(const sptr<IRemoteObject>& object);
     virtual ~CloudNotifierProxy() noexcept;
 
-    int32_t OnComplete(uint32_t seqNum, Details &&result) override;
+    int32_t OnComplete(uint32_t seqNum, DistributedRdb::Details &&result) override;
 
 private:
     static inline BrokerDelegator<CloudNotifierProxy> delegator_;

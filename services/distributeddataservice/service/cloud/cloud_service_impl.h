@@ -29,7 +29,6 @@
 #include "cloud_service_stub.h"
 #include "dfx/dfx_types.h"
 #include "feature/static_acts.h"
-#include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "sync_manager.h"
 #include "values_bucket.h"
@@ -56,8 +55,7 @@ public:
     int32_t SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values) override;
     int32_t CloudSync(const std::string &bundleName, const std::string &storeId, const Option &option,
         const AsyncDetail &async) override;
-    int32_t InitNotifier(const std::string &bundleName, sptr<IRemoteObject> notifier) override;
-    int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
+    int32_t InitNotifier(sptr<IRemoteObject> notifier) override;
 
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string &storeId,
         const DistributedRdb::PredicatesMemo &predicates, const std::vector<std::string> &columns,
@@ -137,7 +135,6 @@ private:
         SyncAgent() = default;
         sptr<CloudNotifierProxy> notifier_;
     };
-    using SyncAgents = std::map<int32_t, SyncAgent>;
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
     static HapInfo GetHapInfo(uint32_t tokenId);
@@ -167,7 +164,7 @@ private:
     static std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
 
-    void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
+    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result);
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
     std::map<std::string, StatisticInfos> ExecuteStatistics(
@@ -218,7 +215,7 @@ private:
     uint64_t expireTime_ = static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
             .count());
-    ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
+    ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
