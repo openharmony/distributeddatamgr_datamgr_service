@@ -73,27 +73,27 @@ void AllocAndSetHapToken()
 
 void TestScreenManager(FuzzedDataProvider &provider)
 {
-   ScreenManager::GetInstance()->Subscribe(nullptr);
-   ScreenManager::GetInstance()->Unsubscribe(nullptr);
-   ScreenManager::GetInstance()->BindExecutor(nullptr);
-   ScreenManager::GetInstance()->SubscribeScreenEvent();
-   ScreenManager::GetInstance()->UnsubscribeScreenEvent();
+    ScreenManager::GetInstance()->Subscribe(nullptr);
+    ScreenManager::GetInstance()->Unsubscribe(nullptr);
+    ScreenManager::GetInstance()->BindExecutor(nullptr);
+    ScreenManager::GetInstance()->SubscribeScreenEvent();
+    ScreenManager::GetInstance()->UnsubscribeScreenEvent();
 }
 
 void SyncStrategiesFuzz(FuzzedDataProvider &provider)
 {
-  int32_t user = provider.ConsumeIntegral<int32_t>();
-  std::string bundleName = provider.ConsumeRandomLengthString(); 
-  NetworkSyncStrategy strategy;
-  StoreInfo storeInfo;
-  storeInfo.user = user;
-  storeInfo.bundleName = bundleName;
-  strategy.CheckSyncAction(storeInfo);
+    int32_t user = provider.ConsumeIntegral<int32_t>();
+    std::string bundleName = provider.ConsumeRandomLengthString(); 
+    NetworkSyncStrategy strategy;
+    StoreInfo storeInfo;
+    storeInfo.user = user;
+    storeInfo.bundleName = bundleName;
+    strategy.CheckSyncAction(storeInfo);
 }
 
 void SyncStrategiesFuzz001(FuzzedDataProvider &provider)
 {
-    uint32_t strategy = provider.ConsumeIntegral<uint32_t>(); 
+    uint32_t strategy = provider.ConsumeIntegral<uint32_t>();
     NetworkSyncStrategy strategyInstance;
     strategyInstance.Check(strategy);
 }
@@ -104,11 +104,11 @@ void SyncStrategiesFuzz002(FuzzedDataProvider &provider)
     std::string bundleName = provider.ConsumeRandomLengthString();
     NetworkSyncStrategy strategyInstance;
     strategyInstance.GetStrategy(user, bundleName);
-    strategyInstance.Getkey(user);
+    strategyInstance.GetKey(user);
+
     NetworkSyncStrategy::StrategyInfo info;
     info.user = 1;
     info.bundleName = "StrategyInfo";
-    info.Marshal(nullptr);
     Serializable::json node;
     std::string key = provider.ConsumeRandomLengthString();
     std::string valueStr = provider.ConsumeRandomLengthString();
@@ -119,7 +119,7 @@ void SyncStrategiesFuzz002(FuzzedDataProvider &provider)
     node[key] = valueStr;
     node["integer"] = valueInt;
     node["float"] = valueFloat;
-    node["bool"] = valueBool;
+    node["boolean"] = valueBool;
     node["range"] = valueRange;
     info.Marshal(node);
     info.Unmarshal(node);
@@ -141,7 +141,7 @@ void StoreDebugInfoFuzz(FuzzedDataProvider &provider)
     node[key] = valueStr;
     node["integer"] = valueInt;
     node["float"] = valueFloat;
-    node["bool"] = valueBool;
+    node["boolean"] = valueBool;
     node["range"] = valueRange;
     fileInfo.Marshal(node);
     fileInfo.Unmarshal(node);
