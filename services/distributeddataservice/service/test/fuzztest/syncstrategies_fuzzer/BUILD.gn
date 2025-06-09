@@ -20,8 +20,8 @@ ohos_fuzztest("SyncStrategiesFuzzTest") {
   module_out_path = "datamgr_service/datamgr_service"
 
   include_dirs = [
-    "${data_service_path}/service/cloud",
     "${data_service_path}/framework/include",
+    "${data_service_path}/service/cloud",
     "${data_service_path}/service/common",
   ]
 
@@ -40,7 +40,6 @@ ohos_fuzztest("SyncStrategiesFuzzTest") {
 
   deps = [
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/cloud:distributeddata_cloud",
     "${data_service_path}/service/common:distributeddata_common",
@@ -54,6 +53,7 @@ ohos_fuzztest("SyncStrategiesFuzzTest") {
     "access_token:libtokenid_sdk",
     "c_utils:utils",
     "hilog:libhilog",
+    "kv_store:datamgr_common",
   ]
 }
 
