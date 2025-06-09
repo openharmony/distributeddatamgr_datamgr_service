@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
- #ifndef SYNCSTRATEGIES_FUZZER_H
- #define SYNCSTRATEGIES_FUZZER_H
+#ifndef SYNCSTRATEGIES_FUZZER_H
+#define SYNCSTRATEGIES_FUZZER_H
  
- #define FUZZ_PROJECT_NAME "syncstrategies_fuzzer"
+#define FUZZ_PROJECT_NAME "syncstrategies_fuzzer"
  
- #endif // SYNCSTRATEGIES_FUZZER_H
+#endif // SYNCSTRATEGIES_FUZZER_H
