@@ -83,8 +83,8 @@ int32_t ObjectAssetsRecvListener::OnRecvProgress(const std::string &srcNetworkId
     }
 
     auto objectKey = assetObj->dstBundleName_ + assetObj->sessionId_;
-    ZLOGI("OnRecvProgress, srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}llu,"
-        "processBytes: %{public}llu.",
+    ZLOGI("OnRecvProgress, srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}" PRIu64
+        ", processBytes: %{public}" PRIu64 ".",
         DistributedData::Anonymous::Change(srcNetworkId).c_str(), objectKey.c_str(), totalBytes, processBytes);
     return OBJECT_SUCCESS;
 }
