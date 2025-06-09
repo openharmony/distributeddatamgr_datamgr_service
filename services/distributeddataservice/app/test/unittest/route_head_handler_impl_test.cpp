@@ -47,7 +47,7 @@ using namespace OHOS::Security::AccessToken;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
 using UserInfo = DistributedDB::UserInfo;
 constexpr const char *PEER_DEVICE_ID = "PEER_DEVICE_ID";
-constexpr const char *DDMS = "distributeddata";
+constexpr const char *DDMS_APP_ID = "distributeddata";
 constexpr const char *META_DB = "service_meta";
 constexpr const char *DRAG = "drag";
 constexpr const char *OTHER_APP_ID = "test_app_id";
@@ -162,7 +162,7 @@ void RouteHeadHandlerImplTest::ParseEmptyHeadDataLen(const DistributedDB::Extend
 HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test1, TestSize.Level0)
 {
     const DistributedDB::ExtendInfo info = {
-        .appId = DDMS, .storeId = DRAG, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
+        .appId = DDMS_APP_ID, .storeId = DRAG, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
     GetEmptyHeadDataLen(info);
 }
@@ -175,7 +175,7 @@ HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test1, TestSize.Level0)
 HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test2, TestSize.Level0)
 {
     const DistributedDB::ExtendInfo info = {
-        .appId = DDMS, .storeId = META_DB, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
+        .appId = DDMS_APP_ID, .storeId = META_DB, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
     GetEmptyHeadDataLen(info);
 }
@@ -188,7 +188,7 @@ HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test2, TestSize.Level0)
 HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test1, TestSize.Level0)
 {
     const DistributedDB::ExtendInfo info = {
-        .appId = DDMS, .storeId = DRAG, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
+        .appId = DDMS_APP_ID, .storeId = DRAG, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
     GetEmptyHeadDataLen(info);
 }
@@ -201,7 +201,7 @@ HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test1, TestSize.Level0)
 HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test2, TestSize.Level0)
 {
     const DistributedDB::ExtendInfo info = {
-        .appId = DDMS, .storeId = META_DB, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
+        .appId = DDMS_APP_ID, .storeId = META_DB, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
     GetEmptyHeadDataLen(info);
 }
