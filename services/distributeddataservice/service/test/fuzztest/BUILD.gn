@@ -23,7 +23,7 @@ group("fuzztest") {
   if (datamgr_service_cloud) {
     deps += [ 
       "cloudservicestub_fuzzer:fuzztest",
-      "syncstrategies_fuzzer",
+      "syncstrategies_fuzzer:fuzztest",
     ]
   }
 
