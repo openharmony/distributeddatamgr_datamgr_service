@@ -27,6 +27,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "types.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedData {
 namespace {
 constexpr const int COPY_SIZE = 1024;
@@ -325,7 +326,7 @@ bool BackupManager::RemoveFile(const std::string &path)
         return true;
     }
     if (remove(path.c_str()) != 0) {
-        ZLOGE("remove error:%{public}d, path:%{public}s", errno, path.c_str());
+        ZLOGE("remove error:%{public}d, path:%{public}s", errno, Anonymous::Change(path).c_str());
         return false;
     }
     return true;
