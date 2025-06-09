@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 
-#define LOG_TAG "UdmfServiceImplTest"
+#define LOG_TAG "UdmfServiceImplMockTest"
 #include "udmf_service_impl.h"
 #include "gtest/gtest.h"
 #include "error_code.h"
@@ -33,70 +33,43 @@ using namespace OHOS::Security::AccessToken;
 using namespace OHOS::UDMF;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
-class UdmfServiceImplTest : public testing::Test {
+class UdmfServiceImplMockTest : public testing::Test {
 public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
+    static void SetUpTestCase(void)
+    {
+        accTokenMock = std::make_shared<AccessTokenKitMock>();
+        BAccessTokenKit::accessTokenkit = accTokenMock;
+        metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+        BMetaDataManager::metaDataManager = metaDataManagerMock;
+        metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
+        BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
+    }
+    static void TearDownTestCase(void)
+    {
+        accTokenMock = nullptr;
+        BAccessTokenKit::accessTokenkit = nullptr;
+        metaDataManagerMock = nullptr;
+        BMetaDataManager::metaDataManager = nullptr;
+        metaDataMock = nullptr;
+        BMetaData<StoreMetaData>::metaDataManager = nullptr;
+    }
     static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp() {};
+    void TearDown() {};
 };
-void UdmfServiceImplTest::SetUpTestCase()
-{
-    accTokenMock = std::make_shared<AccessTokenKitMock>();
-    BAccessTokenKit::accessTokenkit = accTokenMock;
-    metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
-    BMetaDataManager::metaDataManager = metaDataManagerMock;
-    metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
-    BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
-}
-
-void UdmfServiceImplTest::TearDownTestCase(void)
-{
-    accTokenMock = nullptr;
-    BAccessTokenKit::accessTokenkit = nullptr;
-    metaDataManagerMock = nullptr;
-    BMetaDataManager::metaDataManager = nullptr;
-    metaDataMock = nullptr;
-    BMetaData<StoreMetaData>::metaDataManager = nullptr;
-}
-
-/**
-* @tc.name: TransferToEntriesIfNeedTest001
-* @tc.desc: TransferToEntriesIfNeed test
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level0)
-{
-    UnifiedData data;
-    QueryOption query;
-    auto record1 = std::make_shared<UnifiedRecord>();
-    auto record2 = std::make_shared<UnifiedRecord>();
-    data.AddRecord(record1);
-    data.AddRecord(record2);
-    auto properties = std::make_shared<UnifiedDataProperties>();
-    properties->tag = "records_to_entries_data_format";
-    data.SetProperties(properties);
-    query.tokenId = 1;
-    UdmfServiceImpl udmfServiceImpl;
-    udmfServiceImpl.TransferToEntriesIfNeed(query, data);
-    EXPECT_TRUE(data.IsNeedTransferToEntries());
-    int recordSize = 2;
-    EXPECT_EQ(data.GetRecords().size(), recordSize);
-}
 
 /**
 * @tc.name: IsNeedMetaSyncTest001
 * @tc.desc: IsNeedMetaSync test
 * @tc.type: FUNC
 */
-HWTEST_F(UdmfServiceImplTest, IsNeedMetaSyncTest001, TestSize.Level0)
+HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest001, TestSize.Level0)
 {
     UdmfServiceImpl udmfServiceImpl;
     StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
@@ -132,7 +105,7 @@ HWTEST_F(UdmfServiceImplTest, IsNeedMetaSyncTest001, TestSize.Level0)
 * @tc.desc: IsNeedMetaSync test matrix mask
 * @tc.type: FUNC
 */
-HWTEST_F(UdmfServiceImplTest, IsNeedMetaSyncTest002, TestSize.Level0)
+HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest002, TestSize.Level0)
 {
     QueryOption query;
     query.key = "test_key";
@@ -155,7 +128,7 @@ HWTEST_F(UdmfServiceImplTest, IsNeedMetaSyncTest002, TestSize.Level0)
  * @tc.desc: ResolveAutoLaunch test.
  * @tc.type: FUNC
  */
-HWTEST_F(UdmfServiceImplTest, ResolveAutoLaunchTest001, TestSize.Level0)
+HWTEST_F(UdmfServiceImplMockTest, ResolveAutoLaunchTest001, TestSize.Level0)
 {
     auto store = StoreCache::GetInstance().GetStore("drag");
     auto ret = store->Init();
