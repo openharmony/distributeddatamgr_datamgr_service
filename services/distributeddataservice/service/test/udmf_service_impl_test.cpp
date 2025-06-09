@@ -15,19 +15,76 @@
 
 #define LOG_TAG "UdmfServiceImplTest"
 #include "udmf_service_impl.h"
+#include "accesstoken_kit.h"
+#include "bootstrap.h"
+#include "device_manager_adapter.h"
+#include "executor_pool.h"
 #include "gtest/gtest.h"
-#include "error_code.h"
+#include "ipc_skeleton.h"
+#include "kvstore_meta_manager.h"
+#include "metadata/meta_data_manager.h"
+#include "nativetoken_kit.h"
+#include "preprocess_utils.h"
+#include "runtime_store.h"
 #include "text.h"
+#include "token_setproc.h"
 
-using namespace OHOS::DistributedData;
-namespace OHOS::UDMF {
 using namespace testing::ext;
+using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
+using namespace OHOS::UDMF;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using Entry = DistributedDB::Entry;
+using Key = DistributedDB::Key;
+using Value = DistributedDB::Value;
+using UnifiedData = OHOS::UDMF::UnifiedData;
+using Summary =  OHOS::UDMF::Summary;
+namespace OHOS::Test {
+namespace DistributedDataTest {
+
+static void GrantPermissionNative()
+{
+    const char **perms = new const char *[3];
+    perms[0] = "ohos.permission.DISTRIBUTED_DATASYNC";
+    perms[1] = "ohos.permission.ACCESS_SERVICE_DM";
+    perms[2] = "ohos.permission.MONITOR_DEVICE_NETWORK_STATE"; // perms[2] is a permission parameter
+    TokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 3,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "distributed_data_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    AccessTokenKit::ReloadNativeTokenInfo();
+    delete[] perms;
+}
+
 class UdmfServiceImplTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {}
-    static void TearDownTestCase(void) {}
-    void SetUp() {}
-    void TearDown() {}
+    static void SetUpTestCase(void)
+    {
+        GrantPermissionNative();
+        DistributedData::Bootstrap::GetInstance().LoadComponents();
+        DistributedData::Bootstrap::GetInstance().LoadDirectory();
+        DistributedData::Bootstrap::GetInstance().LoadCheckers();
+        size_t max = 2;
+        size_t min = 1;
+        auto executors = std::make_shared<OHOS::ExecutorPool>(max, min);
+        DmAdapter::GetInstance().Init(executors);
+        DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+        DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+        DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+    }
+    static void TearDownTestCase(void){};
+    void SetUp(){};
+    void TearDown(){};
+
+    const std::string STORE_ID = "drag";
 };
 
 /**
@@ -211,9 +268,68 @@ HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
     std::string account = "OH_ACCOUNT_test";
     UdmfServiceImpl udmfServiceImpl;
     auto status = udmfServiceImpl.OnUserChange(code, user, account);
-    ASSERT_EQ(status, E_OK);
+    ASSERT_EQ(status, UDMF::E_OK);
     auto sizeAfter = StoreCache::GetInstance().stores_.Size();
     ASSERT_EQ(sizeAfter, 0);
+}
+
+/**
+* @tc.name: SaveMetaData001
+* @tc.desc: Abnormal testcase of GetRuntime
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, SaveMetaData001, TestSize.Level0)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    
+    result = store->Init();
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name: SaveMetaData001
+* @tc.desc: Abnormal testcase of GetRuntime
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, SyncTest001, TestSize.Level0)
+{
+    QueryOption query;
+    query.key = "udmf://drag/ohos.test.demo1/_aS6adWi7<Dehfffffffffffffffff";
+    query.tokenId = 1;
+    query.intention  = UD_INTENTION_DRAG;
+    UdmfServiceImpl udmfServiceImpl;
+    StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
+    std::vector<std::string> devices = {"remote_device"};
+
+    auto ret = udmfServiceImpl.Sync(query, devices);
+    EXPECT_EQ(ret, UDMF::E_DB_ERROR);
+}
+
+/**
+* @tc.name: ResolveAutoLaunch001
+* @tc.desc: test ResolveAutoLaunch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, ResolveAutoLaunch001, TestSize.Level0)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    
+    DistributedDB::AutoLaunchParam param {
+        .userId = "100",
+        .appId = "distributeddata",
+        .storeId = "drag",
+    };
+    std::string identifier = "identifier";
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    auto ret = udmfServiceImpl->ResolveAutoLaunch(identifier, param);
+    EXPECT_EQ(ret, UDMF::E_OK);
 }
 
 /**
@@ -240,7 +356,6 @@ HWTEST_F(UdmfServiceImplTest, TransferToEntriesIfNeedTest001, TestSize.Level1)
     int recordSize = 2;
     EXPECT_EQ(data.GetRecords().size(), recordSize);
 }
-
 /**
  * @tc.name: IsValidInput001
  * @tc.desc: invalid unifiedData
@@ -316,5 +431,5 @@ HWTEST_F(UdmfServiceImplTest, IsValidInput004, TestSize.Level1)
     bool result = impl.IsValidInput(query, unifiedData, key);
     EXPECT_FALSE(result);
 }
-
-}; // namespace UDMF
+}; // namespace DistributedDataTest
+}; // namespace OHOS::Test

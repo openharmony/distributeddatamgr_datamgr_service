@@ -24,6 +24,7 @@
 #include "account/account_delegate.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/appid_meta_data.h"
+#include "metadata/store_meta_data.h"
 #include "device_manager_adapter.h"
 #include "bootstrap.h"
 #include "directory/directory_manager.h"
@@ -34,6 +35,7 @@ namespace OHOS {
 namespace UDMF {
 using namespace RadarReporter;
 using namespace DistributedDB;
+using namespace OHOS::DistributedData;
 using Anonymous = OHOS::DistributedData::Anonymous;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 constexpr const char *SUMMARY_SUFIX = "#summary";
@@ -475,11 +477,11 @@ bool RuntimeStore::BuildMetaDataParam(DistributedData::StoreMetaData &metaData)
     metaData.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.tokenId = token;
     metaData.securityLevel = DistributedKv::SecurityLevel::S1;
-    metaData.area = DistributedKv::Area::EL1;
+    metaData.area = DistributedKv::Area::EL2;
     metaData.uid = static_cast<int32_t>(getuid());
-    metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
+    metaData.storeType = StoreMetaData::StoreType::STORE_UDMF_BEGIN;
     metaData.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
-    metaData.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(metaData);
+    metaData.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
 
     return true;
 }
@@ -497,21 +499,23 @@ bool RuntimeStore::SaveMetaData()
         ZLOGE("QueryForegroundUserId failed.");
         return false;
     }
-
-    saveMeta.dataDir.append("/").append(std::to_string(foregroundUserId));
+    saveMeta.user = std::to_string(foregroundUserId);
+    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
-        ZLOGE("Create directory error");
+        ZLOGE("Create directory error, dataDir: %{public}s.", Anonymous::Change(saveMeta.dataDir).c_str());
         return false;
     }
 
-    SetDelegateManager(saveMeta.dataDir, saveMeta.appId, saveMeta.user, std::to_string(foregroundUserId));
+    SetDelegateManager(saveMeta.dataDir, saveMeta.appId, saveMeta.user);
 
     DistributedData::StoreMetaData loadLocal;
     DistributedData::StoreMetaData syncMeta;
     if (DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), loadLocal, true) &&
         DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), syncMeta, false)) {
-        ZLOGD("Meta data is already saved.");
-        return true;
+        if (loadLocal == saveMeta && syncMeta == saveMeta) {
+            ZLOGD("Meta data is already saved.");
+            return true;
+        }
     }
 
     auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
@@ -531,10 +535,9 @@ bool RuntimeStore::SaveMetaData()
     return true;
 }
 
-void RuntimeStore::SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId,
-    const std::string &subUser)
+void RuntimeStore::SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId)
 {
-    delegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>(appId, userId, subUser);
+    delegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>(appId, userId);
     DistributedDB::KvStoreConfig kvStoreConfig { dataDir };
     auto status = delegateManager_->SetKvStoreConfig(kvStoreConfig);
     if (status != DBStatus::OK) {

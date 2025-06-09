@@ -192,6 +192,33 @@ HWTEST_F(DirectoryManagerTest, GetKVDBBackupPath, TestSize.Level0)
 }
 
 /**
+* @tc.name: GetUdmfPath
+* @tc.desc: test get udmf store path
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DirectoryManagerTest, GetUdmfStorePath, TestSize.Level0)
+{
+    StoreMetaData metaData;
+    metaData.user = "100";
+    metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    metaData.storeId = "drag";
+    metaData.securityLevel = SecurityLevel::S2;
+    metaData.tokenId = GetAccessTokenId(&tokenParam_);
+    metaData.area = DistributedKv::Area::EL2;
+    metaData.uid = static_cast<int32_t>(getuid());
+    metaData.storeType = StoreMetaData::StoreType::STORE_UDMF_BEGIN;
+    metaData.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
+    metaData.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
+    metaData.dataDir = "/data/service/el2/100/database/distributeddata/other";
+    auto path = DirectoryManager::GetInstance().GetStorePath(metaData);
+    EXPECT_EQ(path, metaData.dataDir);
+    auto res = DistributedData::DirectoryManager::GetInstance().CreateDirectory(path);
+    EXPECT_EQ(res, true);
+}
+
+/**
 * @tc.name: GetStorageMetaPath
 * @tc.desc: test get meta store dir
 * @tc.type: FUNC

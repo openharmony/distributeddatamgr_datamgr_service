@@ -348,6 +348,7 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test1, TestSize.Level1)
     RouteHeadHandlerImpl routeHeadHandlerImpl(info);
     uint32_t headSize = 0;
     routeHeadHandlerImpl.appId_ = Bootstrap::GetInstance().GetProcessLabel();
+    routeHeadHandlerImpl.storeId_ = Bootstrap::GetInstance().GetMetaDBName();
     auto status = routeHeadHandlerImpl.GetHeadDataSize(headSize);
     EXPECT_EQ(status, DistributedDB::OK);
     EXPECT_EQ(headSize, 0);

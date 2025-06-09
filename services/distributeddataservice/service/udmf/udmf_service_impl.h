@@ -19,6 +19,7 @@
 #include "store_cache.h"
 #include "udmf_service_stub.h"
 #include "kv_store_delegate_manager.h"
+#include "metadata/store_meta_data.h"
 #include "checker_manager.h"
 #include "udmf_notifier_proxy.h"
 namespace OHOS {
@@ -55,6 +56,8 @@ public:
     int32_t GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
         sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData) override;
 private:
+    bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
+    int32_t StoreSync(const UnifiedKey &key, const QueryOption &query, const std::vector<std::string> &devices);
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
     int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);

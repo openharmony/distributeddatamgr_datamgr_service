@@ -288,6 +288,7 @@ bool DirectoryManager::CreateDirectory(const std::string &path) const
 
         if (access(subPath.c_str(), F_OK) != 0) {
             if (mkdir(subPath.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) != 0) {
+                ZLOGE("mkdir error:%{public}d", errno);
                 return false;
             }
         }

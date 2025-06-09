@@ -54,8 +54,7 @@ private:
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> delegateManager_ = nullptr;
     std::shared_ptr<DistributedDB::KvStoreNbDelegate> kvStore_;
     std::string storeId_;
-    void SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId,
-        const std::string &subUser);
+    void SetDelegateManager(const std::string &dataDir, const std::string &appId, const std::string &userId);
     bool SaveMetaData();
     Status GetEntries(const std::string &dataPrefix, std::vector<DistributedDB::Entry> &entries);
     Status PutEntries(const std::vector<DistributedDB::Entry> &entries);

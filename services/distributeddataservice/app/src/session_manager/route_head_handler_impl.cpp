@@ -73,6 +73,11 @@ void RouteHeadHandlerImpl::Init()
             userId_ = DEFAULT_USERID;
         }
     }
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()) {
+        int foregroundUserId = 0;
+        AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+        userId_ = std::to_string(foregroundUserId);
+    }
     SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
         static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_,
         AccountDelegate::GetInstance()->GetCurrentAccountId() };
@@ -96,7 +101,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 {
     ZLOGD("begin");
     headSize = 0;
-    if (appId_ == Bootstrap::GetInstance().GetProcessLabel()) {
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ == Bootstrap::GetInstance().GetMetaDBName()) {
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
@@ -121,6 +126,11 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
     if (peerCap.version == CapMetaData::INVALID_VERSION) {
         // older versions ignore pack extend head
         ZLOGI("ignore older version device");
+        return DistributedDB::OK;
+    }
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
+        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
+        ZLOGI("ignore older version device for udmf or object");
         return DistributedDB::OK;
     }
     if (!session_.IsValid()) {
@@ -274,6 +284,19 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
         ZLOGI("other type device received. device:%{public}s", Anonymous::Change(device).c_str());
         return true;
     }
+    
+    bool flag = false;
+    auto peerCap = UpgradeManager::GetInstance().GetCapability(device, flag);
+    if (!flag) {
+        ZLOGI("get peer cap failed");
+        return false;
+    }
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
+        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
+        ZLOGI("ignore older version device for udmf or object");
+        return false;
+    }
+
     RouteHead head = { 0 };
     auto ret = UnPackDataHead(data, totalLen, head);
     headSize = ret ? sizeof(RouteHead) + head.dataLen : 0;

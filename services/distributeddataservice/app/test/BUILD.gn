@@ -375,6 +375,106 @@ ohos_unittest("UpgradeManagerTest") {
   part_name = "datamgr_service"
 }
 
+ohos_unittest("RouteHeadHandlerImplTest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/permission",
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/data_share/common",
+    "${data_service_path}/service/directory/include",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/app/src/session_manager",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/test/mock",
+    "../include",
+    "../src",
+    "../src/security",
+    "unittest",
+    "../src/installer",
+    "../../service/backup/include",
+    "../../../../interfaces/innerkits/distributeddata",
+    "../../service/dumper/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  sources = [
+    "../src/kvstore_meta_manager.cpp",
+    "../src/session_manager/route_head_handler_impl.cpp",
+    "../src/session_manager/session_manager.cpp",
+    "../src/session_manager/upgrade_manager.cpp",
+    "unittest/route_head_handler_impl_test.cpp",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+
+  cflags_cc = [ "-DUT_TEST" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "file_api:securitylabel",
+    "googletest:gmock",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "cJSON:cjson",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  if (datamgr_service_power) {
+    external_deps += [
+      "battery_manager:batterysrv_client",
+      "power_manager:powermgr_client",
+    ]
+  }
+
+  deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
+  ]
+  
+  cflags = [
+    "-Werror",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+  ldflags = [ "-Wl,--whole-archive" ]
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
+
+  part_name = "datamgr_service"
+}
+
 ###############################################################################
 
 group("unittest") {
@@ -387,5 +487,6 @@ group("unittest") {
     ":KvStoreDataServiceTest",
     ":SessionManagerTest",
     ":UpgradeManagerTest",
+    ":RouteHeadHandlerImplTest",
   ]
 }
