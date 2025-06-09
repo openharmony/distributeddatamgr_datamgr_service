@@ -155,10 +155,9 @@ void RouteHeadHandlerImplTest::ParseEmptyHeadDataLen(const DistributedDB::Extend
 }
 
 /**
-  * @tc.name: PackAndUnPack05
+  * @tc.name: GetEmptyHeadDataLen_Test1
   * @tc.desc: test get udmf store
   * @tc.type: FUNC
-  * @tc.require:
   */
 HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test1, TestSize.Level0)
 {
@@ -169,10 +168,9 @@ HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test1, TestSize.Level0)
 }
 
 /**
-  * @tc.name: PackAndUnPack05
-  * @tc.desc: test get udmf store
+  * @tc.name: GetEmptyHeadDataLen_Test2
+  * @tc.desc: test meta db
   * @tc.type: FUNC
-  * @tc.require:
   */
 HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test2, TestSize.Level0)
 {
@@ -183,10 +181,9 @@ HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test2, TestSize.Level0)
 }
 
 /**
-  * @tc.name: PackAndUnPack05
+  * @tc.name: ParseEmptyHeadDataLen_Test1
   * @tc.desc: test get udmf store
   * @tc.type: FUNC
-  * @tc.require:
   */
 HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test1, TestSize.Level0)
 {
@@ -197,10 +194,9 @@ HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test1, TestSize.Level0)
 }
 
 /**
-  * @tc.name: PackAndUnPack05
-  * @tc.desc: test get udmf store
+  * @tc.name: ParseEmptyHeadDataLen_Test2
+  * @tc.desc: test get meta db
   * @tc.type: FUNC
-  * @tc.require:
   */
 HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test2, TestSize.Level0)
 {
@@ -211,10 +207,9 @@ HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test2, TestSize.Level0)
 }
 
 /**
-  * @tc.name: PackAndUnPack05
-  * @tc.desc: test get udmf store
+  * @tc.name: ParseEmptyHeadDataLen_Test3
+  * @tc.desc: test OTHER_APP_ID
   * @tc.type: FUNC
-  * @tc.require:
   */
 HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test3, TestSize.Level0)
 {
@@ -225,10 +220,10 @@ HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test3, TestSize.Level0)
 }
 
 /**
-  * @tc.name: PackAndUnPack05
-  * @tc.desc: test get udmf store
+  * @tc.name: ParseEmptyHeadDataLen_Test4
+  * @tc.desc: test get OTHER_APP_ID and meta db
   * @tc.type: FUNC
-  * @tc.require:
+
   */
 HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test4, TestSize.Level0)
 {
@@ -237,5 +232,4 @@ HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test4, TestSize.Level0)
     };
     GetEmptyHeadDataLen(info);
 }
-
 } // namespace
