@@ -30,7 +30,6 @@
 #include "token_setproc.h"
 
 using namespace testing::ext;
-using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using namespace OHOS::UDMF;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
@@ -302,7 +301,7 @@ HWTEST_F(UdmfServiceImplTest, SyncTest001, TestSize.Level0)
     query.tokenId = 1;
     query.intention  = UD_INTENTION_DRAG;
     UdmfServiceImpl udmfServiceImpl;
-    StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
+    DistributedData::StoreMetaData meta = DistributedData::StoreMetaData("100", "distributeddata", "drag");
     std::vector<std::string> devices = {"remote_device"};
 
     auto ret = udmfServiceImpl.Sync(query, devices);

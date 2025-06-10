@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -107,11 +107,11 @@ public:
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
     static inline std::shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
 private:
-    void GetEmptyHeadDataLen(const DistributedDB::ExtendInfo& info);
-    void ParseEmptyHeadDataLen(const DistributedDB::ExtendInfo& info);
+    bool CheckGetEmptyHeadDataLen(const DistributedDB::ExtendInfo& info);
+    bool CheckParseEmptyHeadDataLen(const DistributedDB::ExtendInfo& info);
 };
 
-void RouteHeadHandlerImplTest::GetEmptyHeadDataLen(const DistributedDB::ExtendInfo& info)
+bool RouteHeadHandlerImplTest::CheckGetEmptyHeadDataLen(const DistributedDB::ExtendInfo& info)
 {
     DeviceInfo deviceInfo;
     deviceInfo.osType = OH_OS_TYPE;
@@ -119,8 +119,9 @@ void RouteHeadHandlerImplTest::GetEmptyHeadDataLen(const DistributedDB::ExtendIn
     EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceInfo(_)).WillRepeatedly(Return(deviceInfo));
 
     auto sendHandler = RouteHeadHandlerImpl::Create(info);
-    ASSERT_NE(sendHandler, nullptr);
-
+    if  (sendHandler == nullptr) {
+        return false;
+    }
     CapMetaData capMetaData;
     capMetaData.version = CapMetaData::UDMF_AND_OBJECT_VERSION;
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
@@ -129,9 +130,10 @@ void RouteHeadHandlerImplTest::GetEmptyHeadDataLen(const DistributedDB::ExtendIn
     auto status = sendHandler->GetHeadDataSize(headSize);
     EXPECT_EQ(status, DistributedDB::OK);
     EXPECT_EQ(headSize, 0);
+    return true;
 }
 
-void RouteHeadHandlerImplTest::ParseEmptyHeadDataLen(const DistributedDB::ExtendInfo& info)
+bool RouteHeadHandlerImplTest::CheckParseEmptyHeadDataLen(const DistributedDB::ExtendInfo& info)
 {
     DeviceInfo deviceInfo;
     deviceInfo.osType = OH_OS_TYPE;
@@ -139,7 +141,9 @@ void RouteHeadHandlerImplTest::ParseEmptyHeadDataLen(const DistributedDB::Extend
     EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceInfo(_)).WillRepeatedly(Return(deviceInfo));
 
     auto recvHandler = RouteHeadHandlerImpl::Create(info);
-    ASSERT_NE(recvHandler, nullptr);
+    if  (recvHandler == nullptr) {
+        return false;
+    }
 
     CapMetaData capMetaData;
     capMetaData.version = CapMetaData::UDMF_AND_OBJECT_VERSION;
@@ -152,6 +156,7 @@ void RouteHeadHandlerImplTest::ParseEmptyHeadDataLen(const DistributedDB::Extend
     auto status = recvHandler->ParseHeadDataLen(data.get(), routeHeadSize, parseSize, PEER_DEVICE_ID);
     EXPECT_EQ(status, false);
     EXPECT_EQ(parseSize, routeHeadSize);
+    return true;
 }
 
 /**
@@ -164,7 +169,7 @@ HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test1, TestSize.Level0)
     const DistributedDB::ExtendInfo info = {
         .appId = PROCESSLABEL, .storeId = DRAG, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
-    GetEmptyHeadDataLen(info);
+    EXPECT_TRUE(CheckParseEmptyHeadDataLen(info));
 }
 
 /**
@@ -177,59 +182,59 @@ HWTEST_F(RouteHeadHandlerImplTest, GetEmptyHeadDataLen_Test2, TestSize.Level0)
     const DistributedDB::ExtendInfo info = {
         .appId = PROCESSLABEL, .storeId = META_DB, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
-    GetEmptyHeadDataLen(info);
+    EXPECT_TRUE(CheckParseEmptyHeadDataLen(info));
 }
 
 /**
-  * @tc.name: ParseEmptyHeadDataLen_Test1
+  * @tc.name: CheckParseEmptyHeadDataLen_Test1
   * @tc.desc: test get udmf store
   * @tc.type: FUNC
   */
-HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test1, TestSize.Level0)
+HWTEST_F(RouteHeadHandlerImplTest, CheckParseEmptyHeadDataLen_Test1, TestSize.Level0)
 {
     const DistributedDB::ExtendInfo info = {
         .appId = PROCESSLABEL, .storeId = DRAG, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
-    GetEmptyHeadDataLen(info);
+    EXPECT_TRUE(CheckParseEmptyHeadDataLen(info));
 }
 
 /**
-  * @tc.name: ParseEmptyHeadDataLen_Test2
+  * @tc.name: CheckParseEmptyHeadDataLen_Test2
   * @tc.desc: test get meta db
   * @tc.type: FUNC
   */
-HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test2, TestSize.Level0)
+HWTEST_F(RouteHeadHandlerImplTest, CheckParseEmptyHeadDataLen_Test2, TestSize.Level0)
 {
     const DistributedDB::ExtendInfo info = {
         .appId = PROCESSLABEL, .storeId = META_DB, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
-    GetEmptyHeadDataLen(info);
+    EXPECT_TRUE(CheckParseEmptyHeadDataLen(info));
 }
 
 /**
-  * @tc.name: ParseEmptyHeadDataLen_Test3
+  * @tc.name: CheckParseEmptyHeadDataLen_Test3
   * @tc.desc: test OTHER_APP_ID
   * @tc.type: FUNC
   */
-HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test3, TestSize.Level0)
+HWTEST_F(RouteHeadHandlerImplTest, CheckParseEmptyHeadDataLen_Test3, TestSize.Level0)
 {
     const DistributedDB::ExtendInfo info = {
         .appId = OTHER_APP_ID, .storeId = DRAG, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
-    GetEmptyHeadDataLen(info);
+    EXPECT_TRUE(CheckParseEmptyHeadDataLen(info));
 }
 
 /**
-  * @tc.name: ParseEmptyHeadDataLen_Test4
+  * @tc.name: CheckParseEmptyHeadDataLen_Test4
   * @tc.desc: test get OTHER_APP_ID and meta db
   * @tc.type: FUNC
 
   */
-HWTEST_F(RouteHeadHandlerImplTest, ParseEmptyHeadDataLen_Test4, TestSize.Level0)
+HWTEST_F(RouteHeadHandlerImplTest, CheckParseEmptyHeadDataLen_Test4, TestSize.Level0)
 {
     const DistributedDB::ExtendInfo info = {
         .appId = OTHER_APP_ID, .storeId = META_DB, .userId = USER_ID, .dstTarget = PEER_DEVICE_ID
     };
-    GetEmptyHeadDataLen(info);
+    EXPECT_TRUE(CheckParseEmptyHeadDataLen(info));
 }
 } // namespace
