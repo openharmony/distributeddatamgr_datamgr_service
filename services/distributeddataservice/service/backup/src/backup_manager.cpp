@@ -281,7 +281,8 @@ BackupManager::ClearType BackupManager::GetClearType(const StoreMetaData &meta)
 
 void BackupManager::CopyFile(const std::string &oldPath, const std::string &newPath, bool isCreate)
 {
-    std::fstream fin, fout;
+    std::fstream fin;
+    std::fstream fout;
     if (!IsFileExist(oldPath)) {
         return;
     }
