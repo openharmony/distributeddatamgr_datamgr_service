@@ -427,7 +427,7 @@ HWTEST_F(SerializableTest, ToString, TestSize.Level1)
 
 /**
 * @tc.name: OperatorTest
-* @tc.desc: test operator=.
+* @tc.desc: test operator.
 * @tc.type: FUNC
 */
 HWTEST_F(SerializableTest, OperatorTest, TestSize.Level1)
