@@ -16,6 +16,7 @@
 
 #include "preprocess_utils.h"
 
+#include <iomanip>
 #include <sstream>
 
 #include "dds_trace.h"
