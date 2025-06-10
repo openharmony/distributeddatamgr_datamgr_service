@@ -438,7 +438,7 @@ HWTEST_F(SerializableTest, OperatorTest, TestSize.Level1)
     uint64_t type = 5;
     int64_t value = 2;
     double test = 1.75;
-    bool is_student = false;
+    bool isStudent = false;
     Serializable::JSONWrapper wrapper;
     wrapper["name"] = name;
     wrapper["count"] = count;
@@ -446,23 +446,25 @@ HWTEST_F(SerializableTest, OperatorTest, TestSize.Level1)
     wrapper["type"] = type;
     wrapper["value"] = value;
     wrapper["test"] = test;
-    wrapper["is_student"] = is_student;
+    wrapper["isStudent"] = isStudent;
     EXPECT_TRUE(wrapper["name"].is_string());
     EXPECT_TRUE(wrapper["test"].is_number_float());
     EXPECT_TRUE(wrapper["count"].is_number_integer());
     EXPECT_TRUE(wrapper["status"].is_number_unsigned());
-    EXPECT_TRUE(wrapper["is_student"].is_boolean());
+    EXPECT_TRUE(wrapper["isStudent"].is_boolean());
     std::string result = wrapper;
-    EXPECT_EQ(result, "{\"name\":\"Alice\",\"count\":-30,\"status\":1,\"type\":5,\"value\":2,\"test\":1.75,\"is_student\":false}");
-    wrapper["name"] = is_student;
+    EXPECT_EQ(result, "{\"name\":\"Alice\",\"count\":-30,\"status\":1,\"type\":"
+                      "5,\"value\":2,\"test\":1.75,\"isStudent\":false}");
+    wrapper["name"] = isStudent;
     EXPECT_TRUE(wrapper["name"].is_boolean());
     wrapper["count"] = status;
     EXPECT_TRUE(wrapper["count"].is_number_unsigned());
     wrapper["status"] = count;
     EXPECT_TRUE(wrapper["status"].is_number_integer());
-    wrapper["is_student"] = test;
+    wrapper["isStudent"] = test;
     result = wrapper;
-    EXPECT_EQ(result, "{\"name\":false,\"count\":1,\"status\":-30,\"type\":5,\"value\":2,\"test\":1.75,\"is_student\":1.75}");
+    EXPECT_EQ(result, "{\"name\":false,\"count\":1,\"status\":-30,\"type\":5,"
+                      "\"value\":2,\"test\":1.75,\"isStudent\":1.75}");
 }
  
 /**
@@ -472,17 +474,13 @@ HWTEST_F(SerializableTest, OperatorTest, TestSize.Level1)
 */
 HWTEST_F(SerializableTest, EraseTest, TestSize.Level2)
 {
- 
     Serializable::JSONWrapper wrapper;
     wrapper = std::map<std::string, std::string>{
         {"name", "John"}, {"age", "30"}, {"city", "New York"}};
- 
     std::string res = wrapper.dump();
     EXPECT_EQ(res, "{\"age\":\"30\",\"city\":\"New York\",\"name\":\"John\"}");
- 
     bool result = wrapper.erase("age");
     ASSERT_TRUE(result);
- 
     res = wrapper.dump();
     EXPECT_EQ(res, "{\"city\":\"New York\",\"name\":\"John\"}");
 }
