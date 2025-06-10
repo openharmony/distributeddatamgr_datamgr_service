@@ -33,7 +33,7 @@ namespace DistributedData {
 struct Serializable {
 public:
     class iterator;
-    class JSONWrapper final{
+    class JSONWrapper final {
     public:
         friend iterator;
         enum class Type : uint8_t {
@@ -100,7 +100,7 @@ public:
         API_EXPORT bool operator==(const std::vector<std::string>& value) const;
         API_EXPORT bool empty() const;
         API_EXPORT JSONWrapper& operator=(const std::map<std::string, uint64_t>& value);
-        API_EXPORT JSONWrapper &operator=(const std::map<std::string, std::string>& value); 
+        API_EXPORT JSONWrapper& operator=(const std::map<std::string, std::string>& value); 
         API_EXPORT bool erase(const std::string& key);
         API_EXPORT bool erase(int index);
     private:

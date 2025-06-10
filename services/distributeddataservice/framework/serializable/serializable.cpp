@@ -291,7 +291,7 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(JSONWrapper &&js
     jsonWrapper.root_ = nullptr;
     key_ = std::move(jsonWrapper.key_);
     children_ = std::move(jsonWrapper.children_);
-	needDel_ = jsonWrapper.needDel_;
+    needDel_ = jsonWrapper.needDel_;
     return *this;
 }
 
@@ -496,7 +496,7 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(const std::vecto
         auto node = cJSON_CreateNumber(value[i]);
         if (!node || !cJSON_AddItemToArray(json_, node)) {
             cJSON_Delete(json_);
-			cJSON_Delete(node);
+            cJSON_Delete(node);
             json_ = nullptr;
             children_.clear();
             return *this;
@@ -527,7 +527,7 @@ bool Serializable::JSONWrapper::ReplaceNode(cJSON *node)
     
     if (success) {
         json_ = node;
-		children_.clear();
+        children_.clear();
     }
     return success;
 }
@@ -933,7 +933,7 @@ void Serializable::JSONWrapper::push_back(const JSONWrapper &value)
     if (is_array()) {
         cJSON *newJson = cJSON_Duplicate(value.json_, 1);
         cJSON_AddItemToArray(json_, newJson);
-        children_.push_back(std::make_shared<JSONWrapper>(newJson, json_)); 
+        children_.push_back(std::make_shared<JSONWrapper>(newJson, json_));
     }
 }
 
