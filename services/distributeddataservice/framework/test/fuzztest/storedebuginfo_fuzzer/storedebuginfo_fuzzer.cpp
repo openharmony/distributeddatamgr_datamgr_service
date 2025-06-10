@@ -15,20 +15,11 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 #include "storedebuginfo_fuzzer.h"
-#include "screen/screen_manager.h"
 #include "metadata/store_debug_info.h"
 
 using namespace OHOS::DistributedData;
 
 namespace OHOS {
-void TestScreenManager(FuzzedDataProvider &provider)
-{
-    ScreenManager::GetInstance()->Subscribe(nullptr);
-    ScreenManager::GetInstance()->Unsubscribe(nullptr);
-    ScreenManager::GetInstance()->BindExecutor(nullptr);
-    ScreenManager::GetInstance()->SubscribeScreenEvent();
-    ScreenManager::GetInstance()->UnsubscribeScreenEvent();
-}
 
 void StoreDebugInfoFuzz(FuzzedDataProvider &provider)
 {
@@ -59,7 +50,6 @@ void StoreDebugInfoFuzz(FuzzedDataProvider &provider)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
-    OHOS::TestScreenManager(provider);
     OHOS::StoreDebugInfoFuzz(provider);
     return 0;
 }
