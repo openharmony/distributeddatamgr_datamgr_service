@@ -15,7 +15,7 @@
 
 #ifndef SCREENMANAGER_FUZZER_H
 #define SCREENMANAGER_FUZZER_H
- 
+
 #define FUZZ_PROJECT_NAME "screenmanager_fuzzer"
- 
+
 #endif // SCREENMANAGER_FUZZER_H

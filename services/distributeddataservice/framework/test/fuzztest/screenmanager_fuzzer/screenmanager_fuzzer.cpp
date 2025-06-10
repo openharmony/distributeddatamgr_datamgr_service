@@ -18,7 +18,7 @@
 #include "screen/screen_manager.h"
 
 using namespace OHOS::DistributedData;
- 
+
 namespace OHOS {
 void TestScreenManager(FuzzedDataProvider &provider)
 {
@@ -28,9 +28,9 @@ void TestScreenManager(FuzzedDataProvider &provider)
     ScreenManager::GetInstance()->SubscribeScreenEvent();
     ScreenManager::GetInstance()->UnsubscribeScreenEvent();
 }
- 
+
 } // namespace OHOS
- 
+
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {

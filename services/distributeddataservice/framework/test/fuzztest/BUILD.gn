@@ -20,7 +20,6 @@ group("fuzztest") {
 
   deps = [
     "storedebuginfo_fuzzer:fuzztest",
-    "screenmanager_fuzzer:fuzztest"
+    "screenmanager_fuzzer:fuzztest",
   ]
-
 }
