@@ -271,7 +271,7 @@ int32_t KvStoreDataService::Exit(const std::string &featureName)
 }
 Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
 {
-    ZLOGI("AppExit");
+    ZLOGD("AppExit");
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
@@ -780,7 +780,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverIm
     pid_ = IPCSkeleton::GetCallingPid();
     token_ = IPCSkeleton::GetCallingTokenID();
     if (observer != nullptr) {
-        ZLOGI("add death recipient");
+        ZLOGD("add death recipient");
         observer->AddDeathRecipient(deathRecipient_);
         observerProxy_.insert_or_assign(featureName, std::move(observer));
     } else {
@@ -814,9 +814,9 @@ KvStoreDataService::KvStoreClientDeathObserverImpl &KvStoreDataService::KvStoreC
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverImpl()
 {
-    ZLOGI("~KvStoreClientDeathObserverImpl");
+    ZLOGD("~KvStoreClientDeathObserverImpl");
     if (deathRecipient_ != nullptr && !observerProxy_.empty()) {
-        ZLOGI("remove death recipient");
+        ZLOGD("remove death recipient");
         for (auto &[key, value] : observerProxy_) {
             if (value != nullptr) {
                 value->RemoveDeathRecipient(deathRecipient_);
@@ -885,7 +885,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvSto
     KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl)
     : kvStoreClientDeathObserverImpl_(kvStoreClientDeathObserverImpl)
 {
-    ZLOGI("KvStore Client Death Observer");
+    ZLOGD("KvStore Client Death Observer");
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::~KvStoreDeathRecipient()
@@ -897,7 +897,7 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::
     const wptr<IRemoteObject> &remote)
 {
     (void) remote;
-    ZLOGI("begin");
+    ZLOGD("begin");
     if (!clientDead_.exchange(true)) {
         kvStoreClientDeathObserverImpl_.NotifyClientDie();
     }
