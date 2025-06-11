@@ -854,7 +854,7 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::Reset()
 bool KvStoreDataService::KvStoreClientDeathObserverImpl::Insert(sptr<IRemoteObject> observer,
     const std::string &featureName)
 {
-    if (observerProxy_.size() < MAX_CLIENT_DEATH_OBSERVER_SIZE &&
+    if (observer != nullptr && observerProxy_.size() < MAX_CLIENT_DEATH_OBSERVER_SIZE &&
         observerProxy_.insert_or_assign(featureName, observer).second) {
         observer->AddDeathRecipient(deathRecipient_);
         return true;

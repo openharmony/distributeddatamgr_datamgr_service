@@ -377,8 +377,32 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(int32_t value)
 
 Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(uint32_t value)
 {
-    int32_t number = static_cast<int32_t>(value);
-    return operator=(number);
+    if (root_ == nullptr && cJSON_IsNull(json_)) {
+        cJSON_Delete(json_);
+        json_ = nullptr;
+    }
+    if (json_ == nullptr) {
+        json_ = cJSON_CreateNumber(static_cast<double>(value));
+        if (json_ == nullptr || root_ == nullptr) {
+            return *this;
+        }
+        AddToRoot();
+    }
+    if (json_ == nullptr) {
+        return *this;
+    }
+    if (cJSON_IsNumber(json_)) {
+        cJSON_SetNumberValue(json_, static_cast<double>(value));
+        return *this;
+    }
+    cJSON *node = cJSON_CreateNumber(static_cast<double>(value));
+    if (node == nullptr) {
+        return *this;
+    }
+    if (!ReplaceNode(node)) {
+        cJSON_Delete(node);
+    }
+    return *this;
 }
 
 Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(int64_t value)

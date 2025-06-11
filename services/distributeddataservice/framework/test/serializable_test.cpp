@@ -545,4 +545,60 @@ HWTEST_F(SerializableTest, CompareStringMap, TestSize.Level2)
     result = wrapper == testMap2;
     ASSERT_TRUE(result);
 }
+
+/**
+* @tc.name: BoundaryTest
+* @tc.desc: test boundary.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, BoundaryTest, TestSize.Level1)
+{
+    struct TestBoundary : public Serializable {
+        int32_t int32Val;
+        uint32_t uint32Val;
+        int64_t int64Val;
+        uint64_t uint64Val;
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(int32Val)], int32Val);
+            SetValue(node[GET_NAME(uint32Val)], uint32Val);
+            SetValue(node[GET_NAME(int64Val)], int64Val);
+            SetValue(node[GET_NAME(uint64Val)], uint64Val);
+            return true;
+        }
+        bool Unmarshal(const json &node) override
+        {
+            bool success = true;
+            success = GetValue(node, GET_NAME(int32Val), int32Val) && success;
+            success = GetValue(node, GET_NAME(uint32Val), uint32Val) && success;
+            success = GetValue(node, GET_NAME(int64Val), int64Val) && success;
+            success = GetValue(node, GET_NAME(uint64Val), uint64Val) && success;
+            return success;
+        }
+    };
+    TestBoundary in, out;
+    in.int32Val = INT32_MIN;
+    in.uint32Val = 0;
+    in.int64Val = -(1LL << 53) + 2;
+    in.uint64Val = 0;
+
+    auto json = Serializable::JSONWrapper::to_string(in.Marshall());
+    out.Unmarshall(json);
+    EXPECT_EQ(out.int32Val, in.int32Val);
+    EXPECT_EQ(out.uint32Val, in.uint32Val);
+    EXPECT_EQ(out.int64Val, in.int64Val);
+    EXPECT_EQ(out.uint64Val, in.uint64Val);
+
+    in.int32Val = INT32_MAX;
+    in.uint32Val = UINT32_MAX;
+    in.int64Val = (1LL << 53) - 2;
+    in.uint64Val = (1LL << 53) - 2;
+
+    json = Serializable::JSONWrapper::to_string(in.Marshall());
+    out.Unmarshall(json);
+    EXPECT_EQ(out.int32Val, in.int32Val);
+    EXPECT_EQ(out.uint32Val, in.uint32Val);
+    EXPECT_EQ(out.int64Val, in.int64Val);
+    EXPECT_EQ(out.uint64Val, in.uint64Val);
+}
 } // namespace OHOS::Test
