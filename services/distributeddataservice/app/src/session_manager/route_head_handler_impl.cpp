@@ -346,7 +346,8 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
             if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
                 int foregroundUserId = 0;
                 AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
-                UserInfo userInfo = { .receiveUser = std::to_string(foregroundUserId) };
+                UserInfo userInfo = { .receiveUser = std::to_string(foregroundUserId),
+                    .sendUser = std::to_string(session_.sourceUserId) };
                 userInfos.emplace_back(userInfo);
                 return true;
             }
