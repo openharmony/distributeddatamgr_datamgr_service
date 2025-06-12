@@ -271,7 +271,6 @@ int32_t KvStoreDataService::Exit(const std::string &featureName)
 }
 Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
 {
-    ZLOGD("AppExit");
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
@@ -821,8 +820,6 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverI
         }
     }
     if (uid_ == INVALID_UID || pid_ == INVALID_PID || token_ == INVALID_TOKEN || !appId_.IsValid()) {
-        ZLOGE("invalid params:pid:%{public}d uid:%{public}d token:%{public}u appId:%{public}s",
-            uid_, pid_, token_, Anonymous::Change(appId_.appId).c_str());
         return;
     }
     dataService_.features_.ForEachCopies([this](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
@@ -884,6 +881,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvSto
     KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl)
     : kvStoreClientDeathObserverImpl_(kvStoreClientDeathObserverImpl)
 {
+    ZLOGD("KvStore Client Death Observer");
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::~KvStoreDeathRecipient()
