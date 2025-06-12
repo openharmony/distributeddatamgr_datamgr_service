@@ -12,15 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#define LOG_TAG "RouteHeadHandler"
 #include "route_head_handler_impl.h"
 
-#define LOG_TAG "RouteHeadHandler"
 #include <chrono>
 #include <cinttypes>
-#include "account/account_delegate.h"
-#include "auth_delegate.h"
+
 #include "access_check/app_access_check_config_manager.h"
+#include "account/account_delegate.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
+#include "auth_delegate.h"
+#include "bootstrap.h"
 #include "device_manager_adapter.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
@@ -28,7 +30,6 @@
 #include "metadata/store_meta_data.h"
 #include "securec.h"
 #include "upgrade_manager.h"
-#include "bootstrap.h"
 #include "utils/anonymous.h"
 #include "utils/endian_converter.h"
 
@@ -73,13 +74,13 @@ void RouteHeadHandlerImpl::Init()
             userId_ = DEFAULT_USERID;
         }
     }
-    SessionPoint localPoint { DmAdapter::GetInstance().GetLocalDevice().uuid,
+    SessionPoint localPoint{ DmAdapter::GetInstance().GetLocalDevice().uuid,
         static_cast<uint32_t>(atoi(userId_.c_str())), appId_, storeId_,
         AccountDelegate::GetInstance()->GetCurrentAccountId() };
     session_ = SessionManager::GetInstance().GetSession(localPoint, deviceId_);
     ZLOGD("valid session:appId:%{public}s, srcDevId:%{public}s, srcUser:%{public}u, trgDevId:%{public}s,",
-          session_.appId.c_str(), Anonymous::Change(session_.sourceDeviceId).c_str(),
-          session_.sourceUserId, Anonymous::Change(session_.targetDeviceId).c_str());
+        session_.appId.c_str(), Anonymous::Change(session_.sourceDeviceId).c_str(), session_.sourceUserId,
+        Anonymous::Change(session_.targetDeviceId).c_str());
 }
 
 std::string RouteHeadHandlerImpl::GetTargetUserId()
@@ -100,9 +101,8 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
-    if(!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
-        ZLOGD("devicdId:%{public}s is not oh type",
-            Anonymous::Change(session_.targetDeviceId).c_str());
+    if (!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
+        ZLOGD("devicdId:%{public}s is not oh type", Anonymous::Change(session_.targetDeviceId).c_str());
         if (appId_.empty()) {
             return DistributedDB::DB_ERROR;
         }
@@ -127,14 +127,14 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("no valid session to peer device");
         return DistributedDB::DB_ERROR;
     }
-    size_t expectSize = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair) +
-        session_.targetUserIds.size() * sizeof(int) + sizeof(SessionAppId) + session_.appId.size() +
-        sizeof(SessionStoreId) + session_.storeId.size() + sizeof(SessionAccountId) + session_.accountId.size();
+    size_t expectSize = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair)
+                        + session_.targetUserIds.size() * sizeof(int) + sizeof(SessionAppId) + session_.appId.size()
+                        + sizeof(SessionStoreId) + session_.storeId.size() + sizeof(SessionAccountId)
+                        + session_.accountId.size();
 
     // align message uint width
     headSize = GET_ALIGNED_SIZE(expectSize, ALIGN_WIDTH);
-    auto time =
-        static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+    auto time = static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
     ZLOGI("packed size:%{public}u times %{public}" PRIu64 ".", headSize, time);
     headSize_ = headSize;
     return DistributedDB::OK;
@@ -159,8 +159,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::FillHeadData(uint8_t *data, uint32
 bool RouteHeadHandlerImpl::PackData(uint8_t *data, uint32_t totalLen)
 {
     if (headSize_ > totalLen) {
-        ZLOGE("the buffer size is not enough, headSize:%{public}d, tatalLen:%{public}d",
-            headSize_, totalLen);
+        ZLOGE("the buffer size is not enough, headSize:%{public}d, tatalLen:%{public}d", headSize_, totalLen);
         return false;
     }
 
@@ -224,8 +223,8 @@ bool RouteHeadHandlerImpl::PackAppId(uint8_t **data, const uint8_t *end)
     *data += sizeof(SessionAppId);
     auto ret = memcpy_s(appPair->appId, end - *data, session_.appId.c_str(), appIdSize);
     if (ret != EOK) {
-        ZLOGE("memcpy for app id failed, ret is %{public}d, leftSize is %{public}u, appIdSize is %{public}u",
-            ret, static_cast<uint32_t>(end - *data), appIdSize);
+        ZLOGE("memcpy for app id failed, ret is %{public}d, leftSize is %{public}u, appIdSize is %{public}u", ret,
+            static_cast<uint32_t>(end - *data), appIdSize);
         return false;
     }
     *data += appIdSize;
@@ -240,8 +239,8 @@ bool RouteHeadHandlerImpl::PackStoreId(uint8_t **data, const uint8_t *end)
     *data += sizeof(SessionStoreId);
     auto ret = memcpy_s(storePair->storeId, end - *data, session_.storeId.data(), storeIdSize);
     if (ret != EOK) {
-        ZLOGE("memcpy for store id failed, ret is %{public}d, leftSize is %{public}u, storeIdSize is %{public}u",
-            ret, static_cast<uint32_t>(end - *data), storeIdSize);
+        ZLOGE("memcpy for store id failed, ret is %{public}d, leftSize is %{public}u, storeIdSize is %{public}u", ret,
+            static_cast<uint32_t>(end - *data), storeIdSize);
         return false;
     }
     *data += storeIdSize;
@@ -263,8 +262,8 @@ bool RouteHeadHandlerImpl::PackAccountId(uint8_t **data, const uint8_t *end)
     return true;
 }
 
-bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalLen, uint32_t &headSize,
-    const std::string &device)
+bool RouteHeadHandlerImpl::ParseHeadDataLen(
+    const uint8_t *data, uint32_t totalLen, uint32_t &headSize, const std::string &device)
 {
     if (data == nullptr) {
         ZLOGE("invalid input data, totalLen:%{public}d", totalLen);
@@ -301,8 +300,8 @@ std::string RouteHeadHandlerImpl::ParseStoreId(const std::string &deviceId, cons
     return "";
 }
 
-bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t totalLen, const std::string &label,
-    std::vector<UserInfo> &userInfos)
+bool RouteHeadHandlerImpl::ParseHeadDataUser(
+    const uint8_t *data, uint32_t totalLen, const std::string &label, std::vector<UserInfo> &userInfos)
 {
     uint32_t headSize = 0;
     auto ret = UnPackData(data, totalLen, headSize);
@@ -331,12 +330,14 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
     }
 
     // flip the local and peer ends
-    SessionPoint local { .deviceId = session_.targetDeviceId, .appId = session_.appId };
-    SessionPoint peer { .deviceId = session_.sourceDeviceId, .userId = session_.sourceUserId, .appId = session_.appId,
+    SessionPoint local{ .deviceId = session_.targetDeviceId, .appId = session_.appId };
+    SessionPoint peer{ .deviceId = session_.sourceDeviceId,
+        .userId = session_.sourceUserId,
+        .appId = session_.appId,
         .accountId = session_.accountId };
     ZLOGD("valid session:appId:%{public}s, srcDevId:%{public}s, srcUser:%{public}u, trgDevId:%{public}s,",
-          session_.appId.c_str(), Anonymous::Change(session_.sourceDeviceId).c_str(),
-          session_.sourceUserId, Anonymous::Change(session_.targetDeviceId).c_str());
+        session_.appId.c_str(), Anonymous::Change(session_.sourceDeviceId).c_str(), session_.sourceUserId,
+        Anonymous::Change(session_.targetDeviceId).c_str());
     bool flag = false;
     auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.sourceDeviceId, flag);
     if (!flag) {
@@ -439,8 +440,8 @@ bool RouteHeadHandlerImpl::UnPackDataBody(const uint8_t *data, uint32_t totalLen
         ZLOGE("get peer cap failed, peer deviceId:%{public}s", Anonymous::Change(session_.sourceDeviceId).c_str());
         return false;
     }
-    if (peerCap.version >= CapMetaData::ACCOUNT_VERSION &&
-        (!UnPackStoreId(&ptr, leftSize) || !UnPackAccountId(&ptr, leftSize))) {
+    if (peerCap.version >= CapMetaData::ACCOUNT_VERSION
+        && (!UnPackStoreId(&ptr, leftSize) || !UnPackAccountId(&ptr, leftSize))) {
         return false;
     }
     return true;

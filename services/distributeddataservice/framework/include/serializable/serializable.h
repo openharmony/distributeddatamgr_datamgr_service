@@ -15,10 +15,11 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <map>
+
 #include "visibility.h"
 #ifndef JSON_NOEXCEPTION
 #define JSON_NOEXCEPTION
@@ -33,7 +34,7 @@ namespace DistributedData {
 struct Serializable {
 public:
     class iterator;
-    class JSONWrapper final{
+    class JSONWrapper final {
     public:
         friend iterator;
         enum class Type : uint8_t {
@@ -44,11 +45,11 @@ public:
         API_EXPORT JSONWrapper(cJSON *json, cJSON *root, const std::string &key = "");
         API_EXPORT JSONWrapper(const std::string &jsonStr);
         API_EXPORT JSONWrapper(JSONWrapper &&jsonWrapper);
-        
+
         API_EXPORT operator std::string() const;
         API_EXPORT bool operator==(int32_t value) const;
         API_EXPORT bool operator==(const std::string &value) const;
-        
+
         API_EXPORT JSONWrapper &operator=(JSONWrapper &&jsonWrapper);
         API_EXPORT JSONWrapper &operator=(JSONWrapper::Type type);
         API_EXPORT JSONWrapper &operator=(bool value);
@@ -95,17 +96,18 @@ public:
         API_EXPORT static JSONWrapper array();
         API_EXPORT void push_back(const JSONWrapper &value);
         API_EXPORT static std::string to_string(const JSONWrapper &jsonWrapper);
-        API_EXPORT bool operator==(const std::map<std::string, std::string>& value) const;
-        API_EXPORT bool operator==(const std::map<std::string, uint64_t>& value) const;
-        API_EXPORT bool operator==(const std::vector<std::string>& value) const;
+        API_EXPORT bool operator==(const std::map<std::string, std::string> &value) const;
+        API_EXPORT bool operator==(const std::map<std::string, uint64_t> &value) const;
+        API_EXPORT bool operator==(const std::vector<std::string> &value) const;
         API_EXPORT bool empty() const;
-        API_EXPORT JSONWrapper& operator=(const std::map<std::string, uint64_t>& value);
-        API_EXPORT JSONWrapper &operator=(const std::map<std::string, std::string>& value); 
-        API_EXPORT bool erase(const std::string& key);
+        API_EXPORT JSONWrapper &operator=(const std::map<std::string, uint64_t> &value);
+        API_EXPORT JSONWrapper &operator=(const std::map<std::string, std::string> &value);
+        API_EXPORT bool erase(const std::string &key);
         API_EXPORT bool erase(int index);
+
     private:
         void AddToRoot();
-        JSONWrapper(const JSONWrapper& jsonWrapper) = delete;
+        JSONWrapper(const JSONWrapper &jsonWrapper) = delete;
         JSONWrapper &operator=(const JSONWrapper &jsonWrapper) = delete;
         bool ReplaceNode(cJSON *node);
         void SyncChildren() const;
@@ -131,8 +133,7 @@ public:
     using json = JSONWrapper;
 
     API_EXPORT json Marshall() const;
-    template<typename T>
-    static std::string Marshall(T &values)
+    template<typename T> static std::string Marshall(T &values)
     {
         json root;
         SetValue(root, values);
@@ -140,8 +141,7 @@ public:
     }
 
     API_EXPORT bool Unmarshall(const std::string &jsonStr);
-    template<typename T>
-    static bool Unmarshall(const std::string &body, T &values)
+    template<typename T> static bool Unmarshall(const std::string &body, T &values)
     {
         return GetValue(ToJson(body), "", values);
     }
@@ -177,31 +177,26 @@ public:
     API_EXPORT static bool SetValue(json &node, const std::vector<uint8_t> &value);
     API_EXPORT static bool SetValue(json &node, const Serializable &value);
 
-    template<typename... _Types>
-    API_EXPORT static bool SetValue(json &node, const std::variant<_Types...> &input);
+    template<typename... _Types> API_EXPORT static bool SetValue(json &node, const std::variant<_Types...> &input);
 
     template<typename... _Types>
     API_EXPORT static bool GetValue(const json &node, const std::string &name, std::variant<_Types...> &value);
+
 protected:
     API_EXPORT ~Serializable() = default;
 
-    template<typename T>
-    static bool GetValue(const json &node, const std::string &name, std::vector<T> &values);
+    template<typename T> static bool GetValue(const json &node, const std::string &name, std::vector<T> &values);
 
-    template<typename T>
-    static bool SetValue(json &node, const std::vector<T> &values);
+    template<typename T> static bool SetValue(json &node, const std::vector<T> &values);
 
     template<typename T>
     static bool GetValue(const json &node, const std::string &name, std::map<std::string, T> &values);
 
-    template<typename T>
-    static bool SetValue(json &node, const std::map<std::string, T> &values);
+    template<typename T> static bool SetValue(json &node, const std::map<std::string, T> &values);
 
-    template<typename T>
-    static bool GetValue(const json &node, const std::string &name, T *&value);
+    template<typename T> static bool GetValue(const json &node, const std::string &name, T *&value);
 
-    template<typename T>
-    static bool SetValue(json &node, const T *value);
+    template<typename T> static bool SetValue(json &node, const T *value);
 
     template<typename _OutTp>
     static bool ReadVariant(const json &node, const std::string &name, uint32_t step, uint32_t index, _OutTp &output);
@@ -209,16 +204,14 @@ protected:
     template<typename _OutTp, typename _First, typename... _Rest>
     static bool ReadVariant(const json &node, const std::string &name, uint32_t step, uint32_t index, _OutTp &output);
 
-    template<typename _InTp>
-    static bool WriteVariant(json &node, uint32_t step, const _InTp &input);
+    template<typename _InTp> static bool WriteVariant(json &node, uint32_t step, const _InTp &input);
 
     template<typename _InTp, typename _First, typename... _Rest>
     static bool WriteVariant(json &node, uint32_t step, const _InTp &input);
     API_EXPORT static const json &GetSubNode(const json &node, const std::string &name);
 };
 
-template<typename T>
-bool Serializable::GetValue(const json &node, const std::string &name, std::vector<T> &values)
+template<typename T> bool Serializable::GetValue(const json &node, const std::string &name, std::vector<T> &values)
 {
     auto &subNode = GetSubNode(node, name);
     if (subNode.is_null() || !subNode.is_array()) {
@@ -233,8 +226,7 @@ bool Serializable::GetValue(const json &node, const std::string &name, std::vect
     return result;
 }
 
-template<typename T>
-bool Serializable::SetValue(json &node, const std::vector<T> &values)
+template<typename T> bool Serializable::SetValue(json &node, const std::vector<T> &values)
 {
     bool result = true;
     size_t i = 0;
@@ -260,8 +252,7 @@ bool Serializable::GetValue(const json &node, const std::string &name, std::map<
     return result;
 }
 
-template<typename T>
-bool Serializable::SetValue(json &node, const std::map<std::string, T> &values)
+template<typename T> bool Serializable::SetValue(json &node, const std::map<std::string, T> &values)
 {
     bool result = true;
     node = JSONWrapper::Type::OBJECT;
@@ -271,14 +262,13 @@ bool Serializable::SetValue(json &node, const std::map<std::string, T> &values)
     return result;
 }
 
-template<typename T>
-bool Serializable::GetValue(const json &node, const std::string &name, T *&value)
+template<typename T> bool Serializable::GetValue(const json &node, const std::string &name, T *&value)
 {
     auto &subNode = GetSubNode(node, name);
     if (subNode.is_null()) {
         return false;
     }
-    value = new(std::nothrow) T();
+    value = new (std::nothrow) T();
     if (value == nullptr) {
         return false;
     }
@@ -290,8 +280,7 @@ bool Serializable::GetValue(const json &node, const std::string &name, T *&value
     return result;
 }
 
-template<typename T>
-bool Serializable::SetValue(json &node, const T *value)
+template<typename T> bool Serializable::SetValue(json &node, const T *value)
 {
     if (value == nullptr) {
         return false;
@@ -299,8 +288,7 @@ bool Serializable::SetValue(json &node, const T *value)
     return SetValue(node, *value);
 }
 
-template<typename... _Types>
-bool Serializable::SetValue(json &node, const std::variant<_Types...> &input)
+template<typename... _Types> bool Serializable::SetValue(json &node, const std::variant<_Types...> &input)
 {
     bool ret = SetValue(node[GET_NAME(type)], input.index());
     if (!ret) {
@@ -325,8 +313,7 @@ bool Serializable::GetValue(const json &node, const std::string &name, std::vari
     return Serializable::ReadVariant<decltype(value), _Types...>(subNode, GET_NAME(value), 0, index, value);
 }
 
-template<typename _InTp>
-bool Serializable::WriteVariant(json &node, uint32_t step, const _InTp &input)
+template<typename _InTp> bool Serializable::WriteVariant(json &node, uint32_t step, const _InTp &input)
 {
     return false;
 }

@@ -14,10 +14,11 @@
  */
 
 #define LOG_TAG "serializable"
-#include "log_print.h"
 #include "serializable/serializable.h"
 
 #include <cJSON.h>
+
+#include "log_print.h"
 namespace OHOS {
 namespace DistributedData {
 Serializable::json Serializable::Marshall() const
@@ -291,7 +292,7 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(JSONWrapper &&js
     jsonWrapper.root_ = nullptr;
     key_ = std::move(jsonWrapper.key_);
     children_ = std::move(jsonWrapper.children_);
-	needDel_ = jsonWrapper.needDel_;
+    needDel_ = jsonWrapper.needDel_;
     return *this;
 }
 
@@ -496,7 +497,7 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(const std::vecto
         auto node = cJSON_CreateNumber(value[i]);
         if (!node || !cJSON_AddItemToArray(json_, node)) {
             cJSON_Delete(json_);
-			cJSON_Delete(node);
+            cJSON_Delete(node);
             json_ = nullptr;
             children_.clear();
             return *this;
@@ -517,17 +518,17 @@ bool Serializable::JSONWrapper::ReplaceNode(cJSON *node)
         json_ = node;
         return true;
     }
-    
+
     bool success = false;
     if (key_.empty()) {
         success = cJSON_ReplaceItemViaPointer(root_, json_, node);
     } else {
         success = cJSON_ReplaceItemInObject(root_, key_.c_str(), node);
     }
-    
+
     if (success) {
         json_ = node;
-		children_.clear();
+        children_.clear();
     }
     return success;
 }
@@ -837,7 +838,7 @@ void Serializable::JSONWrapper::SyncChildren() const
         children_.clear();
         for (int i = 0; i < size; i++) {
             auto item = cJSON_GetArrayItem(json_, i);
-            children_.push_back(std::make_shared<JSONWrapper>(item, json_, is_object() ? item->string:""));
+            children_.push_back(std::make_shared<JSONWrapper>(item, json_, is_object() ? item->string : ""));
         }
     }
 }
@@ -883,7 +884,9 @@ void Serializable::JSONWrapper::AddToRoot()
     }
 }
 
-Serializable::iterator::iterator(std::vector<std::shared_ptr<JSONWrapper>>::iterator it) : node_(it) {}
+Serializable::iterator::iterator(std::vector<std::shared_ptr<JSONWrapper>>::iterator it) : node_(it)
+{
+}
 
 Serializable::iterator &Serializable::iterator::operator++()
 {
@@ -918,7 +921,7 @@ const Serializable::JSONWrapper &Serializable::iterator::value() const
 
 Serializable::JSONWrapper Serializable::JSONWrapper::array()
 {
-    cJSON* json = cJSON_CreateArray();
+    cJSON *json = cJSON_CreateArray();
     return Serializable::JSONWrapper(json, nullptr, "");
 }
 
@@ -927,7 +930,7 @@ void Serializable::JSONWrapper::push_back(const JSONWrapper &value)
     if (is_array()) {
         cJSON *newJson = cJSON_Duplicate(value.json_, 1);
         cJSON_AddItemToArray(json_, newJson);
-        children_.push_back(std::make_shared<JSONWrapper>(newJson, json_)); 
+        children_.push_back(std::make_shared<JSONWrapper>(newJson, json_));
     }
 }
 
@@ -936,7 +939,7 @@ std::string Serializable::JSONWrapper::to_string(const JSONWrapper &jsonWrapper)
     return jsonWrapper.dump();
 }
 
-bool Serializable::JSONWrapper::operator==(const std::map<std::string, std::string>& value) const
+bool Serializable::JSONWrapper::operator==(const std::map<std::string, std::string> &value) const
 {
     if (!is_object()) {
         return false;
@@ -944,7 +947,7 @@ bool Serializable::JSONWrapper::operator==(const std::map<std::string, std::stri
     if (cJSON_GetArraySize(json_) != value.size()) {
         return false;
     }
-    for (const auto& pair : value) {
+    for (const auto &pair : value) {
         auto item = cJSON_GetObjectItem(json_, pair.first.c_str());
         if (item == nullptr || std::string(cJSON_GetStringValue(item)) != pair.second) {
             return false;
@@ -953,7 +956,7 @@ bool Serializable::JSONWrapper::operator==(const std::map<std::string, std::stri
     return true;
 }
 
-bool Serializable::JSONWrapper::operator==(const std::map<std::string, uint64_t>& value) const
+bool Serializable::JSONWrapper::operator==(const std::map<std::string, uint64_t> &value) const
 {
     if (!is_object()) {
         return false;
@@ -961,7 +964,7 @@ bool Serializable::JSONWrapper::operator==(const std::map<std::string, uint64_t>
     if (cJSON_GetArraySize(json_) != value.size()) {
         return false;
     }
-    for (const auto& pair : value) {
+    for (const auto &pair : value) {
         auto item = cJSON_GetObjectItem(json_, pair.first.c_str());
         if (item == nullptr || cJSON_GetNumberValue(item) != pair.second) {
             return false;
@@ -970,7 +973,7 @@ bool Serializable::JSONWrapper::operator==(const std::map<std::string, uint64_t>
     return true;
 }
 
-bool Serializable::JSONWrapper::operator==(const std::vector<std::string>& value) const
+bool Serializable::JSONWrapper::operator==(const std::vector<std::string> &value) const
 {
     if (!is_array()) {
         return false;
@@ -987,15 +990,15 @@ bool Serializable::JSONWrapper::operator==(const std::vector<std::string>& value
     return true;
 }
 
-Serializable::JSONWrapper& Serializable::JSONWrapper::operator=(const std::map<std::string, uint64_t>& value)
+Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(const std::map<std::string, uint64_t> &value)
 {
     if (json_) {
         cJSON_Delete(json_);
         json_ = nullptr;
     }
     json_ = cJSON_CreateObject();
-    for (const auto& pair : value) {
-        cJSON* num = cJSON_CreateNumber(pair.second);
+    for (const auto &pair : value) {
+        cJSON *num = cJSON_CreateNumber(pair.second);
         if (!cJSON_AddItemToObject(json_, pair.first.c_str(), num)) {
             cJSON_Delete(num);
         }
@@ -1004,15 +1007,15 @@ Serializable::JSONWrapper& Serializable::JSONWrapper::operator=(const std::map<s
     return *this;
 }
 
-Serializable::JSONWrapper& Serializable::JSONWrapper::operator=(const std::map<std::string, std::string>& value)
+Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(const std::map<std::string, std::string> &value)
 {
     if (json_) {
         cJSON_Delete(json_);
         json_ = nullptr;
     }
     json_ = cJSON_CreateObject();
-    for (const auto& pair : value) {
-        cJSON* str = cJSON_CreateString(pair.second.c_str());
+    for (const auto &pair : value) {
+        cJSON *str = cJSON_CreateString(pair.second.c_str());
         if (!cJSON_AddItemToObject(json_, pair.first.c_str(), str)) {
             cJSON_Delete(str);
         }
@@ -1021,7 +1024,7 @@ Serializable::JSONWrapper& Serializable::JSONWrapper::operator=(const std::map<s
     return *this;
 }
 
-bool Serializable::JSONWrapper::erase(const std::string& key)
+bool Serializable::JSONWrapper::erase(const std::string &key)
 {
     if (!json_ || !is_object()) {
         return false;
@@ -1061,7 +1064,7 @@ bool Serializable::JSONWrapper::erase(int index)
     if (index < children_.size()) {
         children_.erase(children_.begin() + index);
     }
-    
+
     cJSON_DeleteItemFromArray(json_, index);
     return true;
 }
