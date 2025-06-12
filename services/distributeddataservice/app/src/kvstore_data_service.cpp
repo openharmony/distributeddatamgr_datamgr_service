@@ -780,7 +780,6 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverIm
     pid_ = IPCSkeleton::GetCallingPid();
     token_ = IPCSkeleton::GetCallingTokenID();
     if (observer != nullptr) {
-        ZLOGD("add death recipient");
         observer->AddDeathRecipient(deathRecipient_);
         observerProxy_.insert_or_assign(featureName, std::move(observer));
     } else {
