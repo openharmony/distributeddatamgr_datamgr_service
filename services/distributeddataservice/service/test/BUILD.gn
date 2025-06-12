@@ -61,6 +61,7 @@ ohos_unittest("CloudDataTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/cloud/cloud_data_translate.cpp",
+    "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
@@ -116,6 +117,7 @@ ohos_unittest("CloudServiceImplTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/cloud/cloud_data_translate.cpp",
+    "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",

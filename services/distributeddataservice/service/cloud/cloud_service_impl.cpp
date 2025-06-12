@@ -23,6 +23,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
+#include "cloud/change_event.h"
 #include "cloud/cloud_last_sync_info.h"
 #include "cloud/cloud_mark.h"
 #include "cloud/cloud_server.h"
@@ -48,6 +49,7 @@
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 #include "values_bucket.h"
 #include "xcollie.h"
 
@@ -1229,6 +1231,76 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user, CloudSyncScene scene)
     instance->ReleaseUserInfo(user);
     ZLOGI("notify release user info, user:%{public}d", user);
     return true;
+}
+
+int32_t CloudServiceImpl::InitNotifier(sptr<IRemoteObject> notifier)
+{
+    if (notifier == nullptr) {
+        ZLOGE("no notifier.");
+        return INVALID_ARGUMENT;
+    }
+    auto notifierProxy = iface_cast<CloudNotifierProxy>(notifier);
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    syncAgents_.Compute(tokenId, [notifierProxy](auto, SyncAgent &agent) {
+        agent = SyncAgent();
+        agent.notifier_ = notifierProxy;
+        return true;
+    });
+    return SUCCESS;
+}
+
+Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
+{
+    Details dbDetails;
+    for (const auto& [id, detail] : details) {
+        auto &dbDetail = dbDetails[id];
+        dbDetail.progress = detail.progress;
+        dbDetail.code = detail.code;
+        for (auto &[name, table] : detail.details) {
+            auto &dbTable = dbDetail.details[name];
+            Constant::Copy(&dbTable, &table);
+        }
+    }
+    return dbDetails;
+}
+
+void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
+{
+    ZLOGI("tokenId=%{public}x, seqnum=%{public}u", tokenId, seqNum);
+    sptr<CloudNotifierProxy> notifier = nullptr;
+    syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &syncAgent) {
+        notifier = syncAgent.notifier_;
+        return true;
+    });
+    if (notifier != nullptr) {
+        notifier->OnComplete(seqNum, std::move(result));
+    }
+}
+
+int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::string &storeId,
+    const Option &option, const AsyncDetail &async)
+{
+    if (option.syncMode < DistributedData::GeneralStore::CLOUD_BEGIN ||
+        option.syncMode >= DistributedData::GeneralStore::CLOUD_END) {
+        ZLOGE("not support cloud sync, syncMode = %{public}d", option.syncMode);
+        return INVALID_ARGUMENT;
+    }
+    StoreInfo storeInfo;
+    storeInfo.bundleName = bundleName;
+    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+    storeInfo.storeName = storeId;
+    GenAsync asyncCallback =
+        [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
+        OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
+    };
+    auto highMode = GeneralStore::MANUAL_SYNC_MODE;
+    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
+    SyncParam syncParam = { mixMode, 0, false };
+    auto info = ChangeEvent::EventInfo(syncParam, false, nullptr, asyncCallback);
+    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return SUCCESS;
 }
 
 bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)

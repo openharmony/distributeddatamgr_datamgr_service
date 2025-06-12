@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H
 
 #include "cloud_types.h"
+#include "cloud_service.h"
 #include "itypes_util.h"
 #include "values_bucket.h"
 
@@ -32,6 +33,7 @@ using ValuesBucket = OHOS::NativeRdb::ValuesBucket;
 using StatisticInfo = OHOS::CloudData::StatisticInfo;
 using Strategy = OHOS::CloudData::Strategy;
 using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
+using Option = OHOS::CloudData::CloudService::Option;
 
 template<>
 bool Marshalling(const Participant &input, MessageParcel &data);
@@ -68,5 +70,10 @@ template<>
 bool Marshalling(const CloudSyncInfo &input, MessageParcel &data);
 template<>
 bool Unmarshalling(CloudSyncInfo &output, MessageParcel &data);
+
+template<>
+bool Marshalling(const Option &input, MessageParcel &data);
+template<>
+bool Unmarshalling(Option &output, MessageParcel &data);
 } // namespace OHOS::ITypesUtil
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H

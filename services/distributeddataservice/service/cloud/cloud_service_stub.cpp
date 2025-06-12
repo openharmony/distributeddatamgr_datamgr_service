@@ -36,6 +36,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnQueryStatistics,
     &CloudServiceStub::OnQueryLastSyncInfo,
     &CloudServiceStub::OnSetGlobalCloudStrategy,
+    &CloudServiceStub::OnCloudSync,
     &CloudServiceStub::OnAllocResourceAndShare,
     &CloudServiceStub::OnShare,
     &CloudServiceStub::OnUnshare,
@@ -46,6 +47,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnConfirmInvitation,
     &CloudServiceStub::OnChangeConfirmation,
     &CloudServiceStub::OnSetCloudStrategy,
+    &CloudServiceStub::OnInitNotifier,
 };
 
 int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
@@ -324,6 +326,31 @@ int32_t CloudServiceStub::OnSetCloudStrategy(MessageParcel &data, MessageParcel 
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = SetCloudStrategy(strategy, values);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnCloudSync(MessageParcel &data, MessageParcel &reply)
+{
+    std::string bundleName;
+    std::string storeId;
+    Option option;
+    if (!ITypesUtil::Unmarshal(data, bundleName, storeId, option)) {
+        ZLOGE("Unmarshal failed, bundleName:%{public}s, storeId:%{public}s, syncMode:%{public}d, seqNum:%{public}u",
+            bundleName.c_str(), Anonymous::Change(storeId).c_str(), option.syncMode, option.seqNum);
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = CloudSync(bundleName, storeId, option, nullptr);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnInitNotifier(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> notifier = nullptr;
+    if (!ITypesUtil::Unmarshal(data, notifier) || notifier == nullptr) {
+        ZLOGE("Unmarshal failed, notifier is nullptr?[%{public}u]", notifier == nullptr);
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = InitNotifier(notifier);
     return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData
