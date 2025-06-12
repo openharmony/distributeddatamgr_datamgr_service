@@ -814,9 +814,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl &KvStoreDataService::KvStoreC
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverImpl()
 {
-    ZLOGD("~KvStoreClientDeathObserverImpl");
     if (deathRecipient_ != nullptr && !observerProxy_.empty()) {
-        ZLOGD("remove death recipient");
         for (auto &[key, value] : observerProxy_) {
             if (value != nullptr) {
                 value->RemoveDeathRecipient(deathRecipient_);
@@ -824,6 +822,8 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverI
         }
     }
     if (uid_ == INVALID_UID || pid_ == INVALID_PID || token_ == INVALID_TOKEN || !appId_.IsValid()) {
+        ZLOGE("invalid params:pid:%{public}d uid:%{public}d token:%{public}u appId:%{public}s",
+            uid_, pid_, token_, Anonymous::Change(appId_.appId).c_str());
         return;
     }
     dataService_.features_.ForEachCopies([this](const auto &, sptr<DistributedData::FeatureStubImpl> &value) {
@@ -885,7 +885,6 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvSto
     KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl)
     : kvStoreClientDeathObserverImpl_(kvStoreClientDeathObserverImpl)
 {
-    ZLOGD("KvStore Client Death Observer");
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::~KvStoreDeathRecipient()
@@ -897,7 +896,6 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::
     const wptr<IRemoteObject> &remote)
 {
     (void) remote;
-    ZLOGD("begin");
     if (!clientDead_.exchange(true)) {
         kvStoreClientDeathObserverImpl_.NotifyClientDie();
     }
