@@ -225,12 +225,13 @@ HWTEST_F(ServiceMetaDataTest, SecretKeyMetaData002, TestSize.Level1)
 HWTEST_F(ServiceMetaDataTest, StoreMetaData001, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
+    storeMetaData.dataDir = "testDir";
     StoreMetaData storeMeta;
 
     std::string key = storeMetaData.GetKey();
-    EXPECT_EQ(key, "KvStoreMetaData######100###default######test_store");
+    EXPECT_EQ(key, "KvStoreMetaData######100###default######test_store###testDir");
     std::string keylocal = storeMetaData.GetKeyLocal();
-    EXPECT_EQ(keylocal, "KvStoreMetaDataLocal######100###default######test_store");
+    EXPECT_EQ(keylocal, "KvStoreMetaDataLocal######100###default######test_store###testDir");
     std::initializer_list<std::string> fields = { "100", "appid", "test_store" };
     std::string keyfields = storeMetaData.GetKey(fields);
     EXPECT_EQ(keyfields, "KvStoreMetaData###100###appid###test_store");
@@ -246,15 +247,16 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData001, TestSize.Level1)
     result = MetaDataManager::GetInstance().DelMeta(key, true);
     EXPECT_TRUE(result);
 
-    result = MetaDataManager::GetInstance().SaveMeta(key, storeMetaData);
+    std::string syncKey = storeMetaData.GetKeyWithoutPath();
+    result = MetaDataManager::GetInstance().SaveMeta(syncKey, storeMetaData);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().LoadMeta(key, storeMeta);
+    result = MetaDataManager::GetInstance().LoadMeta(syncKey, storeMeta);
     EXPECT_TRUE(result);
     EXPECT_EQ(storeMetaData.GetKey(), storeMeta.GetKey());
     EXPECT_EQ(storeMetaData.GetKeyLocal(), storeMeta.GetKeyLocal());
     EXPECT_EQ(storeMetaData.GetKey(fields), storeMeta.GetKey(fields));
 
-    result = MetaDataManager::GetInstance().DelMeta(key);
+    result = MetaDataManager::GetInstance().DelMeta(syncKey);
     EXPECT_TRUE(result);
 }
 
@@ -268,10 +270,11 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData001, TestSize.Level1)
 HWTEST_F(ServiceMetaDataTest, StoreMetaData002, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
+    storeMetaData.dataDir = "testDir";
     StoreMetaData storeMeta;
 
     std::string secretkey = storeMetaData.GetSecretKey();
-    EXPECT_EQ(secretkey, "SecretKey###100###default######test_store###0###SINGLE_KEY");
+    EXPECT_EQ(secretkey, "SecretKey###100###default######test_store###0###testDir###SINGLE_KEY");
     std::string backupsecretkey = storeMetaData.GetBackupSecretKey();
     EXPECT_EQ(backupsecretkey, "BackupSecretKey###100###default######test_store###0###");
 
@@ -351,12 +354,13 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData004, TestSize.Level1)
     StoreMetaData storeMetaData("100", "appid", "test_store");
     storeMetaData.version = TEST_CURRENT_VERSION;
     storeMetaData.instanceId = 1;
+    storeMetaData.dataDir = "testDir";
     StoreMetaData storeMeta;
 
     std::string key = storeMetaData.GetKey();
-    EXPECT_EQ(key, "KvStoreMetaData######100###default######test_store###1");
+    EXPECT_EQ(key, "KvStoreMetaData######100###default######test_store###1###testDir");
     std::string keylocal = storeMetaData.GetKeyLocal();
-    EXPECT_EQ(keylocal, "KvStoreMetaDataLocal######100###default######test_store###1");
+    EXPECT_EQ(keylocal, "KvStoreMetaDataLocal######100###default######test_store###1###testDir");
 
     auto result = MetaDataManager::GetInstance().SaveMeta(key, storeMetaData, true);
     EXPECT_TRUE(result);
@@ -368,14 +372,15 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData004, TestSize.Level1)
     result = MetaDataManager::GetInstance().DelMeta(key, true);
     EXPECT_TRUE(result);
 
-    result = MetaDataManager::GetInstance().SaveMeta(key, storeMetaData);
+    std::string syncKey = storeMetaData.GetKeyWithoutPath();
+    result = MetaDataManager::GetInstance().SaveMeta(syncKey, storeMetaData);
     EXPECT_TRUE(result);
-    result = MetaDataManager::GetInstance().LoadMeta(key, storeMeta);
+    result = MetaDataManager::GetInstance().LoadMeta(syncKey, storeMeta);
     EXPECT_TRUE(result);
     EXPECT_EQ(storeMetaData.GetKey(), storeMeta.GetKey());
     EXPECT_EQ(storeMetaData.GetKeyLocal(), storeMeta.GetKeyLocal());
 
-    result = MetaDataManager::GetInstance().DelMeta(key);
+    result = MetaDataManager::GetInstance().DelMeta(syncKey);
     EXPECT_TRUE(result);
 }
 
@@ -391,10 +396,11 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData005, TestSize.Level1)
     StoreMetaData storeMetaData("100", "appid", "test_store");
     storeMetaData.version = TEST_CURRENT_VERSION;
     storeMetaData.instanceId = 1;
+    storeMetaData.dataDir = "testDir";
     StoreMetaData storeMeta;
 
     std::string secretkey = storeMetaData.GetSecretKey();
-    EXPECT_EQ(secretkey, "SecretKey###100###default######test_store###SINGLE_KEY");
+    EXPECT_EQ(secretkey, "SecretKey###100###default######test_store###testDir###SINGLE_KEY");
     std::string backupsecretkey = storeMetaData.GetBackupSecretKey();
     EXPECT_EQ(backupsecretkey, "BackupSecretKey###100###default######test_store###");
     std::string strategykey = storeMetaData.GetStrategyKey();
@@ -536,6 +542,44 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData007, TestSize.Level1)
 }
 
 /**
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: MY
+ */
+HWTEST_F(ServiceMetaDataTest, StoreMetaData008, TestSize.Level1)
+{
+    StoreMetaData storeMetaData("100", "appid", "test_store");
+    storeMetaData.instanceId = 1;
+    storeMetaData.dataDir = "008_dataDir";
+    storeMetaData.deviceId = "008_uuid";
+    storeMetaData.bundleName = "008_bundleName";
+
+    std::string key = "KvStoreMetaDataLocal###008_uuid###100###default###008_bundleName###test_store###1";
+    EXPECT_EQ(storeMetaData.GetKeyLocalWithoutPath(), key);
+}
+
+/**
+ * @tc.name: StoreMetaData
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: MY
+ */
+HWTEST_F(ServiceMetaDataTest, StoreMetaData009, TestSize.Level1)
+{
+    StoreMetaData storeMetaData("100", "appid", "test_store");
+    storeMetaData.instanceId = 1;
+    storeMetaData.dataDir = "009_dataDir";
+    storeMetaData.deviceId = "009_uuid";
+    storeMetaData.bundleName = "009_bundleName";
+
+    std::string key = "StoreDfxInfo###009_uuid###100###default###009_bundleName###test_store###1";
+    EXPECT_EQ(storeMetaData.GetDfxInfoKeyWithoutPath(), key);
+}
+
+/**
  * @tc.name: GetStoreInfo
  * @tc.desc: test StoreMetaData GetStoreInfo function
  * @tc.type: FUNC
@@ -652,6 +696,7 @@ HWTEST_F(ServiceMetaDataTest, StrategyMeta002, TestSize.Level1)
 HWTEST_F(ServiceMetaDataTest, MetaData, TestSize.Level1)
 {
     StoreMetaData storeMetaData("100", "appid", "test_store");
+    storeMetaData.dataDir = "testDir1";
     SecretKeyMetaData secretKeyMetaData;
     MetaData metaData;
     MetaData metaDataLoad;
@@ -814,18 +859,14 @@ HWTEST_F(ServiceMetaDataTest, DeviceMetaData, TestSize.Level1)
 {
     DeviceMetaData  metaData;
     std::string newUuid = "newuuid";
-    std::string oldUuid = "olduuid";
     metaData.newUuid = newUuid;
-    metaData.oldUuid = oldUuid;
     Serializable::json node1;
     metaData.Marshal(node1);
     EXPECT_EQ(node1["newUuid"], newUuid);
-    EXPECT_EQ(node1["oldUuid"], oldUuid);
 
     DeviceMetaData newMetaData;
     newMetaData.Unmarshal(node1);
     EXPECT_EQ(newMetaData.newUuid, newUuid);
-    EXPECT_EQ(newMetaData.oldUuid, oldUuid);
 }
 
 /**
@@ -843,6 +884,7 @@ HWTEST_F(ServiceMetaDataTest, InitTestMeta, TestSize.Level1)
     oldMeta.bundleName = "test_appid_001";
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isEncrypt = true;
+    oldMeta.dataDir = "testDir2";
     bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
     EXPECT_TRUE(isSuccess);
     StoreMetaDataLocal metaDataLocal;
@@ -860,7 +902,7 @@ HWTEST_F(ServiceMetaDataTest, InitTestMeta, TestSize.Level1)
     isSuccess = MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({"mockOldUuid"}), matrixMeta0, true);
     EXPECT_TRUE(isSuccess);
 
-    isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_TRUE(isSuccess);
     MatrixMetaData matrixMeta;
     isSuccess = MetaDataManager::GetInstance().SaveMeta(MatrixMetaData::GetPrefix({"mockOldUuid"}), matrixMeta);
@@ -893,11 +935,12 @@ HWTEST_F(ServiceMetaDataTest, UpdateStoreMetaData, TestSize.Level1)
     newMeta.user = "200";
     newMeta.bundleName = "test_appid_001";
     newMeta.storeId = "test_storeid_001";
+    newMeta.dataDir = "testDir2";
     KvStoreMetaManager::GetInstance().UpdateStoreMetaData(mockNewUuid, mockOldUuid);
     bool isSuccess = MetaDataManager::GetInstance().LoadMeta(newMeta.GetKey(), newMeta, true);
     EXPECT_TRUE(isSuccess);
     EXPECT_TRUE(newMeta.isNeedUpdateDeviceId);
-    isSuccess = MetaDataManager::GetInstance().LoadMeta(newMeta.GetKey(), newMeta);
+    isSuccess = MetaDataManager::GetInstance().LoadMeta(newMeta.GetKeyWithoutPath(), newMeta);
     EXPECT_TRUE(isSuccess);
     AutoLaunchMetaData autoLaunchMetaData;
     isSuccess = MetaDataManager::GetInstance().LoadMeta(AutoLaunchMetaData::GetPrefix({ newMeta.deviceId, newMeta.user,
@@ -919,11 +962,6 @@ HWTEST_F(ServiceMetaDataTest, UpdateMetaDatas, TestSize.Level1)
 {
     std::string mockNewUuid = "mockNewUuid";
     std::string mockOldUuid = "mockOldUuid";
-    StoreMetaData newMeta;
-    newMeta.deviceId = "mockNewUuid";
-    newMeta.user = "200";
-    newMeta.bundleName = "test_appid_001";
-    newMeta.storeId = "test_storeid_001";
     KvStoreMetaManager::GetInstance().UpdateMetaDatas(mockNewUuid, mockOldUuid);
     MatrixMetaData matrixMeta;
     bool isSuccess = MetaDataManager::GetInstance().LoadMeta(MatrixMetaData::GetPrefix({ "mockNewUuid" }),
@@ -958,6 +996,7 @@ HWTEST_F(ServiceMetaDataTest, DelTestMeta, TestSize.Level1)
     newMeta.user = "200";
     newMeta.bundleName = "test_appid_001";
     newMeta.storeId = "test_storeid_001";
+    newMeta.dataDir = "testDir2";
     bool isSuccess = MetaDataManager::GetInstance().DelMeta(newMeta.GetKey(), true);
     EXPECT_TRUE(isSuccess);
     isSuccess = MetaDataManager::GetInstance().DelMeta(newMeta.GetKeyLocal(), true);
@@ -970,7 +1009,7 @@ HWTEST_F(ServiceMetaDataTest, DelTestMeta, TestSize.Level1)
     isSuccess = MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({ "mockNewUuid" }), true);
     EXPECT_TRUE(isSuccess);
 
-    isSuccess = MetaDataManager::GetInstance().DelMeta(newMeta.GetKey());
+    isSuccess = MetaDataManager::GetInstance().DelMeta(newMeta.GetKeyWithoutPath());
     EXPECT_TRUE(isSuccess);
     isSuccess = MetaDataManager::GetInstance().DelMeta(MatrixMetaData::GetPrefix({"mockNewUuid"}));
     EXPECT_TRUE(isSuccess);

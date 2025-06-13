@@ -993,6 +993,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup008, TestSize.Level0) {
     testMeta.deviceId =
         DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     testMeta.isEncrypt = true;
+    testMeta.dataDir = "TEST_DIR";
     std::vector<uint8_t> sKey{2,   249, 221, 119, 177, 216, 217, 134, 185, 139,
                               114, 38,  140, 64,  165, 35,  77,  169, 0,   226,
                               226, 166, 37,  73,  181, 229, 42,  88,  108, 111,

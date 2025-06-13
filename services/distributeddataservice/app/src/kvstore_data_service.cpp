@@ -52,6 +52,7 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "network/network_delegate.h"
+#include "metadata/store_meta_data.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -139,18 +140,18 @@ void KvStoreDataService::Initialize()
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
     CommunicatorContext::GetInstance().RegSessionListener(deviceInnerListener_.get());
     auto translateCall = [](const std::string &oriDevId, const DistributedDB::StoreInfo &info) {
-        StoreMetaData meta;
+        StoreMetaMapping storeMetaMapping;
         AppIDMetaData appIdMeta;
         MetaDataManager::GetInstance().LoadMeta(info.appId, appIdMeta, true);
-        meta.bundleName = appIdMeta.bundleName;
-        meta.storeId = info.storeId;
-        meta.user = info.userId;
-        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+        storeMetaMapping.bundleName = appIdMeta.bundleName;
+        storeMetaMapping.storeId = info.storeId;
+        storeMetaMapping.user = info.userId;
+        storeMetaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
         std::string uuid;
-        if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
+        if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(storeMetaMapping.tokenId) ==
             OHOS::Security::AccessToken::TOKEN_HAP) {
-            uuid = DmAdapter::GetInstance().CalcClientUuid(meta.appId, oriDevId);
+            uuid = DmAdapter::GetInstance().CalcClientUuid(storeMetaMapping.appId, oriDevId);
         } else {
             uuid = DmAdapter::GetInstance().CalcClientUuid(" ", oriDevId);
         }
@@ -917,8 +918,9 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 if (meta.user != eventInfo.userId) {
                     continue;
                 }
-                ZLOGI("bundleName:%{public}s, user:%{public}s", meta.bundleName.c_str(), meta.user.c_str());
-                MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+                ZLOGI("StoreMetaData bundleName:%{public}s, user:%{public}s", meta.bundleName.c_str(),
+                    meta.user.c_str());
+                MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
@@ -929,7 +931,8 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
-                PermitDelegate::GetInstance().DelCache(meta.GetKey());
+                MetaDataManager::GetInstance().DelMeta(StoreMetaMapping(meta).GetKey(), true);
+                PermitDelegate::GetInstance().DelCache(meta.GetKeyWithoutPath());
             }
             g_kvStoreAccountEventStatus = 0;
             break;
@@ -1117,8 +1120,8 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
 
     for (auto &meta : metaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d", bundleName.c_str(),
-                Anonymous::Change(meta.storeId).c_str(), appIndex);
+            ZLOGI("StoreMetaData data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d",
+                bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), appIndex);
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
             MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
@@ -1129,7 +1132,8 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
             MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
-            PermitDelegate::GetInstance().DelCache(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(StoreMetaMapping(meta).GetKey(), true);
+            PermitDelegate::GetInstance().DelCache(meta.GetKeyWithoutPath());
         }
     }
     return SUCCESS;

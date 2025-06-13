@@ -102,13 +102,13 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
         }
         return !value.empty();
     });
-    auto key = data.GetKey();
+    auto key = data.GetKeyWithoutPath();
     if (!metaDataBucket_.Get(key, data)) {
         if (!MetaDataManager::GetInstance().LoadMeta(key, data)) {
-            ZLOGE("load meta failed.");
+            ZLOGE("load meta failed, %{public}s", Anonymous::Change(data.storeId).c_str());
             return false;
         }
-        metaDataBucket_.Set(data.GetKey(), data);
+        metaDataBucket_.Set(data.GetKeyWithoutPath(), data);
     }
     if (data.appType.compare("default") == 0) {
         ZLOGD("default, sync permission success.");

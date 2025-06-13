@@ -273,6 +273,8 @@ ohos_unittest("MetaDataManagerTest") {
     "ipc:ipc_core",
     "cJSON:cjson",
     "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+    "kv_store:distributeddata_inner",
   ]
 
   deps = [
@@ -290,6 +292,8 @@ ohos_unittest("StoreMetaDataLocalTest") {
   external_deps = [
     "cJSON:cjson",
     "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+    "kv_store:distributeddata_inner",
   ]
 }
 

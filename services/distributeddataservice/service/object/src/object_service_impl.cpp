@@ -170,7 +170,7 @@ int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta, const std::stri
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
+    bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta) &&
                    DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!isSaved) {
         ZLOGE("SaveMeta failed");
@@ -352,7 +352,7 @@ ObjectServiceImpl::ObjectServiceImpl()
         meta.bundleName = eventInfo.bundleName;
         meta.user = std::to_string(eventInfo.user);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), meta)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
             return;

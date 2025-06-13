@@ -138,6 +138,76 @@ ohos_unittest("KvStoreDataServiceTest") {
   part_name = "datamgr_service"
 }
 
+ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/checker/bundle_checker.cpp",
+    "${data_service_path}/app/src/checker/system_checker.cpp",
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
+    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
+    "${data_service_path}/app/src/db_info_handle_impl.cpp",
+    "${data_service_path}/app/src/feature_stub_impl.cpp",
+    "${data_service_path}/app/src/installer/installer.cpp",
+    "${data_service_path}/app/src/installer/installer_impl.cpp",
+    "${data_service_path}/app/src/kvstore_account_observer.cpp",
+    "${data_service_path}/app/src/kvstore_data_service.cpp",
+    "${data_service_path}/app/src/kvstore_data_service_stub.cpp",
+    "${data_service_path}/app/src/kvstore_device_listener.cpp",
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/app/src/kvstore_screen_observer.cpp",
+    "${data_service_path}/app/src/security/security.cpp",
+    "${data_service_path}/app/src/security/sensitive.cpp",
+    "${data_service_path}/app/src/session_manager/route_head_handler_impl.cpp",
+    "${data_service_path}/app/src/session_manager/session_manager.cpp",
+    "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
+    "${data_service_path}/app/src/task_manager.cpp",
+    "${data_service_path}/app/test/unittest/kvstore_meta_manager_update_key_test.cpp",
+    "${data_service_path}/service/common/xcollie.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "file_api:securitylabel",
+    "googletest:gtest_main",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
+    "memmgr:memmgrclient",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  if (datamgr_service_power) {
+    external_deps += [
+      "battery_manager:batterysrv_client",
+      "power_manager:powermgr_client",
+    ]
+  }
+  cflags = [
+    "-fno-access-control",  # Ignore Private Member Access Control
+  ]
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+  part_name = "datamgr_service"
+}
+
 ohos_unittest("SessionManagerTest") {
   module_out_path = module_output_path
 
@@ -485,6 +555,7 @@ group("unittest") {
     ":FeatureStubImplTest",
     ":KvStoreDataServiceClearTest",
     ":KvStoreDataServiceTest",
+    ":KvStoreMetaManagerUpdateKeyTest",
     ":SessionManagerTest",
     ":UpgradeManagerTest",
     ":RouteHeadHandlerImplTest",

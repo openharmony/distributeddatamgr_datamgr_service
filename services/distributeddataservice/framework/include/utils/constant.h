@@ -44,6 +44,20 @@ public:
 
     API_EXPORT static std::vector<std::string> Split(const std::string &str, const std::string &delim);
 
+    template <typename T, typename Action>
+    API_EXPORT static bool BatchProcess(const std::vector<T> &value, size_t batchSize, Action action)
+    {
+        auto it = value.begin();
+        while (it != value.end()) {
+            auto end = it + std::min(batchSize, static_cast<size_t>(std::distance(it, value.end())));
+            if (!action(it, end)) {
+                return false;
+            }
+            it = end;
+        }
+        return true;
+    }
+
     template<typename T>
     inline static constexpr bool is_pod = (std::is_standard_layout_v<T> && std::is_trivial_v<T>);
 

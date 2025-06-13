@@ -103,6 +103,7 @@ public:
         const std::vector<QueryKey> &queryKeys);
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
+    static std::string GetPath(const StoreMetaData &meta);
 
 private:
     using Event = DistributedData::Event;

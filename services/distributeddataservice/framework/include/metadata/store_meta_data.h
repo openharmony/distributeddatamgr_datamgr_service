@@ -21,7 +21,8 @@
 #include "store/store_info.h"
 
 namespace OHOS::DistributedData {
-struct API_EXPORT StoreMetaData final : public Serializable {
+struct StoreMetaMapping;
+struct API_EXPORT StoreMetaData : public Serializable {
     // record meta version for compatible, should update when modify store meta data structure.
     static constexpr uint32_t CURRENT_VERSION = 0x03000006;
     // UID -> uid, deviceAccountId -> userId, userId -> user
@@ -77,24 +78,53 @@ struct API_EXPORT StoreMetaData final : public Serializable {
     API_EXPORT StoreMetaData();
     API_EXPORT StoreMetaData(const std::string &userId, const std::string &appId, const std::string &storeId);
     API_EXPORT explicit StoreMetaData(const StoreInfo &storeInfo);
-    API_EXPORT ~StoreMetaData();
+    API_EXPORT virtual ~StoreMetaData();
     API_EXPORT bool operator==(const StoreMetaData &metaData) const;
     API_EXPORT bool operator!=(const StoreMetaData &metaData) const;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
-    API_EXPORT std::string GetKey() const;
-    API_EXPORT std::string GetKeyLocal() const;
-    API_EXPORT std::string GetSecretKey() const;
-    API_EXPORT std::string GetStrategyKey() const;
-    API_EXPORT std::string GetBackupSecretKey() const;
-    API_EXPORT std::string GetAutoLaunchKey() const;
-    API_EXPORT std::string GetDebugInfoKey() const;
-    API_EXPORT std::string GetDfxInfoKey() const;
-    API_EXPORT std::string GetStoreAlias() const;
-    API_EXPORT StoreInfo GetStoreInfo() const;
+    API_EXPORT virtual std::string GetKeyWithoutPath() const;
+    API_EXPORT virtual std::string GetKey() const;
+    API_EXPORT virtual std::string GetKeyLocalWithoutPath() const;
+    API_EXPORT virtual std::string GetKeyLocal() const;
+    API_EXPORT virtual std::string GetSecretKeyWithoutPath() const;
+    API_EXPORT virtual std::string GetSecretKey() const;
+    API_EXPORT virtual std::string GetStrategyKey() const;
+    API_EXPORT virtual std::string GetBackupSecretKey() const;
+    API_EXPORT virtual std::string GetAutoLaunchKey() const;
+    API_EXPORT virtual std::string GetDebugInfoKey() const;
+    API_EXPORT virtual std::string GetDebugInfoKeyWithoutPath() const;
+    API_EXPORT virtual std::string GetDfxInfoKey() const;
+    API_EXPORT virtual std::string GetDfxInfoKeyWithoutPath() const;
+    API_EXPORT virtual std::string GetStoreAlias() const;
+    API_EXPORT virtual StoreInfo GetStoreInfo() const;
+    API_EXPORT virtual std::string GetCloneSecretKey() const;
     API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
     API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
-    API_EXPORT std::string GetCloneSecretKey() const;
+};
+
+struct API_EXPORT StoreMetaMapping final : public StoreMetaData {
+    static constexpr const char *KEY_PREFIX = "StoreMetaMapping";
+    std::string cloudPath;
+    std::string devicePath;
+    std::string searchPath;
+
+    API_EXPORT StoreMetaMapping();
+    API_EXPORT StoreMetaMapping(const StoreMetaData &storeMeta);
+    API_EXPORT explicit StoreMetaMapping(const StoreInfo &storeInfo);
+    API_EXPORT ~StoreMetaMapping();
+    API_EXPORT bool Marshal(json &node) const override;
+    API_EXPORT bool Unmarshal(const json &node) override;
+    API_EXPORT std::string GetKey() const override;
+    API_EXPORT std::string GetCloudStoreMetaKey() const;
+    API_EXPORT std::string GetDeviceStoreMetaKey() const;
+    API_EXPORT std::string GetSearchStoreMetaKey() const;
+    API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
+    API_EXPORT StoreMetaMapping& operator=(const StoreMetaData &meta);
+
+private:
+    static std::string GetKey(const std::initializer_list<std::string> &fields);
+    std::string GetStoreMetaKeyWithPath(const std::string &path) const;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_STORE_META_DATA_H

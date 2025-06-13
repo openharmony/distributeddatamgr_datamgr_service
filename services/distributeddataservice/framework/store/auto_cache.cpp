@@ -25,7 +25,6 @@
 #include "utils/anonymous.h"
 namespace OHOS::DistributedData {
 using Account = AccountDelegate;
-static constexpr const char *KEY_SEPARATOR = "###";
 AutoCache &AutoCache::GetInstance()
 {
     static AutoCache cache;
@@ -61,24 +60,16 @@ AutoCache::~AutoCache()
     }
 }
 
-std::string AutoCache::GenerateKey(const std::string &userId, const std::string &storeId) const
-{
-    std::string key = "";
-    if (userId.empty() || storeId.empty()) {
-        return key;
-    }
-    return key.append(userId).append(KEY_SEPARATOR).append(storeId);
-}
-
 std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
-    auto storeKey = GenerateKey(meta.user, meta.storeId);
+    auto storeKey = meta.dataDir;
     if (meta.storeType >= MAX_CREATOR_NUM || meta.storeType < 0 || !creators_[meta.storeType] ||
         disables_.ContainIf(meta.tokenId,
             [&storeKey](const std::set<std::string> &stores) -> bool { return stores.count(storeKey) != 0; })) {
-        ZLOGW("storeType is invalid or store is disabled,user:%{public}s,bundleName:%{public}s,storeName:%{public}s",
-            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        ZLOGW("storeType %{public}d is invalid or store is disabled, user:%{public}s, bundleName:%{public}s, "
+              "storeName:%{public}s", meta.storeType, meta.user.c_str(), meta.bundleName.c_str(),
+              meta.GetStoreAlias().c_str());
         return { E_ERROR, store };
     }
     if (meta.area == GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
@@ -126,19 +117,17 @@ AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &
     return GetDBStore(meta, watchers).second;
 }
 
-AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::string &storeName,
-    const std::string &userId)
+AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::string &path)
 {
     Stores stores;
-    auto storeKey = GenerateKey(userId, storeName);
     stores_.ComputeIfPresent(
-        tokenId, [&stores, &storeKey](auto &, std::map<std::string, Delegate> &delegates) -> bool {
-            if (storeKey.empty()) {
+        tokenId, [&stores, &path](auto &, std::map<std::string, Delegate> &delegates) -> bool {
+            if (path.empty()) {
                 for (auto &[_, delegate] : delegates) {
                     stores.push_back(delegate);
                 }
             } else {
-                auto it = delegates.find(storeKey);
+                auto it = delegates.find(path);
                 if (it != delegates.end()) {
                     stores.push_back(it->second);
                 }
@@ -170,18 +159,17 @@ void AutoCache::StartTimer()
     ZLOGD("start timer,taskId: %{public}" PRIu64, taskId_);
 }
 
-void AutoCache::CloseStore(uint32_t tokenId, const std::string &storeId, const std::string &userId)
+void AutoCache::CloseStore(uint32_t tokenId, const std::string &path)
 {
-    ZLOGD("close store start, store:%{public}s, token:%{public}u", Anonymous::Change(storeId).c_str(), tokenId);
+    ZLOGD("close store start, token:%{public}u", tokenId);
     std::set<std::string> storeIds;
     std::list<Delegate> closeStores;
     bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
-    auto storeKey = GenerateKey(userId, storeId);
     stores_.ComputeIfPresent(tokenId,
-        [this, &storeKey, isScreenLocked, &storeIds, &closeStores](auto &, auto &delegates) {
+        [this, &path, isScreenLocked, &storeIds, &closeStores](auto &, auto &delegates) {
             auto it = delegates.begin();
             while (it != delegates.end()) {
-                if ((it->first == storeKey || storeKey.empty()) &&
+                if ((it->first == path || path.empty()) &&
                     (!isScreenLocked || it->second.GetArea() != GeneralStore::EL4) &&
                     disableStores_.count(it->second.GetDataDir()) == 0) {
                     disableStores_.insert(it->second.GetDataDir());
@@ -241,14 +229,12 @@ void AutoCache::CloseStore(const AutoCache::Filter &filter)
     });
 }
 
-void AutoCache::SetObserver(uint32_t tokenId, const std::string &storeId, const AutoCache::Watchers &watchers,
-    const std::string &userId)
+void AutoCache::SetObserver(uint32_t tokenId, const AutoCache::Watchers &watchers, const std::string &path)
 {
-    auto storeKey = GenerateKey(userId, storeId);
-    stores_.ComputeIfPresent(tokenId, [&storeKey, &watchers](auto &key, auto &stores) {
+    stores_.ComputeIfPresent(tokenId, [&path, &watchers](auto &key, auto &stores) {
         ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key,
-            Anonymous::Change(storeKey).c_str(), watchers.size());
-        auto it = stores.find(storeKey);
+            Anonymous::Change(path).c_str(), watchers.size());
+        auto it = stores.find(path);
         if (it != stores.end()) {
             it->second.SetObservers(watchers);
         }
@@ -274,23 +260,21 @@ void AutoCache::GarbageCollect(bool isForce)
     });
 }
 
-void AutoCache::Enable(uint32_t tokenId, const std::string &storeId, const std::string &userId)
+void AutoCache::Enable(uint32_t tokenId, const std::string &path)
 {
-    auto storeKey = GenerateKey(userId, storeId);
-    disables_.ComputeIfPresent(tokenId, [&storeKey](auto key, std::set<std::string> &stores) {
-        stores.erase(storeKey);
-        return !(stores.empty() || storeKey.empty());
+    disables_.ComputeIfPresent(tokenId, [&path](auto key, std::set<std::string> &stores) {
+        stores.erase(path);
+        return !(stores.empty() || path.empty());
     });
 }
 
-void AutoCache::Disable(uint32_t tokenId, const std::string &storeId, const std::string &userId)
+void AutoCache::Disable(uint32_t tokenId, const std::string &path)
 {
-    auto storeKey = GenerateKey(userId, storeId);
-    disables_.Compute(tokenId, [&storeKey](auto key, std::set<std::string> &stores) {
-        stores.insert(storeKey);
+    disables_.Compute(tokenId, [&path](auto key, std::set<std::string> &stores) {
+        stores.insert(path);
         return !stores.empty();
     });
-    CloseStore(tokenId, storeId, userId);
+    CloseStore(tokenId, path);
 }
 
 AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user, const StoreMetaData &meta)

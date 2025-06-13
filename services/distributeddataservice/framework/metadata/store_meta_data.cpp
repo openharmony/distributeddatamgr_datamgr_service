@@ -22,6 +22,7 @@
 #include "metadata/strategy_meta_data.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
+#include "utils/crypto.h"
 namespace OHOS {
 namespace DistributedData {
 constexpr uint32_t StoreMetaData::CURRENT_VERSION;
@@ -127,8 +128,8 @@ StoreMetaData::StoreMetaData(const std::string &userId, const std::string &appId
 }
 
 StoreMetaData::StoreMetaData(const StoreInfo &storeInfo)
-    : instanceId(storeInfo.instanceId), bundleName(storeInfo.bundleName), storeId(storeInfo.storeName),
-      user(std::to_string(storeInfo.user))
+    : instanceId(storeInfo.instanceId), bundleName(storeInfo.bundleName), dataDir(storeInfo.path),
+      storeId(storeInfo.storeName), user(std::to_string(storeInfo.user))
 {
 }
 
@@ -160,25 +161,26 @@ bool StoreMetaData::operator!=(const StoreMetaData &metaData) const
 std::string StoreMetaData::GetKey() const
 {
     if (instanceId == 0) {
-        return GetKey({ deviceId, user, "default", bundleName, storeId });
+        return GetKey({ deviceId, user, "default", bundleName, storeId, dataDir });
     }
-    return GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+    return GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId), dataDir });
 }
 
 std::string StoreMetaData::GetKeyLocal() const
 {
     if (instanceId == 0) {
-        return StoreMetaDataLocal::GetKey({ deviceId, user, "default", bundleName, storeId });
+        return StoreMetaDataLocal::GetKey({ deviceId, user, "default", bundleName, storeId, dataDir });
     }
-    return StoreMetaDataLocal::GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+    return StoreMetaDataLocal::GetKey(
+        { deviceId, user, "default", bundleName, storeId, std::to_string(instanceId), dataDir });
 }
 
 std::string StoreMetaData::GetSecretKey() const
 {
     if (version < UUID_CHANGED_TAG) {
-        return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId });
+        return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId, dataDir });
     }
-    return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
+    return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId, std::to_string(instanceId), dataDir });
 }
 
 std::string StoreMetaData::GetBackupSecretKey() const
@@ -196,10 +198,22 @@ std::string StoreMetaData::GetAutoLaunchKey() const
 
 std::string StoreMetaData::GetDebugInfoKey() const
 {
+    return StoreDebugInfo::GetPrefix(
+        { deviceId, user, "default", bundleName, storeId, std::to_string(instanceId), dataDir });
+}
+
+std::string StoreMetaData::GetDebugInfoKeyWithoutPath() const
+{
     return StoreDebugInfo::GetPrefix({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
 
 std::string StoreMetaData::GetDfxInfoKey() const
+{
+    return StoreDfxInfo::GetPrefix(
+        { deviceId, user, "default", bundleName, storeId, std::to_string(instanceId), dataDir });
+}
+
+std::string StoreMetaData::GetDfxInfoKeyWithoutPath() const
 {
     return StoreDfxInfo::GetPrefix({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
@@ -245,5 +259,106 @@ std::string StoreMetaData::GetCloneSecretKey() const
 {
     return SecretKeyMetaData::GetCloneKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
 }
+
+std::string StoreMetaData::GetKeyWithoutPath() const
+{
+    if (instanceId == 0) {
+        return GetKey({ deviceId, user, "default", bundleName, storeId });
+    }
+    return GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StoreMetaData::GetKeyLocalWithoutPath() const
+{
+    if (instanceId == 0) {
+        return StoreMetaDataLocal::GetKey({ deviceId, user, "default", bundleName, storeId });
+    }
+    return StoreMetaDataLocal::GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StoreMetaData::GetSecretKeyWithoutPath() const
+{
+    if (version < UUID_CHANGED_TAG) {
+        return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId });
+    }
+    return SecretKeyMetaData::GetKey({ user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+StoreMetaMapping::StoreMetaMapping() {}
+StoreMetaMapping::StoreMetaMapping(const StoreMetaData &storeMeta) : StoreMetaData(storeMeta) {}
+StoreMetaMapping::~StoreMetaMapping() {}
+
+bool StoreMetaMapping::Marshal(json &node) const
+{
+    StoreMetaData::Marshal(node);
+    SetValue(node[GET_NAME(cloudPath)], cloudPath);
+    SetValue(node[GET_NAME(devicePath)], devicePath);
+    SetValue(node[GET_NAME(searchPath)], searchPath);
+    return true;
+}
+bool StoreMetaMapping::Unmarshal(const Serializable::json &node)
+{
+    StoreMetaData::Unmarshal(node);
+    GetValue(node, GET_NAME(cloudPath), cloudPath);
+    GetValue(node, GET_NAME(devicePath), devicePath);
+    GetValue(node, GET_NAME(searchPath), searchPath);
+    return true;
+}
+
+std::string StoreMetaMapping::GetKey() const
+{
+    if (instanceId == 0) {
+        return GetKey({ deviceId, user, "default", bundleName, storeId });
+    }
+    return GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId) });
+}
+
+std::string StoreMetaMapping::GetCloudStoreMetaKey() const
+{
+    return GetStoreMetaKeyWithPath(cloudPath);
+}
+
+std::string StoreMetaMapping::GetDeviceStoreMetaKey() const
+{
+    return GetStoreMetaKeyWithPath(devicePath);
+}
+
+std::string StoreMetaMapping::GetSearchStoreMetaKey() const
+{
+    return GetStoreMetaKeyWithPath(searchPath);
+}
+
+std::string StoreMetaMapping::GetPrefix(const std::initializer_list<std::string> &fields)
+{
+    return GetKey(fields).append(Constant::KEY_SEPARATOR);
+}
+
+StoreMetaMapping& StoreMetaMapping::operator=(const StoreMetaData &meta)
+{
+    if (this == &meta) {
+        return *this;
+    }
+    this->StoreMetaData::operator=(meta);
+    return *this;
+}
+
+std::string StoreMetaMapping::GetStoreMetaKeyWithPath(const std::string &path) const
+{
+    if (instanceId == 0) {
+        return StoreMetaData::GetKey({ deviceId, user, "default", bundleName, storeId, path });
+    }
+    return StoreMetaData::GetKey({ deviceId, user, "default", bundleName, storeId, std::to_string(instanceId), path });
+}
+
+std::string StoreMetaMapping::GetKey(const std::initializer_list<std::string> &fields)
+{
+    std::string prefix = KEY_PREFIX;
+    for (const auto &field : fields) {
+        prefix.append(Constant::KEY_SEPARATOR).append(field);
+    }
+    return prefix;
+}
+StoreMetaMapping::StoreMetaMapping(const StoreInfo &storeInfo) : StoreMetaData(storeInfo) {}
+
 } // namespace DistributedData
 } // namespace OHOS

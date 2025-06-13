@@ -216,6 +216,38 @@ bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value
     return status == DistributedDB::DBStatus::OK;
 }
 
+bool MetaDataManager::SaveMeta(const std::vector<Entry> &values, bool isLocal)
+{
+    if (!inited_) {
+        return false;
+    }
+    if (values.empty()) {
+        return true;
+    }
+    std::vector<DistributedDB::Entry> entries;
+    entries.reserve(values.size());
+    for (const auto &[key, value] : values) {
+        entries.push_back({ { key.begin(), key.end() }, { value.begin(), value.end() } });
+    }
+    auto status = isLocal ? metaStore_->PutLocalBatch(entries) : metaStore_->PutBatch(entries);
+    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, size:%{public}zu", status, isLocal, values.size());
+        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
+        StopSA();
+        return false;
+    }
+    if (status == DistributedDB::DBStatus::OK && backup_) {
+        backup_(metaStore_);
+    }
+    if (!isLocal && cloudSyncer_) {
+        cloudSyncer_();
+    }
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("failed! status:%{public}d isLocal:%{public}d, size:%{public}zu", status, isLocal, values.size());
+    }
+    return status == DistributedDB::DBStatus::OK;
+}
+
 bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool isLocal)
 {
     if (!inited_) {
@@ -271,12 +303,41 @@ bool MetaDataManager::DelMeta(const std::string &key, bool isLocal)
         return false;
     }
 
-    DistributedDB::Value data;
     auto status = isLocal ? metaStore_->DeleteLocal({ key.begin(), key.end() })
                           : metaStore_->Delete({ key.begin(), key.end() });
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key:%{public}s",
             status, isLocal, Anonymous::Change(key).c_str());
+        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
+        StopSA();
+        return false;
+    }
+    if (status == DistributedDB::DBStatus::OK && backup_) {
+        backup_(metaStore_);
+    }
+    if (!isLocal && cloudSyncer_) {
+        cloudSyncer_();
+    }
+    return ((status == DistributedDB::DBStatus::OK) || (status == DistributedDB::DBStatus::NOT_FOUND));
+}
+
+bool MetaDataManager::DelMeta(const std::vector<std::string> &keys, bool isLocal)
+{
+    if (!inited_) {
+        return false;
+    }
+    if (keys.empty()) {
+        return true;
+    }
+    std::vector<DistributedDB::Key> dbKeys;
+    dbKeys.reserve(keys.size());
+    for (auto &key : keys) {
+        dbKeys.emplace_back(key.begin(), key.end());
+    }
+    auto status = isLocal ? metaStore_->DeleteLocalBatch(dbKeys) : metaStore_->DeleteBatch(dbKeys);
+    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("db corrupted! status:%{public}d isLocal:%{public}d, key size:%{public}zu", status, isLocal,
+            dbKeys.size());
         CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
         StopSA();
         return false;
