@@ -23,6 +23,7 @@
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
 #include "device_manager_adapter.h"
+#include "file_mount_manager.h"
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "system_ability_definition.h"
@@ -240,7 +241,7 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::IDLE);
     std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
-    int ret = RemoteFileShare::GetDfsUrisFromLocal(uris, userId, dfsUris);
+    int ret = Storage::DistributedFile::FileMountManager::GetDfsUrisDirFromLocal(uris, userId, dfsUris);
     if (ret != 0 || dfsUris.empty()) {
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::FAILED, E_FS_ERROR, BizState::DFX_END);
