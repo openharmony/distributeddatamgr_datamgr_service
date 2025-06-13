@@ -100,7 +100,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
-    if(!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
+    if (!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
         ZLOGD("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
         if (appId_.empty()) {
