@@ -575,7 +575,7 @@ HWTEST_F(ServiceMetaDataTest, StoreMetaData009, TestSize.Level1)
     storeMetaData.deviceId = "009_uuid";
     storeMetaData.bundleName = "009_bundleName";
 
-    std::string key = "StoreDfxInfo###009_uuid###100###default###009_bundleName###test_store###1";
+    std::string key = "StoreDfxInfo###009_uuid###100###default###009_bundleName###test_store###1###";
     EXPECT_EQ(storeMetaData.GetDfxInfoKeyWithoutPath(), key);
 }
 

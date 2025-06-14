@@ -311,8 +311,8 @@ HWTEST_F(KvstoreMetaManagerUpdateKeyTest, KeyUpdataTest007, TestSize.Level1)
     MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
     KvStoreMetaManager::GetInstance().InitMetaData();
 
-    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocalWithoutPath(), metaDataLocal, true));
-    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), metaDataLocal, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocalWithoutPath(), metaDataLocal, true));
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), metaDataLocal, true));
 
     StoreMetaMapping storeMetaMapping(metaData);
     EXPECT_TRUE(MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true));
