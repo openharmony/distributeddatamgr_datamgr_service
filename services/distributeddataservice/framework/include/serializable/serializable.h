@@ -15,10 +15,11 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_COMMON_SERIALIZABLE_H
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <map>
+
 #include "visibility.h"
 #ifndef JSON_NOEXCEPTION
 #define JSON_NOEXCEPTION
@@ -33,7 +34,7 @@ namespace DistributedData {
 struct Serializable {
 public:
     class iterator;
-    class JSONWrapper final{
+    class JSONWrapper final {
     public:
         friend iterator;
         enum class Type : uint8_t {
@@ -44,11 +45,11 @@ public:
         API_EXPORT JSONWrapper(cJSON *json, cJSON *root, const std::string &key = "");
         API_EXPORT JSONWrapper(const std::string &jsonStr);
         API_EXPORT JSONWrapper(JSONWrapper &&jsonWrapper);
-        
+
         API_EXPORT operator std::string() const;
         API_EXPORT bool operator==(int32_t value) const;
         API_EXPORT bool operator==(const std::string &value) const;
-        
+
         API_EXPORT JSONWrapper &operator=(JSONWrapper &&jsonWrapper);
         API_EXPORT JSONWrapper &operator=(JSONWrapper::Type type);
         API_EXPORT JSONWrapper &operator=(bool value);
@@ -95,17 +96,18 @@ public:
         API_EXPORT static JSONWrapper array();
         API_EXPORT void push_back(const JSONWrapper &value);
         API_EXPORT static std::string to_string(const JSONWrapper &jsonWrapper);
-        API_EXPORT bool operator==(const std::map<std::string, std::string>& value) const;
-        API_EXPORT bool operator==(const std::map<std::string, uint64_t>& value) const;
-        API_EXPORT bool operator==(const std::vector<std::string>& value) const;
+        API_EXPORT bool operator==(const std::map<std::string, std::string> &value) const;
+        API_EXPORT bool operator==(const std::map<std::string, uint64_t> &value) const;
+        API_EXPORT bool operator==(const std::vector<std::string> &value) const;
         API_EXPORT bool empty() const;
-        API_EXPORT JSONWrapper& operator=(const std::map<std::string, uint64_t>& value);
-        API_EXPORT JSONWrapper &operator=(const std::map<std::string, std::string>& value); 
-        API_EXPORT bool erase(const std::string& key);
+        API_EXPORT JSONWrapper &operator=(const std::map<std::string, uint64_t> &value);
+        API_EXPORT JSONWrapper &operator=(const std::map<std::string, std::string> &value);
+        API_EXPORT bool erase(const std::string &key);
         API_EXPORT bool erase(int index);
+
     private:
         void AddToRoot();
-        JSONWrapper(const JSONWrapper& jsonWrapper) = delete;
+        JSONWrapper(const JSONWrapper &jsonWrapper) = delete;
         JSONWrapper &operator=(const JSONWrapper &jsonWrapper) = delete;
         bool ReplaceNode(cJSON *node);
         void SyncChildren() const;
@@ -182,6 +184,7 @@ public:
 
     template<typename... _Types>
     API_EXPORT static bool GetValue(const json &node, const std::string &name, std::variant<_Types...> &value);
+
 protected:
     API_EXPORT ~Serializable() = default;
 
@@ -278,7 +281,7 @@ bool Serializable::GetValue(const json &node, const std::string &name, T *&value
     if (subNode.is_null()) {
         return false;
     }
-    value = new(std::nothrow) T();
+    value = new (std::nothrow) T();
     if (value == nullptr) {
         return false;
     }
