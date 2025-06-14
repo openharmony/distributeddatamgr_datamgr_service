@@ -82,6 +82,8 @@ ohos_unittest("CloudDataTest") {
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
+    "googletest:gmock",
+    "googletest:gtest",
     "ipc:ipc_single",
     "cJSON:cjson",
     "kv_store:distributeddata_inner",

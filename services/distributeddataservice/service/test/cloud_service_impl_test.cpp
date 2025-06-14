@@ -435,7 +435,7 @@ HWTEST_F(CloudServiceImplTest, ConfirmInvitation001, TestSize.Level0)
  */
 HWTEST_F(CloudServiceImplTest, GetStoreMetaData_001, TestSize.Level1)
 {
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(true)).WillOnce(Return(true));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(true)).WillOnce(Return(false));
     StoreMetaData meta;
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, true);
@@ -448,7 +448,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_001, TestSize.Level1)
  */
 HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
 {
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillOnce(Return(false));
     StoreMetaData meta;
     meta.user = "0";
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
