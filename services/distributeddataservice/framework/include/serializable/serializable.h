@@ -212,7 +212,8 @@ protected:
     template<typename _OutTp, typename _First, typename... _Rest>
     static bool ReadVariant(const json &node, const std::string &name, uint32_t step, uint32_t index, _OutTp &output);
 
-    template<typename _InTp> static bool WriteVariant(json &node, uint32_t step, const _InTp &input);
+    template<typename _InTp>
+    static bool WriteVariant(json &node, uint32_t step, const _InTp &input);
 
     template<typename _InTp, typename _First, typename... _Rest>
     static bool WriteVariant(json &node, uint32_t step, const _InTp &input);
