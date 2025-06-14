@@ -357,6 +357,9 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
         return false;
     }
     auto status = metaStore_->Sync(devices, DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL, [complete](auto &dbResults) {
+        if (complete == nullptr) {
+            return;
+        }
         std::map<std::string, int32_t> results;
         for (auto &[uuid, status] : dbResults) {
             results.insert_or_assign(uuid, static_cast<int32_t>(status));

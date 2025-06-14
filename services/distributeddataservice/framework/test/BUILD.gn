@@ -262,7 +262,10 @@ ohos_unittest("FeatureTest") {
 ohos_unittest("MetaDataManagerTest") {
   module_out_path = module_output_path
 
-  sources = [ "meta_data_manager_test.cpp" ]
+  sources = [
+    "meta_data_manager_test.cpp",
+    "mock/db_store_mock.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
