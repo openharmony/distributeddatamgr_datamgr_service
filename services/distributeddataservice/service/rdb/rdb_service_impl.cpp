@@ -1196,7 +1196,6 @@ int RdbServiceImpl::DoAutoSync(
     const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tables)
 {
     StoreMetaData storeMetaData = GetStoreMetaData(dataBase);
-    auto tokenId = storeMetaData.tokenId;
     auto store = GetStore(storeMetaData);
     if (store == nullptr) {
         ZLOGE("autosync store null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
