@@ -74,14 +74,12 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest001, TestSize.Level0)
     std::vector<std::string> devices = {"remote_device"};
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillOnce(Return(false))
         .WillOnce(Return(false));
     auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillOnce(Return(false))
-        .WillOnce(Return(true));
+        .WillOnce(Return(false));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 
