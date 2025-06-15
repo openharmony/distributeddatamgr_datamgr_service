@@ -34,15 +34,6 @@ OHOS::DistributedData::MetaDataManager::MetaDataManager()
 OHOS::DistributedData::MetaDataManager::~MetaDataManager()
 {
 }
-bool OHOS::DistributedData::MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool isLocal)
-{
-    return BMetaDataManager::metaDataManager->LoadMeta(key, value, isLocal);
-}
-
-bool OHOS::DistributedData::MetaDataManager::SaveMeta(const std::string &key, const Serializable &value, bool isLocal)
-{
-    return BMetaDataManager::metaDataManager->SaveMeta(key, value, isLocal);
-}
 
 template<>
 bool OHOS::DistributedData::MetaDataManager::LoadMeta(

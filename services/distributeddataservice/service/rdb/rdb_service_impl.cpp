@@ -439,7 +439,7 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
     }
     std::vector<std::string> devices = { DmAdapter::GetInstance().ToUUID(device) };
     if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(
-                                             devices, [](auto &results) {}, true)) {
+            devices, [](auto &results) {}, true)) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
     }
@@ -1814,8 +1814,7 @@ void RdbServiceImpl::RegisterEvent()
         StoreMetaMapping mapping(storeInfo);
         mapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(mapping.GetKey(), mapping, true)) {
-            ZLOGE("meta mapping empty, bundleName:%{public}s, storeId:%{public}s", mapping.bundleName.c_str(),
-                mapping.GetStoreAlias().c_str());
+            ZLOGE("bundle:%{public}s, storeId:%{public}s", mapping.bundleName.c_str(), mapping.GetStoreAlias().c_str());
             return;
         }
         StoreMetaData meta = mapping;

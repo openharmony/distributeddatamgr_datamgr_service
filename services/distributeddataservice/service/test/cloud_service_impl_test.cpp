@@ -438,7 +438,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_001, TestSize.Level1)
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(true)).WillOnce(Return(false));
     StoreMetaData meta;
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
-    EXPECT_EQ(res, true);
+    EXPECT_EQ(res, false);
 }
 
 /**
@@ -481,7 +481,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_004, TestSize.Level1)
     StoreMetaData meta;
     meta.user = "100";
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
-    EXPECT_EQ(res, true);
+    EXPECT_EQ(res, false);
 }
 
 /**

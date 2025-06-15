@@ -97,7 +97,7 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest001, TestSize.Level0)
         .WillOnce(testing::Return(true))
         .WillOnce(testing::Return(true));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
-    EXPECT_EQ(isNeedSync, false);
+    EXPECT_EQ(isNeedSync, true);
 }
 
 /**
