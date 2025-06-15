@@ -439,7 +439,7 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
     }
     std::vector<std::string> devices = { DmAdapter::GetInstance().ToUUID(device) };
     if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(
-            devices, [](auto &results) {}, true)) {
+        devices, [](auto &results) {}, true)) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
     }
