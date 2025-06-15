@@ -127,7 +127,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::InsertEx(const std::string &ur
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
-        } 
+        }
         if (errCode != E_OK) {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
@@ -175,7 +175,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
-        } 
+        }
         if (errCode != E_OK) {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
@@ -204,7 +204,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri, providerInfo.visitedUserId);
             RdbSubscriberManager::GetInstance().Emit(uri, providerInfo.visitedUserId, metaData);
-        } 
+        }
         if (errCode != E_OK) {
             ReportExcuteFault(callingTokenId, providerInfo, errCode, func);
         }
