@@ -105,6 +105,8 @@ static constexpr const char *PERMISSION_DISTRIBUTED_DATASYNC = "ohos.permission.
 static constexpr const char *PERMISSION_ACCESS_SERVICE_DM = "ohos.permission.ACCESS_SERVICE_DM";
 static constexpr const char *PERMISSION_MANAGE_LOCAL_ACCOUNTS = "ohos.permission.MANAGE_LOCAL_ACCOUNTS";
 static constexpr const char *PERMISSION_GET_BUNDLE_INFO = "ohos.permission.GET_BUNDLE_INFO_PRIVILEGED";
+static constexpr const char *TEST_CLOUD_PATH =
+    "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/test_cloud_store";
 PermissionDef GetPermissionDef(const std::string &permission)
 {
     PermissionDef def = { .permissionName = permission,
@@ -211,6 +213,7 @@ void CloudDataTest::InitMetaData()
     metaData_.isAutoSync = true;
     metaData_.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
     metaData_.storeId = TEST_CLOUD_STORE;
+    metaData_.dataDir = TEST_CLOUD_PATH;
     PolicyValue value;
     value.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
 }
@@ -303,6 +306,8 @@ void CloudDataTest::SetUp()
 {
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
 }
 
@@ -311,6 +316,8 @@ void CloudDataTest::TearDown()
     EventCenter::GetInstance().Unsubscribe(CloudEvent::LOCAL_CHANGE);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
 }
 
@@ -333,7 +340,7 @@ HWTEST_F(CloudDataTest, GetSchema, TestSize.Level1)
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
     EventCenter::GetInstance().PostEvent(std::move(event));
     auto ret = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
-    ASSERT_TRUE(ret);
+    ASSERT_FALSE(ret);
 }
 
 /**
@@ -2389,6 +2396,7 @@ HWTEST_F(CloudDataTest, PreShare, TestSize.Level0)
     info.bundleName = TEST_CLOUD_BUNDLE;
     info.storeName = TEST_CLOUD_BUNDLE;
     info.user = userId;
+    info.path = TEST_CLOUD_PATH;
     StoreMetaData meta(info);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
@@ -2883,12 +2891,12 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId001, TestSize.Level1)
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isNeedUpdateDeviceId = true;
     oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
 /**
@@ -2909,12 +2917,12 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId002, TestSize.Level1)
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isNeedUpdateDeviceId = false;
     oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
 /**
@@ -2935,12 +2943,12 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId003, TestSize.Level1)
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isNeedUpdateDeviceId = true;
     oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_END;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
 /**
@@ -2961,12 +2969,12 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId004, TestSize.Level1)
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isNeedUpdateDeviceId = false;
     oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_END;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
 /**

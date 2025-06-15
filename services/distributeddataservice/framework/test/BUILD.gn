@@ -262,7 +262,10 @@ ohos_unittest("FeatureTest") {
 ohos_unittest("MetaDataManagerTest") {
   module_out_path = module_output_path
 
-  sources = [ "meta_data_manager_test.cpp" ]
+  sources = [
+    "meta_data_manager_test.cpp",
+    "mock/db_store_mock.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
@@ -273,6 +276,8 @@ ohos_unittest("MetaDataManagerTest") {
     "ipc:ipc_core",
     "cJSON:cjson",
     "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+    "kv_store:distributeddata_inner",
   ]
 
   deps = [
@@ -290,6 +295,8 @@ ohos_unittest("StoreMetaDataLocalTest") {
   external_deps = [
     "cJSON:cjson",
     "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+    "kv_store:distributeddata_inner",
   ]
 }
 

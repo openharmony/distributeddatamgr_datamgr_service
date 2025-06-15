@@ -83,8 +83,9 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
     }
     for (auto &meta : storeMetaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("uninstalled bundleName:%{public}s storeId:%{public}s, userId:%{public}d, appIndex:%{public}d",
-                bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), userId, appIndex);
+            ZLOGI("storeMetaData uninstalled bundleName:%{public}s storeId:%{public}s, userId:%{public}d, "
+                "appIndex:%{public}d", bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), userId, appIndex);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath());
             MetaDataManager::GetInstance().DelMeta(meta.GetKey());
             MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
@@ -96,7 +97,8 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
             MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
-            PermitDelegate::GetInstance().DelCache(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(StoreMetaMapping(meta).GetKey(), true);
+            PermitDelegate::GetInstance().DelCache(meta.GetKeyWithoutPath());
         }
     }
 }

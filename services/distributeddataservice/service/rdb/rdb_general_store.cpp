@@ -142,6 +142,7 @@ void RdbGeneralStore::InitStoreInfo(const StoreMetaData &meta)
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::atoi(meta.user.c_str());
     storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    storeInfo_.path = meta.dataDir;
 }
 
 RelationalStoreDelegate::Option GetOption(const StoreMetaData &meta)

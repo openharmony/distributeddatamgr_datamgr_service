@@ -296,7 +296,7 @@ static AutoCache::Store GetStore(const ChangedAssetInfo& changedAsset)
     meta.user = std::to_string(changedAsset.storeInfo.user);
     meta.instanceId = changedAsset.storeInfo.instanceId;
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), meta)) {
         ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         return nullptr;

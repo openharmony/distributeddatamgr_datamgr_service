@@ -33,12 +33,14 @@ LoadConfigDataInfoStrategy::LoadConfigDataInfoStrategy()
 static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
     DistributedData::StoreMetaData &metaData, const int32_t userId, const int32_t appIndex)
 {
-    DistributedData::StoreMetaData meta;
-    meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    meta.user = std::to_string(userId);
-    meta.bundleName = bundleName;
-    meta.storeId = storeName;
-    bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true);
+    DistributedData::StoreMetaMapping storeMetaMapping;
+    storeMetaMapping.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    storeMetaMapping.user = std::to_string(userId);
+    storeMetaMapping.bundleName = bundleName;
+    storeMetaMapping.storeId = storeName;
+    bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(
+        storeMetaMapping.GetKey(), storeMetaMapping, true);
+    metaData = storeMetaMapping;
     if (!isCreated) {
         ZLOGE("DB not exist");
         return false;

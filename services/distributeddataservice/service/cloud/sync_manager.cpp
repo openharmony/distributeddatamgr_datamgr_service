@@ -176,11 +176,17 @@ std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
             return;
         }
 
-        StoreMetaData meta(storeInfo);
+        StoreMetaMapping meta(storeInfo);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-            ZLOGE("not found meta. bundleName: %{public}s, storeName: %{public}s, user: %{public}d.",
+            ZLOGE("no store mapping. bundleName: %{public}s, storeName: %{public}s, user: %{public}d.",
                 storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
+            return;
+        }
+        if (!meta.cloudPath.empty() && meta.dataDir != meta.cloudPath &&
+            !MetaDataManager::GetInstance().LoadMeta(meta.GetCloudStoreMetaKey(), meta, true)) {
+            ZLOGE("failed, no store meta. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str());
             return;
         }
         auto [status, store] = GetStore(meta, storeInfo.user);
@@ -957,19 +963,36 @@ void SyncManager::BatchReport(int32_t userId, const TraceIds &traceIds, SyncStag
     }
 }
 
+std::string SyncManager::GetPath(const StoreMetaData &meta)
+{
+    if (!meta.dataDir.empty()) {
+        return meta.dataDir;
+    }
+    StoreMetaMapping mapping(meta);
+    MetaDataManager::GetInstance().LoadMeta(mapping.GetKey(), mapping, true);
+    return mapping.cloudPath.empty() ? mapping.dataDir : mapping.cloudPath;
+}
+
 std::pair<bool, StoreMetaData> SyncManager::GetMetaData(const StoreInfo &storeInfo)
 {
     StoreMetaData meta(storeInfo);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-        meta.user = "0"; // check if it is a public store.
-        StoreMetaDataLocal localMetaData;
-        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMetaData, true) ||
-            !localMetaData.isPublic || !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-            ZLOGE("failed, no store meta. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                  meta.GetStoreAlias().c_str());
-            return { false, meta };
-        }
+    meta.dataDir = GetPath(meta);
+    if (!meta.dataDir.empty() && MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+        return { true, meta };
+    }
+    meta.user = "0"; // check if it is a public store.
+    meta.dataDir = GetPath(meta);
+    if (meta.dataDir.empty() || !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+        ZLOGE("failed, no store meta. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+            meta.GetStoreAlias().c_str());
+        return { false, meta };
+    }
+    StoreMetaDataLocal localMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMetaData, true) || !localMetaData.isPublic) {
+        ZLOGE("failed, no store LocalMeta. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+            meta.GetStoreAlias().c_str());
+        return { false, meta };
     }
     return { true, meta };
 }

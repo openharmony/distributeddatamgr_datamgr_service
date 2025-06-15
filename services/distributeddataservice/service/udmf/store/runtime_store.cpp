@@ -511,14 +511,14 @@ bool RuntimeStore::SaveMetaData()
     DistributedData::StoreMetaData loadLocal;
     DistributedData::StoreMetaData syncMeta;
     if (DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), loadLocal, true) &&
-        DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), syncMeta, false)) {
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKeyLocalWithoutPath(), syncMeta, false)) {
         if (loadLocal == saveMeta && syncMeta == saveMeta) {
             ZLOGD("Meta data is already saved.");
             return true;
         }
     }
 
-    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
+    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta) &&
                  DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!saved) {
         ZLOGE("SaveMeta failed, saveMeta.key:%{public}s", saveMeta.GetKey().c_str());

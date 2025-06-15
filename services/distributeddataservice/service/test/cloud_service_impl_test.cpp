@@ -15,6 +15,7 @@
 #define LOG_TAG "CloudServiceImplTest"
 #include "cloud_service_impl.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
 
@@ -41,6 +42,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
+#include "mock/meta_data_manager_mock.h"
 #include "model/component_config.h"
 #include "network/network_delegate.h"
 #include "network_delegate_mock.h"
@@ -53,6 +55,7 @@
 #include "token_setproc.h"
 
 using namespace testing::ext;
+using namespace testing;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using Confirmation = OHOS::CloudData::Confirmation;
@@ -73,6 +76,7 @@ public:
     void TearDown();
 
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
+    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static NetworkDelegateMock delegate_;
 };
 std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceImpl_ =
@@ -81,6 +85,8 @@ NetworkDelegateMock CloudServiceImplTest::delegate_;
 
 void CloudServiceImplTest::SetUpTestCase(void)
 {
+    metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+    BMetaDataManager::metaDataManager = metaDataManagerMock;
     size_t max = 12;
     size_t min = 5;
     auto executor = std::make_shared<ExecutorPool>(max, min);
@@ -88,7 +94,11 @@ void CloudServiceImplTest::SetUpTestCase(void)
     NetworkDelegate::RegisterNetworkInstance(&delegate_);
 }
 
-void CloudServiceImplTest::TearDownTestCase() { }
+void CloudServiceImplTest::TearDownTestCase()
+{
+    metaDataManagerMock = nullptr;
+    BMetaDataManager::metaDataManager = nullptr;
+}
 
 void CloudServiceImplTest::SetUp() { }
 
@@ -416,6 +426,82 @@ HWTEST_F(CloudServiceImplTest, ConfirmInvitation001, TestSize.Level0)
     std::string invitation;
     auto status = cloudServiceImpl_->ConfirmInvitation(invitation, confirmation, result);
     EXPECT_EQ(status, GeneralError::E_ERROR);
+}
+
+/**
+ * @tc.name: GetStoreMetaData_001
+ * @tc.desc: test GetStoreMetaData LoadMeta success.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, GetStoreMetaData_001, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(true)).WillOnce(Return(false));
+    StoreMetaData meta;
+    bool res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name: GetStoreMetaData_002
+ * @tc.desc: test GetStoreMetaData LoadMeta failed and user is 0.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillOnce(Return(false));
+    StoreMetaData meta;
+    meta.user = "0";
+    bool res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name: GetStoreMetaData_003
+ * @tc.desc: test GetStoreMetaData LoadMeta failed and user is not 0.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, GetStoreMetaData_003, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillOnce(Return(false));
+    StoreMetaData meta;
+    meta.user = "100";
+    bool res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name: GetStoreMetaData_004
+ * @tc.desc: test GetStoreMetaData First load of metadata failed and the user is not 0,
+ * then the load of metadata succeeded.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, GetStoreMetaData_004, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillRepeatedly(Return(true));
+    StoreMetaData meta;
+    meta.user = "100";
+    bool res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name: PreShare_001
+ * @tc.desc: test PreShare is dataDir empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, PreShare_001, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillRepeatedly(Return(false));
+    StoreInfo storeInfo;
+    storeInfo.path = "";
+    std::shared_ptr<GenQuery> query;
+    auto [errCode, cursor] = cloudServiceImpl_->PreShare(storeInfo, *query);
+    EXPECT_EQ(errCode, E_ERROR);
+    ASSERT_EQ(cursor, nullptr);
+    storeInfo.path = "test";
+    std::tie(errCode, cursor) = cloudServiceImpl_->PreShare(storeInfo, *query);
+    EXPECT_EQ(errCode, E_ERROR);
+    ASSERT_EQ(cursor, nullptr);
 }
 
 /**

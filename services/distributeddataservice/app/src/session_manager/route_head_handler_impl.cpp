@@ -69,7 +69,7 @@ void RouteHeadHandlerImpl::Init()
         metaData.user = DEFAULT_USERID;
         metaData.bundleName = appId_;
         metaData.storeId = storeId_;
-        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData)) {
             userId_ = DEFAULT_USERID;
         }
     }
@@ -343,7 +343,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataUser(const uint8_t *data, uint32_t total
             metaData.user = DEFAULT_USERID;
             metaData.bundleName = session_.appId;
             metaData.storeId = std::move(storeId);
-            if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData)) {
                 int foregroundUserId = 0;
                 AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
                 UserInfo userInfo = { .receiveUser = std::to_string(foregroundUserId),

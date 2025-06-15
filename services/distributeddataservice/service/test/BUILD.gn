@@ -69,6 +69,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "${data_service_path}/service/test/mock/meta_data_manager_mock.cpp",
     "cloud_data_test.cpp",
   ]
 
@@ -82,6 +83,8 @@ ohos_unittest("CloudDataTest") {
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
+    "googletest:gmock",
+    "googletest:gtest",
     "ipc:ipc_single",
     "cJSON:cjson",
     "kv_store:distributeddata_inner",
@@ -113,6 +116,7 @@ ohos_unittest("CloudServiceImplTest") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   module_out_path = module_output_path
   sources = [
@@ -125,6 +129,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "${data_service_path}/service/test/mock/meta_data_manager_mock.cpp",
     "cloud_service_impl_test.cpp",
   ]
 
@@ -133,12 +138,14 @@ ohos_unittest("CloudServiceImplTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
+    "cJSON:cjson",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
+    "googletest:gmock",
+    "googletest:gtest",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
-    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",

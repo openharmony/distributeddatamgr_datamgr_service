@@ -25,6 +25,7 @@
 #include "extension_connect_adaptor.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/store_meta_data.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
 #include "ipc_skeleton.h"
@@ -34,17 +35,18 @@ std::pair<bool, DistributedData::StoreMetaData> DataShareDbConfig::QueryMetaData
     const std::string &bundleName, const std::string &storeName, int32_t userId, int32_t appIndex)
 {
     TimeoutReport timeoutReport({bundleName, "", storeName, __FUNCTION__, 0});
-    DistributedData::StoreMetaData meta;
-    meta.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    meta.user = std::to_string(userId);
-    meta.bundleName = bundleName;
-    meta.storeId = storeName;
-    meta.instanceId = appIndex;
-    DistributedData::StoreMetaData metaData;
-    bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true);
+    DistributedData::StoreMetaMapping storeMetaMapping;
+    storeMetaMapping.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    storeMetaMapping.user = std::to_string(userId);
+    storeMetaMapping.bundleName = bundleName;
+    storeMetaMapping.storeId = storeName;
+    storeMetaMapping.instanceId = appIndex;
+    bool isCreated =
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+
     auto callingPid = IPCSkeleton::GetCallingPid();
     timeoutReport.Report(std::to_string(userId), callingPid, appIndex);
-    return std::make_pair(isCreated, metaData);
+    return std::make_pair(isCreated, storeMetaMapping);
 }
 
 std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(const DbConfig &dbConfig)

@@ -108,6 +108,15 @@ public:
     }
     static void SetUpTestCase()
     {
+        deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+        BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
+        metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+        BMetaDataManager::metaDataManager = metaDataManagerMock;
+        metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
+        BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
+        userDelegateMock = std::make_shared<UserDelegateMock>();
+        BUserDelegate::userDelegate = userDelegateMock;
+
         auto executors = std::make_shared<ExecutorPool>(12, 5);
         Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
@@ -143,16 +152,8 @@ public:
         metaData.tokenId = AccessTokenKit::GetHapTokenID(PEER_USER_ID2, "ohos.test.demo", 0);
         metaData.uid = METADATA_UID;
         metaData.storeType = 1;
-        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
         GrantPermissionNative();
-        deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
-        BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
-        metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
-        BMetaDataManager::metaDataManager = metaDataManagerMock;
-        metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
-        BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
-        userDelegateMock = std::make_shared<UserDelegateMock>();
-        BUserDelegate::userDelegate = userDelegateMock;
     }
     static void TearDownTestCase()
     {
@@ -169,7 +170,7 @@ public:
         metaData.tokenId = AccessTokenKit::GetHapTokenID(PEER_USER_ID2, "ohos.test.demo", 0);
         metaData.uid = METADATA_UID;
         metaData.storeType = 1;
-        MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
+        MetaDataManager::GetInstance().DelMeta(metaData.GetKeyWithoutPath());
         deviceManagerAdapterMock = nullptr;
         BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
         metaDataManagerMock = nullptr;
