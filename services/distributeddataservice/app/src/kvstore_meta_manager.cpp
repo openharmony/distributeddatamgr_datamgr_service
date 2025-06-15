@@ -719,7 +719,7 @@ void KvStoreMetaManager::UpdateStoreMetaMapping(const std::string &newUuid, cons
         auto oldKey = meta.GetKey();
         meta.deviceId = newUuid;
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
-        MetaDataManager::GetInstance().DelMeta(oldKey);
+        MetaDataManager::GetInstance().DelMeta(oldKey, true);
     }
 }
 

@@ -21,7 +21,6 @@
 #include "store/store_info.h"
 
 namespace OHOS::DistributedData {
-struct StoreMetaMapping;
 struct API_EXPORT StoreMetaData : public Serializable {
     // record meta version for compatible, should update when modify store meta data structure.
     static constexpr uint32_t CURRENT_VERSION = 0x03000006;
