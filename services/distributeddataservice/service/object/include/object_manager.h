@@ -92,14 +92,18 @@ public:
     int32_t InitUserMeta();
     int32_t DeleteByAppId(const std::string &appId, int32_t user);
     void RegisterRemoteCallback(const std::string &bundleName, const std::string &sessionId,
-                                pid_t pid, uint32_t tokenId,
-                                sptr<IRemoteObject> callback);
+        pid_t pid, uint32_t tokenId, sptr<IRemoteObject> callback);
     void UnregisterRemoteCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
-                                  const std::string &sessionId = "");
+        const std::string &sessionId = "");
+    void RegisterProgressObserverCallback(const std::string &bundleName, const std::string &sessionId,
+        pid_t pid, uint32_t tokenId, sptr<IRemoteObject> callback);
+    void UnregisterProgressObserverCallback(const std::string &bundleName, pid_t pid, uint32_t tokenId,
+        const std::string &sessionId = "");
     void NotifyChange(const ObjectRecord &changedData);
     void NotifyAssetsReady(const std::string& objectKey, const std::string& bundleName,
         const std::string& srcNetworkId = "");
     void NotifyAssetsStart(const std::string& objectKey, const std::string& srcNetworkId = "");
+    void NotifyAssetsRecvProgress(const std::string& objectKey, int32_t progress);
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     UriToSnapshot GetSnapShots(const std::string &bundleName, const std::string &storeName);
     int32_t BindAsset(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
@@ -128,10 +132,15 @@ private:
         std::map<std::string, sptr<ObjectChangeCallbackProxy>> observers_;
         bool operator<(const CallbackInfo &it_) const
         {
-            if (pid < it_.pid) {
-                return true;
-            }
-            return false;
+            return pid < it_.pid;
+        }
+    };
+    struct ProgressCallbackInfo {
+        pid_t pid;
+        std::map<std::string, sptr<ObjectProgressCallbackProxy>> observers_;
+        bool operator<(const ProgressCallbackInfo &it_) const
+        {
+            return pid < it_.pid;
         }
     };
     struct SaveInfo : DistributedData::Serializable {
@@ -213,12 +222,16 @@ private:
     std::string userId_;
     std::atomic<bool> isSyncing_ = false;
     ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
+    ConcurrentMap<uint32_t /* tokenId */, ProgressCallbackInfo > processCallbacks_;
     std::shared_ptr<ExecutorPool> executors_;
     DistributedData::AssetBindInfo ConvertBindInfo(ObjectStore::AssetBindInfo& bindInfo);
     ConcurrentMap<std::string, std::shared_ptr<Snapshot>> snapshots_; // key:bundleName_sessionId
     ConcurrentMap<std::string, UriToSnapshot> bindSnapshots_; // key:bundleName_storeName
     ConcurrentMap<std::string, RestoreStatus> restoreStatus_; // key:bundleName+sessionId
     ConcurrentMap<std::string, ExecutorPool::TaskId> objectTimer_; // key:bundleName+sessionId
+    ConcurrentMap<std::string, uint64_t> assetsRecvProgress_; // key:bundleName+sessionId
+    std::map<std::string, int32_t> progressInfo_;
+    std::mutex progressMutex_;
 };
 } // namespace DistributedObject
 } // namespace OHOS
