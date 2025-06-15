@@ -1742,6 +1742,9 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto uid = IPCSkeleton::GetCallingUid();
     meta.user = param.user_;
+    StoreMetaMapping metaMapping(meta);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+    meta.dataDir = metaMapping.dataDir;
     StoreMetaDataLocal localMeta;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true);
     if (!isCreated) {
