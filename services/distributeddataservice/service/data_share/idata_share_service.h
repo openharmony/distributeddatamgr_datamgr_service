@@ -25,6 +25,7 @@
 #include "datashare_template.h"
 #include "data_proxy_observer.h"
 #include "iremote_object.h"
+#include "dataproxy_handle_common.h"
 
 namespace OHOS::DataShare {
 class IDataShareService {
@@ -53,6 +54,11 @@ public:
         DATA_SHARE_SERVICE_CMD_INSERTEX,
         DATA_SHARE_SERVICE_CMD_DELETEEX,
         DATA_SHARE_SERVICE_CMD_UPDATEEX,
+        DATA_SHARE_SERVICE_CMD_PROXY_PUBLISH,
+        DATA_SHARE_SERVICE_CMD_PROXY_DELETE,
+        DATA_SHARE_SERVICE_CMD_PROXY_GET,
+        DATA_SHARE_SERVICE_CMD_SUBSCRIBE_PROXY_DATA,
+        DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_PROXY_DATA,
         DATA_SHARE_SERVICE_CMD_MAX,
         DATA_SHARE_SERVICE_CMD_QUERY_SYSTEM = DATA_SHARE_CMD_SYSTEM_CODE,
         DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE_SYSTEM,
@@ -117,6 +123,16 @@ public:
         const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) = 0;
     virtual std::pair<int32_t, int32_t> DeleteEx(const std::string &uri, const std::string &extUri,
         const DataSharePredicates &predicate) = 0;
-};
+    virtual std::vector<DataProxyResult> PublishProxyData(const std::vector<DataShareProxyData> &proxyData,
+        const DataProxyConfig &proxyConfig) = 0;
+    virtual std::vector<DataProxyResult> DeleteProxyData(const std::vector<std::string> &uris,
+        const DataProxyConfig &proxyConfig) = 0;
+    virtual std::vector<DataProxyGetResult> GetProxyData(const std::vector<std::string> &uris,
+        const DataProxyConfig &proxyConfig) = 0;
+    virtual std::vector<DataProxyResult> SubscribeProxyData(const std::vector<std::string> &uris,
+        const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer) = 0;
+    virtual std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris,
+        const DataProxyConfig &proxyConfig) = 0;
+    };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAFWK_IDATA_SHARE_SERVICE_H

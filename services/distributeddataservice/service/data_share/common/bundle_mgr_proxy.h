@@ -37,11 +37,17 @@ struct ProxyData {
     ProfileConfig profileInfo;
 };
 
+struct CrossAppSharedConfig {
+    std::string resourcePath;
+    ProxyDataProfileInfo profile;
+};
+
 struct HapModuleInfo {
     std::string resourcePath;
     std::string hapPath;
     std::string moduleName;
     std::vector<ProxyData> proxyDatas;
+    CrossAppSharedConfig crossAppSharedConfig;
 };
 
 struct ExtensionAbilityInfo {
@@ -60,6 +66,14 @@ struct BundleConfig {
     bool isSystemApp = false;
     std::vector<HapModuleInfo> hapModuleInfos;
     std::vector<ExtensionAbilityInfo> extensionInfos;
+};
+
+struct BundleInfo {
+    std::string bundleName;
+    std::string appIdentifier;
+    int32_t userId;
+    int32_t appIndex;
+    uint32_t tokenId;
 };
 
 class BundleMgrProxy final : public std::enable_shared_from_this<BundleMgrProxy> {

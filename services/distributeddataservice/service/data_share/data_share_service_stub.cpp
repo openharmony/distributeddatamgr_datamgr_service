@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "datashare_errno.h"
 #define LOG_TAG "DataShareServiceStub"
 
 #include "data_share_service_stub.h"
@@ -29,6 +30,7 @@
 #include "qos.h"
 #include "uri_utils.h"
 #include "utils/anonymous.h"
+#include "dataproxy_handle_common.h"
 
 namespace OHOS {
 namespace DataShare {
@@ -456,6 +458,92 @@ int32_t DataShareServiceStub::OnUnregisterObserver(MessageParcel &data, MessageP
 void DataShareServiceStub::SetServiceReady()
 {
     isReady_.store(true);
+}
+
+int32_t DataShareServiceStub::OnPublishProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<DataShareProxyData> proxyDatas;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, proxyDatas, config)) {
+        ZLOGE("OnPublishProxyData unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyResult> results = PublishProxyData(proxyDatas, config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("OnPublishProxyData marshal reply failed.");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnDeleteProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<std::string> uris;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uris, config)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyResult> results = DeleteProxyData(uris, config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("OnPublishProxyData marshal reply failed.");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnGetProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<std::string> uris;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uris, config)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyGetResult> results = GetProxyData(uris, config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("OnPublishProxyData marshal reply failed.");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnSubscribeProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<std::string> uris;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uris)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto remoteObj = data.ReadRemoteObject();
+    sptr<IProxyDataObserver> observer = new (std::nothrow)ProxyDataObserverProxy(remoteObj);
+    if (observer == nullptr) {
+        ZLOGE("observer is nullptr");
+        return DATA_SHARE_ERROR;
+    }
+    std::vector<DataProxyResult> results = SubscribeProxyData(uris, config, observer);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("ITypesUtil::Marshal(reply, results) failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
+
+int32_t DataShareServiceStub::OnUnsubscribeProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<std::string> uris;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uris)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyResult> results = UnsubscribeProxyData(uris, config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("ITypesUtil::Marshal(reply, results) failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
 }
 } // namespace DataShare
 } // namespace OHOS

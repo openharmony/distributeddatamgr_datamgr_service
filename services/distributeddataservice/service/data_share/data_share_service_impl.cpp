@@ -59,6 +59,10 @@
 #include "xcollie.h"
 #include "log_debug.h"
 #include "parameters.h"
+#include "dataproxy_handle_common.h"
+#include "proxy_data_manager.h"
+#include "datashare_observer.h"
+#include "subscriber_managers/proxy_data_subscriber_manager.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -977,6 +981,125 @@ int32_t DataShareServiceImpl::UnregisterObserver(const std::string &uri,
     return ERROR;
 }
 
+bool DataShareServiceImpl::GetCallerBundleInfo(BundleInfo &callerBundleInfo)
+{
+    GetCallerInfo(callerBundleInfo.bundleName, callerBundleInfo.appIndex);
+    callerBundleInfo.userId = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    callerBundleInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+    auto [ret, callerAppIdentifier] = BundleMgrProxy::GetInstance()->GetCallerAppIdentifier(
+        callerBundleInfo.bundleName, callerBundleInfo.userId);
+    if (ret != 0) {
+        ZLOGE("Get caller appIdentifier failed, callerBundleName is %{public}s", callerBundleInfo.bundleName.c_str());
+        return false;
+    }
+    callerBundleInfo.appIdentifier = callerAppIdentifier;
+    return true;
+}
+
+std::vector<DataProxyResult> DataShareServiceImpl::PublishProxyData(const std::vector<DataShareProxyData> &proxyDatas,
+    const DataProxyConfig &proxyConfig)
+{
+    std::vector<DataProxyResult> result;
+    BundleInfo callerBundleInfo;
+    if (!GetCallerBundleInfo(callerBundleInfo)) {
+        ZLOGE("get callerBundleInfo failed");
+        return result;
+    }
+    std::vector<ProxyDataKey> keys;
+    std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> datas;
+    for (const auto &data : proxyDatas) {
+        DataShareObserver::ChangeType type;
+        auto ret = PublishedProxyData::Upsert(data, callerBundleInfo, type);
+        result.emplace_back(data.uri_, static_cast<DataProxyErrorCode>(ret));
+        if (ret == SUCCESS &&
+            (type == DataShareObserver::ChangeType::INSERT || type == DataShareObserver::ChangeType::UPDATE)) {
+            keys.emplace_back(data.uri_, callerBundleInfo.bundleName);
+            datas[type].emplace_back(data);
+        }
+    }
+    ProxyDataSubscriberManager::GetInstance().Emit(keys, datas, callerBundleInfo.userId);
+    return result;
+}
+
+std::vector<DataProxyResult> DataShareServiceImpl::DeleteProxyData(const std::vector<std::string> &uris,
+    const DataProxyConfig &proxyConfig)
+{
+    std::vector<DataProxyResult> result;
+    BundleInfo callerBundleInfo;
+    if (!GetCallerBundleInfo(callerBundleInfo)) {
+        ZLOGE("get callerBundleInfo failed");
+        return result;
+    }
+    std::vector<ProxyDataKey> keys;
+    std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> datas;
+    for (const auto &uri : uris) {
+        DataShareProxyData oldProxyData;
+        DataShareObserver::ChangeType type;
+        auto ret = PublishedProxyData::Delete(uri, callerBundleInfo, oldProxyData, type);
+        result.emplace_back(uri, static_cast<DataProxyErrorCode>(ret));
+        if (ret == SUCCESS && type == DataShareObserver::ChangeType::DELETE) {
+            keys.emplace_back(uri, callerBundleInfo.bundleName);
+            datas[type].emplace_back(oldProxyData);
+        }
+    }
+    ProxyDataSubscriberManager::GetInstance().Emit(keys, datas, callerBundleInfo.userId);
+    return result;
+}
+
+std::vector<DataProxyGetResult> DataShareServiceImpl::GetProxyData(const std::vector<std::string> &uris,
+    const DataProxyConfig &proxyConfig)
+{
+    std::vector<DataProxyGetResult> result;
+    BundleInfo callerBundleInfo;
+    if (!GetCallerBundleInfo(callerBundleInfo)) {
+        ZLOGE("get callerBundleInfo failed");
+        return result;
+    }
+    DataShareProxyData proxyData;
+    for (const auto &uri : uris) {
+        auto ret = PublishedProxyData::Query(uri, callerBundleInfo, proxyData);
+        result.emplace_back(uri, static_cast<DataProxyErrorCode>(ret), proxyData.value_, proxyData.allowList_);
+    }
+    return result;
+}
+
+std::vector<DataProxyResult> DataShareServiceImpl::SubscribeProxyData(const std::vector<std::string> &uris,
+    const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer)
+{
+    std::vector<DataProxyResult> results = {};
+    BundleInfo callerBundleInfo;
+    if (!GetCallerBundleInfo(callerBundleInfo)) {
+        ZLOGE("get callerBundleInfo failed");
+        return results;
+    }
+    for (const auto &uri : uris) {
+        DataShareProxyData proxyData;
+        DataProxyErrorCode ret =
+            static_cast<DataProxyErrorCode>(PublishedProxyData::Query(uri, callerBundleInfo, proxyData));
+        if (ret == SUCCESS) {
+            ret = ProxyDataSubscriberManager::GetInstance().Add(
+                ProxyDataKey(uri, callerBundleInfo.bundleName), observer, callerBundleInfo.bundleName,
+                callerBundleInfo.appIdentifier, callerBundleInfo.userId);
+        }
+        results.emplace_back(uri, ret);
+    }
+    return results;
+}
+
+std::vector<DataProxyResult> DataShareServiceImpl::UnsubscribeProxyData(const std::vector<std::string> &uris,
+    const DataProxyConfig &proxyConfig)
+{
+    std::string bundleName;
+    GetCallerBundleName(bundleName);
+    int32_t userId = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    std::vector<DataProxyResult> result = {};
+    for (const auto &uri : uris) {
+        auto ret = ProxyDataSubscriberManager::GetInstance().Delete(ProxyDataKey(uri, bundleName), userId);
+        result.emplace_back(uri, ret);
+    }
+    return result;
+}
+
 bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId, int32_t visitedUserId,
     const std::string &acrossAccountsPermission, uint32_t callerTokenId)
 {
@@ -1104,6 +1227,8 @@ void DataShareServiceImpl::InitSubEvent()
     }
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BUNDLE_SCAN_FINISHED);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
     subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
     auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo);
