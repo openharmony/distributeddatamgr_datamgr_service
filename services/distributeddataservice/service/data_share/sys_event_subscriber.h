@@ -23,14 +23,24 @@ namespace OHOS::DataShare {
 class SysEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
     using SysEventCallback = void (SysEventSubscriber::*)();
+    using InstallEventCallback = void (SysEventSubscriber::*)(const std::string &bundleName,
+        int32_t userId, int32_t appIndex, bool isCrossAppSharedConfig);
     explicit SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info);
     ~SysEventSubscriber() {}
     void OnReceiveEvent(const EventFwk::CommonEventData& event) override;
     void OnBMSReady();
+    void OnAppInstall(const std::string &bundleName,
+        int32_t userId, int32_t appIndex, bool isCrossAppSharedConfig);
+    void OnAppUninstall(const std::string &bundleName,
+        int32_t userId, int32_t appIndex, bool isCrossAppSharedConfig);
 
 private:
     void NotifyDataShareReady();
     std::map<std::string, SysEventCallback> callbacks_;
+    std::map<std::string, InstallEventCallback> installCallbacks_;
+    static constexpr const char *USER_ID = "userId";
+    static constexpr const char *APP_INDEX = "appIndex";
+    static constexpr const char* CROSS_APP_SHARED_CONFIG = "crossAppSharedConfig";
 };
 }
 #endif

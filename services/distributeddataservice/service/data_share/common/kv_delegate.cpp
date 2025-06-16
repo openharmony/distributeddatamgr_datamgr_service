@@ -225,6 +225,15 @@ bool KvDelegate::Init()
         RestoreIfNeed(status);
         return false;
     }
+
+    status = GRD_CreateCollection(db_, PROXYDATA_TABLE, nullptr, 0);
+    if (status != GRD_OK) {
+        // If opeaning db succeeds, it is rare to fail to create tables
+        ZLOGE("GRD_CreateCollection data table failed,status %{public}d", status);
+        RestoreIfNeed(status);
+        return false;
+    }
+
     isInitDone_ = true;
     return true;
 }

@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "bundle_info.h"
+#include "dataproxy_handle_common.h"
 #include "resource_manager.h"
 #include "serializable/serializable.h"
 
@@ -68,6 +69,25 @@ struct ProfileInfo : public DistributedData::Serializable {
     bool Unmarshal(const json &node) override;
 };
 
+struct SerialDataShareProxyData : public DistributedData::Serializable {
+    SerialDataShareProxyData() = default;
+    SerialDataShareProxyData(const std::string &uri, const DataProxyValue &value,
+        const std::vector<std::string> &allowList)
+        : uri(uri), value(value), allowList(allowList) {}
+    virtual ~SerialDataShareProxyData() = default;
+    std::string uri;
+    DataProxyValue value;
+    std::vector<std::string> allowList;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
+struct ProxyDataProfileInfo : public DistributedData::Serializable {
+    std::vector<SerialDataShareProxyData> dataShareProxyDatas;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
+
 enum AccessCrossMode : uint8_t {
     USER_UNDEFINED,
     USER_SHARED,
@@ -86,6 +106,8 @@ public:
         std::map<std::string, ProfileInfo> &profileInfos);
     static std::pair<int, ProfileInfo> GetDataProperties(const std::vector<AppExecFwk::Metadata> &metadata,
         const std::string &resPath, const std::string &hapPath, const std::string &name);
+    static std::pair<int, std::vector<SerialDataShareProxyData>> GetCrossAppSharedConfig(const std::string &resource,
+        const std::string &resPath, const std::string &hapPath);
     static AccessCrossMode GetAccessCrossMode(const ProfileInfo &profileInfo,
         const std::string &tableUri, const std::string &storeUri);
 private:

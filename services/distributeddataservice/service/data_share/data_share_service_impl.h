@@ -91,6 +91,16 @@ public:
         const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket) override;
     std::pair<int32_t, int32_t> DeleteEx(const std::string &uri, const std::string &extUri,
         const DataSharePredicates &predicate) override;
+    std::vector<DataProxyResult> PublishProxyData(const std::vector<DataShareProxyData> &proxyData,
+        const DataProxyConfig &proxyConfig) override;
+    std::vector<DataProxyResult> DeleteProxyData(const std::vector<std::string> &uris,
+        const DataProxyConfig &proxyConfig) override;
+    std::vector<DataProxyGetResult> GetProxyData(const std::vector<std::string> &uris,
+        const DataProxyConfig &proxyConfig) override;
+    std::vector<DataProxyResult> SubscribeProxyData(const std::vector<std::string> &uris,
+        const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer) override;
+    std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris,
+        const DataProxyConfig &proxyConfig) override;
 private:
     class SystemAbilityStatusChangeListener;
     using StaticActs = DistributedData::StaticActs;
@@ -142,6 +152,7 @@ private:
         const std::vector<AllowList> &allowLists);
     bool VerifyPermission(const std::string &bundleName, const std::string &permission,
         bool isFromExtension, const int32_t tokenId);
+    bool GetCallerBundleInfo(BundleInfo &callerBundleInfo);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;

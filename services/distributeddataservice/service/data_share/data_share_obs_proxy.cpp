@@ -16,6 +16,7 @@
 #define LOG_TAG "ObserverProxy"
 #include "data_share_obs_proxy.h"
 #include "datashare_errno.h"
+#include "dataproxy_handle_common.h"
 
 #include "itypes_util.h"
 #include "datashare_itypes_utils.h"
@@ -194,6 +195,28 @@ void PublishedDataObserverProxy::OnChangeFromPublishedData(PublishedDataChangeNo
     }
 
     if (!ITypesUtil::Marshal(parcel, changeNode)) {
+        ZLOGE("failed to WriteParcelable changeNode ");
+        return;
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    int32_t result = Remote()->SendRequest(REQUEST_CODE, parcel, reply, option);
+    if (result != ERR_NONE) {
+        ZLOGE("SendRequest error, result=%{public}d", result);
+        return;
+    }
+    ZLOGD("SendRequest ok, retval is %{public}d", reply.ReadInt32());
+}
+
+void ProxyDataObserverProxy::OnChangeFromProxyData(std::vector<DataProxyChangeInfo> &changeInfo)
+{
+    MessageParcel parcel;
+    if (!parcel.WriteInterfaceToken(PublishedDataObserverProxy::GetDescriptor())) {
+        return;
+    }
+
+    if (!ITypesUtil::Marshal(parcel, changeInfo)) {
         ZLOGE("failed to WriteParcelable changeNode ");
         return;
     }
