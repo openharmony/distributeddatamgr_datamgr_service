@@ -965,6 +965,7 @@ void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
      if (delegate_ == nullptr) {
         ZLOGE("database already closed!, tableMode is :%{public}d",
               storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
+        return;
     }
     if (storeConfig.tableMode.has_value()) {
         RelationalStoreDelegate::StoreConfig config;
