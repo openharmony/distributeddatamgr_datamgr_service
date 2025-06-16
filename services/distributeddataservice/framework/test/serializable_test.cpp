@@ -601,4 +601,33 @@ HWTEST_F(SerializableTest, BoundaryTest, TestSize.Level1)
     EXPECT_EQ(out.int64Val, in.int64Val);
     EXPECT_EQ(out.uint64Val, in.uint64Val);
 }
+
+
+HWTEST_F(SerializableTest, ArrayTest, TestSize.Level1)
+{
+    struct TestBoundary : public Serializable {
+        std::vector<int> vectorVal = {10, 20, 30, 40, 50};
+
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(vectorVal)], vectorVal);
+            return true;
+        }
+
+        bool Unmarshal(const json &node) override
+        {
+            bool success = true;
+            success = GetValue(node, GET_NAME(vectorVal), vectorVal) && success;
+            return success;
+        }
+    };
+
+    TestBoundary in;
+    Serializable::JSONWrapper wrapper;
+    wrapper = in.Marshall();
+    EXPECT_EQ(wrapper["vectorVal"][0].dump(), "10");
+    EXPECT_EQ(wrapper["vectorVal"][1].dump(), "20");
+    EXPECT_EQ(wrapper["vectorVal"][5].dump(), "");
+    EXPECT_EQ(wrapper["vectorVal"][10].dump(), "");
+}
 } // namespace OHOS::Test
