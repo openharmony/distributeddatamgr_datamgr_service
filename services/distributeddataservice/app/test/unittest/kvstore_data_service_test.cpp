@@ -157,8 +157,6 @@ HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver001, TestSize.Level1
 * @tc.name: RegisterClientDeathObserver002
 * @tc.desc: register client death observer
 * @tc.type: FUNC
-* @tc.require: AR000CQDU2
-* @tc.author: liuyuhui
 */
 HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver002, TestSize.Level1)
 {

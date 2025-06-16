@@ -400,6 +400,7 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator=(uint32_t value)
         return *this;
     }
     if (!ReplaceNode(node)) {
+        ZLOGE("replace node failed.");
         cJSON_Delete(node);
     }
     return *this;
@@ -608,11 +609,12 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator[](size_t index)
         len++;
     }
     if (index > len) {
-        ZLOGE("cannot use operator[].");
+        ZLOGE("index over limit.");
     }
-    if (index == len) {
+    while (len <= index) {
         auto item = cJSON_GetArrayItem(json_, len);
         children_.push_back(std::make_shared<JSONWrapper>(item, json_));
+        len++;
     }
     return *children_[index];
 }
@@ -628,7 +630,10 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator[](size_t index) c
         ZLOGE("invalid args.");
     }
     auto len = children_.size();
-    while (len < size) {
+    if (index > len) {
+        ZLOGE("index over limit.");
+    }
+    while (len <= index) {
         auto item = cJSON_GetArrayItem(json_, len);
         children_.push_back(std::make_shared<JSONWrapper>(item, json_));
         len++;
