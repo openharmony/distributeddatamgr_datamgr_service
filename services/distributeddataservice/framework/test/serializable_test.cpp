@@ -627,6 +627,7 @@ HWTEST_F(SerializableTest, ArrayTest, TestSize.Level1)
     wrapper = in.Marshall();
     EXPECT_EQ(wrapper["vectorVal"][0].dump(), "10");
     EXPECT_EQ(wrapper["vectorVal"][1].dump(), "20");
+    EXPECT_EQ(wrapper["vectorVal"][4].dump(), "50");
     EXPECT_EQ(wrapper["vectorVal"][5].dump(), "");
     EXPECT_EQ(wrapper["vectorVal"][10].dump(), "");
 }
