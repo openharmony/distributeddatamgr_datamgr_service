@@ -151,11 +151,9 @@ void KvStoreMetaManager::InitMetaData()
     localData.dataDir = metaDBDirectory_;
     localData.schema = "";
     localData.isPublic = true;
-    if (!(MetaDataManager::GetInstance().SaveMeta(data.GetKeyWithoutPath(), data) &&
-        MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data, true) &&
-        MetaDataManager::GetInstance().SaveMeta(data.GetKeyLocal(), localData, true))) {
-        ZLOGE("save meta fail");
-    }
+    MetaDataManager::GetInstance().SaveMeta(data.GetKeyWithoutPath(), data);
+    MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data, true);
+    MetaDataManager::GetInstance().SaveMeta(data.GetKeyLocal(), localData, true);
     std::string localUuid;
     DeviceMetaData deviceMeta;
     if (MetaDataManager::GetInstance().LoadMeta(deviceMeta.GetKey(), deviceMeta, true)) {
@@ -721,7 +719,7 @@ void KvStoreMetaManager::UpdateStoreMetaMapping(const std::string &newUuid, cons
         auto oldKey = meta.GetKey();
         meta.deviceId = newUuid;
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
-        MetaDataManager::GetInstance().DelMeta(oldKey);
+        MetaDataManager::GetInstance().DelMeta(oldKey, true);
     }
 }
 
