@@ -635,7 +635,7 @@ Serializable::JSONWrapper &Serializable::JSONWrapper::operator[](size_t index) c
         children_.push_back(std::make_shared<JSONWrapper>(item, json_));
         len++;
     }
-    if (index > len) {
+    if (index >= len) {
         ZLOGE("index over limit.");
     }
     while (len <= index) {
