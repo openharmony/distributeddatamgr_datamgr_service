@@ -134,15 +134,22 @@ int32_t ObjectServiceImpl::OnInitialize()
         return OBJECT_INNER_ERROR;
     }
     auto token = IPCSkeleton::GetCallingTokenID();
-    const std::string accountId = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
     const auto userId = DistributedData::AccountDelegate::GetInstance()->GetUserByToken(token);
-    StoreMetaData saveMeta;
-    SaveMetaData(saveMeta, std::to_string(userId), accountId);
-    ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
-    ObjectStoreManager::GetInstance()->InitUserMeta();
-    RegisterObjectServiceInfo();
-    RegisterHandler();
-    ObjectDmsHandler::GetInstance().RegisterDmsEvent();
+    
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return OBJECT_INNER_ERROR;
+    }
+    executors_->Schedule(std::chrono::seconds(WAIT_ACCOUNT_SERVICE), [userId, this]() {
+        StoreMetaData saveMeta;
+        SaveMetaData(saveMeta, std::to_string(userId), "accountId");
+        ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, saveMeta.user);
+        ObjectStoreManager::GetInstance()->InitUserMeta();
+        RegisterObjectServiceInfo();
+        RegisterHandler();
+        ObjectDmsHandler::GetInstance().RegisterDmsEvent();
+    });
+
     return OBJECT_SUCCESS;
 }
 
@@ -162,14 +169,22 @@ int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta, const std::stri
     saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     saveMeta.user = user;
-    saveMeta.account = account;
+    saveMeta.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
     saveMeta.tokenId = IPCSkeleton::GetCallingTokenID();
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = DistributedKv::Area::EL1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
-    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
+    saveMeta.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
+    int foregroundUserId = 0;
+    DistributedData::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    saveMeta.user = std::to_string(foregroundUserId);
+    saveMeta.dataDir = "/data/service/el1/public/database/distributeddata/kvdb";
+    if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
+        ZLOGE("Create directory error, dataDir: %{public}s.", Anonymous::Change(saveMeta.dataDir).c_str());
+        return false;
+    }
     bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta) &&
                    DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!isSaved) {
@@ -195,6 +210,9 @@ int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, 
         if (status != OBJECT_SUCCESS) {
             ZLOGE("Clear fail user:%{public}s, status: %{public}d", user.c_str(), status);
         }
+        StoreMetaData saveMeta;
+        SaveMetaData(saveMeta, user, account);
+        ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, saveMeta.user);
     }
     return Feature::OnUserChange(code, user, account);
 }

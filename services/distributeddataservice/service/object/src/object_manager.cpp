@@ -494,27 +494,6 @@ void ObjectStoreManager::NotifyChange(const ObjectRecord &changedData)
         }
     }
     auto data = GetObjectData(changedData, saveInfo, hasAsset);
-    auto isSameAccount = DeviceManagerAdapter::GetInstance().IsSameAccount(saveInfo.sourceDeviceId);
-    if (!isSameAccount) {
-        ZLOGE("IsSameAccount failed. bundleName:%{public}s, source device:%{public}s", saveInfo.bundleName.c_str(),
-            Anonymous::Change(saveInfo.sourceDeviceId).c_str());
-        auto status = Open();
-        if (status != OBJECT_SUCCESS) {
-            ZLOGE("Open failed, bundleName:%{public}s, source device::%{public}s, status: %{public}d",
-                saveInfo.bundleName.c_str(), Anonymous::Change(saveInfo.sourceDeviceId).c_str(), status);
-            return;
-        }
-        std::vector<std::vector<uint8_t>> keys;
-        for (const auto &[key, value] : changedData) {
-            keys.emplace_back(key.begin(), key.end());
-        }
-        status = delegate_->DeleteBatch(keys);
-        if (status != DistributedDB::DBStatus::OK) {
-            ZLOGE("Delete entries failed, bundleName:%{public}s, source device::%{public}s, status: %{public}d",
-                saveInfo.bundleName.c_str(), Anonymous::Change(saveInfo.sourceDeviceId).c_str(), status);
-        }
-        return Close();
-    }
     if (!hasAsset) {
         ObjectStore::RadarReporter::ReportStateStart(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
             ObjectStore::DATA_RECV, ObjectStore::RADAR_SUCCESS, ObjectStore::START, saveInfo.bundleName);
@@ -1022,10 +1001,6 @@ int32_t ObjectStoreManager::SyncOnStore(
             ZLOGI("Save to local, do not need sync, prefix: %{public}s", prefix.c_str());
             callback({{LOCAL_DEVICE, OBJECT_SUCCESS}});
             return OBJECT_SUCCESS;
-        }
-        if (!DeviceManagerAdapter::GetInstance().IsSameAccount(device)) {
-            ZLOGE("IsSameAccount failed. device:%{public}s", Anonymous::Change(device).c_str());
-            continue;
         }
         syncDevices.emplace_back(DmAdaper::GetInstance().GetUuidByNetworkId(device));
     }

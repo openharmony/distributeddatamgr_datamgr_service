@@ -76,6 +76,7 @@ private:
 
     static Factory factory_;
     std::shared_ptr<ExecutorPool> executors_;
+    static constexpr int64_t WAIT_ACCOUNT_SERVICE = 5;
 };
 } // namespace OHOS::DistributedObject
 #endif
