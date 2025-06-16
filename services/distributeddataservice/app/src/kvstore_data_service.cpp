@@ -1117,7 +1117,8 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
             ZLOGI("StoreMetaData data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d",
                 bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), appIndex);
-            MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath(), true);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath());
+            MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetStrategyKey());
