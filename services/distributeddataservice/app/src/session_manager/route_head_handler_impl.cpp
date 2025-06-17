@@ -123,11 +123,14 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("get peer cap failed");
         return DistributedDB::DB_ERROR;
     }
-    if ((appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
-        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION)
-        || peerCap.version == CapMetaData::INVALID_VERSION) {
+    if (peerCap.version == CapMetaData::INVALID_VERSION) {
         // older versions ignore pack extend head
-        ZLOGI("ignore older version device, appId:%{public}s, version:%{public}d", appId_.c_str(), peerCap.version);
+        ZLOGI("ignore older version device");
+        return DistributedDB::OK;
+    }
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
+        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
+        ZLOGI("ignore older version device for udmf or object");
         return DistributedDB::OK;
     }
     if (!session_.IsValid()) {
