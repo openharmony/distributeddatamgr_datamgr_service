@@ -29,7 +29,6 @@
 #include "system_ability_definition.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
-#include "remote_file_share.h"
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
 namespace OHOS {
