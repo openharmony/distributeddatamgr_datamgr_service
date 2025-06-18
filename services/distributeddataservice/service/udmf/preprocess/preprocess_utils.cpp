@@ -240,7 +240,7 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::IDLE);
     std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
-    int ret = Storage::DistributedFile::FileMountManager::GetDfsUrisDirFromLocal(uris, userId, dfsUris);
+    int32_t ret = Storage::DistributedFile::FileMountManager::GetDfsUrisDirFromLocal(uris, userId, dfsUris);
     if (ret != 0 || dfsUris.empty()) {
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::FAILED, E_FS_ERROR, BizState::DFX_END);
