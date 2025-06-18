@@ -88,6 +88,8 @@ private:
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
+    private:
+        bool CloudDriverCheck(const std::string &bundleName, int32_t user);
     };
     class Factory {
     public:
@@ -197,12 +199,14 @@ private:
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
-    void Report(const std::string &faultType, DistributedDataDfx::Fault errCode, const std::string &bundleName,
+    static void Report(const std::string &faultType, DistributedDataDfx::Fault errCode, const std::string &bundleName,
         const std::string &appendix);
 
     static std::pair<int32_t, SchemaMeta> GetSchemaFromHap(const HapInfo &hapInfo);
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
     static int32_t UpdateSchemaFromServer(int32_t user);
+    static int32_t UpdateSchemaFromServer(const CloudInfo &cloudInfo, int32_t user);
+    static void UpdateE2eeEnable(const std::string &schemaKey, bool newE2eeEnable, const std::string &bundleName);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
     QueryLastResults AssembleLastResults(const std::vector<Database> &databases,

@@ -243,6 +243,7 @@ void CloudDataTest::InitSchemaMeta()
     schemaMeta_.databases.emplace_back(database);
     database.alias = TEST_CLOUD_DATABASE_ALIAS_2;
     schemaMeta_.databases.emplace_back(database);
+    schemaMeta_.e2eeEnable = false;
 }
 
 void CloudDataTest::InitCloudInfo()

@@ -327,6 +327,105 @@ HWTEST_F(CloudServiceImplTest, DoSubscribe, TestSize.Level0)
 }
 
 /**
+ * @tc.name: OnAppInstallTest
+ * @tc.desc: Test the OnAppInstallTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppInstallTest, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest OnAppInstallTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t user = 0;
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, user, index);
+    EXPECT_EQ(status, GeneralError::E_ERROR);
+}
+
+/**
+ * @tc.name: OnAppUpdateTest
+ * @tc.desc: Test the OnAppUpdateTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppUpdateTest, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest OnAppUpdateTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t user = 0;
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, user, index);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: CloudDriverCheckTest
+ * @tc.desc: Test the CloudDriverCheck
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, CloudDriverCheckTest, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest CloudDriverCheckTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t user = 0;
+    auto result = cloudServiceImpl_->factory_.staticActs_->CloudDriverCheck(TEST_CLOUD_BUNDLE, user);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: UpdateSchemaFromServerTest_001
+ * @tc.desc: Test UpdateSchemaFromServer functions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_001, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest UpdateSchemaFromServerTest_001 start");
+    CloudServer cloudServer;
+    CloudServer::RegisterCloudInstance(&cloudServer);
+    int user = 100;
+    auto status = cloudServiceImpl_->UpdateSchemaFromServer(user);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    CloudServer::instance_ = nullptr;
+}
+
+/**
+ * @tc.name: UpdateSchemaFromServerTest_002
+ * @tc.desc: Test UpdateSchemaFromServer functions.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_002, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest UpdateSchemaFromServerTest_002 start");
+    CloudServer cloudServer;
+    CloudServer::RegisterCloudInstance(&cloudServer);
+    int user = 0;
+    CloudInfo cloudInfo;
+    cloudInfo.user = user;
+    auto status = cloudServiceImpl_->UpdateSchemaFromServer(cloudInfo, user);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    CloudServer::instance_ = nullptr;
+}
+
+/**
+ * @tc.name: UpdateE2eeEnableTest
+ * @tc.desc: Test UpdateE2eeEnable functions.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, UpdateE2eeEnableTest, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest UpdateE2eeEnableTest start");
+    std::string schemaKey = "schemaKey";
+    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE));
+}
+
+/**
  * @tc.name: Share001
  * @tc.desc: Test the Share with invalid parameters
  * @tc.type: FUNC
