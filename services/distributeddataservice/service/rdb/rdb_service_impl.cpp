@@ -1753,7 +1753,12 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     ATokenTypeEnum type = AccessTokenKit::GetTokenType(tokenId);
-    if (type == ATokenTypeEnum::TOKEN_NATIVE) {
+    if (type == ATokenTypeEnum::TOKEN_INVALID) {
+        ZLOGE("invalid type! bundleName:%{public}s, storeName:%{public}s ",
+            meta.bundleName.c_str(), meta.storeId.c_str());
+        return RDB_ERROR;
+    }
+    if (type == ATokenTypeEnum::TOKEN_NATIVE || type == ATokenTypeEnum::TOKEN_SHELL) {
         auto tokenIdRet =
             std::find(localMeta.promiseInfo.tokenIds.begin(), localMeta.promiseInfo.tokenIds.end(), tokenId);
         auto uidRet = std::find(localMeta.promiseInfo.uids.begin(), localMeta.promiseInfo.uids.end(), uid);
