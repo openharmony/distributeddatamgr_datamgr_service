@@ -105,7 +105,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
-    if(!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
+    if (!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
         ZLOGD("devicdId:%{public}s is not oh type",
             Anonymous::Change(session_.targetDeviceId).c_str());
         if (appId_.empty()) {
@@ -123,14 +123,11 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("get peer cap failed");
         return DistributedDB::DB_ERROR;
     }
-    if (peerCap.version == CapMetaData::INVALID_VERSION) {
+    if ((appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
+        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION)
+        || peerCap.version == CapMetaData::INVALID_VERSION) {
         // older versions ignore pack extend head
-        ZLOGI("ignore older version device");
-        return DistributedDB::OK;
-    }
-    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
-        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
-        ZLOGI("ignore older version device for udmf or object");
+        ZLOGI("ignore older version device, appId:%{public}s, version:%{public}d", appId_.c_str(), peerCap.version);
         return DistributedDB::OK;
     }
     if (!session_.IsValid()) {
