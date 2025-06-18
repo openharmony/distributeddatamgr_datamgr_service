@@ -21,6 +21,7 @@
 
 #include "concurrent_map.h"
 #include "serializable/serializable.h"
+#include "lru_bucket.h"
 namespace DistributedDB {
 class KvStoreNbDelegate;
 }
@@ -91,6 +92,7 @@ private:
     ~MetaDataManager();
 
     API_EXPORT bool GetEntries(const std::string &prefix, std::vector<Bytes> &entries, bool isLocal);
+    API_EXPORT void DelCacheMeta(const std::string &key, bool isLocal);
     void StopSA();
 
     bool inited_ = false;
@@ -101,6 +103,7 @@ private:
     Syncer syncer_;
     CloudSyncer cloudSyncer_;
     std::string storeId_;
+    LRUBucket<std::string, std::string> localdata_ {64};
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_META_DATA_MANAGER_H
