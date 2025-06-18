@@ -263,6 +263,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     dbConfig.maxUploadCount = config.maxNumber;
     dbConfig.maxUploadSize = config.maxSize;
     dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
+    dbConfig.isSupportEncrypt = config.isSupportEncrypt;
     DBSchema schema = GetDBSchema(database);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {

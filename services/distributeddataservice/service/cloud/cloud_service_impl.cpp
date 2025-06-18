@@ -923,6 +923,47 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
     return true;
 }
 
+/**
+* Will be called when 'cloudDriver' OnAppUpdate/OnAppInstall to get newest 'e2eeEnable'.
+*/
+int32_t CloudServiceImpl::UpdateSchemaFromServer(int32_t user)
+{
+    auto [status, cloudInfo] = GetCloudInfo(user);
+    if (status != SUCCESS) {
+        ZLOGW("get cloudinfo failed, user:%{public}d, status:%{public}d", user, status);
+        return status;
+    }
+    auto keys = cloudInfo.GetSchemaKey();
+    for (const auto &[bundle, key] : keys) {
+        HapInfo hapInfo{ .user = user, .instIndex = 0, .bundleName = bundle };
+        auto appInfoOpt = cloudInfo.GetAppInfo(bundle);
+        if (appInfoOpt.has_value()) {
+            const CloudInfo::AppInfo &appInfo = appInfoOpt.value();
+            hapInfo.instIndex = appInfo.instanceId;
+        }
+
+        SchemaMeta schemaMeta;
+        std::tie(status, schemaMeta) = GetAppSchemaFromServer(user, bundle);
+        if (status == NOT_SUPPORT) {
+            ZLOGW("app not support, del cloudInfo! user:%{public}d, bundleName:%{public}s", user, bundle.c_str());
+            MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+            return status;
+        }
+        if (status != SUCCESS) {
+            continue;
+        }
+        SchemaMeta oldMeta;
+        if (MetaDataManager::GetInstance().LoadMeta(key, oldMeta, true) &&
+            oldMeta.e2eeEnable != schemaMeta.e2eeEnable) {
+            ZLOGI("Update e2eeEnable: %{public}d->%{public}d, user:%{public}d, bundleName:%{public}s",
+                oldMeta.e2eeEnable, schemaMeta.e2eeEnable, user, bundle.c_str());
+            oldMeta.e2eeEnable = schemaMeta.e2eeEnable;
+            MetaDataManager::GetInstance().SaveMeta(key, oldMeta, true);
+        }
+    }
+    return SUCCESS;
+}
+
 std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetAppSchemaFromServer(int32_t user, const std::string &bundleName)
 {
     SchemaMeta schemaMeta;
@@ -1080,6 +1121,17 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
 int32_t CloudServiceImpl::CloudStatic::OnAppInstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", bundleName.c_str(), user, index);
+    CheckerManager::StoreInfo info;
+    info.uid = IPCSkeleton::GetCallingUid();
+    info.tokenId = IPCSkeleton::GetCallingTokenID();
+    info.bundleName = bundleName;
+    if (CheckerManager::GetInstance().IsValid(info)) {
+        // cloudDriver install, update schema(for update 'e2eeEnable')
+        ZLOGI("cloud driver install, bundleName:%{public}s, user:%{public}d, instanceId:%{public}d",
+            bundleName.c_str(), user, index);
+        Execute([this, user]() { UpdateSchemaFromServer(user); });
+        return SUCCESS;
+    }
     auto ret = UpdateCloudInfoFromServer(user);
     if (ret == E_OK) {
         StoreInfo info{.bundleName = bundleName,  .instanceId = index, .user = user};
@@ -1091,6 +1143,17 @@ int32_t CloudServiceImpl::CloudStatic::OnAppInstall(const std::string &bundleNam
 int32_t CloudServiceImpl::CloudStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
     ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", bundleName.c_str(), user, index);
+    CheckerManager::StoreInfo info;
+    info.uid = IPCSkeleton::GetCallingUid();
+    info.tokenId = IPCSkeleton::GetCallingTokenID();
+    info.bundleName = bundleName;
+    if (CheckerManager::GetInstance().IsValid(info)) {
+        // cloudDriver updated, update schema(for update 'e2eeEnable')
+        ZLOGI("cloud driver updated, bundleName:%{public}s, user:%{public}d, instanceId:%{public}d",
+            bundleName.c_str(), user, index);
+        Execute([this, user]() { UpdateSchemaFromServer(user); });
+        return SUCCESS;
+    }
     HapInfo hapInfo{ .user = user, .instIndex = index, .bundleName = bundleName };
     Execute([this, hapInfo]() { UpdateSchemaFromHap(hapInfo); });
     return SUCCESS;
