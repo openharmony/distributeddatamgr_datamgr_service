@@ -19,7 +19,7 @@
 
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
-
+namespace OHOS::Test {
 class ConnectManagerTest : public testing::Test {};
 
 /**
@@ -29,6 +29,8 @@ class ConnectManagerTest : public testing::Test {};
 */
 HWTEST_F(ConnectManagerTest, RegisterInstance, TestSize.Level1)
 {
+    auto instance = ConnectManager::GetInstance();
+    ASSERT_NE(instance, nullptr);
     auto result = ConnectManager::RegisterInstance(std::make_shared<ConnectManager>());
     ASSERT_TRUE(result);
     ASSERT_NE(ConnectManager::GetInstance(), nullptr);
@@ -47,7 +49,7 @@ HWTEST_F(ConnectManagerTest, CloseSession, TestSize.Level1)
         return true;
     };
     ret = ConnectManager::GetInstance()->CloseSession("");
-    ASSERT_FALSE(ret);
+    ASSERT_TRUE(ret);
 }
 
 /**
@@ -57,8 +59,12 @@ HWTEST_F(ConnectManagerTest, CloseSession, TestSize.Level1)
 */
 HWTEST_F(ConnectManagerTest, RegisterCloseSessionTask, TestSize.Level1)
 {
+    ConnectManager::GetInstance()->closeSessionTask_ = [](const std::string &networkId) {
+        return true;
+    };
     auto ret = ConnectManager::GetInstance()->RegisterCloseSessionTask([](const std::string &networkId) {
         return true;
     });
     ASSERT_FALSE(ret);
 }
+} // namespace OHOS::Test

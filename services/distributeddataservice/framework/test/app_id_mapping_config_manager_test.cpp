@@ -19,7 +19,7 @@
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
-
+namespace OHOS::Test {
 class AppIdMappingConfigManagerTest : public testing::Test {};
 
 /**
@@ -29,12 +29,18 @@ class AppIdMappingConfigManagerTest : public testing::Test {};
 */
 HWTEST_F(AppIdMappingConfigManagerTest, Convert01, TestSize.Level1)
 {
+    std::vector<AppIdMappingConfigManager::AppMappingInfo> mapper = {
+        {"src1", "dst1"},
+        {"src2", "dst2"},
+        {"src3", "dst3"}
+    };
+    AppIdMappingConfigManager::GetInstance().Initialize(mapper);
     auto result = AppIdMappingConfigManager::GetInstance().Convert("123", "123456789");
-    ASSERT_EQ(result.first, "123");
-    ASSERT_EQ(result.second, "123456789");
-    result = AppIdMappingConfigManager::GetInstance().Convert("123", "987654321");
-    ASSERT_EQ(result.first, "123456789");
-    ASSERT_EQ(result.second, "default");
+    EXPECT_EQ(result.first, "123");
+    EXPECT_EQ(result.second, "123456789");
+    result = AppIdMappingConfigManager::GetInstance().Convert("src1", "987654321");
+    EXPECT_EQ(result.first, "dst1");
+    EXPECT_EQ(result.second, "default");
 }
 
 /**
@@ -44,8 +50,15 @@ HWTEST_F(AppIdMappingConfigManagerTest, Convert01, TestSize.Level1)
 */
 HWTEST_F(AppIdMappingConfigManagerTest, Convert02, TestSize.Level1)
 {
+    std::vector<AppIdMappingConfigManager::AppMappingInfo> mapper = {
+        {"src1", "dst1"},
+        {"src2", "dst2"},
+        {"src3", "dst3"}
+    };
+    AppIdMappingConfigManager::GetInstance().Initialize(mapper);
     auto result = AppIdMappingConfigManager::GetInstance().Convert("321");
-    ASSERT_EQ(result, "321");;
-    result = AppIdMappingConfigManager::GetInstance().Convert("123");
-    ASSERT_EQ(result, "123456789");
+    EXPECT_EQ(result, "321");;
+    result = AppIdMappingConfigManager::GetInstance().Convert("src1");
+    EXPECT_EQ(result, "dst1");
 }
+} // namespace OHOS::Test
