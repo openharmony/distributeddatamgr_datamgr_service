@@ -1059,7 +1059,7 @@ HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync001, TestSize.Level1)
+HWTEST_F(CloudDataTest, CloudSync001, TestSize.Level0)
 {
     int32_t syncMode = DistributedData::GeneralStore::NEARBY_BEGIN;
     uint32_t seqNum = 10;
@@ -1074,7 +1074,7 @@ HWTEST_F(CloudDataTest, CloudSync001, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync002, TestSize.Level1)
+HWTEST_F(CloudDataTest, CloudSync002, TestSize.Level0)
 {
     int32_t syncMode = DistributedData::GeneralStore::NEARBY_PULL_PUSH;
     uint32_t seqNum = 10;
@@ -1089,7 +1089,7 @@ HWTEST_F(CloudDataTest, CloudSync002, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync003, TestSize.Level1)
+HWTEST_F(CloudDataTest, CloudSync003, TestSize.Level0)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_BEGIN;
     uint32_t seqNum = 10;
@@ -1103,7 +1103,7 @@ HWTEST_F(CloudDataTest, CloudSync003, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync004, TestSize.Level1)
+HWTEST_F(CloudDataTest, CloudSync004, TestSize.Level0)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
     uint32_t seqNum = 10;
@@ -1117,7 +1117,7 @@ HWTEST_F(CloudDataTest, CloudSync004, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync005, TestSize.Level1)
+HWTEST_F(CloudDataTest, CloudSync005, TestSize.Level0)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_NATIVE_FIRST;
     uint32_t seqNum = 10;
@@ -1131,7 +1131,7 @@ HWTEST_F(CloudDataTest, CloudSync005, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync006, TestSize.Level1)
+HWTEST_F(CloudDataTest, CloudSync006, TestSize.Level0)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_CLOUD_FIRST;
     uint32_t seqNum = 10;
@@ -1145,7 +1145,7 @@ HWTEST_F(CloudDataTest, CloudSync006, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level1)
+HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level0)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_END;
     uint32_t seqNum = 10;
@@ -1159,7 +1159,7 @@ HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, InitNotifier001, TestSize.Level1)
+HWTEST_F(CloudDataTest, InitNotifier001, TestSize.Level0)
 {
     sptr<IRemoteObject> notifier = nullptr;
     auto ret = cloudServiceImpl_->InitNotifier(notifier);
@@ -2156,6 +2156,68 @@ HWTEST_F(CloudDataTest, GetCloudInfo, TestSize.Level1)
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     auto ret = cloudServiceImpl_->GetCloudInfo(cloudInfo_.user);
     EXPECT_EQ(ret.first, CloudData::SUCCESS);
+}
+
+/**
+* @tc.name: UpdateSchemaFromServer_001
+* @tc.desc: Test get UpdateSchemaFromServer
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, UpdateSchemaFromServer_001, TestSize.Level1)
+{
+    auto status = cloudServiceImpl_->UpdateSchemaFromServer(cloudInfo_.user);
+    EXPECT_EQ(status, CloudData::SUCCESS);
+}
+
+/**
+ * @tc.name: OnAppInstallTest
+ * @tc.desc: Test the OnAppInstallTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppInstallTest, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest OnAppInstallTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, cloudInfo_.user, index);
+    EXPECT_EQ(status, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: OnAppUpdateTest
+ * @tc.desc: Test the OnAppUpdateTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppUpdateTest, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest OnAppUpdateTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, cloudInfo_.user, index);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: UpdateE2eeEnableTest
+* @tc.desc: Test the UpdateE2eeEnable
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateE2eeEnableTest, TestSize.Level1)
+{
+    SchemaMeta schemaMeta;
+    std::string schemaKey = CloudInfo::GetSchemaKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, 0);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    EXPECT_EQ(schemaMeta.e2eeEnable, schemaMeta_.e2eeEnable);
+
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, false, TEST_CLOUD_BUNDLE));
+    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE));
 }
 
 /**

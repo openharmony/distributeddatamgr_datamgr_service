@@ -407,6 +407,11 @@ HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_002, TestSize.Level0)
     int user = 0;
     CloudInfo cloudInfo;
     cloudInfo.user = user;
+    DistributedData::CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.appId = TEST_CLOUD_APPID;
+    appInfo.cloudSwitch = true;
+    cloudInfo.apps = {{ TEST_CLOUD_BUNDLE, appInfo }};
     auto status = cloudServiceImpl_->UpdateSchemaFromServer(cloudInfo, user);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     CloudServer::instance_ = nullptr;
