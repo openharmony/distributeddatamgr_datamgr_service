@@ -187,17 +187,6 @@ void MetaDataManager::SetCloudSyncer(const CloudSyncer &cloudSyncer)
     cloudSyncer_ = cloudSyncer;
 }
 
-void MetaDataManager::DelCacheMeta(const std::string &key, bool isLocal)
-{
-    if (!isLocal) {
-        return;
-    }
-    std::string data;
-    if (localdata_.Get(key, data) && !localdata_.Delete(key)) {
-        ZLOGE("DelCacheMeta fail when update meta, %{public}s.", key.c_str());
-    }
-}
-
 bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value, bool isLocal)
 {
     if (!inited_) {
@@ -266,9 +255,7 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool
     if (!inited_) {
         return false;
     }
-    std::string valueData;
-    if (isLocal && localdata_.Get(key, valueData)) {
-        Serializable::Unmarshall(valueData, value);
+    if (LoadCacheMeta(key, value, isLocal)) {
         return true;
     }
     DistributedDB::Value data;
@@ -284,10 +271,7 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool
     if (status != DistributedDB::DBStatus::OK) {
         return false;
     }
-    if (isLocal) {
-        std::string value(data.begin(), data.end());
-        localdata_.Set(key, value);
-    }
+    SaveCacheMeta(key, { data.begin(), data.end() }, isLocal);
     Serializable::Unmarshall({ data.begin(), data.end() }, value);
     if (isLocal) {
         data.assign(data.size(), 0);
