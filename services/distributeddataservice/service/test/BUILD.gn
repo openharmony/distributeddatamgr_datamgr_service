@@ -643,7 +643,6 @@ ohos_unittest("RdbServiceImplTokenTest") {
   ]
   cflags = [
     "-Werror",
-    "-Dprivate=public",
     "-Dprotected=public",
     "-Wno-multichar",
     "-Wno-c99-designator",

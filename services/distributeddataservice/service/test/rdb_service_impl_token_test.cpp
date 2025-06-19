@@ -59,6 +59,7 @@ protected:
     static StoreMetaData metaData_;
     static CheckerMock checkerMock_;
     static void InitMetaDataManager();
+    static void GetRdbSyncerParam(RdbSyncerParam &param);
 };
 std::shared_ptr<DBStoreMock> RdbServiceImplTokenTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 StoreMetaData RdbServiceImplTokenTest::metaData_;
@@ -115,9 +116,24 @@ void RdbServiceImplTokenTest::TearDown()
 {
 }
 
+void RdbServiceImplTokenTest::GetRdbSyncerParam(RdbSyncerParam &param)
+{
+    param.bundleName_ = metaData_.bundleName;
+    param.type_ = metaData_.storeType;
+    param.level_ = metaData_.securityLevel;
+    param.area_ = metaData_.area;
+    param.hapName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.isSearchable_ = metaData_.isSearchable;
+    param.haMode_ = metaData_.haMode;
+    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
+    param.user_ = metaData_.user;
+}
+
 /**
  * @tc.name: VerifyPromiseInfo001
- * @tc.desc: Test VerifyPromiseInfo when Store not exist.
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -136,7 +152,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo001, TestSize.Level0)
 
 /**
  * @tc.name: VerifyPromiseInfo002
- * @tc.desc: Test VerifyPromiseInfo when tokenId is INVALID.
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -157,17 +173,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo002, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_INVALID));
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.type_ = metaData_.storeType;
-    param.level_ = metaData_.securityLevel;
-    param.area_ = metaData_.area;
-    param.hapName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.isEncrypt_ = metaData_.isEncrypt;
-    param.isSearchable_ = metaData_.isSearchable;
-    param.haMode_ = metaData_.haMode;
-    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
-    param.user_ = metaData_.user;
+    GetRdbSyncerParam(param);
     int32_t result = service.VerifyPromiseInfo(param);
  
     EXPECT_EQ(result, RDB_ERROR);
@@ -176,7 +182,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo002, TestSize.Level0)
 
 /**
  * @tc.name: VerifyPromiseInfo003
- * @tc.desc: Test VerifyPromiseInfo when tokenId is in promiseInfo and tokenid is TOKEN_SHELL.
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -196,17 +202,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo003, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.type_ = metaData_.storeType;
-    param.level_ = metaData_.securityLevel;
-    param.area_ = metaData_.area;
-    param.hapName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.isEncrypt_ = metaData_.isEncrypt;
-    param.isSearchable_ = metaData_.isSearchable;
-    param.haMode_ = metaData_.haMode;
-    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
-    param.user_ = metaData_.user;
+    GetRdbSyncerParam(param);
     int32_t result = service.VerifyPromiseInfo(param);
  
     EXPECT_EQ(result, RDB_OK);
@@ -215,7 +211,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo003, TestSize.Level0)
 
 /**
  * @tc.name: VerifyPromiseInfo004
- * @tc.desc: Test VerifyPromiseInfo when tokenId is not in promiseInfo and tokenid is TOKEN_SHELL.
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -234,17 +230,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo004, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.type_ = metaData_.storeType;
-    param.level_ = metaData_.securityLevel;
-    param.area_ = metaData_.area;
-    param.hapName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.isEncrypt_ = metaData_.isEncrypt;
-    param.isSearchable_ = metaData_.isSearchable;
-    param.haMode_ = metaData_.haMode;
-    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
-    param.user_ = metaData_.user;
+    GetRdbSyncerParam(param);
     int32_t result = service.VerifyPromiseInfo(param);
  
     EXPECT_EQ(result, RDB_ERROR);
@@ -253,7 +239,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo004, TestSize.Level0)
 
 /**
  * @tc.name: VerifyPromiseInfo005
- * @tc.desc: Test VerifyPromiseInfo when tokenId is in promiseInfo and tokenid is TOKEN_NATIVE.
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -273,17 +259,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo005, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.type_ = metaData_.storeType;
-    param.level_ = metaData_.securityLevel;
-    param.area_ = metaData_.area;
-    param.hapName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.isEncrypt_ = metaData_.isEncrypt;
-    param.isSearchable_ = metaData_.isSearchable;
-    param.haMode_ = metaData_.haMode;
-    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
-    param.user_ = metaData_.user;
+    GetRdbSyncerParam(param);
     int32_t result = service.VerifyPromiseInfo(param);
  
     EXPECT_EQ(result, RDB_OK);
@@ -292,7 +268,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo005, TestSize.Level0)
 
 /**
  * @tc.name: VerifyPromiseInfo006
- * @tc.desc: Test VerifyPromiseInfo when tokenId is not in promiseInfo and tokenid is TOKEN_NATIVE.
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -311,17 +287,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo006, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.type_ = metaData_.storeType;
-    param.level_ = metaData_.securityLevel;
-    param.area_ = metaData_.area;
-    param.hapName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.isEncrypt_ = metaData_.isEncrypt;
-    param.isSearchable_ = metaData_.isSearchable;
-    param.haMode_ = metaData_.haMode;
-    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
-    param.user_ = metaData_.user;
+    GetRdbSyncerParam(param);
     int32_t result = service.VerifyPromiseInfo(param);
  
     EXPECT_EQ(result, RDB_ERROR);
@@ -329,7 +295,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo006, TestSize.Level0)
 }
 /**
  * @tc.name: VerifyPromiseInfo007
- * @tc.desc: Test VerifyPromiseInfo when permissionNames is not in promiseInfo and tokenid is TOKEN_HAP.
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -349,17 +315,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo007, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.type_ = metaData_.storeType;
-    param.level_ = metaData_.securityLevel;
-    param.area_ = metaData_.area;
-    param.hapName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.isEncrypt_ = metaData_.isEncrypt;
-    param.isSearchable_ = metaData_.isSearchable;
-    param.haMode_ = metaData_.haMode;
-    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
-    param.user_ = metaData_.user;
+    GetRdbSyncerParam(param);
     int32_t result = service.VerifyPromiseInfo(param);
  
     EXPECT_EQ(result, RDB_ERROR);
@@ -368,7 +324,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo007, TestSize.Level0)
 
 /**
  * @tc.name: VerifyPromiseInfo008
- * @tc.desc: Test VerifyPromiseInfo when permissionNames is in promiseInfo and tokenid is TOKEN_HAP.
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -388,17 +344,7 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo008, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.type_ = metaData_.storeType;
-    param.level_ = metaData_.securityLevel;
-    param.area_ = metaData_.area;
-    param.hapName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.isEncrypt_ = metaData_.isEncrypt;
-    param.isSearchable_ = metaData_.isSearchable;
-    param.haMode_ = metaData_.haMode;
-    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
-    param.user_ = metaData_.user;
+    GetRdbSyncerParam(param);
     int32_t result = service.VerifyPromiseInfo(param);
  
     EXPECT_EQ(result, RDB_OK);
