@@ -1749,7 +1749,7 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true);
     if (!isCreated) {
         ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),
-            Anonymous::Change(meta.storeId).c_str());
+            meta.GetStoreAlias().c_str());
         return RDB_ERROR;
     }
     ATokenTypeEnum type = AccessTokenKit::GetTokenType(tokenId);
@@ -1775,7 +1775,7 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
         return RDB_ERROR;
     } else {
         ZLOGE("invalid type! bundleName:%{public}s, storeName:%{public}s, token_type is %{public}d.",
-            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), type);
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), type);
         return RDB_ERROR;
     }
     return RDB_OK;
