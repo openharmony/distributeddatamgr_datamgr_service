@@ -24,7 +24,7 @@ class AppIdMappingConfigManagerTest : public testing::Test {};
 
 /**
 * @tc.name: Convert
-* @tc.desc: appId and accountId Convert.
+* @tc.desc: Generate a pair based on the input appId and accountId.
 * @tc.type: FUNC
 */
 HWTEST_F(AppIdMappingConfigManagerTest, Convert01, TestSize.Level1)
@@ -45,7 +45,7 @@ HWTEST_F(AppIdMappingConfigManagerTest, Convert01, TestSize.Level1)
 
 /**
 * @tc.name: Convert
-* @tc.desc: app id Convert.
+* @tc.desc: Convert the input appId to another id.
 * @tc.type: FUNC
 */
 HWTEST_F(AppIdMappingConfigManagerTest, Convert02, TestSize.Level1)

@@ -38,7 +38,7 @@ HWTEST_F(ConnectManagerTest, RegisterInstance, TestSize.Level1)
 
 /**
 * @tc.name: CloseSession
-* @tc.desc: Close Session.
+* @tc.desc: Close the session related to the networkid.
 * @tc.type: FUNC
 */
 HWTEST_F(ConnectManagerTest, CloseSession, TestSize.Level1)
