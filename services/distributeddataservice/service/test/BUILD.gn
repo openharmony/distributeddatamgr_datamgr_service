@@ -994,6 +994,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_subscriber_managers_test.cpp",
     "data_share_types_util_test.cpp",
     "kv_dalegate_test.cpp",
+    "mock/account_delegate_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1027,6 +1028,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share:datashare_common_lite",
     "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
+    "googletest:gmock_main",
     "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
