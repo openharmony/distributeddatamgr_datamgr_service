@@ -381,6 +381,24 @@ ohos_unittest("ScreenManagerTest") {
   external_deps = [ "kv_store:datamgr_common" ]
 }
 
+ohos_unittest("AppIdMappingConfigManagerTest") {
+  module_out_path = module_output_path
+  sources = [ "app_id_mapping_config_manager_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [ "kv_store:datamgr_common" ]
+}
+
+ohos_unittest("ConnectManagerTest") {
+  module_out_path = module_output_path
+  sources = [ "connect_manager_test.cpp" ]
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [ "kv_store:datamgr_common" ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -388,11 +406,13 @@ group("unittest") {
   deps = []
 
   deps += [
+    ":AppIdMappingConfigManagerTest",
     ":AssetLoaderTest",
     ":BackupRuleManagerTest",
     ":BindEventTest",
     ":CheckerManagerTest",
     ":CloudInfoTest",
+    ":ConnectManagerTest",
     ":ConstantTest",
     ":CryptoTest",
     ":EventCenterTest",
