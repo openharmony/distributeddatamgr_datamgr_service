@@ -612,7 +612,7 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
 Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId, int32_t subUser,
     std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
     if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
         std::vector<uint8_t> backupPwd;
         bool res = BackupManager::GetInstance().GetPassWord(metaData, backupPwd);
