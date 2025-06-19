@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "accesstoken_kit.h"
+#include "account_delegate_mock.h"
 #include "data_share_service_stub.h"
 #include "dump/dump_manager.h"
 #include "hap_token_info.h"
@@ -516,5 +517,28 @@ HWTEST_F(DataShareServiceImplTest, GetSilentProxyStatus001, TestSize.Level1)
     EXPECT_EQ(result, OHOS::DataShare::E_OK);
     SetSelfTokenInfo(USER_TEST);
     ZLOGI("DataShareServiceImplTest GetSilentProxyStatus001 end");
+}
+
+/**
+* @tc.name: DataProviderConfig001
+* @tc.desc: test get provider info function
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, DataProviderConfig001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest DataProviderConfig001 start");
+    SetSelfTokenInfo(NATIVE_USER_ID);
+    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
+        NATIVE_USER_ID, BUNDLE_NAME, 0);
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryForegroundUserId(testing::_))
+        .Times(1)
+        .WillOnce(testing::Return(false));
+    DataProviderConfig config(SLIENT_ACCESS_URI, testTokenId);
+    EXPECT_EQ(config.providerInfo_.uri, SLIENT_ACCESS_URI);
+    EXPECT_EQ(config.providerInfo_.currentUserId, NATIVE_USER_ID);
+    EXPECT_EQ(config.providerInfo_.visitedUserId, NATIVE_USER_ID);
+    SetSelfTokenInfo(USER_TEST);
+    ZLOGI("DataShareServiceImplTest DataProviderConfig001 end");
 }
 } // namespace OHOS::Test
