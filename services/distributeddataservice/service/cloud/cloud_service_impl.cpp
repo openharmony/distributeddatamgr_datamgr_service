@@ -967,8 +967,8 @@ void CloudServiceImpl::UpdateE2eeEnable(const std::string &schemaKey, bool newE2
     }
     ZLOGI("Update e2eeEnable: %{public}d->%{public}d", oldMeta.e2eeEnable, newE2eeEnable);
     oldMeta.e2eeEnable = newE2eeEnable;
-    Report(FT_ENCRYPT_CHANGED, Fault::CSFAPP_SCHEMA, bundleName,
-        "oldE2eeEnable=" + std::to_string(oldMeta.e2eeEnable) + ",newE2eeEnable" + std::to_string(newE2eeEnable));
+    Report(FT_ENCRYPT_CHANGED, Fault::CSF_APP_SCHEMA, bundleName,
+        "oldE2eeEnable=" + std::to_string(oldMeta.e2eeEnable) + ",newE2eeEnable=" + std::to_string(newE2eeEnable));
     MetaDataManager::GetInstance().SaveMeta(schemaKey, oldMeta, true);
 }
 
@@ -1153,11 +1153,11 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUpdate(const std::string &bundleName
 
 bool CloudServiceImpl::CloudStatic::CloudDriverCheck(const std::string &bundleName, int32_t user)
 {
-    CheckerManager::StoreInfo info;
-    info.uid = IPCSkeleton::GetCallingUid();
-    info.tokenId = IPCSkeleton::GetCallingTokenID();
-    info.bundleName = bundleName;
-    if (CheckerManager::GetInstance().IsValid(info)) {
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        return false;
+    }
+    if (instance->CloudDriverUpdated(bundleName)) {
         // cloudDriver install, update schema(for update 'e2eeEnable')
         ZLOGI("cloud driver check valid, bundleName:%{public}s, user:%{public}d", bundleName.c_str(), user);
         Execute([this, user]() { UpdateSchemaFromServer(user); });

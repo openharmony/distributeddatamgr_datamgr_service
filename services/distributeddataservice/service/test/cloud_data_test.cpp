@@ -1089,7 +1089,7 @@ HWTEST_F(CloudDataTest, CloudSync002, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync003, TestSize.Level0)
+HWTEST_F(CloudDataTest, CloudSync003, TestSize.Level1)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_BEGIN;
     uint32_t seqNum = 10;
@@ -1103,7 +1103,7 @@ HWTEST_F(CloudDataTest, CloudSync003, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync004, TestSize.Level0)
+HWTEST_F(CloudDataTest, CloudSync004, TestSize.Level1)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
     uint32_t seqNum = 10;
@@ -1117,7 +1117,7 @@ HWTEST_F(CloudDataTest, CloudSync004, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync005, TestSize.Level0)
+HWTEST_F(CloudDataTest, CloudSync005, TestSize.Level1)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_NATIVE_FIRST;
     uint32_t seqNum = 10;
@@ -1131,7 +1131,7 @@ HWTEST_F(CloudDataTest, CloudSync005, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, CloudSync006, TestSize.Level0)
+HWTEST_F(CloudDataTest, CloudSync006, TestSize.Level1)
 {
     int32_t syncMode = DistributedData::GeneralStore::CLOUD_CLOUD_FIRST;
     uint32_t seqNum = 10;
@@ -2176,9 +2176,9 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromServer_001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(CloudServiceImplTest, OnAppInstallTest, TestSize.Level1)
+HWTEST_F(CloudDataTest, OnAppInstallTest, TestSize.Level1)
 {
-    ZLOGI("CloudServiceImplTest OnAppInstallTest start");
+    ZLOGI("CloudDataTest OnAppInstallTest start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
     int32_t index = 0;
@@ -2192,9 +2192,9 @@ HWTEST_F(CloudServiceImplTest, OnAppInstallTest, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(CloudServiceImplTest, OnAppUpdateTest, TestSize.Level1)
+HWTEST_F(CloudDataTest, OnAppUpdateTest, TestSize.Level1)
 {
-    ZLOGI("CloudServiceImplTest OnAppUpdateTest start");
+    ZLOGI("CloudDataTest OnAppUpdateTest start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
     int32_t index = 0;
