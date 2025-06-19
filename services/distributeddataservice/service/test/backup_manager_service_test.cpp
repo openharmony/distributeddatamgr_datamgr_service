@@ -20,7 +20,7 @@
 #include "backup_manager.h"
 #include "backuprule/backup_rule_manager.h"
 #include "bootstrap.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "file_ex.h"

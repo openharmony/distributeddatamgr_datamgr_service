@@ -1014,7 +1014,6 @@ ohos_unittest("DataShareServiceImplTest") {
 
   sources = [
     "${data_service_path}/service/common/xcollie.cpp",
-    "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/common_utils.cpp",
@@ -1982,7 +1981,6 @@ ohos_unittest("UpgradeMockTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
-    "${data_service_path}/service/crypto:distributeddata_crypto",
     "${data_service_path}/service/matrix:distributeddata_matrix",
     "${data_service_path}/service/rdb:distributeddata_rdb",
     "${data_service_path}/service/test/mock:distributeddata_mock_static",

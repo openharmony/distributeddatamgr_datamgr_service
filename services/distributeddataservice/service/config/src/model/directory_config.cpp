@@ -36,15 +36,32 @@ bool DirectoryConfig::DirectoryStrategy::Unmarshal(const json &node)
     return true;
 }
 
+bool DirectoryConfig::StoreType::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(range)], range);
+    SetValue(node[GET_NAME(type)], type);
+    return true;
+}
+
+bool DirectoryConfig::StoreType::Unmarshal(const json &node)
+{
+    GetValue(node, GET_NAME(range), range);
+    GetValue(node, GET_NAME(type), type);
+    return true;
+}
+
 bool DirectoryConfig::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(strategy)], strategy);
+    SetValue(node[GET_NAME(storeTypes)], storeTypes);
     return true;
 }
 
 bool DirectoryConfig::Unmarshal(const json &node)
 {
-    return GetValue(node, GET_NAME(strategy), strategy);
+    GetValue(node, GET_NAME(strategy), strategy);
+    GetValue(node, GET_NAME(storeTypes), storeTypes);
+    return true;
 }
 } // namespace DistributedData
 } // namespace OHOS

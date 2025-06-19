@@ -30,6 +30,7 @@ config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
+    "${data_service_path}/adapter/include/communicator",
   ]
 }
 
@@ -69,6 +70,8 @@ ohos_shared_library("distributeddatasvcfwk") {
     "cloud/sync_event.cpp",
     "cloud/sync_strategy.cpp",
     "communication/connect_manager.cpp",
+    "crypto/crypto_manager.cpp",
+    "device_manager/device_manager_delegate.cpp",
     "device_sync_app/device_sync_app_manager.cpp",
     "dfx/reporter.cpp",
     "directory/directory_manager.cpp",
@@ -134,6 +137,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
+    "huks:libhukssdk",
     "cJSON:cjson",
     "openssl:libcrypto_shared",
     "kv_store:datamgr_common",

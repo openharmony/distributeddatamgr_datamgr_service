@@ -121,6 +121,7 @@ ohos_unittest("DeviceManagerAdapterTest") {
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

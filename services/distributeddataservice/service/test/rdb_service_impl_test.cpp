@@ -20,7 +20,7 @@
 #include "checker_mock.h"
 #include "cloud/change_event.h"
 #include "cloud/schema_meta.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "event_center.h"

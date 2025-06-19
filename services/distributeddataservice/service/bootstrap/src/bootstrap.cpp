@@ -156,7 +156,12 @@ void Bootstrap::LoadDirectory()
     for (size_t i = 0; i < config->strategy.size(); ++i) {
         strategies[i] = config->strategy[i];
     }
-    DirectoryManager::GetInstance().Initialize(strategies);
+    auto typeSize = config->storeTypes.size();
+    std::vector<DirectoryManager::StoreType> storeTypes(typeSize);
+    for (size_t i = 0; i < typeSize; ++i) {
+        storeTypes[i] = config->storeTypes[i];
+    }
+    DirectoryManager::GetInstance().Initialize(strategies, storeTypes);
 }
 
 void Bootstrap::LoadCloud()

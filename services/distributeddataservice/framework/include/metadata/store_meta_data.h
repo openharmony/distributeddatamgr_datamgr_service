@@ -69,8 +69,8 @@ struct API_EXPORT StoreMetaData : public Serializable {
         STORE_RELATIONAL_END = 19,
         STORE_OBJECT_BEGIN = 20,
         STORE_OBJECT_END = 29,
-        STORE_UDMF_BEGIN = 30,
-        STORE_UDMF_END = 39,
+        STORE_GDB_BEGIN = 30,
+        STORE_GDB_END = 39,
         STORE_BUTT = 255
     };
 

@@ -612,7 +612,8 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
                     BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
         }
     })) {
-        ZLOGW("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
+        ZLOGE("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
+        return E_DB_ERROR;
     }
     if (store->Sync(devices, callback) != E_OK) {
         ZLOGE("Store sync failed");
@@ -866,8 +867,8 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
     }
 
     for (const auto &storeMeta : metaData) {
-        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_UDMF_BEGIN ||
-            storeMeta.storeType > StoreMetaData::StoreType::STORE_UDMF_END ||
+        if (storeMeta.storeType < StoreMetaData::StoreType::STORE_KV_BEGIN ||
+            storeMeta.storeType > StoreMetaData::StoreType::STORE_KV_END ||
             storeMeta.appId != Bootstrap::GetInstance().GetProcessLabel()) {
             continue;
         }

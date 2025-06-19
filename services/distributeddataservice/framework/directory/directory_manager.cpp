@@ -107,7 +107,7 @@ std::string DirectoryManager::GetClonePath(const std::string &userId, uint32_t v
     return "";
 }
 
-void DirectoryManager::Initialize(const std::vector<Strategy> &strategies)
+void DirectoryManager::Initialize(const std::vector<Strategy> &strategies, const std::vector<StoreType> &storeTypes)
 {
     strategies_.resize(strategies.size());
     for (size_t i = 0; i < strategies.size(); ++i) {
@@ -127,6 +127,8 @@ void DirectoryManager::Initialize(const std::vector<Strategy> &strategies)
 
     std::sort(strategies_.begin(), strategies_.end(),
         [](const StrategyImpl &curr, const StrategyImpl &prev) { return curr.version > prev.version; });
+
+    storeTypes_ = storeTypes;
 }
 
 std::string DirectoryManager::GetType(const StoreMetaData &metaData) const
@@ -140,19 +142,10 @@ std::string DirectoryManager::GetType(const StoreMetaData &metaData) const
 
 std::string DirectoryManager::GetStore(const StoreMetaData &metaData) const
 {
-    if (metaData.storeType >= StoreMetaData::StoreType::STORE_KV_BEGIN &&
-        metaData.storeType <= StoreMetaData::StoreType::STORE_KV_END) {
-        return "kvdb";
-    }
-    // rdb use empty session
-    if (metaData.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN &&
-        metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END) {
-        return "rdb";
-    }
-    // object use meta
-    if (metaData.storeType >= StoreMetaData::StoreType::STORE_OBJECT_BEGIN &&
-        metaData.storeType <= StoreMetaData::StoreType::STORE_OBJECT_END) {
-        return "kvdb";
+    for (const auto &storeType : storeTypes_) {
+        if (metaData.storeType >= storeType.range.front() && metaData.storeType <= storeType.range.back()) {
+            return storeType.type;
+        }
     }
     return "other";
 }

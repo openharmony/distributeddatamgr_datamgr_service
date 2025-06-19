@@ -23,7 +23,7 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "communication_provider.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"

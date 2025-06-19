@@ -24,7 +24,7 @@
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/schema_meta.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "kv_store_nb_delegate_mock.h"
 #include "kvdb_query.h"

@@ -24,13 +24,14 @@
 #include "concurrent_map.h"
 #include "device_manager.h"
 #include "device_manager_callback.h"
+#include "device_manager/device_manager_delegate.h"
 #include "dm_device_info.h"
 #include "executor_pool.h"
 #include "lru_bucket.h"
 
 namespace OHOS {
 namespace DistributedData {
-class API_EXPORT DeviceManagerAdapter {
+class API_EXPORT DeviceManagerAdapter : public DeviceManagerDelegate {
 public:
     enum DeviceState {
         DEVICE_ONLINE,
@@ -52,7 +53,7 @@ public:
     void Init(std::shared_ptr<ExecutorPool> executors);
     Status StartWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
     Status StopWatchDeviceChange(const AppDeviceChangeListener *observer, const PipeInfo &pipeInfo);
-    DeviceInfo GetLocalDevice();
+    DeviceInfo GetLocalDevice() override;
     std::vector<DeviceInfo> GetRemoteDevices();
     std::vector<DeviceInfo> GetOnlineDevices();
     bool IsDeviceReady(const std::string &id);

@@ -208,10 +208,10 @@ HWTEST_F(DirectoryManagerTest, GetUdmfStorePath, TestSize.Level0)
     metaData.tokenId = GetAccessTokenId(&tokenParam_);
     metaData.area = DistributedKv::Area::EL2;
     metaData.uid = static_cast<int32_t>(getuid());
-    metaData.storeType = StoreMetaData::StoreType::STORE_UDMF_BEGIN;
+    metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
     metaData.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
     metaData.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
-    metaData.dataDir = "/data/service/el2/100/database/distributeddata/other";
+    metaData.dataDir = "/data/service/el2/100/database/distributeddata/kvdb";
     auto path = DirectoryManager::GetInstance().GetStorePath(metaData);
     EXPECT_EQ(path, metaData.dataDir);
     auto res = DistributedData::DirectoryManager::GetInstance().CreateDirectory(path);
@@ -282,4 +282,35 @@ HWTEST_F(DirectoryManagerTest, DeleteDirectory, TestSize.Level0)
     bool ret1 = DirectoryManager::GetInstance().DeleteDirectory(deleteDir.c_str());
     EXPECT_TRUE(ret1);
     EXPECT_EQ(access(deleteDir.c_str(), F_OK), -1);
+}
+
+/**
+* @tc.name: GetStoreTypePath
+* @tc.desc: test get db dir
+* @tc.type: FUNC
+*/
+HWTEST_F(DirectoryManagerTest, GetStoreTypePath, TestSize.Level0)
+{
+    StoreMetaData metaData;
+    metaData.user = "100";
+    metaData.bundleName = "ohos.test.demo";
+    metaData.securityLevel = SecurityLevel::S2;
+    metaData.area = 1;
+    metaData.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    metaData.appId = "ohos.test.demo_09AEF01D";
+
+    metaData.storeType = StoreMetaData::StoreType::STORE_KV_BEGIN;
+    metaData.dataDir = "/data/app/el1/100/database/ohos.test.demo/kvdb";
+    auto path = DirectoryManager::GetInstance().GetStorePath(metaData);
+    EXPECT_EQ(path, metaData.dataDir);
+
+    metaData.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    metaData.dataDir = "/data/app/el1/100/database/ohos.test.demo/rdb";
+    path = DirectoryManager::GetInstance().GetStorePath(metaData);
+    EXPECT_EQ(path, metaData.dataDir);
+
+    metaData.storeType = StoreMetaData::StoreType::STORE_BUTT;
+    metaData.dataDir = "/data/app/el1/100/database/ohos.test.demo/other";
+    path = DirectoryManager::GetInstance().GetStorePath(metaData);
+    EXPECT_EQ(path, metaData.dataDir);
 }

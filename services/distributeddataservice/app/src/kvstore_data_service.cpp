@@ -33,7 +33,7 @@
 #include "communication_provider.h"
 #include "communicator_context.h"
 #include "config_factory.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "db_info_handle_impl.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
