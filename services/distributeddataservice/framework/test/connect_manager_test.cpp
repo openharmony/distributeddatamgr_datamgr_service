@@ -24,7 +24,7 @@ class ConnectManagerTest : public testing::Test {};
 
 /**
 * @tc.name: RegisterInstance
-* @tc.desc: RegisterInstance.
+* @tc.desc: Register Instance.
 * @tc.type: FUNC
 */
 HWTEST_F(ConnectManagerTest, RegisterInstance, TestSize.Level1)
@@ -38,7 +38,7 @@ HWTEST_F(ConnectManagerTest, RegisterInstance, TestSize.Level1)
 
 /**
 * @tc.name: CloseSession
-* @tc.desc: CloseSession.
+* @tc.desc: Close Session.
 * @tc.type: FUNC
 */
 HWTEST_F(ConnectManagerTest, CloseSession, TestSize.Level1)
@@ -54,7 +54,7 @@ HWTEST_F(ConnectManagerTest, CloseSession, TestSize.Level1)
 
 /**
 * @tc.name: RegisterCloseSessionTask
-* @tc.desc: RegisterCloseSessionTask.
+* @tc.desc: Only one session closing task can be registered.
 * @tc.type: FUNC
 */
 HWTEST_F(ConnectManagerTest, RegisterCloseSessionTask, TestSize.Level1)

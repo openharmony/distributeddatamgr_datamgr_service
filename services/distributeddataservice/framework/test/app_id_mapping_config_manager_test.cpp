@@ -24,7 +24,7 @@ class AppIdMappingConfigManagerTest : public testing::Test {};
 
 /**
 * @tc.name: Convert
-* @tc.desc: Convert.
+* @tc.desc: appId and accountId Convert.
 * @tc.type: FUNC
 */
 HWTEST_F(AppIdMappingConfigManagerTest, Convert01, TestSize.Level1)
@@ -45,7 +45,7 @@ HWTEST_F(AppIdMappingConfigManagerTest, Convert01, TestSize.Level1)
 
 /**
 * @tc.name: Convert
-* @tc.desc: Convert.
+* @tc.desc: app id Convert.
 * @tc.type: FUNC
 */
 HWTEST_F(AppIdMappingConfigManagerTest, Convert02, TestSize.Level1)
