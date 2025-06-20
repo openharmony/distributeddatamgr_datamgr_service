@@ -137,7 +137,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries001, TestSize.Level1)
         entrysRand.push_back({ key, value });
     }
 
-    int32_t status = store->PutEntries(entrysRand);
+    status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_OK, status);
 
     vector<Entry> entries;
