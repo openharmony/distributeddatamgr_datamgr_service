@@ -456,7 +456,7 @@ HWTEST_F(UdmfRunTimeStoreTest, Get002, TestSize.Level1)
     auto status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_DB_ERROR, status);
     entrysRand.clear();
-    status = store->GetEntries(EMPTY_DEVICE_ID, entrysRand);
+    status = store->GetEntries(KEY_PREFIX, entrysRand);
     EXPECT_EQ(E_OK, status);
     EXPECT_TRUE(entrysRand.empty());
 
