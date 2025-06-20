@@ -120,8 +120,7 @@ private:
             return;
         }
         
-        std::string value(data.begin(), data.end());
-        localdata_.Set(key, value);
+        localdata_.Set(key, data);
     }
     
     void StopSA();
