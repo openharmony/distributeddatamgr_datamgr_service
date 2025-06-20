@@ -119,7 +119,6 @@ private:
         if (!isLocal) {
             return;
         }
-        
         localdata_.Set(key, data);
     }
     

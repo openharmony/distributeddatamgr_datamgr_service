@@ -271,8 +271,9 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool
     if (status != DistributedDB::DBStatus::OK) {
         return false;
     }
-    SaveCacheMeta(key, { data.begin(), data.end() }, isLocal);
-    Serializable::Unmarshall({ data.begin(), data.end() }, value);
+    std::string tempdata(data.begin(), data.end());
+    SaveCacheMeta(key, tempdata, isLocal);
+    Serializable::Unmarshall(tempdata, value);
     if (isLocal) {
         data.assign(data.size(), 0);
     }
