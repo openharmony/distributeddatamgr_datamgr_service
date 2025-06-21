@@ -468,16 +468,18 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
         auto accountId = account.empty() ? AccountDelegate::GetInstance()->GetUnencryptedAccountId() : account;
         auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, accountId);
         auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
-        ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
+        ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}s, appId:%{public}s",
             Anonymous::Change(storeId).c_str(), Anonymous::Change(convertedIds.second).c_str(),
-            DistributedData::Serializable::Marshall(sameAccountDevs).c_str(), convertedIds.first.c_str());
+            Anonymous::Change(DistributedData::Serializable::Marshall(sameAccountDevs)).c_str(),
+            convertedIds.first.c_str());
         delegate_->SetEqualIdentifier(identifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
         auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, defaultAccountId);
         auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
-        ZLOGI("no account store:%{public}s, device:%{public}.10s, appId:%{public}s", Anonymous::Change(storeId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), convertedIds.first.c_str());
+        ZLOGI("no account store:%{public}s, device:%{public}s, appId:%{public}s", Anonymous::Change(storeId).c_str(),
+            Anonymous::Change(DistributedData::Serializable::Marshall(defaultAccountDevs)).c_str(),
+            convertedIds.first.c_str());
         delegate_->SetEqualIdentifier(identifier, defaultAccountDevs);
     }
 }
