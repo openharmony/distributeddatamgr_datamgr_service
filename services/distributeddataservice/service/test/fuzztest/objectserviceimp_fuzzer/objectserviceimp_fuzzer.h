@@ -15,7 +15,7 @@
 
 #ifndef OBJECT_SERVICE_IMP_FUZZER_H
 #define OBJECT_SERVICE_IMP_FUZZER_H
- 
+
 #define FUZZ_PROJECT_NAME "objectserviceimp_fuzzer"
- 
+
 #endif // OBJECT_SERVICE_IMP_FUZZER_H
