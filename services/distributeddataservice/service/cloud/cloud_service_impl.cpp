@@ -931,7 +931,7 @@ int32_t CloudServiceImpl::UpdateSchemaFromServer(int32_t user)
 {
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
-        ZLOGW("get cloudinfo failed, user:%{public}d, status:%{public}d", user, status);
+        ZLOGW("get cloud info failed, user:%{public}d, status:%{public}d", user, status);
         return status;
     }
     return UpdateSchemaFromServer(cloudInfo, user);
