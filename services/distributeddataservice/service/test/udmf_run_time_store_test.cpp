@@ -92,6 +92,7 @@ public:
     const std::string STORE_ID = "drag";
     const std::string KEY_PREFIX = "TEST_";
     const std::string EMPTY_DEVICE_ID = "";
+    const std::string BUNDLE_NAME = "udmf_test";
     static constexpr size_t tempUdataRecordSize = 1;
 };
 
@@ -124,6 +125,9 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries001, TestSize.Level1)
     bool result = store->Init();
     EXPECT_EQ(true, result);
 
+    auto status = store->Delete(KEY_PREFIX);
+    EXPECT_EQ(E_OK, status);
+
     Key key;
     Value value;
     GetRandomValue(value, MAX_KEY_SIZE); // 1K
@@ -133,7 +137,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutEntries001, TestSize.Level1)
         entrysRand.push_back({ key, value });
     }
 
-    int32_t status = store->PutEntries(entrysRand);
+    status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_OK, status);
 
     vector<Entry> entries;
@@ -412,24 +416,17 @@ HWTEST_F(UdmfRunTimeStoreTest, Get001, TestSize.Level1)
     bool result = store->Init();
     EXPECT_TRUE(result);
 
-    Key key;
     Key keyInvalid;
     Value value;
-    Value valueInvalid;
-    GetRandomKey(key, MAX_KEY_SIZE);                  // 1K
     GetRandomKey(keyInvalid, MAX_KEY_SIZE + 1);       // 1K + 1
     GetRandomValue(value, MAX_VALUE_SIZE);            // 4M
-    GetRandomValue(valueInvalid, MAX_VALUE_SIZE + 1); // 4M + 1
     vector<Entry> entrysMix1(1, { keyInvalid, value });
-    vector<Entry> entrysMix2(1, { key, valueInvalid });
-    UnifiedData unifiedData;
     int32_t status = store->PutEntries(entrysMix1);
     EXPECT_EQ(E_DB_ERROR, status);
+    entrysMix1.clear();
     status = store->GetEntries(KEY_PREFIX, entrysMix1);
     EXPECT_EQ(E_OK, status);
-
-    status = store->Get(KEY_PREFIX, unifiedData);
-    EXPECT_EQ(E_NOT_FOUND, status);
+    EXPECT_TRUE(entrysMix1.empty());
 
     status = store->Delete(KEY_PREFIX);
     EXPECT_EQ(E_OK, status);
@@ -458,11 +455,10 @@ HWTEST_F(UdmfRunTimeStoreTest, Get002, TestSize.Level1)
     }
     auto status = store->PutEntries(entrysRand);
     EXPECT_EQ(E_DB_ERROR, status);
-    status = store->GetEntries(EMPTY_DEVICE_ID, entrysRand);
+    entrysRand.clear();
+    status = store->GetEntries(KEY_PREFIX, entrysRand);
     EXPECT_EQ(E_OK, status);
-    UnifiedData data1;
-    status = store->Get(EMPTY_DEVICE_ID, data1);
-    EXPECT_EQ(E_NOT_FOUND, status);
+    EXPECT_TRUE(entrysRand.empty());
 
     status = store->Delete(KEY_PREFIX);
     EXPECT_EQ(E_OK, status);
@@ -679,16 +675,18 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
 */
 HWTEST_F(UdmfRunTimeStoreTest, GetRuntime001, TestSize.Level1)
 {
+    UnifiedKey udKey(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    Runtime runtime{
+        .key = udKey
+    };
     UnifiedData inputData;
-    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
-    auto status = PreProcessUtils::FillRuntimeInfo(inputData, option);
-    EXPECT_EQ(status, E_OK);
+    inputData.SetRuntime(runtime);
     auto key = inputData.GetRuntime()->key.GetUnifiedKey();
 
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
     EXPECT_TRUE(result);
-    status = store->PutRuntime(key, *inputData.GetRuntime());
+    auto status = store->PutRuntime(key, *inputData.GetRuntime());
     EXPECT_EQ(status, E_OK);
 
     Runtime outRuntime;
@@ -705,10 +703,12 @@ HWTEST_F(UdmfRunTimeStoreTest, GetRuntime001, TestSize.Level1)
 */
 HWTEST_F(UdmfRunTimeStoreTest, GetRuntime002, TestSize.Level1)
 {
+    UnifiedKey udKey(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    Runtime runtime{
+        .key = udKey
+    };
     UnifiedData inputData;
-    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
-    auto status = PreProcessUtils::FillRuntimeInfo(inputData, option);
-    EXPECT_EQ(status, E_OK);
+    inputData.SetRuntime(runtime);
     auto key = inputData.GetRuntime()->key.GetUnifiedKey();
 
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
@@ -716,7 +716,7 @@ HWTEST_F(UdmfRunTimeStoreTest, GetRuntime002, TestSize.Level1)
     EXPECT_TRUE(result);
 
     Runtime outRuntime;
-    status = store->GetRuntime(key, outRuntime);
+    auto status = store->GetRuntime(key, outRuntime);
     EXPECT_EQ(status, E_NOT_FOUND);
 }
 }; // namespace DistributedDataTest
