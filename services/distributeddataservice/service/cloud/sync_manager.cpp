@@ -623,7 +623,6 @@ std::pair<int32_t, AutoCache::Store> SyncManager::GetStore(const StoreMetaData &
         return { E_USER_UNLOCK, nullptr };
     }
     if (CloudServer::GetInstance() == nullptr) {
-        ZLOGD("not support cloud sync");
         return { E_NOT_SUPPORT, nullptr };
     }
     auto [status, store] = AutoCache::GetInstance().GetDBStore(meta, {});
@@ -662,6 +661,7 @@ std::pair<int32_t, AutoCache::Store> SyncManager::GetStore(const StoreMetaData &
         if (MetaDataManager::GetInstance().LoadMeta(info.GetKey(), info, true)) {
             config.maxNumber = info.maxNumber;
             config.maxSize = info.maxSize;
+            config.isSupportEncrypt = schemaMeta.e2eeEnable;
         }
         store->Bind(dbMeta, bindInfos, config);
     }

@@ -257,6 +257,7 @@ int32_t KVDBGeneralStore::Bind(
     dbConfig.maxUploadCount = config.maxNumber;
     dbConfig.maxUploadSize = config.maxSize;
     dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
+    dbConfig.isSupportEncrypt = config.isSupportEncrypt;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
