@@ -966,9 +966,9 @@ void CloudServiceImpl::UpdateE2eeEnable(const std::string &schemaKey, bool newE2
         return;
     }
     ZLOGI("Update e2eeEnable: %{public}d->%{public}d", oldMeta.e2eeEnable, newE2eeEnable);
-    oldMeta.e2eeEnable = newE2eeEnable;
     Report(FT_ENCRYPT_CHANGED, Fault::CSF_APP_SCHEMA, bundleName,
         "oldE2eeEnable=" + std::to_string(oldMeta.e2eeEnable) + ",newE2eeEnable=" + std::to_string(newE2eeEnable));
+    oldMeta.e2eeEnable = newE2eeEnable;
     MetaDataManager::GetInstance().SaveMeta(schemaKey, oldMeta, true);
 }
 

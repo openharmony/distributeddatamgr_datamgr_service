@@ -371,9 +371,12 @@ HWTEST_F(CloudServiceImplTest, CloudDriverCheckTest, TestSize.Level0)
     ZLOGI("CloudServiceImplTest CloudDriverCheckTest start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    CloudServer cloudServer;
+    CloudServer::RegisterCloudInstance(&cloudServer);
     int32_t user = 0;
     auto result = cloudServiceImpl_->factory_.staticActs_->CloudDriverCheck(TEST_CLOUD_BUNDLE, user);
     EXPECT_EQ(result, false);
+    CloudServer::instance_ = nullptr;
 }
 
 /**
@@ -426,8 +429,13 @@ HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_002, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, UpdateE2eeEnableTest, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest UpdateE2eeEnableTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudServer cloudServer;
+    auto result = cloudServer.CloudDriverUpdated(TEST_CLOUD_BUNDLE);
+    EXPECT_EQ(result, false);
+
     std::string schemaKey = "schemaKey";
-    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE));
+    cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE);
 }
 
 /**

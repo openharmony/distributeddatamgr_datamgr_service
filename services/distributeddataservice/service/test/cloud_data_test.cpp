@@ -1151,6 +1151,10 @@ HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level0)
     uint32_t seqNum = 10;
     auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+
+    CloudData::Details details{};
+    uint32_t tokenId = 0;
+    cloudServiceImpl_->OnAsyncComplete(tokenId, seqNum, std::move(details));
 }
 
 /**
@@ -2216,8 +2220,8 @@ HWTEST_F(CloudDataTest, UpdateE2eeEnableTest, TestSize.Level1)
     EXPECT_EQ(schemaMeta.e2eeEnable, schemaMeta_.e2eeEnable);
 
     ASSERT_NE(cloudServiceImpl_, nullptr);
-    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, false, TEST_CLOUD_BUNDLE));
-    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE));
+    cloudServiceImpl_->UpdateE2eeEnable(schemaKey, false, TEST_CLOUD_BUNDLE);
+    cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE);
 }
 
 /**
