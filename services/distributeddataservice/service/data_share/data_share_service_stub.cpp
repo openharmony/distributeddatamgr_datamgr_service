@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "datashare_errno.h"
 #define LOG_TAG "DataShareServiceStub"
 
 #include "data_share_service_stub.h"
@@ -27,7 +28,9 @@
 #include "itypes_util.h"
 #include "log_print.h"
 #include "qos.h"
+#include "uri_utils.h"
 #include "utils/anonymous.h"
+#include "dataproxy_handle_common.h"
 
 namespace OHOS {
 namespace DataShare {
@@ -71,8 +74,8 @@ int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = InsertEx(uri, extUri, bucket);
-    ZLOGI("Insert uri:%{public}s, errCode:%{public}x, status:%{public}x",
-        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
+    ZLOGI("Insert uri:%{public}s, e:%{public}x, s:%{public}x",
+        URIUtils::Anonymous(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -92,8 +95,8 @@ int32_t DataShareServiceStub::OnUpdateEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = UpdateEx(uri, extUri, predicate, bucket);
-    ZLOGI("Update uri:%{public}s, errCode:%{public}x, status:%{public}x",
-        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
+    ZLOGI("Update uri:%{public}s, e:%{public}x, s:%{public}x",
+        URIUtils::Anonymous(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -111,8 +114,8 @@ int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = DeleteEx(uri, extUri, predicate);
-    ZLOGI("Delete uri:%{public}s, errCode:%{public}x, status:%{public}x",
-        DistributedData::Anonymous::Change(uri).c_str(), errCode, status);
+    ZLOGI("Delete uri:%{public}s, e:%{public}x, s:%{public}x",
+        URIUtils::Anonymous(uri).c_str(), errCode, status);
     if (!ITypesUtil::Marshal(reply, errCode, status)) {
         ZLOGE("Marshal errCode: 0x%{public}x, status: 0x%{public}x", errCode, status);
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -455,6 +458,92 @@ int32_t DataShareServiceStub::OnUnregisterObserver(MessageParcel &data, MessageP
 void DataShareServiceStub::SetServiceReady()
 {
     isReady_.store(true);
+}
+
+int32_t DataShareServiceStub::OnPublishProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<DataShareProxyData> proxyDatas;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, proxyDatas, config)) {
+        ZLOGE("OnPublishProxyData unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyResult> results = PublishProxyData(proxyDatas, config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("OnPublishProxyData marshal reply failed.");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnDeleteProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<std::string> uris;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uris, config)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyResult> results = DeleteProxyData(uris, config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("OnPublishProxyData marshal reply failed.");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnGetProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<std::string> uris;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uris, config)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyGetResult> results = GetProxyData(uris, config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("OnPublishProxyData marshal reply failed.");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnSubscribeProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<std::string> uris;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uris)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto remoteObj = data.ReadRemoteObject();
+    sptr<IProxyDataObserver> observer = new (std::nothrow)ProxyDataObserverProxy(remoteObj);
+    if (observer == nullptr) {
+        ZLOGE("observer is nullptr");
+        return DATA_SHARE_ERROR;
+    }
+    std::vector<DataProxyResult> results = SubscribeProxyData(uris, config, observer);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("ITypesUtil::Marshal(reply, results) failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
+
+int32_t DataShareServiceStub::OnUnsubscribeProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<std::string> uris;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uris)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyResult> results = UnsubscribeProxyData(uris, config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("ITypesUtil::Marshal(reply, results) failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
 }
 } // namespace DataShare
 } // namespace OHOS

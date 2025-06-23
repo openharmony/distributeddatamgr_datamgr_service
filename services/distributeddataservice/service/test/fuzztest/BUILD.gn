@@ -21,7 +21,10 @@ group("fuzztest") {
   deps = [ "dumphelper_fuzzer:fuzztest" ]
 
   if (datamgr_service_cloud) {
-    deps += [ "cloudservicestub_fuzzer:fuzztest" ]
+    deps += [ 
+      "cloudservicestub_fuzzer:fuzztest",
+      "syncstrategies_fuzzer:fuzztest",
+    ]
   }
 
   if (datamgr_service_object) {

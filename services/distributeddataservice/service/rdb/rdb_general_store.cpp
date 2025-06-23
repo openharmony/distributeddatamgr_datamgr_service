@@ -142,6 +142,7 @@ void RdbGeneralStore::InitStoreInfo(const StoreMetaData &meta)
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::atoi(meta.user.c_str());
     storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    storeInfo_.path = meta.dataDir;
 }
 
 RelationalStoreDelegate::Option GetOption(const StoreMetaData &meta)
@@ -277,6 +278,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     dbConfig.maxUploadCount = config.maxNumber;
     dbConfig.maxUploadSize = config.maxSize;
     dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
+    dbConfig.isSupportEncrypt = config.isSupportEncrypt;
     DBSchema schema = GetDBSchema(database);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -980,6 +982,7 @@ void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
      if (delegate_ == nullptr) {
         ZLOGE("database already closed!, tableMode is :%{public}d",
               storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
+        return;
     }
     if (storeConfig.tableMode.has_value()) {
         RelationalStoreDelegate::StoreConfig config;

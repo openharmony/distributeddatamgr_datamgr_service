@@ -16,6 +16,7 @@
 
 #include "preprocess_utils.h"
 
+#include <iomanip>
 #include <sstream>
 
 #include "bundle_info.h"
@@ -23,12 +24,12 @@
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
 #include "device_manager_adapter.h"
+#include "file_mount_manager.h"
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "system_ability_definition.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
-#include "remote_file_share.h"
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
 namespace OHOS {
@@ -240,7 +241,7 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::IDLE);
     std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
-    int ret = RemoteFileShare::GetDfsUrisFromLocal(uris, userId, dfsUris);
+    int32_t ret = Storage::DistributedFile::FileMountManager::GetDfsUrisDirFromLocal(uris, userId, dfsUris);
     if (ret != 0 || dfsUris.empty()) {
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::FAILED, E_FS_ERROR, BizState::DFX_END);

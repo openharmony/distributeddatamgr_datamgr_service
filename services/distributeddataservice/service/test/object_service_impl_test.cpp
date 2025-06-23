@@ -151,4 +151,29 @@ HWTEST_F(ObjectServiceImplTest, ResolveAutoLaunch001, TestSize.Level1)
     int32_t ret = objectServiceImpl->ResolveAutoLaunch(identifier, param);
     EXPECT_EQ(ret, OBJECT_SUCCESS);
 }
+
+/**
+ * @tc.name: RegisterProgressObserver001
+ * @tc.desc: RegisterProgressObserver test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, RegisterProgressObserver001, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    sptr<IRemoteObject> callback;
+    int32_t ret = objectServiceImpl->RegisterProgressObserver(bundleName_, sessionId_, callback);
+    EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name: UnregisterProgressObserver001
+ * @tc.desc: UnregisterProgressObserver test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, UnregisterProgressObserver001, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    int32_t ret = objectServiceImpl->UnregisterProgressObserver(bundleName_, sessionId_);
+    EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+}
 }

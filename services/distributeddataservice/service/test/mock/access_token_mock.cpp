@@ -22,6 +22,14 @@ ATokenTypeEnum AccessTokenKit::GetTokenTypeFlag(AccessTokenID tokenID)
     return BAccessTokenKit::accessTokenkit->GetTokenTypeFlag(tokenID);
 }
 
+ATokenTypeEnum AccessTokenKit::GetTokenType(AccessTokenID tokenID)
+{
+    if (BAccessTokenKit::accessTokenkit == nullptr) {
+        return ATokenTypeEnum::TOKEN_INVALID;
+    }
+    return BAccessTokenKit::accessTokenkit->GetTokenType(tokenID);
+}
+
 int AccessTokenKit::GetHapTokenInfo(AccessTokenID tokenID, HapTokenInfo& hapTokenInfoRes)
 {
     return BAccessTokenKit::accessTokenkit->GetHapTokenInfo(tokenID, hapTokenInfoRes);

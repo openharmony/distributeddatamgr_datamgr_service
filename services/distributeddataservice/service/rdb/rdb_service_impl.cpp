@@ -18,6 +18,7 @@
 #include "abs_rdb_predicates.h"
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bootstrap.h"
 #include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
@@ -39,11 +40,13 @@
 #include "metadata/store_debug_info.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
+#include "permit_delegate.h"
 #include "rdb_general_store.h"
+#include "rdb_hiview_adapter.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
-#include "rdb_schema_config.h"
 #include "rdb_result_set_impl.h"
+#include "rdb_schema_config.h"
 #include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "tokenid_kit.h"
@@ -52,9 +55,7 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "xcollie.h"
-#include "permit_delegate.h"
-#include "bootstrap.h"
-#include "rdb_hiview_adapter.h"
+using OHOS::DistributedData::AccountDelegate;
 using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
 using OHOS::DistributedData::MetaDataManager;
@@ -105,49 +106,7 @@ RdbServiceImpl::RdbServiceImpl()
         [this](const std::string& identifier, DistributedDB::AutoLaunchParam &param) {
             return ResolveAutoLaunch(identifier, param);
         });
-    auto process = [this](const Event &event) {
-        auto &evt = static_cast<const CloudEvent &>(event);
-        auto &storeInfo = evt.GetStoreInfo();
-        StoreMetaData meta(storeInfo);
-        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                meta.GetStoreAlias().c_str());
-            return;
-        }
-        if (meta.storeType < StoreMetaData::STORE_RELATIONAL_BEGIN ||
-            meta.storeType > StoreMetaData::STORE_RELATIONAL_END) {
-            return;
-        }
-        auto watchers = GetWatchers(meta.tokenId, meta.storeId);
-        auto store = AutoCache::GetInstance().GetStore(meta, watchers);
-        if (store == nullptr) {
-            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
-            return;
-        }
-        store->RegisterDetailProgressObserver(GetCallbacks(meta.tokenId, storeInfo.storeName));
-    };
-    EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
-    EventCenter::GetInstance().Subscribe(CloudEvent::CLEAN_DATA, process);
-
-    EventCenter::GetInstance().Subscribe(CloudEvent::MAKE_QUERY, [](const Event& event) {
-        auto& evt = static_cast<const MakeQueryEvent&>(event);
-        auto callback = evt.GetCallback();
-        if (!callback) {
-            return;
-        }
-        auto predicate = evt.GetPredicates();
-        auto rdbQuery = std::make_shared<RdbQuery>();
-        rdbQuery->MakeQuery(*predicate);
-        rdbQuery->SetColumns(evt.GetColumns());
-        callback(rdbQuery);
-    });
-    auto compensateSyncProcess = [this] (const Event &event) {
-        auto &evt = static_cast<const BindEvent &>(event);
-        DoCompensateSync(evt);
-    };
-    EventCenter::GetInstance().Subscribe(BindEvent::COMPENSATE_SYNC, compensateSyncProcess);
-    EventCenter::GetInstance().Subscribe(BindEvent::RECOVER_SYNC, compensateSyncProcess);
+    RegisterEvent();
 }
 
 int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, DistributedDB::AutoLaunchParam &param)
@@ -324,13 +283,13 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const Rd
 void RdbServiceImpl::UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store)
 {
     StoreMetaData syncMeta;
-    bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta);
+    bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), syncMeta);
     if (!isCreatedSync || localMeta != syncMeta) {
         ZLOGI("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
               "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
             meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
             syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
-        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), localMeta);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKeyWithoutPath(), localMeta);
     }
     Database dataBase;
     if (RdbSchemaConfig::GetDistributedSchema(localMeta, dataBase) && !dataBase.name.empty() &&
@@ -361,14 +320,16 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
               Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    auto store = GetStore(param);
+    auto store = GetStore(meta);
     if (store == nullptr) {
-        ZLOGE("bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
-            Anonymous::Change(param.storeName_).c_str());
+        ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
+    StoreMetaMapping metaMapping(localMeta);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
         UpdateMeta(meta, localMeta, store);
+        metaMapping.devicePath = meta.dataDir;
     } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
         if (localMeta.asyncDownloadAsset != param.asyncDownloadAsset_ || localMeta.enableCloud != param.enableCloud_) {
             ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
@@ -379,7 +340,10 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             localMeta.enableCloud = param.enableCloud_;
             MetaDataManager::GetInstance().SaveMeta(localMeta.GetKey(), localMeta, true);
         }
+        metaMapping.cloudPath = meta.dataDir;
     }
+    metaMapping = localMeta;
+    MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
     std::vector<DistributedData::Reference> relationships;
     for (const auto &reference : references) {
         DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
@@ -464,15 +428,16 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
             Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, nullptr };
     }
-    auto store = GetStore(param);
+    StoreMetaData meta = GetStoreMetaData(param);
+    auto store = GetStore(meta);
     if (store == nullptr) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, nullptr };
     }
-    StoreMetaData meta = GetStoreMetaData(param);
-    std::vector<std::string> devices = {DmAdapter::GetInstance().ToUUID(device)};
-    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
+    std::vector<std::string> devices = { DmAdapter::GetInstance().ToUUID(device) };
+    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(
+        devices, [](auto &results) {}, true)) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
     }
@@ -504,7 +469,8 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
 int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option &option,
     const PredicatesMemo &predicates, const AsyncDetail &async)
 {
-    auto store = GetStore(param);
+    StoreMetaData meta = GetStoreMetaData(param);
+    auto store = GetStore(meta);
     if (store == nullptr) {
         return RDB_ERROR;
     }
@@ -514,10 +480,9 @@ int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option
                                                  : DmAdapter::ToUUID(rdbQuery.GetDevices());
     auto pid = IPCSkeleton::GetCallingPid();
     SyncParam syncParam = { option.mode, 0, option.isCompensation };
-    StoreMetaData meta = GetStoreMetaData(param);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     ZLOGD("seqNum=%{public}u", option.seqNum);
-    auto complete = [this, rdbQuery, store, pid, syncParam, tokenId, async, seq = option.seqNum](
+    auto complete = [this, rdbQuery, store, pid, syncParam, tokenId, seq = option.seqNum](
                         const auto &results) mutable {
         auto ret = ProcessResult(results);
         store->Sync(
@@ -548,7 +513,7 @@ bool RdbServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector
         CapMetaData capMeta;
         auto capKey = CapMetaRow::GetKeyFor(uuid);
         if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
-            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData)) {
             isAfterMeta = true;
             break;
         }
@@ -633,7 +598,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
             async(HandleGenDetails(details));
         }
     };
-    auto highMode = (!predicates.tables_.empty() && option.mode == DistributedData::GeneralStore::CLOUD_ClOUD_FIRST)
+    auto highMode = (!predicates.tables_.empty() && option.mode == DistributedData::GeneralStore::CLOUD_CLOUD_FIRST)
                     ? GeneralStore::ASSETS_SYNC_MODE
                     : (option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode, highMode));
@@ -670,9 +635,8 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
         return true;
     });
     if (isCreate) {
-        auto subUser = GetSubUser(param.subUser_);
-        AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-            GetWatchers(tokenId, param.storeName_), subUser);
+        AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_),
+            GetPath(param));
     }
     return RDB_OK;
 }
@@ -700,9 +664,8 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         return true;
     });
     if (destroyed) {
-        auto subUser = GetSubUser(param.subUser_);
-        AutoCache::GetInstance().SetObserver(tokenId, RemoveSuffix(param.storeName_),
-            GetWatchers(tokenId, param.storeName_), subUser);
+        AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_),
+            GetPath(param));
     }
     return RDB_OK;
 }
@@ -754,15 +717,22 @@ int32_t RdbServiceImpl::UnregisterAutoSyncCallback(const RdbSyncerParam& param,
 int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto subUser = GetSubUser(param.subUser_);
-    AutoCache::GetInstance().CloseStore(tokenId, RemoveSuffix(param.storeName_), subUser);
-    RdbSyncerParam tmpParam = param;
-    HapTokenInfo hapTokenInfo;
-    AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
-    tmpParam.bundleName_ = hapTokenInfo.bundleName;
-    auto storeMeta = GetStoreMetaData(tmpParam);
-    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey());
+    if (param.bundleName_.empty()) {
+        ZLOGE("bundleName is empty! tokenId:%{public}d.", tokenId);
+        return RDB_ERROR;
+    }
+    auto storeMeta = GetStoreMetaData(param);
+    StoreMetaMapping storeMetaMapping(storeMeta);
+    MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    storeMeta.dataDir = storeMetaMapping.dataDir;
+    AutoCache::GetInstance().CloseStore(tokenId, storeMeta.dataDir);
+    MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyWithoutPath());
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetSecretKey(), true);
@@ -772,6 +742,22 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetDebugInfoKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetDfxInfoKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetCloneSecretKey(), true);
+    std::vector<StoreMetaData> metaList;
+    if (MetaDataManager::GetInstance().LoadMeta(storeMeta.GetKeyWithoutPath(), metaList, true) && !metaList.empty()) {
+        if (storeMetaMapping.cloudPath == storeMetaMapping.dataDir) {
+            storeMetaMapping.cloudPath = "";
+        }
+        if (storeMetaMapping.searchPath == storeMetaMapping.dataDir) {
+            storeMetaMapping.searchPath = "";
+        }
+        if (storeMetaMapping.devicePath == storeMetaMapping.dataDir) {
+            storeMetaMapping.devicePath = "";
+        }
+        storeMetaMapping = metaList[0];
+        MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    } else {
+        MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true);
+    }
     return RDB_OK;
 }
 
@@ -897,7 +883,7 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
     return RDB_OK;
 }
 
-void RdbServiceImpl::SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param)
+void RdbServiceImpl::SetReturnParam(const StoreMetaData &metadata, RdbSyncerParam &param)
 {
     param.bundleName_ = metadata.bundleName;
     param.type_ = metadata.storeType;
@@ -979,6 +965,14 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         }
     }
 
+    StoreMetaMapping metaMapping(meta);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+    if (meta.isSearchable) {
+        metaMapping.searchPath = meta.dataDir;
+    }
+    metaMapping = meta;
+    MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
+
     SaveDebugInfo(meta, param);
     SavePromiseInfo(meta, param);
     SaveDfxInfo(meta, param);
@@ -1030,6 +1024,8 @@ void RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
         storeInfo.instanceId = instanceId;
         storeInfo.user = user;
         storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        auto meta = GetStoreMetaData(param);
+        storeInfo.path = meta.dataDir;
         executors_->Execute([storeInfo]() {
             auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo));
             EventCenter::GetInstance().PostEvent(move(event));
@@ -1135,16 +1131,20 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 
 StoreMetaData RdbServiceImpl::GetStoreMetaData(const Database &dataBase)
 {
-    StoreMetaData storeMetaData;
-    storeMetaData.storeId = dataBase.name;
-    storeMetaData.bundleName = dataBase.bundleName;
-    storeMetaData.user = dataBase.user;
-    storeMetaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    StoreMetaMapping storeMetaMapping;
+    storeMetaMapping.storeId = dataBase.name;
+    storeMetaMapping.bundleName = dataBase.bundleName;
+    storeMetaMapping.user = dataBase.user;
+    storeMetaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    storeMetaData.tokenId = tokenId;
-    auto [instanceId, user] = GetInstIndexAndUser(storeMetaData.tokenId, storeMetaData.bundleName);
-    storeMetaData.instanceId = instanceId;
-    MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData, true);
+    storeMetaMapping.tokenId = tokenId;
+    auto [instanceId, user] = GetInstIndexAndUser(storeMetaMapping.tokenId, storeMetaMapping.bundleName);
+    storeMetaMapping.instanceId = instanceId;
+    MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    StoreMetaData storeMetaData = storeMetaMapping;
+    if (storeMetaMapping.dataDir != storeMetaMapping.devicePath) {
+        MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetDeviceStoreMetaKey(), storeMetaData, true);
+    }
     return storeMetaData;
 }
 
@@ -1171,22 +1171,19 @@ int RdbServiceImpl::DoAutoSync(
     const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tables)
 {
     StoreMetaData storeMetaData = GetStoreMetaData(dataBase);
-    auto tokenId = storeMetaData.tokenId;
     auto store = GetStore(storeMetaData);
     if (store == nullptr) {
         ZLOGE("autosync store null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
         return RDB_ERROR;
     }
-    SyncParam syncParam = {0, 0};
-    auto pid = IPCSkeleton::GetCallingPid();
-    DetailAsync async;
     if (executors_ == nullptr) {
         ZLOGE("autosync executors_ null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
         return RDB_ERROR;
     }
+    SyncParam syncParam = { 0, 0 };
+    DetailAsync async;
     for (auto &table : tables) {
-        executors_->Execute([this, table, store, pid, syncParam, tokenId, async,
-                                devices, storeMetaData]() {
+        executors_->Execute([this, table, store, syncParam, async, devices, storeMetaData]() {
             RdbQuery rdbQuery;
             rdbQuery.MakeQuery(table);
             std::vector<std::string> onDevices = GetReuseDevice(devices);
@@ -1194,7 +1191,7 @@ int RdbServiceImpl::DoAutoSync(
                 ZLOGE("autosync ondevices null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
                 return;
             }
-            auto complete = [this, rdbQuery, store, pid, syncParam, tokenId, async, seq = 0](
+            auto complete = [this, rdbQuery, store, syncParam, async](
                                 const auto &results) mutable {
                 auto ret = ProcessResult(results);
                 store->Sync(ret.first, rdbQuery, async, syncParam);
@@ -1413,6 +1410,7 @@ int32_t RdbServiceImpl::NotifyDataChange(
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.bundleName = param.bundleName_;
     storeInfo.storeName = RemoveSuffix(param.storeName_);
+    storeInfo.path = GetPath(param);
     auto [instanceId, user] = GetInstIndexAndUser(storeInfo.tokenId, param.bundleName_);
     storeInfo.instanceId = instanceId;
     storeInfo.user = user;
@@ -1420,7 +1418,7 @@ int32_t RdbServiceImpl::NotifyDataChange(
     DataChangeEvent::EventInfo eventInfo;
     eventInfo.isFull = rdbNotifyConfig.isFull_;
     if (!DoDataChangeSync(storeInfo, rdbChangedData)) {
-        ZLOGE("store datachange sync fail, storeId:%{public}s", storeInfo.storeName.c_str());
+        ZLOGE("store datachange sync fail, storeId:%{public}s", Anonymous::Change(storeInfo.storeName).c_str());
     }
     for (const auto &[key, value] : rdbChangedData.tableData) {
         if (value.isTrackedDataChange) {
@@ -1428,7 +1426,7 @@ int32_t RdbServiceImpl::NotifyDataChange(
             eventInfo.tableProperties.insert_or_assign(key, std::move(tableChangeProperties));
         }
     }
-    if (IsPostImmediately(IPCSkeleton::GetCallingPid(), rdbNotifyConfig, storeInfo, eventInfo, param.storeName_)) {
+    if (IsPostImmediately(IPCSkeleton::GetCallingPid(), rdbNotifyConfig, storeInfo, eventInfo, storeInfo.path)) {
         auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
         EventCenter::GetInstance().PostEvent(std::move(evt));
     }
@@ -1436,12 +1434,12 @@ int32_t RdbServiceImpl::NotifyDataChange(
 }
 
 bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig,
-    StoreInfo &storeInfo, DataChangeEvent::EventInfo &eventInfo, const std::string &storeName)
+    StoreInfo &storeInfo, DataChangeEvent::EventInfo &eventInfo, const std::string &path)
 {
     bool postImmediately = false;
     heartbeatTaskIds_.Compute(callingPid, [this, &postImmediately, &rdbNotifyConfig, &storeInfo, &eventInfo,
-        &storeName](const int32_t &key, std::map<std::string, ExecutorPool::TaskId> &tasks) {
-        auto iter = tasks.find(storeName);
+        &path](const int32_t &key, std::map<std::string, ExecutorPool::TaskId> &tasks) {
+        auto iter = tasks.find(path);
         ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
         if (iter != tasks.end()) {
             taskId = iter->second;
@@ -1451,7 +1449,7 @@ bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotify
                 executors_->Remove(taskId);
             }
             postImmediately = true;
-            tasks.erase(storeName);
+            tasks.erase(path);
             return !tasks.empty();
         }
 
@@ -1466,7 +1464,7 @@ bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotify
                 taskId = executors_->Reset(taskId, std::chrono::milliseconds(rdbNotifyConfig.delay_));
             }
         }
-        tasks.insert_or_assign(storeName, taskId);
+        tasks.insert_or_assign(path, taskId);
         return true;
     });
     return postImmediately;
@@ -1496,6 +1494,7 @@ int32_t RdbServiceImpl::PostSearchEvent(int32_t evtId, const RdbSyncerParam& par
     storeInfo.instanceId = instanceId;
     storeInfo.user = user;
     storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    storeInfo.path = GetPath(param);
 
     auto evt = std::make_unique<SetSearchableEvent>(std::move(storeInfo), std::move(eventInfo), evtId);
     EventCenter::GetInstance().PostEvent(std::move(evt));
@@ -1507,7 +1506,7 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam &param)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
     auto userId = GetSubUser(param.subUser_);
-    AutoCache::GetInstance().Disable(tokenId, storeId, userId);
+    AutoCache::GetInstance().Disable(tokenId, GetPath(param));
     return RDB_OK;
 }
 
@@ -1516,7 +1515,7 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
     auto userId = GetSubUser(param.subUser_);
-    AutoCache::GetInstance().Enable(tokenId, storeId, userId);
+    AutoCache::GetInstance().Enable(tokenId, GetPath(param));
     return RDB_OK;
 }
 
@@ -1571,6 +1570,8 @@ StoreInfo RdbServiceImpl::GetStoreInfo(const RdbSyncerParam &param)
     storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
     storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
     storeInfo.storeName = RemoveSuffix(param.storeName_);
+    auto meta = GetStoreMetaData(param);
+    storeInfo.path = meta.dataDir;
     return storeInfo;
 }
 
@@ -1728,15 +1729,18 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto uid = IPCSkeleton::GetCallingUid();
     meta.user = param.user_;
+    StoreMetaMapping metaMapping(meta);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+    meta.dataDir = metaMapping.dataDir;
     StoreMetaDataLocal localMeta;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true);
     if (!isCreated) {
         ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),
-            meta.storeId.c_str());
+            meta.GetStoreAlias().c_str());
         return RDB_ERROR;
     }
     ATokenTypeEnum type = AccessTokenKit::GetTokenType(tokenId);
-    if (type == ATokenTypeEnum::TOKEN_NATIVE) {
+    if (type == ATokenTypeEnum::TOKEN_NATIVE || type == ATokenTypeEnum::TOKEN_SHELL) {
         auto tokenIdRet =
             std::find(localMeta.promiseInfo.tokenIds.begin(), localMeta.promiseInfo.tokenIds.end(), tokenId);
         auto uidRet = std::find(localMeta.promiseInfo.uids.begin(), localMeta.promiseInfo.uids.end(), uid);
@@ -1748,14 +1752,17 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
             !isPromise) {
             return RDB_ERROR;
         }
-    }
-    if (type == ATokenTypeEnum::TOKEN_HAP) {
-        for (const auto& permissionName : localMeta.promiseInfo.permissionNames) {
+    } else if (type == ATokenTypeEnum::TOKEN_HAP) {
+        for (const auto &permissionName : localMeta.promiseInfo.permissionNames) {
             if (PermitDelegate::VerifyPermission(permissionName, tokenId)) {
                 return RDB_OK;
             }
         }
         ZLOGE("Permission denied! tokenId:0x%{public}x", tokenId);
+        return RDB_ERROR;
+    } else {
+        ZLOGE("invalid type! bundleName:%{public}s, storeName:%{public}s, token_type is %{public}d.",
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), type);
         return RDB_ERROR;
     }
     return RDB_OK;
@@ -1776,7 +1783,7 @@ bool RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreM
     StoreMetaData syncMeta;
     if (oldMeta.isNeedUpdateDeviceId && oldMeta.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN &&
         oldMeta.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END &&
-        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta)) {
+        MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), syncMeta)) {
         auto store = GetStore(param);
         if (store == nullptr) {
             ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", param.bundleName_.c_str(),
@@ -1791,4 +1798,81 @@ bool RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreM
     }
     return true;
 }
+
+void RdbServiceImpl::RegisterEvent()
+{
+    auto process = [this](const Event &event) {
+        auto &evt = static_cast<const CloudEvent &>(event);
+        auto &storeInfo = evt.GetStoreInfo();
+        StoreMetaMapping mapping(storeInfo);
+        mapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        if (!MetaDataManager::GetInstance().LoadMeta(mapping.GetKey(), mapping, true)) {
+            ZLOGE("bundle:%{public}s, storeId:%{public}s", mapping.bundleName.c_str(), mapping.GetStoreAlias().c_str());
+            return;
+        }
+        StoreMetaData meta = mapping;
+        if (!mapping.cloudPath.empty() && mapping.cloudPath != mapping.dataDir &&
+            !MetaDataManager::GetInstance().LoadMeta(mapping.GetCloudStoreMetaKey(), meta, true)) {
+            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str());
+            return;
+        }
+        if (meta.storeType < StoreMetaData::STORE_RELATIONAL_BEGIN ||
+            meta.storeType > StoreMetaData::STORE_RELATIONAL_END) {
+            return;
+        }
+        auto watchers = GetWatchers(meta.tokenId, meta.storeId);
+        auto store = AutoCache::GetInstance().GetStore(meta, watchers);
+        if (store == nullptr) {
+            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+            return;
+        }
+        store->RegisterDetailProgressObserver(GetCallbacks(meta.tokenId, storeInfo.storeName));
+    };
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLEAN_DATA, process);
+
+    EventCenter::GetInstance().Subscribe(CloudEvent::MAKE_QUERY, [](const Event &event) {
+        auto &evt = static_cast<const MakeQueryEvent &>(event);
+        auto callback = evt.GetCallback();
+        if (!callback) {
+            return;
+        }
+        auto predicate = evt.GetPredicates();
+        auto rdbQuery = std::make_shared<RdbQuery>();
+        rdbQuery->MakeQuery(*predicate);
+        rdbQuery->SetColumns(evt.GetColumns());
+        callback(rdbQuery);
+    });
+    auto compensateSyncProcess = [this](const Event &event) {
+        auto &evt = static_cast<const BindEvent &>(event);
+        DoCompensateSync(evt);
+    };
+    EventCenter::GetInstance().Subscribe(BindEvent::COMPENSATE_SYNC, compensateSyncProcess);
+    EventCenter::GetInstance().Subscribe(BindEvent::RECOVER_SYNC, compensateSyncProcess);
+}
+
+std::string RdbServiceImpl::GetPath(const RdbSyncerParam &param)
+{
+    StoreMetaData metaData;
+    metaData.uid = IPCSkeleton::GetCallingUid();
+    metaData.tokenId = IPCSkeleton::GetCallingTokenID();
+    auto [instanceId, user] = GetInstIndexAndUser(metaData.tokenId, param.bundleName_);
+    metaData.instanceId = instanceId;
+    metaData.bundleName = param.bundleName_;
+    metaData.storeId = RemoveSuffix(param.storeName_);
+    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) != TOKEN_HAP && param.subUser_ != 0) {
+        metaData.user = std::to_string(param.subUser_);
+    } else {
+        metaData.user = std::to_string(user);
+    }
+    metaData.storeType = param.type_;
+    metaData.securityLevel = param.level_;
+    metaData.area = param.area_;
+    metaData.appType = "harmony";
+    metaData.hapName = param.hapName_;
+    metaData.customDir = param.customDir_;
+    return DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
+}
+
 } // namespace OHOS::DistributedRdb

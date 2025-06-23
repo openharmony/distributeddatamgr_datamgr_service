@@ -170,6 +170,8 @@ private:
 
     void RegisterHandler();
 
+    void RegisterEvent();
+
     void DumpRdbServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
 
     void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
@@ -192,27 +194,38 @@ private:
 
     DetailAsync GetCallbacks(uint32_t tokenId, const std::string &storeName);
 
-    bool CheckAccess(const std::string& bundleName, const std::string& storeName);
-
-    bool CheckInvalidPath(const std::string& param);
-
-    bool CheckCustomDir(const std::string &customDir, int32_t upLimit);
-
-    bool CheckParam(const RdbSyncerParam &param);
-
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
 
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const StoreMetaData &storeMetaData);
 
     void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
 
-    StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
-
-    StoreMetaData GetStoreMetaData(const Database &dataBase);
-
     int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &old);
 
-    std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> AllocResource(
+    void GetSchema(const RdbSyncerParam &param);
+
+    bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
+        DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
+
+    bool TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta);
+
+    void SaveLaunchInfo(StoreMetaData &meta);
+
+    static bool CheckAccess(const std::string& bundleName, const std::string& storeName);
+
+    static bool CheckInvalidPath(const std::string& param);
+
+    static bool CheckCustomDir(const std::string &customDir, int32_t upLimit);
+
+    static bool CheckParam(const RdbSyncerParam &param);
+
+    static StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
+
+    static std::string GetPath(const RdbSyncerParam &param);
+
+    static StoreMetaData GetStoreMetaData(const Database &dataBase);
+
+    static std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> AllocResource(
         StoreInfo& storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
 
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
@@ -227,32 +240,24 @@ private:
     
     static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old);
 
-    void GetSchema(const RdbSyncerParam &param);
+    static void SetReturnParam(const StoreMetaData &metadata, RdbSyncerParam &param);
 
-    void SetReturnParam(StoreMetaData &metadata, RdbSyncerParam &param);
+    static bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
 
-    bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids);
+    static SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
 
-    SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
+    static StoreInfo GetStoreInfo(const RdbSyncerParam &param);
 
-    StoreInfo GetStoreInfo(const RdbSyncerParam &param);
+    static int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
-    int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+    static int32_t SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
-    int32_t SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+    static int32_t SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
-    int32_t SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
-
-    int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
+    static int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);
 
-    bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
-        DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
-    void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store);
-
-    bool TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta);
-
-    void SaveLaunchInfo(StoreMetaData &meta);
+    static void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store);
 
     std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
 

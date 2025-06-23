@@ -128,10 +128,15 @@ HWTEST_F(SerializableTest, GetNormalVal, TestSize.Level2)
     normal.value = -56;
     normal.isClear = true;
     normal.cols = {"adfasdfas"};
-    auto jstr = Serializable::JSONWrapper::to_string(normal.Marshall());
+    auto json = normal.Marshall();
+    auto jstr = Serializable::JSONWrapper::to_string(json);
     Normal normal1;
     normal1.Unmarshall(jstr);
     ASSERT_TRUE(normal == normal1) << normal1.name;
+    ASSERT_FALSE(normal1.Unmarshall(""));
+    ASSERT_FALSE(normal1.Unmarshall("{"));
+    std::vector<std::string> testVec = {"adfasdfas", "banana"};
+    ASSERT_FALSE(json["cols"] == testVec);
 }
 
 /**
@@ -303,6 +308,82 @@ HWTEST_F(SerializableTest, SetPointerValue, TestSize.Level2)
 }
 
 /**
+* @tc.name: SetStringMapValue
+* @tc.desc: set map value with string param.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, SetStringMapValue, TestSize.Level2)
+{
+    struct TestStringMap final : public Serializable {
+    public:
+        std::map<std::string, std::string> testMap = {
+            {"name", "John"},
+            {"email", "john@example.com"}
+        };
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(testMap)], testMap);
+            return true;
+        }
+        bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(testMap), testMap);
+            return true;
+        }
+        bool operator==(const TestStringMap &other) const
+        {
+            return testMap == other.testMap;
+        }
+    };
+ 
+    TestStringMap in;
+    in.testMap["name"] = "New York";
+    in.testMap["email"] = "john@sample.com";
+    auto json = Serializable::JSONWrapper::to_string(in.Marshall());
+    TestStringMap out;
+    out.Unmarshall(json);
+    ASSERT_TRUE(in == out);
+}
+ 
+/**
+* @tc.name: SetStringMapValue
+* @tc.desc: set map value with int param.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, SetMapValue, TestSize.Level2)
+{
+    struct TestMap final : public Serializable {
+    public:
+        std::map<std::string, uint64_t> testMap = {
+            {"id", 123456},
+            {"version", 42}
+        };
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(testMap)], testMap);
+            return true;
+        }
+        bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(testMap), testMap);
+            return true;
+        }
+        bool operator==(const TestMap &other) const
+        {
+            return testMap == other.testMap;
+        }
+    };
+ 
+    TestMap in;
+    in.testMap["version"] = 552;
+    auto json = Serializable::JSONWrapper::to_string(in.Marshall());
+ 
+    TestMap out;
+    out.Unmarshall(json);
+    ASSERT_TRUE(in == out);
+}
+
+/**
 * @tc.name: IsJson
 * @tc.desc: is json.
 * @tc.type: FUNC
@@ -329,8 +410,225 @@ HWTEST_F(SerializableTest, ToString, TestSize.Level1)
     wrapper["is_student"] = false;
     std::string result = wrapper;
     EXPECT_EQ(result, "{\"name\":\"Alice\",\"age\":30,\"height\":1.75,\"is_student\":false}");
+    std::map<std::string, uint64_t> testUintMap = {
+        {"id", 123456},
+        {"version", 42}
+    };
+    std::map<std::string, std::string> testStringMap = {
+        {"name", "John"},
+        {"email", "john@example.com"}
+    };
+    wrapper["testUintMap"] = testUintMap;
+    wrapper["testStringMap"] = testStringMap;
     EXPECT_TRUE(wrapper["name"].is_string());
     EXPECT_TRUE(wrapper["age"].is_number_float());
     EXPECT_TRUE(wrapper["is_student"].is_boolean());
+}
+
+/**
+* @tc.name: OperatorTest
+* @tc.desc: test operator.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, OperatorTest, TestSize.Level1)
+{
+    std::string name = "Alice";
+    int32_t count = -30;
+    uint32_t status = 1;
+    uint64_t type = 5;
+    int64_t value = 2;
+    double test = 1.75;
+    bool isStudent = false;
+    Serializable::JSONWrapper wrapper;
+    wrapper["name"] = name;
+    wrapper["count"] = count;
+    wrapper["status"] = status;
+    wrapper["type"] = type;
+    wrapper["value"] = value;
+    wrapper["test"] = test;
+    wrapper["isStudent"] = isStudent;
+    EXPECT_TRUE(wrapper["name"].is_string());
+    EXPECT_TRUE(wrapper["test"].is_number_float());
+    EXPECT_TRUE(wrapper["count"].is_number_integer());
+    EXPECT_TRUE(wrapper["status"].is_number_unsigned());
+    EXPECT_TRUE(wrapper["isStudent"].is_boolean());
+    std::string result = wrapper;
+    EXPECT_EQ(result, "{\"name\":\"Alice\",\"count\":-30,\"status\":1,\"type\":"
+                      "5,\"value\":2,\"test\":1.75,\"isStudent\":false}");
+    wrapper["name"] = isStudent;
+    EXPECT_TRUE(wrapper["name"].is_boolean());
+    wrapper["count"] = status;
+    EXPECT_TRUE(wrapper["count"].is_number_unsigned());
+    wrapper["status"] = count;
+    EXPECT_TRUE(wrapper["status"].is_number_integer());
+    wrapper["isStudent"] = test;
+    result = wrapper;
+    EXPECT_EQ(result, "{\"name\":false,\"count\":1,\"status\":-30,\"type\":5,"
+                      "\"value\":2,\"test\":1.75,\"isStudent\":1.75}");
+}
+ 
+/**
+* @tc.name: EraseTest
+* @tc.desc: test erase.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, EraseTest, TestSize.Level2)
+{
+    Serializable::JSONWrapper wrapper;
+    wrapper = std::map<std::string, std::string>{
+        {"name", "John"}, {"age", "30"}, {"city", "New York"}};
+    std::string res = wrapper.dump();
+    EXPECT_EQ(res, "{\"age\":\"30\",\"city\":\"New York\",\"name\":\"John\"}");
+    bool result = wrapper.erase("age");
+    ASSERT_TRUE(result);
+    res = wrapper.dump();
+    EXPECT_EQ(res, "{\"city\":\"New York\",\"name\":\"John\"}");
+}
+
+/**
+* @tc.name: CompareUint
+* @tc.desc: test compare.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, CompareUint, TestSize.Level2)
+{
+    Serializable::JSONWrapper wrapper;
+    wrapper = std::map<std::string, uint64_t>{
+        {"key1", 100},
+        {"key2", 200},
+        {"key3", 300}
+    };
+ 
+    std::map<std::string, uint64_t> testMap1 = {
+        {"key1", 100},
+        {"key2", 200}
+    };
+ 
+    bool result = wrapper == testMap1;
+    ASSERT_FALSE(result);
+    std::map<std::string, uint64_t> testMap2 = {
+        {"key1", 100},
+        {"key2", 200},
+        {"key3", 300}
+    };
+    result = wrapper == testMap2;
+    ASSERT_TRUE(result);
+}
+
+/**
+* @tc.name: CompareStringMap
+* @tc.desc: test compare.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, CompareStringMap, TestSize.Level2)
+{
+    Serializable::JSONWrapper wrapper;
+    wrapper = std::map<std::string, std::string>{
+        {"name", "Bob"},
+        {"age", "25"},
+        {"job", "Engineer"}
+    };
+ 
+    std::map<std::string, std::string> testMap1 = {
+        {"name", "Bob"},
+        {"age", "25"}
+    };
+ 
+    bool result = wrapper == testMap1;
+    ASSERT_FALSE(result);
+ 
+    std::map<std::string, std::string> testMap2 = {
+        {"name", "Bob"},
+        {"age", "25"},
+        {"job", "Engineer"}
+    };
+    result = wrapper == testMap2;
+    ASSERT_TRUE(result);
+}
+
+/**
+* @tc.name: BoundaryTest
+* @tc.desc: test boundary.
+* @tc.type: FUNC
+*/
+HWTEST_F(SerializableTest, BoundaryTest, TestSize.Level1)
+{
+    struct TestBoundary : public Serializable {
+        int32_t int32Val;
+        uint32_t uint32Val;
+        int64_t int64Val;
+        uint64_t uint64Val;
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(int32Val)], int32Val);
+            SetValue(node[GET_NAME(uint32Val)], uint32Val);
+            SetValue(node[GET_NAME(int64Val)], int64Val);
+            SetValue(node[GET_NAME(uint64Val)], uint64Val);
+            return true;
+        }
+        bool Unmarshal(const json &node) override
+        {
+            bool success = true;
+            success = GetValue(node, GET_NAME(int32Val), int32Val) && success;
+            success = GetValue(node, GET_NAME(uint32Val), uint32Val) && success;
+            success = GetValue(node, GET_NAME(int64Val), int64Val) && success;
+            success = GetValue(node, GET_NAME(uint64Val), uint64Val) && success;
+            return success;
+        }
+    };
+    TestBoundary in, out;
+    in.int32Val = INT32_MIN;
+    in.uint32Val = 0;
+    in.int64Val = -(1LL << 53) + 2;
+    in.uint64Val = 0;
+
+    auto json = Serializable::JSONWrapper::to_string(in.Marshall());
+    out.Unmarshall(json);
+    EXPECT_EQ(out.int32Val, in.int32Val);
+    EXPECT_EQ(out.uint32Val, in.uint32Val);
+    EXPECT_EQ(out.int64Val, in.int64Val);
+    EXPECT_EQ(out.uint64Val, in.uint64Val);
+
+    in.int32Val = INT32_MAX;
+    in.uint32Val = UINT32_MAX;
+    in.int64Val = (1LL << 53) - 2;
+    in.uint64Val = (1LL << 53) - 2;
+
+    json = Serializable::JSONWrapper::to_string(in.Marshall());
+    out.Unmarshall(json);
+    EXPECT_EQ(out.int32Val, in.int32Val);
+    EXPECT_EQ(out.uint32Val, in.uint32Val);
+    EXPECT_EQ(out.int64Val, in.int64Val);
+    EXPECT_EQ(out.uint64Val, in.uint64Val);
+}
+
+
+HWTEST_F(SerializableTest, ArrayTest, TestSize.Level1)
+{
+    struct TestBoundary : public Serializable {
+        std::vector<int> vectorVal = {10, 20, 30, 40, 50};
+
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(vectorVal)], vectorVal);
+            return true;
+        }
+
+        bool Unmarshal(const json &node) override
+        {
+            bool success = true;
+            success = GetValue(node, GET_NAME(vectorVal), vectorVal) && success;
+            return success;
+        }
+    };
+
+    TestBoundary in;
+    Serializable::JSONWrapper wrapper;
+    wrapper = in.Marshall();
+    EXPECT_EQ(wrapper["vectorVal"][0].dump(), "10");
+    EXPECT_EQ(wrapper["vectorVal"][1].dump(), "20");
+    EXPECT_EQ(wrapper["vectorVal"][4].dump(), "50");
+    EXPECT_EQ(wrapper["vectorVal"][5].dump(), "");
+    EXPECT_EQ(wrapper["vectorVal"][10].dump(), "");
 }
 } // namespace OHOS::Test

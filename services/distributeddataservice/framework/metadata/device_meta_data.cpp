@@ -20,14 +20,12 @@ static constexpr const char *KEY_PREFIX = "DeviceMeta";
 bool DeviceMetaData::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(newUuid)], newUuid);
-    SetValue(node[GET_NAME(oldUuid)], oldUuid);
     return true;
 }
 
 bool DeviceMetaData::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(newUuid), newUuid);
-    GetValue(node, GET_NAME(oldUuid), oldUuid);
     return true;
 }
 

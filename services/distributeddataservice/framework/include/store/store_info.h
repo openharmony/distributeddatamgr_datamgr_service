@@ -27,6 +27,7 @@ struct StoreInfo {
     int32_t user = 0;
     std::string deviceId;
     uint64_t syncId = 0;
+    std::string path;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_STORE_INFO_H

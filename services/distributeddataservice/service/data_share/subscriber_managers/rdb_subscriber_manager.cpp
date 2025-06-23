@@ -206,7 +206,7 @@ int RdbSubscriberManager::Disable(const Key &key, uint32_t firstCallerTokenId)
     }
     if (!result) {
         ZLOGE("disable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
+            URIUtils::Anonymous(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
     }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
@@ -241,7 +241,7 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
     }
     if (!result) {
         ZLOGE("enable failed, uri is %{public}s, bundleName is %{public}s, subscriberId is %{public}" PRId64,
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
+            URIUtils::Anonymous(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
     }
     return result ? E_OK : E_SUBSCRIBER_NOT_EXIST;
 }
@@ -350,7 +350,6 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
         return E_TEMPLATE_NOT_EXIST;
     }
     DistributedData::StoreMetaData meta = metaData;
-    meta.bundleName = key.bundleName;
     meta.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(meta, key.uri);
     if (delegate == nullptr) {
@@ -428,6 +427,8 @@ DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(cons
     metaData.dataDir = context->calledSourceDir;
     metaData.storeId = context->calledStoreName;
     metaData.haMode = context->haMode;
+    metaData.isEncrypt = context->isEncryptDb;
+    metaData.bundleName = context->calledBundleName;
     return metaData;
 }
 

@@ -52,6 +52,7 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "network/network_delegate.h"
+#include "metadata/store_meta_data.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -139,18 +140,18 @@ void KvStoreDataService::Initialize()
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
     CommunicatorContext::GetInstance().RegSessionListener(deviceInnerListener_.get());
     auto translateCall = [](const std::string &oriDevId, const DistributedDB::StoreInfo &info) {
-        StoreMetaData meta;
+        StoreMetaMapping storeMetaMapping;
         AppIDMetaData appIdMeta;
         MetaDataManager::GetInstance().LoadMeta(info.appId, appIdMeta, true);
-        meta.bundleName = appIdMeta.bundleName;
-        meta.storeId = info.storeId;
-        meta.user = info.userId;
-        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+        storeMetaMapping.bundleName = appIdMeta.bundleName;
+        storeMetaMapping.storeId = info.storeId;
+        storeMetaMapping.user = info.userId;
+        storeMetaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
         std::string uuid;
-        if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(meta.tokenId) ==
+        if (OHOS::Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(storeMetaMapping.tokenId) ==
             OHOS::Security::AccessToken::TOKEN_HAP) {
-            uuid = DmAdapter::GetInstance().CalcClientUuid(meta.appId, oriDevId);
+            uuid = DmAdapter::GetInstance().CalcClientUuid(storeMetaMapping.appId, oriDevId);
         } else {
             uuid = DmAdapter::GetInstance().CalcClientUuid(" ", oriDevId);
         }
@@ -271,7 +272,6 @@ int32_t KvStoreDataService::Exit(const std::string &featureName)
 }
 Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
 {
-    ZLOGI("AppExit");
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
     // clientDeathObserverMap_ erase, so we have to take a copy if we want to use this parameter after erase operation.
     AppId appIdTmp = appId;
@@ -787,7 +787,6 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreClientDeathObserverIm
     pid_ = IPCSkeleton::GetCallingPid();
     token_ = IPCSkeleton::GetCallingTokenID();
     if (observer != nullptr) {
-        ZLOGI("add death recipient");
         observer->AddDeathRecipient(deathRecipient_);
         observerProxy_.insert_or_assign(featureName, std::move(observer));
     } else {
@@ -821,9 +820,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl &KvStoreDataService::KvStoreC
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::~KvStoreClientDeathObserverImpl()
 {
-    ZLOGI("~KvStoreClientDeathObserverImpl");
     if (deathRecipient_ != nullptr && !observerProxy_.empty()) {
-        ZLOGI("remove death recipient");
         for (auto &[key, value] : observerProxy_) {
             if (value != nullptr) {
                 value->RemoveDeathRecipient(deathRecipient_);
@@ -861,8 +858,8 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::Reset()
 bool KvStoreDataService::KvStoreClientDeathObserverImpl::Insert(sptr<IRemoteObject> observer,
     const std::string &featureName)
 {
-    if (observerProxy_.size() < MAX_CLIENT_DEATH_OBSERVER_SIZE &&
-        observerProxy_.insert_or_assign(featureName, observer).second) {
+    if (observer != nullptr && observerProxy_.size() < MAX_CLIENT_DEATH_OBSERVER_SIZE &&
+        observerProxy_.insert({featureName, observer}).second) {
         observer->AddDeathRecipient(deathRecipient_);
         return true;
     }
@@ -892,7 +889,7 @@ KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::KvSto
     KvStoreClientDeathObserverImpl &kvStoreClientDeathObserverImpl)
     : kvStoreClientDeathObserverImpl_(kvStoreClientDeathObserverImpl)
 {
-    ZLOGI("KvStore Client Death Observer");
+    ZLOGD("KvStore Client Death Observer");
 }
 
 KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::~KvStoreDeathRecipient()
@@ -904,7 +901,6 @@ void KvStoreDataService::KvStoreClientDeathObserverImpl::KvStoreDeathRecipient::
     const wptr<IRemoteObject> &remote)
 {
     (void) remote;
-    ZLOGI("begin");
     if (!clientDead_.exchange(true)) {
         kvStoreClientDeathObserverImpl_.NotifyClientDie();
     }
@@ -924,8 +920,9 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 if (meta.user != eventInfo.userId) {
                     continue;
                 }
-                ZLOGI("bundleName:%{public}s, user:%{public}s", meta.bundleName.c_str(), meta.user.c_str());
-                MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+                ZLOGI("StoreMetaData bundleName:%{public}s, user:%{public}s", meta.bundleName.c_str(),
+                    meta.user.c_str());
+                MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath());
                 MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
@@ -936,7 +933,8 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
                 MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
-                PermitDelegate::GetInstance().DelCache(meta.GetKey());
+                MetaDataManager::GetInstance().DelMeta(StoreMetaMapping(meta).GetKey(), true);
+                PermitDelegate::GetInstance().DelCache(meta.GetKeyWithoutPath());
             }
             g_kvStoreAccountEventStatus = 0;
             break;
@@ -1124,9 +1122,9 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
 
     for (auto &meta : metaData) {
         if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
-            ZLOGI("data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d", bundleName.c_str(),
-                Anonymous::Change(meta.storeId).c_str(), appIndex);
-            MetaDataManager::GetInstance().DelMeta(meta.GetKey());
+            ZLOGI("StoreMetaData data cleared bundleName:%{public}s, stordId:%{public}s, appIndex:%{public}d",
+                bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), appIndex);
+            MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath());
             MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
@@ -1136,7 +1134,8 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
             MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
-            PermitDelegate::GetInstance().DelCache(meta.GetKey());
+            MetaDataManager::GetInstance().DelMeta(StoreMetaMapping(meta).GetKey(), true);
+            PermitDelegate::GetInstance().DelCache(meta.GetKeyWithoutPath());
         }
     }
     return SUCCESS;

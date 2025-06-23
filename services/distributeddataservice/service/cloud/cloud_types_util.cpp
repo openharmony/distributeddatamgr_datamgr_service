@@ -109,4 +109,16 @@ bool Unmarshalling(CloudSyncInfo &output, MessageParcel &data)
 {
     return Unmarshal(data, output.startTime, output.finishTime, output.code, output.syncStatus);
 }
+
+template<>
+bool Marshalling(const Option &input, MessageParcel &data)
+{
+    return Marshal(data, input.syncMode, input.seqNum);
+}
+
+template<>
+bool Unmarshalling(Option &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.syncMode, output.seqNum);
+}
 } // namespace OHOS::ITypesUtil

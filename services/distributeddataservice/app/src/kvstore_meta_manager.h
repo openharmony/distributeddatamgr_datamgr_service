@@ -75,7 +75,9 @@ private:
 
     void InitMetaData();
 
-    void UpdateMetaData();
+    DistributedData::StoreMetaData InitStoreMetaData();
+
+    void UpdateMetaData(const std::string &uuid);
 
     void SubscribeMetaKvStore();
 
@@ -100,7 +102,11 @@ private:
 
     void UpdateStoreMetaData(const std::string &newUuid, const std::string &oldUuid);
     
+    void UpdateStoreMetaMapping(const std::string &newUuid, const std::string &oldUuid);
+
     void UpdateMetaDatas(const std::string &newUuid, const std::string &oldUuid);
+
+    static bool UpgradeStoreMeta(const std::string &uuid);
 
     static ExecutorPool::Task GetBackupTask(
         TaskQueue queue, std::shared_ptr<ExecutorPool> executors, const NbDelegate store);
@@ -137,7 +143,6 @@ private:
     std::mutex mutex_;
     std::shared_ptr<ExecutorPool> executors_;
     TaskId delaySyncTaskId_ = ExecutorPool::INVALID_TASK_ID;
-    static constexpr int32_t META_VERSION = 4;
     static constexpr int32_t MAX_TASK_COUNT = 1;
 };
 }  // namespace DistributedKv

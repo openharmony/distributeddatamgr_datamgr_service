@@ -45,5 +45,16 @@ public:
 private:
     static inline BrokerDelegator<PublishedDataObserverProxy> delegator_;
 };
+
+class ProxyDataObserverProxy : public IRemoteProxy<IProxyDataObserver> {
+public:
+    explicit ProxyDataObserverProxy(const sptr<IRemoteObject>& remote)
+        : IRemoteProxy<IProxyDataObserver>(remote) {}
+    virtual ~ProxyDataObserverProxy() {}
+    void OnChangeFromProxyData(std::vector<DataProxyChangeInfo> &changeNode) override;
+
+private:
+    static inline BrokerDelegator<ProxyDataObserverProxy> delegator_;
+};
 } // namespace OHOS::DataShare
 #endif // DATA_SHARE_OBS_PROXY_H

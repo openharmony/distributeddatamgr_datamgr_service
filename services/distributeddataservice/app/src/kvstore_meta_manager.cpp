@@ -143,11 +143,40 @@ void KvStoreMetaManager::InitMetaData()
         return;
     }
 
+    StoreMetaData data = InitStoreMetaData();
+    StoreMetaDataLocal localData;
+    localData.isAutoSync = false;
+    localData.isBackup = false;
+    localData.isEncrypt = false;
+    localData.dataDir = metaDBDirectory_;
+    localData.schema = "";
+    localData.isPublic = true;
+    MetaDataManager::GetInstance().SaveMeta(data.GetKeyWithoutPath(), data);
+    MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data, true);
+    MetaDataManager::GetInstance().SaveMeta(data.GetKeyLocal(), localData, true);
+    std::string localUuid;
+    DeviceMetaData deviceMeta;
+    if (MetaDataManager::GetInstance().LoadMeta(deviceMeta.GetKey(), deviceMeta, true)) {
+        localUuid = deviceMeta.newUuid;
+    } else {
+        localUuid = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    }
+    if (localUuid.empty()) {
+        ZLOGE("get uuid failed");
+        return;
+    }
+    UpdateMetaData(localUuid);
     CheckMetaDeviceId();
+    SetCloudSyncer();
+    ZLOGI("end.");
+}
+
+StoreMetaData KvStoreMetaManager::InitStoreMetaData()
+{
+    StoreMetaData data;
     auto uid = getuid();
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto userId = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
-    StoreMetaData data;
     data.appId = label_;
     data.appType = "default";
     data.bundleName = label_;
@@ -168,44 +197,87 @@ void KvStoreMetaManager::InitMetaData()
     data.securityLevel = SecurityLevel::S1;
     data.area = EL1;
     data.tokenId = tokenId;
-    StoreMetaDataLocal localData;
-    localData.isAutoSync = false;
-    localData.isBackup = false;
-    localData.isEncrypt = false;
-    localData.dataDir = metaDBDirectory_;
-    localData.schema = "";
-    localData.isPublic = true;
-    if (!(MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data) &&
-        MetaDataManager::GetInstance().SaveMeta(data.GetKey(), data, true) &&
-        MetaDataManager::GetInstance().SaveMeta(data.GetKeyLocal(), localData, true))) {
-        ZLOGE("save meta fail");
-    }
-    UpdateMetaData();
-    SetCloudSyncer();
-    ZLOGI("end.");
+    return data;
 }
 
-void KvStoreMetaManager::UpdateMetaData()
+void KvStoreMetaManager::UpdateMetaData(const std::string &uuid)
 {
     VersionMetaData versionMeta;
-    if (!MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)
-        || versionMeta.version < META_VERSION) {
+    bool isExist = MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true);
+    if (isExist && versionMeta.version == VersionMetaData::CURRENT_VERSION) {
+        return;
+    }
+    bool syncMetaUpdateNeeded = !isExist || versionMeta.version < VersionMetaData::UPDATE_SYNC_META_VERSION;
+    bool storeMetaUpgradeNeeded = !isExist || versionMeta.version < VersionMetaData::UPDATE_STORE_META_KEY_VERSION;
+    if (syncMetaUpdateNeeded) {
         std::vector<StoreMetaData> metaDataList;
-        std::string prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid });
+        std::string prefix = StoreMetaData::GetPrefix({ uuid });
         MetaDataManager::GetInstance().LoadMeta(prefix, metaDataList);
-        for (auto metaData : metaDataList) {
+        std::vector<std::string> keys;
+        for (const auto &metaData : metaDataList) {
             MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
             if (CheckerManager::GetInstance().IsDistrust(Converter::ConvertToStoreInfo(metaData)) ||
-                (metaData.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN
-                 && metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END)) {
-                MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
+                (metaData.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN &&
+                    metaData.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END)) {
+                keys.push_back(metaData.GetKey());
             }
         }
-    }
-    if (versionMeta.version != VersionMetaData::CURRENT_VERSION) {
-        versionMeta.version = VersionMetaData::CURRENT_VERSION;
+        MetaDataManager::GetInstance().DelMeta(keys);
+        versionMeta.version = VersionMetaData::UPDATE_SYNC_META_VERSION;
         MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
     }
+    if (storeMetaUpgradeNeeded && UpgradeStoreMeta(uuid)) {
+        versionMeta.version = VersionMetaData::UPDATE_STORE_META_KEY_VERSION;
+        MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+    }
+}
+
+// The metadata database is upgraded. The suffix is added to the path.
+bool KvStoreMetaManager::UpgradeStoreMeta(const std::string &uuid)
+{
+    std::vector<StoreMetaData> metaDataList;
+    std::string prefix = StoreMetaData::GetPrefix({ uuid });
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, metaDataList, true)) {
+        ZLOGE("load meta failed");
+        return false;
+    }
+    size_t batchSize = 100; // The batch quantity is 100.
+    return Constant::BatchProcess(metaDataList, batchSize, [](const auto &begin, const auto &end) {
+        std::vector<MetaDataManager::Entry> entries;
+        std::vector<std::string> deleteKeys;
+        auto size = static_cast<size_t>(std::distance(begin, end));
+        entries.reserve(size * 3); // Expand the entries size by 3 times.
+        deleteKeys.reserve(size * 4); // Expand the deleteKeys size by 4 times.
+        auto it = begin;
+        do {
+            auto &meta = *it;
+            StoreMetaDataLocal localMeta;
+            bool isExist = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocalWithoutPath(), localMeta, true);
+            if (isExist) {
+                deleteKeys.push_back(meta.GetKeyLocalWithoutPath());
+                entries.push_back({ meta.GetKeyLocal(), Serializable::Marshall(localMeta) });
+            }
+            SecretKeyMetaData secretKeyMetaData;
+            isExist = MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKeyWithoutPath(), secretKeyMetaData, true);
+            if (isExist) {
+                deleteKeys.push_back(meta.GetSecretKeyWithoutPath());
+                entries.push_back({ meta.GetSecretKey(), Serializable::Marshall(secretKeyMetaData) });
+            }
+            deleteKeys.push_back(meta.GetKeyWithoutPath());
+            deleteKeys.push_back(meta.GetDebugInfoKeyWithoutPath());
+            deleteKeys.push_back(meta.GetDfxInfoKeyWithoutPath());
+            StoreMetaMapping storeMetaMapping(meta);
+            auto key = storeMetaMapping.GetKey();
+            entries.push_back({ std::move(key), Serializable::Marshall(storeMetaMapping) });
+            entries.push_back({ meta.GetKey(), Serializable::Marshall(meta) });
+        } while (++it != end);
+
+        if (MetaDataManager::GetInstance().SaveMeta(entries, true)) {
+            MetaDataManager::GetInstance().DelMeta(deleteKeys, true);
+            return true;
+        }
+        return false;
+    });
 }
 
 void KvStoreMetaManager::InitMetaParameter()
@@ -580,11 +652,10 @@ void KvStoreMetaManager::CheckMetaDeviceId()
     if (deviceMeta.newUuid != localUuid) {
         UpdateStoreMetaData(localUuid, deviceMeta.newUuid);
         UpdateMetaDatas(localUuid, deviceMeta.newUuid);
-        deviceMeta.oldUuid = deviceMeta.newUuid;
+        ZLOGI("meta changed! cur uuid:%{public}s, old uuid:%{public}s", Anonymous::Change(localUuid).c_str(),
+            Anonymous::Change(deviceMeta.newUuid).c_str());
         deviceMeta.newUuid = localUuid;
         MetaDataManager::GetInstance().SaveMeta(deviceMeta.GetKey(), deviceMeta, true);
-        ZLOGI("meta changed! curruuid:%{public}s, olduuid:%{public}s", Anonymous::Change(deviceMeta.newUuid).c_str(),
-            Anonymous::Change(deviceMeta.oldUuid).c_str());
     }
 }
 
@@ -600,10 +671,10 @@ void KvStoreMetaManager::UpdateStoreMetaData(const std::string &newUuid, const s
         MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey(), true);
 
         StoreMetaData syncStoreMeta;
-        if (MetaDataManager::GetInstance().LoadMeta(oldMeta.GetKey(), syncStoreMeta)) {
+        if (MetaDataManager::GetInstance().LoadMeta(oldMeta.GetKeyWithoutPath(), syncStoreMeta)) {
             syncStoreMeta.deviceId = newUuid;
-            MetaDataManager::GetInstance().SaveMeta(storeMeta.GetKey(), syncStoreMeta);
-            MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+            MetaDataManager::GetInstance().SaveMeta(storeMeta.GetKeyWithoutPath(), syncStoreMeta);
+            MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
         }
 
         StrategyMeta strategyMeta;
@@ -634,6 +705,21 @@ void KvStoreMetaManager::UpdateStoreMetaData(const std::string &newUuid, const s
             MetaDataManager::GetInstance().DelMeta(storeMeta.GetSecretKey(), true);
             MetaDataManager::GetInstance().DelMeta(storeMeta.GetCloneSecretKey(), true);
         }
+        MetaDataManager::GetInstance().DelMeta(oldMeta.GetDebugInfoKey(), true);
+        MetaDataManager::GetInstance().DelMeta(oldMeta.GetDfxInfoKey(), true);
+    }
+    UpdateStoreMetaMapping(newUuid, oldUuid);
+}
+
+void KvStoreMetaManager::UpdateStoreMetaMapping(const std::string &newUuid, const std::string &oldUuid)
+{
+    std::vector<StoreMetaMapping> storeMetaMappings;
+    MetaDataManager::GetInstance().LoadMeta(StoreMetaMapping::GetPrefix({ oldUuid }), storeMetaMappings, true);
+    for (auto &meta : storeMetaMappings) {
+        auto oldKey = meta.GetKey();
+        meta.deviceId = newUuid;
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+        MetaDataManager::GetInstance().DelMeta(oldKey, true);
     }
 }
 

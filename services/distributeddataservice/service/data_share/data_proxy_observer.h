@@ -18,6 +18,7 @@
 
 #include <iremote_broker.h>
 #include "datashare_template.h"
+#include "dataproxy_handle_common.h"
 
 namespace OHOS {
 namespace DataShare {
@@ -31,6 +32,12 @@ class IDataProxyPublishedDataObserver : public OHOS::IRemoteBroker {
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DataShare.IDataProxyPublishedDataObserver");
     virtual void OnChangeFromPublishedData(PublishedDataChangeNode &changeNode) = 0;
+};
+
+class IProxyDataObserver : public OHOS::IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DataShare.IProxyDataObserver");
+    virtual void OnChangeFromProxyData(std::vector<DataProxyChangeInfo> &changeNode) = 0;
 };
 }  // namespace DataShare
 }  // namespace OHOS

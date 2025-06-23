@@ -45,7 +45,7 @@ public:
         CLOUD_BEGIN = 4,
         CLOUD_TIME_FIRST = CLOUD_BEGIN,
         CLOUD_NATIVE_FIRST,
-        CLOUD_ClOUD_FIRST,
+        CLOUD_CLOUD_FIRST,
         CLOUD_END,
         NEARBY_SUBSCRIBE_REMOTE,
         NEARBY_UNSUBSCRIBE_REMOTE,
@@ -114,6 +114,7 @@ public:
         int32_t maxNumber = 30;
         int32_t maxSize = 1024 * 512 * 3; // 1.5M
         int32_t maxRetryConflictTimes = 3;     // default max retry 3 times when version conflict
+        bool isSupportEncrypt = false;
     };
 
     enum class DistributedTableMode : int {

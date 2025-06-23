@@ -28,7 +28,6 @@ public:
     API_EXPORT std::string GetKey() const;
 
     std::string newUuid = "";
-    std::string oldUuid = "";
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_DEVICE_META_DATA_H

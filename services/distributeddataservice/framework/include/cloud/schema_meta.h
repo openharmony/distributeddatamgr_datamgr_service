@@ -88,6 +88,7 @@ public:
     int32_t version = 0;
     std::string bundleName;
     std::vector<Database> databases;
+    bool e2eeEnable = false;
 
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

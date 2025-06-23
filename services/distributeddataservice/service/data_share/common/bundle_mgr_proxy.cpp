@@ -262,6 +262,7 @@ std::pair<int, std::vector<HapModuleInfo>> BundleMgrProxy::ConvertHapModuleInfo(
         hapModuleInfo.resourcePath = std::move(item.resourcePath);
         hapModuleInfo.hapPath = std::move(item.hapPath);
         hapModuleInfo.moduleName = std::move(item.moduleName);
+        hapModuleInfo.crossAppSharedConfig.resourcePath = std::move(item.crossAppSharedConfig);
         std::vector<ProxyData> proxyDatas;
         for (auto &proxyData : item.proxyDatas) {
             ProxyData data;

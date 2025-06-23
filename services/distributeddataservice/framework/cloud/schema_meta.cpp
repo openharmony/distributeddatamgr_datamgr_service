@@ -23,6 +23,7 @@ bool SchemaMeta::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(version)], version);
     SetValue(node[GET_NAME(bundleName)], bundleName);
     SetValue(node[GET_NAME(databases)], databases);
+    SetValue(node[GET_NAME(e2eeEnable)], e2eeEnable);
     return true;
 }
 
@@ -35,6 +36,7 @@ bool SchemaMeta::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(databases), databases);
     GetValue(node, GET_NAME(dbSchema), databases);
+    GetValue(node, GET_NAME(e2eeEnable), e2eeEnable);
     return true;
 }
 

@@ -105,6 +105,8 @@ static constexpr const char *PERMISSION_DISTRIBUTED_DATASYNC = "ohos.permission.
 static constexpr const char *PERMISSION_ACCESS_SERVICE_DM = "ohos.permission.ACCESS_SERVICE_DM";
 static constexpr const char *PERMISSION_MANAGE_LOCAL_ACCOUNTS = "ohos.permission.MANAGE_LOCAL_ACCOUNTS";
 static constexpr const char *PERMISSION_GET_BUNDLE_INFO = "ohos.permission.GET_BUNDLE_INFO_PRIVILEGED";
+static constexpr const char *TEST_CLOUD_PATH =
+    "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/test_cloud_store";
 PermissionDef GetPermissionDef(const std::string &permission)
 {
     PermissionDef def = { .permissionName = permission,
@@ -211,6 +213,7 @@ void CloudDataTest::InitMetaData()
     metaData_.isAutoSync = true;
     metaData_.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
     metaData_.storeId = TEST_CLOUD_STORE;
+    metaData_.dataDir = TEST_CLOUD_PATH;
     PolicyValue value;
     value.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
 }
@@ -240,6 +243,7 @@ void CloudDataTest::InitSchemaMeta()
     schemaMeta_.databases.emplace_back(database);
     database.alias = TEST_CLOUD_DATABASE_ALIAS_2;
     schemaMeta_.databases.emplace_back(database);
+    schemaMeta_.e2eeEnable = false;
 }
 
 void CloudDataTest::InitCloudInfo()
@@ -303,6 +307,8 @@ void CloudDataTest::SetUp()
 {
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
 }
 
@@ -311,6 +317,8 @@ void CloudDataTest::TearDown()
     EventCenter::GetInstance().Unsubscribe(CloudEvent::LOCAL_CHANGE);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
 }
 
@@ -1046,6 +1054,122 @@ HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level1)
 }
 
 /**
+* @tc.name: CloudSync001
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync001, TestSize.Level0)
+{
+    int32_t syncMode = DistributedData::GeneralStore::NEARBY_BEGIN;
+    uint32_t seqNum = 10;
+    // invalid syncMode
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: CloudSync002
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync002, TestSize.Level0)
+{
+    int32_t syncMode = DistributedData::GeneralStore::NEARBY_PULL_PUSH;
+    uint32_t seqNum = 10;
+    // invalid syncMode
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: CloudSync003
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync003, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_BEGIN;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync004
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync004, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync005
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync005, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_NATIVE_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync006
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync006, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_CLOUD_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync007
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level0)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_END;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: InitNotifier001
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, InitNotifier001, TestSize.Level0)
+{
+    sptr<IRemoteObject> notifier = nullptr;
+    auto ret = cloudServiceImpl_->InitNotifier(notifier);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+
+    ret = cloudServiceImpl_->InitNotifier(notifier);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
 * @tc.name: Clean
 * @tc.desc:
 * @tc.type: FUNC
@@ -1701,6 +1825,51 @@ HWTEST_F(CloudDataTest, OnSetCloudStrategy, TestSize.Level0)
 }
 
 /**
+* @tc.name: OnCloudSync
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnCloudSync, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CLOUD_SYNC, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string bundleName = "bundleName";
+    std::string storeId = "storeId";
+    CloudData::CloudService::Option option;
+    option.syncMode = 4;
+    option.seqNum = 1;
+    ITypesUtil::Marshal(data, bundleName, storeId, option);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CLOUD_SYNC, data, reply);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+* @tc.name: OnInitNotifier
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnInitNotifier, TestSize.Level0)
+{
+    MessageParcel reply;
+    MessageParcel data;
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_INIT_NOTIFIER, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
+    std::string bundleName = "bundleName";
+    sptr<IRemoteObject> notifier = nullptr;
+    ITypesUtil::Marshal(data, bundleName, notifier);
+    ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_INIT_NOTIFIER, data, reply);
+    EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
 * @tc.name: SharingUtil001
 * @tc.desc:
 * @tc.type: FUNC
@@ -1990,6 +2159,68 @@ HWTEST_F(CloudDataTest, GetCloudInfo, TestSize.Level1)
 }
 
 /**
+* @tc.name: UpdateSchemaFromServer_001
+* @tc.desc: Test get UpdateSchemaFromServer
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, UpdateSchemaFromServer_001, TestSize.Level1)
+{
+    auto status = cloudServiceImpl_->UpdateSchemaFromServer(cloudInfo_.user);
+    EXPECT_EQ(status, CloudData::SUCCESS);
+}
+
+/**
+ * @tc.name: OnAppInstallTest
+ * @tc.desc: Test the OnAppInstallTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppInstallTest, TestSize.Level1)
+{
+    ZLOGI("CloudDataTest OnAppInstallTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, cloudInfo_.user, index);
+    EXPECT_EQ(status, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: OnAppUpdateTest
+ * @tc.desc: Test the OnAppUpdateTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppUpdateTest, TestSize.Level1)
+{
+    ZLOGI("CloudDataTest OnAppUpdateTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, cloudInfo_.user, index);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: UpdateE2eeEnableTest
+* @tc.desc: Test the UpdateE2eeEnable
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, UpdateE2eeEnableTest, TestSize.Level1)
+{
+    SchemaMeta schemaMeta;
+    std::string schemaKey = CloudInfo::GetSchemaKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, 0);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    EXPECT_EQ(schemaMeta.e2eeEnable, schemaMeta_.e2eeEnable);
+
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, false, TEST_CLOUD_BUNDLE));
+    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE));
+}
+
+/**
 * @tc.name: SubTask
 * @tc.desc: Test the subtask execution logic
 * @tc.type: FUNC
@@ -2228,6 +2459,7 @@ HWTEST_F(CloudDataTest, PreShare, TestSize.Level0)
     info.bundleName = TEST_CLOUD_BUNDLE;
     info.storeName = TEST_CLOUD_BUNDLE;
     info.user = userId;
+    info.path = TEST_CLOUD_PATH;
     StoreMetaData meta(info);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
@@ -2425,7 +2657,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel001, TestSize.Level1)
     });
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
     DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
-    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST, .isAsync = true };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_CLOUD_FIRST, .isAsync = true };
     DistributedRdb::PredicatesMemo memo;
     memo.tables_ = { TEST_CLOUD_TABLE };
     rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
@@ -2469,7 +2701,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel003, TestSize.Level1)
     });
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
     DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
-    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST, .isAsync = true };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_CLOUD_FIRST, .isAsync = true };
     DistributedRdb::PredicatesMemo memo;
     rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
 }
@@ -2490,7 +2722,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
     });
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
     DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
-    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_ClOUD_FIRST,
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_CLOUD_FIRST,
         .seqNum = 0,
         .isAsync = true,
         .isAutoSync = true };
@@ -2722,12 +2954,12 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId001, TestSize.Level1)
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isNeedUpdateDeviceId = true;
     oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
 /**
@@ -2748,12 +2980,12 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId002, TestSize.Level1)
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isNeedUpdateDeviceId = false;
     oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
 /**
@@ -2774,12 +3006,12 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId003, TestSize.Level1)
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isNeedUpdateDeviceId = true;
     oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_END;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
 /**
@@ -2800,12 +3032,12 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId004, TestSize.Level1)
     oldMeta.storeId = "test_storeid_001";
     oldMeta.isNeedUpdateDeviceId = false;
     oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_END;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta);
+    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
     auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
     EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKey());
+    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
 /**
