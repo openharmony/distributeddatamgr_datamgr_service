@@ -28,7 +28,10 @@ group("fuzztest") {
   }
 
   if (datamgr_service_object) {
-    deps += [ "objectservicestub_fuzzer:fuzztest" ]
+    deps += [
+      "objectservicestub_fuzzer:fuzztest",
+      "objectserviceimp_fuzzer:fuzztest",
+    ]
   }
 
   if (datamgr_service_rdb) {
