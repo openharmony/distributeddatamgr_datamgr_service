@@ -27,7 +27,6 @@
 #include "cloud/make_query_event.h"
 #include "cloud/schema_meta.h"
 #include "communicator/device_manager_adapter.h"
-#include "crypto_manager.h"
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
@@ -72,8 +71,8 @@ using system_clock = std::chrono::system_clock;
 
 constexpr uint32_t ITERATE_TIMES = 10000;
 constexpr uint32_t ALLOW_ONLINE_AUTO_SYNC = 8;
-const size_t KEY_COUNT = 2;
 constexpr int32_t VALID_PARAM_LENGTH = 2;
+const size_t KEY_COUNT = 2;
 namespace OHOS::DistributedRdb {
 __attribute__((used)) RdbServiceImpl::Factory RdbServiceImpl::factory_;
 RdbServiceImpl::Factory::Factory()
@@ -143,7 +142,6 @@ int32_t RdbServiceImpl::ResolveAutoLaunch(const std::string &identifier, Distrib
         if (entry.isEncrypt) {
             param.option.iterateTimes = ITERATE_TIMES;
             param.option.cipher = DistributedDB::CipherType::AES_256_GCM;
-            GetDBPassword(entry, param.option.passwd);
         }
         AutoCache::GetInstance().GetStore(entry, GetWatchers(entry.tokenId, entry.storeId));
         return true;
@@ -913,6 +911,35 @@ void RdbServiceImpl::SaveLaunchInfo(StoreMetaData &meta)
     }
 }
 
+void RdbServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password)
+{
+    CryptoManager::CryptoParams encryptParams = { .area = metaData.area, .userId = metaData.user };
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
+    if (!encryptKey.empty() && !encryptParams.nonce.empty()) {
+        SecretKeyMetaData secretKey;
+        secretKey.storeType = metaData.storeType;
+        secretKey.area = metaData.area;
+        secretKey.sKey = encryptKey;
+        secretKey.nonce = encryptParams.nonce;
+        auto time = system_clock::to_time_t(system_clock::now());
+        secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetSecretKey(), secretKey, true);
+    }
+    SecretKeyMetaData cloneKey;
+    auto metaKey = metaData.GetCloneSecretKey();
+    // update clone secret key with area
+    if (MetaDataManager::GetInstance().LoadMeta(metaKey, cloneKey, true) && !cloneKey.sKey.empty() &&
+        (cloneKey.nonce.empty() || cloneKey.area < 0)) {
+        CryptoManager::CryptoParams decryptParams = { .area = cloneKey.area, .userId = metaData.user,
+            .nonce = cloneKey.nonce };
+        auto clonePassword = CryptoManager::GetInstance().Decrypt(cloneKey.sKey, decryptParams);
+        if (!clonePassword.empty()) {
+            CryptoManager::GetInstance().UpdateSecretMeta(clonePassword, metaData, metaKey, cloneKey);
+        }
+        clonePassword.assign(clonePassword.size(), 0);
+    }
+}
+
 int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
@@ -955,12 +982,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     }
 
     if (param.isEncrypt_ && !param.password_.empty()) {
-        if (SaveSecretKey(param, meta) != RDB_OK) {
-            ZLOGE("Set secret key failed, bundle:%{public}s store:%{public}s",
-                  meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-            return RDB_ERROR;
-        }
-        UpgradeCloneSecretKey(meta);
+        SaveSecretKeyMeta(meta, param.password_);
     }
     GetSchema(param);
     return RDB_OK;
@@ -1044,33 +1066,6 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     return metaData;
 }
 
-int32_t RdbServiceImpl::SaveSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta)
-{
-    SecretKeyMetaData newSecretKey;
-    newSecretKey.storeType = meta.storeType;
-    newSecretKey.area = meta.area;
-    newSecretKey.sKey = CryptoManager::GetInstance().Encrypt(param.password_, meta.area, meta.user);
-    if (newSecretKey.sKey.empty()) {
-        ZLOGE("encrypt work key error.");
-        return RDB_ERROR;
-    }
-    auto time = system_clock::to_time_t(system_clock::now());
-    newSecretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
-    return MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), newSecretKey, true) ? RDB_OK : RDB_ERROR;
-}
-
-bool RdbServiceImpl::UpgradeCloneSecretKey(const StoreMetaData &meta)
-{
-    SecretKeyMetaData secretKey;
-    if (MetaDataManager::GetInstance().LoadMeta(meta.GetCloneSecretKey(), secretKey, true) && secretKey.area < 0) {
-        std::vector<uint8_t> clonePwd;
-        // Update the encryption method for the key
-        CryptoManager::GetInstance().Decrypt(meta, secretKey, clonePwd, CryptoManager::CLONE_SECRET_KEY);
-        clonePwd.assign(clonePwd.size(), 0);
-    }
-    return true;
-}
-
 int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData &old)
 {
     if (old.storeType == RDB_DEVICE_COLLABORATION && old.version < StoreMetaData::UUID_CHANGED_TAG) {
@@ -1098,26 +1093,6 @@ Details RdbServiceImpl::HandleGenDetails(const GenDetails &details)
         }
     }
     return dbDetails;
-}
-
-bool RdbServiceImpl::GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password)
-{
-    if (!metaData.isEncrypt) {
-        return true;
-    }
-
-    std::string key = metaData.GetSecretKey();
-    DistributedData::SecretKeyMetaData secretKeyMeta;
-    MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
-    std::vector<uint8_t> decryptKey;
-    CryptoManager::GetInstance().Decrypt(metaData, secretKeyMeta, decryptKey);
-    if (password.SetValue(decryptKey.data(), decryptKey.size()) != DistributedDB::CipherPassword::OK) {
-        std::fill(decryptKey.begin(), decryptKey.end(), 0);
-        ZLOGE("Set secret key value failed. len is (%{public}d)", int32_t(decryptKey.size()));
-        return false;
-    }
-    std::fill(decryptKey.begin(), decryptKey.end(), 0);
-    return true;
 }
 
 std::string RdbServiceImpl::RemoveSuffix(const std::string& name)
@@ -1544,6 +1519,30 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
+std::vector<uint8_t> RdbServiceImpl::LoadSecretKey(const StoreMetaData &metaData,
+    CryptoManager::SecretKeyType secretKeyType)
+{
+    SecretKeyMetaData secretKey;
+    std::string metaKey;
+    if (secretKeyType == CryptoManager::SecretKeyType::LOCAL_SECRET_KEY) {
+        metaKey = metaData.GetSecretKey();
+    } else if (secretKeyType == CryptoManager::SecretKeyType::CLONE_SECRET_KEY) {
+        metaKey = metaData.GetCloneSecretKey();
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) {
+        return {};
+    }
+    CryptoManager::CryptoParams decryptParams = { .area = secretKey.area, .userId = metaData.user,
+        .nonce = secretKey.nonce };
+    auto password = CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptParams);
+    if (password.empty()) {
+        return {};
+    }
+    // update secret key of area or nonce
+    CryptoManager::GetInstance().UpdateSecretMeta(password, metaData, metaKey, secretKey);
+    return password;
+}
+
 int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std::vector<uint8_t>> &password)
 {
     if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
@@ -1551,29 +1550,17 @@ int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
+    password.reserve(KEY_COUNT);
     auto meta = GetStoreMetaData(param);
-    password.resize(KEY_COUNT);
-    SecretKeyMetaData secretKey;
-    SecretKeyMetaData cloneSecretKey;
-    bool keyMeta = MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKey, true);
-    bool cloneKeyMeta = MetaDataManager::GetInstance().LoadMeta(meta.GetCloneSecretKey(), cloneSecretKey, true);
-    if (!keyMeta && !cloneKeyMeta) {
-        ZLOGE("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
-            Anonymous::Change(param.storeName_).c_str());
-        return RDB_NO_META;
+    auto key = LoadSecretKey(meta, CryptoManager::SecretKeyType::LOCAL_SECRET_KEY);
+    if (!key.empty()) {
+        password.emplace_back(key);
     }
-    bool key = CryptoManager::GetInstance().Decrypt(meta, secretKey, password.at(0));
-    bool cloneKey = CryptoManager::GetInstance().Decrypt(
-        meta, cloneSecretKey, password.at(1), CryptoManager::CLONE_SECRET_KEY);
-    if (!key && !cloneKey) {
-        ZLOGE("bundleName:%{public}s, storeName:%{public}s. decrypt err", param.bundleName_.c_str(),
-            Anonymous::Change(param.storeName_).c_str());
-        for (auto &item : password) {
-            item.assign(item.size(), 0);
-        }
-        return RDB_ERROR;
+    auto cloneKey = LoadSecretKey(meta, CryptoManager::SecretKeyType::CLONE_SECRET_KEY);
+    if (!cloneKey.empty()) {
+        password.emplace_back(cloneKey);
     }
-    return RDB_OK;
+    return password.size() > 0 ? RDB_OK : RDB_ERROR;
 }
 
 StoreInfo RdbServiceImpl::GetStoreInfo(const RdbSyncerParam &param)

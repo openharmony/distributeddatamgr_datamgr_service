@@ -23,6 +23,8 @@
 #include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
+#include "file_ex.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "kvstore_meta_manager.h"
@@ -33,10 +35,17 @@ using namespace std;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
 namespace DistributedDataTest {
+static constexpr int32_t LOOP_NUM = 2;
 static constexpr uint32_t SKEY_SIZE = 32;
 static constexpr int MICROSEC_TO_SEC_TEST = 1000;
 static constexpr const char *TEST_BACKUP_BUNDLE = "test_backup_bundleName";
 static constexpr const char *TEST_BACKUP_STOREID = "test_backup_storeId";
+static constexpr const char *BASE_DIR = "/data/service/el1/public/database/test_backup_bundleName";
+static constexpr const char *DATA_DIR = "/data/service/el1/public/database/test_backup_bundleName/rdb";
+static constexpr const char *BACKUP_DIR = "/data/service/el1/public/database/test_backup_bundleName/rdb/backup";
+static constexpr const char *STORE_DIR =
+    "/data/service/el1/public/database/test_backup_bundleName/rdb/backup/test_backup_storeId";
+static constexpr const char *AUTO_BACKUP_NAME = "/autoBackup.bak";
 class BackupManagerServiceTest : public testing::Test {
 public:
     class TestRule : public BackupRuleManager::BackupRule {
@@ -57,9 +66,16 @@ public:
     void SetUp();
     void TearDown();
     static std::vector<uint8_t> Random(uint32_t len);
-    void InitMetaData();
-    StoreMetaData metaData_;
+    static void InitMetaData();
+    static void Exporter(const StoreMetaData &meta, const std::string &backupPath, bool &result);
+    static void ConfigExport(bool flag);
+
+    static StoreMetaData metaData_;
+    static bool isExport_;
 };
+
+StoreMetaData BackupManagerServiceTest::metaData_;
+bool BackupManagerServiceTest::isExport_ = false;
 
 void BackupManagerServiceTest::SetUpTestCase(void)
 {
@@ -71,6 +87,9 @@ void BackupManagerServiceTest::SetUpTestCase(void)
     DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
     DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
     DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+    InitMetaData();
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetBackupSecretKey(), true);
 }
 
 void BackupManagerServiceTest::TearDownTestCase()
@@ -94,10 +113,11 @@ void BackupManagerServiceTest::InitMetaData()
     metaData_.area = OHOS::DistributedKv::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
-    metaData_.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
+    metaData_.storeType = StoreMetaData::StoreType::STORE_KV_BEGIN;
     metaData_.storeId = TEST_BACKUP_STOREID;
     metaData_.dataDir = "/data/service/el1/public/database/" + std::string(TEST_BACKUP_BUNDLE) + "/kvdb";
     metaData_.securityLevel = OHOS::DistributedKv::SecurityLevel::S2;
+    metaData_.tokenId = IPCSkeleton::GetSelfTokenID();
 }
 
 std::vector<uint8_t> BackupManagerServiceTest::Random(uint32_t len)
@@ -109,6 +129,21 @@ std::vector<uint8_t> BackupManagerServiceTest::Random(uint32_t len)
         key[i] = static_cast<uint8_t>(distribution(randomDevice));
     }
     return key;
+}
+
+void BackupManagerServiceTest::ConfigExport(bool flag)
+{
+    isExport_ = flag;
+}
+
+void BackupManagerServiceTest::Exporter(const StoreMetaData &meta, const std::string &backupPath, bool &result)
+{
+    (void)meta;
+    result = isExport_;
+    if (isExport_) {
+        std::vector<char> content(TEST_BACKUP_BUNDLE, TEST_BACKUP_BUNDLE + std::strlen(TEST_BACKUP_BUNDLE));
+        result = SaveBufferToFile(backupPath, content);
+    }
 }
 
 /**
@@ -297,18 +332,134 @@ HWTEST_F(BackupManagerServiceTest, GetClearType002, TestSize.Level1)
 }
 
 /**
-* @tc.name: GetPassWord
-* @tc.desc: GetPassWord testing exception branching scenarios.
+* @tc.name: GetPassWordTest001
+* @tc.desc: get password fail with exception branch
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: suoqilong
 */
-HWTEST_F(BackupManagerServiceTest, GetPassWord, TestSize.Level1)
+HWTEST_F(BackupManagerServiceTest, GetPassWordTest001, TestSize.Level1)
 {
     StoreMetaData meta;
-    std::vector<uint8_t> password;
-    bool status = BackupManager::GetInstance().GetPassWord(meta, password);
-    EXPECT_FALSE(status);
+    auto password = BackupManager::GetInstance().GetPassWord(meta);
+    ASSERT_TRUE(password.empty());
+
+    SecretKeyMetaData secretKey;
+    secretKey.area = metaData_.area;
+    secretKey.storeType = metaData_.storeType;
+    auto result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetBackupSecretKey(), secretKey, true);
+    ASSERT_TRUE(result);
+    password = BackupManager::GetInstance().GetPassWord(metaData_);
+    ASSERT_TRUE(password.empty());
+
+    auto key = Random(SKEY_SIZE);
+    ASSERT_FALSE(key.empty());
+    secretKey.sKey = key;
+    secretKey.nonce = key;
+    result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetBackupSecretKey(), secretKey, true);
+    ASSERT_TRUE(result);
+    password = BackupManager::GetInstance().GetPassWord(metaData_);
+    ASSERT_TRUE(password.empty());
+
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetBackupSecretKey(), true);
+}
+
+/**
+* @tc.name: GetPassWordTest002
+* @tc.desc: get backup password success
+* @tc.type: FUNC
+*/
+HWTEST_F(BackupManagerServiceTest, GetPassWordTest002, TestSize.Level1)
+{
+    auto key = Random(SKEY_SIZE);
+    ASSERT_FALSE(key.empty());
+    CryptoManager::CryptoParams encryptParams;
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(key, encryptParams);
+    ASSERT_FALSE(encryptKey.empty());
+
+    SecretKeyMetaData secretKey;
+    secretKey.area = encryptParams.area;
+    secretKey.storeType = metaData_.storeType;
+    secretKey.sKey = encryptKey;
+    secretKey.nonce = encryptParams.nonce;
+    auto result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetBackupSecretKey(), secretKey, true);
+    ASSERT_TRUE(result);
+
+    for (int32_t index = 0; index < LOOP_NUM; ++index) {
+        auto password = BackupManager::GetInstance().GetPassWord(metaData_);
+        ASSERT_FALSE(password.empty());
+        ASSERT_EQ(password.size(), key.size());
+        for (size_t i = 0; i < key.size(); ++i) {
+            ASSERT_EQ(password[i], key[i]);
+        }
+    }
+
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetBackupSecretKey(), true);
+}
+
+/**
+* @tc.name: DoBackupTest001
+* @tc.desc: do backup with every condition
+* @tc.type: FUNC
+*/
+HWTEST_F(BackupManagerServiceTest, DoBackupTest001, TestSize.Level1)
+{
+    metaData_.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    mkdir(BASE_DIR, (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
+    mkdir(DATA_DIR, (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
+    mkdir(BACKUP_DIR, (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
+    mkdir(STORE_DIR, (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
+
+    auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(metaData_);
+    ASSERT_EQ(backupPath, STORE_DIR);
+
+    std::string backupFilePath = backupPath + AUTO_BACKUP_NAME;
+
+    std::shared_ptr<BackupManager> testManager = std::make_shared<BackupManager>();
+    testManager->DoBackup(metaData_);
+    ASSERT_NE(access(backupFilePath.c_str(), F_OK), 0);
+
+    testManager->RegisterExporter(metaData_.storeType, Exporter);
+    ConfigExport(false);
+    testManager->DoBackup(metaData_);
+    ASSERT_NE(access(backupFilePath.c_str(), F_OK), 0);
+
+    ConfigExport(true);
+    metaData_.isEncrypt = false;
+    testManager->DoBackup(metaData_);
+    ASSERT_EQ(access(backupFilePath.c_str(), F_OK), 0);
+    (void)remove(backupFilePath.c_str());
+
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetSecretKey(), true);
+    SecretKeyMetaData secretKey;
+    auto result = MetaDataManager::GetInstance().LoadMeta(metaData_.GetSecretKey(), secretKey, true);
+    ASSERT_FALSE(result);
+
+    metaData_.isEncrypt = true;
+    testManager->DoBackup(metaData_);
+    ASSERT_NE(access(backupFilePath.c_str(), F_OK), 0);
+
+    SecretKeyMetaData backupSecretKey;
+    result = MetaDataManager::GetInstance().LoadMeta(metaData_.GetBackupSecretKey(), backupSecretKey, true);
+    ASSERT_FALSE(result);
+
+    secretKey.area = metaData_.area;
+    secretKey.storeType = metaData_.storeType;
+    auto key = Random(SKEY_SIZE);
+    ASSERT_FALSE(key.empty());
+    secretKey.sKey = key;
+    result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true);
+    ASSERT_TRUE(result);
+    testManager->DoBackup(metaData_);
+    ASSERT_EQ(access(backupFilePath.c_str(), F_OK), 0);
+    result = MetaDataManager::GetInstance().LoadMeta(metaData_.GetBackupSecretKey(), backupSecretKey, true);
+    ASSERT_TRUE(result);
+
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetBackupSecretKey(), true);
+    (void)remove(backupFilePath.c_str());
+    (void)remove(STORE_DIR);
+    (void)remove(BACKUP_DIR);
+    (void)remove(DATA_DIR);
+    (void)remove(BASE_DIR);
 }
 
 /**

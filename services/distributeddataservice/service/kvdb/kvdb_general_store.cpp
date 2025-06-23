@@ -98,21 +98,26 @@ static DBSchema GetDBSchema(const Database &database)
     }
     return schema;
 }
+
 KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData &data)
 {
     DBPassword dbPassword;
     if (!data.isEncrypt) {
         return dbPassword;
     }
-
     SecretKeyMetaData secretKey;
-    secretKey.storeType = data.storeType;
-    auto storeKey = data.GetSecretKey();
-    MetaDataManager::GetInstance().LoadMeta(storeKey, secretKey, true);
-    std::vector<uint8_t> password;
-    StoreMetaData metaData;
-    MetaDataManager::GetInstance().LoadMeta(data.GetKey(), metaData, true);
-    CryptoManager::GetInstance().Decrypt(metaData, secretKey, password);
+    auto metaKey = data.GetSecretKey();
+    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) {
+        return dbPassword;
+    }
+    CryptoManager::CryptoParams decryptParams = { .area = secretKey.area, .userId = data.user,
+        .nonce = secretKey.nonce };
+    auto password = CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptParams);
+    if (password.empty()) {
+        return dbPassword;
+    }
+    // update secret key of area or nonce
+    CryptoManager::GetInstance().UpdateSecretMeta(password, data, metaKey, secretKey);
     dbPassword.SetValue(password.data(), password.size());
     password.assign(password.size(), 0);
     return dbPassword;

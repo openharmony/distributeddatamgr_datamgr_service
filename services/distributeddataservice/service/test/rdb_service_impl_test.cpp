@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "rdb_service_impl.h"
+
+#include <random>
+
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
@@ -48,6 +50,7 @@ namespace DistributedRDBTest {
 static constexpr const char *TEST_BUNDLE = "test_rdb_service_impl_bundleName";
 static constexpr const char *TEST_APPID = "test_rdb_service_impl_appid";
 static constexpr const char *TEST_STORE = "test_rdb_service_impl_store";
+static constexpr int32_t KEY_LENGTH = 32;
 static constexpr uint32_t DELY_TIME = 10000;
 
 class RdbServiceImplTest : public testing::Test {
@@ -58,6 +61,7 @@ public:
     static void InitMapping(StoreMetaMapping &meta);
     void SetUp();
     void TearDown();
+    static std::vector<uint8_t> Random(int32_t len);
 protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
@@ -122,6 +126,17 @@ void RdbServiceImplTest::SetUp()
 
 void RdbServiceImplTest::TearDown()
 {
+}
+
+std::vector<uint8_t> RdbServiceImplTest::Random(int32_t len)
+{
+    std::random_device randomDevice;
+    std::uniform_int_distribution<int> distribution(0, std::numeric_limits<uint8_t>::max());
+    std::vector<uint8_t> key(len);
+    for (uint32_t i = 0; i < len; i++) {
+        key[i] = static_cast<uint8_t>(distribution(randomDevice));
+    }
+    return key;
 }
 
 /**
@@ -857,16 +872,17 @@ HWTEST_F(RdbServiceImplTest, GetPassword001, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTest, GetPassword002, TestSize.Level0)
 {
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     auto meta = metaData_;
     meta.isEncrypt = true;
-    std::vector<uint8_t> sKey{2,   249, 221, 119, 177, 216, 217, 134, 185, 139, 114, 38,  140, 64,  165, 35,
-                              77,  169, 0,   226, 226, 166, 37,  73,  181, 229, 42,  88,  108, 111, 131, 104,
-                              141, 43,  96,  119, 214, 34,  177, 129, 233, 96,  98,  164, 87,  115, 187, 170};
+    auto sKey = Random(KEY_LENGTH);
+    ASSERT_FALSE(sKey.empty());
     SecretKeyMetaData secretKey;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(sKey);
-    secretKey.area = 0;
+    CryptoManager::CryptoParams encryptParams;
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(sKey, encryptParams);
+    secretKey.area = encryptParams.area;
     secretKey.storeType = meta.storeType;
-    secretKey.time = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    secretKey.nonce = encryptParams.nonce;
 
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), secretKey, true), true);
@@ -879,8 +895,7 @@ HWTEST_F(RdbServiceImplTest, GetPassword002, TestSize.Level0)
     int32_t result = service.GetPassword(param, password);
 
     EXPECT_EQ(result, RDB_OK);
-    size_t KEY_COUNT = 2;
-    ASSERT_EQ(password.size(), KEY_COUNT);
+    ASSERT_GT(password.size(), 0);
     EXPECT_EQ(password.at(0), sKey);
     MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true);
@@ -895,22 +910,27 @@ HWTEST_F(RdbServiceImplTest, GetPassword002, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTest, GetPassword003, TestSize.Level0)
 {
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    auto sKey = Random(KEY_LENGTH);
+    ASSERT_FALSE(sKey.empty());
     SecretKeyMetaData secretKey;
-    secretKey.sKey = {0x01, 0x02, 0x03}; // Invalid key for decryption
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    secretKey.sKey = sKey; // Invalid key for decryption
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), secretKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
+    param.bundleName_ = meta.bundleName;
+    param.storeName_ = meta.storeId;
     std::vector<std::vector<uint8_t>> password;
 
     int32_t result = service.GetPassword(param, password);
 
     EXPECT_EQ(result, RDB_ERROR);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetSecretKey(), true), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
 /**
@@ -922,16 +942,17 @@ HWTEST_F(RdbServiceImplTest, GetPassword003, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTest, GetPassword004, TestSize.Level0)
 {
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     auto meta = metaData_;
     meta.isEncrypt = true;
-    std::vector<uint8_t> sKey{2,   249, 221, 119, 177, 216, 217, 134, 185, 139, 114, 38,  140, 64,  165, 35,
-                              77,  169, 0,   226, 226, 166, 37,  73,  181, 229, 42,  88,  108, 111, 131, 104,
-                              141, 43,  96,  119, 214, 34,  177, 129, 233, 96,  98,  164, 87,  115, 187, 170};
+    auto sKey = Random(KEY_LENGTH);
+    ASSERT_FALSE(sKey.empty());
     SecretKeyMetaData secretKey;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(sKey);
-    secretKey.area = 0;
+    CryptoManager::CryptoParams encryptParams;
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(sKey, encryptParams);
+    secretKey.area = encryptParams.area;
     secretKey.storeType = meta.storeType;
-    secretKey.time = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+    secretKey.nonce = encryptParams.nonce;
 
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true), true);
@@ -946,11 +967,10 @@ HWTEST_F(RdbServiceImplTest, GetPassword004, TestSize.Level0)
     int32_t result = service.GetPassword(param, password);
 
     EXPECT_EQ(result, RDB_OK);
-    size_t KEY_COUNT = 2;
-    ASSERT_EQ(password.size(), KEY_COUNT);
-    EXPECT_EQ(password.at(1), sKey);
-    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
-    MetaDataManager::GetInstance().DelMeta(metaData_.GetCloneSecretKey(), true);
+    ASSERT_GT(password.size(), 0);
+    EXPECT_EQ(password.at(0), sKey);
+    MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
 }
 
 /**
@@ -971,7 +991,7 @@ HWTEST_F(RdbServiceImplTest, GetPassword005, TestSize.Level0)
 
     int32_t result = service.GetPassword(param, password);
 
-    EXPECT_EQ(result, RDB_NO_META);
+    EXPECT_EQ(result, RDB_ERROR);
 }
 
 /**
@@ -1202,34 +1222,6 @@ HWTEST_F(RdbServiceImplTest, UnSubscribe001, TestSize.Level0)
 
     int32_t result = service.UnSubscribe(param, option, nullptr);
     EXPECT_EQ(result, RDB_ERROR);
-}
-
-/**
- * @tc.name: UpgradeCloneSecretKey001
- * @tc.desc: Test UpgradeCloneSecretKey when meta invalid.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zhaojh
- */
-HWTEST_F(RdbServiceImplTest, UpgradeCloneSecretKey001, TestSize.Level0)
-{
-    auto meta = metaData_;
-    meta.isEncrypt = true;
-    std::vector<uint8_t> sKey{2,   249, 221, 119, 177, 216, 217, 134, 185, 139, 114, 38,  140, 64,  165, 35,
-                              77,  169, 0,   226, 226, 166, 37,  73,  181, 229, 42,  88,  108, 111, 131, 104,
-                              141, 43,  96,  119, 214, 34,  177, 129, 233, 96,  98,  164, 87,  115, 187, 170};
-    SecretKeyMetaData secretKey;
-    secretKey.sKey = CryptoManager::GetInstance().Encrypt(sKey);
-    secretKey.area = -1;
-    secretKey.storeType = meta.storeType;
-    secretKey.time = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true), true);
-
-    RdbServiceImpl service;
-
-    auto result = service.UpgradeCloneSecretKey(meta);
-    ASSERT_EQ(result, true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
 }
 
 /**

@@ -45,6 +45,7 @@ public:
     using Reference = DistributedData::Reference;
     using Snapshot = DistributedData::Snapshot;
     using BindAssets = DistributedData::BindAssets;
+    using DBPassword = DistributedDB::CipherPassword;
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
@@ -159,6 +160,7 @@ private:
     std::pair<int32_t, int32_t> DoCloudSync(const Devices &devices, const DistributedDB::Query &dbQuery,
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
+    DBPassword GetDBPassword(const StoreMetaData &data);
 
     ObserverProxy observer_;
     RdbManager manager_;

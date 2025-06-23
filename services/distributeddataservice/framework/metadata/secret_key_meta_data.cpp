@@ -24,12 +24,14 @@ SecretKeyMetaData::SecretKeyMetaData()
 SecretKeyMetaData::~SecretKeyMetaData()
 {
     sKey.assign(sKey.size(), 0);
+    nonce.assign(nonce.size(), 0);
 }
 
 bool SecretKeyMetaData::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(time)], time);
     SetValue(node[GET_NAME(sKey)], sKey);
+    SetValue(node[GET_NAME(nonce)], nonce);
     SetValue(node[GET_NAME(storeType)], storeType);
     SetValue(node[GET_NAME(area)], area);
     return true;
@@ -39,6 +41,7 @@ bool SecretKeyMetaData::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(time), time);
     GetValue(node, GET_NAME(sKey), sKey);
+    GetValue(node, GET_NAME(nonce), nonce);
     GetValue(node, GET_NAME(storeType), storeType);
     GetValue(node, GET_NAME(area), area);
     return true;

@@ -130,30 +130,24 @@ void BackupManager::BackSchedule(std::shared_ptr<ExecutorPool> executors)
 
 void BackupManager::DoBackup(const StoreMetaData &meta)
 {
-    bool result = false;
-    auto key = meta.GetSecretKey();
-    auto backupKey = meta.GetBackupSecretKey();
-    std::vector<uint8_t> decryptKey;
-    SecretKeyMetaData secretKey;
-    if (MetaDataManager::GetInstance().LoadMeta(key, secretKey, true)) {
-        CryptoManager::GetInstance().Decrypt(meta, secretKey, decryptKey);
-        if (secretKey.area < 0) {
-            MetaDataManager::GetInstance().LoadMeta(key, secretKey, true);
-        }
+    if (exporters_[meta.storeType] == nullptr) {
+        return;
     }
     auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(meta);
     std::string backupFullPath = backupPath + "/" + AUTO_BACKUP_NAME;
-
     KeepData(backupFullPath);
-    if (exporters_[meta.storeType] != nullptr) {
-        exporters_[meta.storeType](meta, backupFullPath + BACKUP_TMP_POSTFIX, result);
-    }
-    if (result) {
-        SaveData(backupFullPath, backupKey, secretKey);
-    } else {
+    bool result = false;
+    exporters_[meta.storeType](meta, backupFullPath + BACKUP_TMP_POSTFIX, result);
+    if (!result) {
         CleanData(backupFullPath);
+        return;
     }
-    decryptKey.assign(decryptKey.size(), 0);
+    SecretKeyMetaData secretKey;
+    result = MetaDataManager::GetInstance().LoadMeta(meta.GetSecretKey(), secretKey, true);
+    if (meta.isEncrypt && !result) {
+        return;
+    }
+    SaveData(backupFullPath, meta.GetBackupSecretKey(), secretKey);
 }
 
 bool BackupManager::CanBackup()
@@ -301,13 +295,22 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
     fout.close();
 }
 
-bool BackupManager::GetPassWord(const StoreMetaData &meta, std::vector<uint8_t> &password)
+std::vector<uint8_t> BackupManager::GetPassWord(const StoreMetaData &meta)
 {
     SecretKeyMetaData secretKey;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetBackupSecretKey(), secretKey, true)) {
-        return false;
+    auto metaKey = meta.GetBackupSecretKey();
+    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) {
+        return {};
     }
-    return CryptoManager::GetInstance().Decrypt(meta, secretKey, password);
+    CryptoManager::CryptoParams decryptParams = { .area = secretKey.area, .userId = meta.user,
+        .nonce = secretKey.nonce };
+    auto password = CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptParams);
+    if (password.empty()) {
+        return password;
+    }
+    // update secret key of area or nonce
+    CryptoManager::GetInstance().UpdateSecretMeta(password, meta, metaKey, secretKey);
+    return password;
 }
 
 bool BackupManager::IsFileExist(const std::string &path)

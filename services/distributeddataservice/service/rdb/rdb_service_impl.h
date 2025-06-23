@@ -24,6 +24,7 @@
 #include "commonevent/data_change_event.h"
 #include "commonevent/set_searchable_event.h"
 #include "concurrent_map.h"
+#include "crypto_manager.h"
 #include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -127,6 +128,7 @@ private:
     using DBStatus = DistributedDB::DBStatus;
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     using AutoCache = DistributedData::AutoCache;
+    using CryptoManager = DistributedData::CryptoManager;
     struct SyncAgent {
         SyncAgent() = default;
         explicit SyncAgent(const std::string &bundleName);
@@ -223,8 +225,6 @@ private:
 
     static StoreMetaData GetStoreMetaData(const Database &dataBase);
 
-    static int32_t SaveSecretKey(const RdbSyncerParam &param, const StoreMetaData &meta);
-
     static std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> AllocResource(
         StoreInfo& storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
 
@@ -237,8 +237,6 @@ private:
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
     static std::string GetSubUser(const int32_t subUser);
-
-    static bool GetDBPassword(const StoreMetaData &metaData, DistributedDB::CipherPassword &password);
     
     static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old);
 
@@ -261,7 +259,9 @@ private:
 
     static void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store);
 
-    static bool UpgradeCloneSecretKey(const StoreMetaData &meta);
+    std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
+
+    void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
