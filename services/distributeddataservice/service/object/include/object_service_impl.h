@@ -71,7 +71,7 @@ private:
     };
     void RegisterObjectServiceInfo();
     void RegisterHandler();
-    int32_t SaveMetaData(StoreMetaData& saveMeta, const std::string &user, const std::string &account);
+    int32_t SaveMetaData(StoreMetaData& saveMeta);
     void UpdateMetaData();
 
     static Factory factory_;

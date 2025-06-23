@@ -44,6 +44,7 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
+constexpr const char *METADATA_STORE_PATH = "/data/service/el1/public/database/distributeddata/kvdb";
 ObjectServiceImpl::Factory::Factory()
 {
     FeatureSystem::GetInstance().RegisterCreator(
@@ -133,16 +134,14 @@ int32_t ObjectServiceImpl::OnInitialize()
         ZLOGE("failed to get local device id");
         return OBJECT_INNER_ERROR;
     }
-    auto token = IPCSkeleton::GetCallingTokenID();
-    const auto userId = DistributedData::AccountDelegate::GetInstance()->GetUserByToken(token);
-    
+
     if (executors_ == nullptr) {
         ZLOGE("executors_ is nullptr");
         return OBJECT_INNER_ERROR;
     }
-    executors_->Schedule(std::chrono::seconds(WAIT_ACCOUNT_SERVICE), [userId, this]() {
+    executors_->Schedule(std::chrono::seconds(WAIT_ACCOUNT_SERVICE), [this]() {
         StoreMetaData saveMeta;
-        SaveMetaData(saveMeta, std::to_string(userId), "accountId");
+        SaveMetaData(saveMeta);
         ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, saveMeta.user);
         ObjectStoreManager::GetInstance()->InitUserMeta();
         RegisterObjectServiceInfo();
@@ -153,7 +152,7 @@ int32_t ObjectServiceImpl::OnInitialize()
     return OBJECT_SUCCESS;
 }
 
-int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta, const std::string &user, const std::string &account)
+int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta)
 {
     auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (localDeviceId.empty()) {
@@ -168,7 +167,6 @@ int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta, const std::stri
     saveMeta.isEncrypt = false;
     saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.user = user;
     saveMeta.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
     saveMeta.tokenId = IPCSkeleton::GetCallingTokenID();
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
@@ -180,10 +178,10 @@ int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta, const std::stri
     int foregroundUserId = 0;
     DistributedData::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
     saveMeta.user = std::to_string(foregroundUserId);
-    saveMeta.dataDir = "/data/service/el1/public/database/distributeddata/kvdb";
+    saveMeta.dataDir = METADATA_STORE_PATH;
     if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
         ZLOGE("Create directory error, dataDir: %{public}s.", Anonymous::Change(saveMeta.dataDir).c_str());
-        return false;
+        return OBJECT_INNER_ERROR;
     }
     bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta) &&
                    DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
@@ -211,7 +209,7 @@ int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, 
             ZLOGE("Clear fail user:%{public}s, status: %{public}d", user.c_str(), status);
         }
         StoreMetaData saveMeta;
-        SaveMetaData(saveMeta, user, account);
+        SaveMetaData(saveMeta);
         ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, saveMeta.user);
     }
     return Feature::OnUserChange(code, user, account);
