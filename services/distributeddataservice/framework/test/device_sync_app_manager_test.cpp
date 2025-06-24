@@ -36,9 +36,9 @@ protected:
 };
 
 /**
-@tc.name: Check001
-@tc.desc: Checks that the given WhiteList object exists in whiteLists_ list.
-@tc.type: FUNC
+* @tc.name: Check001
+* @tc.desc: Checks that the given WhiteList object exists in whiteLists_ list.
+* @tc.type: FUNC
 */
 HWTEST_F(DeviceSyncAppManagerTest, Check001, TestSize.Level1)
 {
@@ -48,9 +48,9 @@ HWTEST_F(DeviceSyncAppManagerTest, Check001, TestSize.Level1)
 }
 
 /**
-@tc.name: Check002
-@tc.desc: Check that the given appId object does not match.
-@tc.type: FUNC
+* @tc.name: Check002
+* @tc.desc: Check that the given appId object does not match.
+* @tc.type: FUNC
 */
 HWTEST_F(DeviceSyncAppManagerTest, Check002, TestSize.Level1)
 {
@@ -60,9 +60,9 @@ HWTEST_F(DeviceSyncAppManagerTest, Check002, TestSize.Level1)
 }
 
 /**
-@tc.name: Check003
-@tc.desc: Check that the given bundleName object does not match.
-@tc.type: FUNC
+* @tc.name: Check003
+* @tc.desc: Check that the given bundleName object does not match.
+* @tc.type: FUNC
 */
 HWTEST_F(DeviceSyncAppManagerTest, Check003, TestSize.Level1)
 {
@@ -72,9 +72,9 @@ HWTEST_F(DeviceSyncAppManagerTest, Check003, TestSize.Level1)
 }
 
 /**
-@tc.name: Check004
-@tc.desc: Check that the given version object does not match.
-@tc.type: FUNC
+* @tc.name: Check004
+* @tc.desc: Check that the given version object does not match.
+* @tc.type: FUNC
 */
 HWTEST_F(DeviceSyncAppManagerTest, Check004, TestSize.Level1)
 {
@@ -84,9 +84,9 @@ HWTEST_F(DeviceSyncAppManagerTest, Check004, TestSize.Level1)
 }
 
 /**
-@tc.name: Check005
-@tc.desc: Checks that the given WhiteList object does not exist in whiteLists_ list.
-@tc.type: FUNC
+* @tc.name: Check005
+* @tc.desc: Checks that the given WhiteList object does not exist in whiteLists_ list.
+* @tc.type: FUNC
 */
 HWTEST_F(DeviceSyncAppManagerTest, Check005, TestSize.Level1)
 {
