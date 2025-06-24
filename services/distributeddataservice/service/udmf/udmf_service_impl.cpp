@@ -428,10 +428,13 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     }
     std::shared_ptr<Runtime> runtime = data.GetRuntime();
     if (runtime == nullptr) {
+        ZLOGE("Invalid parameter, runtime is nullptr.");
         return E_DB_ERROR;
     }
-    if (runtime->tokenId != query.tokenId && !HasDatahubPriviledge(bundleName)) {
-        ZLOGE("Update failed: tokenId mismatch");
+
+    if (runtime->tokenId != query.tokenId && !HasDatahubPriviledge(bundleName) &&
+        CheckAppId(runtime, bundleName) != E_OK) {
+        ZLOGE("Update failed: tokenId or appId mismatch, bundleName: %{public}s", bundleName.c_str());
         return E_INVALID_PARAMETERS;
     }
     runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
@@ -440,6 +443,21 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     if (store->Update(unifiedData) != E_OK) {
         ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::CheckAppId(std::shared_ptr<Runtime> runtime, const std::string &bundleName)
+{
+    if (runtime->appId.empty()) {
+        ZLOGE("Update failed: Invalid parameter, runtime->appId is empty");
+        return E_INVALID_PARAMETERS;
+    }
+    std::string appId = PreProcessUtils::GetAppId(bundleName);
+    if (appId.empty() || appId != runtime->appId) {
+        ZLOGE("Update failed: runtime->appId %{public}s and bundleName appId %{public}s mismatch",
+            runtime->appId.c_str(), appId.c_str());
+        return E_INVALID_PARAMETERS;
     }
     return E_OK;
 }
@@ -470,15 +488,10 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
     }
     std::shared_ptr<Runtime> runtime;
     std::vector<std::string> deleteKeys;
-    for (const auto &data : dataSet) {
-        runtime = data.GetRuntime();
-        if (runtime == nullptr) {
-            return E_DB_ERROR;
-        }
-        if (runtime->tokenId == query.tokenId) {
-            unifiedDataSet.push_back(data);
-            deleteKeys.push_back(UnifiedKey(runtime->key.key).GetKeyCommonPrefix());
-        }
+    status = ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
+    if (status != E_OK) {
+        ZLOGE("ValidateAndProcessRuntimeData failed.");
+        return status;
     }
     if (deleteKeys.empty()) {
         ZLOGE("No data to delete for this application");
@@ -488,6 +501,38 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
     if (store->DeleteBatch(deleteKeys) != E_OK) {
         ZLOGE("Remove data failed.");
         return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::ValidateAndProcessRuntimeData(const std::vector<UnifiedData> &dataSet,
+    std::shared_ptr<Runtime> runtime, std::vector<UnifiedData> &unifiedDataSet, const QueryOption &query,
+    std::vector<std::string> &deleteKeys)
+{
+    std::string appId;
+    bool isFirstInvoke = false;
+    for (const auto &data : dataSet) {
+        runtime = data.GetRuntime();
+        if (runtime == nullptr) {
+            ZLOGE("Invalid runtime.");
+            return E_DB_ERROR;
+        }
+        if (runtime->tokenId != query.tokenId) {
+            if (runtime->appId.empty()) {
+                continue;
+            }
+            if (!isFirstInvoke) {
+                std::string bundleName;
+                PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
+                appId = PreProcessUtils::GetAppId(bundleName);
+                isFirstInvoke = true;
+            }
+            if (appId.empty() || appId != runtime->appId) {
+                continue;
+            }
+        }
+        unifiedDataSet.push_back(data);
+        deleteKeys.emplace_back(UnifiedKey(runtime->key.key).GetKeyCommonPrefix());
     }
     return E_OK;
 }

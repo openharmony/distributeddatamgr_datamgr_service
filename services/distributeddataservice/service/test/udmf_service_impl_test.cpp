@@ -27,6 +27,7 @@
 #include "preprocess_utils.h"
 #include "runtime_store.h"
 #include "text.h"
+#include "plain_text.h"
 #include "token_setproc.h"
 
 using namespace testing::ext;
@@ -430,6 +431,162 @@ HWTEST_F(UdmfServiceImplTest, IsValidInput004, TestSize.Level1)
     UdmfServiceImpl impl;
     bool result = impl.IsValidInput(query, unifiedData, key);
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: CheckAppId001
+ * @tc.desc: invalid bundleName
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, CheckAppId001, TestSize.Level1)
+{
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->appId = "appId";
+    std::string bundleName = "ohos.test.demo1";
+
+    UdmfServiceImpl impl;
+    int32_t result = impl.CheckAppId(runtime, bundleName);
+    EXPECT_EQ(result, E_INVALID_PARAMETERS);
+}
+
+/**
+ * @tc.name: CheckAppId002
+ * @tc.desc: invalid runtime
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, CheckAppId002, TestSize.Level1)
+{
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    std::string bundleName = "ohos.test.demo1";
+
+    UdmfServiceImpl impl;
+    int32_t result = impl.CheckAppId(runtime, bundleName);
+    EXPECT_EQ(result, E_INVALID_PARAMETERS);
+}
+
+/**
+ * @tc.name: ValidateAndProcessRuntimeData001
+ * @tc.desc: invalid appId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData001, TestSize.Level1)
+{
+    UnifiedData data;
+    std::shared_ptr<UnifiedRecord> record = std::make_shared<PlainText>(UDType::PLAIN_TEXT, "plainTextContent");
+    data.AddRecord(record);
+    std::shared_ptr<UnifiedDataProperties> properties = std::make_shared<UnifiedDataProperties>();
+    std::string tag = "this is a tag of test ValidateAndProcessRuntimeData001";
+    properties->tag = tag;
+    data.SetProperties(std::move(properties));
+
+    std::vector<UnifiedData> dataSet = {data};
+    std::shared_ptr<Runtime> runtime;
+    std::vector<UnifiedData> unifiedDataSet;
+    std::vector<std::string> deleteKeys;
+    QueryOption query;
+
+    UdmfServiceImpl impl;
+    int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
+    EXPECT_EQ(result, UDMF::E_DB_ERROR);
+}
+
+/**
+ * @tc.name: ValidateAndProcessRuntimeData002
+ * @tc.desc: Normal test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData002, TestSize.Level1)
+{
+    UnifiedData data;
+    data.runtime_ = std::make_shared<Runtime>();
+    data.runtime_->tokenId = 1;
+    std::shared_ptr<UnifiedRecord> record = std::make_shared<PlainText>(UDType::PLAIN_TEXT, "plainTextContent");
+    data.AddRecord(record);
+    std::shared_ptr<UnifiedDataProperties> properties = std::make_shared<UnifiedDataProperties>();
+    std::string tag = "this is a tag of test ValidateAndProcessRuntimeData002";
+    properties->tag = tag;
+    data.SetProperties(std::move(properties));
+
+    std::vector<UnifiedData> dataSet = {data};
+    std::shared_ptr<Runtime> runtime;
+    std::vector<UnifiedData> unifiedDataSet;
+    std::vector<std::string> deleteKeys;
+    QueryOption query;
+    query.tokenId = 1;
+
+    UdmfServiceImpl impl;
+    int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
+    EXPECT_EQ(result, UDMF::E_OK);
+}
+
+/**
+ * @tc.name: ValidateAndProcessRuntimeData003
+ * @tc.desc: invalid appId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData003, TestSize.Level1)
+{
+    UnifiedData data;
+    data.runtime_ = std::make_shared<Runtime>();
+    data.runtime_->tokenId = 1;
+    data.runtime_ = std::make_shared<Runtime>();
+    data.runtime_->appId = "appId";
+    std::shared_ptr<UnifiedRecord> record = std::make_shared<PlainText>(UDType::PLAIN_TEXT, "plainTextContent");
+    data.AddRecord(record);
+    std::shared_ptr<UnifiedDataProperties> properties = std::make_shared<UnifiedDataProperties>();
+    std::string tag = "this is a tag of test ValidateAndProcessRuntimeData003";
+    properties->tag = tag;
+    data.SetProperties(std::move(properties));
+
+    std::vector<UnifiedData> dataSet = {data};
+    std::shared_ptr<Runtime> runtime;
+    std::vector<UnifiedData> unifiedDataSet;
+    std::vector<std::string> deleteKeys;
+    QueryOption query;
+    query.tokenId = 2;
+
+    UdmfServiceImpl impl;
+    int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
+    EXPECT_EQ(result, UDMF::E_OK);
+}
+
+/**
+ * @tc.name: ValidateAndProcessRuntimeData004
+ * @tc.desc: invalid appId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData004, TestSize.Level1)
+{
+    UnifiedData data1;
+    data1.runtime_ = std::make_shared<Runtime>();
+    data1.runtime_->tokenId = 1;
+    data1.runtime_ = std::make_shared<Runtime>();
+    data1.runtime_->appId = "appId";
+    std::shared_ptr<UnifiedRecord> record = std::make_shared<PlainText>(UDType::PLAIN_TEXT, "plainTextContent");
+    data1.AddRecord(record);
+    std::shared_ptr<UnifiedDataProperties> properties = std::make_shared<UnifiedDataProperties>();
+    std::string tag = "this is a tag of test ValidateAndProcessRuntimeData004";
+    properties->tag = tag;
+    data1.SetProperties(std::move(properties));
+
+    UnifiedData data2;
+    data2.runtime_ = std::make_shared<Runtime>();
+    data2.runtime_->tokenId = 1;
+    data2.runtime_ = std::make_shared<Runtime>();
+    data2.runtime_->appId = "appId";
+    data2.AddRecord(record);
+    data2.SetProperties(std::move(properties));
+
+    std::vector<UnifiedData> dataSet = { data1, data2 };
+    std::shared_ptr<Runtime> runtime;
+    std::vector<UnifiedData> unifiedDataSet;
+    std::vector<std::string> deleteKeys;
+    QueryOption query;
+    query.tokenId = 2;
+
+    UdmfServiceImpl impl;
+    int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
+    EXPECT_EQ(result, UDMF::E_OK);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
