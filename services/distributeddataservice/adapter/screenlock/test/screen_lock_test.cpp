@@ -123,6 +123,6 @@ HWTEST_F(ScreenLockTest, SubscribeScreenEvent001, TestSize.Level0)
     screenLock->SubscribeScreenEvent();
     EXPECT_NE(screenLock->eventSubscriber_, nullptr);
     screenLock->UnsubscribeScreenEvent();
-    sleep(1);
+    screenLock->executors_ == nullptr;
 }
 } // namespace
