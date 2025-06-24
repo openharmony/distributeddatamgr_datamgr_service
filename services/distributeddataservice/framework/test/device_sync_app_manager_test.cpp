@@ -20,8 +20,9 @@ using namespace OHOS::DistributedData;
 
 namespace OHOS::Test {
 class DeviceSyncAppManagerTest : public testing::Test {
-protected:
-    void SetUp() override {
+public:
+    void SetUp()
+    {
         whiteList1 = {"appId1", "bundleName1", 1};
         whiteList2 = {"appId2", "bundleName2", 2};
         whiteList3 = {"appId3", "bundleName3", 3};
