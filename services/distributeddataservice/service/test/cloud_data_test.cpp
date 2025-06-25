@@ -2216,8 +2216,12 @@ HWTEST_F(CloudDataTest, UpdateE2eeEnableTest, TestSize.Level1)
     EXPECT_EQ(schemaMeta.e2eeEnable, schemaMeta_.e2eeEnable);
 
     ASSERT_NE(cloudServiceImpl_, nullptr);
-    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, false, TEST_CLOUD_BUNDLE));
-    EXPECT_NO_FATAL_FAILURE(cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE));
+    cloudServiceImpl_->UpdateE2eeEnable(schemaKey, false, TEST_CLOUD_BUNDLE);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    EXPECT_EQ(schemaMeta.e2eeEnable, schemaMeta_.e2eeEnable);
+    cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+    EXPECT_EQ(schemaMeta.e2eeEnable, true);
 }
 
 /**
