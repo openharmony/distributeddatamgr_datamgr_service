@@ -13,23 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_DEVICE_MANAGER_DELEGATE_H
-#define DISTRIBUTEDDATAMGR_DEVICE_MANAGER_DELEGATE_H
-
-#include "device_manager_types.h"
+#ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORK_DEVICE_MANAGER_TYPES_H
+#define OHOS_DISTRIBUTED_DATA_FRAMEWORK_DEVICE_MANAGER_TYPES_H
+#include <string>
 #include "visibility.h"
-
-namespace OHOS {
-namespace DistributedData {
-class DeviceManagerDelegate {
-public:
-    virtual ~DeviceManagerDelegate() = default;
-    virtual DeviceInfo GetLocalDevice() = 0;
-    API_EXPORT static bool RegisterInstance(DeviceManagerDelegate *instance);
-    API_EXPORT static DeviceManagerDelegate *GetInstance();
-private:
-    static DeviceManagerDelegate *instance_;
+namespace OHOS::DistributedData {
+struct API_EXPORT DeviceInfo {
+    std::string uuid;
+    std::string udid;
+    std::string networkId;
+    std::string deviceName;
+    uint32_t deviceType;
+    int32_t osType;
+    int32_t authForm;
 };
-} // namespace DistributedData
-} // namespace OHOS
-#endif // DISTRIBUTEDDATAMGR_DEVICE_MANAGER_DELEGATE_H
+}
+#endif // OHOS_DISTRIBUTED_DATA_FRAMEWORK_DEVICE_MANAGER_TYPES_H

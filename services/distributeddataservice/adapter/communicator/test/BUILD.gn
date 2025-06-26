@@ -34,6 +34,7 @@ ohos_unittest("CommunicationProviderTest") {
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -68,6 +69,7 @@ ohos_unittest("CommunicatorContextTest") {
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -257,6 +259,7 @@ ohos_unittest("SoftbusClientTest") {
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -287,6 +290,7 @@ ohos_unittest("AppPipeMgrServiceTest") {
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
