@@ -135,7 +135,8 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
 {
     auto proxy = iface_cast<ObjectSaveCallbackProxy>(callback);
     if (deviceId.size() == 0) {
-        ZLOGE("DeviceId empty, appId: %{public}s, sessionId: %{public}s", appId.c_str(), sessionId.c_str());
+        ZLOGE("DeviceId empty, appId: %{public}s, sessionId: %{public}s", appId.c_str(),
+            Anonymous::Change(sessionId).c_str());
         proxy->Completed(std::map<std::string, int32_t>());
         return INVALID_ARGUMENT;
     }
@@ -159,7 +160,7 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
         return result;
     }
     ZLOGI("Sync data, bundleName: %{public}s, sessionId: %{public}s, deviceId: %{public}s", dstBundleName.c_str(),
-        sessionId.c_str(), Anonymous::Change(deviceId).c_str());
+        Anonymous::Change(sessionId).c_str(), Anonymous::Change(deviceId).c_str());
     SyncCallBack syncCallback =
         [proxy, dstBundleName, sessionId, deviceId, this](const std::map<std::string, int32_t> &results) {
             ProcessSyncCallback(results, dstBundleName, sessionId, deviceId);
@@ -984,11 +985,13 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
     auto status = delegate_->PutBatch(entries);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("PutBatch failed, bundleName: %{public}s, sessionId: %{public}s, dstNetworkId: %{public}s, "
-            "status: %{public}d", appId.c_str(), sessionId.c_str(), Anonymous::Change(toDeviceId).c_str(), status);
+              "status: %{public}d",
+            appId.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(toDeviceId).c_str(), status);
         return status;
     }
     ZLOGI("PutBatch success, bundleName: %{public}s, sessionId: %{public}s, dstNetworkId: %{public}s, "
-        "count: %{public}zu", appId.c_str(), sessionId.c_str(), Anonymous::Change(toDeviceId).c_str(), entries.size());
+          "count: %{public}zu",
+        appId.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(toDeviceId).c_str(), entries.size());
     return OBJECT_SUCCESS;
 }
 
@@ -998,7 +1001,7 @@ int32_t ObjectStoreManager::SyncOnStore(
     std::vector<std::string> syncDevices;
     for (auto const &device : deviceList) {
         if (device == LOCAL_DEVICE) {
-            ZLOGI("Save to local, do not need sync, prefix: %{public}s", prefix.c_str());
+            ZLOGI("Save to local, do not need sync, prefix: %{public}s", Anonymous::Change(prefix).c_str());
             callback({{LOCAL_DEVICE, OBJECT_SUCCESS}});
             return OBJECT_SUCCESS;
         }
@@ -1077,14 +1080,14 @@ int32_t ObjectStoreManager::RetrieveFromStore(const std::string &appId, const st
     std::string prefix = GetPrefixWithoutDeviceId(appId, sessionId);
     auto status = delegate_->GetEntries(std::vector<uint8_t>(prefix.begin(), prefix.end()), entries);
     if (status == DistributedDB::DBStatus::NOT_FOUND) {
-        ZLOGI("Get entries empty, prefix: %{public}s, status: %{public}d", prefix.c_str(), status);
+        ZLOGI("Get entries empty, prefix: %{public}s, status: %{public}d", Anonymous::Change(prefix).c_str(), status);
         return KEY_NOT_FOUND;
     }
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("Get entries failed, prefix: %{public}s, status: %{public}d", prefix.c_str(), status);
+        ZLOGE("Get entries failed, prefix: %{public}s, status: %{public}d", Anonymous::Change(prefix).c_str(), status);
         return DB_ERROR;
     }
-    ZLOGI("Get entries success, prefix: %{public}s, count: %{public}zu", prefix.c_str(), entries.size());
+    ZLOGI("GetEntries success,prefix:%{public}s,count:%{public}zu", Anonymous::Change(prefix).c_str(), entries.size());
     for (const auto &entry : entries) {
         std::string key(entry.key.begin(), entry.key.end());
         if (key.find(SAVE_INFO) != std::string::npos) {
