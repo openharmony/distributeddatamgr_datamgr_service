@@ -24,7 +24,8 @@ group("unittest") {
     "../dfx/test:unittest",
   ]
 
-  if (defined(global_parts_info) && defined(global_parts_info.theme_screenlock_mgr)) {
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.theme_screenlock_mgr)) {
     deps += [ "${data_service_path}/adapter/screenlock/test:unittest" ]
   }
 
@@ -36,5 +37,9 @@ group("unittest") {
 group("fuzztest") {
   testonly = true
 
-  deps = [ "../communicator/test/fuzztest:fuzztest" ]
+  deps = [
+    "../communicator/test/fuzztest:fuzztest",
+    "../network/test/fuzztest/networkdelegatenormalimpl_fuzzer:fuzztest",
+    "../screenlock/test/fuzztest/screenlock_fuzzer:fuzztest",
+  ]
 }
