@@ -24,6 +24,7 @@
 #include "distributed_file_daemon_manager.h"
 namespace OHOS::DistributedObject {
 using namespace OHOS::FileManagement::CloudSync;
+using namespace OHOS::DistributedData;
 ObjectAssetLoader *ObjectAssetLoader::GetInstance()
 {
     static ObjectAssetLoader *loader = new ObjectAssetLoader();
@@ -42,7 +43,7 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
     assetInfo.uri = asset.uri;
     assetInfo.assetName = asset.name;
     ZLOGI("Start transfer, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
-        DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
+        Anonymous::Change(deviceId).c_str(), Anonymous::Change(assetInfo.assetName).c_str());
     auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, OBJECT_SUCCESS });
     auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
         [block](const std::string& uri, int32_t status) {
@@ -50,17 +51,17 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
         });
     if (res != OBJECT_SUCCESS) {
         ZLOGE("fail, res: %{public}d, name: %{public}s, deviceId: %{public}s, bundleName: %{public}s", res,
-            asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), bundleName.c_str());
+            Anonymous::Change(asset.name).c_str(), Anonymous::Change(deviceId).c_str(), bundleName.c_str());
         return false;
     }
     auto [timeout, status] = block->GetValue();
     if (timeout || status != OBJECT_SUCCESS) {
         ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
-            status, asset.name.c_str(), DistributedData::Anonymous::Change(deviceId).c_str());
+            status, Anonymous::Change(asset.name).c_str(), Anonymous::Change(deviceId).c_str());
         return false;
     }
     ZLOGD("Transfer end, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
-        DistributedData::Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
+        Anonymous::Change(deviceId).c_str(), Anonymous::Change(assetInfo.assetName).c_str());
     return true;
 }
 
@@ -69,7 +70,7 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
 {
     if (executors_ == nullptr) {
         ZLOGE("executors is null, bundleName: %{public}s, deviceId: %{public}s, userId: %{public}d",
-            bundleName.c_str(), DistributedData::Anonymous::Change(deviceId).c_str(), userId);
+            bundleName.c_str(), Anonymous::Change(deviceId).c_str(), userId);
         callback(false);
         return;
     }
@@ -148,7 +149,7 @@ bool ObjectAssetLoader::IsDownloading(const DistributedData::Asset& asset)
 {
     auto [success, hash] = downloading_.Find(asset.uri);
     if (success && hash == asset.hash) {
-        ZLOGD("asset is downloading. assetName:%{public}s", asset.name.c_str());
+        ZLOGD("asset is downloading. assetName:%{public}s", Anonymous::Change(asset.name).c_str());
         return true;
     }
     return false;
@@ -158,7 +159,7 @@ bool ObjectAssetLoader::IsDownloaded(const DistributedData::Asset& asset)
 {
     auto [success, hash] = downloaded_.Find(asset.uri);
     if (success && hash == asset.hash) {
-        ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
+        ZLOGD("asset is downloaded. assetName:%{public}s", Anonymous::Change(asset.name).c_str());
         return true;
     }
     return false;
@@ -170,12 +171,13 @@ int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &asset
     ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
         ObjectStore::PUSH_ASSETS, ObjectStore::IDLE);
     ZLOGI("PushAsset start, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
-        assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), assetObj->sessionId_.c_str());
+        assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), Anonymous::Change(assetObj->sessionId_).c_str());
     auto status = Storage::DistributedFile::DistributedFileDaemonManager::GetInstance().PushAsset(userId, assetObj,
         sendCallback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("PushAsset err status: %{public}d, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
-            status, assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), assetObj->sessionId_.c_str());
+            status, assetObj->uris_.size(), assetObj->dstBundleName_.c_str(),
+            Anonymous::Change(assetObj->sessionId_).c_str());
         ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE,
             ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED, status, ObjectStore::FINISHED);
     }

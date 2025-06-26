@@ -52,7 +52,7 @@ int32_t ObjectAssetsRecvListener::OnStart(const std::string &srcNetworkId, const
     const std::string &sessionId, const std::string &dstBundleName)
 {
     auto objectKey = dstBundleName + sessionId;
-    ZLOGI("OnStart, objectKey:%{public}s", objectKey.c_str());
+    ZLOGI("OnStart, objectKey:%{public}s", DistributedData::Anonymous::Change(objectKey).c_str());
     ObjectStoreManager::GetInstance()->NotifyAssetsStart(objectKey, srcNetworkId);
     ObjectStoreManager::GetInstance()->NotifyAssetsRecvProgress(objectKey, 0);
     return OBJECT_SUCCESS;
@@ -69,8 +69,8 @@ int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, co
         return result;
     }
     auto objectKey = assetObj->dstBundleName_+assetObj->sessionId_;
-    ZLOGI("OnFinished, status:%{public}d objectKey:%{public}s, asset size:%{public}zu", result, objectKey.c_str(),
-        assetObj->uris_.size());
+    ZLOGI("OnFinished, status:%{public}d objectKey:%{public}s, asset size:%{public}zu", result,
+        DistributedData::Anonymous::Change(objectKey).c_str(), assetObj->uris_.size());
     ObjectStoreManager::GetInstance()->NotifyAssetsReady(objectKey, assetObj->dstBundleName_, srcNetworkId);
     if (result != OBJECT_SUCCESS) {
         ObjectStoreManager::GetInstance()->NotifyAssetsRecvProgress(objectKey, PROGRESS_INVALID);
