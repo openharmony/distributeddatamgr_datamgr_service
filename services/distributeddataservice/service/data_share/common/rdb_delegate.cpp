@@ -15,7 +15,7 @@
 #define LOG_TAG "RdbAdaptor"
 #include "rdb_delegate.h"
 
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"

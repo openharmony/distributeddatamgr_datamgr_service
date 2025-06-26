@@ -21,7 +21,7 @@
 #include <iostream>
 
 #include "backuprule/backup_rule_manager.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "log_print.h"

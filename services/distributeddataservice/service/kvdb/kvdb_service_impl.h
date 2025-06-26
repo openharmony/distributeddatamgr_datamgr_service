@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "concurrent_map.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_matrix.h"
 #include "kv_store_delegate_manager.h"
 #include "kv_store_nb_delegate.h"

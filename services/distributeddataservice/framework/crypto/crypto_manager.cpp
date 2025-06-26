@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 #define LOG_TAG "CryptoManager"
-
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 
 #include <cstring>
 #include <string>

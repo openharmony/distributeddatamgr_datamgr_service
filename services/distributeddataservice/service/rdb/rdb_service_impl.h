@@ -24,7 +24,7 @@
 #include "commonevent/data_change_event.h"
 #include "commonevent/set_searchable_event.h"
 #include "concurrent_map.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"

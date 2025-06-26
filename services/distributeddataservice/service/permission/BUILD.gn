@@ -55,7 +55,6 @@ ohos_source_set("distributeddata_permit") {
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/crypto:distributeddata_crypto",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",

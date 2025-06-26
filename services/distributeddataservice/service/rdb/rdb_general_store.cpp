@@ -29,7 +29,7 @@
 #include "device_sync_app/device_sync_app_manager.h"
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "dfx/dfx_types.h"
 #include "dfx/reporter.h"

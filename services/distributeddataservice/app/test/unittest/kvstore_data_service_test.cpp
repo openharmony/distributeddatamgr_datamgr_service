@@ -15,7 +15,7 @@
 
 #include "auth_delegate.h"
 #include "bootstrap.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
 #include <memory>

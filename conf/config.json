@@ -75,6 +75,20 @@
         "metaPath": "/data/service/el1/public/database/distributeddata/meta",
         "clonePath": "/data/service/el2/{userId}/database/distributeddata/secret_key_backup.conf"
       }
+    ],
+    "storeTypes": [
+      {
+        "range": [0, 9],
+        "type": "kvdb"
+      },
+      {
+        "range": [10, 19],
+        "type": "rdb"
+      },
+      {
+        "range": [20, 29],
+        "type": "kvdb"
+      }
     ]
   },
   "backup": {

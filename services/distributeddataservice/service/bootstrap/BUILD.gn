@@ -49,7 +49,6 @@ ohos_source_set("distributeddata_bootstrap") {
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/service/config:distributeddata_config",
-    "${data_service_path}/service/crypto:distributeddata_crypto",
   ]
 
   external_deps = [

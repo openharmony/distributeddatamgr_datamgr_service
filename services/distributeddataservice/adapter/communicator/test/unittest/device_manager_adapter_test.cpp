@@ -14,6 +14,7 @@
  */
 
 #include "device_manager_adapter.h"
+#include "device_manager/device_manager_delegate.h"
 #include "gtest/gtest.h"
 #include "accesstoken_kit.h"
 #include "executor_pool.h"
@@ -621,5 +622,18 @@ HWTEST_F(DeviceManagerAdapterTest, IsSameAccount01, TestSize.Level0)
     std::string networkId = "test_network_id";
     auto status = DeviceManagerAdapter::GetInstance().IsSameAccount(networkId);
     EXPECT_EQ(status, false);
+}
+
+/**
+* @tc.name: RegisterDelegateInstance
+* @tc.desc: test DeviceManagerDelegate::RegisterInstance function
+* @tc.type: FUNC
+*/
+HWTEST_F(DeviceManagerAdapterTest, RegisterDelegateInstance, TestSize.Level0)
+{
+    DeviceManagerDelegate::RegisterInstance(&DeviceManagerAdapter::GetInstance());
+    // Repeated registration
+    DeviceManagerDelegate::RegisterInstance(&DeviceManagerAdapter::GetInstance());
+    EXPECT_NE(nullptr, DeviceManagerDelegate::GetInstance());
 }
 } // namespace

@@ -19,7 +19,7 @@
 #include "mock/access_token_mock.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "metadata/meta_data_manager.h"

@@ -16,19 +16,12 @@
 #ifndef OHOS_DISTRIBUTED_DATA_ADAPTER_COMMUNICATOR_COMMU_TYPES_H
 #define OHOS_DISTRIBUTED_DATA_ADAPTER_COMMUNICATOR_COMMU_TYPES_H
 #include <string>
+#include "device_manager/device_manager_types.h"
 #include "store_errno.h"
 #include "visibility.h"
 namespace OHOS::AppDistributedKv {
 using Status = DistributedKv::Status;
-struct API_EXPORT DeviceInfo {
-    std::string uuid;
-    std::string udid;
-    std::string networkId;
-    std::string deviceName;
-    uint32_t deviceType;
-    int32_t osType;
-    int32_t authForm;
-};
+using DeviceInfo = DistributedData::DeviceInfo;
 
 struct API_EXPORT AccessCaller {
     std::string accountId;
