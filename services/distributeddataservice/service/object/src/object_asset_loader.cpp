@@ -43,7 +43,7 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
     assetInfo.uri = asset.uri;
     assetInfo.assetName = asset.name;
     ZLOGI("Start transfer, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
-        Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
+        Anonymous::Change(deviceId).c_str(), Anonymous::Change(assetInfo.assetName).c_str());
     auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, OBJECT_SUCCESS });
     auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
         [block](const std::string& uri, int32_t status) {
@@ -51,17 +51,17 @@ bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundle
         });
     if (res != OBJECT_SUCCESS) {
         ZLOGE("fail, res: %{public}d, name: %{public}s, deviceId: %{public}s, bundleName: %{public}s", res,
-            asset.name.c_str(), Anonymous::Change(deviceId).c_str(), bundleName.c_str());
+            Anonymous::Change(asset.name).c_str(), Anonymous::Change(deviceId).c_str(), bundleName.c_str());
         return false;
     }
     auto [timeout, status] = block->GetValue();
     if (timeout || status != OBJECT_SUCCESS) {
         ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
-            status, asset.name.c_str(), Anonymous::Change(deviceId).c_str());
+            status, Anonymous::Change(asset.name).c_str(), Anonymous::Change(deviceId).c_str());
         return false;
     }
     ZLOGD("Transfer end, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
-        Anonymous::Change(deviceId).c_str(), assetInfo.assetName.c_str());
+        Anonymous::Change(deviceId).c_str(), Anonymous::Change(assetInfo.assetName).c_str());
     return true;
 }
 
@@ -149,7 +149,7 @@ bool ObjectAssetLoader::IsDownloading(const DistributedData::Asset& asset)
 {
     auto [success, hash] = downloading_.Find(asset.uri);
     if (success && hash == asset.hash) {
-        ZLOGD("asset is downloading. assetName:%{public}s", asset.name.c_str());
+        ZLOGD("asset is downloading. assetName:%{public}s", Anonymous::Change(asset.name).c_str());
         return true;
     }
     return false;
@@ -159,7 +159,7 @@ bool ObjectAssetLoader::IsDownloaded(const DistributedData::Asset& asset)
 {
     auto [success, hash] = downloaded_.Find(asset.uri);
     if (success && hash == asset.hash) {
-        ZLOGD("asset is downloaded. assetName:%{public}s", asset.name.c_str());
+        ZLOGD("asset is downloaded. assetName:%{public}s", Anonymous::Change(asset.name).c_str());
         return true;
     }
     return false;
