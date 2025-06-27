@@ -47,11 +47,10 @@ QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
     }
     std::string groupIdStr(groupId.begin(), groupId.end());
     UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
-    QueryOption query = {
-        .key = udKey.GetUnifiedKey(),
-        .intention = Intention::UD_INTENTION_DRAG,
-        .tokenId = provider.ConsumeIntegral<uint32_t>()
-    };
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey(),
+    query.intention = Intention::UD_INTENTION_DRAG,
+    query.tokenId = provider.ConsumeIntegral<uint32_t>()
     return query;
 }
 
@@ -86,7 +85,7 @@ void SetDataFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = svalue;
-    obj->value_[FILE_TYPE] = "abcdefg";
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data1.AddRecord(record);
     MessageParcel request;
@@ -136,7 +135,7 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = svalue;
-    obj->value_[FILE_TYPE] = "abcdefg";
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data1.AddRecord(record);
     MessageParcel request;
@@ -303,7 +302,7 @@ void PushDelayDataFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
-    obj->value_[FILE_TYPE] = "abcdefg";
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data.AddRecord(record);
     ITypesUtil::Marshal(requestUpdate, data);
@@ -403,7 +402,7 @@ void ProcessUriFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
-    obj->value_[FILE_TYPE] = "abcdefg";
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data.AddRecord(record);
     udmfServiceImpl->ProcessUri(query, data);
@@ -417,7 +416,7 @@ void ProcessCrossDeviceDataFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
-    obj->value_[FILE_TYPE] = "abcdefg";
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data.AddRecord(record);
     std::vector<Uri> uris;
@@ -486,7 +485,7 @@ void ProcessDataFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
-    obj->value_[FILE_TYPE] = "abcdefg";
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data.AddRecord(record);
     std::vector<UnifiedData> dataSet = { data };
