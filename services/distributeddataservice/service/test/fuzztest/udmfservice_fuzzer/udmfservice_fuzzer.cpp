@@ -48,9 +48,9 @@ QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
     std::string groupIdStr(groupId.begin(), groupId.end());
     UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
     QueryOption query;
-    query.key = udKey.GetUnifiedKey(),
-    query.intention = Intention::UD_INTENTION_DRAG,
-    query.tokenId = provider.ConsumeIntegral<uint32_t>()
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
     return query;
 }
 
