@@ -44,6 +44,7 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
+constexpr const char *METADATA_STORE_PATH = "/data/service/el1/public/database/distributeddata/kvdb";
 ObjectServiceImpl::Factory::Factory()
 {
     FeatureSystem::GetInstance().RegisterCreator(
@@ -133,20 +134,25 @@ int32_t ObjectServiceImpl::OnInitialize()
         ZLOGE("failed to get local device id");
         return OBJECT_INNER_ERROR;
     }
-    auto token = IPCSkeleton::GetCallingTokenID();
-    const std::string accountId = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    const auto userId = DistributedData::AccountDelegate::GetInstance()->GetUserByToken(token);
-    StoreMetaData saveMeta;
-    SaveMetaData(saveMeta, std::to_string(userId), accountId);
-    ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, std::to_string(userId));
-    ObjectStoreManager::GetInstance()->InitUserMeta();
-    RegisterObjectServiceInfo();
-    RegisterHandler();
-    ObjectDmsHandler::GetInstance().RegisterDmsEvent();
+
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return OBJECT_INNER_ERROR;
+    }
+    executors_->Schedule(std::chrono::seconds(WAIT_ACCOUNT_SERVICE), [this]() {
+        StoreMetaData saveMeta;
+        SaveMetaData(saveMeta);
+        ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, saveMeta.user);
+        ObjectStoreManager::GetInstance()->InitUserMeta();
+        RegisterObjectServiceInfo();
+        RegisterHandler();
+        ObjectDmsHandler::GetInstance().RegisterDmsEvent();
+    });
+
     return OBJECT_SUCCESS;
 }
 
-int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta, const std::string &user, const std::string &account)
+int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta)
 {
     auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (localDeviceId.empty()) {
@@ -161,16 +167,23 @@ int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta, const std::stri
     saveMeta.isEncrypt = false;
     saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
     saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.user = user;
-    saveMeta.account = account;
+    saveMeta.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
     saveMeta.tokenId = IPCSkeleton::GetCallingTokenID();
     saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
     saveMeta.area = DistributedKv::Area::EL1;
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
     saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
-    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
+    saveMeta.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
+    int foregroundUserId = 0;
+    DistributedData::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    saveMeta.user = std::to_string(foregroundUserId);
+    saveMeta.dataDir = METADATA_STORE_PATH;
+    if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
+        ZLOGE("Create directory error, dataDir: %{public}s.", Anonymous::Change(saveMeta.dataDir).c_str());
+        return OBJECT_INNER_ERROR;
+    }
+    bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta) &&
                    DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!isSaved) {
         ZLOGE("SaveMeta failed");
@@ -195,6 +208,9 @@ int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, 
         if (status != OBJECT_SUCCESS) {
             ZLOGE("Clear fail user:%{public}s, status: %{public}d", user.c_str(), status);
         }
+        StoreMetaData saveMeta;
+        SaveMetaData(saveMeta);
+        ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, saveMeta.user);
     }
     return Feature::OnUserChange(code, user, account);
 }
@@ -257,6 +273,31 @@ int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundl
     }
     auto pid = IPCSkeleton::GetCallingPid();
     ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(bundleName, pid, tokenId, sessionId);
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectServiceImpl::RegisterProgressObserver(
+    const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
+    }
+    auto pid = IPCSkeleton::GetCallingPid();
+    ObjectStoreManager::GetInstance()->RegisterProgressObserverCallback(bundleName, sessionId, pid, tokenId, callback);
+    return OBJECT_SUCCESS;
+}
+
+int32_t ObjectServiceImpl::UnregisterProgressObserver(const std::string &bundleName, const std::string &sessionId)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t status = IsBundleNameEqualTokenId(bundleName, sessionId, tokenId);
+    if (status != OBJECT_SUCCESS) {
+        return status;
+    }
+    auto pid = IPCSkeleton::GetCallingPid();
+    ObjectStoreManager::GetInstance()->UnregisterProgressObserverCallback(bundleName, pid, tokenId, sessionId);
     return OBJECT_SUCCESS;
 }
 
@@ -339,6 +380,7 @@ int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, con
     ZLOGI("ObjectServiceImpl::OnAppExit uid=%{public}d, pid=%{public}d, tokenId=%{public}d, bundleName=%{public}s",
           uid, pid, tokenId, appId.c_str());
     ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(appId, pid, tokenId);
+    ObjectStoreManager::GetInstance()->UnregisterProgressObserverCallback(appId, pid, tokenId);
     return FeatureSystem::STUB_SUCCESS;
 }
 
@@ -352,7 +394,7 @@ ObjectServiceImpl::ObjectServiceImpl()
         meta.bundleName = eventInfo.bundleName;
         meta.user = std::to_string(eventInfo.user);
         meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), meta)) {
             ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
                 meta.GetStoreAlias().c_str());
             return;

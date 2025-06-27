@@ -29,7 +29,7 @@
 #include "device_sync_app/device_sync_app_manager.h"
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "dfx/dfx_types.h"
 #include "dfx/reporter.h"
@@ -142,6 +142,7 @@ void RdbGeneralStore::InitStoreInfo(const StoreMetaData &meta)
     storeInfo_.instanceId = meta.instanceId;
     storeInfo_.user = std::atoi(meta.user.c_str());
     storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    storeInfo_.path = meta.dataDir;
 }
 
 RelationalStoreDelegate::Option GetOption(const StoreMetaData &meta)
@@ -154,6 +155,27 @@ RelationalStoreDelegate::Option GetOption(const StoreMetaData &meta)
     return option;
 }
 
+RdbGeneralStore::DBPassword RdbGeneralStore::GetDBPassword(const StoreMetaData &data)
+{
+    DBPassword dbPassword;
+    SecretKeyMetaData secretKey;
+    auto metaKey = data.GetSecretKey();
+    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) {
+        return dbPassword;
+    }
+    CryptoManager::CryptoParams decryptParams = { .area = secretKey.area, .userId = data.user,
+        .nonce = secretKey.nonce };
+    auto password = CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptParams);
+    if (password.empty()) {
+        return dbPassword;
+    }
+    // update secret key of area or nonce
+    CryptoManager::GetInstance().UpdateSecretMeta(password, data, metaKey, secretKey);
+    dbPassword.SetValue(password.data(), password.size());
+    password.assign(password.size(), 0);
+    return dbPassword;
+}
+
 RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
     : manager_(meta.appId, meta.user, meta.instanceId), tasks_(std::make_shared<ConcurrentMap<SyncId, FinishTask>>())
 {
@@ -162,13 +184,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
     RelationalStoreDelegate::Option option = GetOption(meta);
     option.observer = &observer_;
     if (meta.isEncrypt) {
-        std::string key = meta.GetSecretKey();
-        SecretKeyMetaData secretKeyMeta;
-        MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true);
-        std::vector<uint8_t> decryptKey;
-        CryptoManager::GetInstance().Decrypt(meta, secretKeyMeta, decryptKey);
-        option.passwd.SetValue(decryptKey.data(), decryptKey.size());
-        std::fill(decryptKey.begin(), decryptKey.end(), 0);
+        option.passwd = GetDBPassword(meta);
         option.isEncryptedDb = meta.isEncrypt;
         option.cipher = CipherType::AES_256_GCM;
         for (uint32_t i = 0; i < ITERS_COUNT; ++i) {
@@ -262,6 +278,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     dbConfig.maxUploadCount = config.maxNumber;
     dbConfig.maxUploadSize = config.maxSize;
     dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
+    dbConfig.isSupportEncrypt = config.isSupportEncrypt;
     DBSchema schema = GetDBSchema(database);
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
@@ -965,6 +982,7 @@ void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
      if (delegate_ == nullptr) {
         ZLOGE("database already closed!, tableMode is :%{public}d",
               storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
+        return;
     }
     if (storeConfig.tableMode.has_value()) {
         RelationalStoreDelegate::StoreConfig config;

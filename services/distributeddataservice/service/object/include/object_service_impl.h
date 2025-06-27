@@ -38,6 +38,9 @@ public:
     int32_t RegisterDataObserver(const std::string &bundleName, const std::string &sessionId,
         sptr<IRemoteObject> callback) override;
     int32_t UnregisterDataChangeObserver(const std::string &bundleName, const std::string &sessionId) override;
+    int32_t RegisterProgressObserver(const std::string &bundleName, const std::string &sessionId,
+        sptr<IRemoteObject> callback) override;
+    int32_t UnregisterProgressObserver(const std::string &bundleName, const std::string &sessionId) override;
     int32_t DeleteSnapshot(const std::string &bundleName, const std::string &sessionId) override;
     int32_t IsBundleNameEqualTokenId(
         const std::string &bundleName, const std::string &sessionId, const uint32_t &tokenId);
@@ -68,11 +71,12 @@ private:
     };
     void RegisterObjectServiceInfo();
     void RegisterHandler();
-    int32_t SaveMetaData(StoreMetaData& saveMeta, const std::string &user, const std::string &account);
+    int32_t SaveMetaData(StoreMetaData& saveMeta);
     void UpdateMetaData();
 
     static Factory factory_;
     std::shared_ptr<ExecutorPool> executors_;
+    static constexpr int64_t WAIT_ACCOUNT_SERVICE = 5;
 };
 } // namespace OHOS::DistributedObject
 #endif

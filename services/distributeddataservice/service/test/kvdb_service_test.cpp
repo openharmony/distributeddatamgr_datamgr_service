@@ -18,7 +18,7 @@
 #include "auth_delegate.h"
 #include "bootstrap.h"
 #include "change_notification.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "ikvstore_observer.h"

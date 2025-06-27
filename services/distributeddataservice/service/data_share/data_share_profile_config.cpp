@@ -134,6 +134,34 @@ bool ProfileInfo::Unmarshal(const json &node)
     return true;
 }
 
+bool SerialDataShareProxyData::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(uri)], uri);
+    SetValue(node[GET_NAME(value)], value);
+    SetValue(node[GET_NAME(allowList)], allowList);
+    return true;
+}
+
+bool SerialDataShareProxyData::Unmarshal(const json &node)
+{
+    bool ret = GetValue(node, GET_NAME(uri), uri);
+    GetValue(node, GET_NAME(value), value);
+    GetValue(node, GET_NAME(allowList), allowList);
+    return ret;
+}
+
+bool ProxyDataProfileInfo::Marshal(json &node) const
+{
+    SetValue(node[GET_NAME(crossAppSharedConfig)], dataShareProxyDatas);
+    return true;
+}
+
+bool ProxyDataProfileInfo::Unmarshal(const json &node)
+{
+    bool ret = GetValue(node, GET_NAME(crossAppSharedConfig), dataShareProxyDatas);
+    return ret;
+}
+
 std::pair<int, ProfileInfo> DataShareProfileConfig::GetDataProperties(
     const std::vector<AppExecFwk::Metadata> &metadata, const std::string &resPath,
     const std::string &hapPath, const std::string &name)
@@ -148,6 +176,27 @@ std::pair<int, ProfileInfo> DataShareProfileConfig::GetDataProperties(
         return std::make_pair(ERROR, profileInfo);
     }
     return std::make_pair(SUCCESS, profileInfo);
+}
+
+std::pair<int, std::vector<SerialDataShareProxyData>> DataShareProfileConfig::GetCrossAppSharedConfig(
+    const std::string &resource, const std::string &resPath, const std::string &hapPath)
+{
+    std::vector<SerialDataShareProxyData> serialProxyDatas;
+    ProxyDataProfileInfo profileInfo;
+    std::string resourcePath = !hapPath.empty() ? hapPath : resPath;
+
+    std::shared_ptr<ResourceManager> resMgr = InitResMgr(resourcePath);
+    if (resMgr == nullptr) {
+        return std::make_pair(ERROR, serialProxyDatas);
+    }
+    std::string info = GetResFromResMgr(resource, *resMgr, hapPath);
+    if (info.empty()) {
+        return std::make_pair(NOT_FOUND, serialProxyDatas);
+    }
+    if (!profileInfo.Unmarshall(info)) {
+        return std::make_pair(ERROR, serialProxyDatas);
+    }
+    return std::make_pair(SUCCESS, profileInfo.dataShareProxyDatas);
 }
 
 std::string DataShareProfileConfig::GetProfileInfoByMetadata(const std::vector<AppExecFwk::Metadata> &metadata,
@@ -207,7 +256,7 @@ std::string DataShareProfileConfig::GetResFromResMgr(
         std::unique_ptr<uint8_t[]> fileContent = nullptr;
         size_t len = 0;
         RState ret = resMgr.GetProfileDataByName(profileName.c_str(), len, fileContent);
-        if (ret != SUCCESS || fileContent == nullptr) {
+        if (ret != RState::SUCCESS || fileContent == nullptr) {
             ZLOGE("failed, ret is %{public}d, profileName is %{public}s", ret, profileName.c_str());
             return profileInfo;
         }
@@ -225,7 +274,7 @@ std::string DataShareProfileConfig::GetResFromResMgr(
     // hap is decompressed status, get file path then read file.
     std::string resPath;
     RState ret = resMgr.GetProfileByName(profileName.c_str(), resPath);
-    if (ret != SUCCESS) {
+    if (ret != RState::SUCCESS) {
         ZLOGE("profileName not found, ret is %{public}d, profileName is %{public}s", ret, profileName.c_str());
         return profileInfo;
     }

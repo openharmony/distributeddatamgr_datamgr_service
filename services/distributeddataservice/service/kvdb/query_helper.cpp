@@ -21,6 +21,7 @@
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "types.h"
+#include "utils/anonymous.h"
 namespace OHOS::DistributedKv {
 constexpr int QUERY_SKIP_SIZE = 1;
 constexpr int QUERY_WORD_SIZE = 2;
@@ -559,7 +560,7 @@ bool QueryHelper::HandleInKeys(const std::vector<std::string> &words, int &point
     const std::vector<std::string> inKeys = GetStringList(words, inkeyOffSet, end);
     std::set<std::vector<uint8_t>> inDbKeys;
     for (const std::string &inKey : inKeys) {
-        ZLOGI("inKey=%{public}s", inKey.c_str());
+        ZLOGI("inKey=%{public}s", DistributedData::Anonymous::Change(inKey).c_str());
         std::vector<uint8_t> dbKey;
         dbKey.assign(inKey.begin(), inKey.end());
         inDbKeys.insert(dbKey);

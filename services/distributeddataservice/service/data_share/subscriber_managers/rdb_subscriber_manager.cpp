@@ -350,7 +350,6 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
         return E_TEMPLATE_NOT_EXIST;
     }
     DistributedData::StoreMetaData meta = metaData;
-    meta.bundleName = key.bundleName;
     meta.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(meta, key.uri);
     if (delegate == nullptr) {
@@ -428,6 +427,8 @@ DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(cons
     metaData.dataDir = context->calledSourceDir;
     metaData.storeId = context->calledStoreName;
     metaData.haMode = context->haMode;
+    metaData.isEncrypt = context->isEncryptDb;
+    metaData.bundleName = context->calledBundleName;
     return metaData;
 }
 

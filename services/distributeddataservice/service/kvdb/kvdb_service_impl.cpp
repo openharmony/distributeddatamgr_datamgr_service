@@ -27,7 +27,6 @@
 #include "cloud/cloud_server.h"
 #include "communication_provider.h"
 #include "communicator_context.h"
-#include "crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
@@ -40,6 +39,7 @@
 #include "matrix_event.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/capability_meta_data.h"
+#include "metadata/store_meta_data.h"
 #include "metadata/switches_meta_data.h"
 #include "permit_delegate.h"
 #include "query_helper.h"
@@ -101,7 +101,7 @@ void KVDBServiceImpl::Init()
     auto process = [this](const Event &event) {
         const auto &evt = static_cast<const CloudEvent &>(event);
         const auto &storeInfo = evt.GetStoreInfo();
-        StoreMetaData meta(storeInfo);
+        StoreMetaMapping meta(storeInfo);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
             if (meta.user == "0") {
@@ -180,7 +180,7 @@ Status KVDBServiceImpl::GetStoreIds(const AppId &appId, int32_t subUser, std::ve
 
 Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }
@@ -193,7 +193,9 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32
         syncAgent.delayTimes_.erase(storeId);
         return true;
     });
-    MetaDataManager::GetInstance().DelMeta(metaData.GetKey());
+    StoreMetaMapping storeMetaMapping(metaData);
+    MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetKeyWithoutPath());
     MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
@@ -202,8 +204,8 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32
     MetaDataManager::GetInstance().DelMeta(metaData.GetAutoLaunchKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetDebugInfoKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData.GetCloneSecretKey(), true);
-    PermitDelegate::GetInstance().DelCache(metaData.GetKey());
-    AutoCache::GetInstance().CloseStore(metaData.tokenId, storeId, metaData.user);
+    PermitDelegate::GetInstance().DelCache(metaData.GetKeyWithoutPath());
+    AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
     return SUCCESS;
@@ -211,11 +213,11 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32
 
 Status KVDBServiceImpl::Close(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }
-    AutoCache::GetInstance().CloseStore(metaData.tokenId, storeId, metaData.user);
+    AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
     return SUCCESS;
@@ -223,7 +225,7 @@ Status KVDBServiceImpl::Close(const AppId &appId, const StoreId &storeId, int32_
 
 Status KVDBServiceImpl::CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId);
+    StoreMetaMapping metaData = GetStoreMetaData(appId, storeId);
     if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true)) {
         ZLOGE("invalid, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -244,7 +246,7 @@ void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, Progres
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
         DeviceMatrix::GetInstance().OnChanged(metaData);
@@ -269,7 +271,7 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
 Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &storeId, uint64_t delay)
 {
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), meta)) {
         ZLOGE("invalid, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return Status::INVALID_ARGUMENT;
@@ -527,7 +529,7 @@ Status KVDBServiceImpl::AddSubscribeInfo(const AppId &appId, const StoreId &stor
     const SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(&KVDBServiceImpl::DoSyncInOrder, this, metaData, syncInfo, std::placeholders::_1, ACTION_SUBSCRIBE),
@@ -538,7 +540,7 @@ Status KVDBServiceImpl::RmvSubscribeInfo(const AppId &appId, const StoreId &stor
     const SyncInfo &syncInfo)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     return KvStoreSyncManager::GetInstance()->AddSyncOperation(uintptr_t(metaData.tokenId), delay,
         std::bind(
@@ -552,7 +554,7 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
     if (observer == nullptr) {
         return INVALID_ARGUMENT;
     }
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
     ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), metaData.tokenId);
     bool isCreate = false;
@@ -568,8 +570,8 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
         return true;
     });
     if (isCreate) {
-        AutoCache::GetInstance().SetObserver(metaData.tokenId, storeId,
-            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.user);
+        AutoCache::GetInstance().SetObserver(metaData.tokenId,
+            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir);
     }
     return SUCCESS;
 }
@@ -577,7 +579,7 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
 Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, int32_t subUser,
     sptr<IKvStoreObserver> observer)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
     ZLOGI("appId:%{public}s storeId:%{public}s tokenId:0x%{public}x", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), metaData.tokenId);
     bool destroyed = false;
@@ -600,40 +602,58 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
         return true;
     });
     if (destroyed) {
-        AutoCache::GetInstance().SetObserver(metaData.tokenId, storeId,
-            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.user);
+        AutoCache::GetInstance().SetObserver(metaData.tokenId,
+            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir);
     }
     return SUCCESS;
+}
+
+std::vector<uint8_t> KVDBServiceImpl::LoadSecretKey(const StoreMetaData &metaData,
+    CryptoManager::SecretKeyType secretKeyType)
+{
+    SecretKeyMetaData secretKey;
+    std::string metaKey;
+    if (secretKeyType == CryptoManager::SecretKeyType::LOCAL_SECRET_KEY) {
+        metaKey = metaData.GetSecretKey();
+    } else if (secretKeyType == CryptoManager::SecretKeyType::CLONE_SECRET_KEY) {
+        metaKey = metaData.GetCloneSecretKey();
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) {
+        return {};
+    }
+    CryptoManager::CryptoParams decryptParams = { .area = secretKey.area, .userId = metaData.user,
+        .nonce = secretKey.nonce };
+    auto password = CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptParams);
+    if (password.empty()) {
+        return {};
+    }
+    // update secret key of area or nonce
+    CryptoManager::GetInstance().UpdateSecretMeta(password, metaData, metaKey, secretKey);
+    return password;
 }
 
 Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId, int32_t subUser,
     std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
     if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
-        std::vector<uint8_t> backupPwd;
-        bool res = BackupManager::GetInstance().GetPassWord(metaData, backupPwd);
-        if (res) {
-            passwords.emplace_back(backupPwd);
+        auto backupPwd = BackupManager::GetInstance().GetPassWord(metaData);
+        if (backupPwd.empty()) {
+            return ERROR;
         }
+        passwords.emplace_back(backupPwd);
         backupPwd.assign(backupPwd.size(), 0);
-        return res ? SUCCESS : ERROR;
+        return SUCCESS;
     }
     if (passwordType == KVDBService::PasswordType::SECRET_KEY) {
         passwords.reserve(SECRET_KEY_COUNT);
-        SecretKeyMetaData secretKey;
-        std::vector<uint8_t> password;
-        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), secretKey, true) &&
-            CryptoManager::GetInstance().Decrypt(metaData, secretKey, password)) {
+        auto password = LoadSecretKey(metaData, CryptoManager::SecretKeyType::LOCAL_SECRET_KEY);
+        if (!password.empty()) {
             passwords.emplace_back(password);
-            password.assign(password.size(), 0);
         }
-
-        std::vector<uint8_t> clonePwd;
-        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true) &&
-            CryptoManager::GetInstance().Decrypt(metaData, secretKey, clonePwd, CryptoManager::CLONE_SECRET_KEY)) {
-            passwords.emplace_back(clonePwd);
-            clonePwd.assign(clonePwd.size(), 0);
+        auto clonePassword = LoadSecretKey(metaData, CryptoManager::SecretKeyType::CLONE_SECRET_KEY);
+        if (!clonePassword.empty()) {
+            passwords.emplace_back(clonePassword);
         }
         return passwords.size() > 0 ? SUCCESS : ERROR;
     }
@@ -645,6 +665,9 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
 Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, const StoreConfig &storeConfig)
 {
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
+    StoreMetaMapping storeMetaMapping(meta);
+    MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    meta.dataDir = storeMetaMapping.dataDir;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
     if (!isCreated) {
         return SUCCESS;
@@ -654,15 +677,19 @@ Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, co
     if (!MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true)) {
         return Status::ERROR;
     }
+    storeMetaMapping = meta;
+    if (!MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true)) {
+        return Status::ERROR;
+    }
     StoreMetaData syncMeta;
-    if (MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), syncMeta)) {
+    if (MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), syncMeta)) {
         syncMeta.enableCloud = storeConfig.cloudConfig.enableCloud;
         syncMeta.cloudAutoSync = storeConfig.cloudConfig.autoSync;
-        if (!MetaDataManager::GetInstance().SaveMeta(syncMeta.GetKey(), syncMeta)) {
+        if (!MetaDataManager::GetInstance().SaveMeta(syncMeta.GetKeyWithoutPath(), syncMeta)) {
             return Status::ERROR;
         }
     }
-    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, storeId, meta.user);
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, meta.dataDir);
     for (auto store : stores) {
         store->SetConfig({ storeConfig.cloudConfig.enableCloud });
     }
@@ -678,8 +705,8 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     StoreMetaData meta = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, meta);
 
-    StoreMetaData old;
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
+    StoreMetaMapping old(meta);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(old.GetKey(), old, true);
     if (!isCreated) {
         return SUCCESS;
     }
@@ -717,6 +744,35 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     return dbStatus == DBStatus::OK ? SUCCESS : DB_ERROR;
 }
 
+void KVDBServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password)
+{
+    CryptoManager::CryptoParams encryptParams = { .area = metaData.area, .userId = metaData.user };
+    auto encryptKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
+    if (!encryptKey.empty() && !encryptParams.nonce.empty()) {
+        SecretKeyMetaData secretKey;
+        secretKey.storeType = metaData.storeType;
+        secretKey.area = metaData.area;
+        secretKey.sKey = encryptKey;
+        secretKey.nonce = encryptParams.nonce;
+        auto time = system_clock::to_time_t(system_clock::now());
+        secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetSecretKey(), secretKey, true);
+    }
+    SecretKeyMetaData cloneKey;
+    auto metaKey = metaData.GetCloneSecretKey();
+    // update clone secret key with area
+    if (MetaDataManager::GetInstance().LoadMeta(metaKey, cloneKey, true) && !cloneKey.sKey.empty() &&
+        (cloneKey.nonce.empty() || cloneKey.area < 0)) {
+        CryptoManager::CryptoParams decryptParams = { .area = cloneKey.area, .userId = metaData.user,
+            .nonce = cloneKey.nonce };
+        auto clonePassword = CryptoManager::GetInstance().Decrypt(cloneKey.sKey, decryptParams);
+        if (!clonePassword.empty()) {
+            CryptoManager::GetInstance().UpdateSecretMeta(clonePassword, metaData, metaKey, cloneKey);
+        }
+        clonePassword.assign(clonePassword.size(), 0);
+    }
+}
+
 Status KVDBServiceImpl::AfterCreate(
     const AppId &appId, const StoreId &storeId, const Options &options, const std::vector<uint8_t> &password)
 {
@@ -729,8 +785,8 @@ Status KVDBServiceImpl::AfterCreate(
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, metaData);
 
-    StoreMetaData oldMeta;
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMeta, true);
+    StoreMetaMapping oldMeta(metaData);
+    auto isCreated = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetKey(), oldMeta, true);
     Status status = SUCCESS;
     if (isCreated && oldMeta != metaData) {
         auto dbStatus = Upgrade::GetInstance().UpdateStore(oldMeta, metaData, password);
@@ -746,24 +802,20 @@ Status KVDBServiceImpl::AfterCreate(
 
     if (!isCreated || oldMeta != metaData) {
         if (!CheckerManager::GetInstance().IsDistrust(Converter::ConvertToStoreInfo(metaData))) {
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData);
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
         }
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+        oldMeta = metaData;
+        MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
     }
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = metaData.bundleName;
     appIdMeta.appId = metaData.appId;
     MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
     SaveLocalMetaData(options, metaData);
-    if (metaData.isEncrypt && CryptoManager::GetInstance().UpdateSecretKey(metaData, password)) {
-        SecretKeyMetaData secretKey;
-        if (MetaDataManager::GetInstance().LoadMeta(metaData.GetCloneSecretKey(), secretKey, true) &&
-            secretKey.area < 0) {
-            std::vector<uint8_t> clonePwd;
-            // Update the encryption method for the key
-            CryptoManager::GetInstance().Decrypt(metaData, secretKey, clonePwd, CryptoManager::CLONE_SECRET_KEY);
-            clonePwd.assign(clonePwd.size(), 0);
-        }
+
+    if (metaData.isEncrypt && !password.empty()) {
+        SaveSecretKeyMeta(metaData, password);
     }
     ZLOGI("appId:%{public}s storeId:%{public}s instanceId:%{public}d type:%{public}d dir:%{public}s "
         "isCreated:%{public}d dataType:%{public}d", appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
@@ -918,6 +970,14 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMetaData, true);
 }
 
+StoreMetaData KVDBServiceImpl::LoadStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser)
+{
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaMapping storeMetaMapping(metaData);
+    MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    return storeMetaMapping;
+}
+
 StoreMetaData KVDBServiceImpl::GetStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
     StoreMetaData metaData;
@@ -1004,6 +1064,7 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     storeInfo.user = atoi(meta.user.c_str());
     storeInfo.tokenId = meta.tokenId;
     storeInfo.storeName = meta.storeId;
+    storeInfo.path = meta.dataDir;
     GenAsync syncCallback = [tokenId = storeInfo.tokenId, seqId = syncInfo.seqId, this](const GenDetails &details) {
         OnAsyncComplete(tokenId, seqId, HandleGenDetails(details));
     };
@@ -1082,7 +1143,7 @@ bool KVDBServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
         if ((!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) &&
             !(devInfo.osType != OH_OS_TYPE &&
             devInfo.deviceType == static_cast<uint32_t>(DistributedHardware::DmDeviceType::DEVICE_TYPE_CAR))) ||
-            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData)) {
             isAfterMeta = true;
             break;
         }
@@ -1107,7 +1168,7 @@ StoreMetaData KVDBServiceImpl::GetDistributedDataMeta(const std::string &deviceI
     meta.bundleName = Bootstrap::GetInstance().GetProcessLabel();
     meta.storeId = Bootstrap::GetInstance().GetMetaDBName();
     meta.user = DEFAULT_USER_ID;
-    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta)) {
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), meta)) {
         ZLOGE("Load meta fail, device: %{public}s", Anonymous::Change(deviceId).c_str());
     }
     return meta;
@@ -1489,7 +1550,7 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     const std::string &device)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
-    MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData);
+    MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
     auto watcher = GetWatchers(metaData.tokenId, metaData.storeId, metaData.user);
     auto store = AutoCache::GetInstance().GetStore(metaData, watcher);
     if (store == nullptr) {

@@ -127,6 +127,7 @@ class KvDBDelegate {
 public:
     static constexpr const char *TEMPLATE_TABLE = "template_";
     static constexpr const char *DATA_TABLE = "data_";
+    static constexpr const char *PROXYDATA_TABLE = "proxydata_";
     static std::shared_ptr<KvDBDelegate> GetInstance(
         bool reInit = false, const std::string &dir = "", const std::shared_ptr<ExecutorPool> &executors = nullptr);
     virtual ~KvDBDelegate() = default;

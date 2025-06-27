@@ -130,6 +130,8 @@
                             "cloud/schema_meta.h",
                             "cloud/subscription.h",
                             "cloud/sync_event.h",
+                            "crypto/crypto_manager.h",
+                            "device_manager/device_manager_delegate.h",
                             "dfx/dfx_types.h",
                             "dfx/reporter.h",
                             "directory/directory_manager.h",

@@ -82,6 +82,8 @@ ohos_unittest("CloudDataTest") {
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
+    "googletest:gmock",
+    "googletest:gtest",
     "ipc:ipc_single",
     "cJSON:cjson",
     "kv_store:distributeddata_inner",
@@ -113,6 +115,7 @@ ohos_unittest("CloudServiceImplTest") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   module_out_path = module_output_path
   sources = [
@@ -133,12 +136,14 @@ ohos_unittest("CloudServiceImplTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
+    "cJSON:cjson",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
+    "googletest:gmock",
+    "googletest:gtest",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
-    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
@@ -278,10 +283,12 @@ ohos_unittest("CryptoManagerTest") {
     "ability_base:base",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
     "access_token:libnativetoken",
     "c_utils:utils",
     "googletest:gtest_main",
     "hilog:libhilog",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
@@ -611,6 +618,74 @@ ohos_unittest("RdbServiceImplTest") {
   ]
 }
 
+ohos_unittest("RdbServiceImplTokenTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  module_out_path = module_output_path
+  sources = [
+    "mock/access_token_mock.cpp",
+    "mock/checker_mock.cpp",
+    "mock/db_change_data_mock.cpp",
+    "mock/db_store_mock.cpp",
+    "rdb_service_impl_token_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include/eventcenter",
+    "${data_service_path}/service/test/mock",
+  ]
+
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
+  cflags = [
+    "-Werror",
+    "-Dprotected=public",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-fno-access-control",  # Ignore Private Member Access Control
+  ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "device_manager:devicemanagersdk",
+    "dsoftbus:softbus_client",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "huks:libhukssdk",
+    "ipc:ipc_core",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+    "resource_management:global_resmgr",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/rdb:distributeddata_rdb",
+  ]
+}
+
 ohos_unittest("ObjectAssetLoaderTest") {
   module_out_path = module_output_path
   sources = [
@@ -862,6 +937,13 @@ ohos_unittest("MetaDataTest") {
 }
 
 ohos_unittest("UdmfRunTimeStoreTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
@@ -932,7 +1014,6 @@ ohos_unittest("DataShareServiceImplTest") {
 
   sources = [
     "${data_service_path}/service/common/xcollie.cpp",
-    "${data_service_path}/service/crypto/src/crypto_manager.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/common_utils.cpp",
@@ -941,6 +1022,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/common/extension_ability_manager.cpp",
     "${data_service_path}/service/data_share/common/extension_connect_adaptor.cpp",
     "${data_service_path}/service/data_share/common/extension_mgr_proxy.cpp",
+    "${data_service_path}/service/data_share/common/proxy_data_manager.cpp",
     "${data_service_path}/service/data_share/common/kv_delegate.cpp",
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
@@ -973,6 +1055,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/strategies/rdb_notify_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/subscribe_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/template_strategy.cpp",
+    "${data_service_path}/service/data_share/subscriber_managers/proxy_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
@@ -987,6 +1070,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_subscriber_managers_test.cpp",
     "data_share_types_util_test.cpp",
     "kv_dalegate_test.cpp",
+    "mock/account_delegate_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1020,6 +1104,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share:datashare_common_lite",
     "data_share:datashare_consumer",
     "device_manager:devicemanagersdk",
+    "googletest:gmock_main",
     "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -1044,6 +1129,66 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+  ]
+}
+
+ohos_unittest("KvdbServicePasswordTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "kvdb_service_password_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/framework/include/cloud",
+    "${data_service_path}/framework/include/eventcenter",
+    "${data_service_path}/service/test/mock",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
+    "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb",
+    "mock:distributeddata_mock_static",
   ]
 }
 
@@ -1243,7 +1388,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
   external_deps = [
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
+    "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_base",
@@ -1264,6 +1409,12 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "safwk:system_ability_fwk",
     "udmf:udmf_client",
   ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
 }
 
 ohos_unittest("UdmfServiceStubTest") {
@@ -1836,7 +1987,6 @@ ohos_unittest("UpgradeMockTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
-    "${data_service_path}/service/crypto:distributeddata_crypto",
     "${data_service_path}/service/matrix:distributeddata_matrix",
     "${data_service_path}/service/rdb:distributeddata_rdb",
     "${data_service_path}/service/test/mock:distributeddata_mock_static",
@@ -1992,6 +2142,7 @@ group("unittest") {
     deps += [
       ":RdbResultSetImplTest",
       ":RdbServiceImplTest",
+      ":RdbServiceImplTokenTest",
       ":RdbServiceTest",
     ]
   }
@@ -2003,6 +2154,7 @@ group("unittest") {
       ":KVDBGeneralStoreAbnormalTest",
       ":KVDBGeneralStoreTest",
       ":KvdbServiceImplTest",
+      ":KvdbServicePasswordTest",
       ":QueryHelperUnitTest",
       ":UpgradeMockTest",
       ":UserDelegateMockTest",

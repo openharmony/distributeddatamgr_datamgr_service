@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2024 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 #include "text.h"
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
-#include "device_manager_adapter.h"
 #include "executor_pool.h"
 #include "ipc_skeleton.h"
 #include "mock/access_token_mock.h"
@@ -31,7 +30,6 @@
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using namespace OHOS::UDMF;
-using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using namespace testing::ext;
 using namespace testing;
 
@@ -75,33 +73,31 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest001, TestSize.Level0)
     StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
     std::vector<std::string> devices = {"remote_device"};
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false))
-        .WillOnce(testing::Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillOnce(Return(false));
     auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false))
-        .WillOnce(testing::Return(true));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillOnce(Return(false));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(true))
-        .WillOnce(testing::Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillOnce(Return(true))
+        .WillOnce(Return(false));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(true))
-        .WillOnce(testing::Return(true));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillOnce(Return(true))
+        .WillOnce(Return(true));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, false);
 }
 
 /**
-* @tc.name: SyncTest001
+* @tc.name: IsNeedMetaSyncTest002
 * @tc.desc: IsNeedMetaSync test matrix mask
 * @tc.type: FUNC
 */
@@ -115,9 +111,9 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest002, TestSize.Level0)
     StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
     std::vector<std::string> devices = {"remote_device"};
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false))
-        .WillOnce(testing::Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillOnce(Return(false))
+        .WillOnce(Return(false));
     auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
     // mock mask
@@ -130,10 +126,6 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest002, TestSize.Level0)
  */
 HWTEST_F(UdmfServiceImplMockTest, ResolveAutoLaunchTest001, TestSize.Level0)
 {
-    auto store = StoreCache::GetInstance().GetStore("drag");
-    auto ret = store->Init();
-    EXPECT_EQ(ret, UDMF::E_OK);
-
     DistributedDB::AutoLaunchParam param {
         .userId = "100",
         .appId = "distributeddata",
@@ -141,7 +133,7 @@ HWTEST_F(UdmfServiceImplMockTest, ResolveAutoLaunchTest001, TestSize.Level0)
     };
     std::string identifier = "identifier";
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    ret = udmfServiceImpl->ResolveAutoLaunch(identifier, param);
+    auto ret = udmfServiceImpl->ResolveAutoLaunch(identifier, param);
     EXPECT_EQ(ret, UDMF::E_NOT_FOUND);
 }
 }; // DistributedDataTest

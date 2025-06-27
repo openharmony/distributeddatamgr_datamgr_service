@@ -15,6 +15,7 @@
 #define LOG_TAG "CloudServiceImplTest"
 #include "cloud_service_impl.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
 
@@ -41,6 +42,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
+#include "mock/meta_data_manager_mock.h"
 #include "model/component_config.h"
 #include "network/network_delegate.h"
 #include "network_delegate_mock.h"
@@ -53,6 +55,7 @@
 #include "token_setproc.h"
 
 using namespace testing::ext;
+using namespace testing;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using Confirmation = OHOS::CloudData::Confirmation;
@@ -73,6 +76,7 @@ public:
     void TearDown();
 
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
+    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static NetworkDelegateMock delegate_;
 };
 std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceImpl_ =
@@ -81,6 +85,8 @@ NetworkDelegateMock CloudServiceImplTest::delegate_;
 
 void CloudServiceImplTest::SetUpTestCase(void)
 {
+    metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+    BMetaDataManager::metaDataManager = metaDataManagerMock;
     size_t max = 12;
     size_t min = 5;
     auto executor = std::make_shared<ExecutorPool>(max, min);
@@ -88,7 +94,11 @@ void CloudServiceImplTest::SetUpTestCase(void)
     NetworkDelegate::RegisterNetworkInstance(&delegate_);
 }
 
-void CloudServiceImplTest::TearDownTestCase() { }
+void CloudServiceImplTest::TearDownTestCase()
+{
+    metaDataManagerMock = nullptr;
+    BMetaDataManager::metaDataManager = nullptr;
+}
 
 void CloudServiceImplTest::SetUp() { }
 
@@ -317,6 +327,120 @@ HWTEST_F(CloudServiceImplTest, DoSubscribe, TestSize.Level0)
 }
 
 /**
+ * @tc.name: OnAppInstallTest
+ * @tc.desc: Test the OnAppInstallTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppInstallTest, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest OnAppInstallTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t user = 0;
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, user, index);
+    EXPECT_EQ(status, GeneralError::E_ERROR);
+}
+
+/**
+ * @tc.name: OnAppUpdateTest
+ * @tc.desc: Test the OnAppUpdateTest
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppUpdateTest, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest OnAppUpdateTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t user = 0;
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, user, index);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: CloudDriverCheckTest
+ * @tc.desc: Test the CloudDriverCheck
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, CloudDriverCheckTest, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest CloudDriverCheckTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    CloudServer cloudServer;
+    CloudServer::RegisterCloudInstance(&cloudServer);
+    int32_t user = 0;
+    auto result = cloudServiceImpl_->factory_.staticActs_->CloudDriverCheck(TEST_CLOUD_BUNDLE, user);
+    EXPECT_EQ(result, false);
+    CloudServer::instance_ = nullptr;
+}
+
+/**
+ * @tc.name: UpdateSchemaFromServerTest_001
+ * @tc.desc: Test UpdateSchemaFromServer functions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_001, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest UpdateSchemaFromServerTest_001 start");
+    CloudServer cloudServer;
+    CloudServer::RegisterCloudInstance(&cloudServer);
+    int user = 100;
+    auto status = cloudServiceImpl_->UpdateSchemaFromServer(user);
+    EXPECT_EQ(status, E_ERROR);
+    CloudServer::instance_ = nullptr;
+}
+
+/**
+ * @tc.name: UpdateSchemaFromServerTest_002
+ * @tc.desc: Test UpdateSchemaFromServer functions.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_002, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest UpdateSchemaFromServerTest_002 start");
+    CloudServer cloudServer;
+    CloudServer::RegisterCloudInstance(&cloudServer);
+    int user = 0;
+    CloudInfo cloudInfo;
+    cloudInfo.user = user;
+    DistributedData::CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.appId = TEST_CLOUD_APPID;
+    appInfo.cloudSwitch = true;
+    cloudInfo.apps = {{ TEST_CLOUD_BUNDLE, appInfo }};
+    auto status = cloudServiceImpl_->UpdateSchemaFromServer(cloudInfo, user);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    CloudServer::instance_ = nullptr;
+}
+
+/**
+ * @tc.name: UpdateE2eeEnableTest
+ * @tc.desc: Test UpdateE2eeEnable functions.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, UpdateE2eeEnableTest, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest UpdateE2eeEnableTest start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    CloudServer cloudServer;
+    auto result = cloudServer.CloudDriverUpdated(TEST_CLOUD_BUNDLE);
+    EXPECT_EQ(result, false);
+
+    std::string schemaKey = "schemaKey";
+    cloudServiceImpl_->UpdateE2eeEnable(schemaKey, true, TEST_CLOUD_BUNDLE);
+    SchemaMeta schemaMeta;
+    ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
+}
+
+/**
  * @tc.name: Share001
  * @tc.desc: Test the Share with invalid parameters
  * @tc.type: FUNC
@@ -416,6 +540,82 @@ HWTEST_F(CloudServiceImplTest, ConfirmInvitation001, TestSize.Level0)
     std::string invitation;
     auto status = cloudServiceImpl_->ConfirmInvitation(invitation, confirmation, result);
     EXPECT_EQ(status, GeneralError::E_ERROR);
+}
+
+/**
+ * @tc.name: GetStoreMetaData_001
+ * @tc.desc: test GetStoreMetaData LoadMeta success.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, GetStoreMetaData_001, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(true)).WillOnce(Return(false));
+    StoreMetaData meta;
+    bool res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name: GetStoreMetaData_002
+ * @tc.desc: test GetStoreMetaData LoadMeta failed and user is 0.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillOnce(Return(false));
+    StoreMetaData meta;
+    meta.user = "0";
+    bool res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name: GetStoreMetaData_003
+ * @tc.desc: test GetStoreMetaData LoadMeta failed and user is not 0.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, GetStoreMetaData_003, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillOnce(Return(false));
+    StoreMetaData meta;
+    meta.user = "100";
+    bool res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name: GetStoreMetaData_004
+ * @tc.desc: test GetStoreMetaData First load of metadata failed and the user is not 0,
+ * then the load of metadata succeeded.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, GetStoreMetaData_004, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillRepeatedly(Return(true));
+    StoreMetaData meta;
+    meta.user = "100";
+    bool res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+/**
+ * @tc.name: PreShare_001
+ * @tc.desc: test PreShare is dataDir empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(CloudServiceImplTest, PreShare_001, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillRepeatedly(Return(false));
+    StoreInfo storeInfo;
+    storeInfo.path = "";
+    std::shared_ptr<GenQuery> query;
+    auto [errCode, cursor] = cloudServiceImpl_->PreShare(storeInfo, *query);
+    EXPECT_EQ(errCode, E_ERROR);
+    ASSERT_EQ(cursor, nullptr);
+    storeInfo.path = "test";
+    std::tie(errCode, cursor) = cloudServiceImpl_->PreShare(storeInfo, *query);
+    EXPECT_EQ(errCode, E_ERROR);
+    ASSERT_EQ(cursor, nullptr);
 }
 
 /**

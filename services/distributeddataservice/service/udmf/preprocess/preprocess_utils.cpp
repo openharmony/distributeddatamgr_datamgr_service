@@ -16,6 +16,7 @@
 
 #include "preprocess_utils.h"
 
+#include <iomanip>
 #include <sstream>
 
 #include "bundle_info.h"

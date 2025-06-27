@@ -32,6 +32,10 @@ public:
         std::string metaPath;
         std::string clonePath;
     };
+    struct StoreType {
+        std::vector<int32_t> range;
+        std::string type;
+    };
     API_EXPORT static DirectoryManager &GetInstance();
     API_EXPORT std::string GetStorePath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetSecretKeyPath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
@@ -40,7 +44,7 @@ public:
     API_EXPORT std::string GetMetaStorePath(uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetMetaBackupPath(uint32_t version = INVALID_VERSION);
     API_EXPORT std::vector<uint32_t> GetVersions();
-    API_EXPORT void Initialize(const std::vector<Strategy> &strategies);
+    API_EXPORT void Initialize(const std::vector<Strategy> &strategies, const std::vector<StoreType> &storeTypes);
     API_EXPORT bool CreateDirectory(const std::string &path) const;
     API_EXPORT bool DeleteDirectory(const char* path);
 
@@ -69,6 +73,7 @@ private:
     std::string GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath = "") const;
     const std::map<std::string, Action> actions_;
     std::vector<StrategyImpl> strategies_;
+    std::vector<StoreType> storeTypes_;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_DIRECTORY_MANAGER_H

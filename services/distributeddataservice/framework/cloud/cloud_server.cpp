@@ -87,4 +87,9 @@ bool CloudServer::IsSupportCloud(int32_t userId)
 {
     return false;
 }
+
+bool CloudServer::CloudDriverUpdated(const std::string &bundleName)
+{
+    return false;
+}
 } // namespace OHOS::DistributedData

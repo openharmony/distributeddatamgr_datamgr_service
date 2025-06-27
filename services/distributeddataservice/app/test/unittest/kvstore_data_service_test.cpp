@@ -15,7 +15,7 @@
 
 #include "auth_delegate.h"
 #include "bootstrap.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
 #include <memory>
@@ -151,6 +151,29 @@ HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver001, TestSize.Level1
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     Status status = kvDataService.RegisterClientDeathObserver(appId, new KvStoreClientDeathObserver(), "");
     EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
+}
+
+/**
+* @tc.name: RegisterClientDeathObserver002
+* @tc.desc: register client death observer
+* @tc.type: FUNC
+*/
+HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver002, TestSize.Level1)
+{
+    AppId appId;
+    appId.appId = "app0";
+    KvStoreDataService kvDataService;
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadCheckers();
+    KvStoreMetaManager::GetInstance().BindExecutor(std::make_shared<ExecutorPool>(12, 5));
+    KvStoreMetaManager::GetInstance().InitMetaParameter();
+    Status status = kvDataService.RegisterClientDeathObserver(appId, nullptr, "");
+    EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
+    for (int i = 0; i < 17; i++) {
+        auto featureName = std::to_string(i);
+        status = kvDataService.RegisterClientDeathObserver(appId, new KvStoreClientDeathObserver(), featureName);
+        EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
+    }
 }
 
 /**
@@ -988,20 +1011,24 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup008, TestSize.Level0) {
     testMeta.bundleName = "com.example.restore_test";
     testMeta.storeId = "Source";
     testMeta.user = "100";
-    testMeta.area = DEFAULT_ENCRYPTION_LEVEL;
+    testMeta.area = CryptoManager::Area::EL1;
     testMeta.instanceId = 0;
     testMeta.deviceId =
         DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     testMeta.isEncrypt = true;
+    testMeta.dataDir = "TEST_DIR";
     std::vector<uint8_t> sKey{2,   249, 221, 119, 177, 216, 217, 134, 185, 139,
                               114, 38,  140, 64,  165, 35,  77,  169, 0,   226,
                               226, 166, 37,  73,  181, 229, 42,  88,  108, 111,
                               131, 104, 141, 43,  96,  119, 214, 34,  177, 129,
                               233, 96,  98,  164, 87,  115, 187, 170};
     SecretKeyMetaData testSecret;
-    testSecret.sKey = CryptoManager::GetInstance().Encrypt(sKey, testMeta.area, testMeta.user);
+    CryptoManager::CryptoParams encryptParams = { .area = testMeta.area };
+    testSecret.sKey = CryptoManager::GetInstance().Encrypt(sKey, encryptParams);
     testSecret.storeType = 10;
     testSecret.time = std::vector<uint8_t>{233, 39, 137, 103, 0, 0, 0, 0};
+    testSecret.nonce = encryptParams.nonce;
+    testSecret.area = encryptParams.area;
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetKey(), testMeta, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetSecretKey(), testSecret, true), true);
 

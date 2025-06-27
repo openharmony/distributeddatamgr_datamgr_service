@@ -21,6 +21,7 @@
 
 #include "concurrent_map.h"
 #include "serializable/serializable.h"
+#include "lru_bucket.h"
 namespace DistributedDB {
 class KvStoreNbDelegate;
 }
@@ -51,11 +52,16 @@ public:
     using Backup = std::function<int32_t(const std::shared_ptr<MetaStore> &)>;
     using Bytes = std::vector<uint8_t>;
     using OnComplete = std::function<void(const std::map<std::string, int32_t> &)>;
+    struct Entry {
+        std::string key;
+        std::string value;
+    };
     API_EXPORT static MetaDataManager &GetInstance();
     API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string &storeId);
     API_EXPORT void SetSyncer(const Syncer &syncer);
     API_EXPORT void SetCloudSyncer(const CloudSyncer &cloudSyncer);
     API_EXPORT bool SaveMeta(const std::string &key, const Serializable &value, bool isLocal = false);
+    API_EXPORT bool SaveMeta(const std::vector<Entry> &values, bool isLocal = false);
     API_EXPORT bool LoadMeta(const std::string &key, Serializable &value, bool isLocal = false);
     template<class T>
     API_EXPORT bool LoadMeta(const std::string &prefix, std::vector<T> &values, bool isLocal = false)
@@ -75,6 +81,7 @@ public:
     }
 
     API_EXPORT bool DelMeta(const std::string &key, bool isLocal = false);
+    API_EXPORT bool DelMeta(const std::vector<std::string> &keys, bool isLocal = false);
     API_EXPORT bool Subscribe(std::shared_ptr<Filter> filter, Observer observer);
     API_EXPORT bool Subscribe(std::string prefix, Observer observer, bool isLocal = false);
     API_EXPORT bool Unsubscribe(std::string filter);
@@ -85,6 +92,36 @@ private:
     ~MetaDataManager();
 
     API_EXPORT bool GetEntries(const std::string &prefix, std::vector<Bytes> &entries, bool isLocal);
+
+    void DelCacheMeta(const std::string &key, bool isLocal)
+    {
+        if (!isLocal) {
+            return;
+        }
+        localdata_.Delete(key);
+    }
+
+    bool LoadCacheMeta(const std::string &key, Serializable &value, bool isLocal)
+    {
+        if (!isLocal) {
+            return false;
+        }
+        std::string data;
+        if (!localdata_.Get(key, data)) {
+            return false;
+        }
+        Serializable::Unmarshall(data, value);
+        return true;
+    }
+
+    void SaveCacheMeta(const std::string &key, const std::string &data, bool isLocal)
+    {
+        if (!isLocal) {
+            return;
+        }
+        localdata_.Set(key, data);
+    }
+    
     void StopSA();
 
     bool inited_ = false;
@@ -95,6 +132,7 @@ private:
     Syncer syncer_;
     CloudSyncer cloudSyncer_;
     std::string storeId_;
+    LRUBucket<std::string, std::string> localdata_ {64};
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_METADATA_META_DATA_MANAGER_H

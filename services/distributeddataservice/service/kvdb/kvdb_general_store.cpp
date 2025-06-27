@@ -22,7 +22,7 @@
 #include "checker/checker_manager.h"
 #include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
-#include "crypto_manager.h"
+#include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "dfx/dfx_types.h"
@@ -98,21 +98,26 @@ static DBSchema GetDBSchema(const Database &database)
     }
     return schema;
 }
+
 KVDBGeneralStore::DBPassword KVDBGeneralStore::GetDBPassword(const StoreMetaData &data)
 {
     DBPassword dbPassword;
     if (!data.isEncrypt) {
         return dbPassword;
     }
-
     SecretKeyMetaData secretKey;
-    secretKey.storeType = data.storeType;
-    auto storeKey = data.GetSecretKey();
-    MetaDataManager::GetInstance().LoadMeta(storeKey, secretKey, true);
-    std::vector<uint8_t> password;
-    StoreMetaData metaData;
-    MetaDataManager::GetInstance().LoadMeta(data.GetKey(), metaData, true);
-    CryptoManager::GetInstance().Decrypt(metaData, secretKey, password);
+    auto metaKey = data.GetSecretKey();
+    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) {
+        return dbPassword;
+    }
+    CryptoManager::CryptoParams decryptParams = { .area = secretKey.area, .userId = data.user,
+        .nonce = secretKey.nonce };
+    auto password = CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptParams);
+    if (password.empty()) {
+        return dbPassword;
+    }
+    // update secret key of area or nonce
+    CryptoManager::GetInstance().UpdateSecretMeta(password, data, metaKey, secretKey);
     dbPassword.SetValue(password.data(), password.size());
     password.assign(password.size(), 0);
     return dbPassword;
@@ -257,6 +262,7 @@ int32_t KVDBGeneralStore::Bind(
     dbConfig.maxUploadCount = config.maxNumber;
     dbConfig.maxUploadSize = config.maxSize;
     dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
+    dbConfig.isSupportEncrypt = config.isSupportEncrypt;
     std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
@@ -467,16 +473,18 @@ void KVDBGeneralStore::SetEqualIdentifier(const std::string &appId, const std::s
         auto accountId = account.empty() ? AccountDelegate::GetInstance()->GetUnencryptedAccountId() : account;
         auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, accountId);
         auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
-        ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}.10s, appId:%{public}s",
+        ZLOGI("same account store:%{public}s, user:%{public}s, device:%{public}s, appId:%{public}s",
             Anonymous::Change(storeId).c_str(), Anonymous::Change(convertedIds.second).c_str(),
-            DistributedData::Serializable::Marshall(sameAccountDevs).c_str(), convertedIds.first.c_str());
+            Anonymous::Change(DistributedData::Serializable::Marshall(sameAccountDevs)).c_str(),
+            convertedIds.first.c_str());
         delegate_->SetEqualIdentifier(identifier, sameAccountDevs);
     }
     if (!defaultAccountDevs.empty()) {
         auto convertedIds = AppIdMappingConfigManager::GetInstance().Convert(appId, defaultAccountId);
         auto identifier = KvManager::GetKvStoreIdentifier(convertedIds.second, convertedIds.first, storeId);
-        ZLOGI("no account store:%{public}s, device:%{public}.10s, appId:%{public}s", Anonymous::Change(storeId).c_str(),
-            DistributedData::Serializable::Marshall(defaultAccountDevs).c_str(), convertedIds.first.c_str());
+        ZLOGI("no account store:%{public}s, device:%{public}s, appId:%{public}s", Anonymous::Change(storeId).c_str(),
+            Anonymous::Change(DistributedData::Serializable::Marshall(defaultAccountDevs)).c_str(),
+            convertedIds.first.c_str());
         delegate_->SetEqualIdentifier(identifier, defaultAccountDevs);
     }
 }

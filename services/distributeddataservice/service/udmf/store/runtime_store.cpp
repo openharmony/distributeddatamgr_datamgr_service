@@ -159,7 +159,7 @@ Status RuntimeStore::PutSummary(UnifiedKey &key, const Summary &summary)
         return status;
     }
     auto summaryKey = propertyKey + SUMMARY_SUFIX;
-    std::vector<Entry> entries{{{summaryKey.begin(), summaryKey.end()}, value}};;
+    std::vector<Entry> entries{{{summaryKey.begin(), summaryKey.end()}, value}};
     return PutEntries(std::move(entries));
 }
 
@@ -474,7 +474,7 @@ bool RuntimeStore::BuildMetaDataParam(DistributedData::StoreMetaData &metaData)
     metaData.securityLevel = DistributedKv::SecurityLevel::S1;
     metaData.area = DistributedKv::Area::EL2;
     metaData.uid = static_cast<int32_t>(getuid());
-    metaData.storeType = StoreMetaData::StoreType::STORE_UDMF_BEGIN;
+    metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
     metaData.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
     metaData.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
 
@@ -506,14 +506,14 @@ bool RuntimeStore::SaveMetaData()
     DistributedData::StoreMetaData loadLocal;
     DistributedData::StoreMetaData syncMeta;
     if (DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), loadLocal, true) &&
-        DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), syncMeta, false)) {
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKeyLocalWithoutPath(), syncMeta, false)) {
         if (loadLocal == saveMeta && syncMeta == saveMeta) {
             ZLOGD("Meta data is already saved.");
             return true;
         }
     }
 
-    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta) &&
+    auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta) &&
                  DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
     if (!saved) {
         ZLOGE("SaveMeta failed, saveMeta.key:%{public}s", saveMeta.GetKey().c_str());

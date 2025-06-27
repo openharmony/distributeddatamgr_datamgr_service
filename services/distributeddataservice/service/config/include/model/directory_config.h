@@ -25,7 +25,12 @@ public:
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
     };
+    struct StoreType final : public Serializable, public DirectoryManager::StoreType {
+        bool Marshal(json &node) const override;
+        bool Unmarshal(const json &node) override;
+    };
     std::vector<DirectoryStrategy> strategy;
+    std::vector<StoreType> storeTypes;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

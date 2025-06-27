@@ -99,6 +99,12 @@ HWTEST_F(ObjectServiceStubTest, ObjectServiceTest002, TestSize.Level1)
     result = objectServiceStub->ObjectStoreBindAssetOnRemote(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 
+    result = objectServiceStub->OnSubscribeProgress(request, reply);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
+
+    result = objectServiceStub->OnUnsubscribeProgress(request, reply);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
+
     result = objectServiceStub->OnDeleteSnapshot(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 

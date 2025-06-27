@@ -29,6 +29,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
+#include "directory/directory_manager.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
@@ -120,6 +121,8 @@ void MetaDataTest::SetUp()
     metaData_.instanceId = GetInstIndex(metaData_.tokenId, appId);
     metaData_.version = 1;
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey());
+    metaData_.area = options_.area;
+    metaData_.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData_);
 }
 
 void MetaDataTest::TearDown() {}
@@ -138,7 +141,7 @@ HWTEST_F(MetaDataTest, SaveLoadMateData, TestSize.Level0)
     std::vector<uint8_t> password {};
     auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData));
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyWithoutPath(), metaData));
     ASSERT_TRUE(metaData.isNeedCompress);
 }
 
@@ -157,9 +160,9 @@ HWTEST_F(MetaDataTest, MateDataChanged, TestSize.Level0)
     std::vector<uint8_t> password {};
     auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
     ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData));
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(metaData_.GetKeyWithoutPath(), metaData));
     ASSERT_FALSE(metaData.isNeedCompress);
-    ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey()));
+    ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()));
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
