@@ -44,7 +44,6 @@ public:
     Status PutRuntime(const std::string &key, const Runtime &runtime) override;
     Status GetRuntime(const std::string &key, Runtime &runtime) override;
     Status PutSummary(UnifiedKey &key, const Summary &summary) override;
-    void Close() override;
     bool Init() override;
 
 private:

@@ -630,19 +630,6 @@ HWTEST_F(UdmfRunTimeStoreTest, Clear01, TestSize.Level1)
 }
 
 /**
-* @tc.name: Close01
-* @tc.desc: check for legal parameters, delete entries error.
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfRunTimeStoreTest, Close01, TestSize.Level1)
-{
-    auto store = std::make_shared<RuntimeStore>(STORE_ID);
-    EXPECT_NO_FATAL_FAILURE(store->Close());
-}
-
-
-/**
 * @tc.name: GetSummary
 * @tc.desc: check for legal parameters, delete entries error.
 * @tc.type: FUNC

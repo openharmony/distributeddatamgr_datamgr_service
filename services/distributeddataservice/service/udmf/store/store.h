@@ -41,7 +41,6 @@ public:
     virtual Status GetRuntime(const std::string &key, Runtime &runtime) = 0;
     virtual Status PutSummary(UnifiedKey &key, const Summary &summary) = 0;
     virtual bool Init() = 0;
-    virtual void Close() = 0;
 
     bool operator<(const Time &time) const
     {
