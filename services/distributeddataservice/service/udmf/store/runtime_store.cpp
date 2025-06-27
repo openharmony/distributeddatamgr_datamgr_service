@@ -407,11 +407,6 @@ Status RuntimeStore::GetBatchData(const std::string &dataPrefix, std::vector<Uni
     return E_OK;
 }
 
-void RuntimeStore::Close()
-{
-    delegateManager_->CloseKvStore(kvStore_.get());
-}
-
 bool RuntimeStore::Init()
 {
     if (!SaveMetaData()) {  // get keyinfo about create db fail.
