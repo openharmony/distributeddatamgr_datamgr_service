@@ -128,7 +128,7 @@ bool RdbDelegate::Init(const DistributedData::StoreMetaData &meta, int version,
     auto [err, config] = GetConfig(meta, registerFunction);
     if (err != E_OK) {
         ZLOGW("Get rdbConfig failed, errCode is %{public}d, dir is %{public}s", err,
-            DistributedData::Anonymous::Change(meta.dataDir).c_str());
+            URIUtils::Anonymous(meta.dataDir).c_str());
         return false;
     }
     DefaultOpenCallback callback;
@@ -138,7 +138,7 @@ bool RdbDelegate::Init(const DistributedData::StoreMetaData &meta, int version,
     timeoutReport.Report(meta.user, callingPid, -1, meta.instanceId);
     if (errCode_ != E_OK) {
         ZLOGW("GetRdbStore failed, errCode is %{public}d, dir is %{public}s", errCode_,
-            DistributedData::Anonymous::Change(meta.dataDir).c_str());
+            URIUtils::Anonymous(meta.dataDir).c_str());
         RdbDelegate::TryAndSend(errCode_);
         return false;
     }
