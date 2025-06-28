@@ -69,7 +69,7 @@ int32_t DataShareServiceStub::OnInsertEx(MessageParcel &data, MessageParcel &rep
     std::string extUri;
     DataShareValuesBucket bucket;
     if (!ITypesUtil::Unmarshal(data, uri, extUri, bucket.valuesMap)) {
-        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
+        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", URIUtils::Anonymous(uri).c_str(),
             bucket.valuesMap.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -90,7 +90,7 @@ int32_t DataShareServiceStub::OnUpdateEx(MessageParcel &data, MessageParcel &rep
     DataSharePredicates predicate;
     DataShareValuesBucket bucket;
     if (!ITypesUtil::Unmarshal(data, uri, extUri, predicate, bucket.valuesMap)) {
-        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
+        ZLOGE("Unmarshal uri:%{public}s bucket size:%{public}zu", URIUtils::Anonymous(uri).c_str(),
             bucket.valuesMap.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -110,7 +110,7 @@ int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &rep
     std::string extUri;
     DataSharePredicates predicate;
     if (!ITypesUtil::Unmarshal(data, uri, extUri, predicate)) {
-        ZLOGE("Unmarshal uri:%{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("Unmarshal uri:%{public}s", URIUtils::Anonymous(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, status] = DeleteEx(uri, extUri, predicate);
@@ -130,7 +130,7 @@ int32_t DataShareServiceStub::OnQuery(MessageParcel &data, MessageParcel &reply)
     DataSharePredicates predicate;
     std::vector<std::string> columns;
     if (!ITypesUtil::Unmarshal(data, uri, extUri, predicate, columns)) {
-        ZLOGE("Unmarshal uri:%{public}s columns size:%{public}zu", DistributedData::Anonymous::Change(uri).c_str(),
+        ZLOGE("Unmarshal uri:%{public}s columns size:%{public}zu", URIUtils::Anonymous(uri).c_str(),
             columns.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -419,7 +419,7 @@ int32_t DataShareServiceStub::OnSetSilentSwitch(MessageParcel &data, MessageParc
     std::string uri;
     bool enable = false;
     if (!ITypesUtil::Unmarshal(data, uri, enable)) {
-        ZLOGE("Unmarshal set silent switch failed. uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("Unmarshal set silent switch failed. uri: %{public}s", URIUtils::Anonymous(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = EnableSilentProxy(uri, enable);
@@ -434,7 +434,7 @@ int32_t DataShareServiceStub::OnGetSilentProxyStatus(MessageParcel &data, Messag
 {
     std::string uri;
     if (!ITypesUtil::Unmarshal(data, uri)) {
-        ZLOGE("Unmarshal silent enable failed. uri: %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("Unmarshal silent enable failed. uri: %{public}s", URIUtils::Anonymous(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t enable = GetSilentProxyStatus(uri);

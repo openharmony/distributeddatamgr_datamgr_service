@@ -168,7 +168,7 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
         callerBundleInfo.appIndex, callerBundleInfo.tokenId)));
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}s %{public}d",
-            DistributedData::Anonymous::Change(proxyData.uri_).c_str(), status);
+            URIUtils::Anonymous(proxyData.uri_).c_str(), status);
         type = DataShareObserver::ChangeType::INVAILD;
         return INNER_ERROR;
     }

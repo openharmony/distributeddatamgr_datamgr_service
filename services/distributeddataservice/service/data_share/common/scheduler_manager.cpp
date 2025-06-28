@@ -41,7 +41,7 @@ void SchedulerManager::Execute(const std::string &uri, const int32_t userId, Dis
     metaData.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(metaData);
     if (delegate == nullptr) {
-        ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("malloc fail %{public}s", URIUtils::Anonymous(uri).c_str());
         return;
     }
     std::vector<Key> keys = RdbSubscriberManager::GetInstance().GetKeysByUri(uri);
@@ -57,7 +57,7 @@ void SchedulerManager::Execute(const Key &key, const int32_t userId, const Distr
     meta.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(meta);
     if (delegate == nullptr) {
-        ZLOGE("malloc fail %{public}s", DistributedData::Anonymous::Change(key.uri).c_str());
+        ZLOGE("malloc fail %{public}s", URIUtils::Anonymous(key.uri).c_str());
         return;
     }
     ExecuteSchedulerSQL(userId, meta, key, delegate);
@@ -195,14 +195,14 @@ void SchedulerManager::SetTimer(
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         ZLOGD_MACRO("has current taskId: %{private}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         auto timerId = it->second;
         ResetTimerTask(timerId, reminderTime);
         return;
     }
     auto callback = [key, metaData, userId, this]() {
         ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
-            "%{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
+            "%{public}s", URIUtils::Anonymous(key.uri).c_str(),
             key.subscriberId, key.bundleName.c_str());
         int64_t timerId = EraseTimerTaskId(key);
         DestoryTimerTask(timerId);
@@ -217,7 +217,7 @@ void SchedulerManager::SetTimer(
         return;
     }
     ZLOGI("create new task success, uri is %{public}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
-        DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+        URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
     timerCache_.emplace(key, timerId);
 }
 
@@ -227,19 +227,19 @@ void SchedulerManager::ExecuteSchedulerSQL(const int32_t userId, DistributedData
     Template tpl;
     if (!TemplateManager::GetInstance().Get(key, userId, tpl)) {
         ZLOGE("template undefined, %{public}s, %{public}" PRId64 ", %{public}s",
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return;
     }
     if (tpl.scheduler_.empty()) {
         ZLOGW("template scheduler_ empty, %{public}s, %{public}" PRId64 ", %{public}s",
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return;
     }
     GenRemindTimerFuncParams(userId, metaData, key, tpl.scheduler_);
     auto resultSet = delegate->QuerySql(tpl.scheduler_);
     if (resultSet == nullptr) {
         ZLOGE("resultSet is nullptr, %{public}s, %{public}" PRId64 ", %{public}s",
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return;
     }
     int count;
@@ -247,7 +247,7 @@ void SchedulerManager::ExecuteSchedulerSQL(const int32_t userId, DistributedData
     if (errCode != E_OK || count == 0) {
         ZLOGE("GetRowCount error, %{public}s, %{public}" PRId64 ", %{public}s, errorCode is %{public}d, count is "
             "%{public}d",
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str(), errCode,
+            URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str(), errCode,
             count);
         return;
     }
@@ -278,7 +278,7 @@ void SchedulerManager::RemoveTimer(const Key &key)
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
         ZLOGW("RemoveTimer %{public}s %{public}s %{public}" PRId64,
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
+            URIUtils::Anonymous(key.uri).c_str(), key.bundleName.c_str(), key.subscriberId);
         DestoryTimerTask(it->second);
         timerCache_.erase(key);
     }

@@ -20,7 +20,7 @@
 #include "data_proxy/load_config_from_data_proxy_node_strategy.h"
 #include "general/load_config_common_strategy.h"
 #include "log_print.h"
-#include "utils/anonymous.h"
+#include "uri_utils.h"
 
 namespace OHOS::DataShare {
 Data GetDataStrategy::Execute(std::shared_ptr<Context> context, int &errorCode)
@@ -32,7 +32,7 @@ Data GetDataStrategy::Execute(std::shared_ptr<Context> context, int &errorCode)
         return Data();
     }
     if (!preProcess(context)) {
-        ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+        ZLOGE("pre process fail, uri: %{public}s", URIUtils::Anonymous(context->uri).c_str());
         errorCode = context->errCode;
         return Data();
     }

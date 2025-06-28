@@ -21,7 +21,7 @@
 #include "general/load_config_data_info_strategy.h"
 #include "general/permission_strategy.h"
 #include "log_print.h"
-#include "utils/anonymous.h"
+#include "uri_utils.h"
 
 namespace OHOS::DataShare {
 int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::function<int32_t()> process)
@@ -34,7 +34,7 @@ int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::functi
     context->isRead = true;
     context->needAutoLoadCallerBundleName = true;
     if (!preProcess(context)) {
-        ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+        ZLOGE("pre process fail, uri: %{public}s", URIUtils::Anonymous(context->uri).c_str());
         return context->errCode;
     }
     return process();

@@ -36,7 +36,7 @@ bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
     if (splitUri[BUNDLE_NAME].empty() || splitUri[MODULE_NAME].empty() ||
         splitUri[STORE_NAME].empty() || splitUri[TABLE_NAME].empty()) {
         ZLOGE("Uri has empty field! bundleName: %{public}s  uri: %{public}s", splitUri[BUNDLE_NAME].c_str(),
-            DistributedData::Anonymous::Change(uri).c_str());
+            URIUtils::Anonymous(uri).c_str());
         return false;
     }
 

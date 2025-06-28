@@ -38,7 +38,7 @@ DataProxyErrorCode ProxyDataSubscriberManager::Add(const ProxyDataKey &key, cons
         key, [&observer, bundleName, callerAppIdentifier, userId](const ProxyDataKey &key,
         std::vector<ObserverNode> &value) {
             ZLOGI("add proxy data subscriber, uri %{public}s",
-                DistributedData::Anonymous::Change(key.uri).c_str());
+                URIUtils::Anonymous(key.uri).c_str());
             value.emplace_back(observer, IPCSkeleton::GetCallingTokenID(), bundleName, callerAppIdentifier, userId);
             return true;
         });
@@ -53,7 +53,7 @@ DataProxyErrorCode ProxyDataSubscriberManager::Delete(const ProxyDataKey &key, c
             for (auto it = value.begin(); it != value.end();) {
                 if (it->callerTokenId == IPCSkeleton::GetCallingTokenID() && it->userId == userId) {
                     ZLOGI("delete proxy data subscriber, uri %{public}s",
-                        DistributedData::Anonymous::Change(key.uri).c_str());
+                        URIUtils::Anonymous(key.uri).c_str());
                     it = value.erase(it);
                 }
             }

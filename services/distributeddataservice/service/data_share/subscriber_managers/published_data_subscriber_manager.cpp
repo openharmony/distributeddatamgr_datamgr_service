@@ -39,7 +39,7 @@ int PublishedDataSubscriberManager::Add(const PublishedDataKey &key,
         key, [&observer, &firstCallerTokenId, userId, this](const PublishedDataKey &key,
         std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{public}s tokenId 0x%{public}x",
-                DistributedData::Anonymous::Change(key.key).c_str(), firstCallerTokenId);
+                URIUtils::Anonymous(key.key).c_str(), firstCallerTokenId);
             value.emplace_back(observer, firstCallerTokenId, IPCSkeleton::GetCallingTokenID(),
                 IPCSkeleton::GetCallingPid(), userId);
             return true;
@@ -55,7 +55,7 @@ int PublishedDataSubscriberManager::Delete(const PublishedDataKey &key, uint32_t
             for (auto it = value.begin(); it != value.end();) {
                 if (it->firstCallerTokenId == firstCallerTokenId) {
                     ZLOGI("delete publish subscriber, uri %{public}s tokenId 0x%{public}x",
-                        DistributedData::Anonymous::Change(key.key).c_str(), firstCallerTokenId);
+                        URIUtils::Anonymous(key.key).c_str(), firstCallerTokenId);
                     it = value.erase(it);
                 } else {
                     it++;
@@ -72,7 +72,7 @@ void PublishedDataSubscriberManager::Delete(uint32_t callerTokenId, uint32_t cal
         for (auto it = value.begin(); it != value.end();) {
             if (it->callerTokenId == callerTokenId && it->callerPid == callerPid) {
                 ZLOGI("erase start, uri is %{public}s, tokenId is 0x%{public}x, pid is %{public}d",
-                    DistributedData::Anonymous::Change(key.key).c_str(), callerTokenId, callerPid);
+                    URIUtils::Anonymous(key.key).c_str(), callerTokenId, callerPid);
                 it = value.erase(it);
             } else {
                 it++;
