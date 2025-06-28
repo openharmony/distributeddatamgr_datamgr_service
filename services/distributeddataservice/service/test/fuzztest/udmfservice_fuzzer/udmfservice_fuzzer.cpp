@@ -69,6 +69,8 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     request.RewindRead(0);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(code, request, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     return true;
 }
 
@@ -93,6 +95,8 @@ void SetDataFuzz(FuzzedDataProvider &provider)
     ITypesUtil::Marshal(request, option1, data1);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DATA), request, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void GetDataFuzz(FuzzedDataProvider &provider)
@@ -107,6 +111,8 @@ void GetDataFuzz(FuzzedDataProvider &provider)
     ITypesUtil::Marshal(request, query);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_DATA), request, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void GetBatchDataFuzz(FuzzedDataProvider &provider)
@@ -121,6 +127,8 @@ void GetBatchDataFuzz(FuzzedDataProvider &provider)
     ITypesUtil::Marshal(request, query);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_BATCH_DATA), request, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void UpdateDataFuzz(FuzzedDataProvider &provider)
@@ -143,6 +151,8 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     ITypesUtil::Marshal(request, query, data1);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::UPDATE_DATA), request, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void DeleteDataFuzz(FuzzedDataProvider &provider)
@@ -157,6 +167,8 @@ void DeleteDataFuzz(FuzzedDataProvider &provider)
     ITypesUtil::Marshal(request, query);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::DELETE_DATA), request, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void GetSummaryFuzz(FuzzedDataProvider &provider)
@@ -171,6 +183,8 @@ void GetSummaryFuzz(FuzzedDataProvider &provider)
     ITypesUtil::Marshal(request, query);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_SUMMARY), request, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void AddPrivilegeDataFuzz(FuzzedDataProvider &provider)
@@ -193,6 +207,8 @@ void AddPrivilegeDataFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::ADD_PRIVILEGE),
         request, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void SyncDataFuzz(FuzzedDataProvider &provider)
@@ -209,6 +225,8 @@ void SyncDataFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SYNC),
         requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void IsRemoteDataFuzz(FuzzedDataProvider &provider)
@@ -224,6 +242,8 @@ void IsRemoteDataFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::IS_REMOTE_DATA),
         requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void ObtainAsynProcessFuzz(FuzzedDataProvider &provider)
@@ -246,6 +266,8 @@ void ObtainAsynProcessFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::OBTAIN_ASYN_PROCESS),
         requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void ClearAsynProcessFuzz(FuzzedDataProvider &provider)
@@ -265,6 +287,8 @@ void ClearAsynProcessFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::CLEAR_ASYN_PROCESS_BY_KEY),
         requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void SetDelayInfoFuzz(FuzzedDataProvider &provider)
@@ -285,6 +309,8 @@ void SetDelayInfoFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DELAY_INFO),
         requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void PushDelayDataFuzz(FuzzedDataProvider &provider)
@@ -310,6 +336,8 @@ void PushDelayDataFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DELAY_DATA),
         requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void GetDataIfAvailableFuzz(FuzzedDataProvider &provider)
@@ -334,6 +362,8 @@ void GetDataIfAvailableFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_DELAY_DATA),
         requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void OnGetAppShareOptionFuzz(FuzzedDataProvider &provider)
@@ -352,6 +382,8 @@ void OnGetAppShareOptionFuzz(FuzzedDataProvider &provider)
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_APP_SHARE_OPTION),
         requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void CheckDragParamsFuzz(FuzzedDataProvider &provider)
@@ -436,6 +468,8 @@ void ResolveAutoLaunchFuzz(FuzzedDataProvider &provider)
     param.storeId = provider.ConsumeRandomLengthString();
     param.path = provider.ConsumeRandomLengthString();
     udmfServiceImpl->ResolveAutoLaunch(identifier, param);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void HasDatahubPriviledgeFuzz(FuzzedDataProvider &provider)
@@ -514,6 +548,8 @@ void VerifyIntentionPermissionFuzz(FuzzedDataProvider &provider)
     Runtime runtime;
     data.SetRuntime(runtime);
     udmfServiceImpl->VerifyIntentionPermission(query, data, udKey, info);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
 }
 
 void IsFileMangerIntentionFuzz(FuzzedDataProvider &provider)

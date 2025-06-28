@@ -37,8 +37,7 @@ ohos_fuzztest("UdmfServiceFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
-    "-Dprivate=public",
-    "-Dprotected=public",
+    "-fno-access-control"
   ]
 
   sources = [ "udmfservice_fuzzer.cpp" ]
