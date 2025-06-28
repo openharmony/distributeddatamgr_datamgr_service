@@ -60,9 +60,9 @@ void UdmfNotifierProxy::HandleDelayObserver(const std::string &key, const DataLo
 {
     MessageParcel reply;
     int32_t status =
-        IPC_SEND(static_cast<uint32_t>(UdmfServiceInterfaceCode::HANDLE_DELAY_OBSERVER), reply, key, dataLoadInfo);
+        IPC_SEND(static_cast<uint32_t>(UdmfNotifierInterfaceCode::HANDLE_DELAY_OBSERVER), reply, key, dataLoadInfo);
     if (status != E_OK) {
-        ZLOGE("status:%{public}d" PRIu64, status);
+        ZLOGE("status:%{public}d", status);
     }
 }
 
@@ -76,9 +76,9 @@ void DelayDataCallbackProxy::DelayDataCallback(const std::string &key, const Uni
 {
     MessageParcel reply;
     int32_t status =
-        IPC_SEND(static_cast<uint32_t>(UdmfServiceInterfaceCode::HANDLE_DELAY_OBSERVER), reply, key, data);
+        IPC_SEND(static_cast<uint32_t>(UdmfNotifierInterfaceCode::HANDLE_DELAY_DATA), reply, key, data);
     if (status != E_OK) {
-        ZLOGE("status:%{public}d" PRIu64, status);
+        ZLOGE("status:%{public}d", status);
     }
 }
 } // namespace UDMF
