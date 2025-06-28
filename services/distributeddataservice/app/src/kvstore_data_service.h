@@ -137,9 +137,8 @@ public:
     int32_t OnBackup(MessageParcel &data, MessageParcel &reply);
     int32_t OnRestore(MessageParcel &data, MessageParcel &reply);
     bool WriteBackupInfo(const std::string &content, const std::string &backupPath);
-    bool GetSecretKeyBackup(
-        const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
-        const std::string &userId, const std::vector<uint8_t> &iv, std::string &content);
+    std::string GetSecretKeyBackup(const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
+        const std::string &userId, const std::vector<uint8_t> &iv);
 
 private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
