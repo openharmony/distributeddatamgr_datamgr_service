@@ -20,7 +20,7 @@
 #include "datashare_errno.h"
 #include "general/load_config_common_strategy.h"
 #include "log_print.h"
-#include "utils/anonymous.h"
+#include "uri_utils.h"
 
 namespace OHOS::DataShare {
 int32_t TemplateStrategy::Execute(std::shared_ptr<Context> context, std::function<bool()> process)
@@ -32,7 +32,7 @@ int32_t TemplateStrategy::Execute(std::shared_ptr<Context> context, std::functio
     }
 
     if (!preProcess(context)) {
-        ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+        ZLOGE("pre process fail, uri: %{public}s", URIUtils::Anonymous(context->uri).c_str());
         return context->errCode;
     }
     return process();

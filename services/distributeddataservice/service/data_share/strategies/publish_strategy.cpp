@@ -22,7 +22,7 @@
 #include "general/permission_strategy.h"
 #include "log_print.h"
 #include "published_data.h"
-#include "utils/anonymous.h"
+#include "uri_utils.h"
 
 namespace OHOS::DataShare {
 int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const PublishedDataItem &item)
@@ -33,7 +33,7 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
         return -1;
     }
     if (!preProcess(context)) {
-        ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+        ZLOGE("pre process fail, uri: %{public}s", URIUtils::Anonymous(context->uri).c_str());
         return context->errCode;
     }
     auto delegate = KvDBDelegate::GetInstance();
@@ -48,7 +48,7 @@ int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const Publish
     auto [status, count] = delegate->Upsert(KvDBDelegate::DATA_TABLE, data);
     if (status != E_OK) {
         ZLOGE("db Upsert failed, %{public}s %{public}s %{public}d", context->calledBundleName.c_str(),
-            DistributedData::Anonymous::Change(context->uri).c_str(), status);
+            URIUtils::Anonymous(context->uri).c_str(), status);
         return status;
     }
     return E_OK;

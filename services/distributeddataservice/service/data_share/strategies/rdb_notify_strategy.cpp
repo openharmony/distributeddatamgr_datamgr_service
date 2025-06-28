@@ -20,7 +20,7 @@
 #include "general/load_config_data_info_strategy.h"
 #include "general/load_config_from_bundle_info_strategy.h"
 #include "log_print.h"
-#include "utils/anonymous.h"
+#include "uri_utils.h"
 #include "log_debug.h"
 
 namespace OHOS::DataShare {
@@ -32,7 +32,7 @@ bool RdbNotifyStrategy::Execute(std::shared_ptr<Context> context)
         return false;
     }
     if (!preProcess(context)) {
-        ZLOGE("pre process fail, uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+        ZLOGE("pre process fail, uri: %{public}s", URIUtils::Anonymous(context->uri).c_str());
         return false;
     }
     if (context->callerBundleName != context->calledBundleName) {

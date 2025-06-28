@@ -256,7 +256,7 @@ int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t 
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
     if (!GetCallerBundleName(tpltId.bundleName_)) {
-        ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("get bundleName error, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
     ZLOGI("Add template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s,"
@@ -276,11 +276,11 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
     if (!GetCallerBundleName(tpltId.bundleName_)) {
-        ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("get bundleName error, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
     ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.",
-        DistributedData::Anonymous::Change(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
+        URIUtils::Anonymous(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &context]() -> int32_t {
         return TemplateManager::GetInstance().Delete(
             Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->visitedUserId);
@@ -348,7 +348,7 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
         int32_t result = publishStrategy_.Execute(context, item);
         results.emplace_back(item.key_, result);
         if (result != E_OK) {
-            ZLOGE("publish error, key is %{public}s", DistributedData::Anonymous::Change(item.key_).c_str());
+            ZLOGE("publish error, key is %{public}s", URIUtils::Anonymous(item.key_).c_str());
             continue;
         }
         publishedData.emplace_back(context->uri, context->calledBundleName, item.subscriberId_);

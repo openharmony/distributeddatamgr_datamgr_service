@@ -157,7 +157,7 @@ void RdbDelegate::TryAndSend(int errCode)
         return;
     }
     ZLOGE("Database corruption. BundleName: %{public}s. StoreName: %{public}s. ExtUri: %{public}s",
-        bundleName_.c_str(), storeName_.c_str(), DistributedData::Anonymous::Change(extUri_).c_str());
+        bundleName_.c_str(), storeName_.c_str(), URIUtils::Anonymous(extUri_).c_str());
     AAFwk::WantParams params;
     params.SetParam("BundleName", AAFwk::String::Box(bundleName_));
     params.SetParam("StoreName", AAFwk::String::Box(storeName_));
