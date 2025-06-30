@@ -17,39 +17,61 @@
 #define DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_SOFTBUS_CLIENT_H
 
 #include <atomic>
-#include <map>
 #include <mutex>
 
 #include "commu_types.h"
-#include "executor_pool.h"
+#include "serializable/serializable.h"
 #include "socket.h"
-#include "softbus_bus_center.h"
+
 namespace OHOS::AppDistributedKv {
 class SoftBusClient : public std::enable_shared_from_this<SoftBusClient> {
 public:
+    struct AccessExtraInfo final : public DistributedData::Serializable {
+        std::string bundleName = "";
+        std::string accountId = "";
+        std::string storeId = "";
+
+        AccessExtraInfo() {};
+        ~AccessExtraInfo() {};
+        bool Marshal(json &node) const override
+        {
+            SetValue(node[GET_NAME(bundleName)], bundleName);
+            SetValue(node[GET_NAME(accountId)], accountId);
+            SetValue(node[GET_NAME(storeId)], storeId);
+            return true;
+        };
+        bool Unmarshal(const json &node) override
+        {
+            GetValue(node, GET_NAME(bundleName), bundleName);
+            GetValue(node, GET_NAME(accountId), accountId);
+            GetValue(node, GET_NAME(storeId), storeId);
+            return true;
+        };
+    };
+
     enum QoSType {
         QOS_BR,
         QOS_HML,
         QOS_REUSE,
         QOS_BUTT
     };
+
     SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId, const std::string& networkId,
-        uint32_t type = QOS_HML);
+        uint32_t type = QOS_HML, const SessionAccessInfo &accessInfo = {});
     ~SoftBusClient();
 
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
     Status CheckStatus();
     Status OpenConnect(const ISocketListener *listener);
-    Status SendData(const DataInfo &dataInfo, const ISocketListener *listener);
+    Status SendData(const DataInfo &dataInfo);
     bool operator==(int32_t socket) const;
     bool operator==(const std::string &deviceId) const;
-    uint32_t GetMtuSize() const;
+    uint32_t GetMtuBuffer() const;
     uint32_t GetTimeout() const;
     Time GetExpireTime() const;
     int32_t GetSocket() const;
     uint32_t GetQoSType() const;
-    void UpdateExpireTime(bool async = true);
     int32_t GetSoftBusError();
     Status ReuseConnect(const ISocketListener *listener);
     std::string GetNetworkId() const;
@@ -100,7 +122,7 @@ private:
     int32_t bindState_ = -1;
     int32_t softBusError_ = 0;
     std::string networkId_;
+    SessionAccessInfo accessInfo_;
 };
 } // namespace OHOS::AppDistributedKv
-
 #endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_SOFTBUS_CLIENT_H

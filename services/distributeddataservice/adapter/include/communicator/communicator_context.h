@@ -21,7 +21,6 @@
 #include "commu_types.h"
 #include "concurrent_map.h"
 #include "visibility.h"
-#include "iprocess_communicator.h"
 
 namespace OHOS::DistributedData {
 class API_EXPORT CommunicatorContext {

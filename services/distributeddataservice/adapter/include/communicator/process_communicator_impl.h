@@ -67,7 +67,7 @@ public:
     API_EXPORT DBStatus GetDataHeadInfo(DataHeadInfo dataHeadInfo, uint32_t &headLength) override;
     API_EXPORT DBStatus GetDataUserInfo(DataUserInfo dataUserInfo, std::vector<UserInfo> &userInfos) override;
 
-    Status ReuseConnect(const DeviceId &deviceId);
+    Status ReuseConnect(const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
 
 private:
     void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,

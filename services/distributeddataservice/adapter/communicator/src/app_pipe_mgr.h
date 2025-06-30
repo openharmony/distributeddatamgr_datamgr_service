@@ -47,7 +47,7 @@ public:
 
     void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag);
 
-    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId);
+    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
 private:
     std::mutex dataBusMapMutex_ {};
     std::map<std::string, std::shared_ptr<AppPipeHandler>> dataBusMap_ {};
