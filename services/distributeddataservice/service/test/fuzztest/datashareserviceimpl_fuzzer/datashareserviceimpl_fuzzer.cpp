@@ -176,6 +176,51 @@ void TimerReceiverOnReceiveEventFuzz(FuzzedDataProvider &provider)
     commonEventData.SetWant(want);
     tmerReceiver.OnReceiveEvent(commonEventData);
 }
+
+void OnUserChangeFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(0, 10);
+    std::string user = provider.ConsumeRandomLengthString();
+    std::string account = provider.ConsumeRandomLengthString();
+    dataShareServiceImpl->OnUserChange(code, user, account);
+}
+
+void DataShareStaticOnAppUninstall(FuzzedDataProvider &provider)
+{
+    DataShareServiceImpl::DataShareStatic dataShareStatic;
+    std::string bundleName = provider.ConsumeRandomLengthString();
+    int32_t user = provider.ConsumeIntegral<int32_t>();
+    int32_t index = provider.ConsumeIntegral<int32_t>();
+    dataShareStatic.OnAppUninstall(bundleName, user, index);
+}
+
+void AllowCleanDataLaunchAppFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    int32_t evtId = provider.ConsumeIntegral<int32_t>();
+    DistributedData::RemoteChangeEvent::DataInfo dataInfo;
+    dataInfo.userId = provider.ConsumeRandomLengthString();
+    dataInfo.storeId = provider.ConsumeRandomLengthString();
+    dataInfo.deviceId = provider.ConsumeRandomLengthString();
+    dataInfo.bundleName = provider.ConsumeRandomLengthString();
+    DistributedData::RemoteChangeEvent event(evtId, std::move(dataInfo));
+    bool launchForCleanData = provider.ConsumeBool();
+    dataShareServiceImpl->AllowCleanDataLaunchApp(event, launchForCleanData);
+}
+
+void AutoLaunchFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    int32_t evtId = provider.ConsumeIntegral<int32_t>();
+    DistributedData::RemoteChangeEvent::DataInfo dataInfo;
+    dataInfo.userId = provider.ConsumeRandomLengthString();
+    dataInfo.storeId = provider.ConsumeRandomLengthString();
+    dataInfo.deviceId = provider.ConsumeRandomLengthString();
+    dataInfo.bundleName = provider.ConsumeRandomLengthString();
+    DistributedData::RemoteChangeEvent event(evtId, std::move(dataInfo));
+    dataShareServiceImpl->AutoLaunch(event);
+}
 } // namespace OHOS
 
 /* Fuzzer entry point */
@@ -197,5 +242,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::DumpDataShareServiceInfoFuzz(provider);
     OHOS::DataShareStaticOnClearAppStorageFuzz(provider);
     OHOS::TimerReceiverOnReceiveEventFuzz(provider);
+    OHOS::OnUserChangeFuzz(provider);
+    OHOS::DataShareStaticOnAppUninstall(provider);
+    OHOS::AllowCleanDataLaunchAppFuzz(provider);
+    OHOS::AutoLaunchFuzz(provider);
     return 0;
 }
