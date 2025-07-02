@@ -88,6 +88,7 @@ enum class Fault {
     CSF_DOWNLOAD_ASSETS                     = 82,
     CSF_GS_CREATE_DISTRIBUTED_TABLE         = 83,
     CSF_GS_CLOUD_SYNC                       = 84,
+    CSF_GS_CLOUD_CLEAN                      = 85,
 };
 
 enum class FaultType {
