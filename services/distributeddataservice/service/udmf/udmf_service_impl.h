@@ -80,6 +80,9 @@ private:
     std::string FindIntentionMap(const Intention &queryintention);
     bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
     bool IsValidInput(const QueryOption &query, UnifiedData &unifiedData, UnifiedKey &key);
+    int32_t ValidateAndProcessRuntimeData(const std::vector<UnifiedData> &dataSet, std::shared_ptr<Runtime> runtime,
+        std::vector<UnifiedData> &unifiedDataSet, const QueryOption &query, std::vector<std::string> &deleteKeys);
+    int32_t CheckAppId(std::shared_ptr<Runtime> runtime, const std::string &bundleName);
     class Factory {
     public:
         Factory();
