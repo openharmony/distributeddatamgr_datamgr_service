@@ -145,7 +145,11 @@ bool SerialDataShareProxyData::Marshal(json &node) const
 bool SerialDataShareProxyData::Unmarshal(const json &node)
 {
     bool ret = GetValue(node, GET_NAME(uri), uri);
-    GetValue(node, GET_NAME(value), value);
+    if (!GetValue(node, GET_NAME(value), value)) {
+        std::string valueStr;
+        GetValue(node, GET_NAME(value), valueStr);
+        value = valueStr;
+    }
     GetValue(node, GET_NAME(allowList), allowList);
     return ret;
 }
