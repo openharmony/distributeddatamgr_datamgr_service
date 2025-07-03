@@ -430,15 +430,15 @@ bool ExtensionUtil::ContainNullChar(const std::string &path)
     const char *cStrPath = path.c_str();
     uint32_t cStrLength = strlen(cStrPath);
     if (pathLength != cStrLength) {
-        ZLOGE("The string contains null characters.");
-        return false;
+        ZLOGW("The string contains null characters.");
+        return true;
     }
-    return true;
+    return false;
 }
 
 std::pair<OhCloudExtCloudAsset *, size_t> ExtensionUtil::Convert(const DBAsset &dbAsset)
 {
-    if (!ContainNullChar(dbAsset.path) || !ContainNullChar(dbAsset.uri)) {
+    if (ContainNullChar(dbAsset.path) || ContainNullChar(dbAsset.uri)) {
         return { nullptr, 0 };
     }
     OhCloudExtCloudAssetBuilder builder {
