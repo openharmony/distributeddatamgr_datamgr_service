@@ -424,7 +424,8 @@ DBInfo ExtensionUtil::ConvertAppInfo(OhCloudExtAppInfo *appInfo)
     return info;
 }
 
-bool ExtensionUtil::ValidateString(const std::string &path) {
+bool ExtensionUtil::ValidateString(const std::string &path)
+{
     uint32_t pathLength = path.length();
     const char *cStrPath = path.c_str();
     uint32_t cStrLength = strlen(cStrPath);

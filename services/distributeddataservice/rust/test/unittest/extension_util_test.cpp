@@ -54,7 +54,7 @@ HWTEST_F(ExtensionUtilTest, Convert001, TestSize.Level1)
 */
 HWTEST_F(ExtensionUtilTest, Convert002, TestSize.Level1)
 {
-    const char data[] = "/path\0/to/file"; 
+    const char data[] = "/path\0/to/file";
     std::string path(data, 13);
     DBAsset dbAsset;
     dbAsset.version = 1;
@@ -110,7 +110,7 @@ HWTEST_F(ExtensionUtilTest, Convert004, TestSize.Level1)
 {
     const char data1[] = "http://example.com/path\0to/file";
     std::string uri(data1, 32);
-    const char data2[] = "/path\0/to/file"; 
+    const char data2[] = "/path\0/to/file";
     std::string path(data2, 13);
     DBAsset dbAsset;
     dbAsset.version = 1;
