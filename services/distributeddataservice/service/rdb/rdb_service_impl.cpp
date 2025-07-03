@@ -208,7 +208,7 @@ int32_t RdbServiceImpl::OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, co
     return E_OK;
 }
 
-bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::string& storeName)
+bool RdbServiceImpl::IsValidAccess(const std::string& bundleName, const std::string& storeName)
 {
     CheckerManager::StoreInfo storeInfo;
     storeInfo.uid = IPCSkeleton::GetCallingUid();
@@ -222,7 +222,7 @@ bool RdbServiceImpl::CheckAccess(const std::string& bundleName, const std::strin
 std::string RdbServiceImpl::ObtainDistributedTableName(const RdbSyncerParam &param, const std::string &device,
     const std::string &table)
 {
-    if (!CheckAccess(param.bundleName_, "")) {
+    if (!IsValidAccess(param.bundleName_, "")) {
         ZLOGE("bundleName:%{public}s. Permission error", param.bundleName_.c_str());
         return "";
     }
@@ -244,7 +244,7 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const RdbSyncerParam &par
 int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
-    if (!CheckAccess(param.bundleName_, "")) {
+    if (!IsValidAccess(param.bundleName_, "")) {
         ZLOGE("bundleName:%{public}s. Permission error", param.bundleName_.c_str());
         return RDB_ERROR;
     }
@@ -302,7 +302,7 @@ void RdbServiceImpl::UpdateMeta(const StoreMetaData &meta, const StoreMetaData &
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
     const std::vector<Reference> &references, bool isRebuild, int32_t type)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -423,7 +423,7 @@ RdbServiceImpl::DetailAsync RdbServiceImpl::GetCallbacks(uint32_t tokenId, const
 std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::RemoteQuery(const RdbSyncerParam& param,
     const std::string& device, const std::string& sql, const std::vector<std::string>& selectionArgs)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, nullptr };
@@ -453,7 +453,7 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
 int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
                              const AsyncDetail &async)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -717,7 +717,7 @@ int32_t RdbServiceImpl::UnregisterAutoSyncCallback(const RdbSyncerParam& param,
 int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -764,7 +764,7 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
 std::pair<int32_t, std::shared_ptr<RdbService::ResultSet>> RdbServiceImpl::QuerySharingResource(
     const RdbSyncerParam& param, const PredicatesMemo& predicates, const std::vector<std::string>& columns)
 {
-    if (!CheckAccess(param.bundleName_, param.storeName_) ||
+    if (!IsValidAccess(param.bundleName_, param.storeName_) ||
         !TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
@@ -805,7 +805,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbServiceImpl::AllocResource(StoreI
     return result;
 }
 
-bool RdbServiceImpl::CheckInvalidPath(const std::string &param)
+bool RdbServiceImpl::IsValidPath(const std::string &param)
 {
     if ((param.find("/") != std::string::npos) || (param.find("\\") != std::string::npos) || (param == "..")) {
         return false;
@@ -813,7 +813,7 @@ bool RdbServiceImpl::CheckInvalidPath(const std::string &param)
     return true;
 }
 
-bool RdbServiceImpl::CheckCustomDir(const std::string &customDir, int32_t upLimit)
+bool RdbServiceImpl::IsValidCustomDir(const std::string &customDir, int32_t upLimit)
 {
     if (customDir.empty()) {
         return true;
@@ -838,26 +838,26 @@ bool RdbServiceImpl::CheckCustomDir(const std::string &customDir, int32_t upLimi
     return true;
 }
 
-bool RdbServiceImpl::CheckParam(const RdbSyncerParam &param)
+bool RdbServiceImpl::IsValidParam(const RdbSyncerParam &param)
 {
     if (param.storeName_.find("/") != std::string::npos) {
         ZLOGE("storeName is Invalid, storeName is %{public}s.", Anonymous::Change(param.storeName_).c_str());
         return false;
     }
-    if (!CheckInvalidPath(param.bundleName_)) {
+    if (!IsValidPath(param.bundleName_)) {
         ZLOGE("bundleName is Invalid, bundleName is %{public}s.", param.bundleName_.c_str());
         return false;
     }
-    if (!CheckInvalidPath(param.user_)) {
+    if (!IsValidPath(param.user_)) {
         ZLOGE("user is Invalid, user is %{public}s.", param.user_.c_str());
         return false;
     }
-    if (!CheckInvalidPath(param.hapName_)) {
+    if (!IsValidPath(param.hapName_)) {
         ZLOGE("hapName is Invalid, hapName is %{public}s.", param.hapName_.c_str());
         return false;
     }
     int32_t upLimit = param.hapName_.empty() ? 1 : VALID_PARAM_LENGTH;
-    if (!CheckCustomDir(param.customDir_, upLimit)) {
+    if (!IsValidCustomDir(param.customDir_, upLimit)) {
         ZLOGE("customDir is Invalid, customDir is %{public}s.", Anonymous::Change(param.customDir_).c_str());
         return false;
     }
@@ -867,7 +867,7 @@ bool RdbServiceImpl::CheckParam(const RdbSyncerParam &param)
 int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -943,7 +943,7 @@ void RdbServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std:
 int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -1004,7 +1004,7 @@ bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaDat
 
 int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam& param, const RdbStatEvent &statEvent)
 {
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -1232,8 +1232,8 @@ int32_t RdbServiceImpl::OnReady(const std::string &device)
                 dataBase.autoSyncType == AutoSyncType::SYNC_ON_CHANGE_READY) &&
             index > 0) {
             std::vector<std::string> devices = {device};
-            if (!DoOnlineSync(devices, dataBase)) {
-                ZLOGE("store online sync fail, storeId:%{public}s", dataBase.name.c_str());
+            if (DoOnlineSync(devices, dataBase) != RDB_OK) {
+                ZLOGE("store online sync fail, storeId:%{public}s", Anonymous::Change(dataBase.name).c_str());
             }
             index--;
         }
@@ -1401,7 +1401,7 @@ int32_t RdbServiceImpl::NotifyDataChange(
     const RdbSyncerParam &param, const RdbChangedData &rdbChangedData, const RdbNotifyConfig &rdbNotifyConfig)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -1417,7 +1417,7 @@ int32_t RdbServiceImpl::NotifyDataChange(
     storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     DataChangeEvent::EventInfo eventInfo;
     eventInfo.isFull = rdbNotifyConfig.isFull_;
-    if (!DoDataChangeSync(storeInfo, rdbChangedData)) {
+    if (DoDataChangeSync(storeInfo, rdbChangedData) != RDB_OK) {
         ZLOGE("store datachange sync fail, storeId:%{public}s", Anonymous::Change(storeInfo.storeName).c_str());
     }
     for (const auto &[key, value] : rdbChangedData.tableData) {
@@ -1473,7 +1473,7 @@ bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotify
 int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam& param, bool isSearchable)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -1545,7 +1545,7 @@ std::vector<uint8_t> RdbServiceImpl::LoadSecretKey(const StoreMetaData &metaData
 
 int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std::vector<uint8_t>> &password)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -1578,7 +1578,7 @@ StoreInfo RdbServiceImpl::GetStoreInfo(const RdbSyncerParam &param)
 std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerParam &param)
 {
     std::pair<int32_t, uint32_t> result { RDB_ERROR, 0 };
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
               Anonymous::Change(param.storeName_).c_str());
         return result;
@@ -1600,7 +1600,7 @@ std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerP
 int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
 {
     int32_t result = RDB_ERROR;
-    if (!CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
               Anonymous::Change(param.storeName_).c_str());
         return result;
@@ -1621,7 +1621,7 @@ int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
 
 int32_t RdbServiceImpl::GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -1674,7 +1674,7 @@ int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSy
 
 int32_t RdbServiceImpl::GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::RdbDfxInfo &dfxInfo)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
