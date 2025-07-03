@@ -995,27 +995,6 @@ HWTEST_F(RdbServiceImplTest, GetPassword005, TestSize.Level0)
 }
 
 /**
- * @tc.name: GetPassword006
- * @tc.desc: Test GetPassword when CheckParam not pass.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zd
- */
-HWTEST_F(RdbServiceImplTest, GetPassword006, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    param.hapName_ = "test/test";
-    std::vector<std::vector<uint8_t>> password;
-
-    int32_t result = service.GetPassword(param, password);
-
-    EXPECT_EQ(result, RDB_ERROR);
-}
-
-/**
  * @tc.name: SetDistributedTables001
  * @tc.desc: Test SetDistributedTables when CheckAccess not pass.
  * @tc.type: FUNC
@@ -1242,85 +1221,6 @@ HWTEST_F(RdbServiceImplTest, GetDfxInfo001, TestSize.Level0)
 }
 
 /**
- * @tc.name: GetDfxInfo002
- * @tc.desc: Test GetDfxInfo when CheckParam not pass.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zd
- */
-HWTEST_F(RdbServiceImplTest, GetDfxInfo002, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    param.hapName_ = "test/test";
-    DistributedRdb::RdbDfxInfo dfxInfo;
-    int32_t result = service.GetDfxInfo(param, dfxInfo);
-    EXPECT_EQ(result, RDB_ERROR);
-}
-
-/**
- * @tc.name: GetDfxInfo003
- * @tc.desc: Test GetDfxInfo when CheckParam not pass.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zd
- */
-HWTEST_F(RdbServiceImplTest, GetDfxInfo003, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    DistributedRdb::RdbDfxInfo dfxInfo;
-    int32_t result = service.GetDfxInfo(param, dfxInfo);
-    EXPECT_EQ(result, RDB_OK);
-}
-
-/**
- * @tc.name: GetDfxInfo004
- * @tc.desc: Test GetDfxInfo when CheckParam not pass.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zd
- */
-HWTEST_F(RdbServiceImplTest, GetDfxInfo004, TestSize.Level0)
-{
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    DistributedRdb::RdbDfxInfo dfxInfo;
-    int32_t result = service.GetDfxInfo(param, dfxInfo);
-    EXPECT_EQ(result, RDB_OK);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
-}
-
-/**
- * @tc.name: GetDfxInfo005
- * @tc.desc: Test GetDfxInfo when CheckParam not pass.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zd
- */
-HWTEST_F(RdbServiceImplTest, GetDfxInfo005, TestSize.Level0)
-{
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetDfxInfoKey(), metaData_, false), true);
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    DistributedRdb::RdbDfxInfo dfxInfo;
-    int32_t result = service.GetDfxInfo(param, dfxInfo);
-    EXPECT_EQ(result, RDB_OK);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetDfxInfoKey(), false), true);
-}
-
-/**
  * @tc.name: LockCloudContainer001
  * @tc.desc: Test LockCloudContainer when CheckAccess fails.
  * @tc.type: FUNC
@@ -1415,28 +1315,6 @@ HWTEST_F(RdbServiceImplTest, GetDebugInfo001, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
-    std::map<std::string, RdbDebugInfo> debugInfo;
-
-    int32_t result = service.GetDebugInfo(param, debugInfo);
-
-    EXPECT_EQ(result, RDB_ERROR);
-    EXPECT_TRUE(debugInfo.empty());
-}
-
-/**
- * @tc.name: GetDebugInfo002
- * @tc.desc: Test GetDebugInfo when CheckSyncParam fails.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zhaojh
- */
-HWTEST_F(RdbServiceImplTest, GetDebugInfo002, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.hapName_ = "test/test";
     std::map<std::string, RdbDebugInfo> debugInfo;
 
     int32_t result = service.GetDebugInfo(param, debugInfo);

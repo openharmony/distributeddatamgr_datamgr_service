@@ -1545,7 +1545,7 @@ std::vector<uint8_t> RdbServiceImpl::LoadSecretKey(const StoreMetaData &metaData
 
 int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std::vector<uint8_t>> &password)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -1621,7 +1621,7 @@ int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
 
 int32_t RdbServiceImpl::GetDebugInfo(const RdbSyncerParam &param, std::map<std::string, RdbDebugInfo> &debugInfo)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
@@ -1674,7 +1674,7 @@ int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSy
 
 int32_t RdbServiceImpl::GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::RdbDfxInfo &dfxInfo)
 {
-    if (!CheckParam(param) || !CheckAccess(param.bundleName_, param.storeName_)) {
+    if (!CheckAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
