@@ -960,9 +960,15 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/preprocess",
+    "${data_service_path}/framework/include/directory",
   ]
 
   configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
 
   external_deps = [
     "ability_base:base",
