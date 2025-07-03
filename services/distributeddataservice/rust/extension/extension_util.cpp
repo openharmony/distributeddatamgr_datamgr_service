@@ -424,8 +424,23 @@ DBInfo ExtensionUtil::ConvertAppInfo(OhCloudExtAppInfo *appInfo)
     return info;
 }
 
+bool ExtensionUtil::ContainNullChar(const std::string &path)
+{
+    uint32_t pathLength = path.length();
+    const char *cStrPath = path.c_str();
+    uint32_t cStrLength = strlen(cStrPath);
+    if (pathLength != cStrLength) {
+        ZLOGW("The string contains null characters.");
+        return true;
+    }
+    return false;
+}
+
 std::pair<OhCloudExtCloudAsset *, size_t> ExtensionUtil::Convert(const DBAsset &dbAsset)
 {
+    if (ContainNullChar(dbAsset.path) || ContainNullChar(dbAsset.uri)) {
+        return { nullptr, 0 };
+    }
     OhCloudExtCloudAssetBuilder builder {
         .version = dbAsset.version,
         .status = ConvertAssetStatus(static_cast<DBAssetStatus>(dbAsset.status)),
