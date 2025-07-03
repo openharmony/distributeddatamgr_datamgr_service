@@ -424,7 +424,7 @@ DBInfo ExtensionUtil::ConvertAppInfo(OhCloudExtAppInfo *appInfo)
     return info;
 }
 
-bool ExtensionUtil::ValidateString(const std::string &path)
+bool ExtensionUtil::ContainNullChar(const std::string &path)
 {
     uint32_t pathLength = path.length();
     const char *cStrPath = path.c_str();
@@ -438,7 +438,7 @@ bool ExtensionUtil::ValidateString(const std::string &path)
 
 std::pair<OhCloudExtCloudAsset *, size_t> ExtensionUtil::Convert(const DBAsset &dbAsset)
 {
-    if (!ValidateString(dbAsset.path) || !ValidateString(dbAsset.uri)) {
+    if (!ContainNullChar(dbAsset.path) || !ContainNullChar(dbAsset.uri)) {
         return { nullptr, 0 };
     }
     OhCloudExtCloudAssetBuilder builder {
