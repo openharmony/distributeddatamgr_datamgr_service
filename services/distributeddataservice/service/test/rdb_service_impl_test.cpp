@@ -29,6 +29,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
+#include "metadata/store_debug_info.h"
 #include "mock/db_store_mock.h"
 #include "rdb_service_impl.h"
 #include "rdb_types.h"
