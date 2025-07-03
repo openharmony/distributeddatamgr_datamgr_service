@@ -1281,7 +1281,7 @@ HWTEST_F(RdbServiceImplTest, GetDfxInfo001, TestSize.Level0)
 
 /**
  * @tc.name: GetDfxInfo002
- * @tc.desc: Test GetDfxInfo when meta data is found.
+ * @tc.desc: Test GetDfxInfo when CheckAccess pass.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
