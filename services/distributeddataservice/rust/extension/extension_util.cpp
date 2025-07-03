@@ -424,8 +424,22 @@ DBInfo ExtensionUtil::ConvertAppInfo(OhCloudExtAppInfo *appInfo)
     return info;
 }
 
+bool ExtensionUtil::ValidateString(const std::string &path) {
+    uint32_t pathLength = path.length();
+    const char *cStrPath = path.c_str();
+    uint32_t cStrLength = strlen(cStrPath);
+    if (pathLength != cStrLength) {
+        ZLOGE("The string contains null characters.");
+        return false;
+    }
+    return true;
+}
+
 std::pair<OhCloudExtCloudAsset *, size_t> ExtensionUtil::Convert(const DBAsset &dbAsset)
 {
+    if (!ValidateString(dbAsset.path) || !ValidateString(dbAsset.uri)) {
+        return { nullptr, 0 };
+    }
     OhCloudExtCloudAssetBuilder builder {
         .version = dbAsset.version,
         .status = ConvertAssetStatus(static_cast<DBAssetStatus>(dbAsset.status)),
