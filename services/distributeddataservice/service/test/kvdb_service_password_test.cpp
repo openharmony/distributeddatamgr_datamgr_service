@@ -65,6 +65,7 @@ void KvdbServicePasswordTest::SetUpTestCase(void)
     metaData_.user = TEST_USER;
     metaData_.area = Area::EL1;
     metaData_.tokenId = IPCSkeleton::GetSelfTokenID();
+    (void)CryptoManager::GetInstance().GenerateRootKey();
 }
 
 std::vector<uint8_t> KvdbServicePasswordTest::Random(int32_t len)
