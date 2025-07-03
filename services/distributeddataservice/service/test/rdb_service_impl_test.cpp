@@ -995,6 +995,47 @@ HWTEST_F(RdbServiceImplTest, GetPassword005, TestSize.Level0)
 }
 
 /**
+ * @tc.name: GetPassword006
+ * @tc.desc: Test GetPassword when meta data is found.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, GetPassword006, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    auto sKey = Random(KEY_LENGTH);
+    ASSERT_FALSE(sKey.empty());
+    SecretKeyMetaData secretKey;
+    CryptoManager::CryptoParams encryptParams;
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(sKey, encryptParams);
+    secretKey.area = encryptParams.area;
+    secretKey.storeType = meta.storeType;
+    secretKey.nonce = encryptParams.nonce;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true), true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = meta.bundleName;
+    param.storeName_ = meta.storeId;
+    param.type_ = meta.storeType;
+    param.customDir_ = "../../../base/haps/entry/files/.backup/textautofill";
+    std::vector<std::vector<uint8_t>> password;
+
+    int32_t result = service.GetPassword(param, password);
+
+    EXPECT_EQ(result, RDB_OK);
+    ASSERT_GT(password.size(), 0);
+    EXPECT_EQ(password.at(0), sKey);
+    MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
+}
+
+/**
  * @tc.name: SetDistributedTables001
  * @tc.desc: Test SetDistributedTables when CheckAccess not pass.
  * @tc.type: FUNC
@@ -1221,6 +1262,36 @@ HWTEST_F(RdbServiceImplTest, GetDfxInfo001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: GetDfxInfo002
+ * @tc.desc: Test GetPassword when meta data is found.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, GetDfxInfo002, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+    auto meta = metaData_;
+    DistributedData::StoreDfxInfo dfxMeta;
+    dfxMeta.lastOpenTime = "test";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetDfxInfoKey(), dfxMeta, true), true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = meta.bundleName;
+    param.storeName_ = meta.storeId;
+    param.type_ = meta.storeType;
+    param.customDir_ = "../../../base/haps/entry/files/.backup/textautofill";
+    DistributedRdb::RdbDfxInfo dfxInfo;
+    int32_t result = service.GetDfxInfo(param, dfxInfo);
+    EXPECT_EQ(dfxInfo.lastOpenTime_, "test");
+    EXPECT_EQ(result, RDB_OK);
+    MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
+}
+
+/**
  * @tc.name: LockCloudContainer001
  * @tc.desc: Test LockCloudContainer when CheckAccess fails.
  * @tc.type: FUNC
@@ -1324,6 +1395,56 @@ HWTEST_F(RdbServiceImplTest, GetDebugInfo001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: GetDebugInfo002
+ * @tc.desc: Test GetDebugInfo when CheckAccess pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, GetDebugInfo002, TestSize.Level0)
+{
+    auto meta = metaData_;
+    DistributedData::StoreDebugInfo debugMeta;
+    DistributedData::StoreDebugInfo::FileInfo fileInfo1;
+    fileInfo1.inode = 4;
+    fileInfo1.size = 5;
+    fileInfo1.dev = 6;
+    fileInfo1.mode = 7;
+    fileInfo1.uid = 8;
+    fileInfo1.gid = 9;
+    debugMeta.fileInfos.insert(std::pair{ "test1", fileInfo1 });
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetDebugInfoKey(), debugMeta, true), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.type_ = metaData_.storeType;
+    param.level_ = metaData_.securityLevel;
+    param.area_ = metaData_.area;
+    param.hapName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.isSearchable_ = metaData_.isSearchable;
+    param.haMode_ = metaData_.haMode;
+    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
+    param.user_ = metaData_.user;
+    param.customDir_ = "../../../base/haps/entry/files/.backup/textautofill";
+    std::map<std::string, RdbDebugInfo> debugInfo;
+    int32_t result = service.GetDebugInfo(param, debugInfo);
+    EXPECT_EQ(result, RDB_OK);
+    RdbDebugInfo rdbInfo = debugInfo["test1"];
+    EXPECT_EQ(rdbInfo.inode_, 4);
+    EXPECT_EQ(rdbInfo.size_, 5);
+    EXPECT_EQ(rdbInfo.dev_, 6);
+    EXPECT_EQ(rdbInfo.mode_, 7);
+    EXPECT_EQ(rdbInfo.uid_, 8);
+    EXPECT_EQ(rdbInfo.gid_, 9);
+    EXPECT_EQ(debugInfo.size(), 1);
+    MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
+}
+
+/**
  * @tc.name: VerifyPromiseInfo001
  * @tc.desc: Test VerifyPromiseInfo when LoadMeta fails.
  * @tc.type: FUNC
@@ -1396,18 +1517,18 @@ HWTEST_F(RdbServiceImplTest, CheckParam001, TestSize.Level0)
     param.user_ = "test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
     param.bundleName_ = "..";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 
     param.bundleName_ = "test\\..test";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 }
@@ -1429,18 +1550,18 @@ HWTEST_F(RdbServiceImplTest, CheckParam002, TestSize.Level0)
     param.user_ = "test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
     param.hapName_ = "..";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
     
     param.hapName_ = "test\\..test";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 }
@@ -1462,18 +1583,18 @@ HWTEST_F(RdbServiceImplTest, CheckParam003, TestSize.Level0)
     param.user_ = "test/test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 
     param.user_ = "..";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
     param.user_ = "test\\..test";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 }
@@ -1495,7 +1616,7 @@ HWTEST_F(RdbServiceImplTest, CheckParam004, TestSize.Level0)
     param.user_ = "test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, true);
 }
@@ -1517,7 +1638,7 @@ HWTEST_F(RdbServiceImplTest, CheckParam005, TestSize.Level0)
     param.user_ = "test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 }
@@ -1538,59 +1659,59 @@ HWTEST_F(RdbServiceImplTest, CheckParam006, TestSize.Level0)
     param.storeName_ = "test";
     param.user_ = "test";
     param.customDir_ = "test/../../test/../../../";
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../test/../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../../../test/../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/./../../test/../../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/.../../../test/../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/test/../../../test/test/../test/../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/test/../../../../../test/test/test/";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "/test";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/..//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..////./././///////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..////./././//////////////////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 }
 
@@ -1610,59 +1731,59 @@ HWTEST_F(RdbServiceImplTest, CheckParam007, TestSize.Level0)
     param.storeName_ = "test";
     param.user_ = "test";
     param.customDir_ = "test/../../test/../../../";
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../test/../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../../../test/../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../../../test/../../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/.../../test/../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/test/../../../test/test/../test/../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/test/../../../../../test/test/test/";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "/test";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test//////////////////..///////../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/..//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..////./././///////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..////./././///////////////////../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 }
 

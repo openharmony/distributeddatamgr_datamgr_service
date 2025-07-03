@@ -211,13 +211,13 @@ private:
 
     void SaveLaunchInfo(StoreMetaData &meta);
 
-    static bool CheckAccess(const std::string& bundleName, const std::string& storeName);
+    static bool IsValidAccess(const std::string& bundleName, const std::string& storeName);
 
-    static bool CheckInvalidPath(const std::string& param);
+    static bool IsValidPath(const std::string& param);
 
-    static bool CheckCustomDir(const std::string &customDir, int32_t upLimit);
+    static bool IsValidCustomDir(const std::string &customDir, int32_t upLimit);
 
-    static bool CheckParam(const RdbSyncerParam &param);
+    static bool IsValidParam(const RdbSyncerParam &param);
 
     static StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
 
