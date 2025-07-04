@@ -166,7 +166,7 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
             ProcessSyncCallback(results, dstBundleName, sessionId, deviceId);
             proxy->Completed(results);
         };
-    result = SyncOnStore(GetPropertyPrefix(dstBundleName, sessionId, deviceId), {deviceId}, syncCallback);
+    result = SyncOnStore(GetPropertyPrefix(dstBundleName, sessionId, deviceId), { deviceId }, syncCallback);
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Sync data failed, result: %{public}d", result);
         ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE,
