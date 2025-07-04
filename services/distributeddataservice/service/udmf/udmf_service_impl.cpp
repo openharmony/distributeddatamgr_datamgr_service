@@ -479,7 +479,6 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
     auto status = QueryDataCommon(query, dataSet, store);
     if (status != E_OK) {
         ZLOGE("QueryDataCommon failed.");
-        CloseStoreWhenCorrupted(key.intention, static_cast<Status>(status));
         return E_DB_ERROR;
     }
     if (dataSet.empty()) {
@@ -609,9 +608,8 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
     if (res != E_OK) {
         ZLOGE("Update runtime failed, res:%{public}d, key:%{public}s", res, query.key.c_str());
         CloseStoreWhenCorrupted(key.intention, res);
-        return E_DB_ERROR;
     }
-    return E_OK;
+    return res;
 }
 
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
