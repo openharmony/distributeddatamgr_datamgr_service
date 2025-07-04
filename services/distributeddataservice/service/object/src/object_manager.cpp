@@ -62,6 +62,10 @@ ObjectStoreManager::~ObjectStoreManager()
             ZLOGE("UnRegister assetsRecvListener err %{public}d", status);
         }
     }
+    if (objectDataListener_ != nullptr) {
+        delete objectDataListener_;
+        objectDataListener_ = nullptr;
+    }
 }
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
