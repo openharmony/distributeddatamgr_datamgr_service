@@ -577,7 +577,7 @@ Status RuntimeStore::PutEntries(const std::vector<Entry> &entries)
 
 Status RuntimeStore::DeleteEntries(const std::vector<Key> &keys)
 {
-    DBStatus status = INVALID_PASSWD_OR_CORRUPTED_DB;
+    DBStatus status = kvStore_->DeleteBatch(keys);
     if (status != DBStatus::OK) {
         ZLOGE("deleteBatch failed, status: %{public}d.", status);
         return MarkWhenCorrupted(status);
