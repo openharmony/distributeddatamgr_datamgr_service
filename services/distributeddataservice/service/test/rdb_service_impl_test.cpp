@@ -1000,7 +1000,7 @@ HWTEST_F(RdbServiceImplTest, GetPassword005, TestSize.Level0)
  * @tc.desc: Test GetPassword when meta data is found.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zhaojh
+ * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTest, GetPassword006, TestSize.Level0)
 {
@@ -1141,6 +1141,23 @@ HWTEST_F(RdbServiceImplTest, Sync002, TestSize.Level0)
 }
 
 /**
+ * @tc.name: QuerySharingResource001
+ * @tc.desc: Test QuerySharingResource when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, QuerySharingResource001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    PredicatesMemo predicates;
+    std::vector<std::string> columns;
+    auto result = service.QuerySharingResource(param, predicates, columns);
+    EXPECT_EQ(result.first, RDB_ERROR);
+}
+
+/**
  * @tc.name: BeforeOpen001
  * @tc.desc: Test BeforeOpen when CheckParam not pass.
  * @tc.type: FUNC
@@ -1264,10 +1281,10 @@ HWTEST_F(RdbServiceImplTest, GetDfxInfo001, TestSize.Level0)
 
 /**
  * @tc.name: GetDfxInfo002
- * @tc.desc: Test GetPassword when meta data is found.
+ * @tc.desc: Test GetDfxInfo when CheckAccess pass.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zhaojh
+ * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTest, GetDfxInfo002, TestSize.Level0)
 {
@@ -1400,7 +1417,7 @@ HWTEST_F(RdbServiceImplTest, GetDebugInfo001, TestSize.Level0)
  * @tc.desc: Test GetDebugInfo when CheckAccess pass.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zhaojh
+ * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTest, GetDebugInfo002, TestSize.Level0)
 {
