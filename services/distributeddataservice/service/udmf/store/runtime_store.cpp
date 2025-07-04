@@ -181,6 +181,7 @@ Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
         }
         UDDetails details {};
         if (PreProcessUtils::GetDetailsFromUData(unifiedData, details)) {
+            ZLOGE("GetDetailsFromUData11111");
             return PreProcessUtils::GetSummaryFromDetails(details, summary);
         }
         UnifiedDataHelper::GetSummary(unifiedData, summary);
