@@ -28,6 +28,7 @@ public:
     static StoreCache &GetInstance();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     void CloseStores();
+    void RemoveStore(std::string intention);
 
 private:
     StoreCache() {}

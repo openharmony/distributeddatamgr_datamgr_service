@@ -588,5 +588,39 @@ HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData004, TestSize.Level1)
     int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
     EXPECT_EQ(result, UDMF::E_OK);
 }
+
+/**
+ * @tc.name: CloseStoreWhenCorrupted001
+ * @tc.desc: Normal test of CloseStoreWhenCorrupted
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, CloseStoreWhenCorrupted001, TestSize.Level1)
+{
+    std::string intention = "drag";
+    StoreCache::GetInstance().CloseStores();
+    auto store = StoreCache::GetInstance().GetStore(intention);
+    EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
+    Status status = UDMF::E_OK;
+    UdmfServiceImpl impl;
+    impl.CloseStoreWhenCorrupted(intention, status);
+    EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
+}
+
+/**
+ * @tc.name: CloseStoreWhenCorrupted002
+ * @tc.desc: Abnormal test of CloseStoreWhenCorrupted
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, CloseStoreWhenCorrupted002, TestSize.Level1)
+{
+    std::string intention = "drag";
+    StoreCache::GetInstance().CloseStores();
+    auto store = StoreCache::GetInstance().GetStore(intention);
+    EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
+    Status status = UDMF::E_DB_CORRUPTED;
+    UdmfServiceImpl impl;
+    impl.CloseStoreWhenCorrupted(intention, status);
+    EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 0);
+}
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

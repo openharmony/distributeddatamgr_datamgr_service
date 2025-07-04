@@ -60,7 +60,7 @@ Status RuntimeStore::PutLocal(const std::string &key, const std::string &value)
     auto status = kvStore_->PutLocal(keyBytes, valueBytes);
     if (status != DBStatus::OK) {
         ZLOGE("KvStore PutLocal failed, status: %{public}d.", status);
-        return E_DB_ERROR;
+        return MarkWhenCorrupted(status);
     }
     return E_OK;
 }
@@ -73,7 +73,7 @@ Status RuntimeStore::GetLocal(const std::string &key, std::string &value)
     DBStatus status = kvStore_->GetLocal(keyBytes, valueBytes);
     if (status != DBStatus::OK && status != DBStatus::NOT_FOUND) {
         ZLOGE("GetLocal entry failed, key: %{public}s.", key.c_str());
-        return E_DB_ERROR;
+        return MarkWhenCorrupted(status);
     }
     if (valueBytes.empty()) {
         ZLOGW("GetLocal entry is empty, key: %{public}s", key.c_str());
@@ -91,7 +91,7 @@ Status RuntimeStore::DeleteLocal(const std::string &key)
     DBStatus status = kvStore_->DeleteLocal(keyBytes);
     if (status != DBStatus::OK && status != DBStatus::NOT_FOUND) {
         ZLOGE("DeleteLocal failed, key: %{public}s.", key.c_str());
-        return E_DB_ERROR;
+        return MarkWhenCorrupted(status);
     }
     return E_OK;
 }
@@ -115,9 +115,10 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
 {
     UpdateTime();
     std::vector<Entry> entries;
-    if (GetEntries(UnifiedKey(key).GetKeyCommonPrefix(), entries) != E_OK) {
+    auto status = GetEntries(UnifiedKey(key).GetKeyCommonPrefix(), entries);
+    if (status != E_OK) {
         ZLOGE("GetEntries failed, dataPrefix: %{public}s.", key.c_str());
-        return E_DB_ERROR;
+        return status;
     }
     if (entries.empty()) {
         ZLOGW("entries is empty, dataPrefix: %{public}s", key.c_str());
@@ -173,9 +174,10 @@ Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
         ZLOGW("Get stored summary failed, key: %{public}s, status:%{public}d", summaryKey.c_str(), res);
         UnifiedData unifiedData;
         auto udKey = key.GetUnifiedKey();
-        if (Get(udKey, unifiedData) != E_OK) {
+        auto status = Get(udKey, unifiedData);
+        if (status != E_OK) {
             ZLOGE("Get unified data failed, key: %{public}s", udKey.c_str());
-            return E_DB_ERROR;
+            return status;
         }
         UDDetails details {};
         if (PreProcessUtils::GetDetailsFromUData(unifiedData, details)) {
@@ -204,7 +206,7 @@ Status RuntimeStore::PutRuntime(const std::string &key, const Runtime &runtime)
     auto res = kvStore_->Put({key.begin(), key.end()}, value);
     if (res != OK) {
         ZLOGE("Put failed, key:%{public}s, status:%{public}d", key.c_str(), res);
-        return E_DB_ERROR;
+        return MarkWhenCorrupted(res);
     }
     return E_OK;
 }
@@ -220,7 +222,7 @@ Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
     }
     if (res != OK || value.empty()) {
         ZLOGE("Get failed, key: %{public}s, status:%{public}d", key.c_str(), res);
-        return E_DB_ERROR;
+        return MarkWhenCorrupted(res);
     }
     auto status = DataHandler::UnmarshalEntries(value, runtime, TAG::TAG_RUNTIME);
     if (status != E_OK) {
@@ -233,14 +235,16 @@ Status RuntimeStore::GetRuntime(const std::string &key, Runtime &runtime)
 Status RuntimeStore::Update(const UnifiedData &unifiedData)
 {
     std::string key = unifiedData.GetRuntime()->key.key;
-    if (Delete(UnifiedKey(key).GetKeyCommonPrefix()) != E_OK) {
+    auto status = Delete(UnifiedKey(key).GetKeyCommonPrefix());
+    if (status != E_OK) {
         UpdateTime();
         ZLOGE("Delete unified data failed, dataPrefix: %{public}s.", key.c_str());
-        return E_DB_ERROR;
+        return status;
     }
-    if (Put(unifiedData) != E_OK) {
+    status = Put(unifiedData);
+    if (status != E_OK) {
         ZLOGE("Update unified data failed, dataPrefix: %{public}s.", key.c_str());
-        return E_DB_ERROR;
+        return status;
     }
     return E_OK;
 }
@@ -248,9 +252,10 @@ Status RuntimeStore::Update(const UnifiedData &unifiedData)
 Status RuntimeStore::Delete(const std::string &key)
 {
     std::vector<Entry> entries;
-    if (GetEntries(key, entries) != E_OK) {
+    auto status = GetEntries(key, entries);
+    if (status != E_OK) {
         ZLOGE("GetEntries failed, dataPrefix: %{public}s.", key.c_str());
-        return E_DB_ERROR;
+        return status;
     }
     if (entries.empty()) {
         ZLOGD("entries is empty.");
@@ -382,7 +387,7 @@ Status RuntimeStore::GetBatchData(const std::string &dataPrefix, std::vector<Uni
     auto status = GetEntries(dataPrefix, entries);
     if (status != E_OK) {
         ZLOGE("GetEntries failed, dataPrefix: %{public}s.", dataPrefix.c_str());
-        return E_DB_ERROR;
+        return status;
     }
     if (entries.empty()) {
         ZLOGD("entries is empty.");
@@ -428,6 +433,13 @@ bool RuntimeStore::Init()
                                      delegate = nbDelegate;
                                      status = dbStatus;
                                  });
+    if (status == INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("GetKvStore fail, database corrupted, status: %{public}d.", static_cast<int>(status));
+        if (delegateManager_->DeleteKvStore(storeId_) != DBStatus::OK) {
+            ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(status));
+        }
+        return false;
+    }
     if (status != DBStatus::OK) {
         ZLOGE("GetKvStore fail, status: %{public}d.", static_cast<int>(status));
         return false;
@@ -441,6 +453,13 @@ bool RuntimeStore::Init()
         auto retStatus = delegateManager_->CloseKvStore(delegate);
         if (retStatus != DBStatus::OK) {
             ZLOGE("CloseKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
+        }
+        if (isCorrupted) {
+            ZLOGI("start to delete runtime kvStore.");
+            retStatus = delegateManager_->DeleteKvStore(storeId_);
+            if (retStatus != DBStatus::OK) {
+                ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
+            }
         }
     };
     kvStore_ = std::shared_ptr<KvStoreNbDelegate>(delegate, release);
@@ -549,7 +568,7 @@ Status RuntimeStore::GetEntries(const std::string &dataPrefix, std::vector<Entry
     DBStatus status = kvStore_->GetEntries(dbQuery, entries);
     if (status != DBStatus::OK && status != DBStatus::NOT_FOUND) {
         ZLOGE("KvStore getEntries failed, status: %{public}d.", static_cast<int>(status));
-        return E_DB_ERROR;
+        return MarkWhenCorrupted(status);
     }
     return E_OK;
 }
@@ -559,7 +578,7 @@ Status RuntimeStore::PutEntries(const std::vector<Entry> &entries)
     DBStatus status = kvStore_->PutBatch(entries);
     if (status != DBStatus::OK) {
         ZLOGE("putBatch failed, status: %{public}d.", status);
-        return E_DB_ERROR;
+        return MarkWhenCorrupted(status);
     }
     return E_OK;
 }
@@ -569,10 +588,19 @@ Status RuntimeStore::DeleteEntries(const std::vector<Key> &keys)
     DBStatus status = kvStore_->DeleteBatch(keys);
     if (status != DBStatus::OK) {
         ZLOGE("deleteBatch failed, status: %{public}d.", status);
-        return E_DB_ERROR;
+        return MarkWhenCorrupted(status);
     }
     return E_OK;
 }
 
+Status RuntimeStore::MarkWhenCorrupted(DistributedDB::DBStatus status)
+{
+    if (status == INVALID_PASSWD_OR_CORRUPTED_DB) {
+        ZLOGE("Kv database corrupted");
+        isCorrupted = true;
+        return E_DB_CORRUPTED;
+    }
+    return E_DB_ERROR;
+}
 } // namespace UDMF
 } // namespace OHOS
