@@ -79,7 +79,6 @@ time_t PreProcessUtils::GetTimestamp()
 
 int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId, int &userId)
 {
-    userId = 100;
     return E_OK;
 }
 
@@ -87,7 +86,6 @@ bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleNa
 {
     bundleName = "processName";
     return true;
-
 }
 
 bool PreProcessUtils::GetNativeProcessNameByToken(int tokenId, std::string &processName)
