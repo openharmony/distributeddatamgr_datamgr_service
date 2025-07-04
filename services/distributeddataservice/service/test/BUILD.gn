@@ -2180,7 +2180,6 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:utd_client",
   ]
 
   deps = [
