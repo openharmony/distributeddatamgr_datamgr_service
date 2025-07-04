@@ -31,6 +31,8 @@
 #include "metadata/store_meta_data_local.h"
 #include "metadata/store_debug_info.h"
 #include "mock/db_store_mock.h"
+#include "mock/general_store_mock.h"
+#include "store/general_value.h"
 #include "rdb_service_impl.h"
 #include "rdb_types.h"
 #include "relational_store_manager.h"
@@ -540,6 +542,7 @@ HWTEST_F(RdbServiceImplTest, DoCompensateSync001, TestSize.Level0)
         EXPECT_EQ(GeneralStore::GetPriorityLevel(GeneralStore::GetHighMode(static_cast<uint32_t>(mode))), 1);
     });
     service.DoCompensateSync(event);
+    EventCenter::GetInstance().Unsubscribe(CloudEvent::LOCAL_CHANGE);
 }
 
 /**
@@ -2082,5 +2085,235 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_009, TestSize.Level1)
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
+/**
+ * @tc.name: SetDistributedTables004
+ * @tc.desc: Test SetDistributedTables when type is device.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "SetDistributedTables004";
+    param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    std::vector<std::string> tables;
+    std::vector<OHOS::DistributedRdb::Reference> references;
+
+    auto meta = service.GetStoreMetaData(param);
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
+        auto store = new (std::nothrow) GeneralStoreMock();
+        return store;
+    };
+    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
+
+    int32_t result =
+        service.SetDistributedTables(param, tables, references, false,
+                                     DistributedTableType::DISTRIBUTED_DEVICE);
+    EXPECT_EQ(result, RDB_OK);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: RemoteQuery003
+ * @tc.desc: test RemoteQuery, when CheckAccess pass but query failed.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, RemoteQuery003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "RemoteQuery003";
+    std::vector<std::string> selectionArgs;
+    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    auto ret = service.RemoteQuery(param, deviceId, "", selectionArgs);
+    EXPECT_EQ(ret.first, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: Sync003
+ * @tc.desc: Test Sync when mode is nearby begin.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, Sync003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "Sync003";
+    RdbService::Option option { DistributedData::GeneralStore::NEARBY_BEGIN };
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: Sync004
+ * @tc.desc: Test Sync when mode is cloud begin.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, Sync004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "Sync004";
+    RdbService::Option option { DistributedData::GeneralStore::CLOUD_BEGIN };
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: QuerySharingResource_PermissionDenied_001
+ * @tc.desc: Test QuerySharingResource returns RDB_ERROR when CheckAccess fails.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, QuerySharingResource_PermissionDenied_001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    // param.bundleName_ and param.storeName_ left empty to trigger CheckAccess failure
+    PredicatesMemo predicates;
+    predicates.tables_ = {"table1"};
+    std::vector<std::string> columns = {"col1", "col2"};
+
+    auto result = service.QuerySharingResource(param, predicates, columns);
+    EXPECT_EQ(result.first, RDB_ERROR);
+    EXPECT_EQ(result.second, nullptr);
+}
+
+/**
+ * @tc.name: QuerySharingResource_PermissionDenied_002
+ * @tc.desc: Test QuerySharingResource returns RDB_ERROR when not system app.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, QuerySharingResource_PermissionDenied_002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    PredicatesMemo predicates;
+    predicates.tables_ = {"table1"};
+    std::vector<std::string> columns = {"col1", "col2"};
+
+    auto result = service.QuerySharingResource(param, predicates, columns);
+    EXPECT_EQ(result.first, RDB_ERROR);
+    EXPECT_EQ(result.second, nullptr);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_CloneKeyUpdate_001
+ * @tc.desc: Test SaveSecretKeyMeta updates clone secret key when area < 0 or nonce is empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_001, TestSize.Level0)
+{
+    // Prepare metaData and secret key
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> password = Random(KEY_LENGTH);
+
+    // Prepare cloneKey with area < 0 and empty nonce
+    SecretKeyMetaData cloneKey;
+    CryptoManager::CryptoParams params;
+    cloneKey.sKey = CryptoManager::GetInstance().Encrypt(password, params);
+    cloneKey.area = -1;
+    cloneKey.nonce.clear();
+    cloneKey.storeType = meta.storeType;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    // Call SaveSecretKeyMeta, should trigger UpdateSecretMeta for cloneKey
+    RdbServiceImpl service;
+    service.SaveSecretKeyMeta(meta, password);
+
+    // Clean up
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_CloneKeyUpdate_EmptySKey_002
+ * @tc.desc: Test SaveSecretKeyMeta does not update clone secret key if sKey is empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_EmptySKey_002, TestSize.Level0)
+{
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> password = Random(KEY_LENGTH);
+
+    // Prepare cloneKey with empty sKey
+    SecretKeyMetaData cloneKey;
+    cloneKey.sKey.clear();
+    cloneKey.area = -1;
+    cloneKey.nonce.clear();
+    cloneKey.storeType = meta.storeType;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    RdbServiceImpl service;
+    service.SaveSecretKeyMeta(meta, password);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_CloneKeyUpdate_NoUpdate_003
+ * @tc.desc: Test SaveSecretKeyMeta does not update clone secret key if area >= 0 and nonce not empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_NoUpdate_003, TestSize.Level0)
+{
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> password = Random(KEY_LENGTH);
+
+    // Prepare cloneKey with area >= 0 and nonce not empty
+    SecretKeyMetaData cloneKey;
+    CryptoManager::CryptoParams params;
+    cloneKey.sKey = CryptoManager::GetInstance().Encrypt(password, params);
+    cloneKey.area = 1;
+    cloneKey.nonce = { 1, 2, 3, 4 };
+    cloneKey.storeType = meta.storeType;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    RdbServiceImpl service;
+    service.SaveSecretKeyMeta(meta, password);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
