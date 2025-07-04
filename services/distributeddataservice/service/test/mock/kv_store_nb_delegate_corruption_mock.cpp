@@ -278,7 +278,8 @@ DBStatus KvStoreNbDelegateCorruptionMock::RemoveDeviceData(const std::string &de
     return DBStatus::OK;
 }
 
-DBStatus KvStoreNbDelegateCorruptionMock::RemoveDeviceData(const std::string &device, const std::string &user, ClearMode mode)
+DBStatus KvStoreNbDelegateCorruptionMock::RemoveDeviceData(const std::string &device,
+    const std::string &user, ClearMode mode)
 {
     return DBStatus::OK;
 }
@@ -323,7 +324,8 @@ DBStatus KvStoreNbDelegateCorruptionMock::GetDeviceEntries(const std::string &de
     return DBStatus::OK;
 }
 
-DBStatus KvStoreNbDelegateCorruptionMock::Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess)
+DBStatus KvStoreNbDelegateCorruptionMock::Sync(const DeviceSyncOption &option,
+    const DeviceSyncProcessCallback &onProcess)
 {
     return DBStatus::OK;
 }

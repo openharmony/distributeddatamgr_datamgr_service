@@ -398,7 +398,6 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
 {
     UnifiedKey key(query.key);
     if (!IsValidInput(query, unifiedData, key)) {
-        ZLOGE("Invalid input, key = %{public}s", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
