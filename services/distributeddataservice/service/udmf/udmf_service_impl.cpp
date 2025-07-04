@@ -431,7 +431,6 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
         ZLOGE("Invalid parameter, runtime is nullptr.");
         return E_DB_ERROR;
     }
-
     if (runtime->tokenId != query.tokenId && !HasDatahubPriviledge(bundleName) &&
         CheckAppId(runtime, bundleName) != E_OK) {
         ZLOGE("Update failed: tokenId or appId mismatch, bundleName: %{public}s", bundleName.c_str());
@@ -440,8 +439,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
     unifiedData.SetRuntime(*runtime);
     PreProcessUtils::SetRecordUid(unifiedData);
-    res = store->Update(unifiedData);
-    if (res != E_OK) {
+    if ((res = store->Update(unifiedData)) != E_OK) {
         ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
         CloseStoreWhenCorrupted(key.intention, static_cast<Status>(res));
         return E_DB_ERROR;
