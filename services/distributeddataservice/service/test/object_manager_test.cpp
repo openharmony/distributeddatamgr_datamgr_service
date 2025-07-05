@@ -1225,7 +1225,7 @@ HWTEST_F(ObjectManagerTest, OnFinished002, TestSize.Level1)
 
 /**
 * @tc.name: DestructedObjectStoreManager001
-* @tc.desc: test objectDataListener_ is not nullptr ObjectStoreManager is destructed.
+* @tc.desc: Test that the destructor cleans the dataCaches when objectDataListener_ is not nullptr.
 * @tc.type: FUNC
 */
 HWTEST_F(ObjectManagerTest, DestructedObjectStoreManager001, TestSize.Level1)
@@ -1237,7 +1237,7 @@ HWTEST_F(ObjectManagerTest, DestructedObjectStoreManager001, TestSize.Level1)
 
 /**
 * @tc.name: DestructedObjectStoreManager002
-* @tc.desc: test objectDataListener_ is nullptr ObjectStoreManager is destructed.
+* @tc.desc: Test that the destructor does not clean the dataCaches when objectDataListener_ is nullptr.
 * @tc.type: FUNC
 */
 HWTEST_F(ObjectManagerTest, DestructedObjectStoreManager002, TestSize.Level1)
