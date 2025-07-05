@@ -488,23 +488,6 @@ HWTEST_F(ObjectManagerTest, DeleteSnapshot001, TestSize.Level0)
 }
 
 /**
-* @tc.name: OpenObjectKvStore001
-* @tc.desc: OpenObjectKvStore test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
-*/
-HWTEST_F(ObjectManagerTest, OpenObjectKvStore001, TestSize.Level0)
-{
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->objectDataListener_ = nullptr;
-    ASSERT_EQ(manager->objectDataListener_, nullptr);
-    manager->OpenObjectKvStore();
-    ASSERT_NE(manager->objectDataListener_, nullptr);
-    manager->OpenObjectKvStore();
-}
-
-/**
 * @tc.name: FlushClosedStore001
 * @tc.desc: FlushClosedStore test.
 * @tc.type: FUNC

@@ -71,9 +71,6 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
     option.createDirByStoreIdOnly = true;
     option.syncDualTupleMode = true;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
-    if (objectDataListener_ == nullptr) {
-        objectDataListener_ = new ObjectDataListener();
-    }
     ZLOGD("start GetKvStore");
     kvStoreDelegateManager_->GetKvStore(ObjectCommon::OBJECTSTORE_DB_STOREID, option,
         [&store, this](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
@@ -86,7 +83,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
             std::vector<uint8_t> tmpKey;
             DistributedDB::DBStatus status = store->RegisterObserver(tmpKey,
                 DistributedDB::ObserverMode::OBSERVER_CHANGES_FOREIGN,
-                objectDataListener_);
+                &objectDataListener_);
             if (status != DistributedDB::DBStatus::OK) {
                 ZLOGE("RegisterObserver err %{public}d", status);
             }
@@ -910,10 +907,6 @@ void ObjectStoreManager::FlushClosedStore()
             return;
         }
         delegate_ = nullptr;
-        if (objectDataListener_ != nullptr) {
-            delete objectDataListener_;
-            objectDataListener_ = nullptr;
-        }
     }
 }
 
