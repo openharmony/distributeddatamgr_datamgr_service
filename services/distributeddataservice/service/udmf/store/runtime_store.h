@@ -64,6 +64,8 @@ private:
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
     Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
+    Status MarkWhenCorrupted(DistributedDB::DBStatus status);
+    bool isCorrupted_ = false;
 };
 } // namespace UDMF
 } // namespace OHOS

@@ -642,18 +642,10 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
     EXPECT_TRUE(result);
-
-    UnifiedData data;
-    UDDetails details;
-    details.insert({ "udmf_key", "udmf_value" });
-    auto text = std::make_shared<Text>();
-    text->SetDetails(details);
-    data.AddRecord(text);
-
     Summary summary;
     UnifiedKey key(KEY_PREFIX);
     auto status = store->GetSummary(key, summary);
-    ASSERT_EQ(status, E_DB_ERROR);
+    ASSERT_EQ(status, E_NOT_FOUND);
 }
 
 /**
@@ -736,6 +728,34 @@ HWTEST_F(UdmfRunTimeStoreTest, OnAccountChanged001, TestSize.Level1)
     EXPECT_EQ(access(userPath.c_str(), F_OK), -1);
     SetSelfTokenID(0);
     observer.OnAccountChanged(eventInfo, 0);
+}
+
+/**
+* @tc.name: MarkWhenCorrupted001
+* @tc.desc: Normal testcase of MarkWhenCorrupted
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, MarkWhenCorrupted001, TestSize.Level1)
+{
+    DistributedDB::DBStatus status = DistributedDB::DBStatus::OK;
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->MarkWhenCorrupted(status);
+    EXPECT_FALSE(store->isCorrupted_);
+}
+
+/**
+* @tc.name: MarkWhenCorrupted001
+* @tc.desc: Normal testcase of MarkWhenCorrupted
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, MarkWhenCorrupted002, TestSize.Level1)
+{
+    DistributedDB::DBStatus status = DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB;
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->MarkWhenCorrupted(status);
+    EXPECT_TRUE(store->isCorrupted_);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
