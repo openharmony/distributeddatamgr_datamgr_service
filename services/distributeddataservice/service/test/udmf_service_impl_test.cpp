@@ -602,7 +602,7 @@ HWTEST_F(UdmfServiceImplTest, CloseStoreWhenCorrupted001, TestSize.Level1)
     EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
     int32_t status = UDMF::E_OK;
     UdmfServiceImpl impl;
-    impl.CloseStoreWhenCorrupted(intention, status);
+    impl.HandleDbError(intention, status);
     EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
 }
 
@@ -619,8 +619,9 @@ HWTEST_F(UdmfServiceImplTest, CloseStoreWhenCorrupted002, TestSize.Level1)
     EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
     int32_t status = UDMF::E_DB_CORRUPTED;
     UdmfServiceImpl impl;
-    impl.CloseStoreWhenCorrupted(intention, status);
+    impl.HandleDbError(intention, status);
     EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 0);
+    EXPECT_EQ(status, UDMF::E_DB_ERROR);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
