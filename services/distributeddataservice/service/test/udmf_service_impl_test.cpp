@@ -600,7 +600,7 @@ HWTEST_F(UdmfServiceImplTest, CloseStoreWhenCorrupted001, TestSize.Level1)
     StoreCache::GetInstance().CloseStores();
     auto store = StoreCache::GetInstance().GetStore(intention);
     EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
-    Status status = UDMF::E_OK;
+    int32_t status = UDMF::E_OK;
     UdmfServiceImpl impl;
     impl.CloseStoreWhenCorrupted(intention, status);
     EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
@@ -617,7 +617,7 @@ HWTEST_F(UdmfServiceImplTest, CloseStoreWhenCorrupted002, TestSize.Level1)
     StoreCache::GetInstance().CloseStores();
     auto store = StoreCache::GetInstance().GetStore(intention);
     EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
-    Status status = UDMF::E_DB_CORRUPTED;
+    int32_t status = UDMF::E_DB_CORRUPTED;
     UdmfServiceImpl impl;
     impl.CloseStoreWhenCorrupted(intention, status);
     EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 0);
