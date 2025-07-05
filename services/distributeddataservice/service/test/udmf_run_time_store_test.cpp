@@ -741,7 +741,7 @@ HWTEST_F(UdmfRunTimeStoreTest, MarkWhenCorrupted001, TestSize.Level1)
     DistributedDB::DBStatus status = DistributedDB::DBStatus::OK;
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     store->MarkWhenCorrupted(status);
-    EXPECT_FALSE(store->isCorrupted);
+    EXPECT_FALSE(store->isCorrupted_);
 }
 
 /**
@@ -755,7 +755,7 @@ HWTEST_F(UdmfRunTimeStoreTest, MarkWhenCorrupted002, TestSize.Level1)
     DistributedDB::DBStatus status = DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB;
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     store->MarkWhenCorrupted(status);
-    EXPECT_TRUE(store->isCorrupted);
+    EXPECT_TRUE(store->isCorrupted_);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
