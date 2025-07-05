@@ -146,13 +146,12 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         }
     }
     PreProcessUtils::SetRecordUid(unifiedData);
-
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
-    auto status = store->Put(unifiedData);
+    int32_t status = store->Put(unifiedData);
     if (status != E_OK) {
         ZLOGE("Put unified data failed:%{public}s, status:%{public}d", intention.c_str(), status);
         CloseStoreWhenCorrupted(intention, status);
@@ -221,8 +220,8 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
     int32_t res = store->Get(query.key, unifiedData);
     if (res != E_OK) {
         ZLOGE("Get data failed,res:%{public}d,key:%{public}s", res, query.key.c_str());
-        CloseStoreWhenCorrupted(key.intention, static_cast<Status>(res));
-        return E_DB_ERROR;
+        CloseStoreWhenCorrupted(key.intention, res);
+        return res;
     }
 
     if (!unifiedData.IsComplete()) {
@@ -418,7 +417,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     int32_t res = store->Get(query.key, data);
     if (res != E_OK) {
         ZLOGE("Get data failed:%{public}s", key.intention.c_str());
-        CloseStoreWhenCorrupted(key.intention, static_cast<Status>(res));
+        CloseStoreWhenCorrupted(key.intention, res);
         return res;
     }
     if (data.IsEmpty()) {
@@ -440,8 +439,8 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     PreProcessUtils::SetRecordUid(unifiedData);
     if ((res = store->Update(unifiedData)) != E_OK) {
         ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
-        CloseStoreWhenCorrupted(key.intention, static_cast<Status>(res));
-        return E_DB_ERROR;
+        CloseStoreWhenCorrupted(key.intention, res);
+        return res;
     }
     return E_OK;
 }
@@ -476,10 +475,10 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
     }
     std::vector<UnifiedData> dataSet;
     std::shared_ptr<Store> store;
-    auto status = QueryDataCommon(query, dataSet, store);
+    int32_t status = QueryDataCommon(query, dataSet, store);
     if (status != E_OK) {
         ZLOGE("QueryDataCommon failed.");
-        return E_DB_ERROR;
+        return status;
     }
     if (dataSet.empty()) {
         ZLOGW("DataSet has no data, key: %{public}s, intention: %{public}d.", query.key.c_str(), query.intention);
@@ -500,7 +499,7 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
     status = store->DeleteBatch(deleteKeys);
     if (status != E_OK) {
         ZLOGE("Remove data failed.");
-        CloseStoreWhenCorrupted(key.intention, static_cast<Status>(status));
+        CloseStoreWhenCorrupted(key.intention, status);
         return E_DB_ERROR;
     }
     return E_OK;
@@ -552,7 +551,7 @@ int32_t UdmfServiceImpl::GetSummary(const QueryOption &query, Summary &summary)
         ZLOGE("Get store failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
-    auto status = store->GetSummary(key, summary);
+    int32_t status = store->GetSummary(key, summary);
     if (status != E_OK) {
         ZLOGE("Store get summary failed:%{public}s", key.intention.c_str());
         CloseStoreWhenCorrupted(key.intention, status);
@@ -592,7 +591,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
     }
 
     Runtime runtime;
-    auto res = store->GetRuntime(query.key, runtime);
+    int32_t res = store->GetRuntime(query.key, runtime);
     if (res == E_NOT_FOUND) {
         privilegeCache_[query.key] = privilege;
         ZLOGW("Add privilege in cache, key: %{public}s.", query.key.c_str());
@@ -716,7 +715,7 @@ int32_t UdmfServiceImpl::IsRemoteData(const QueryOption &query, bool &result)
     }
 
     Runtime runtime;
-    auto res = store->GetRuntime(query.key, runtime);
+    int32_t res = store->GetRuntime(query.key, runtime);
     if (res != E_OK) {
         ZLOGE("Get runtime failed, res:%{public}d, key:%{public}s.", res, query.key.c_str());
         CloseStoreWhenCorrupted(key.intention, res);
@@ -756,7 +755,7 @@ int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, int32_t
         ZLOGE("SetAppShareOption failed,shareOption already set:%{public}s", shareOptionTmp.c_str());
         return E_SETTINGS_EXISTED;
     }
-    auto status = store->PutLocal(std::to_string(accessTokenIDEx), ShareOptionsUtil::GetEnumStr(shareOption));
+    int32_t status = store->PutLocal(std::to_string(accessTokenIDEx), ShareOptionsUtil::GetEnumStr(shareOption));
     if (status != E_OK) {
         ZLOGE("Store get unifiedData failed:%{public}d", status);
         CloseStoreWhenCorrupted(intention, status);
@@ -781,8 +780,8 @@ int32_t UdmfServiceImpl::GetAppShareOption(const std::string &intention, int32_t
     int32_t ret = store->GetLocal(std::to_string(accessTokenIDEx), appShareOption);
     if (ret != E_OK) {
         ZLOGW("GetLocal failed:%{public}s", intention.c_str());
-        CloseStoreWhenCorrupted(intention, static_cast<Status>(ret));
-        return E_DB_ERROR;
+        CloseStoreWhenCorrupted(intention, ret);
+        return ret;
     }
     ZLOGI("GetLocal ok intention:%{public}s,appShareOption:%{public}s", intention.c_str(), appShareOption.c_str());
     shareOption = ShareOptionsUtil::GetEnumNum(appShareOption);
@@ -809,7 +808,7 @@ int32_t UdmfServiceImpl::RemoveAppShareOption(const std::string &intention)
     }
 
     UnifiedData unifiedData;
-    auto status = store->DeleteLocal(std::to_string(accessTokenIDEx));
+    int32_t status = store->DeleteLocal(std::to_string(accessTokenIDEx));
     if (status != E_OK) {
         ZLOGE("Store DeleteLocal failed:%{public}s, status:%{public}d", intention.c_str(), status);
         CloseStoreWhenCorrupted(intention, status);
@@ -858,7 +857,7 @@ int32_t UdmfServiceImpl::QueryDataCommon(
         ZLOGE("Get store failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
-    auto status = store->GetBatchData(dataPrefix, dataSet);
+    int32_t status = store->GetBatchData(dataPrefix, dataSet);
     if (status != E_OK) {
         ZLOGE("Get dataSet failed, dataPrefix: %{public}s, status:%{public}d.", dataPrefix.c_str(), status);
         CloseStoreWhenCorrupted(intention, status);
@@ -1146,7 +1145,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 
     Summary summary;
     UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
-    auto status = store->PutSummary(udkey, summary);
+    int32_t status = store->PutSummary(udkey, summary);
     if (status != E_OK) {
         ZLOGE("Put summary failed:%{public}s, status:%{public}d", key.c_str(), status);
         CloseStoreWhenCorrupted(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
@@ -1253,11 +1252,12 @@ bool UdmfServiceImpl::IsValidInput(const QueryOption &query, UnifiedData &unifie
     return true;
 }
 
-void UdmfServiceImpl::CloseStoreWhenCorrupted(const std::string &intention, Status status)
+void UdmfServiceImpl::CloseStoreWhenCorrupted(const std::string &intention, int32_t &status)
 {
     if (status == E_DB_CORRUPTED) {
         ZLOGE("Kv database corrupted, start to remove store");
         StoreCache::GetInstance().RemoveStore(intention);
+        status = E_DB_ERROR;
     }
 }
 } // namespace UDMF

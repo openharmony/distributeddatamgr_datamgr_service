@@ -83,7 +83,7 @@ private:
     int32_t ValidateAndProcessRuntimeData(const std::vector<UnifiedData> &dataSet, std::shared_ptr<Runtime> runtime,
         std::vector<UnifiedData> &unifiedDataSet, const QueryOption &query, std::vector<std::string> &deleteKeys);
     int32_t CheckAppId(std::shared_ptr<Runtime> runtime, const std::string &bundleName);
-    void CloseStoreWhenCorrupted(const std::string &intention, Status status);
+    void CloseStoreWhenCorrupted(const std::string &intention, int32_t &status);
     class Factory {
     public:
         Factory();
