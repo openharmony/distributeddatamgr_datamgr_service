@@ -1222,4 +1222,28 @@ HWTEST_F(ObjectManagerTest, OnFinished002, TestSize.Level1)
     ret = listener.OnFinished(srcNetworkId, assetObj_1, result_1);
     EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
 }
+
+/**
+* @tc.name: DestructedObjectStoreManager001
+* @tc.desc: test objectDataListener_ is not nullptr ObjectStoreManager is destructed.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, DestructedObjectStoreManager001, TestSize.Level1)
+{
+    auto manager = std::make_shared<ObjectStoreManager>();
+    manager->objectDataListener_ = new ObjectDataListener();
+    ASSERT_NE(manager->objectDataListener_, nullptr);
+}
+
+/**
+* @tc.name: DestructedObjectStoreManager002
+* @tc.desc: test objectDataListener_ is nullptr ObjectStoreManager is destructed.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, DestructedObjectStoreManager002, TestSize.Level1)
+{
+    auto manager = std::make_shared<ObjectStoreManager>();
+    manager->objectDataListener_ = nullptr;
+    ASSERT_EQ(manager->objectDataListener_, nullptr);
+}
 } // namespace OHOS::Test
