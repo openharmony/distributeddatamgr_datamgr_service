@@ -488,23 +488,6 @@ HWTEST_F(ObjectManagerTest, DeleteSnapshot001, TestSize.Level0)
 }
 
 /**
-* @tc.name: OpenObjectKvStore001
-* @tc.desc: OpenObjectKvStore test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
-*/
-HWTEST_F(ObjectManagerTest, OpenObjectKvStore001, TestSize.Level0)
-{
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->objectDataListener_ = nullptr;
-    ASSERT_EQ(manager->objectDataListener_, nullptr);
-    manager->OpenObjectKvStore();
-    ASSERT_NE(manager->objectDataListener_, nullptr);
-    manager->OpenObjectKvStore();
-}
-
-/**
 * @tc.name: FlushClosedStore001
 * @tc.desc: FlushClosedStore test.
 * @tc.type: FUNC
@@ -1221,29 +1204,5 @@ HWTEST_F(ObjectManagerTest, OnFinished002, TestSize.Level1)
     int32_t result_1 = 0;
     ret = listener.OnFinished(srcNetworkId, assetObj_1, result_1);
     EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
-}
-
-/**
-* @tc.name: DestructedObjectStoreManager001
-* @tc.desc: Test that the destructor cleans the dataCaches when objectDataListener_ is not nullptr.
-* @tc.type: FUNC
-*/
-HWTEST_F(ObjectManagerTest, DestructedObjectStoreManager001, TestSize.Level1)
-{
-    auto manager = std::make_shared<ObjectStoreManager>();
-    manager->objectDataListener_ = new ObjectDataListener();
-    ASSERT_NE(manager->objectDataListener_, nullptr);
-}
-
-/**
-* @tc.name: DestructedObjectStoreManager002
-* @tc.desc: Test that the destructor does not clean the dataCaches when objectDataListener_ is nullptr.
-* @tc.type: FUNC
-*/
-HWTEST_F(ObjectManagerTest, DestructedObjectStoreManager002, TestSize.Level1)
-{
-    auto manager = std::make_shared<ObjectStoreManager>();
-    manager->objectDataListener_ = nullptr;
-    ASSERT_EQ(manager->objectDataListener_, nullptr);
 }
 } // namespace OHOS::Test

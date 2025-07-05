@@ -215,7 +215,7 @@ private:
     std::recursive_mutex kvStoreMutex_;
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
-    ObjectDataListener *objectDataListener_ = nullptr;
+    ObjectDataListener objectDataListener_;
     sptr<ObjectAssetsRecvListener> objectAssetsRecvListener_ = nullptr;
     sptr<ObjectAssetsSendListener> objectAssetsSendListener_ = nullptr;
     uint32_t syncCount_ = 0;
