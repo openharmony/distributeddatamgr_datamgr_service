@@ -65,7 +65,7 @@ private:
         const DevNameMap &deviceNameMap);
     Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
     Status MarkWhenCorrupted(DistributedDB::DBStatus status);
-    bool isCorrupted = false;
+    bool isCorrupted_ = false;
 };
 } // namespace UDMF
 } // namespace OHOS

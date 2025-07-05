@@ -92,7 +92,7 @@ void StoreCache::CloseStores()
     stores_.Clear();
 }
 
-void StoreCache::RemoveStore(std::string intention)
+void StoreCache::RemoveStore(const std::string &intention)
 {
     ZLOGI("RemoveStore, intention:%{public}s", intention.c_str());
     int foregroundUserId = 0;

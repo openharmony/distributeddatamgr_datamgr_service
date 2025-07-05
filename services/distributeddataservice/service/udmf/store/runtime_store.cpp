@@ -450,7 +450,7 @@ bool RuntimeStore::Init()
         if (retStatus != DBStatus::OK) {
             ZLOGE("CloseKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
         }
-        if (isCorrupted && (retStatus = delegateManager_->DeleteKvStore(storeId_)) != DBStatus::OK) {
+        if (isCorrupted_ && (retStatus = delegateManager_->DeleteKvStore(storeId_)) != DBStatus::OK) {
             ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
         }
     };
@@ -589,7 +589,7 @@ Status RuntimeStore::MarkWhenCorrupted(DistributedDB::DBStatus status)
 {
     if (status == INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("Kv database corrupted");
-        isCorrupted = true;
+        isCorrupted_ = true;
         return E_DB_CORRUPTED;
     }
     return E_DB_ERROR;
