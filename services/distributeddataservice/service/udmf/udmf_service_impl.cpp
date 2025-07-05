@@ -440,7 +440,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     if ((res = store->Update(unifiedData)) != E_OK) {
         ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
         HandleDbError(key.intention, res);
-        return res;
+        return E_DB_ERROR;
     }
     return E_OK;
 }
