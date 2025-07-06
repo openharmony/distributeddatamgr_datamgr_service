@@ -1055,8 +1055,8 @@ std::vector<DataProxyGetResult> DataShareServiceImpl::GetProxyData(const std::ve
         ZLOGE("get callerBundleInfo failed");
         return result;
     }
-    DataShareProxyData proxyData;
     for (const auto &uri : uris) {
+        DataShareProxyData proxyData;
         auto ret = PublishedProxyData::Query(uri, callerBundleInfo, proxyData);
         result.emplace_back(uri, static_cast<DataProxyErrorCode>(ret), proxyData.value_, proxyData.allowList_);
     }
