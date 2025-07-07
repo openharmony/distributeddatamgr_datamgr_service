@@ -269,10 +269,10 @@ int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &call
 int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const BundleInfo &callerBundleInfo,
     DataShareObserver::ChangeType &type)
 {
+    type = DataShareObserver::ChangeType::INVAILD;
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
         ZLOGE("db open failed");
-        type = DataShareObserver::ChangeType::INVAILD;
         return INNER_ERROR;
     }
 
@@ -304,7 +304,10 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
         if (data.isAllowListUndefined) {
             data.allowList_ = oldData.proxyData.allowList;
         }
-        type = DataShareObserver::ChangeType::UPDATE;
+        // only when value changed is need notify
+        if (oldData.proxyData.value != data.value_) {
+            type = DataShareObserver::ChangeType::UPDATE;
+        }
         return UpdateProxyData(delegate, callerBundleInfo.bundleName,
             callerBundleInfo.userId, callerBundleInfo.tokenId, data);
     }
