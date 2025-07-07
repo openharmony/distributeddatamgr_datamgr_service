@@ -172,9 +172,9 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset
                 if (status != E_OK) {
                     ZLOGE("UpdateStore error, error:%{public}d, assetName:%{public}s, store:%{public}s, "
                           "table:%{public}s",
-                        status, changedAsset.asset.name.c_str(),
+                        status, Anonymous::Change(changedAsset.asset.name).c_str(),
                         Anonymous::Change(changedAsset.bindInfo.storeName).c_str(),
-                        changedAsset.bindInfo.tableName.c_str());
+                        Anonymous::Change(changedAsset.bindInfo.tableName).c_str());
                 }
             }
             ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset.asset);
@@ -338,8 +338,8 @@ static int32_t ChangeAssetToNormal(int32_t eventId, ChangedAssetInfo& changedAss
 static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset)
 {
-    ZLOGE("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s", eventId,
-        changedAsset.status, changedAsset.asset.name.c_str());
+    ZLOGI("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s", eventId,
+        changedAsset.status, Anonymous::Change(changedAsset.asset.name).c_str());
 
     BindEvent::BindEventInfo bindEventInfo = MakeBindInfo(changedAsset);
     changedAsset.status = TransferStatus::STATUS_STABLE;

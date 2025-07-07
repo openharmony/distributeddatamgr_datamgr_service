@@ -68,7 +68,6 @@ void Connect::WaitConnect()
     cv_.wait_for(lock, std::chrono::seconds(CONNECT_TIMEOUT), [this] {
         return flag_;
     });
-    cv_.notify_one();
 }
 
 namespace ConnectInner {

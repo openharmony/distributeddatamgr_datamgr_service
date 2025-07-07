@@ -807,8 +807,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
     if (!NeedSaveSyncInfo(queryKey)) {
         return;
     }
-    lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key,
-        std::map<SyncId, CloudLastSyncInfo> &val) {
+    lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key, std::map<SyncId, CloudLastSyncInfo> &val) {
         auto now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         for (auto iter = val.begin(); iter != val.end();) {
             bool isExpired = ((now - iter->second.startTime) >= EXPIRATION_TIME) && iter->second.code == -1;
@@ -860,7 +859,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
             return;
         }
         int32_t code = result.begin()->second.code;
-        UpdateFinishSyncInfo({ user, id, storeInfo.bundleName, storeInfo.storeName}, storeInfo.syncId, code);
+        UpdateFinishSyncInfo({ user, id, storeInfo.bundleName, storeInfo.storeName }, storeInfo.syncId, code);
     };
 }
 

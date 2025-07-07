@@ -108,7 +108,7 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
     status = ObjectStoreManager::GetInstance()->BindAsset(tokenId, bundleName, sessionId, asset, bindInfo);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("bind asset fail %{public}d, bundleName:%{public}s, sessionId:%{public}s, assetName:%{public}s", status,
-            bundleName.c_str(), sessionId.c_str(), asset.name.c_str());
+            bundleName.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(asset.name).c_str());
     }
     return status;
 }
