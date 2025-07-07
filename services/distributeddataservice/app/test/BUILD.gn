@@ -87,13 +87,20 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_data_service_test.cpp",
+    "${data_service_path}/app/test/unittest/security_test.cpp",
+    "${data_service_path}/app/test/unittest/sensitive_test.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
   ]
 
   sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    integer_overflow = true
+    cfi_no_nvcall = true
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
 
   configs = [ ":module_private_config" ]
