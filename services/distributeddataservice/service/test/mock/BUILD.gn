@@ -56,7 +56,6 @@ ohos_static_library("distributeddata_mock_static") {
     "device_manager:devicemanagersdk",
     "googletest:gmock",
     "googletest:gtest",
-    "json:nlohmann_json_static",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",

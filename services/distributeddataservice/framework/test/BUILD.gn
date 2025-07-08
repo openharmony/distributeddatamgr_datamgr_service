@@ -121,7 +121,6 @@ ohos_unittest("ServiceUtilsTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
   ]
 
@@ -213,7 +212,6 @@ ohos_unittest("CloudInfoTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   external_deps = [
-    "json:nlohmann_json_static",
     "c_utils:utils",
     "kv_store:datamgr_common",
   ]
@@ -247,7 +245,6 @@ ohos_unittest("SubscriptionTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
-    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
   ]
 }
@@ -275,7 +272,6 @@ ohos_unittest("MetaDataManagerTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "kv_store:distributeddata_inner",
@@ -294,7 +290,6 @@ ohos_unittest("StoreMetaDataLocalTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   
   external_deps = [
-    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "kv_store:distributeddata_inner",
@@ -355,7 +350,6 @@ ohos_unittest("ServiceMetaDataTest") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
