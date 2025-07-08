@@ -53,7 +53,6 @@ ohos_fuzztest("SyncStrategiesFuzzTest") {
     "access_token:libtokenid_sdk",
     "c_utils:utils",
     "hilog:libhilog",
-    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
   ]
 }
