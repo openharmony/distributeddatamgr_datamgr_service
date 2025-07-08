@@ -132,7 +132,7 @@ ohos_source_set("data_share_service") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "qos_manager:concurrent_task_client",

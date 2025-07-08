@@ -35,7 +35,7 @@
 #include "metadata/device_meta_data.h"
 #include "utils/constant.h"
 #include "gtest/gtest.h"
-#include "serializable/serializable.h"
+#include <nlohmann/json.hpp>
 using namespace testing::ext;
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
@@ -781,9 +781,7 @@ HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
 
     Serializable::json node2;
     userStatus.Marshal(node2);
-    bool ret;
-    node2["isActive"].get_to(ret);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(node2["isActive"], true);
     EXPECT_EQ(node2["id"], USER_ID2);
 
     UserStatus userUnmarshal;
