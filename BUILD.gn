@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 group("build_native_test") {
   testonly = true
   deps = [
+    
     "services/distributeddataservice/adapter/test:unittest",
     "services/distributeddataservice/app/test:unittest",
     "services/distributeddataservice/framework/test:unittest",
