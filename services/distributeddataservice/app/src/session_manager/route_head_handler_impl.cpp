@@ -39,8 +39,8 @@ using DmAdapter = DistributedData::DeviceManagerAdapter;
 using DBManager = DistributedDB::KvStoreDelegateManager;
 constexpr const int ALIGN_WIDTH = 8;
 constexpr const char *DEFAULT_USERID = "0";
-constexpr const char *DATA_OBJECT_DB_STORE_ID = "distributedObject_";
-constexpr const char *UDMF_DB_STORE_ID = "drag";
+constexpr const char *DATA_OBJECT_STORE_ID = "distributedObject_";
+constexpr const char *UDMF_STORE_ID = "drag";
 
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
@@ -104,22 +104,18 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 {
     ZLOGD("begin");
     headSize = 0;
-    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ == Bootstrap::GetInstance().GetMetaDBName()) {
+    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != UDMF_STORE_ID &&
+        storeId_ != DATA_OBJECT_STORE_ID) {
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
     if (appId_ == Bootstrap::GetInstance().GetProcessLabel() &&
-        (storeId_ == UDMF_DB_STORE_ID || storeId_ == DATA_OBJECT_DB_STORE_ID)) {
+        (storeId_ == UDMF_STORE_ID || storeId_ == DATA_OBJECT_STORE_ID)) {
         bool flag = false;
         auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
-        if (!flag) {
-            return DistributedDB::OK;
-        }
-        if (appId_ == Bootstrap::GetInstance().GetProcessLabel() &&
-            peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
+        if (!flag || peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
             // older versions ignore pack extend head
-            ZLOGI("ignore older version device, appId:%{public}s, version:%{public}d",
-                appId_.c_str(), peerCap.version);
+            ZLOGI("ignore older version device, flag:%{public}d, version:%{public}d", flag, peerCap.version);
             return DistributedDB::OK;
         }
     }
@@ -287,11 +283,11 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
     }
 
     if (appId_ == Bootstrap::GetInstance().GetProcessLabel() &&
-       (storeId_ == UDMF_DB_STORE_ID || storeId_ == DATA_OBJECT_DB_STORE_ID) {
+       (storeId_ == UDMF_STORE_ID || storeId_ == DATA_OBJECT_STORE_ID)) {
         bool flag = false;
         auto peerCap = UpgradeManager::GetInstance().GetCapability(device, flag);
         if (flag && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
-            ZLOGI("get peer cap failed");
+            ZLOGI("get peer cap success, peerCap's version is %{public}d, less then 3", peerCap.version);
             return false;
         }
     }

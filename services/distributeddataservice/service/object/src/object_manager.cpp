@@ -897,7 +897,7 @@ void ObjectStoreManager::ForceClose()
         return;
     }
     delegate_ = nullptr;
-    taskCount = 0;
+    isSyncing_ = false;
     syncCount_ = 0;
 }
 
@@ -1066,7 +1066,7 @@ int32_t ObjectStoreManager::SyncOnStore(
     }
     bool result = MetaDataManager::GetInstance().Sync(uuids, [this, prefix, syncDevices, sequenceId](auto &results) {
         auto status = DoSync(prefix, syncDevices, sequenceId);
-        ZLOGI("Store sync end, status:%{public}d", status);
+        ZLOGI("Store sync after meta sync end, status:%{public}d", status);
     });
     ZLOGI("prefix:%{public}s, meta sync end, result:%{public}d", prefix.c_str(), result);
     return result ? OBJECT_SUCCESS : DoSync(prefix, syncDevices, sequenceId);
@@ -1075,13 +1075,13 @@ int32_t ObjectStoreManager::SyncOnStore(
 int32_t ObjectStoreManager::DoSync(const std::string &prefix, const std::vector<std::string> &deviceList,
     uint64_t sequenceId)
 {
+    if (delegate_ == nullptr) {
+        ZLOGE("db store was closed.");
+        return E_DB_ERROR;
+    }
     DistributedDB::Query dbQuery = DistributedDB::Query::Select();
     dbQuery.PrefixKey(std::vector<uint8_t>(prefix.begin(), prefix.end()));
     ZLOGI("Start sync data, sequenceId: 0x%{public}" PRIx64 "", sequenceId);
-    if (delegate_ == nullptr) {
-        ZLOGE("delegate_ == nullptr");
-        return E_DB_ERROR;
-    }
     auto status = delegate_->Sync(deviceList, DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY,
         [this, sequenceId](const std::map<std::string, DistributedDB::DBStatus> &devicesMap) {
             ZLOGI("Sync data finished, sequenceId: 0x%{public}" PRIx64 "", sequenceId);
