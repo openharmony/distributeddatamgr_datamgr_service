@@ -1068,7 +1068,7 @@ int32_t ObjectStoreManager::SyncOnStore(
         auto status = DoSync(prefix, syncDevices, sequenceId);
         ZLOGI("Store sync after meta sync end, status:%{public}d", status);
     });
-    ZLOGI("prefix:%{public}s, meta sync end, result:%{public}d", prefix.c_str(), result);
+    ZLOGI("prefix:%{public}s, meta sync end, result:%{public}d", Anonymous::Change(prefix).c_str(), result);
     return result ? OBJECT_SUCCESS : DoSync(prefix, syncDevices, sequenceId);
 }
 

@@ -109,18 +109,8 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
-    if (appId_ == Bootstrap::GetInstance().GetProcessLabel() &&
-        (storeId_ == UDMF_STORE_ID || storeId_ == DATA_OBJECT_STORE_ID)) {
-        bool flag = false;
-        auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
-        if (!flag || peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
-            // older versions ignore pack extend head
-            ZLOGI("ignore older version device, flag:%{public}d, version:%{public}d", flag, peerCap.version);
-            return DistributedDB::OK;
-        }
-    }
-    if (!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
-        ZLOGD("devicdId:%{public}s is not oh type", Anonymous::Change(session_.targetDeviceId).c_str());
+    if(!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
+        ZLOGD("deviceId:%{public}s is not oh type", Anonymous::Change(session_.targetDeviceId).c_str());
         if (appId_.empty()) {
             return DistributedDB::DB_ERROR;
         }
@@ -128,6 +118,20 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
             AppIdMappingConfigManager::GetInstance().Convert(appId_))) {
             return DistributedDB::DB_ERROR;
         }
+        return DistributedDB::OK;
+    }
+    bool flag = false;
+    auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
+    if (!flag) {
+        ZLOGI("get peer cap failed");
+        return (storeId_ == UDMF_STORE_ID || storeId_ == DATA_OBJECT_STORE_ID) ? DistributedDB::OK
+                                                                               : DistributedDB::DB_ERROR;
+    }
+    if ((appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
+        && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION)
+        || peerCap.version == CapMetaData::INVALID_VERSION) {
+        // older versions ignore pack extend head
+        ZLOGI("ignore older version device, appId:%{public}s, version:%{public}d", appId_.c_str(), peerCap.version);
         return DistributedDB::OK;
     }
     if (!session_.IsValid()) {
@@ -287,7 +291,7 @@ bool RouteHeadHandlerImpl::ParseHeadDataLen(const uint8_t *data, uint32_t totalL
         bool flag = false;
         auto peerCap = UpgradeManager::GetInstance().GetCapability(device, flag);
         if (flag && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION) {
-            ZLOGI("get peer cap success, peerCap's version is %{public}d, less then 3", peerCap.version);
+            ZLOGI("get peer cap success, peerCap's version is %{public}d, less than 3", peerCap.version);
             return false;
         }
     }
