@@ -184,16 +184,17 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
         EXPECT_EQ(result, OBJECT_SUCCESS);
     }
 
-    // remote device. IsNeedMetaSync: true; Sync: false
+    // remote device. IsNeedMetaSync: false
     {
         std::vector<std::string> remoteDeviceList = { "remote_device_1" };
         EXPECT_CALL(*devMgrAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return("mock_uuid"));
         EXPECT_CALL(*devMgrAdapterMock, ToUUID(testing::A<const std::vector<std::string> &>()))
             .WillOnce(Return(std::vector<std::string>{ "mock_uuid_1" }));
         EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-            .WillOnce(testing::Return(false))
-            .WillOnce(testing::Return(false));
-        EXPECT_CALL(*metaDataManagerMock, Sync(_, _, _)).WillOnce(testing::Return(false));
+            .WillOnce(testing::Return(true))
+            .WillOnce(testing::Return(true));
+        EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
+        EXPECT_CALL(*deviceMatrixMock, GetMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
         auto result = manager->SyncOnStore(prefix, remoteDeviceList, func);
         EXPECT_EQ(result, E_DB_ERROR);
     }

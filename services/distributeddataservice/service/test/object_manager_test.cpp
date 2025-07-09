@@ -844,7 +844,7 @@ HWTEST_F(ObjectManagerTest, RegisterAssetsLister001, TestSize.Level0)
     auto result = manager->RegisterAssetsLister();
     ASSERT_EQ(result, true);
     manager->objectAssetsSendListener_ = new ObjectAssetsSendListener();
-    manager->objectAssetsRecvListener_ = new ObjectAssetsRecvListener();;
+    manager->objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
     result = manager->RegisterAssetsLister();
     ASSERT_EQ(result, true);
 }
