@@ -83,15 +83,8 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync001, TestSize.Level0)
     std::vector<std::string> uuids = {"test_uuid"};
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false))
         .WillOnce(testing::Return(false));
     bool isNeedSync = manager->IsNeedMetaSync(meta, uuids);
-    EXPECT_EQ(isNeedSync, true);
- 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false))
-        .WillOnce(testing::Return(true));
-    isNeedSync = manager->IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(isNeedSync, true);
  
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
@@ -158,6 +151,18 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
     
     bool result = manager->IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(result, true);
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillRepeatedly(Return(true));
+
+    EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _))
+        .WillOnce(Return(std::make_pair(true, 0)));
+
+    EXPECT_CALL(*deviceMatrixMock, GetMask(_, _))
+        .WillOnce(Return(std::make_pair(true, 0)));
+
+    result = manager->IsNeedMetaSync(meta, uuids);
+    EXPECT_EQ(result, faklse);
 }
 
 HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)

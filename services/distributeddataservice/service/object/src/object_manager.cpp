@@ -896,7 +896,7 @@ void ObjectStoreManager::ForceClose()
         ZLOGE("GetEntries fail %{public}d", status);
         return;
     }
-    delegate_ == nullptr
+    delegate_ = nullptr;
     taskCount = 0;
     syncCount_ = 0;
 }

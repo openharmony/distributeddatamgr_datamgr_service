@@ -40,6 +40,7 @@ using DBManager = DistributedDB::KvStoreDelegateManager;
 constexpr const int ALIGN_WIDTH = 8;
 constexpr const char *DEFAULT_USERID = "0";
 constexpr const char *DATA_OBJECT_DB_STORE_ID = "distributedObject_";
+constexpr const char *UDMF_DB_STORE_ID = "drag";
 
 std::shared_ptr<RouteHeadHandler> RouteHeadHandlerImpl::Create(const ExtendInfo &info)
 {
@@ -102,13 +103,13 @@ std::string RouteHeadHandlerImpl::GetTargetUserId()
 DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize)
 {
     ZLOGD("begin");
+    headSize = 0;
     if (appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ == Bootstrap::GetInstance().GetMetaDBName()) {
         ZLOGI("meta data permitted");
         return DistributedDB::OK;
     }
-    // udmf名字待修改
     if (appId_ == Bootstrap::GetInstance().GetProcessLabel() &&
-        (storeId_ == udmf || storeId_ == DATA_OBJECT_DB_STORE_ID)) {
+        (storeId_ == UDMF_DB_STORE_ID || storeId_ == DATA_OBJECT_DB_STORE_ID)) {
         bool flag = false;
         auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
         if (!flag) {
@@ -116,8 +117,7 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         }
     }
     if (!DmAdapter::GetInstance().IsOHOSType(session_.targetDeviceId)) {
-        ZLOGD("devicdId:%{public}s is not oh type",
-            Anonymous::Change(session_.targetDeviceId).c_str());
+        ZLOGD("devicdId:%{public}s is not oh type", Anonymous::Change(session_.targetDeviceId).c_str());
         if (appId_.empty()) {
             return DistributedDB::DB_ERROR;
         }
@@ -142,7 +142,6 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
         ZLOGI("no valid session to peer device");
         return DistributedDB::DB_ERROR;
     }
-    headSize = 0;
     size_t expectSize = sizeof(RouteHead) + sizeof(SessionDevicePair) + sizeof(SessionUserPair) +
         session_.targetUserIds.size() * sizeof(int) + sizeof(SessionAppId) + session_.appId.size() +
         sizeof(SessionStoreId) + session_.storeId.size() + sizeof(SessionAccountId) + session_.accountId.size();

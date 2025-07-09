@@ -132,9 +132,9 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, SetEqualIdentifier, TestSize.Level0)
     mockDelegate.taskCountMock_ = 1;
     store->delegate_ = &mockDelegate;
     EXPECT_NE(store->delegate_, nullptr);
-    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::_)).WillOnce(testing::Return(uuids));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<std::vector<DeviceInfo>>())).WillOnce(testing::Return(uuids));
     auto uuids1 = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
-    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::_)).WillOnce(testing::Return(uuids));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<std::vector<DeviceInfo>>())).WillOnce(testing::Return(uuids));
     EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType("uuidtest01"))
         .WillOnce(testing::Return(false)).WillOnce(testing::Return(false));
     store->SetEqualIdentifier(metaData_.appId, metaData_.storeId);
