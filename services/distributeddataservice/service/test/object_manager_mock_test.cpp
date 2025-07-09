@@ -14,14 +14,13 @@
 */
 
 #define LOG_TAG "ObjectManagerMockTest"
-#include "object_manager.h"
-
 #include <gmock/gmock.h>
-#include "gtest/gtest.h"
 
-#include "device_matrix_mock.h"
-#include "mock/meta_data_manager_mock.h"
 #include "device_manager_adapter_mock.h"
+#include "device_matrix_mock.h"
+#include "gtest/gtest.h"
+#include "mock/meta_data_manager_mock.h"
+#include "object_manager.h"
 
 using namespace OHOS::DistributedObject;
 using namespace OHOS::DistributedData;
@@ -61,8 +60,8 @@ public:
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
     static inline std::shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
     static inline std::shared_ptr<DeviceMatrixMock> deviceMatrixMock = nullptr;
-    void SetUp() {};
-    void TearDown() {};
+    void SetUp(){};
+    void TearDown(){};
 };
 
 /**
@@ -80,13 +79,11 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync001, TestSize.Level0)
     meta.user = "0";
     meta.storeId = "distributedObject_";
     meta.bundleName = "test_bundle";
-    std::vector<std::string> uuids = {"test_uuid"};
+    std::vector<std::string> uuids = { "test_uuid" };
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_)).WillOnce(testing::Return(false));
     bool isNeedSync = manager->IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(isNeedSync, true);
- 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
         .WillOnce(testing::Return(true))
         .WillOnce(testing::Return(false));
@@ -109,15 +106,12 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync002, TestSize.Level0)
     meta.user = "0";
     meta.storeId = "distributedObject_";
     meta.bundleName = "test_bundle";
-    
-    std::vector<std::string> uuids = {"test_uuid"};
+    std::vector<std::string> uuids = { "test_uuid" };
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillRepeatedly(Return((true)));
-
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillRepeatedly(Return((true)));
     EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _))
         .WillRepeatedly(Return(std::make_pair(true, DeviceMatrix::META_STORE_MASK)));
-    
+
     bool result = manager->IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(result, true);
 }
@@ -137,63 +131,51 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
     meta.user = "0";
     meta.storeId = "distributedObject_";
     meta.bundleName = "test_bundle";
-    
-    std::vector<std::string> uuids = {"test_uuid"};
+    std::vector<std::string> uuids = { "test_uuid" };
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
+    EXPECT_CALL(*deviceMatrixMock, GetMask(_, _)).WillOnce(Return(std::make_pair(true, DeviceMatrix::META_STORE_MASK)));
 
-    EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _))
-        .WillOnce(Return(std::make_pair(true, 0)));
-
-    EXPECT_CALL(*deviceMatrixMock, GetMask(_, _))
-        .WillOnce(Return(std::make_pair(true, DeviceMatrix::META_STORE_MASK)));
-    
     bool result = manager->IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(result, true);
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillRepeatedly(Return(true));
 
-    EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _))
-        .WillOnce(Return(std::make_pair(true, 0)));
+    EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
 
-    EXPECT_CALL(*deviceMatrixMock, GetMask(_, _))
-        .WillOnce(Return(std::make_pair(true, 0)));
+    EXPECT_CALL(*deviceMatrixMock, GetMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
 
     result = manager->IsNeedMetaSync(meta, uuids);
-    EXPECT_EQ(result, faklse);
+    EXPECT_EQ(result, false);
 }
 
 HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
-    auto func = [](const std::map<std::string, int32_t> &results) {
-        return results;
-    };
+    std::function<void(const std::map<std::string, int32_t> &results)> func;
+    func = [](const std::map<std::string, int32_t> &results) { return results; };
     std::string prefix = "ObjectManagerTest";
     StoreMetaData meta;
     meta.deviceId = "test_device_id";
     meta.user = "0";
     meta.storeId = "distributedObject_";
     meta.bundleName = "test_bundle";
-    std::vector<std::string> uuids = {"test_uuid"};
-
+    std::vector<std::string> uuids = { "test_uuid" };
 
     // local device
     {
-        std::vector<std::string> localDeviceList = {"local"};
+        std::vector<std::string> localDeviceList = { "local" };
         auto result = manager->SyncOnStore(prefix, localDeviceList, func);
         EXPECT_EQ(result, OBJECT_SUCCESS);
     }
 
     // remote device. IsNeedMetaSync: true; Sync: true
     {
-        std::vector<std::string> remoteDeviceList = {"remote_device_1"};
-
+        std::vector<std::string> remoteDeviceList = { "remote_device_1" };
         EXPECT_CALL(*devMgrAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return("mock_uuid"));
-        EXPECT_CALL(*devMgrAdapterMock, ToUUID(_))
-            .WillOnce(Return(std::vector<std::string>{"mock_uuid_1"}));
+        EXPECT_CALL(*devMgrAdapterMock, ToUUID(testing::A<const std::vector<std::string> &>()))
+            .WillOnce(Return(std::vector<std::string>{ "mock_uuid_1" }));
         EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
             .WillOnce(testing::Return(false))
             .WillOnce(testing::Return(false));
@@ -204,11 +186,10 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
 
     // remote device. IsNeedMetaSync: true; Sync: false
     {
-        std::vector<std::string> remoteDeviceList = {"remote_device_1"};
-
+        std::vector<std::string> remoteDeviceList = { "remote_device_1" };
         EXPECT_CALL(*devMgrAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return("mock_uuid"));
-        EXPECT_CALL(*devMgrAdapterMock, ToUUID(_))
-            .WillOnce(Return(std::vector<std::string>{"mock_uuid_1"}));
+        EXPECT_CALL(*devMgrAdapterMock, ToUUID(testing::A<const std::vector<std::string> &>()))
+            .WillOnce(Return(std::vector<std::string>{ "mock_uuid_1" }));
         EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
             .WillOnce(testing::Return(false))
             .WillOnce(testing::Return(false));
@@ -217,5 +198,5 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
         EXPECT_EQ(result, E_DB_ERROR);
     }
 }
-}; // namespace OHOS::Test
-}
+}; // namespace DistributedDataTest
+} // namespace OHOS::Test
