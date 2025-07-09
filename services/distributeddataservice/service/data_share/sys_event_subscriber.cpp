@@ -42,20 +42,22 @@ void SysEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& event)
 {
     EventFwk::Want want = event.GetWant();
     std::string action = want.GetAction();
-    if (action == EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED ||
-        action == EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
+    auto installEvent = installCallbacks_.find(action);
+    if (installEvent != installCallbacks_.end()) {
         std::string bundleName = want.GetElement().GetBundleName();
         int32_t userId = want.GetIntParam(USER_ID, -1);
         int32_t appIndex = want.GetIntParam(APP_INDEX, 0);
-        auto tokenId = want.GetIntParam(ACCESS_TOKEN_ID, -1);
-        bool isCrossAppSharedConfig = want.GetBoolParam(CROSS_APP_SHARED_CONFIG, false);
-        ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d, isCrossAppSharedConfig:%{public}d",
-            bundleName.c_str(), userId, appIndex, isCrossAppSharedConfig);
-        auto installEvent = installCallbacks_.find(action);
-        if (installEvent != installCallbacks_.end()) {
-            (this->*(installEvent->second))(bundleName, userId, appIndex, tokenId, isCrossAppSharedConfig);
+        int32_t tokenId = want.GetIntParam(ACCESS_TOKEN_ID, -1);
+        // when application updated, the tokenId in event's want is 0, so use other way to get tokenId
+        if (tokenId == 0) {
+            tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(userId, bundleName, appIndex);
         }
+        bool isCrossAppSharedConfig = want.GetBoolParam(CROSS_APP_SHARED_CONFIG, false);
+        ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d, tokenId:%{public}d, "
+            "isCrossAppSharedConfig:%{public}d", bundleName.c_str(), userId, appIndex, tokenId, isCrossAppSharedConfig);
+        (this->*(installEvent->second))(bundleName, userId, appIndex, tokenId, isCrossAppSharedConfig);
     }
+
     auto it = callbacks_.find(action);
     if (it != callbacks_.end()) {
         (this->*(it->second))();
