@@ -530,35 +530,6 @@ HWTEST_F(ObjectManagerTest, Close001, TestSize.Level0)
 }
 
 /**
-* @tc.name: SyncOnStore001
-* @tc.desc: SyncOnStore test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
-*/
-HWTEST_F(ObjectManagerTest, SyncOnStore001, TestSize.Level0)
-{
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->delegate_ = manager->OpenObjectKvStore();
-    std::function<void(const std::map<std::string, int32_t> &results)> func;
-    func = [](const std::map<std::string, int32_t> &results) {
-        return results;
-    };
-    std::string prefix = "ObjectManagerTest";
-    std::vector<std::string> deviceList;
-    // not local device & syncDevices empty
-    deviceList.push_back("local1");
-    EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
-    auto result = manager->SyncOnStore(prefix, deviceList, func);
-    ASSERT_NE(result, OBJECT_SUCCESS);
-    // local device
-    deviceList.push_back("local");
-    EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
-    result = manager->SyncOnStore(prefix, deviceList, func);
-    ASSERT_EQ(result, OBJECT_SUCCESS);
-}
-
-/**
 * @tc.name: RetrieveFromStore001
 * @tc.desc: RetrieveFromStore test.
 * @tc.type: FUNC

@@ -26,6 +26,9 @@
 #include "common/string_utils.h"
 #include "datetime_ex.h"
 #include "distributed_file_daemon_manager.h"
+#include "device_matrix.h"
+#include "ipc_skeleton.h"
+#include "metadata/capability_meta_data.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -44,6 +47,8 @@ using Account = OHOS::DistributedData::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 using ValueProxy = OHOS::DistributedData::ValueProxy;
 using DistributedFileDaemonManager = Storage::DistributedFile::DistributedFileDaemonManager;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+
 constexpr const char *SAVE_INFO = "p_###SAVEINFO###";
 constexpr int32_t PROGRESS_MAX = 100;
 constexpr int32_t PROGRESS_INVALID = -1;
@@ -319,7 +324,7 @@ int32_t ObjectStoreManager::Clear()
     result = RevokeSaveToStore("");
     callbacks_.Clear();
     processCallbacks_.Clear();
-    Close();
+    ForceClose();
     return result;
 }
 
@@ -569,6 +574,34 @@ void ObjectStoreManager::ComputeStatus(const std::string& objectKey, const SaveI
         }
         return true;
     });
+}
+
+bool ObjectStoreManager::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
+{
+    bool isAfterMeta = false;
+    for (const auto &uuid : uuids) {
+        auto metaData = meta;
+        metaData.deviceId = uuid;
+        CapMetaData capMeta;
+        auto capKey = CapMetaRow::GetKeyFor(uuid);
+        bool flag = !MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
+        if (flag) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
+        if ((mask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuid);
+        if ((localMask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+    }
+    return isAfterMeta;
 }
 
 void ObjectStoreManager::NotifyDataChanged(const std::map<std::string, ObjectRecord>& data, const SaveInfo& saveInfo)
@@ -852,6 +885,22 @@ int32_t ObjectStoreManager::Open()
     return OBJECT_SUCCESS;
 }
 
+void ObjectStoreManager::ForceClose()
+{
+    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
+    if (delegate_ == nullptr) {
+        return;
+    }
+    auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("GetEntries fail %{public}d", status);
+        return;
+    }
+    delegate_ == nullptr
+    taskCount = 0;
+    syncCount_ = 0;
+}
+
 void ObjectStoreManager::Close()
 {
     std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
@@ -1006,10 +1055,34 @@ int32_t ObjectStoreManager::SyncOnStore(
         return OBJECT_SUCCESS;
     }
     uint64_t sequenceId = SequenceSyncManager::GetInstance()->AddNotifier(userId_, callback);
+
+    int32_t id = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
+    StoreMetaData meta = StoreMetaData(std::to_string(id), Bootstrap::GetInstance().GetProcessLabel(),
+        DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID);
+    auto uuids = DmAdapter::GetInstance().ToUUID(syncDevices);
+    bool isNeedMetaSync = IsNeedMetaSync(meta, uuids);
+    if (!isNeedMetaSync) {
+        return DoSync(prefix, syncDevices, sequenceId);
+    }
+    bool result = MetaDataManager::GetInstance().Sync(uuids, [this, prefix, syncDevices, sequenceId](auto &results) {
+        auto status = DoSync(prefix, syncDevices, sequenceId);
+        ZLOGI("Store sync end, status:%{public}d", status);
+    });
+    ZLOGI("prefix:%{public}s, meta sync end, result:%{public}d", prefix.c_str(), result);
+    return result ? OBJECT_SUCCESS : DoSync(prefix, syncDevices, sequenceId);
+}
+
+int32_t ObjectStoreManager::DoSync(const std::string &prefix, const std::vector<std::string> &deviceList,
+    uint64_t sequenceId)
+{
     DistributedDB::Query dbQuery = DistributedDB::Query::Select();
     dbQuery.PrefixKey(std::vector<uint8_t>(prefix.begin(), prefix.end()));
     ZLOGI("Start sync data, sequenceId: 0x%{public}" PRIx64 "", sequenceId);
-    auto status = delegate_->Sync(syncDevices, DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY,
+    if (delegate_ == nullptr) {
+        ZLOGE("delegate_ == nullptr");
+        return E_DB_ERROR;
+    }
+    auto status = delegate_->Sync(deviceList, DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY,
         [this, sequenceId](const std::map<std::string, DistributedDB::DBStatus> &devicesMap) {
             ZLOGI("Sync data finished, sequenceId: 0x%{public}" PRIx64 "", sequenceId);
             std::map<std::string, DistributedDB::DBStatus> result;
