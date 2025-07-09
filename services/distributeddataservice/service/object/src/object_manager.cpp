@@ -893,7 +893,7 @@ void ObjectStoreManager::ForceClose()
     }
     auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("GetEntries fail %{public}d", status);
+        ZLOGE("CloseKvStore fail %{public}d", status);
         return;
     }
     delegate_ = nullptr;
