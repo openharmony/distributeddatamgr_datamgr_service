@@ -435,9 +435,11 @@ bool RuntimeStore::Init()
                                  });
     if (status != DBStatus::OK) {
         ZLOGE("GetKvStore fail, status: %{public}d.", static_cast<int>(status));
-        if (status == INVALID_PASSWD_OR_CORRUPTED_DB &&
-            (status = delegateManager_->DeleteKvStore(storeId_)) != DBStatus::OK) {
-            ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(status));
+        if (status == INVALID_PASSWD_OR_CORRUPTED_DB) {
+            status = delegateManager_->DeleteKvStore(storeId_);
+            if (status != DBStatus::OK) {
+                ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(status));
+            }
         }
         return false;
     }
@@ -450,8 +452,12 @@ bool RuntimeStore::Init()
         if (retStatus != DBStatus::OK) {
             ZLOGE("CloseKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
         }
-        if (isCorrupted_ && (retStatus = delegateManager_->DeleteKvStore(storeId_)) != DBStatus::OK) {
-            ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
+        if (isCorrupted_) {
+            ZLOGE("Db corrupted!");
+            retStatus = delegateManager_->DeleteKvStore(storeId_);
+            if (retStatus != DBStatus::OK) {
+                ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
+            }
         }
     };
     kvStore_ = std::shared_ptr<KvStoreNbDelegate>(delegate, release);
