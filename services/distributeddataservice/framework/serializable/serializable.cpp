@@ -240,5 +240,6 @@ const Serializable::json &Serializable::GetSubNode(const json &node, const std::
     }
     return *it;
 }
+
 } // namespace DistributedData
 } // namespace OHOS
