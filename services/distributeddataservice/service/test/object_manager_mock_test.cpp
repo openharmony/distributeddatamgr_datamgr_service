@@ -69,7 +69,6 @@ public:
  * @tc.desc: Test IsNeedMetaSync when LoadMeta fails for CapMetaData.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zhaojh
  */
 HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync001, TestSize.Level0)
 {
@@ -96,7 +95,6 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync001, TestSize.Level0)
  * @tc.desc: Test IsNeedMetaSync when LoadMeta fails for StoreMetaData.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zhaojh
  */
 HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync002, TestSize.Level0)
 {
@@ -121,7 +119,6 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync002, TestSize.Level0)
  * @tc.desc: Test IsNeedMetaSync when LoadMeta fails for StoreMetaData.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zhaojh
  */
 HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
 {
@@ -150,6 +147,12 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
     EXPECT_EQ(result, false);
 }
 
+/**
+ * @tc.name: SyncOnStore001
+ * @tc.desc: Test SyncOnStore.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
 {
     auto manager = ObjectStoreManager::GetInstance();
