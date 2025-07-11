@@ -81,5 +81,10 @@ ThreadConfig *ConfigFactory::GetThreadConfig()
 {
     return nullptr;
 }
+
+DataShareConfig *ConfigFactory::GetDataShareConfig()
+{
+    return nullptr;
+}
 } // namespace DistributedData
 } // namespace OHOS

@@ -25,6 +25,7 @@
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "concurrent_task_client.h"
+#include "config_factory.h"
 #include "data_ability_observer_interface.h"
 #include "data_share_profile_config.h"
 #include "dataobs_mgr_client.h"
@@ -72,6 +73,7 @@ using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
 // decimal base
 static constexpr int DECIMAL_BASE = 10;
+DataShareServiceImpl::BindInfo DataShareServiceImpl::binderInfo_;
 class DataShareServiceImpl::SystemAbilityStatusChangeListener
     : public SystemAbilityStatusChangeStub {
 public:
@@ -807,6 +809,38 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUpdate(const std::string &bu
     return E_OK;
 }
 
+void DataShareServiceImpl::UpdateLaunchInfo()
+{
+    DataShareConfig *config = ConfigFactory::GetInstance().GetDataShareConfig();
+    if (config == nullptr) {
+        ZLOGE("DataShareConfig is nullptr");
+        return;
+    }
+
+    ZLOGI("UpdateLaunchInfo begin.");
+    for (auto &bundleName : config->updateLaunchNames) {
+        std::string prefix = StoreMetaData::GetPrefix(
+            { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid });
+        std::vector<StoreMetaData> storeMetaData;
+        MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true);
+        std::vector<StoreMetaData> updateMetaData;
+        for (auto &meta : storeMetaData) {
+            if (meta.bundleName != bundleName) {
+                continue;
+            }
+            updateMetaData.push_back(meta);
+        }
+        for (auto &meta : updateMetaData) {
+            MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
+        }
+        for (auto &meta : updateMetaData) {
+            BundleMgrProxy::GetInstance()->Delete(bundleName, atoi(meta.user.c_str()), 0);
+            SaveLaunchInfo(meta.bundleName, meta.user, DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid);
+        }
+        ZLOGI("update bundleName %{public}s, size:%{public}zu.", bundleName.c_str(), storeMetaData.size());
+    }
+}
+
 int32_t DataShareServiceImpl::DataShareStatic::OnClearAppStorage(const std::string &bundleName,
     int32_t user, int32_t index, int32_t tokenId)
 {
@@ -1246,7 +1280,7 @@ void DataShareServiceImpl::InitSubEvent()
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
     subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
-    auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo);
+    auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo, binderInfo_.executors);
     if (!EventFwk::CommonEventManager::SubscribeCommonEvent(sysEventSubscriber)) {
         ZLOGE("Subscribe sys event failed.");
         alreadySubscribe = false;
