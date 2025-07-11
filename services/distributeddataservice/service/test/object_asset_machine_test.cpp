@@ -257,13 +257,16 @@ HWTEST_F(ObjectAssetMachineTest, StatusUpload002, TestSize.Level0)
     ChangedAssetInfo changedAssetInfo(asset, bindInfo, storeInfo);
     std::pair<std::string, Asset> changedAsset{ "device_" + timestamp, asset };
 
+    std::count << "machine->DFAPostEvent(UPLOAD, changedAssetInfo, asset) start" << std::endl;
     machine->DFAPostEvent(UPLOAD, changedAssetInfo, asset);
     ASSERT_EQ(changedAssetInfo.status, STATUS_UPLOADING);
 
+    std::count << "machine->DFAPostEvent(REMOTE_CHANGED, changedAssetInfo, asset, changedAsset) start" << std::endl;
     machine->DFAPostEvent(REMOTE_CHANGED, changedAssetInfo, asset, changedAsset);
     ASSERT_EQ(changedAssetInfo.status, STATUS_WAIT_TRANSFER);
     ASSERT_EQ(changedAssetInfo.asset.hash, asset.hash);
 
+    std::count << "machine->DFAPostEvent(UPLOAD_FINISHED, changedAssetInfo, asset) start" << std::endl;
     machine->DFAPostEvent(UPLOAD_FINISHED, changedAssetInfo, asset);
     ASSERT_EQ(changedAssetInfo.status, STATUS_TRANSFERRING);
 }
