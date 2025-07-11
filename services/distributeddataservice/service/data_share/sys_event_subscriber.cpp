@@ -47,7 +47,7 @@ void SysEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& event)
         std::string bundleName = want.GetElement().GetBundleName();
         int32_t userId = want.GetIntParam(USER_ID, -1);
         int32_t appIndex = want.GetIntParam(APP_INDEX, 0);
-        int32_t tokenId = want.GetIntParam(ACCESS_TOKEN_ID, -1);
+        uint32_t tokenId = static_cast<uint32_t>(want.GetIntParam(ACCESS_TOKEN_ID, 0));
         // when application updated, the tokenId in event's want is 0, so use other way to get tokenId
         if (tokenId == 0) {
             tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(userId, bundleName, appIndex);
@@ -70,7 +70,7 @@ void SysEventSubscriber::OnBMSReady()
 }
 
 void SysEventSubscriber::OnAppInstall(const std::string &bundleName,
-    int32_t userId, int32_t appIndex, int32_t tokenId, bool isCrossAppSharedConfig)
+    int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig)
 {
     ZLOGI("%{public}s installed, userId: %{public}d, appIndex: %{public}d, tokenId: %{public}d",
         bundleName.c_str(), userId, appIndex, tokenId);
@@ -80,7 +80,7 @@ void SysEventSubscriber::OnAppInstall(const std::string &bundleName,
 }
 
 void SysEventSubscriber::OnAppUpdate(const std::string &bundleName,
-    int32_t userId, int32_t appIndex, int32_t tokenId, bool isCrossAppSharedConfig)
+    int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig)
 {
     ZLOGI("%{public}s updated, userId: %{public}d, appIndex: %{public}d, tokenId: %{public}d",
         bundleName.c_str(), userId, appIndex, tokenId);
@@ -90,7 +90,7 @@ void SysEventSubscriber::OnAppUpdate(const std::string &bundleName,
 }
 
 void SysEventSubscriber::OnAppUninstall(const std::string &bundleName,
-    int32_t userId, int32_t appIndex, int32_t tokenId, bool isCrossAppSharedConfig)
+    int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig)
 {
     ZLOGI("%{public}s uninstalled, userId: %{public}d, appIndex: %{public}d, tokenId: %{public}d",
         bundleName.c_str(), userId, appIndex, tokenId);
