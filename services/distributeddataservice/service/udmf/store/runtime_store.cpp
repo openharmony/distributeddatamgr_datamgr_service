@@ -444,16 +444,16 @@ bool RuntimeStore::Init()
         return false;
     }
     auto release = [this](KvStoreNbDelegate *delegate) {
-        ZLOGI("Release runtime kvStore.");
+        ZLOGI("Release runtime kvStore, db is corrupted: %{public}d.", isCorrupted_);
         if (delegate == nullptr) {
             return;
         }
         auto retStatus = delegateManager_->CloseKvStore(delegate);
         if (retStatus != DBStatus::OK) {
             ZLOGE("CloseKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
+            return;
         }
         if (isCorrupted_) {
-            ZLOGE("Db corrupted!");
             retStatus = delegateManager_->DeleteKvStore(storeId_);
             if (retStatus != DBStatus::OK) {
                 ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
