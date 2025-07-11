@@ -40,6 +40,10 @@ group("fuzztest") {
   deps = [
     "../communicator/test/fuzztest:fuzztest",
     "../network/test/fuzztest/networkdelegatenormalimpl_fuzzer:fuzztest",
-    "../screenlock/test/fuzztest/screenlock_fuzzer:fuzztest",
   ]
+
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.theme_screenlock_mgr)) {
+    deps += [ "../screenlock/test/fuzztest/screenlock_fuzzer:fuzztest" ]
+  }
 }
