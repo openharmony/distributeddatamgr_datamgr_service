@@ -46,6 +46,7 @@ ohos_unittest("ExtensionUtilTest") {
   ]
   external_deps = [
     "hilog:libhilog",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
   ]
 

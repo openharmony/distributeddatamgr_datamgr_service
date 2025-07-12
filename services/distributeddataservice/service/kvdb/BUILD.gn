@@ -78,7 +78,7 @@ ohos_source_set("distributeddata_kvdb") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",

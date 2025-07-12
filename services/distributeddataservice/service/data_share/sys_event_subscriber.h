@@ -31,11 +31,11 @@ public:
     void OnReceiveEvent(const EventFwk::CommonEventData& event) override;
     void OnBMSReady();
     void OnAppInstall(const std::string &bundleName,
-        int32_t userId, int32_t appIndex, int32_t tokenId, bool isCrossAppSharedConfig);
+        int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig);
     void OnAppUpdate(const std::string &bundleName,
-        int32_t userId, int32_t appIndex, int32_t tokenId, bool isCrossAppSharedConfig);
+        int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig);
     void OnAppUninstall(const std::string &bundleName,
-        int32_t userId, int32_t appIndex, int32_t tokenId, bool isCrossAppSharedConfig);
+        int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig);
 
 private:
     void NotifyDataShareReady();

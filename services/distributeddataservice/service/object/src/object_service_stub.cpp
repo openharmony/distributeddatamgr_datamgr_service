@@ -26,6 +26,7 @@
 
 namespace OHOS::DistributedObject {
 using namespace DistributedKv;
+using Anonymous = DistributedData::Anonymous;
 int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageParcel &reply)
 {
     std::string sessionId;
@@ -61,7 +62,7 @@ int32_t ObjectServiceStub::OnAssetChangedOnRemote(MessageParcel &data, MessagePa
     }
     ObjectStore::Asset assetValue;
     if (!ITypesUtil::Unmarshalling(assetValue, data)) {
-        ZLOGE("Unmarshal assetValue fail, asset name: %{public}s", assetValue.name.c_str());
+        ZLOGE("Unmarshal assetValue fail, asset name: %{public}s", Anonymous::Change(assetValue.name).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = OnAssetChanged(bundleName, sessionId, deviceId, assetValue);
@@ -80,8 +81,8 @@ int32_t ObjectServiceStub::ObjectStoreBindAssetOnRemote(MessageParcel &data, Mes
     ObjectStore::AssetBindInfo bindInfo;
     if (!ITypesUtil::Unmarshal(data, bundleName, sessionId, asset, bindInfo)) {
         ZLOGE("Unmarshal sessionId:%{public}s bundleName:%{public}s assetName:%{public}s bindStore:%{public}s",
-              DistributedData::Anonymous::Change(sessionId).c_str(), bundleName.c_str(),
-              asset.name.c_str(), bindInfo.storeName.c_str());
+            Anonymous::Change(sessionId).c_str(), bundleName.c_str(), Anonymous::Change(asset.name).c_str(),
+            Anonymous::Change(bindInfo.storeName).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 

@@ -781,9 +781,7 @@ HWTEST_F(ServiceMetaDataTest, UserMetaData, TestSize.Level1)
 
     Serializable::json node2;
     userStatus.Marshal(node2);
-    bool ret;
-    node2["isActive"].get_to(ret);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(node2["isActive"], true);
     EXPECT_EQ(node2["id"], USER_ID2);
 
     UserStatus userUnmarshal;

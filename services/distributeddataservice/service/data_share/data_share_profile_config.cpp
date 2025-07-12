@@ -145,6 +145,8 @@ bool SerialDataShareProxyData::Marshal(json &node) const
 bool SerialDataShareProxyData::Unmarshal(const json &node)
 {
     bool ret = GetValue(node, GET_NAME(uri), uri);
+    // the value in profile can only be string, but the type of value which is published is variant,
+    // use type variant to unmarshal a string will fail, so use a string to try unmarshal again
     if (!GetValue(node, GET_NAME(value), value)) {
         std::string valueStr;
         GetValue(node, GET_NAME(value), valueStr);

@@ -87,13 +87,20 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_data_service_test.cpp",
+    "${data_service_path}/app/test/unittest/security_test.cpp",
+    "${data_service_path}/app/test/unittest/sensitive_test.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
   ]
 
   sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    integer_overflow = true
+    cfi_no_nvcall = true
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
 
   configs = [ ":module_private_config" ]
@@ -243,7 +250,7 @@ ohos_unittest("SessionManagerTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -318,7 +325,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -438,7 +445,7 @@ ohos_unittest("UpgradeManagerTest") {
     "c_utils:utils",
     "googletest:gtest_main",
     "hilog:libhilog",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
   ]
 
@@ -508,7 +515,7 @@ ohos_unittest("RouteHeadHandlerImplTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",

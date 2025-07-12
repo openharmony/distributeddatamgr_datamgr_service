@@ -42,6 +42,7 @@ ohos_fuzztest("StoreDebugInfoFuzzTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
   ]
 }
