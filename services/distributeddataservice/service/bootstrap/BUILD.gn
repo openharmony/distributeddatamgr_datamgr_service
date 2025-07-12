@@ -53,7 +53,7 @@ ohos_source_set("distributeddata_bootstrap") {
 
   external_deps = [
     "hilog:libhilog",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "c_utils:utils",
     "kv_store:datamgr_common",
   ]
