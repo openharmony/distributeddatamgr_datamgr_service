@@ -18,13 +18,15 @@ namespace DistributedData {
 bool DataShareConfig::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(dataShareExtNames)], dataShareExtNames);
+    SetValue(node[GET_NAME(updateLaunchNames)], updateLaunchNames);
     return true;
 }
 
 bool DataShareConfig::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(dataShareExtNames), dataShareExtNames);
+    GetValue(node, GET_NAME(updateLaunchNames), updateLaunchNames);
     return true;
 }
 } // namespace DistributedData
-} // namespace OHOS
+} // namespace OHOS

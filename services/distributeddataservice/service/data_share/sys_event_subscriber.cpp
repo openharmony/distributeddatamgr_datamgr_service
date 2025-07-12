@@ -21,8 +21,8 @@
 #include "proxy_data_manager.h"
 
 namespace OHOS::DataShare {
-SysEventSubscriber::SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo& info)
-    : CommonEventSubscriber(info)
+SysEventSubscriber::SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo& info,
+    std::shared_ptr<ExecutorPool> executors): CommonEventSubscriber(info), executors_(executors)
 {
     callbacks_ = {
         { EventFwk::CommonEventSupport::COMMON_EVENT_BUNDLE_SCAN_FINISHED,
@@ -67,6 +67,14 @@ void SysEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& event)
 void SysEventSubscriber::OnBMSReady()
 {
     NotifyDataShareReady();
+    auto executors = executors_;
+    if (executors == nullptr) {
+        ZLOGE("executors is null.");
+        return;
+    }
+    executors->Execute([]() {
+        DataShareServiceImpl::UpdateLaunchInfo();
+    });
 }
 
 void SysEventSubscriber::OnAppInstall(const std::string &bundleName,

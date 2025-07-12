@@ -101,6 +101,7 @@ public:
         const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer) override;
     std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris,
         const DataProxyConfig &proxyConfig) override;
+    static void UpdateLaunchInfo();
 private:
     class SystemAbilityStatusChangeListener;
     using StaticActs = DistributedData::StaticActs;
@@ -165,7 +166,7 @@ private:
     SubscribeStrategy subscribeStrategy_;
     TemplateStrategy templateStrategy_;
     RdbNotifyStrategy rdbNotifyStrategy_;
-    BindInfo binderInfo_;
+    static BindInfo binderInfo_;
     std::shared_ptr<TimerReceiver> timerReceiver_ = nullptr;
     DataShareSilentConfig dataShareSilentConfig_;
 };
