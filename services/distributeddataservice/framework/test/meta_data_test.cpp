@@ -35,7 +35,7 @@
 #include "metadata/device_meta_data.h"
 #include "utils/constant.h"
 #include "gtest/gtest.h"
-#include <nlohmann/json.hpp>
+#include "serializable/serializable.h"
 using namespace testing::ext;
 using namespace OHOS;
 using namespace OHOS::DistributedKv;
