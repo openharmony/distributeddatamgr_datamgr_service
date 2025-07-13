@@ -335,7 +335,10 @@ void KvStoreDataService::OnStart()
     AccountDelegate::GetInstance()->RegisterHashFunc(Crypto::Sha256);
     DmAdapter::GetInstance().Init(executors_);
     AutoCache::GetInstance().Bind(executors_);
-    NetworkDelegate::GetInstance()->BindExecutor(executors_);
+    auto instance = NetworkDelegate::GetInstance();
+    if (instance != nullptr) {
+        instance->BindExector(executors_);
+    }
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
     for (BlockInteger retry(RETRY_INTERVAL); retry < RETRY_TIMES; ++retry) {
@@ -404,7 +407,10 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
         Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 1,
                                                                 DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     } else if (systemAbilityId == COMM_NET_CONN_MANAGER_SYS_ABILITY_ID) {
-        NetworkDelegate::GetInstance()->RegOnNetworkChange();
+        auto instance = NetworkDelegate::GetInstance();
+        if (instance != nullptr) {
+            instance->RegOnNetworkChange();
+        }
     }
     return;
 }

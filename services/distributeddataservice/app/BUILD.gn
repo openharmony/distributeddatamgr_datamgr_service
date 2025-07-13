@@ -93,7 +93,6 @@ ohos_shared_library("distributeddataservice") {
     ubsan = true
   }
   sources = [
-    "${data_service_path}/service/common/xcollie.cpp",
     "src/clone/clone_backup_info.cpp",
     "src/clone/secret_key_backup_data.cpp",
     "src/db_info_handle_impl.cpp",
