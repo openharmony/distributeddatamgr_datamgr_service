@@ -702,6 +702,11 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
 {
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str());
+    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return false;
+    }
     StoreMetaData meta = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, meta);
 
@@ -1583,5 +1588,13 @@ std::string KVDBServiceImpl::GenerateKey(const std::string &userId, const std::s
         return key;
     }
     return key.append(userId).append(KEY_SEPARATOR).append(storeId);
+}
+
+bool RdbServiceImpl::IsValidPath(const std::string &param)
+{
+    if ((param.find("/") != std::string::npos) || (param.find("\\") != std::string::npos) || (param == "..")) {
+        return false;
+    }
+    return true;
 }
 } // namespace OHOS::DistributedKv
