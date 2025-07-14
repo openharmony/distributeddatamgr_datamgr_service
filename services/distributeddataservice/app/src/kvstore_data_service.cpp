@@ -337,7 +337,7 @@ void KvStoreDataService::OnStart()
     AutoCache::GetInstance().Bind(executors_);
     auto instance = NetworkDelegate::GetInstance();
     if (instance != nullptr) {
-        instance->BindExector(executors_);
+        instance->BindExecutor(executors_);
     }
     static constexpr int32_t RETRY_TIMES = 50;
     static constexpr int32_t RETRY_INTERVAL = 500 * 1000; // unit is ms
