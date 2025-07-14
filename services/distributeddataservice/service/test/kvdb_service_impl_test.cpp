@@ -1555,5 +1555,35 @@ HWTEST_F(KvdbServiceImplTest, SubscribeSwitchData, TestSize.Level0)
     status = kvdbServiceImpl_->UnregServiceNotifier(appId);
     ASSERT_EQ(status, Status::SUCCESS);
 }
+
+/**
+* @tc.name: IsValidPath001
+* @tc.desc: IsValidPath function test.
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidPath001, TestSize.Level0)
+{
+    EXPECT_TRUE(rdbService.IsValidPath("validpath"));
+    EXPECT_TRUE(rdbService.IsValidPath("another_valid_path"));
+    EXPECT_TRUE(rdbService.IsValidPath("file123"));
+}
+
+/**
+* @tc.name: IsValidPath002
+* @tc.desc: IsValidPath function test.
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidPath002, TestSize.Level0)
+{
+    EXPECT_FALSE(rdbService.IsValidPath("path/with/forward/slash"));
+    EXPECT_FALSE(rdbService.IsValidPath("/starting/slash"));
+    EXPECT_FALSE(rdbService.IsValidPath("ending/slash/"));
+    EXPECT_FALSE(rdbService.IsValidPath("path\\with\\backslash"));
+    EXPECT_FALSE(rdbService.IsValidPath("\\starting\\backslash"));
+    EXPECT_FALSE(rdbService.IsValidPath("ending\\backslash\\"));
+    EXPECT_FALSE(rdbService.IsValidPath(".."));
+    EXPECT_FALSE(rdbService.IsValidPath("path/with\\mixed/slashes"));
+    EXPECT_FALSE(rdbService.IsValidPath("path\\with/mixed\\slashes"));
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
