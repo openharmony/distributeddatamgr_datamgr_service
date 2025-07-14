@@ -1611,7 +1611,7 @@ std::string KVDBServiceImpl::GenerateKey(const std::string &userId, const std::s
     return key.append(userId).append(KEY_SEPARATOR).append(storeId);
 }
 
-bool RdbServiceImpl::IsValidPath(const std::string &param)
+bool KVDBServiceImpl::IsValidPath(const std::string &param)
 {
     if ((param.find("/") != std::string::npos) || (param.find("\\") != std::string::npos) || (param == "..")) {
         return false;
