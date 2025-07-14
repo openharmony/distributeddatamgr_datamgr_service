@@ -444,6 +444,8 @@ HWTEST_F(ObjectManagerTest, Open001, TestSize.Level0)
     manager->delegate_ = manager->OpenObjectKvStore();
     result = manager->Open();
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+    manager->ForceClose();
+    ASSERT_EQ(manager->delegate_, nullptr);
 }
 
 /**

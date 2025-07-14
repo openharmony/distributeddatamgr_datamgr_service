@@ -52,6 +52,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 constexpr const char *SAVE_INFO = "p_###SAVEINFO###";
 constexpr int32_t PROGRESS_MAX = 100;
 constexpr int32_t PROGRESS_INVALID = -1;
+constexpr uint32_t LOCK_TIMEOUT = 3600; // second
 ObjectStoreManager::ObjectStoreManager()
 {
     ZLOGI("ObjectStoreManager construct");
@@ -869,7 +870,7 @@ int32_t ObjectStoreManager::Open()
         ZLOGE("Kvstore delegate manager not init");
         return OBJECT_INNER_ERROR;
     }
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         delegate_ = OpenObjectKvStore();
         if (delegate_ == nullptr) {
@@ -887,7 +888,7 @@ int32_t ObjectStoreManager::Open()
 
 void ObjectStoreManager::ForceClose()
 {
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_, std::chrono::seconds(LOCK_TIMEOUT));
     if (delegate_ == nullptr) {
         return;
     }
@@ -903,11 +904,14 @@ void ObjectStoreManager::ForceClose()
 
 void ObjectStoreManager::Close()
 {
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
-    if (delegate_ == nullptr) {
-        return;
+    int32_t taskCount = 0;
+    {
+        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            return;
+        }
+        taskCount = delegate_->GetTaskCount();
     }
-    int32_t taskCount = delegate_->GetTaskCount();
     if (taskCount > 0 && syncCount_ == 1) {
         CloseAfterMinute();
         ZLOGW("Store is busy, close after a minute, task count: %{public}d", taskCount);
@@ -943,7 +947,7 @@ void ObjectStoreManager::SyncCompleted(
         
 void ObjectStoreManager::FlushClosedStore()
 {
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (!isSyncing_ && syncCount_ == 0 && delegate_ != nullptr) {
         ZLOGD("close store");
         auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
@@ -962,14 +966,17 @@ void ObjectStoreManager::FlushClosedStore()
 void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
 {
     std::vector<DistributedDB::Entry> entries;
-    auto status = delegate_->GetEntries(std::vector<uint8_t>(appId.begin(), appId.end()), entries);
-    if (status == DistributedDB::DBStatus::NOT_FOUND) {
-        ZLOGI("Get old entries empty, bundleName: %{public}s", appId.c_str());
-        return;
-    }
-    if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("Get old entries failed, bundleName: %{public}s, status %{public}d", appId.c_str(), status);
-        return;
+    {
+        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            ZLOGE("delegate is nullptr.");
+            return;
+        }
+        auto status = delegate_->GetEntries(std::vector<uint8_t>(appId.begin(), appId.end()), entries);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("Get old entries failed, bundleName: %{public}s, status %{public}d", appId.c_str(), status);
+            return;
+        }
     }
     std::map<std::string, int64_t> sessionIds;
     int64_t oldestTime = 0;
@@ -1024,12 +1031,19 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
         entry.value = item.second;
         entries.emplace_back(entry);
     }
-    auto status = delegate_->PutBatch(entries);
-    if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("PutBatch failed, bundleName: %{public}s, sessionId: %{public}s, dstNetworkId: %{public}s, "
-              "status: %{public}d",
-            appId.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(toDeviceId).c_str(), status);
-        return status;
+    {
+        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            ZLOGE("delegate is nullptr.");
+            return E_DB_ERROR;
+        }
+        auto status = delegate_->PutBatch(entries);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("PutBatch failed, bundleName: %{public}s, sessionId: %{public}s, dstNetworkId: %{public}s, "
+                  "status: %{public}d",
+                appId.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(toDeviceId).c_str(), status);
+            return status;
+        }
     }
     ZLOGI("PutBatch success, bundleName: %{public}s, sessionId: %{public}s, dstNetworkId: %{public}s, "
           "count: %{public}zu",
@@ -1075,6 +1089,7 @@ int32_t ObjectStoreManager::SyncOnStore(
 int32_t ObjectStoreManager::DoSync(const std::string &prefix, const std::vector<std::string> &deviceList,
     uint64_t sequenceId)
 {
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("db store was closed.");
         return E_DB_ERROR;
@@ -1112,6 +1127,11 @@ int32_t ObjectStoreManager::SetSyncStatus(bool status)
 int32_t ObjectStoreManager::RevokeSaveToStore(const std::string &prefix)
 {
     std::vector<DistributedDB::Entry> entries;
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("db store was closed.");
+        return E_DB_ERROR;
+    }
     auto status = delegate_->GetEntries(std::vector<uint8_t>(prefix.begin(), prefix.end()), entries);
     if (status == DistributedDB::DBStatus::NOT_FOUND) {
         ZLOGI("Get entries empty, prefix: %{public}s", Anonymous::Change(prefix).c_str());
@@ -1144,6 +1164,11 @@ int32_t ObjectStoreManager::RetrieveFromStore(const std::string &appId, const st
 {
     std::vector<DistributedDB::Entry> entries;
     std::string prefix = GetPrefixWithoutDeviceId(appId, sessionId);
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("db store was closed.");
+        return E_DB_ERROR;
+    }
     auto status = delegate_->GetEntries(std::vector<uint8_t>(prefix.begin(), prefix.end()), entries);
     if (status == DistributedDB::DBStatus::NOT_FOUND) {
         ZLOGI("Get entries empty, prefix: %{public}s, status: %{public}d", Anonymous::Change(prefix).c_str(), status);

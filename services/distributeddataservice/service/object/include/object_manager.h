@@ -217,6 +217,7 @@ private:
         return std::string(USERID) + SEPERATOR + userId + SEPERATOR + appId + SEPERATOR
              + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
+    mutable std::shared_timed_mutex rwMutex_;
     std::recursive_mutex kvStoreMutex_;
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
