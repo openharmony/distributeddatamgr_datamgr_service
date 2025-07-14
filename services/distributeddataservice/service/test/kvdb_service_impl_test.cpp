@@ -619,7 +619,13 @@ HWTEST_F(KvdbServiceImplTest, EnableCapabilityTest001, TestSize.Level0)
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
+    AppId appId1;
+    appId1.appId = "../kvdb_test_storeid";
+    StoreId storeId1;
+    storeId1.storeId = "ohos.test.kvdb";
+    auto status = kvdbServiceImpl_->EnableCapability(appId1, storeId1, 0);
+    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
+    status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
@@ -845,7 +851,13 @@ HWTEST_F(KvdbServiceImplTest, DisableCapabilityTest001, TestSize.Level0)
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    auto status = kvdbServiceImpl_->DisableCapability(appId, storeId, 0);
+    AppId appId1;
+    appId1.appId = "../kvdb_test_storeid";
+    StoreId storeId1;
+    storeId1.storeId = "ohos.test.kvdb";
+    auto status = kvdbServiceImpl_->DisableCapability(appId1, storeId1, 0);
+    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
+    status = kvdbServiceImpl_->DisableCapability(appId, storeId, 0);
     ZLOGI("DisableCapabilityTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
@@ -875,6 +887,12 @@ HWTEST_F(KvdbServiceImplTest, SetCapabilityTest001, TestSize.Level0)
     auto status = kvdbServiceImpl_->SetCapability(appId, storeId, 0, local, remote);
     ZLOGI("SetCapabilityTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
+    AppId appId1;
+    appId1.appId = "../kvdb_test_storeid";
+    StoreId storeId1;
+    storeId1.storeId = "ohos.test.kvdb";
+    status = kvdbServiceImpl_->SetCapability(appId1, storeId1, 0, local, remote);
+    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
@@ -996,68 +1014,6 @@ HWTEST_F(KvdbServiceImplTest, BeforeCreateTest001, TestSize.Level0)
 }
 
 /**
-* @tc.name: BeforeCreateTest002
-* @tc.desc: BeforeCreate test
-* @tc.type: FUNC
-*/
-HWTEST_F(KvdbServiceImplTest, BeforeCreateTest002, TestSize.Level0)
-{
-    OHOS::DistributedKv::StoreId storeId1 = { "\\kvdb_test_storeid" };
-    OHOS::DistributedKv::AppId appId1 = { "/ohos.test.kvdb" };
-    Status status1 = manager.GetSingleKvStore(create, appId1, storeId1, kvStore);
-    ASSERT_NE(kvStore, nullptr);
-    ASSERT_EQ(status1, Status::SUCCESS);
-    Options creates;
-    creates.createIfMissing = true;
-    creates.encrypt = false;
-    creates.securityLevel = OHOS::DistributedKv::S1;
-    creates.autoSync = true;
-    creates.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
-    creates.area = OHOS::DistributedKv::EL1;
-    creates.baseDir = std::string("/data/service/el1/public/database/") + appId1.appId;
-    creates.cloudConfig.enableCloud = true;
-    kvdbServiceImpl_->executors_ = std::make_shared<ExecutorPool>(1, 1);
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-    .WillOnce(testing::Return(false))
-    .WillRepeatedly(testing::Return(false));
-    auto status = kvdbServiceImpl_->BeforeCreate(appId1, storeId1, creates);
-    ASSERT_NE(status, Status::STORE_META_CHANGED);
-    kvdbServiceImpl_->executors_ = nullptr;
-    ASSERT_EQ(status, Status::SUCCESS);
-}
-
-/**
-* @tc.name: BeforeCreateTest003
-* @tc.desc: BeforeCreate test
-* @tc.type: FUNC
-*/
-HWTEST_F(KvdbServiceImplTest, BeforeCreateTest003, TestSize.Level0)
-{
-    OHOS::DistributedKv::StoreId storeId1 = { "../kvdb_test_storeid" };
-    OHOS::DistributedKv::AppId appId1 = { "ohos.test.kvdb" };
-    Status status1 = manager.GetSingleKvStore(create, appId1, storeId1, kvStore);
-    ASSERT_NE(kvStore, nullptr);
-    ASSERT_EQ(status1, Status::SUCCESS);
-    Options creates;
-    creates.createIfMissing = true;
-    creates.encrypt = false;
-    creates.securityLevel = OHOS::DistributedKv::S1;
-    creates.autoSync = true;
-    creates.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
-    creates.area = OHOS::DistributedKv::EL1;
-    creates.baseDir = std::string("/data/service/el1/public/database/") + appId1.appId;
-    creates.cloudConfig.enableCloud = true;
-    kvdbServiceImpl_->executors_ = std::make_shared<ExecutorPool>(1, 1);
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-    .WillOnce(testing::Return(false))
-    .WillRepeatedly(testing::Return(false));
-    auto status = kvdbServiceImpl_->BeforeCreate(appId1, storeId1, creates);
-    ASSERT_NE(status, Status::STORE_META_CHANGED);
-    kvdbServiceImpl_->executors_ = nullptr;
-    ASSERT_EQ(status, Status::SUCCESS);
-}
-
-/**
 * @tc.name: AfterCreateTest001
 * @tc.desc: AfterCreate test
 * @tc.type: FUNC
@@ -1082,6 +1038,34 @@ HWTEST_F(KvdbServiceImplTest, AfterCreateTest001, TestSize.Level0)
     status = kvdbServiceImpl_->AfterCreate(appId, storeIds, create, password);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
     status = kvdbServiceImpl_->AfterCreate(appIds, storeIds, create, password);
+    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: AfterCreateTest002
+* @tc.desc: AfterCreate test
+* @tc.type: FUNC
+* @tc.author: wangbin
+*/
+HWTEST_F(KvdbServiceImplTest, AfterCreateTest002, TestSize.Level0)
+{
+    ZLOGI("AfterCreateTest002 start");
+    Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status1, Status::SUCCESS);
+    std::vector<uint8_t> password;
+    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, create, password);
+    ZLOGI("AfterCreateTest001 status = :%{public}d", status);
+    ASSERT_EQ(status, Status::SUCCESS);
+    AppId appIds;
+    appIds.appId = "../kvdb_test_storeid";
+    StoreId storeIds;
+    storeIds.storeId = "ohos.test.kvdb";
+    status = kvdbServiceImpl_->AfterCreate(appIds, storeId, create, password);
+    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
+    appIds.appId = "kvdb_test_storeid";
+    storeIds.storeId = "\\ohos.test.kvdb";
+    status = kvdbServiceImpl_->AfterCreate(appId, storeIds, create, password);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
 }
 
@@ -1245,6 +1229,13 @@ HWTEST_F(KvdbServiceImplTest, PutSwitch, TestSize.Level0)
     switchData.length = DeviceMatrix::INVALID_LEVEL;
     status = kvdbServiceImpl_->PutSwitch(appId, switchData);
     EXPECT_EQ(status, Status::SUCCESS);
+    switchData.value = DeviceMatrix::INVALID_VALUE;
+    switchData.length = DeviceMatrix::INVALID_LENGTH;
+    status = kvdbServiceImpl_->PutSwitch(appId, switchData);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+    Appid appId1 = "\\ohos.test.kvdb";
+    status = kvdbServiceImpl_->PutSwitch(appId1, switchData);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
     std::string networkId = "networkId";
     status = kvdbServiceImpl_->GetSwitch(appId, networkId, switchData);
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);

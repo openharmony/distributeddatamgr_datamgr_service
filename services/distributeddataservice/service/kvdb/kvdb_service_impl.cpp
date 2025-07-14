@@ -293,9 +293,11 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
 
 Status KVDBServiceImpl::PutSwitch(const AppId &appId, const SwitchData &data)
 {
-    if (data.value == DeviceMatrix::INVALID_VALUE || data.length == DeviceMatrix::INVALID_LENGTH) {
+    if (data.value == DeviceMatrix::INVALID_VALUE || data.length == DeviceMatrix::INVALID_LENGTH ||
+        !IsValidPath(appId)) {
         return Status::INVALID_ARGUMENT;
     }
+
     auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
     SwitchesMetaData oldMeta;
     oldMeta.deviceId = deviceId;
@@ -489,6 +491,11 @@ Status KVDBServiceImpl::GetSyncParam(const AppId &appId, const StoreId &storeId,
 
 Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
+    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return INVALID_ARGUMENT;
+    }
     StrategyMeta strategyMeta = GetStrategyMeta(appId, storeId, subUser);
     if (strategyMeta.instanceId < 0) {
         return ILLEGAL_STATE;
@@ -501,6 +508,11 @@ Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &stor
 
 Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
+    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return INVALID_ARGUMENT;
+    }
     StrategyMeta strategyMeta = GetStrategyMeta(appId, storeId, subUser);
     if (strategyMeta.instanceId < 0) {
         return ILLEGAL_STATE;
@@ -514,6 +526,11 @@ Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &sto
 Status KVDBServiceImpl::SetCapability(const AppId &appId, const StoreId &storeId, int32_t subUser,
     const std::vector<std::string> &local, const std::vector<std::string> &remote)
 {
+    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return INVALID_ARGUMENT;
+    }
     StrategyMeta strategy = GetStrategyMeta(appId, storeId, subUser);
     if (strategy.instanceId < 0) {
         return ILLEGAL_STATE;
@@ -664,6 +681,11 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
 
 Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, const StoreConfig &storeConfig)
 {
+    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return INVALID_ARGUMENT;
+    }
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     StoreMetaMapping storeMetaMapping(meta);
     MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
@@ -702,11 +724,6 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
 {
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str());
-    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
-        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
-            Anonymous::Change(storeId.storeId).c_str());
-        return INVALID_ARGUMENT;
-    }
     StoreMetaData meta = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, meta);
 
@@ -786,7 +803,11 @@ Status KVDBServiceImpl::AfterCreate(
             options.kvStoreType, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), options.dataType);
         return INVALID_ARGUMENT;
     }
-
+    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return INVALID_ARGUMENT;
+    }
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, metaData);
 
