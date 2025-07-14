@@ -996,6 +996,68 @@ HWTEST_F(KvdbServiceImplTest, BeforeCreateTest001, TestSize.Level0)
 }
 
 /**
+* @tc.name: BeforeCreateTest002
+* @tc.desc: BeforeCreate test
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, BeforeCreateTest002, TestSize.Level0)
+{
+    OHOS::DistributedKv::StoreId storeId1 = { "\\kvdb_test_storeid" };
+    OHOS::DistributedKv::AppId appId1 = { "/ohos.test.kvdb" };
+    Status status1 = manager.GetSingleKvStore(create, appId1, storeId1, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status1, Status::SUCCESS);
+    Options creates;
+    creates.createIfMissing = true;
+    creates.encrypt = false;
+    creates.securityLevel = OHOS::DistributedKv::S1;
+    creates.autoSync = true;
+    creates.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    creates.area = OHOS::DistributedKv::EL1;
+    creates.baseDir = std::string("/data/service/el1/public/database/") + appId1.appId;
+    creates.cloudConfig.enableCloud = true;
+    kvdbServiceImpl_->executors_ = std::make_shared<ExecutorPool>(1, 1);
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+    .WillOnce(testing::Return(false))
+    .WillRepeatedly(testing::Return(false));
+    auto status = kvdbServiceImpl_->BeforeCreate(appId1, storeId1, creates);
+    ASSERT_NE(status, Status::STORE_META_CHANGED);
+    kvdbServiceImpl_->executors_ = nullptr;
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: BeforeCreateTest003
+* @tc.desc: BeforeCreate test
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, BeforeCreateTest003, TestSize.Level0)
+{
+    OHOS::DistributedKv::StoreId storeId1 = { "../kvdb_test_storeid" };
+    OHOS::DistributedKv::AppId appId1 = { "ohos.test.kvdb" };
+    Status status1 = manager.GetSingleKvStore(create, appId1, storeId1, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status1, Status::SUCCESS);
+    Options creates;
+    creates.createIfMissing = true;
+    creates.encrypt = false;
+    creates.securityLevel = OHOS::DistributedKv::S1;
+    creates.autoSync = true;
+    creates.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    creates.area = OHOS::DistributedKv::EL1;
+    creates.baseDir = std::string("/data/service/el1/public/database/") + appId1.appId;
+    creates.cloudConfig.enableCloud = true;
+    kvdbServiceImpl_->executors_ = std::make_shared<ExecutorPool>(1, 1);
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+    .WillOnce(testing::Return(false))
+    .WillRepeatedly(testing::Return(false));
+    auto status = kvdbServiceImpl_->BeforeCreate(appId1, storeId1, creates);
+    ASSERT_NE(status, Status::STORE_META_CHANGED);
+    kvdbServiceImpl_->executors_ = nullptr;
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
 * @tc.name: AfterCreateTest001
 * @tc.desc: AfterCreate test
 * @tc.type: FUNC
