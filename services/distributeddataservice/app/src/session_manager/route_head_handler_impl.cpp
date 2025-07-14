@@ -124,8 +124,10 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
     auto peerCap = UpgradeManager::GetInstance().GetCapability(session_.targetDeviceId, flag);
     if (!flag) {
         ZLOGI("get peer cap failed");
-        return (storeId_ == UDMF_STORE_ID || storeId_ == DATA_OBJECT_STORE_ID) ? DistributedDB::OK
-                                                                               : DistributedDB::DB_ERROR;
+        return (appId_ == Bootstrap::GetInstance().GetProcessLabel() &&
+                   (storeId_ == UDMF_STORE_ID || storeId_ == DATA_OBJECT_STORE_ID))
+                   ? DistributedDB::OK
+                   : DistributedDB::DB_ERROR;
     }
     if ((appId_ == Bootstrap::GetInstance().GetProcessLabel() && storeId_ != Bootstrap::GetInstance().GetMetaDBName()
         && peerCap.version < CapMetaData::UDMF_AND_OBJECT_VERSION)
