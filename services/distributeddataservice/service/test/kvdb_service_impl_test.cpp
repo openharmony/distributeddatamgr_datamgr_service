@@ -1233,7 +1233,8 @@ HWTEST_F(KvdbServiceImplTest, PutSwitch, TestSize.Level0)
     switchData.length = DeviceMatrix::INVALID_LENGTH;
     status = kvdbServiceImpl_->PutSwitch(appId, switchData);
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
-    Appid appId1 = "\\ohos.test.kvdb";
+    AppId appId1;
+    appId1.appId = "\\ohos.test.kvdb";
     status = kvdbServiceImpl_->PutSwitch(appId1, switchData);
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
     std::string networkId = "networkId";
