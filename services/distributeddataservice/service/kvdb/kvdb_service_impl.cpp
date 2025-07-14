@@ -705,7 +705,7 @@ Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId,
     if (!IsValidPath(storeId) || !IsValidPath(appId)) {
         ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
-        return false;
+        return INVALID_ARGUMENT;
     }
     StoreMetaData meta = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, meta);
