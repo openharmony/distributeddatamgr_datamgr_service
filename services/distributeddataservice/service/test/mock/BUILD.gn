@@ -45,7 +45,6 @@ ohos_static_library("distributeddata_mock_static") {
     "device_manager_adapter_mock.cpp",
     "general_store_mock.cpp",
     "kv_store_nb_delegate_mock.cpp",
-    "meta_data_manager_mock.cpp",
     "network_delegate_mock.cpp",
     "screen_lock_mock.cpp",
     "user_delegate_mock.cpp",
