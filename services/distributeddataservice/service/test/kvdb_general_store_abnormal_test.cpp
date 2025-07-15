@@ -127,16 +127,19 @@ HWTEST_F(KVDBGeneralStoreAbnormalTest, GetDBOptionTest001, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreAbnormalTest, SetEqualIdentifier, TestSize.Level0)
 {
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
-    std::vector<std::string> uuids{"uuidtest01"};
+    std::vector<std::string> uuids{ "uuidtest01" };
     KvStoreNbDelegateMock mockDelegate;
     mockDelegate.taskCountMock_ = 1;
     store->delegate_ = &mockDelegate;
     EXPECT_NE(store->delegate_, nullptr);
-    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::_)).WillOnce(testing::Return(uuids));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<std::vector<DeviceInfo>>()))
+        .WillOnce(testing::Return(uuids));
     auto uuids1 = DMAdapter::ToUUID(DMAdapter::GetInstance().GetRemoteDevices());
-    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::_)).WillOnce(testing::Return(uuids));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<std::vector<DeviceInfo>>()))
+        .WillOnce(testing::Return(uuids));
     EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType("uuidtest01"))
-        .WillOnce(testing::Return(false)).WillOnce(testing::Return(false));
+        .WillOnce(testing::Return(false))
+        .WillOnce(testing::Return(false));
     store->SetEqualIdentifier(metaData_.appId, metaData_.storeId);
     EXPECT_EQ(uuids1, uuids);
     store->delegate_ = nullptr;
