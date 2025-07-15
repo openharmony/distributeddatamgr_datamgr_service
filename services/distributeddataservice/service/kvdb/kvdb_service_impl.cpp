@@ -1041,7 +1041,7 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
         return Status::CLOUD_DISABLED;
     }
     auto network = NetworkDelegate::GetInstance();
-    if (network != nullptr || !network->IsNetworkAvailable()) {
+    if (network == nullptr || !network->IsNetworkAvailable()) {
         return Status::NETWORK_ERROR;
     }
     std::vector<int32_t> users;
