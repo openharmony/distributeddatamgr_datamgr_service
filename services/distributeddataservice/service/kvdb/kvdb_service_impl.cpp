@@ -527,7 +527,7 @@ Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &sto
 Status KVDBServiceImpl::SetCapability(const AppId &appId, const StoreId &storeId, int32_t subUser,
     const std::vector<std::string> &local, const std::vector<std::string> &remote)
 {
-    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId)) {
         ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
               Anonymous::Change(storeId.storeId).c_str());
         return INVALID_ARGUMENT;
@@ -682,7 +682,7 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
 
 Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, const StoreConfig &storeConfig)
 {
-    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId)) {
         ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
               Anonymous::Change(storeId.storeId).c_str());
         return INVALID_ARGUMENT;
