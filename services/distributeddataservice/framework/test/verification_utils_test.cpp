@@ -51,11 +51,11 @@ HWTEST_F(VerificationUtilsTest, IfContainIllegalField002, TestSize.Level0)
     EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path/with/forward/slash"));
     EXPECT_FALSE(VerificationUtils::IfContainIllegalField("/starting/slash"));
     EXPECT_FALSE(VerificationUtils::IfContainIllegalField("ending/slash/"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path\with\backslash"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("\starting\backslash"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("ending\backslash\"));
+    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path\\with\\backslash"));
+    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("\\starting\\ending"));
+    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("ending\\"));
     EXPECT_FALSE(VerificationUtils::IfContainIllegalField(".."));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path/with\mixed/slashes"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path\with/mixed\slashes"));
+    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path/with\\mixed/slashes"));
+    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path\\with/mixed\\slashes"));
 }
 } // namespace OHOS::Test
