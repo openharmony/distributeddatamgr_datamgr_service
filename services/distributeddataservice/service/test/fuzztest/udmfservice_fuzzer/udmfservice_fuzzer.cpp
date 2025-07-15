@@ -202,11 +202,10 @@ void AddPrivilegeDataFuzz(FuzzedDataProvider &provider)
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     QueryOption query = GenerateFuzzQueryOption(provider);
 
-    Privilege privilege = {
-        .tokenId = 1,
-        .readPermission = "read",
-        .writePermission = "write"
-    };
+    Privilege privilege;
+    privilege.tokenId = 1;
+    privilege.readPermission = "read";
+    privilege.writePermission = "write";
 
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
@@ -267,9 +266,8 @@ void ObtainAsynProcessFuzz(FuzzedDataProvider &provider)
         groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MINIMUM);
     }
     std::string businessUdKey(groupId.begin(), groupId.end());
-    AsyncProcessInfo processInfo = {
-        .businessUdKey = businessUdKey,
-    };
+    AsyncProcessInfo processInfo;
+    processInfo.businessUdKey = businessUdKey;
     MessageParcel requestUpdate;
     requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(requestUpdate, processInfo);
@@ -427,16 +425,14 @@ void IsPermissionInCacheFuzz(FuzzedDataProvider &provider)
 void IsReadAndKeepFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    Privilege privilege = {
-        .tokenId = provider.ConsumeIntegral<uint32_t>(),
-        .readPermission = "read",
-        .writePermission = "write"
-    };
-    Privilege privilege2 = {
-        .tokenId = provider.ConsumeIntegral<uint32_t>(),
-        .readPermission = "readAndKeep",
-        .writePermission = "write"
-    };
+    Privilege privilege;
+    privilege.tokenId = provider.ConsumeIntegral<uint32_t>();
+    privilege.readPermission = "read";
+    privilege.writePermission = "write";
+    Privilege privilege2;
+    privilege2.tokenId = provider.ConsumeIntegral<uint32_t>();
+    privilege2.readPermission = "readAndKeep";
+    privilege2.writePermission = "write";
     std::vector<Privilege> privileges = { privilege, privilege2 };
     QueryOption query = GenerateFuzzQueryOption(provider);
     udmfServiceImpl->IsReadAndKeep(privileges, query);
