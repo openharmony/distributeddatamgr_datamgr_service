@@ -944,10 +944,10 @@ void ObjectStoreManager::SyncCompleted(
         }
     }
 }
-        
+
 void ObjectStoreManager::FlushClosedStore()
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (!isSyncing_ && syncCount_ == 0 && delegate_ != nullptr) {
         ZLOGD("close store");
         auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
