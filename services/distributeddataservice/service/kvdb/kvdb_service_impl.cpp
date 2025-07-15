@@ -50,6 +50,7 @@
 #include "utils/converter.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "network/network_delegate.h"
+#include "utils/verification_utils.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -294,7 +295,7 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
 Status KVDBServiceImpl::PutSwitch(const AppId &appId, const SwitchData &data)
 {
     if (data.value == DeviceMatrix::INVALID_VALUE || data.length == DeviceMatrix::INVALID_LENGTH ||
-        !IsValidPath(appId)) {
+        !VerificationUtils::IfContainIllegalField(appId)) {
         return Status::INVALID_ARGUMENT;
     }
 
@@ -491,7 +492,7 @@ Status KVDBServiceImpl::GetSyncParam(const AppId &appId, const StoreId &storeId,
 
 Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId)) {
         ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
               Anonymous::Change(storeId.storeId).c_str());
         return INVALID_ARGUMENT;
@@ -508,7 +509,7 @@ Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &stor
 
 Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId)) {
         ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
               Anonymous::Change(storeId.storeId).c_str());
         return INVALID_ARGUMENT;
@@ -803,7 +804,8 @@ Status KVDBServiceImpl::AfterCreate(
             options.kvStoreType, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), options.dataType);
         return INVALID_ARGUMENT;
     }
-    if (!IsValidPath(storeId) || !IsValidPath(appId)) {
+    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId) ||
+        !VerificationUtils::IfContainIllegalField(options.hapName)) {
         ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
               Anonymous::Change(storeId.storeId).c_str());
         return INVALID_ARGUMENT;
@@ -1609,13 +1611,5 @@ std::string KVDBServiceImpl::GenerateKey(const std::string &userId, const std::s
         return key;
     }
     return key.append(userId).append(KEY_SEPARATOR).append(storeId);
-}
-
-bool KVDBServiceImpl::IsValidPath(const std::string &param)
-{
-    if ((param.find("/") != std::string::npos) || (param.find("\\") != std::string::npos) || (param == "..")) {
-        return false;
-    }
-    return true;
 }
 } // namespace OHOS::DistributedKv

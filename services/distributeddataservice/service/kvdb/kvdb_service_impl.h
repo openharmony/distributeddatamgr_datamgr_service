@@ -166,7 +166,6 @@ private:
     std::string GenerateKey(const std::string &userId, const std::string &storeId) const;
     std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
     void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password);
-    static bool IsValidPath(const std::string& param);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
