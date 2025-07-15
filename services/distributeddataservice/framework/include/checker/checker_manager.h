@@ -53,6 +53,7 @@ public:
         virtual std::vector<StoreInfo> GetStaticStores() = 0;
         virtual bool IsDynamic(const StoreInfo &info) = 0;
         virtual bool IsStatic(const StoreInfo &info) = 0;
+        virtual void DeleteCache(const std::string &bundleName, int32_t user, int32_t index){};
     protected:
         API_EXPORT ~Checker() = default;
     };
@@ -68,6 +69,8 @@ public:
     API_EXPORT bool IsSwitches(const StoreInfo &info);
     API_EXPORT void LoadCheckers(std::vector<std::string> &checkers);
     API_EXPORT Checker *GetChecker(const std::string &checker);
+    API_EXPORT void DeleteCache(const std::string &bundleName, int32_t user, int32_t index);
+
 private:
     std::map<std::string, Checker *> checkers_;
     ConcurrentMap<std::string, std::function<Checker *()>> getters_;

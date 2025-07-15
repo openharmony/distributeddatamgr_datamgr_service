@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CHECKER_BUNDLE_CHECKER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CHECKER_BUNDLE_CHECKER_H
 #include "checker/checker_manager.h"
+#include "lru_bucket.h"
 namespace OHOS {
 namespace DistributedData {
 class BundleChecker : public CheckerManager::Checker {
@@ -36,6 +37,7 @@ public:
     std::vector<CheckerManager::StoreInfo> GetStaticStores() override;
     bool IsDynamic(const CheckerManager::StoreInfo &info) override;
     bool IsStatic(const CheckerManager::StoreInfo &info) override;
+    void DeleteCache(const std::string &bundleName, int32_t user, int32_t index) override;
 
 private:
     static BundleChecker instance_;
@@ -45,6 +47,7 @@ private:
     std::vector<CheckerManager::StoreInfo> dynamicStores_;
     std::vector<CheckerManager::StoreInfo> staticStores_;
     std::string GetBundleAppId(const CheckerManager::StoreInfo &info);
+    LRUBucket<std::string, std::string> appId_ {64};
 };
 } // namespace DistributedData
 } // namespace OHOS

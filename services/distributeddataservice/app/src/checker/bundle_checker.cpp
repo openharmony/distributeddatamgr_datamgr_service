@@ -63,6 +63,12 @@ bool BundleChecker::SetSwitchesInfo(const CheckerManager::Switches &switches)
 
 std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
 {
+    std::string appId;
+    int32_t userId = info.uid / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
+    std::string key = info.bundleName + "###" + std::to_string(userId);
+    if (appId_.Get(key, appId)) {
+        return appId;
+    }
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {
         ZLOGE("Failed to get system ability mgr.");
@@ -78,13 +84,23 @@ std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
         ZLOGE("Failed to get bundle manager");
         return "";
     }
-    int32_t userId = info.uid / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
-    std::string appId = bundleManager->GetAppIdByBundleName(info.bundleName, userId);
+    appId = bundleManager->GetAppIdByBundleName(info.bundleName, userId);
     if (appId.empty()) {
         ZLOGE("GetAppIdByBundleName failed appId:%{public}s, bundleName:%{public}s, uid:%{public}d",
             appId.c_str(), info.bundleName.c_str(), userId);
     }
+    appId_.Set(key, appId);
     return appId;
+}
+
+void BundleChecker::DeleteCache(const std::string &bundleName, int32_t user, int32_t index)
+{
+    std::string key = bundleName + "###" + std::to_string(user);
+    std::string appId;
+    appId_.Get(key, appId);
+    ZLOGI("DeleteAppidCache bundleName:%{public}s, user:%{public}d, appId:%{public}s.",
+        bundleName.c_str(), user, appId.c_str());
+    appId_.Delete(key);
 }
 
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)

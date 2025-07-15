@@ -47,6 +47,16 @@ void CheckerManager::RegisterPlugin(const std::string &checker, std::function<Ch
     });
 }
 
+void CheckerManager::DeleteCache(const std::string &bundleName, int32_t user, int32_t index)
+{
+    for (auto &[name, checker] : checkers_) {
+        if (checker == nullptr) {
+            continue;
+        }
+        checker->DeleteCache(bundleName, user, index);
+    }
+}
+
 std::string CheckerManager::GetAppId(const StoreInfo &info)
 {
     for (auto &[name, checker] : checkers_) {

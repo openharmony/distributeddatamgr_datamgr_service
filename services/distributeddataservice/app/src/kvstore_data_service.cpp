@@ -1049,6 +1049,7 @@ void KvStoreDataService::OnSessionReady(const AppDistributedKv::DeviceInfo &info
 
 int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
+    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppUninstall(bundleName, user, index);
@@ -1059,6 +1060,7 @@ int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t u
 
 int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
+    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppUpdate(bundleName, user, index);
@@ -1069,6 +1071,7 @@ int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user
 
 int32_t KvStoreDataService::OnInstall(const std::string &bundleName, int32_t user, int32_t index)
 {
+    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppInstall(bundleName, user, index);
@@ -1089,6 +1092,7 @@ int32_t KvStoreDataService::OnScreenUnlocked(int32_t user)
 int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
     int32_t tokenId)
 {
+    CheckerManager::GetInstance().DeleteCache(bundleName, userId, appIndex);
     auto callerToken = IPCSkeleton::GetCallingTokenID();
     NativeTokenInfo nativeTokenInfo;
     if (AccessTokenKit::GetNativeTokenInfo(callerToken, nativeTokenInfo) != RET_SUCCESS ||

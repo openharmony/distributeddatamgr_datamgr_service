@@ -92,36 +92,6 @@ private:
     ~MetaDataManager();
 
     API_EXPORT bool GetEntries(const std::string &prefix, std::vector<Bytes> &entries, bool isLocal);
-
-    void DelCacheMeta(const std::string &key, bool isLocal)
-    {
-        if (!isLocal) {
-            return;
-        }
-        localdata_.Delete(key);
-    }
-
-    bool LoadCacheMeta(const std::string &key, Serializable &value, bool isLocal)
-    {
-        if (!isLocal) {
-            return false;
-        }
-        std::string data;
-        if (!localdata_.Get(key, data)) {
-            return false;
-        }
-        Serializable::Unmarshall(data, value);
-        return true;
-    }
-
-    void SaveCacheMeta(const std::string &key, const std::string &data, bool isLocal)
-    {
-        if (!isLocal) {
-            return;
-        }
-        localdata_.Set(key, data);
-    }
-    
     void StopSA();
 
     bool inited_ = false;
