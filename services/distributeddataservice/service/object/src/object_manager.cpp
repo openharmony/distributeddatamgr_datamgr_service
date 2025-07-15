@@ -881,7 +881,7 @@ int32_t ObjectStoreManager::Open()
         ZLOGI("Open object kvstore success");
     } else {
         syncCount_++;
-        ZLOGI("Object kvstore syncCount: %{public}d", syncCount_);
+        ZLOGI("Object kvstore syncCount: %{public}d", syncCount_.load());
     }
     return OBJECT_SUCCESS;
 }
@@ -918,7 +918,7 @@ void ObjectStoreManager::Close()
         return;
     }
     syncCount_--;
-    ZLOGI("closed a store, syncCount = %{public}d", syncCount_);
+    ZLOGI("closed a store, syncCount = %{public}d", syncCount_.load());
     FlushClosedStore();
 }
 
@@ -928,7 +928,6 @@ void ObjectStoreManager::SyncCompleted(
     std::string userId;
     SequenceSyncManager::Result result = SequenceSyncManager::GetInstance()->Process(sequenceId, results, userId);
     if (result == SequenceSyncManager::SUCCESS_USER_HAS_FINISHED && userId == userId_) {
-        std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
         SetSyncStatus(false);
         FlushClosedStore();
     }
@@ -1119,7 +1118,6 @@ int32_t ObjectStoreManager::DoSync(const std::string &prefix, const std::vector<
 
 int32_t ObjectStoreManager::SetSyncStatus(bool status)
 {
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
     isSyncing_ = status;
     return OBJECT_SUCCESS;
 }

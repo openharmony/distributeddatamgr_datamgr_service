@@ -218,15 +218,14 @@ private:
              + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
     mutable std::shared_timed_mutex rwMutex_;
-    std::recursive_mutex kvStoreMutex_;
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
     ObjectDataListener objectDataListener_;
     sptr<ObjectAssetsRecvListener> objectAssetsRecvListener_ = nullptr;
     sptr<ObjectAssetsSendListener> objectAssetsSendListener_ = nullptr;
-    uint32_t syncCount_ = 0;
+    std::atomic<uint32_t> syncCount_{ 0 };
     std::string userId_;
-    std::atomic<bool> isSyncing_ = false;
+    std::atomic<bool> isSyncing_{ false };
     ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
     ConcurrentMap<uint32_t /* tokenId */, ProgressCallbackInfo > processCallbacks_;
     std::shared_ptr<ExecutorPool> executors_;
