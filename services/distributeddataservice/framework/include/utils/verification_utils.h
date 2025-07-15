@@ -15,7 +15,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_VERIFICATION_UTILS_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_VERIFICATION_UTILS_H
 #include "visibility.h"
-
+#include <string>
 namespace OHOS {
 namespace DistributedData {
 class VerificationUtils {
