@@ -103,10 +103,9 @@ HWTEST_F(UdmfServiceImplDbCorruptionMockTest, SaveDataTest001, TestSize.Level1)
     DistributedData::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
     key.append(std::to_string(foregroundUserId));
     StoreCache::GetInstance().stores_.InsertOrAssign(key, store);
-    CustomOption option {
-        .intention = Intention::UD_INTENTION_DATA_HUB,
-        .tokenId = 1
-    };
+    CustomOption option;
+    option.intention = Intention::UD_INTENTION_DATA_HUB;
+    option.tokenId = 1;
     auto record = std::make_shared<UnifiedRecord>();
     UnifiedData data;
     data.AddRecord(record);
