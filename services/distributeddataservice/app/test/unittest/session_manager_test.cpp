@@ -489,7 +489,7 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test5, TestSize.Level1)
 HWTEST_F(SessionManagerTest, GetHeadDataSize_Test6, TestSize.Level1)
 {
     const DistributedDB::ExtendInfo info = {
-        .appId = "com.providers.calendar", .storeId = "test", .userId = "100", .dstTarget = PEER_DEVICE_ID
+        .appId = "com.test.demo", .storeId = "test", .userId = "100", .dstTarget = PEER_DEVICE_ID
     };
     std::vector<AppMappingInfo> mapper = { { .appId = info.appId, .bundleName = info.appId } };
     AppAccessCheckConfigManager::GetInstance().Initialize(mapper);
@@ -509,6 +509,7 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test6, TestSize.Level1)
   */
 HWTEST_F(SessionManagerTest, GetHeadDataSize_Test7, TestSize.Level1)
 {
+    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(_)).WillRepeatedly(Return(true));
     const DistributedDB::ExtendInfo info = {
         .appId = "otherAppId", .storeId = "test", .userId = "100", .dstTarget = "10"
     };
@@ -528,8 +529,9 @@ HWTEST_F(SessionManagerTest, GetHeadDataSize_Test7, TestSize.Level1)
   */
 HWTEST_F(SessionManagerTest, GetHeadDataSize_Test8, TestSize.Level1)
 {
+    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(_)).WillRepeatedly(Return(true));
     const DistributedDB::ExtendInfo info = {
-        .appId = "otherAppId", .storeId = "test", .userId = "100", .dstTarget = "10"
+        .appId = "otherAppId", .storeId = "test", .userId = "100", .dstTarget = PEER_DEVICE_ID
     };
     auto sendHandler = RouteHeadHandlerImpl::Create(info);
     ASSERT_NE(sendHandler, nullptr);
