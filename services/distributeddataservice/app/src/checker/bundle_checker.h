@@ -47,7 +47,7 @@ private:
     std::vector<CheckerManager::StoreInfo> dynamicStores_;
     std::vector<CheckerManager::StoreInfo> staticStores_;
     std::string GetBundleAppId(const CheckerManager::StoreInfo &info);
-    LRUBucket<std::string, std::string> appId_ {64};
+    LRUBucket<std::string, std::string> appId_ {32};
 };
 } // namespace DistributedData
 } // namespace OHOS
