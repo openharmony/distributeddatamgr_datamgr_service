@@ -213,7 +213,7 @@ bool MetaDataManager::SaveMeta(const std::string &key, const Serializable &value
         ZLOGE("failed! status:%{public}d isLocal:%{public}d, key:%{public}s", status, isLocal,
             Anonymous::Change(key).c_str());
     }
-    localdata_.Delete(key);
+    DelCacheMeta(key, isLocal);
     return status == DistributedDB::DBStatus::OK;
 }
 
@@ -229,7 +229,7 @@ bool MetaDataManager::SaveMeta(const std::vector<Entry> &values, bool isLocal)
     entries.reserve(values.size());
     for (const auto &[key, value] : values) {
         entries.push_back({ { key.begin(), key.end() }, { value.begin(), value.end() } });
-        localdata_.Delete(key);
+        DelCacheMeta(key, isLocal);
     }
     auto status = isLocal ? metaStore_->PutLocalBatch(entries) : metaStore_->PutBatch(entries);
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
@@ -255,9 +255,7 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool
     if (!inited_) {
         return false;
     }
-    std::string temp;
-    if (localdata_.Get(key, temp)) {
-        Serializable::Unmarshall(temp, value);
+    if (LoadCacheMeta(key, value, isLocal)) {
         return true;
     }
     DistributedDB::Value data;
@@ -274,7 +272,7 @@ bool MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool
         return false;
     }
     std::string tempdata(data.begin(), data.end());
-    localdata_.Set(key, tempdata);
+    SaveCacheMeta(key, tempdata, isLocal);
     Serializable::Unmarshall(tempdata, value);
     if (isLocal) {
         data.assign(data.size(), 0);
@@ -310,7 +308,7 @@ bool MetaDataManager::DelMeta(const std::string &key, bool isLocal)
     if (!inited_) {
         return false;
     }
-    localdata_.Delete(key);
+    DelCacheMeta(key, isLocal);
     auto status = isLocal ? metaStore_->DeleteLocal({ key.begin(), key.end() })
                           : metaStore_->Delete({ key.begin(), key.end() });
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
@@ -341,7 +339,7 @@ bool MetaDataManager::DelMeta(const std::vector<std::string> &keys, bool isLocal
     dbKeys.reserve(keys.size());
     for (auto &key : keys) {
         dbKeys.emplace_back(key.begin(), key.end());
-        localdata_.Delete(key);
+        DelCacheMeta(key, isLocal);
     }
     auto status = isLocal ? metaStore_->DeleteLocalBatch(dbKeys) : metaStore_->DeleteBatch(dbKeys);
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
