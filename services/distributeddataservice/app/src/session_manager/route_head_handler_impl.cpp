@@ -156,6 +156,10 @@ DistributedDB::DBStatus RouteHeadHandlerImpl::GetHeadDataSize(uint32_t &headSize
 DistributedDB::DBStatus RouteHeadHandlerImpl::FillHeadData(uint8_t *data, uint32_t headSize, uint32_t totalLen)
 {
     ZLOGD("begin");
+    if (data == nullptr) {
+        ZLOGE("data is nullptr");
+        return DistributedDB::DB_ERROR;
+    }
     if (headSize != headSize_) {
         ZLOGI("size not match");
         return DistributedDB::DB_ERROR;
