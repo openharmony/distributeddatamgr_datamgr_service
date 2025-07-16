@@ -62,6 +62,7 @@ private:
 
     bool CheckPermission(uint32_t code, const StoreInfo &storeInfo);
     std::pair<int32_t, StoreInfo> GetStoreInfo(uint32_t code, MessageParcel &data);
+    bool IsValidField(const std::string &param);
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_SERVICE_KVDB_SERVICE_STUB_H

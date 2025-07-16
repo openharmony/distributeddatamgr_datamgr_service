@@ -113,7 +113,6 @@ ohos_shared_library("distributeddatasvcfwk") {
     "utils/crypto.cpp",
     "utils/ref_count.cpp",
     "utils/time_utils.cpp",
-    "utils/verification_utils.cpp",
   ]
 
   cflags = [

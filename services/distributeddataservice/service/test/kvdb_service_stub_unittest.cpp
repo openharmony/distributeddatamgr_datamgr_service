@@ -383,5 +383,37 @@ HWTEST_F(KVDBServiceStubTest, OnRemoveDeviceData, TestSize.Level1)
     auto status = kvdbServiceStub->OnRemoveDeviceData(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
+
+/**
+ * @tc.name: IsValidField001
+ * @tc.desc: IsValidField function test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(VerificationUtilsTest, IsValidField001, TestSize.Level0)
+{
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("validpath"));
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("another_valid_path"));
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("file123"));
+}
+
+/**
+ * @tc.name: IsValidField002
+ * @tc.desc: IsValidField function test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(VerificationUtilsTest, IsValidField002, TestSize.Level0)
+{
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path/with/forward/slash"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("/starting/slash"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("ending/slash/"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path\\with\\backslash"));
+    EXPECT_FALSE(kvdbServiceStub->IfContainIsValidFieldIllegalField("\\starting\\ending"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("ending\\"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField(".."));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path/with\\mixed/slashes"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path\\with/mixed\\slashes"));
+}
+
+
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
