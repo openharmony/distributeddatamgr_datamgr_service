@@ -407,7 +407,6 @@ ohos_unittest("DeviceSyncAppManagerTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [ "kv_store:datamgr_common" ]
 }
-
 ###############################################################################
 group("unittest") {
   testonly = true
