@@ -14,12 +14,13 @@
  */
 #ifndef OHOS_DISTRIBUTED_DATA_FRAMEWORKS_VERIFICATION_UTILS_H
 #define OHOS_DISTRIBUTED_DATA_FRAMEWORKS_VERIFICATION_UTILS_H
+#include "visibility.h"
 #include <string>
 namespace OHOS {
 namespace DistributedData {
 class VerificationUtils {
 public:
-    static bool IsValidField(const std::string &param);
+    API_EXPORT static bool IsValidField(const std::string &param);
 };
 } // namespace DistributedData
 } // namespace OHOS
