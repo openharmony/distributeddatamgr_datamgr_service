@@ -50,7 +50,6 @@
 #include "utils/converter.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "network/network_delegate.h"
-#include "utils/verification_utils.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -297,7 +296,6 @@ Status KVDBServiceImpl::PutSwitch(const AppId &appId, const SwitchData &data)
     if (data.value == DeviceMatrix::INVALID_VALUE || data.length == DeviceMatrix::INVALID_LENGTH) {
         return Status::INVALID_ARGUMENT;
     }
-
     auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
     SwitchesMetaData oldMeta;
     oldMeta.deviceId = deviceId;
@@ -783,6 +781,7 @@ Status KVDBServiceImpl::AfterCreate(
             options.kvStoreType, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), options.dataType);
         return INVALID_ARGUMENT;
     }
+
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, options.subUser);
     AddOptions(options, metaData);
 

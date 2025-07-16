@@ -20,6 +20,7 @@
 #include "log_print.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
+#include "utils/verification_utils.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
 const KVDBServiceStub::Handler
