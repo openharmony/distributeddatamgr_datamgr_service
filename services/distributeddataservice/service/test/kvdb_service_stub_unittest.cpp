@@ -389,7 +389,7 @@ HWTEST_F(KVDBServiceStubTest, OnRemoveDeviceData, TestSize.Level1)
  * @tc.desc: IsValidField function test.
  * @tc.type: FUNC
  */
-HWTEST_F(VerificationUtilsTest, IsValidField001, TestSize.Level0)
+HWTEST_F(KVDBServiceStubTest, IsValidField001, TestSize.Level0)
 {
     EXPECT_TRUE(kvdbServiceStub->IsValidField("validpath"));
     EXPECT_TRUE(kvdbServiceStub->IsValidField("another_valid_path"));
@@ -401,7 +401,7 @@ HWTEST_F(VerificationUtilsTest, IsValidField001, TestSize.Level0)
  * @tc.desc: IsValidField function test.
  * @tc.type: FUNC
  */
-HWTEST_F(VerificationUtilsTest, IsValidField002, TestSize.Level0)
+HWTEST_F(KVDBServiceStubTest, IsValidField002, TestSize.Level0)
 {
     EXPECT_FALSE(kvdbServiceStub->IsValidField("path/with/forward/slash"));
     EXPECT_FALSE(kvdbServiceStub->IsValidField("/starting/slash"));
