@@ -22,9 +22,9 @@
 #include "utils/constant.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
-static constexpr const char *Slash = "/";
-static constexpr const char *BackSlash  = "\\";
-static constexpr const char *Point = "..";
+static constexpr const char *SLASH = "/";
+static constexpr const char *BACK_SLASH  = "\\";
+static constexpr const char *POINT = "..";
 
 const KVDBServiceStub::Handler
     KVDBServiceStub::HANDLERS[static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)] = {
@@ -592,8 +592,8 @@ int32_t KVDBServiceStub::OnRemoveDeviceData(const AppId &appId, const StoreId &s
 
 bool KVDBServiceStub::IsValidField(const std::string &param)
 {
-    if ((param.find(Slash) != std::string::npos) || (param.find(BackSlash) != std::string::npos) || (param == Point)) {
-        ZLOGE("check failed, param is: %{public}s", Anonymous::Change(param.c_str());
+    if ((param.find(SLASH) != std::string::npos) || (param.find(BACK_SLASH) != std::string::npos) || (param == POINT)) {
+        ZLOGE("check failed, param is: %{public}s", Anonymous::Change(param.c_str()));
         return false;
     }
     return true;
