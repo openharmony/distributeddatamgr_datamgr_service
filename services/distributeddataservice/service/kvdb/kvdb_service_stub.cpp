@@ -593,7 +593,7 @@ int32_t KVDBServiceStub::OnRemoveDeviceData(const AppId &appId, const StoreId &s
 bool KVDBServiceStub::IsValidField(const std::string &param)
 {
     if ((param.find(SLASH) != std::string::npos) || (param.find(BACK_SLASH) != std::string::npos) || (param == POINT)) {
-        ZLOGE("check failed, param is: %{public}s", Anonymous::Change(param.c_str()));
+        ZLOGE("check failed, param is: %{public}s", Anonymous::Change(param).c_str());
         return false;
     }
     return true;
