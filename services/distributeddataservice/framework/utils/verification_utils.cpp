@@ -17,9 +17,10 @@
 
 namespace OHOS {
 namespace DistributedData {
-bool VerificationUtils::IfContainIllegalField(const std::string &param)
+bool VerificationUtils::IsValidField(const std::string &param)
 {
     if ((param.find("/") != std::string::npos) || (param.find("\\") != std::string::npos) || (param == "..")) {
+        ZLOGE("check failed, param is: %{public}s", param.c_str());
         return false;
     }
     return true;

@@ -30,32 +30,32 @@ namespace OHOS::Test {
 
 /**
 
-@tc.name: IfContainIllegalField001
-@tc.desc: IfContainIllegalField function test.
+@tc.name: IsValidField001
+@tc.desc: IsValidField function test.
 @tc.type: FUNC
 */
-    HWTEST_F(VerificationUtilsTest, IfContainIllegalField001, TestSize.Level0)
+    HWTEST_F(VerificationUtilsTest, IsValidField001, TestSize.Level0)
 {
-    EXPECT_TRUE(VerificationUtils::IfContainIllegalField("validpath"));
-    EXPECT_TRUE(VerificationUtils::IfContainIllegalField("another_valid_path"));
-    EXPECT_TRUE(VerificationUtils::IfContainIllegalField("file123"));
+    EXPECT_TRUE(VerificationUtils::IsValidField("validpath"));
+    EXPECT_TRUE(VerificationUtils::IsValidField("another_valid_path"));
+    EXPECT_TRUE(VerificationUtils::IsValidField("file123"));
 }
 /**
 
-@tc.name: IfContainIllegalField002
-@tc.desc: IfContainIllegalField function test.
+@tc.name: IsValidField002
+@tc.desc: IsValidField function test.
 @tc.type: FUNC
 */
-HWTEST_F(VerificationUtilsTest, IfContainIllegalField002, TestSize.Level0)
+HWTEST_F(VerificationUtilsTest, IsValidField002, TestSize.Level0)
 {
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path/with/forward/slash"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("/starting/slash"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("ending/slash/"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path\\with\\backslash"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("\\starting\\ending"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("ending\\"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField(".."));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path/with\\mixed/slashes"));
-    EXPECT_FALSE(VerificationUtils::IfContainIllegalField("path\\with/mixed\\slashes"));
+    EXPECT_FALSE(VerificationUtils::IsValidField("path/with/forward/slash"));
+    EXPECT_FALSE(VerificationUtils::IsValidField("/starting/slash"));
+    EXPECT_FALSE(VerificationUtils::IsValidField("ending/slash/"));
+    EXPECT_FALSE(VerificationUtils::IsValidField("path\\with\\backslash"));
+    EXPECT_FALSE(VerificationUtils::IfContainIsValidFieldIllegalField("\\starting\\ending"));
+    EXPECT_FALSE(VerificationUtils::IsValidField("ending\\"));
+    EXPECT_FALSE(VerificationUtils::IsValidField(".."));
+    EXPECT_FALSE(VerificationUtils::IsValidField("path/with\\mixed/slashes"));
+    EXPECT_FALSE(VerificationUtils::IsValidField("path\\with/mixed\\slashes"));
 }
 } // namespace OHOS::Test

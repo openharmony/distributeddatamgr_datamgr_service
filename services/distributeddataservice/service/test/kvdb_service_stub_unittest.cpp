@@ -149,12 +149,12 @@ HWTEST_F(KVDBServiceStubTest, CheckPermission001, TestSize.Level1)
 
 
 /**
- * @tc.name: OnBeforeCreate
+ * @tc.name: OnBeforeCreate001
  * @tc.desc: Test OnBeforeCreate
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(KVDBServiceStubTest, OnBeforeCreate, TestSize.Level1)
+HWTEST_F(KVDBServiceStubTest, OnBeforeCreate001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -165,18 +165,51 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnAfterCreate
+ * @tc.name: OnBeforeCreate002
+ * @tc.desc: Test OnBeforeCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnBeforeCreate002, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    AppId appId = {"test/App"};
+    StoreId storeId = {"test\\StoreId"};
+    auto status = kvdbServiceStub->OnBeforeCreate(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnAfterCreate001
  * @tc.desc: Test OnAfterCreate
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(KVDBServiceStubTest, OnAfterCreate, TestSize.Level1)
+HWTEST_F(KVDBServiceStubTest, OnAfterCreate001, TestSize.Level1)
 {
     MessageParcel data;
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     AppId appId = {"testApp"};
     StoreId storeId = {"testStore"};
+    auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnAfterCreate002
+ * @tc.desc: Test OnAfterCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnAfterCreate002, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
+    MessageParcel reply;
+    AppId appId = {"..testApp"};
+    StoreId storeId = {"..testStore"};
     auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }

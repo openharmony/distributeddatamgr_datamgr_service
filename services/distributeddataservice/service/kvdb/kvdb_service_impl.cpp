@@ -294,8 +294,7 @@ Status KVDBServiceImpl::NotifyDataChange(const AppId &appId, const StoreId &stor
 
 Status KVDBServiceImpl::PutSwitch(const AppId &appId, const SwitchData &data)
 {
-    if (data.value == DeviceMatrix::INVALID_VALUE || data.length == DeviceMatrix::INVALID_LENGTH ||
-        !VerificationUtils::IfContainIllegalField(appId)) {
+    if (data.value == DeviceMatrix::INVALID_VALUE || data.length == DeviceMatrix::INVALID_LENGTH) {
         return Status::INVALID_ARGUMENT;
     }
 
@@ -492,11 +491,6 @@ Status KVDBServiceImpl::GetSyncParam(const AppId &appId, const StoreId &storeId,
 
 Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId)) {
-        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
-              Anonymous::Change(storeId.storeId).c_str());
-        return INVALID_ARGUMENT;
-    }
     StrategyMeta strategyMeta = GetStrategyMeta(appId, storeId, subUser);
     if (strategyMeta.instanceId < 0) {
         return ILLEGAL_STATE;
@@ -509,11 +503,6 @@ Status KVDBServiceImpl::EnableCapability(const AppId &appId, const StoreId &stor
 
 Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId)) {
-        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
-              Anonymous::Change(storeId.storeId).c_str());
-        return INVALID_ARGUMENT;
-    }
     StrategyMeta strategyMeta = GetStrategyMeta(appId, storeId, subUser);
     if (strategyMeta.instanceId < 0) {
         return ILLEGAL_STATE;
@@ -527,11 +516,6 @@ Status KVDBServiceImpl::DisableCapability(const AppId &appId, const StoreId &sto
 Status KVDBServiceImpl::SetCapability(const AppId &appId, const StoreId &storeId, int32_t subUser,
     const std::vector<std::string> &local, const std::vector<std::string> &remote)
 {
-    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId)) {
-        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
-              Anonymous::Change(storeId.storeId).c_str());
-        return INVALID_ARGUMENT;
-    }
     StrategyMeta strategy = GetStrategyMeta(appId, storeId, subUser);
     if (strategy.instanceId < 0) {
         return ILLEGAL_STATE;
@@ -682,11 +666,6 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
 
 Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, const StoreConfig &storeConfig)
 {
-    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId)) {
-        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
-              Anonymous::Change(storeId.storeId).c_str());
-        return INVALID_ARGUMENT;
-    }
     StoreMetaData meta = GetStoreMetaData(appId, storeId);
     StoreMetaMapping storeMetaMapping(meta);
     MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
@@ -802,12 +781,6 @@ Status KVDBServiceImpl::AfterCreate(
     if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
         ZLOGE("failed please check type:%{public}d appId:%{public}s storeId:%{public}s dataType:%{public}d",
             options.kvStoreType, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), options.dataType);
-        return INVALID_ARGUMENT;
-    }
-    if (!VerificationUtils::IfContainIllegalField(storeId) || !VerificationUtils::IfContainIllegalField(appId) ||
-        !VerificationUtils::IfContainIllegalField(options.hapName)) {
-        ZLOGE("param is Invalid, appId:%{public}s storeId:%{public}s.", appId.appId.c_str(),
-              Anonymous::Change(storeId.storeId).c_str());
         return INVALID_ARGUMENT;
     }
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, options.subUser);

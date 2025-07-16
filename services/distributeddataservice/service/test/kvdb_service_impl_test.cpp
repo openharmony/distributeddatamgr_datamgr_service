@@ -619,13 +619,7 @@ HWTEST_F(KvdbServiceImplTest, EnableCapabilityTest001, TestSize.Level0)
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    AppId appId1;
-    appId1.appId = "../kvdb_test_storeid";
-    StoreId storeId1;
-    storeId1.storeId = "ohos.test.kvdb";
-    auto status = kvdbServiceImpl_->EnableCapability(appId1, storeId1, 0);
-    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
-    status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
+    auto status = kvdbServiceImpl_->EnableCapability(appId, storeId, 0);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
@@ -851,13 +845,7 @@ HWTEST_F(KvdbServiceImplTest, DisableCapabilityTest001, TestSize.Level0)
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    AppId appId1;
-    appId1.appId = "../kvdb_test_storeid";
-    StoreId storeId1;
-    storeId1.storeId = "ohos.test.kvdb";
-    auto status = kvdbServiceImpl_->DisableCapability(appId1, storeId1, 0);
-    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
-    status = kvdbServiceImpl_->DisableCapability(appId, storeId, 0);
+    auto status = kvdbServiceImpl_->DisableCapability(appId, storeId, 0);
     ZLOGI("DisableCapabilityTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
@@ -887,12 +875,6 @@ HWTEST_F(KvdbServiceImplTest, SetCapabilityTest001, TestSize.Level0)
     auto status = kvdbServiceImpl_->SetCapability(appId, storeId, 0, local, remote);
     ZLOGI("SetCapabilityTest001 status = :%{public}d", status);
     ASSERT_EQ(status, Status::SUCCESS);
-    AppId appId1;
-    appId1.appId = "../kvdb_test_storeid";
-    StoreId storeId1;
-    storeId1.storeId = "ohos.test.kvdb";
-    status = kvdbServiceImpl_->SetCapability(appId1, storeId1, 0, local, remote);
-    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
@@ -1038,34 +1020,6 @@ HWTEST_F(KvdbServiceImplTest, AfterCreateTest001, TestSize.Level0)
     status = kvdbServiceImpl_->AfterCreate(appId, storeIds, create, password);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
     status = kvdbServiceImpl_->AfterCreate(appIds, storeIds, create, password);
-    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
-}
-
-/**
-* @tc.name: AfterCreateTest002
-* @tc.desc: AfterCreate test
-* @tc.type: FUNC
-* @tc.author: wangbin
-*/
-HWTEST_F(KvdbServiceImplTest, AfterCreateTest002, TestSize.Level0)
-{
-    ZLOGI("AfterCreateTest002 start");
-    Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
-    ASSERT_NE(kvStore, nullptr);
-    ASSERT_EQ(status1, Status::SUCCESS);
-    std::vector<uint8_t> password;
-    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, create, password);
-    ZLOGI("AfterCreateTest001 status = :%{public}d", status);
-    ASSERT_EQ(status, Status::SUCCESS);
-    AppId appIds;
-    appIds.appId = "../kvdb_test_storeid";
-    StoreId storeIds;
-    storeIds.storeId = "ohos.test.kvdb";
-    status = kvdbServiceImpl_->AfterCreate(appIds, storeId, create, password);
-    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
-    appIds.appId = "kvdb_test_storeid";
-    storeIds.storeId = "\\ohos.test.kvdb";
-    status = kvdbServiceImpl_->AfterCreate(appId, storeIds, create, password);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
 }
 
@@ -1233,8 +1187,7 @@ HWTEST_F(KvdbServiceImplTest, PutSwitch, TestSize.Level0)
     switchData.length = DeviceMatrix::INVALID_LENGTH;
     status = kvdbServiceImpl_->PutSwitch(appId, switchData);
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
-    AppId appId1;
-    appId1.appId = "\\ohos.test.kvdb";
+    Appid appId1 = "\\ohos.test.kvdb";
     status = kvdbServiceImpl_->PutSwitch(appId1, switchData);
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
     std::string networkId = "networkId";
@@ -1608,6 +1561,36 @@ HWTEST_F(KvdbServiceImplTest, SubscribeSwitchData, TestSize.Level0)
     EXPECT_EQ(tokenId, syncAgent.pid_);
     status = kvdbServiceImpl_->UnregServiceNotifier(appId);
     ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: IsValidPath001
+* @tc.desc: IsValidPath function test.
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidPath001, TestSize.Level0)
+{
+    EXPECT_TRUE(kvdbServiceImpl_->IsValidPath("validpath"));
+    EXPECT_TRUE(kvdbServiceImpl_->IsValidPath("another_valid_path"));
+    EXPECT_TRUE(kvdbServiceImpl_->IsValidPath("file123"));
+}
+
+/**
+* @tc.name: IsValidPath002
+* @tc.desc: IsValidPath function test.
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidPath002, TestSize.Level0)
+{
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath("path/with/forward/slash"));
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath("/starting/slash"));
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath("ending/slash/"));
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath("path\\with\\backslash"));
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath("\\starting\\backslash"));
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath("ending\\backslash\\"));
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath(".."));
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath("path/with\\mixed/slashes"));
+    EXPECT_FALSE(kvdbServiceImpl_->IsValidPath("path\\with/mixed\\slashes"));
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
