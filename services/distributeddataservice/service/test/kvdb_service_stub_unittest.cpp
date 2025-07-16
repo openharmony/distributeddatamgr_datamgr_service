@@ -407,7 +407,7 @@ HWTEST_F(KVDBServiceStubTest, IsValidField002, TestSize.Level0)
     EXPECT_FALSE(kvdbServiceStub->IsValidField("/starting/slash"));
     EXPECT_FALSE(kvdbServiceStub->IsValidField("ending/slash/"));
     EXPECT_FALSE(kvdbServiceStub->IsValidField("path\\with\\backslash"));
-    EXPECT_FALSE(kvdbServiceStub->IfContainIsValidFieldIllegalField("\\starting\\ending"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("\\starting\\ending"));
     EXPECT_FALSE(kvdbServiceStub->IsValidField("ending\\"));
     EXPECT_FALSE(kvdbServiceStub->IsValidField(".."));
     EXPECT_FALSE(kvdbServiceStub->IsValidField("path/with\\mixed/slashes"));
