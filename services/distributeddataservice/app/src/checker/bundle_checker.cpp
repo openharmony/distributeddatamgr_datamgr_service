@@ -28,7 +28,6 @@
 namespace OHOS {
 namespace DistributedData {
 using namespace Security::AccessToken;
-constexpr int CACHE_SIZE = 32;
 __attribute__((used)) BundleChecker BundleChecker::instance_;
 BundleChecker::BundleChecker() noexcept
 {
@@ -115,7 +114,6 @@ void BundleChecker::DeleteCache(const std::string &bundleName, int32_t user, int
 
 void BundleChecker::ClearCache()
 {
-    ZLOGI("ClearAppidCache.");
     appIds_.ResetCapacity(0);
     appIds_.ResetCapacity(CACHE_SIZE);
 }

@@ -40,6 +40,7 @@ public:
     void DeleteCache(const std::string &bundleName, int32_t user, int32_t index) override;
     void ClearCache() override;
 private:
+    static constexpr int CACHE_SIZE = 32;
     std::string GetAppidFromCache(const std::string &bundleName, int32_t userId);
     std::string GetKey(const std::string &bundleName, int32_t userId);
     static BundleChecker instance_;
@@ -49,7 +50,7 @@ private:
     std::vector<CheckerManager::StoreInfo> dynamicStores_;
     std::vector<CheckerManager::StoreInfo> staticStores_;
     std::string GetBundleAppId(const CheckerManager::StoreInfo &info);
-    LRUBucket<std::string, std::string> appIds_ {32};
+    LRUBucket<std::string, std::string> appIds_ {CACHE_SIZE};
 };
 } // namespace DistributedData
 } // namespace OHOS
