@@ -92,7 +92,7 @@
                 "app_file_service",
                 "file_api",
                 "openssl",
-                "cJSON",
+                "json",
                 "dmsfwk",
                 "data_object",
                 "init"

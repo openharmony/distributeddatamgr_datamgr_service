@@ -62,7 +62,7 @@ void ObjectSaveCallbackProxy::Completed(const std::map<std::string, int32_t> &re
     MessageOption mo { MessageOption::TF_SYNC };
     int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
     if (error != 0) {
-        ZLOGW("SendRequest failed, error %d", error);
+        ZLOGW("SendRequest failed, error %{public}d", error);
     }
 }
 
@@ -75,13 +75,13 @@ void ObjectRevokeSaveCallbackProxy::Completed(int32_t status)
         return;
     }
     if (!ITypesUtil::Marshal(data, status)) {
-        ZLOGE("write descriptor failed");
+        ZLOGE("Marshalling failed, status:%{public}d", status);
         return;
     }
     MessageOption mo { MessageOption::TF_SYNC };
     int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
     if (error != 0) {
-        ZLOGW("SendRequest failed, error %d", error);
+        ZLOGW("SendRequest failed, error %{public}d", error);
     }
 }
 
@@ -94,13 +94,13 @@ void ObjectRetrieveCallbackProxy::Completed(const std::map<std::string, std::vec
         return;
     }
     if (!ITypesUtil::Marshal(data, results, allReady)) {
-        ZLOGE("write descriptor failed");
+        ZLOGE("Marshalling failed, allReady:%{public}d", allReady);
         return;
     }
     MessageOption mo { MessageOption::TF_SYNC };
     int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
     if (error != 0) {
-        ZLOGW("SendRequest failed, error %d", error);
+        ZLOGW("SendRequest failed, error %{public}d", error);
     }
 }
 
@@ -113,13 +113,13 @@ void ObjectChangeCallbackProxy::Completed(const std::map<std::string, std::vecto
         return;
     }
     if (!ITypesUtil::Marshal(data, results, allReady)) {
-        ZLOGE("write descriptor failed");
+        ZLOGE("Marshalling failed, allReady:%{public}d", allReady);
         return;
     }
     MessageOption mo { MessageOption::TF_SYNC };
     int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
     if (error != 0) {
-        ZLOGW("SendRequest failed, error %d", error);
+        ZLOGW("SendRequest failed, error %{public}d", error);
     }
 }
 
@@ -138,7 +138,7 @@ void ObjectProgressCallbackProxy::Completed(int32_t progress)
     MessageOption mo { MessageOption::TF_ASYNC };
     int error = Remote()->SendRequest(COMPLETED, data, reply, mo);
     if (error != 0) {
-        ZLOGW("SendRequest failed, error %d", error);
+        ZLOGW("SendRequest failed, error %{public}d", error);
     }
 }
 }  // namespace DistributedObject

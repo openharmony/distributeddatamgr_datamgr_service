@@ -60,7 +60,7 @@ HWTEST_F(ConfigFactoryTest, ComponentConfig, TestSize.Level0)
     ASSERT_EQ(config.lib, "libconfigdemo.z.so");
     ASSERT_EQ(config.constructor, "");
     ASSERT_EQ(config.destructor, "");
-    ASSERT_EQ(config.params, "{\"key\":\"value\",\"count\":1}");
+    ASSERT_EQ(config.params, "{\"count\":1,\"key\":\"value\"}");
 }
 
 /**

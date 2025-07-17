@@ -21,8 +21,8 @@
 #include "proxy_data_manager.h"
 
 namespace OHOS::DataShare {
-SysEventSubscriber::SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo& info)
-    : CommonEventSubscriber(info)
+SysEventSubscriber::SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo& info,
+    std::shared_ptr<ExecutorPool> executors): CommonEventSubscriber(info), executors_(executors)
 {
     callbacks_ = {
         { EventFwk::CommonEventSupport::COMMON_EVENT_BUNDLE_SCAN_FINISHED,
@@ -31,6 +31,8 @@ SysEventSubscriber::SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo&
     installCallbacks_ = {
         { EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED,
             &SysEventSubscriber::OnAppInstall },
+        { EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED,
+            &SysEventSubscriber::OnAppUpdate },
         { EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED,
             &SysEventSubscriber::OnAppUninstall }
     };
@@ -40,19 +42,22 @@ void SysEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& event)
 {
     EventFwk::Want want = event.GetWant();
     std::string action = want.GetAction();
-    if (action == EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED ||
-        action == EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
+    auto installEvent = installCallbacks_.find(action);
+    if (installEvent != installCallbacks_.end()) {
         std::string bundleName = want.GetElement().GetBundleName();
         int32_t userId = want.GetIntParam(USER_ID, -1);
         int32_t appIndex = want.GetIntParam(APP_INDEX, 0);
-        bool isCrossAppSharedConfig = want.GetBoolParam(CROSS_APP_SHARED_CONFIG, false);
-        ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d, isCrossAppSharedConfig:%{public}d",
-            bundleName.c_str(), userId, appIndex, isCrossAppSharedConfig);
-        auto installEvent = installCallbacks_.find(action);
-        if (installEvent != installCallbacks_.end()) {
-            (this->*(installEvent->second))(bundleName, userId, appIndex, isCrossAppSharedConfig);
+        uint32_t tokenId = static_cast<uint32_t>(want.GetIntParam(ACCESS_TOKEN_ID, 0));
+        // when application updated, the tokenId in event's want is 0, so use other way to get tokenId
+        if (tokenId == 0) {
+            tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(userId, bundleName, appIndex);
         }
+        bool isCrossAppSharedConfig = want.GetBoolParam(CROSS_APP_SHARED_CONFIG, false);
+        ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d, tokenId:%{public}d, "
+            "isCrossAppSharedConfig:%{public}d", bundleName.c_str(), userId, appIndex, tokenId, isCrossAppSharedConfig);
+        (this->*(installEvent->second))(bundleName, userId, appIndex, tokenId, isCrossAppSharedConfig);
     }
+
     auto it = callbacks_.find(action);
     if (it != callbacks_.end()) {
         (this->*(it->second))();
@@ -62,23 +67,41 @@ void SysEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData& event)
 void SysEventSubscriber::OnBMSReady()
 {
     NotifyDataShareReady();
+    auto executors = executors_;
+    if (executors == nullptr) {
+        ZLOGE("executors is null.");
+        return;
+    }
+    executors->Execute([]() {
+        DataShareServiceImpl::UpdateLaunchInfo();
+    });
 }
 
 void SysEventSubscriber::OnAppInstall(const std::string &bundleName,
-    int32_t userId, int32_t appIndex, bool isCrossAppSharedConfig)
+    int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig)
 {
-    ZLOGI("%{public}s installed, userId: %{public}d, appIndex: %{public}d", bundleName.c_str(), userId, appIndex);
-    uint32_t tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(userId, bundleName, appIndex);
+    ZLOGI("%{public}s installed, userId: %{public}d, appIndex: %{public}d, tokenId: %{public}d",
+        bundleName.c_str(), userId, appIndex, tokenId);
     if (isCrossAppSharedConfig) {
         ProxyDataManager::GetInstance().OnAppInstall(bundleName, userId, appIndex, tokenId);
     }
 }
 
-void SysEventSubscriber::OnAppUninstall(const std::string &bundleName,
-    int32_t userId, int32_t appIndex, bool isCrossAppSharedConfig)
+void SysEventSubscriber::OnAppUpdate(const std::string &bundleName,
+    int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig)
 {
-    ZLOGI("%{public}s uninstalled, userId: %{public}d, appIndex: %{public}d", bundleName.c_str(), userId, appIndex);
-    uint32_t tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(userId, bundleName, appIndex);
+    ZLOGI("%{public}s updated, userId: %{public}d, appIndex: %{public}d, tokenId: %{public}d",
+        bundleName.c_str(), userId, appIndex, tokenId);
+    if (isCrossAppSharedConfig) {
+        ProxyDataManager::GetInstance().OnAppUpdate(bundleName, userId, appIndex, tokenId);
+    }
+}
+
+void SysEventSubscriber::OnAppUninstall(const std::string &bundleName,
+    int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig)
+{
+    ZLOGI("%{public}s uninstalled, userId: %{public}d, appIndex: %{public}d, tokenId: %{public}d",
+        bundleName.c_str(), userId, appIndex, tokenId);
     ProxyDataManager::GetInstance().OnAppUninstall(bundleName, userId, appIndex, tokenId);
 }
 

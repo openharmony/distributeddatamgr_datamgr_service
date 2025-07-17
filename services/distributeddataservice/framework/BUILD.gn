@@ -137,7 +137,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
     "huks:libhukssdk",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "openssl:libcrypto_shared",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",

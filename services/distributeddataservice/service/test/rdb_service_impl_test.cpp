@@ -29,7 +29,10 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
+#include "metadata/store_debug_info.h"
 #include "mock/db_store_mock.h"
+#include "mock/general_store_mock.h"
+#include "store/general_value.h"
 #include "rdb_service_impl.h"
 #include "rdb_types.h"
 #include "relational_store_manager.h"
@@ -539,6 +542,7 @@ HWTEST_F(RdbServiceImplTest, DoCompensateSync001, TestSize.Level0)
         EXPECT_EQ(GeneralStore::GetPriorityLevel(GeneralStore::GetHighMode(static_cast<uint32_t>(mode))), 1);
     });
     service.DoCompensateSync(event);
+    EventCenter::GetInstance().Unsubscribe(CloudEvent::LOCAL_CHANGE);
 }
 
 /**
@@ -996,23 +1000,43 @@ HWTEST_F(RdbServiceImplTest, GetPassword005, TestSize.Level0)
 
 /**
  * @tc.name: GetPassword006
- * @tc.desc: Test GetPassword when CheckParam not pass.
+ * @tc.desc: Test GetPassword when meta data is found.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTest, GetPassword006, TestSize.Level0)
 {
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    auto sKey = Random(KEY_LENGTH);
+    ASSERT_FALSE(sKey.empty());
+    SecretKeyMetaData secretKey;
+    CryptoManager::CryptoParams encryptParams;
+    secretKey.sKey = CryptoManager::GetInstance().Encrypt(sKey, encryptParams);
+    secretKey.area = encryptParams.area;
+    secretKey.storeType = meta.storeType;
+    secretKey.nonce = encryptParams.nonce;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), secretKey, true), true);
+
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    param.hapName_ = "test/test";
+    param.bundleName_ = meta.bundleName;
+    param.storeName_ = meta.storeId;
+    param.type_ = meta.storeType;
+    param.customDir_ = "../../../base/haps/entry/files/.backup/textautofill";
     std::vector<std::vector<uint8_t>> password;
 
     int32_t result = service.GetPassword(param, password);
 
-    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(result, RDB_OK);
+    ASSERT_GT(password.size(), 0);
+    EXPECT_EQ(password.at(0), sKey);
+    MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true);
 }
 
 /**
@@ -1117,6 +1141,23 @@ HWTEST_F(RdbServiceImplTest, Sync002, TestSize.Level0)
 
     int32_t result = service.Sync(param, option, predicates, nullptr);
     EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: QuerySharingResource001
+ * @tc.desc: Test QuerySharingResource when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, QuerySharingResource001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    PredicatesMemo predicates;
+    std::vector<std::string> columns;
+    auto result = service.QuerySharingResource(param, predicates, columns);
+    EXPECT_EQ(result.first, RDB_ERROR);
 }
 
 /**
@@ -1243,81 +1284,32 @@ HWTEST_F(RdbServiceImplTest, GetDfxInfo001, TestSize.Level0)
 
 /**
  * @tc.name: GetDfxInfo002
- * @tc.desc: Test GetDfxInfo when CheckParam not pass.
+ * @tc.desc: Test GetDfxInfo when CheckAccess pass.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTest, GetDfxInfo002, TestSize.Level0)
 {
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    param.hapName_ = "test/test";
-    DistributedRdb::RdbDfxInfo dfxInfo;
-    int32_t result = service.GetDfxInfo(param, dfxInfo);
-    EXPECT_EQ(result, RDB_ERROR);
-}
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+    auto meta = metaData_;
+    DistributedData::StoreDfxInfo dfxMeta;
+    dfxMeta.lastOpenTime = "test";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetDfxInfoKey(), dfxMeta, true), true);
 
-/**
- * @tc.name: GetDfxInfo003
- * @tc.desc: Test GetDfxInfo when CheckParam not pass.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zd
- */
-HWTEST_F(RdbServiceImplTest, GetDfxInfo003, TestSize.Level0)
-{
     RdbServiceImpl service;
     RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
+    param.bundleName_ = meta.bundleName;
+    param.storeName_ = meta.storeId;
+    param.type_ = meta.storeType;
+    param.customDir_ = "../../../base/haps/entry/files/.backup/textautofill";
     DistributedRdb::RdbDfxInfo dfxInfo;
     int32_t result = service.GetDfxInfo(param, dfxInfo);
+    EXPECT_EQ(dfxInfo.lastOpenTime_, "test");
     EXPECT_EQ(result, RDB_OK);
-}
-
-/**
- * @tc.name: GetDfxInfo004
- * @tc.desc: Test GetDfxInfo when CheckParam not pass.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zd
- */
-HWTEST_F(RdbServiceImplTest, GetDfxInfo004, TestSize.Level0)
-{
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    DistributedRdb::RdbDfxInfo dfxInfo;
-    int32_t result = service.GetDfxInfo(param, dfxInfo);
-    EXPECT_EQ(result, RDB_OK);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
-}
-
-/**
- * @tc.name: GetDfxInfo005
- * @tc.desc: Test GetDfxInfo when CheckParam not pass.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zd
- */
-HWTEST_F(RdbServiceImplTest, GetDfxInfo005, TestSize.Level0)
-{
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetDfxInfoKey(), metaData_, false), true);
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = TEST_STORE;
-    DistributedRdb::RdbDfxInfo dfxInfo;
-    int32_t result = service.GetDfxInfo(param, dfxInfo);
-    EXPECT_EQ(result, RDB_OK);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetDfxInfoKey(), false), true);
+    MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta.GetDfxInfoKey(), true);
 }
 
 /**
@@ -1425,24 +1417,52 @@ HWTEST_F(RdbServiceImplTest, GetDebugInfo001, TestSize.Level0)
 
 /**
  * @tc.name: GetDebugInfo002
- * @tc.desc: Test GetDebugInfo when CheckSyncParam fails.
+ * @tc.desc: Test GetDebugInfo when CheckAccess pass.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zhaojh
+ * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTest, GetDebugInfo002, TestSize.Level0)
 {
+    auto meta = metaData_;
+    DistributedData::StoreDebugInfo debugMeta;
+    DistributedData::StoreDebugInfo::FileInfo fileInfo1;
+    fileInfo1.inode = 4;
+    fileInfo1.size = 5;
+    fileInfo1.dev = 6;
+    fileInfo1.mode = 7;
+    fileInfo1.uid = 8;
+    fileInfo1.gid = 9;
+    debugMeta.fileInfos.insert(std::pair{ "test1", fileInfo1 });
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetDebugInfoKey(), debugMeta, true), true);
     RdbServiceImpl service;
     RdbSyncerParam param;
     param.bundleName_ = metaData_.bundleName;
+    param.type_ = metaData_.storeType;
+    param.level_ = metaData_.securityLevel;
+    param.area_ = metaData_.area;
+    param.hapName_ = metaData_.bundleName;
     param.storeName_ = metaData_.storeId;
-    param.hapName_ = "test/test";
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.isSearchable_ = metaData_.isSearchable;
+    param.haMode_ = metaData_.haMode;
+    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
+    param.user_ = metaData_.user;
+    param.customDir_ = "../../../base/haps/entry/files/.backup/textautofill";
     std::map<std::string, RdbDebugInfo> debugInfo;
-
     int32_t result = service.GetDebugInfo(param, debugInfo);
-
-    EXPECT_EQ(result, RDB_ERROR);
-    EXPECT_TRUE(debugInfo.empty());
+    EXPECT_EQ(result, RDB_OK);
+    RdbDebugInfo rdbInfo = debugInfo["test1"];
+    EXPECT_EQ(rdbInfo.inode_, 4);
+    EXPECT_EQ(rdbInfo.size_, 5);
+    EXPECT_EQ(rdbInfo.dev_, 6);
+    EXPECT_EQ(rdbInfo.mode_, 7);
+    EXPECT_EQ(rdbInfo.uid_, 8);
+    EXPECT_EQ(rdbInfo.gid_, 9);
+    EXPECT_EQ(debugInfo.size(), 1);
+    MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta.GetDebugInfoKey(), true);
 }
 
 /**
@@ -1518,18 +1538,18 @@ HWTEST_F(RdbServiceImplTest, CheckParam001, TestSize.Level0)
     param.user_ = "test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
     param.bundleName_ = "..";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 
     param.bundleName_ = "test\\..test";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 }
@@ -1551,18 +1571,18 @@ HWTEST_F(RdbServiceImplTest, CheckParam002, TestSize.Level0)
     param.user_ = "test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
     param.hapName_ = "..";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
     
     param.hapName_ = "test\\..test";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 }
@@ -1584,18 +1604,18 @@ HWTEST_F(RdbServiceImplTest, CheckParam003, TestSize.Level0)
     param.user_ = "test/test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 
     param.user_ = "..";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
     param.user_ = "test\\..test";
 
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 }
@@ -1617,7 +1637,7 @@ HWTEST_F(RdbServiceImplTest, CheckParam004, TestSize.Level0)
     param.user_ = "test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, true);
 }
@@ -1639,7 +1659,7 @@ HWTEST_F(RdbServiceImplTest, CheckParam005, TestSize.Level0)
     param.user_ = "test";
     param.customDir_ = "test";
 
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
 }
@@ -1660,59 +1680,59 @@ HWTEST_F(RdbServiceImplTest, CheckParam006, TestSize.Level0)
     param.storeName_ = "test";
     param.user_ = "test";
     param.customDir_ = "test/../../test/../../../";
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../test/../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../../../test/../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/./../../test/../../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/.../../../test/../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/test/../../../test/test/../test/../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/test/../../../../../test/test/test/";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "/test";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/..//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..////./././///////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..////./././//////////////////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 }
 
@@ -1732,59 +1752,59 @@ HWTEST_F(RdbServiceImplTest, CheckParam007, TestSize.Level0)
     param.storeName_ = "test";
     param.user_ = "test";
     param.customDir_ = "test/../../test/../../../";
-    bool result = service.CheckParam(param);
+    bool result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../test/../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../../../test/../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/../../../test/../../../../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/.../../test/../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/test/../../../test/test/../test/../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/test/../../../../../test/test/test/";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "/test";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test//////////////////..///////../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 
     param.customDir_ = "test/..//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..//////////////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..////./././///////////..///////../../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, false);
 
     param.customDir_ = "test/..////./././///////////////////../";
-    result = service.CheckParam(param);
+    result = service.IsValidParam(param);
     EXPECT_EQ(result, true);
 }
 
@@ -2065,5 +2085,235 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_009, TestSize.Level1)
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
+/**
+ * @tc.name: SetDistributedTables004
+ * @tc.desc: Test SetDistributedTables when type is device.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "SetDistributedTables004";
+    param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    std::vector<std::string> tables;
+    std::vector<OHOS::DistributedRdb::Reference> references;
+
+    auto meta = service.GetStoreMetaData(param);
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
+        auto store = new (std::nothrow) GeneralStoreMock();
+        return store;
+    };
+    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
+
+    int32_t result =
+        service.SetDistributedTables(param, tables, references, false,
+                                     DistributedTableType::DISTRIBUTED_DEVICE);
+    EXPECT_EQ(result, RDB_OK);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: RemoteQuery003
+ * @tc.desc: test RemoteQuery, when CheckAccess pass but query failed.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, RemoteQuery003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "RemoteQuery003";
+    std::vector<std::string> selectionArgs;
+    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    auto ret = service.RemoteQuery(param, deviceId, "", selectionArgs);
+    EXPECT_EQ(ret.first, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: Sync003
+ * @tc.desc: Test Sync when mode is nearby begin.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, Sync003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "Sync003";
+    RdbService::Option option { DistributedData::GeneralStore::NEARBY_BEGIN };
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: Sync004
+ * @tc.desc: Test Sync when mode is cloud begin.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, Sync004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "Sync004";
+    RdbService::Option option { DistributedData::GeneralStore::CLOUD_BEGIN };
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: QuerySharingResource_PermissionDenied_001
+ * @tc.desc: Test QuerySharingResource returns RDB_ERROR when CheckAccess fails.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, QuerySharingResource_PermissionDenied_001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    // param.bundleName_ and param.storeName_ left empty to trigger CheckAccess failure
+    PredicatesMemo predicates;
+    predicates.tables_ = {"table1"};
+    std::vector<std::string> columns = {"col1", "col2"};
+
+    auto result = service.QuerySharingResource(param, predicates, columns);
+    EXPECT_EQ(result.first, RDB_ERROR);
+    EXPECT_EQ(result.second, nullptr);
+}
+
+/**
+ * @tc.name: QuerySharingResource_PermissionDenied_002
+ * @tc.desc: Test QuerySharingResource returns RDB_ERROR when not system app.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, QuerySharingResource_PermissionDenied_002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    PredicatesMemo predicates;
+    predicates.tables_ = {"table1"};
+    std::vector<std::string> columns = {"col1", "col2"};
+
+    auto result = service.QuerySharingResource(param, predicates, columns);
+    EXPECT_EQ(result.first, RDB_ERROR);
+    EXPECT_EQ(result.second, nullptr);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_CloneKeyUpdate_001
+ * @tc.desc: Test SaveSecretKeyMeta updates clone secret key when area < 0 or nonce is empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_001, TestSize.Level0)
+{
+    // Prepare metaData and secret key
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> password = Random(KEY_LENGTH);
+
+    // Prepare cloneKey with area < 0 and empty nonce
+    SecretKeyMetaData cloneKey;
+    CryptoManager::CryptoParams params;
+    cloneKey.sKey = CryptoManager::GetInstance().Encrypt(password, params);
+    cloneKey.area = -1;
+    cloneKey.nonce.clear();
+    cloneKey.storeType = meta.storeType;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    // Call SaveSecretKeyMeta, should trigger UpdateSecretMeta for cloneKey
+    RdbServiceImpl service;
+    service.SaveSecretKeyMeta(meta, password);
+
+    // Clean up
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_CloneKeyUpdate_EmptySKey_002
+ * @tc.desc: Test SaveSecretKeyMeta does not update clone secret key if sKey is empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_EmptySKey_002, TestSize.Level0)
+{
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> password = Random(KEY_LENGTH);
+
+    // Prepare cloneKey with empty sKey
+    SecretKeyMetaData cloneKey;
+    cloneKey.sKey.clear();
+    cloneKey.area = -1;
+    cloneKey.nonce.clear();
+    cloneKey.storeType = meta.storeType;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    RdbServiceImpl service;
+    service.SaveSecretKeyMeta(meta, password);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_CloneKeyUpdate_NoUpdate_003
+ * @tc.desc: Test SaveSecretKeyMeta does not update clone secret key if area >= 0 and nonce not empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_NoUpdate_003, TestSize.Level0)
+{
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> password = Random(KEY_LENGTH);
+
+    // Prepare cloneKey with area >= 0 and nonce not empty
+    SecretKeyMetaData cloneKey;
+    CryptoManager::CryptoParams params;
+    cloneKey.sKey = CryptoManager::GetInstance().Encrypt(password, params);
+    cloneKey.area = 1;
+    cloneKey.nonce = { 1, 2, 3, 4 };
+    cloneKey.storeType = meta.storeType;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    RdbServiceImpl service;
+    service.SaveSecretKeyMeta(meta, password);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

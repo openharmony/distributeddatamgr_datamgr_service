@@ -524,11 +524,7 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
         return -1;
     }
 
-    std::string content;
-    if (!GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, iv, content)) {
-        DeleteCloneKey();
-        return -1;
-    };
+    auto content = GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, iv);
     DeleteCloneKey();
 
     std::string backupPath = DirectoryManager::GetInstance().GetClonePath(backupInfo.userId);
@@ -575,9 +571,8 @@ std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, Se
     return reEncryptedKey;
 }
 
-bool KvStoreDataService::GetSecretKeyBackup(
-    const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
-    const std::string &userId, const std::vector<uint8_t> &iv, std::string &content)
+std::string KvStoreDataService::GetSecretKeyBackup(const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
+    const std::string &userId, const std::vector<uint8_t> &iv)
 {
     SecretKeyBackupData backupInfos;
     std::string deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
@@ -609,8 +604,7 @@ bool KvStoreDataService::GetSecretKeyBackup(
             backupInfos.infos.push_back(std::move(item));
         }
     }
-    content = Serializable::Marshall(backupInfos);
-    return true;
+    return Serializable::Marshall(backupInfos);
 }
 
 int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)

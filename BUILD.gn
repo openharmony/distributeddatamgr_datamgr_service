@@ -19,6 +19,7 @@ group("build_native_test") {
     "services/distributeddataservice/app/test:unittest",
     "services/distributeddataservice/framework/test:unittest",
     "services/distributeddataservice/service/test:unittest",
+    "services/distributeddataservice/rust/test:unittest",
   ]
 }
 

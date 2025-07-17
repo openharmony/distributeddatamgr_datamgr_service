@@ -1,0 +1,65 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
+
+###############################################################################
+config("module_private_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "../extension",
+    "../ylong_cloud_extension/include",
+  ]
+
+  cflags = [ "-Werror" ]
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
+}
+
+ohos_unittest("ExtensionUtilTest") {
+  module_out_path = module_output_path
+  sources = [
+    "../extension/extension_util.cpp",
+    "unittest/extension_util_test.cpp"
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "${data_service_path}/rust/extension:opencloudextension",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/rust/ylong_cloud_extension:ylong_cloud_extension",
+  ]
+  external_deps = [
+    "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+  ]
+
+  part_name = "datamgr_service"
+}
+
+###############################################################################
+
+group("unittest") {
+  testonly = true
+  deps = []
+
+  deps += [
+    ":ExtensionUtilTest",
+  ]
+}

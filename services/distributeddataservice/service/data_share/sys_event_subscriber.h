@@ -24,15 +24,18 @@ class SysEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
     using SysEventCallback = void (SysEventSubscriber::*)();
     using InstallEventCallback = void (SysEventSubscriber::*)(const std::string &bundleName,
-        int32_t userId, int32_t appIndex, bool isCrossAppSharedConfig);
-    explicit SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info);
+        int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig);
+    explicit SysEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info,
+        std::shared_ptr<ExecutorPool> executors);
     ~SysEventSubscriber() {}
     void OnReceiveEvent(const EventFwk::CommonEventData& event) override;
     void OnBMSReady();
     void OnAppInstall(const std::string &bundleName,
-        int32_t userId, int32_t appIndex, bool isCrossAppSharedConfig);
+        int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig);
+    void OnAppUpdate(const std::string &bundleName,
+        int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig);
     void OnAppUninstall(const std::string &bundleName,
-        int32_t userId, int32_t appIndex, bool isCrossAppSharedConfig);
+        int32_t userId, int32_t appIndex, uint32_t tokenId, bool isCrossAppSharedConfig);
 
 private:
     void NotifyDataShareReady();
@@ -40,7 +43,9 @@ private:
     std::map<std::string, InstallEventCallback> installCallbacks_;
     static constexpr const char *USER_ID = "userId";
     static constexpr const char *APP_INDEX = "appIndex";
-    static constexpr const char* CROSS_APP_SHARED_CONFIG = "crossAppSharedConfig";
+    static constexpr const char *ACCESS_TOKEN_ID = "accessTokenId";
+    static constexpr const char *CROSS_APP_SHARED_CONFIG = "crossAppSharedConfig";
+    std::shared_ptr<ExecutorPool> executors_ = nullptr;
 };
 }
 #endif

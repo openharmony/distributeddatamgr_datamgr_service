@@ -444,6 +444,8 @@ HWTEST_F(ObjectManagerTest, Open001, TestSize.Level0)
     manager->delegate_ = manager->OpenObjectKvStore();
     result = manager->Open();
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+    manager->ForceClose();
+    ASSERT_EQ(manager->delegate_, nullptr);
 }
 
 /**
@@ -488,23 +490,6 @@ HWTEST_F(ObjectManagerTest, DeleteSnapshot001, TestSize.Level0)
 }
 
 /**
-* @tc.name: OpenObjectKvStore001
-* @tc.desc: OpenObjectKvStore test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
-*/
-HWTEST_F(ObjectManagerTest, OpenObjectKvStore001, TestSize.Level0)
-{
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->objectDataListener_ = nullptr;
-    ASSERT_EQ(manager->objectDataListener_, nullptr);
-    manager->OpenObjectKvStore();
-    ASSERT_NE(manager->objectDataListener_, nullptr);
-    manager->OpenObjectKvStore();
-}
-
-/**
 * @tc.name: FlushClosedStore001
 * @tc.desc: FlushClosedStore test.
 * @tc.type: FUNC
@@ -544,35 +529,6 @@ HWTEST_F(ObjectManagerTest, Close001, TestSize.Level0)
     manager->delegate_ = manager->OpenObjectKvStore();
     manager->Close();
     ASSERT_EQ(manager->syncCount_, 0); // 0 is for testing
-}
-
-/**
-* @tc.name: SyncOnStore001
-* @tc.desc: SyncOnStore test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
-*/
-HWTEST_F(ObjectManagerTest, SyncOnStore001, TestSize.Level0)
-{
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->delegate_ = manager->OpenObjectKvStore();
-    std::function<void(const std::map<std::string, int32_t> &results)> func;
-    func = [](const std::map<std::string, int32_t> &results) {
-        return results;
-    };
-    std::string prefix = "ObjectManagerTest";
-    std::vector<std::string> deviceList;
-    // not local device & syncDevices empty
-    deviceList.push_back("local1");
-    EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
-    auto result = manager->SyncOnStore(prefix, deviceList, func);
-    ASSERT_NE(result, OBJECT_SUCCESS);
-    // local device
-    deviceList.push_back("local");
-    EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
-    result = manager->SyncOnStore(prefix, deviceList, func);
-    ASSERT_EQ(result, OBJECT_SUCCESS);
 }
 
 /**
@@ -890,7 +846,7 @@ HWTEST_F(ObjectManagerTest, RegisterAssetsLister001, TestSize.Level0)
     auto result = manager->RegisterAssetsLister();
     ASSERT_EQ(result, true);
     manager->objectAssetsSendListener_ = new ObjectAssetsSendListener();
-    manager->objectAssetsRecvListener_ = new ObjectAssetsRecvListener();;
+    manager->objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
     result = manager->RegisterAssetsLister();
     ASSERT_EQ(result, true);
 }

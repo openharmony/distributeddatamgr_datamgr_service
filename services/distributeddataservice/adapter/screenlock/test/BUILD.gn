@@ -31,9 +31,11 @@ ohos_unittest("ScreenLockTest") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "googletest:gtest_main",
     "hilog:libhilog",
+    "ipc:ipc_core",
     "kv_store:datamgr_common",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]

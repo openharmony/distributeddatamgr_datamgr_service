@@ -14,6 +14,8 @@
  */
 #ifndef OHOS_DISTRIBUTEDDATA_SERVICE_TEST_CURSOR_MOCK_H
 #define OHOS_DISTRIBUTEDDATA_SERVICE_TEST_CURSOR_MOCK_H
+#include <gmock/gmock.h>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -44,6 +46,22 @@ public:
 private:
     std::shared_ptr<ResultSet> resultSet_;
     int32_t index_ = 0;
+};
+
+class MockCursor : public DistributedData::Cursor {
+    MOCK_METHOD(int32_t, GetColumnNames, (std::vector<std::string> &names), (const, override));
+    MOCK_METHOD(int32_t, GetColumnName, (int32_t col, std::string &name), (const, override));
+    MOCK_METHOD(int32_t, GetColumnType, (int32_t col), (const, override));
+    MOCK_METHOD(int32_t, GetCount, (), (const, override));
+    MOCK_METHOD(int32_t, MoveToFirst, (), (override));
+    MOCK_METHOD(int32_t, MoveToNext, (), (override));
+    MOCK_METHOD(int32_t, MoveToPrev, (), (override));
+    MOCK_METHOD(int32_t, GetEntry, (VBucket &entry), (override));
+    MOCK_METHOD(int32_t, GetRow, (VBucket &data), (override));
+    MOCK_METHOD(int32_t, Get, (int32_t col, Value &value), (override));
+    MOCK_METHOD(int32_t, Get, (const std::string &col, Value &value), (override));
+    MOCK_METHOD(int32_t, Close, (), (override));
+    MOCK_METHOD(bool, IsEnd, (), (override));
 };
 } // namespace DistributedData
 } // namespace OHOS

@@ -30,6 +30,10 @@ void RuntimeStoreAccountObserver::OnAccountChanged(const AccountEventInfo &event
     if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_DELETE) {
         DistributedData::StoreMetaData metaData;
         uint32_t token = IPCSkeleton::GetSelfTokenID();
+        if (token == 0) {
+            ZLOGW("invalid token.");
+            return;
+        }
         metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
         metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
         metaData.user = eventInfo.userId;

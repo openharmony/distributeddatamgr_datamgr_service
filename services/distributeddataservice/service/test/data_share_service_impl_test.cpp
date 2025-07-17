@@ -22,11 +22,13 @@
 #include "accesstoken_kit.h"
 #include "account_delegate_mock.h"
 #include "data_share_service_stub.h"
+#include "device_manager_adapter.h"
 #include "dump/dump_manager.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
+#include "metadata/meta_data_manager.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
 
@@ -540,5 +542,27 @@ HWTEST_F(DataShareServiceImplTest, DataProviderConfig001, TestSize.Level1)
     EXPECT_EQ(config.providerInfo_.visitedUserId, NATIVE_USER_ID);
     SetSelfTokenInfo(USER_TEST);
     ZLOGI("DataShareServiceImplTest DataProviderConfig001 end");
+}
+
+/**
+* @tc.name: UpdateLaunchInfoMock001
+* @tc.desc: mock GetInstance return nullptr
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, UpdateLaunchInfo001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest UpdateLaunchInfo001 start");
+
+    DataShareServiceImpl dataShareServiceImpl;
+    // cover branch of config is nullptr
+    dataShareServiceImpl.UpdateLaunchInfo();
+    
+    std::string prefix = StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid });
+    std::vector<StoreMetaData> storeMetaData;
+    MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true);
+    EXPECT_EQ(storeMetaData.size(), 0);
+    ZLOGI("DataShareServiceImplTest UpdateLaunchInfo001 end");
 }
 } // namespace OHOS::Test

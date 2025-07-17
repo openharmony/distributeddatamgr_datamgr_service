@@ -43,6 +43,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
+using CheckerManager = OHOS::DistributedData::CheckerManager;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
 constexpr const char *METADATA_STORE_PATH = "/data/service/el1/public/database/distributeddata/kvdb";
 ObjectServiceImpl::Factory::Factory()
@@ -108,7 +109,7 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
     status = ObjectStoreManager::GetInstance()->BindAsset(tokenId, bundleName, sessionId, asset, bindInfo);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("bind asset fail %{public}d, bundleName:%{public}s, sessionId:%{public}s, assetName:%{public}s", status,
-            bundleName.c_str(), sessionId.c_str(), asset.name.c_str());
+            bundleName.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(asset.name).c_str());
     }
     return status;
 }
@@ -320,8 +321,7 @@ int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
     storeInfo.tokenId = tokenId;
     storeInfo.bundleName = bundleName;
     storeInfo.storeId = sessionId;
-    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
-    if (appId.empty()) {
+    if (!CheckerManager::GetInstance().IsValid(storeInfo)) {
         ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = %{public}s",
               bundleName.c_str(), storeInfo.uid, Anonymous::Change(std::to_string(storeInfo.tokenId)).c_str());
         return OBJECT_PERMISSION_DENIED;

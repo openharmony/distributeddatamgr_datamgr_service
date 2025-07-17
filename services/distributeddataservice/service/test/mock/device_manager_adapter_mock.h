@@ -30,6 +30,7 @@ public:
     virtual std::vector<DeviceInfo> GetRemoteDevices() = 0;
     virtual bool IsOHOSType(const std::string &) = 0;
     virtual std::vector<std::string> ToUUID(std::vector<DeviceInfo>) = 0;
+    virtual std::vector<std::string> ToUUID(const std::vector<std::string> &) = 0;
     virtual Status StartWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual Status StopWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual bool IsSameAccount(const AccessCaller &, const AccessCallee &) = 0;
@@ -49,6 +50,7 @@ public:
     MOCK_METHOD(std::vector<DeviceInfo>, GetRemoteDevices, ());
     MOCK_METHOD(bool, IsOHOSType, (const std::string &));
     MOCK_METHOD((std::vector<std::string>), ToUUID, (std::vector<DeviceInfo>));
+    MOCK_METHOD((std::vector<std::string>), ToUUID, (const std::vector<std::string> &));
     MOCK_METHOD(Status, StartWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(Status, StopWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(bool, IsSameAccount, (const AccessCaller &, const AccessCallee &));

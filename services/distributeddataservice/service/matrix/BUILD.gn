@@ -58,7 +58,7 @@ ohos_source_set("distributeddata_matrix") {
   external_deps = [
     "device_manager:devicemanagersdk",
     "hilog:libhilog",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "c_utils:utils",
     "kv_store:datamgr_common",
   ]

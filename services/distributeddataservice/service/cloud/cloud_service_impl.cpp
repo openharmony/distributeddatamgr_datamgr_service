@@ -68,6 +68,7 @@ static constexpr const char *FT_ENABLE_CLOUD = "ENABLE_CLOUD";
 static constexpr const char *FT_DISABLE_CLOUD = "DISABLE_CLOUD";
 static constexpr const char *FT_SWITCH_ON = "SWITCH_ON";
 static constexpr const char *FT_SWITCH_OFF = "SWITCH_OFF";
+static constexpr const char *FT_CLOUD_CLEAN = "CLOUD_CLEAN";
 static constexpr const char *FT_QUERY_INFO = "QUERY_SYNC_INFO";
 static constexpr const char *FT_USER_CHANGE = "USER_CHANGE";
 static constexpr const char *FT_USER_UNLOCK = "USER_UNLOCK";
@@ -249,6 +250,7 @@ int32_t CloudServiceImpl::DoClean(const CloudInfo &cloudInfo, const std::map<std
         SchemaMeta schemaMeta;
         if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(bundle), schemaMeta, true)) {
             ZLOGE("failed, no schema meta:bundleName:%{public}s", bundle.c_str());
+            Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, bundle, "get schema failed");
             continue;
         }
         DoClean(cloudInfo.user, schemaMeta, action);
@@ -287,6 +289,8 @@ void CloudServiceImpl::DoClean(int32_t user, const SchemaMeta &schemaMeta, int32
             ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
                   "storeId:%{public}s",
                 status, static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+            Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, meta.bundleName, "Clean:" + std::to_string(status) +
+                ", storeId=" + meta.GetStoreAlias() + ", action=" + std::to_string(action));
         } else {
             ZLOGD("clean success, user:%{public}d, bundleName:%{public}s, storeId:%{public}s",
                 static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
@@ -325,16 +329,21 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
     if (status != SUCCESS) {
         ZLOGE("get cloud meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
+        Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, "",
+            "get cloud info from meta failed=" + std::to_string(status));
         return ERROR;
     }
     if (id != cloudInfo.id) {
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
             Anonymous::Change(id).c_str());
+        Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, "",
+            "different id, new:" + Anonymous::Change(id) + ", old:" + Anonymous::Change(cloudInfo.id));
         return ERROR;
     }
     auto dbActions = ConvertAction(actions);
     if (dbActions.empty()) {
         ZLOGE("invalid actions. id:%{public}s", Anonymous::Change(cloudInfo.id).c_str());
+        Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, "", "convert action failed");
         return ERROR;
     }
     return DoClean(cloudInfo, dbActions);
@@ -881,6 +890,8 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user, CloudSyncScene scene)
             actions[bundle] = GeneralStore::CleanMode::CLOUD_INFO;
         }
         DoClean(oldInfo, actions);
+        Report(GetDfxFaultType(scene), Fault::CSF_CLOUD_INFO, "",
+            "Clean: different id, new:" + Anonymous::Change(cloudInfo.id) + ", old:" + Anonymous::Change(oldInfo.id));
     }
     return true;
 }

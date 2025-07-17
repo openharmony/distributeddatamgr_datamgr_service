@@ -21,6 +21,7 @@
 #include "device_manager_adapter.h"
 #include "kv_store_delegate_manager.h"
 #include "kvstore_sync_callback.h"
+#include "metadata/store_meta_data.h"
 #include "object_asset_loader.h"
 #include "object_callback.h"
 #include "object_callback_proxy.h"
@@ -64,6 +65,7 @@ class ObjectStoreManager {
 public:
     using DmAdaper = OHOS::DistributedData::DeviceManagerAdapter;
     using UriToSnapshot = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
+    using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 
     enum RestoreStatus : int32_t {
         NONE = 0,
@@ -159,6 +161,7 @@ private:
     DistributedDB::KvStoreNbDelegate *OpenObjectKvStore();
     void FlushClosedStore();
     void Close();
+    void ForceClose();
     int32_t SetSyncStatus(bool status);
     int32_t SaveToStore(const std::string &appId, const std::string &sessionId, const std::string &toDeviceId,
         const ObjectRecord &data);
@@ -171,6 +174,8 @@ private:
     void ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
         const std::string &sessionId, const std::string &deviceId);
     void SaveUserToMeta();
+    bool IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &networkIds);
+    int32_t DoSync(const std::string &prefix, const std::vector<std::string> &deviceList, uint64_t sequenceId);
     std::string GetCurrentUser();
     void DoNotify(uint32_t tokenId, const CallbackInfo& value, const std::map<std::string, ObjectRecord>& data,
         bool allReady);
@@ -212,15 +217,15 @@ private:
         return std::string(USERID) + SEPERATOR + userId + SEPERATOR + appId + SEPERATOR
              + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
-    std::recursive_mutex kvStoreMutex_;
+    mutable std::shared_timed_mutex rwMutex_;
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
-    ObjectDataListener *objectDataListener_ = nullptr;
+    ObjectDataListener objectDataListener_;
     sptr<ObjectAssetsRecvListener> objectAssetsRecvListener_ = nullptr;
     sptr<ObjectAssetsSendListener> objectAssetsSendListener_ = nullptr;
-    uint32_t syncCount_ = 0;
+    std::atomic<uint32_t> syncCount_{ 0 };
     std::string userId_;
-    std::atomic<bool> isSyncing_ = false;
+    std::atomic<bool> isSyncing_{ false };
     ConcurrentMap<uint32_t /* tokenId */, CallbackInfo > callbacks_;
     ConcurrentMap<uint32_t /* tokenId */, ProgressCallbackInfo > processCallbacks_;
     std::shared_ptr<ExecutorPool> executors_;

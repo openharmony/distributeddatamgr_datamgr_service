@@ -30,6 +30,7 @@
 #include "system_ability.h"
 #include "system_ability_definition.h"
 #include "upgrade_manager.h"
+#include "utils/base64_utils.h"
 
 using namespace testing::ext;
 using namespace OHOS;
@@ -708,6 +709,22 @@ HWTEST_F(KvStoreDataServiceTest, DumpBundleInfo001, TestSize.Level0)
 * @tc.desc: restore with invalid fd
 * @tc.type: FUNC
 * @tc.require:
+* @tc.author: zhaojh
+*/
+HWTEST_F(KvStoreDataServiceTest, OnExtension001, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+    data.WriteFileDescriptor(-1);
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("invalid", data, reply), 0);
+}
+
+/**
+* @tc.name: OnExtensionRestore001
+* @tc.desc: restore with invalid fd
+* @tc.type: FUNC
+* @tc.require:
 * @tc.author: yanhui
 */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore001, TestSize.Level0)
@@ -846,7 +863,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore006, TestSize.Level0)
  * @tc.desc: test OnExtension function backup invalid json
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: zhaojh
  */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup001, TestSize.Level0) {
     KvStoreDataService kvStoreDataServiceTest;
@@ -862,7 +879,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup001, TestSize.Level0) {
  * @tc.desc: test OnExtension function backup application empty
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: zhaojh
  */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup002, TestSize.Level0) {
     KvStoreDataService kvStoreDataServiceTest;
@@ -880,7 +897,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup002, TestSize.Level0) {
  * @tc.desc: test OnExtension function backup no userInfo
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: zhaojh
  */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup003, TestSize.Level0) {
     KvStoreDataService kvStoreDataServiceTest;
@@ -899,7 +916,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup003, TestSize.Level0) {
  * @tc.desc: test OnExtension function backup userinfo empty
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: zhaojh
  */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup004, TestSize.Level0) {
     KvStoreDataService kvStoreDataServiceTest;
@@ -919,7 +936,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup004, TestSize.Level0) {
  * @tc.desc: test OnExtension function backup secret key length invalid
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: zhaojh
  */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup005, TestSize.Level0) {
     KvStoreDataService kvStoreDataServiceTest;
@@ -943,7 +960,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup005, TestSize.Level0) {
  * @tc.desc: test OnExtension function backup secret iv length invalid
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: zhaojh
  */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup006, TestSize.Level0) {
     KvStoreDataService kvStoreDataServiceTest;
@@ -967,7 +984,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup006, TestSize.Level0) {
  * @tc.desc: test OnExtension function backup no bundle
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: zhaojh
  */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup007, TestSize.Level0) {
     KvStoreDataService kvStoreDataServiceTest;
@@ -1001,7 +1018,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup007, TestSize.Level0) {
  * @tc.desc: test OnExtension function backup no bundle
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: SQL
+ * @tc.author: zhaojh
  */
 HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup008, TestSize.Level0) {
     KvStoreDataService kvStoreDataServiceTest;
@@ -1056,5 +1073,281 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup008, TestSize.Level0) {
     backupData.Unmarshal(DistributedData::Serializable::ToJson(secretKeyStr));
 
     EXPECT_TRUE(backupData.infos.size() == 1);
+}
+
+/**
+ * @tc.name: ReEncryptKey001
+ * @tc.desc: test ReEncryptKey load meta failed
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(KvStoreDataServiceTest, ReEncryptKey001, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    SecretKeyMetaData secretKeyMeta;
+    StoreMetaData storeMeta;
+    std::vector<uint8_t> iv;
+    auto ret = kvStoreDataServiceTest.ReEncryptKey("", secretKeyMeta, storeMeta, iv);
+    EXPECT_TRUE(ret.empty());
+}
+
+/**
+ * @tc.name: ReEncryptKey002
+ * @tc.desc: test ReEncryptKey failed when meta sKey is invalid
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(KvStoreDataServiceTest, ReEncryptKey002, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    StoreMetaData testMeta;
+    testMeta.bundleName = "com.example.restore_test";
+    testMeta.storeId = "Source";
+    testMeta.user = "100";
+    testMeta.area = CryptoManager::Area::EL1;
+    testMeta.instanceId = 0;
+    testMeta.deviceId =
+        DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    testMeta.isEncrypt = true;
+    testMeta.dataDir = "TEST_DIR";
+    SecretKeyMetaData testSecret;
+    CryptoManager::CryptoParams encryptParams = { .area = testMeta.area };
+    testSecret.storeType = 10;
+    testSecret.time = std::vector<uint8_t>{233, 39, 137, 103, 0, 0, 0, 0};
+    testSecret.nonce = encryptParams.nonce;
+    testSecret.area = encryptParams.area;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetKey(), testMeta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetSecretKey(), testSecret, true), true);
+
+    SecretKeyMetaData secretKeyMeta;
+    std::vector<uint8_t> iv;
+    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    EXPECT_TRUE(ret.empty());
+}
+
+/**
+ * @tc.name: ReEncryptKey003
+ * @tc.desc: test reEncryptKey failed when iv is invalid
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(KvStoreDataServiceTest, ReEncryptKey003, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    StoreMetaData testMeta;
+    testMeta.bundleName = "com.example.restore_test";
+    testMeta.storeId = "Source";
+    testMeta.user = "100";
+    testMeta.area = CryptoManager::Area::EL1;
+    testMeta.instanceId = 0;
+    testMeta.deviceId =
+        DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    testMeta.isEncrypt = true;
+    testMeta.dataDir = "TEST_DIR";
+    std::vector<uint8_t> sKey{2,   249, 221, 119, 177, 216, 217, 134, 185, 139,
+                              114, 38,  140, 64,  165, 35,  77,  169, 0,   226,
+                              226, 166, 37,  73,  181, 229, 42,  88,  108, 111,
+                              131, 104, 141, 43,  96,  119, 214, 34,  177, 129,
+                              233, 96,  98,  164, 87,  115, 187, 170};
+    SecretKeyMetaData testSecret;
+    CryptoManager::CryptoParams encryptParams = { .area = testMeta.area };
+    testSecret.sKey = CryptoManager::GetInstance().Encrypt(sKey, encryptParams);
+    testSecret.storeType = 10;
+    testSecret.time = std::vector<uint8_t>{233, 39, 137, 103, 0, 0, 0, 0};
+    testSecret.nonce = encryptParams.nonce;
+    testSecret.area = encryptParams.area;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetKey(), testMeta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetSecretKey(), testSecret, true), true);
+
+    SecretKeyMetaData secretKeyMeta;
+    std::vector<uint8_t> iv;
+    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    EXPECT_TRUE(ret.empty());
+}
+
+/**
+ * @tc.name: OnExtensionRestore_InvalidUserId
+ * @tc.desc: Test OnRestore returns -1 when userId is empty
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_InvalidUserId, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+    // Prepare a valid backup file (content doesn't matter, as IV size will fail first)
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA), 0);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+
+    std::string cloneInfoStr =
+        "[{\"type\":\"encryption_info\",\"detail\":{\"encryption_symkey\":\"27,"
+        "145,118,212,62,156,133,135,50,68,188,239,20,170,227,190,37,142,218,"
+        "158,177,32,5,160,13,114,186,141,59,91,44,200\",\"encryption_algname\":"
+        "\"AES256\",\"gcmParams_iv\":\"1,2,3,4,5,6,7,8,9,10\"}},{\"type\":\"userId\",\"detail\":\"\"}]";
+    data.WriteString(cloneInfoStr);
+
+    // Should return -1 due to IV size error
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+    close(fd);
+}
+
+/**
+ * @tc.name: OnExtensionRestore_InvalidIvSize
+ * @tc.desc: Test OnRestore returns -1 when IV size is incorrect
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_InvalidIvSize, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA), 0);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+
+    // Prepare cloneInfoStr with invalid IV (length != AES_256_NONCE_SIZE)
+    std::string cloneInfoStr =
+        "[{\"type\":\"encryption_info\",\"detail\":{\"encryption_symkey\":\"27,"
+        "145,118,212,62,156,133,135,50,68,188,239,20,170,227,190,37,142,218,"
+        "158,177,32,5,160,13,114,186,141,59,91,44,200\",\"encryption_algname\":"
+        "\"AES256\",\"gcmParams_iv\":\"1,2,3,4,5,6,7,8,9,10\"}},{\"type\":\"userId\",\"detail\":\"100\"}]";
+    data.WriteString(cloneInfoStr);
+
+    // Should return -1 due to IV size error
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+    close(fd);
+}
+
+/**
+ * @tc.name: OnExtensionRestore_ImportCloneKeyFailed
+ * @tc.desc: Test OnRestore returns -1 when ImportCloneKey fails (invalid key size)
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_ImportCloneKeyFailed, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    // Prepare a valid backup file (content doesn't matter, as ImportCloneKey will fail first)
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, NORMAL_BACKUP_DATA), 0);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+
+    // Prepare cloneInfoStr with invalid encryption_symkey (too short, so ImportCloneKey fails)
+    std::string cloneInfoStr =
+        "[{\"type\":\"encryption_info\",\"detail\":{\"encryption_symkey\":\"1,2,3\",\"encryption_algname\":\"AES256\","
+        "\"gcmParams_iv\":\"97,160,201,177,46,37,129,18,112,220,107,106,25,231,15,15,""58,85,31,83,123,216,211,2,222,"
+        "49,122,72,21,251,83,16\"}},{\"type\":\"userId\",\"detail\":\"100\"}]";
+    data.WriteString(cloneInfoStr);
+
+    // Should return -1 due to ImportCloneKey failure
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+    close(fd);
+}
+
+/**
+ * @tc.name: OnExtensionRestore_RestoreSuccess
+ * @tc.desc: Test OnRestore returns 0 when ImportCloneKey succeeds
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreSuccess, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    StoreMetaData testMeta;
+    testMeta.bundleName = "com.myapp.example";
+    testMeta.storeId = "storeId";
+    testMeta.user = "100";
+    testMeta.area = CryptoManager::Area::EL1;
+    testMeta.instanceId = 0;
+    testMeta.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    testMeta.isEncrypt = true;
+    testMeta.dataDir = "TEST_DIR";
+    std::vector<uint8_t> sKey(32, 0);
+    SecretKeyMetaData testSecret;
+    CryptoManager::CryptoParams encryptParams = { .area = testMeta.area };
+    testSecret.sKey = CryptoManager::GetInstance().Encrypt(sKey, encryptParams);
+    testSecret.storeType = 10;
+    testSecret.time = std::vector<uint8_t>{ 233, 39, 137, 103, 0, 0, 0, 0 };
+    testSecret.nonce = encryptParams.nonce;
+    testSecret.area = encryptParams.area;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetKey(), testMeta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetSecretKey(), testSecret, true), true);
+
+    std::string symKey = "27,145,118,212,62,156,133,135,50,68,188,239,20,170,227,190,37,142,"
+                         "218,158,177,32,5,160,13,114,186,141,59,91,44,200";
+    std::vector<uint8_t> iv{ 97, 160, 201, 177, 46, 37, 129, 18, 112, 220, 107, 106, 25, 231, 15, 15, 58, 85, 31, 83,
+        123, 216, 211, 2, 222, 49, 122, 72, 21, 251, 83, 16 };
+
+    ASSERT_EQ(kvStoreDataServiceTest.ImportCloneKey(symKey), true);
+
+    SecretKeyMetaData secretKeyMeta;
+    auto reEncryptedKey = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    kvStoreDataServiceTest.DeleteCloneKey();
+    auto encodeEncryptedKey = DistributedData::Base64::Encode(reEncryptedKey);
+
+    const std::string backupData =
+        std::string("{\"infos\":[{\"bundleName\":\"com.myapp.example\",\"dbName\":\"storeId\","
+                    "\"instanceId\":0,\"storeType\":\"10\",\"user\":\"100\",\"sKey\":\"") +
+        encodeEncryptedKey + std::string("\",\"time\":[50,180,137,103,0,0,0,0]}]}");
+
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, backupData), 0);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+
+    std::string cloneInfoStr =
+        std::string("[{\"type\":\"encryption_info\",\"detail\":{\"encryption_symkey\":\"") + symKey +
+        std::string("\",\"encryption_algname\":\"AES256\",\"gcmParams_iv\":\"97,160,201,177,46,37,129,18,112,220,107,"
+            "106,25,231,15,15,58,85,31,83,123,216,211,2,222,49,122,72,21,251,83,16\"}},"
+            "{\"type\":\"userId\",\"detail\":\"100\"}]");
+    data.WriteString(cloneInfoStr);
+
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), 0);
+    close(fd);
+}
+
+/**
+ * @tc.name: WriteBackupInfo_FwriteFail
+ * @tc.desc: Test WriteBackupInfo returns false when fwrite fails
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(KvStoreDataServiceTest, WriteBackupInfo_FwriteFail, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    std::string content = "test_content";
+    // Try to open a directory as a file, which should fail at fopen
+    bool result = kvStoreDataServiceTest.WriteBackupInfo(content, "/");
+    EXPECT_FALSE(result);
 }
 } // namespace OHOS::Test

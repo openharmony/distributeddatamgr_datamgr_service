@@ -73,7 +73,7 @@ ohos_source_set("distributeddata_cloud") {
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "relational_store:cloud_data_inner",

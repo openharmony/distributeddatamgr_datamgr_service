@@ -943,13 +943,16 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
             ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d",
                 Anonymous::Change(table).c_str(), dBStatus);
             Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
-                "SetDistributedTables ret=" + std::to_string(static_cast<int32_t>(dBStatus)));
+                "SetDistributedTables: set table(" + Anonymous::Change(table) + ") =" +
+                std::to_string(static_cast<int32_t>(dBStatus)));
             return GeneralError::E_ERROR;
         }
     }
     if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
         auto status = SetReference(references);
         if (status != GeneralError::E_OK) {
+            Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
+                "SetDistributedTables: set reference=" + std::to_string(static_cast<int32_t>(status)));
             return GeneralError::E_ERROR;
         }
     }

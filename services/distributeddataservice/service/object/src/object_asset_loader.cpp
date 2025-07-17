@@ -170,8 +170,9 @@ int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &asset
 {
     ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
         ObjectStore::PUSH_ASSETS, ObjectStore::IDLE);
-    ZLOGI("PushAsset start, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
-        assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), Anonymous::Change(assetObj->sessionId_).c_str());
+    ZLOGI("PushAsset start, userId:%{public}d, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
+        userId, assetObj->uris_.size(), assetObj->dstBundleName_.c_str(),
+        Anonymous::Change(assetObj->sessionId_).c_str());
     auto status = Storage::DistributedFile::DistributedFileDaemonManager::GetInstance().PushAsset(userId, assetObj,
         sendCallback);
     if (status != OBJECT_SUCCESS) {
