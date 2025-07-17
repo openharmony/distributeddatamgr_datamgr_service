@@ -40,6 +40,8 @@ public:
     void DeleteCache(const std::string &bundleName, int32_t user, int32_t index) override;
 
 private:
+    bool GetAppidFromCache(const std::string &bundleName, int32_t userId, std::string &appId);
+    std::string GetKey(const std::string &bundleName, int32_t userId);
     static BundleChecker instance_;
     std::map<std::string, std::string> trusts_;
     std::map<std::string, std::string> distrusts_;
