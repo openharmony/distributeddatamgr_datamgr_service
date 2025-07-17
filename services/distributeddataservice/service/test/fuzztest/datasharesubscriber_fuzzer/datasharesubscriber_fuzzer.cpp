@@ -44,24 +44,25 @@ void AddFuzz(FuzzedDataProvider &provider)
 void CheckAllowListFuzz(FuzzedDataProvider &provider)
 {
     std::string callerAppIdentifier = provider.ConsumeRandomLengthString();
-    std::vector<std::string> allowList;
-    const std::string allowList1 = provider.ConsumeRandomLengthString();
-    const std::string allowList2 = provider.ConsumeRandomLengthString();
+    uint8_t len = provider.ConsumeIntegralInRange<uint8_t>(0, 20);
+    std::vector<std::string> allowLists(len);
+    for (int i = 0; i < len; i++) {
+        std::string allowList = provider.ConsumeRandomLengthString();
+        allowLists[i] = allowList;
+    }
     auto& manager = ProxyDataSubscriberManager::GetInstance();
-    manager.CheckAllowList(allowList, callerAppIdentifier);
+    manager.CheckAllowList(allowLists, callerAppIdentifier);
 }
 
 void EmitFuzz(FuzzedDataProvider &provider)
 {
+    uint8_t keyNum = provider.ConsumeIntegralInRange<uint8_t>(0, 20);
     std::vector<ProxyDataKey> keys;
-    std::string uri = provider.ConsumeRandomLengthString();
-    std::string bundleName = provider.ConsumeRandomLengthString();
-    ProxyDataKey key(uri, bundleName);
-    std::string uri1 = provider.ConsumeRandomLengthString();
-    std::string bundleName1 = provider.ConsumeRandomLengthString();
-    ProxyDataKey key1(uri1, bundleName1);
-    keys.push_back(key);
-    keys.push_back(key1);
+    for (int i = 0; i < keyNum; i++) {
+        std::string uri = provider.ConsumeRandomLengthString();
+        std::string bundleName = provider.ConsumeRandomLengthString();
+        keys.push_back(ProxyDataKey(uri, bundleName));
+    }
     std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> datas;
     std::vector<DataShareProxyData> insertData;
     DataShareProxyData data1;

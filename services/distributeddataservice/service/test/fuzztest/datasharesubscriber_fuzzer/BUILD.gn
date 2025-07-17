@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -72,6 +72,8 @@ ohos_fuzztest("DataShareSubscriberFuzzTest") {
     "${data_service_path}/service/data_share/data_share_db_config.cpp",
     "${data_service_path}/service/data_share/data_share_obs_proxy.cpp",
     "${data_service_path}/service/data_share/data_share_profile_config.cpp",
+    "${data_service_path}/service/data_share/data_share_service_impl.cpp",
+    "${data_service_path}/service/data_share/data_share_service_stub.cpp",
     "${data_service_path}/service/data_share/data_share_silent_config.cpp",
     "${data_service_path}/service/data_share/data_share_types_util.cpp",
     "${data_service_path}/service/data_share/dfx/hiview_adapter.cpp",
@@ -96,7 +98,6 @@ ohos_fuzztest("DataShareSubscriberFuzzTest") {
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
-    "${data_service_path}/service/permission/src/permission_validator.cpp",
     "datasharesubscriber_fuzzer.cpp",
   ]
 
