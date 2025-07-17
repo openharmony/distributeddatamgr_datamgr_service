@@ -27,23 +27,103 @@ void ObjectStoreSaveFuzzTest(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
     sptr<IRemoteObject> callback;
-    std::string bundleName = provider.ConsumeRandomLengthString();
-    std::string sessionId = provider.ConsumeRandomLengthString();
-    std::string deviceId = provider.ConsumeRandomLengthString();
+    std::string bundleName = provider.ConsumeRandomLengthString(10);
+    std::string sessionId = provider.ConsumeRandomLengthString(10);
+    std::string deviceId = provider.ConsumeRandomLengthString(10);
     std::map<std::string, std::vector<uint8_t>> data;
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     data["key1"] = remainingData;
     objectServiceImpl->ObjectStoreSave(bundleName, sessionId, deviceId, data, callback);
 }
 
+void OnUserChangeFuzzTest(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    uint32_t code = static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED);
+    std::string user = provider.ConsumeRandomLengthString(10);
+    std::string account = provider.ConsumeRandomLengthString(10);
+    objectServiceImpl->OnUserChange(code, user, account);
+}
+
+void ObjectStoreRevokeSaveFuzzTest(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    sptr<IRemoteObject> callback;
+    std::string bundleName = provider.ConsumeRandomLengthString(10);
+    std::string sessionId = provider.ConsumeRandomLengthString(10);
+    objectServiceImpl->ObjectStoreRevokeSave(bundleName, sessionId, callback);
+}
+
+void ObjectStoreRetrieveFuzzTest(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    sptr<IRemoteObject> callback;
+    std::string bundleName = provider.ConsumeRandomLengthString(10);
+    std::string sessionId = provider.ConsumeRandomLengthString(10);
+    objectServiceImpl->ObjectStoreRetrieve(bundleName, sessionId, callback);
+}
+
+void RegisterDataObserverFuzzTest(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    sptr<IRemoteObject> callback;
+    std::string bundleName = provider.ConsumeRandomLengthString(10);
+    std::string sessionId = provider.ConsumeRandomLengthString(10);
+    objectServiceImpl->RegisterDataObserver(bundleName, sessionId, callback);
+}
+
+void OnAppUninstallFuzzTest(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    if (objectServiceImpl->factory_.staticActs_ == nullptr) {
+        return;
+    }
+    std::string bundleName = provider.ConsumeRandomLengthString(10);
+    int32_t user = provider.ConsumeIntegral<int32_t>();
+    int32_t index = provider.ConsumeIntegral<int32_t>();
+    objectServiceImpl->factory_.staticActs_->OnAppUninstall(bundleName, user, index);
+}
+
+void ResolveAutoLaunchFuzzTest(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    std::string identifier = provider.ConsumeRandomLengthString(10);
+    DistributedDB::AutoLaunchParam param;
+    objectServiceImpl->ResolveAutoLaunch(identifier, param);
+}
+
+void OnAppExitFuzzTest(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    pid_t uid = provider.ConsumeIntegral<uint32_t>();
+    pid_t pid = provider.ConsumeIntegral<uint32_t>();
+    uint32_t tokenId = provider.ConsumeIntegral<uint32_t>();
+    std::string bundleName = provider.ConsumeRandomLengthString(10);
+    objectServiceImpl->OnAppExit(uid, pid, tokenId, bundleName);
+    objectServiceImpl->RegisterObjectServiceInfo();
+    objectServiceImpl->RegisterHandler();
+}
+
+void DumpObjectServiceInfoFuzzTest(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    int fd = provider.ConsumeIntegral<int>();
+    std::string key = provider.ConsumeRandomLengthString(10);
+    std::string value1 = provider.ConsumeRandomLengthString(10);
+    std::string value2 = provider.ConsumeRandomLengthString(10);
+    std::map<std::string, std::vector<std::string>> params;
+    std::vector<std::string> value = {value1, value2};
+    params.emplace(std::make_pair(key, value));
+    objectServiceImpl->DumpObjectServiceInfo(fd, params);
+}
 void SaveMetaDataFuzzTest(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
     StoreMetaData saveMeta;
     objectServiceImpl->SaveMetaData(saveMeta);
     auto &dmAdapter = DeviceManagerAdapter::GetInstance();
-    std::string uuid = provider.ConsumeRandomLengthString();
-    std::string udid = provider.ConsumeRandomLengthString();
+    std::string uuid = provider.ConsumeRandomLengthString(10);
+    std::string udid = provider.ConsumeRandomLengthString(10);
     if (uuid.empty()) {
         uuid = "123";
     }
@@ -55,82 +135,20 @@ void SaveMetaDataFuzzTest(FuzzedDataProvider &provider)
     objectServiceImpl->SaveMetaData(saveMeta);
 }
 
-void OnUserChangeFuzzTest(FuzzedDataProvider &provider)
+void BindAssetStoreFuzzTest(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    uint32_t code = static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED);
-    std::string user = provider.ConsumeRandomLengthString();
-    std::string account = provider.ConsumeRandomLengthString();
-    objectServiceImpl->OnUserChange(code, user, account);
-}
-
-void ObjectStoreRevokeSaveFuzzTest(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    sptr<IRemoteObject> callback;
-    std::string bundleName = provider.ConsumeRandomLengthString();
-    std::string sessionId = provider.ConsumeRandomLengthString();
-    objectServiceImpl->ObjectStoreRevokeSave(bundleName, sessionId, callback);
-}
-
-void ObjectStoreRetrieveFuzzTest(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    sptr<IRemoteObject> callback;
-    std::string bundleName = provider.ConsumeRandomLengthString();
-    std::string sessionId = provider.ConsumeRandomLengthString();
-    objectServiceImpl->ObjectStoreRetrieve(bundleName, sessionId, callback);
-}
-
-void RegisterDataObserverFuzzTest(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    sptr<IRemoteObject> callback;
-    std::string bundleName = provider.ConsumeRandomLengthString();
-    std::string sessionId = provider.ConsumeRandomLengthString();
-    objectServiceImpl->RegisterDataObserver(bundleName, sessionId, callback);
-}
-
-void OnAppUninstallFuzzTest(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    std::string bundleName = provider.ConsumeRandomLengthString();
-    int32_t user = provider.ConsumeIntegral<int32_t>();
-    int32_t index = provider.ConsumeIntegral<int32_t>();
-    objectServiceImpl->OnAppUninstall(bundleName, user, index);
-}
-
-void ResolveAutoLaunchFuzzTest(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    std::string identifier = provider.ConsumeRandomLengthString();
-    DistributedDB::AutoLaunchParam param;
-    objectServiceImpl->ResolveAutoLaunch(identifier, param);
-}
-
-void OnAppExitFuzzTest(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    pid_t uid = provider.ConsumeIntegral<uint32_t>();
-    pid_t pid = provider.ConsumeIntegral<uint32_t>();
-    uint32_t tokenId = provider.ConsumeIntegral<uint32_t>();
-    std::string bundleName = provider.ConsumeRandomLengthString();
-    objectServiceImpl->OnAppExit(uid, pid, tokenId, bundleName);
-    objectServiceImpl->RegisterObjectServiceInfo();
-    objectServiceImpl->RegisterHandler();
-}
-
-void DumpObjectServiceInfoFuzzTest(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    int fd = provider.ConsumeIntegral<int>();
-    std::string key = provider.ConsumeRandomLengthString();
-    std::string value1 = provider.ConsumeRandomLengthString();
-    std::string value2 = provider.ConsumeRandomLengthString();
-    std::map<std::string, std::vector<std::string>> params;
-    std::vector<std::string> value = {value1, value2};
-    params.emplace(std::make_pair(key, value));
-    objectServiceImpl->DumpObjectServiceInfo(fd, params);
+    std::string bundleName = provider.ConsumeRandomLengthString(20);
+    std::string sessionId = provider.ConsumeRandomLengthString(20);
+    ObjectStore::Asset asset = {.id = provider.ConsumeRandomLengthString(10),
+        .name = provider.ConsumeRandomLengthString(10),
+        .uri = provider.ConsumeRandomLengthString(10)};
+    ObjectStore::AssetBindInfo bindInfo = {.storeName = provider.ConsumeRandomLengthString(10),
+        .tableName = provider.ConsumeRandomLengthString(10),
+        .primaryKey = {{"data1", 123}, {"data2", "test1"}},
+        .field = provider.ConsumeRandomLengthString(10),
+        .assetName = provider.ConsumeRandomLengthString(10)};
+    objectServiceImpl->BindAssetStore(bundleName, sessionId, asset, bindInfo);
 }
 } // namespace OHOS
 
@@ -140,7 +158,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     FuzzedDataProvider provider(data, size);
     OHOS::ObjectStoreSaveFuzzTest(provider);
     OHOS::OnUserChangeFuzzTest(provider);
-    OHOS::SaveMetaDataFuzzTest(provider);
     OHOS::ObjectStoreRevokeSaveFuzzTest(provider);
     OHOS::ObjectStoreRetrieveFuzzTest(provider);
     OHOS::RegisterDataObserverFuzzTest(provider);
@@ -148,5 +165,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::ResolveAutoLaunchFuzzTest(provider);
     OHOS::OnAppExitFuzzTest(provider);
     OHOS::DumpObjectServiceInfoFuzzTest(provider);
+    OHOS::SaveMetaDataFuzzTest(provider);
+    OHOS::BindAssetStoreFuzzTest(provider);
     return 0;
 }
