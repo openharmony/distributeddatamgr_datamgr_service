@@ -28,6 +28,7 @@
 namespace OHOS {
 namespace DistributedData {
 using namespace Security::AccessToken;
+constexpr int CACHE_SIZE = 32;
 __attribute__((used)) BundleChecker BundleChecker::instance_;
 BundleChecker::BundleChecker() noexcept
 {
@@ -69,7 +70,7 @@ std::string BundleChecker::GetKey(const std::string &bundleName, int32_t userId)
 std::string BundleChecker::GetAppidFromCache(const std::string &bundleName, int32_t userId)
 {
     std::string appId;
-    std::string key = Getkey(bundleName, userId);
+    std::string key = GetKey(bundleName, userId);
     appIds_.Get(key, appId);
     return appId;
 }
@@ -101,7 +102,7 @@ std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
         ZLOGE("GetAppIdByBundleName failed appId:%{public}s, bundleName:%{public}s, uid:%{public}d",
             appId.c_str(), info.bundleName.c_str(), userId);
     } else {
-        appIds_.Set(GetKey(bundleName, userId), appId);
+        appIds_.Set(GetKey(info.bundleName, userId), appId);
     }
     return appId;
 }
@@ -109,7 +110,6 @@ std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
 void BundleChecker::DeleteCache(const std::string &bundleName, int32_t user, int32_t index)
 {
     std::string key = GetKey(bundleName, user);
-    ZLOGI("DeleteAppidCache bundleName:%{public}s, user:%{public}d.", bundleName.c_str(), user);
     appIds_.Delete(key);
 }
 
@@ -117,7 +117,7 @@ void BundleChecker::ClearCache()
 {
     ZLOGI("ClearAppidCache.");
     appIds_.ResetCapacity(0);
-    appIds_.ResetCapacity(32);
+    appIds_.ResetCapacity(CACHE_SIZE);
 }
 
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
