@@ -69,10 +69,7 @@ std::string BundleChecker::GetKey(const std::string &bundleName, int32_t userId)
 bool BundleChecker::GetAppidFromCache(const std::string &bundleName, int32_t userId, std::string &appId)
 {
     std::string key = Getkey(bundleName, userId);
-    if (appIds_.Get(key, appId)) {
-        return true;
-    }
-    return false;
+    return appIds_.Get(key, appId);
 }
 
 std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
