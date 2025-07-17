@@ -69,7 +69,7 @@ std::string BundleChecker::GetKey(const std::string &bundleName, int32_t userId)
 bool BundleChecker::GetAppidFromCache(const std::string &bundleName, int32_t userId, std::string &appId)
 {
     std::string key = Getkey(bundleName, userId);
-    if (appId_.Get(key, appId)) {
+    if (appIds_.Get(key, appId)) {
         return true;
     }
     return false;
@@ -102,7 +102,7 @@ std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
         ZLOGE("GetAppIdByBundleName failed appId:%{public}s, bundleName:%{public}s, uid:%{public}d",
             appId.c_str(), info.bundleName.c_str(), userId);
     } else {
-        appId_.Set(GetKey(bundleName, userId), appId);
+        appIds_.Set(GetKey(bundleName, userId), appId);
     }
     return appId;
 }
@@ -111,7 +111,7 @@ void BundleChecker::DeleteCache(const std::string &bundleName, int32_t user, int
 {
     std::string key = GetKey(bundleName, user);
     ZLOGI("DeleteAppidCache bundleName:%{public}s, user:%{public}d.", bundleName.c_str(), user);
-    appId_.Delete(key);
+    appIds_.Delete(key);
 }
 
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)
