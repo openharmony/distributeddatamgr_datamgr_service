@@ -715,7 +715,6 @@ HWTEST_F(ObjectManagerTest, ProcessSyncCallback002, TestSize.Level0)
     std::string dataDir = "/data/app/el2/100/database";
     auto manager = ObjectStoreManager::GetInstance();
     std::map<std::string, int32_t> results;
-
     results.insert({"remote", 1}); // for testing
     ASSERT_EQ(results.empty(), false);
     ASSERT_EQ(results.find("local"), results.end());
@@ -819,8 +818,7 @@ HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords002, TestSize.Level0)
 
     result.insert({dataKey, value0});
     auto assets = manager->GetAssetsFromDBRecords(result);
-    EXPECT_TRUE(assets.empty());
-
+    EXPECT_TRUE(assets.empty());    
     result.clear();
     result.insert({assetPrefix0 + ObjectStore::URI_SUFFIX, value0});
     assets = manager->GetAssetsFromDBRecords(result);
