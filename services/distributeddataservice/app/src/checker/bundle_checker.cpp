@@ -66,17 +66,19 @@ std::string BundleChecker::GetKey(const std::string &bundleName, int32_t userId)
     return bundleName + "###" + std::to_string(userId);
 }
 
-bool BundleChecker::GetAppidFromCache(const std::string &bundleName, int32_t userId, std::string &appId)
+std::string BundleChecker::GetAppidFromCache(const std::string &bundleName, int32_t userId)
 {
+    std::string appId;
     std::string key = Getkey(bundleName, userId);
-    return appIds_.Get(key, appId);
+    appIds_.Get(key, appId);
+    return appId;
 }
 
 std::string BundleChecker::GetBundleAppId(const CheckerManager::StoreInfo &info)
 {
-    std::string appId;
     int32_t userId = info.uid / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
-    if (GetAppidFromCache(info.bundleName, userId, appId)) {
+    std::string appId = GetAppidFromCache(info.bundleName, userId);
+    if (!appId.empty()) {
         return appId;
     }
     auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -109,6 +111,13 @@ void BundleChecker::DeleteCache(const std::string &bundleName, int32_t user, int
     std::string key = GetKey(bundleName, user);
     ZLOGI("DeleteAppidCache bundleName:%{public}s, user:%{public}d.", bundleName.c_str(), user);
     appIds_.Delete(key);
+}
+
+void BundleChecker::ClearCache()
+{
+    ZLOGI("ClearAppidCache.");
+    appIds_.ResetCapacity(0);
+    appIds_.ResetCapacity(32);
 }
 
 std::string BundleChecker::GetAppId(const CheckerManager::StoreInfo &info)

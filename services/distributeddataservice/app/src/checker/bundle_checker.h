@@ -38,9 +38,9 @@ public:
     bool IsDynamic(const CheckerManager::StoreInfo &info) override;
     bool IsStatic(const CheckerManager::StoreInfo &info) override;
     void DeleteCache(const std::string &bundleName, int32_t user, int32_t index) override;
-
+    void ClearCache() override;
 private:
-    bool GetAppidFromCache(const std::string &bundleName, int32_t userId, std::string &appId);
+    std::string GetAppidFromCache(const std::string &bundleName, int32_t userId);
     std::string GetKey(const std::string &bundleName, int32_t userId);
     static BundleChecker instance_;
     std::map<std::string, std::string> trusts_;

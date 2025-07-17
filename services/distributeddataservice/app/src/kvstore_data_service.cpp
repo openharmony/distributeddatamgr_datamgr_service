@@ -930,6 +930,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(StoreMetaMapping(meta).GetKey(), true);
                 PermitDelegate::GetInstance().DelCache(meta.GetKeyWithoutPath());
             }
+            CheckerManager::GetInstance().ClearCache();
             g_kvStoreAccountEventStatus = 0;
             break;
         }
