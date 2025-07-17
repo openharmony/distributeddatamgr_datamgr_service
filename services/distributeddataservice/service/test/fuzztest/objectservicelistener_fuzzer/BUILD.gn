@@ -50,7 +50,7 @@ ohos_fuzztest("ObjectServiceListenerFuzzTest") {
     "data_object:data_object_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "hilog:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "kv_store:distributeddb",
   ]
 }
