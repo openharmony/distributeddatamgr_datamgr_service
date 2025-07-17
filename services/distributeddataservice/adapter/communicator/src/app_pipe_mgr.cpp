@@ -13,15 +13,19 @@
  * limitations under the License.
  */
 
-#include "app_pipe_mgr.h"
-#include "kvstore_utils.h"
-
+#ifdef LOG_TAG
 #undef LOG_TAG
+#endif
 #define LOG_TAG "AppPipeMgr"
+
+#include "app_pipe_mgr.h"
+
+#include "utils/anonymous.h"
 
 namespace OHOS {
 namespace AppDistributedKv {
 using namespace OHOS::DistributedKv;
+using namespace OHOS::DistributedData;
 Status AppPipeMgr::StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo)
 {
     ZLOGI("begin");
@@ -31,7 +35,7 @@ Status AppPipeMgr::StartWatchDataChange(const AppDataChangeListener *observer, c
     }
     std::lock_guard<std::mutex> lock(dataBusMapMutex_);
     auto it = dataBusMap_.find(pipeInfo.pipeId);
-    if (it == dataBusMap_.end()) {
+    if (it == dataBusMap_.end() || it->second == nullptr) {
         ZLOGE("pipeid not found");
         return Status::ERROR;
     }
@@ -49,7 +53,7 @@ Status AppPipeMgr::StopWatchDataChange(const AppDataChangeListener *observer, co
     }
     std::lock_guard<std::mutex> lock(dataBusMapMutex_);
     auto it = dataBusMap_.find(pipeInfo.pipeId);
-    if (it == dataBusMap_.end()) {
+    if (it == dataBusMap_.end() || it->second == nullptr) {
         ZLOGE("pipeid not found");
         return Status::ERROR;
     }
@@ -61,18 +65,26 @@ Status AppPipeMgr::StopWatchDataChange(const AppDataChangeListener *observer, co
 std::pair<Status, int32_t> AppPipeMgr::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
     const DataInfo &dataInfo,  uint32_t totalLength, const MessageInfo &info)
 {
-    if (dataInfo.length > DataBuffer::MAX_TRANSFER_SIZE || dataInfo.length == 0 || dataInfo.data == nullptr ||
-        pipeInfo.pipeId.empty() || deviceId.deviceId.empty()) {
-        ZLOGW("Input is invalid, maxSize:%u, current size:%u", DataBuffer::MAX_TRANSFER_SIZE, dataInfo.length);
+    if (pipeInfo.pipeId.empty() || deviceId.deviceId.empty() || dataInfo.length > DataBuffer::MAX_TRANSFER_SIZE ||
+        dataInfo.length == 0 || dataInfo.data == nullptr) {
+        ZLOGE("Input is invalid, maxSize:%{public}u, current size:%{public}u", DataBuffer::MAX_TRANSFER_SIZE,
+            dataInfo.length);
         return std::make_pair(Status::ERROR, 0);
     }
-    ZLOGD("pipeInfo:%s ,size:%u, total length:%u", pipeInfo.pipeId.c_str(), dataInfo.length, totalLength);
+    if (dataInfo.extraInfo.userId.empty() || dataInfo.extraInfo.appId.empty() || dataInfo.extraInfo.storeId.empty()) {
+        ZLOGE("access info is empty, userId:%{public}s, appId:%{public}s, storeId:%{public}s",
+            dataInfo.extraInfo.userId.c_str(), dataInfo.extraInfo.appId.c_str(),
+            Anonymous::Change(dataInfo.extraInfo.storeId).c_str());
+        return std::make_pair(Status::ERROR, 0);
+    }
+    ZLOGD("pipeInfo:%{public}s ,size:%{public}u, total length:%{public}u", pipeInfo.pipeId.c_str(),
+        dataInfo.length, totalLength);
     std::shared_ptr<AppPipeHandler> appPipeHandler;
     {
         std::lock_guard<std::mutex> lock(dataBusMapMutex_);
         auto it = dataBusMap_.find(pipeInfo.pipeId);
-        if (it == dataBusMap_.end()) {
-            ZLOGW("pipeInfo:%s not found", pipeInfo.pipeId.c_str());
+        if (it == dataBusMap_.end() || it->second == nullptr) {
+            ZLOGE("pipeInfo:%{public}s not found", pipeInfo.pipeId.c_str());
             return std::make_pair(Status::KEY_NOT_FOUND, 0);
         }
         appPipeHandler = it->second;
@@ -89,7 +101,7 @@ Status AppPipeMgr::Start(const PipeInfo &pipeInfo)
     }
     std::lock_guard<std::mutex> lock(dataBusMapMutex_);
     auto it = dataBusMap_.find(pipeInfo.pipeId);
-    if (it != dataBusMap_.end()) {
+    if (it != dataBusMap_.end() && it->second != nullptr) {
         ZLOGW("repeated start, pipeInfo:%{public}s.", pipeInfo.pipeId.c_str());
         return Status::SUCCESS;
     }
@@ -100,8 +112,7 @@ Status AppPipeMgr::Start(const PipeInfo &pipeInfo)
         ZLOGW("Start pipeInfo:%{public}s, failed ret:%{public}d.", pipeInfo.pipeId.c_str(), ret);
         return Status::ILLEGAL_STATE;
     }
-
-    dataBusMap_.insert(std::pair<std::string, std::shared_ptr<AppPipeHandler>>(pipeInfo.pipeId, handler));
+    dataBusMap_.insert_or_assign(pipeInfo.pipeId, handler);
     return Status::SUCCESS;
 }
 
@@ -110,7 +121,7 @@ Status AppPipeMgr::Stop(const PipeInfo &pipeInfo)
 {
     std::lock_guard<std::mutex> lock(dataBusMapMutex_);
     auto it = dataBusMap_.find(pipeInfo.pipeId);
-    if (it == dataBusMap_.end()) {
+    if (it == dataBusMap_.end() || it->second == nullptr) {
         ZLOGW("pipeInfo:%s not found", pipeInfo.pipeId.c_str());
         return Status::KEY_NOT_FOUND;
     }
@@ -136,7 +147,7 @@ bool AppPipeMgr::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo, const stru
     {
         std::lock_guard<std::mutex> lock(dataBusMapMutex_);
         auto it = dataBusMap_.find(pipeInfo.pipeId);
-        if (it == dataBusMap_.end()) {
+        if (it == dataBusMap_.end() || it->second == nullptr) {
             ZLOGE("pipeInfo:%s not found. Return false.", pipeInfo.pipeId.c_str());
             return false;
         }
@@ -154,7 +165,7 @@ void AppPipeMgr::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)
     {
         std::lock_guard<std::mutex> lock(dataBusMapMutex_);
         auto it = dataBusMap_.find(pipeInfo.pipeId);
-        if (it == dataBusMap_.end()) {
+        if (it == dataBusMap_.end() || it->second == nullptr) {
             ZLOGW("pipeInfo:%s not found", pipeInfo.pipeId.c_str());
             return;
         }
@@ -163,25 +174,32 @@ void AppPipeMgr::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)
     appPipeHandler->SetMessageTransFlag(pipeInfo, flag);
 }
 
-Status AppPipeMgr::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId)
+Status AppPipeMgr::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo)
 {
     if (pipeInfo.pipeId.empty() || deviceId.deviceId.empty()) {
-        ZLOGW("Input is invalid, pipeId:%{public}s, deviceId:%{public}s", pipeInfo.pipeId.c_str(),
-            KvStoreUtils::ToBeAnonymous(deviceId.deviceId).c_str());
+        ZLOGE("Input is invalid, pipeId:%{public}s, deviceId:%{public}s", pipeInfo.pipeId.c_str(),
+            Anonymous::Change(deviceId.deviceId).c_str());
         return Status::INVALID_ARGUMENT;
     }
-    ZLOGD("pipeInfo:%s", pipeInfo.pipeId.c_str());
+    if (extraInfo.userId.empty() || extraInfo.bundleName.empty() || extraInfo.storeId.empty() ||
+        extraInfo.tokenId == 0) {
+        ZLOGE("access info is empty, userId:%{public}s, bundleName:%{public}s, storeId:%{public}s, tokenId:%{public}d",
+            extraInfo.userId.c_str(), extraInfo.bundleName.c_str(), Anonymous::Change(extraInfo.storeId).c_str(),
+            extraInfo.tokenId);
+        return Status::ERROR;
+    }
+    ZLOGD("pipeInfo:%{public}s", pipeInfo.pipeId.c_str());
     std::shared_ptr<AppPipeHandler> appPipeHandler;
     {
         std::lock_guard<std::mutex> lock(dataBusMapMutex_);
         auto it = dataBusMap_.find(pipeInfo.pipeId);
-        if (it == dataBusMap_.end()) {
-            ZLOGW("pipeInfo:%s not found", pipeInfo.pipeId.c_str());
-            return Status::INVALID_ARGUMENT;
+        if (it == dataBusMap_.end() || it->second == nullptr) {
+            ZLOGE("pipeInfo:%{public}s not found", pipeInfo.pipeId.c_str());
+            return Status::KEY_NOT_FOUND;
         }
         appPipeHandler = it->second;
     }
-    return appPipeHandler->ReuseConnect(pipeInfo, deviceId);
+    return appPipeHandler->ReuseConnect(pipeInfo, deviceId, extraInfo);
 }
 }  // namespace AppDistributedKv
 }  // namespace OHOS

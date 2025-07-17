@@ -594,8 +594,8 @@ HWTEST_F(RdbServiceImplTest, GetReuseDevice001, TestSize.Level0)
 {
     RdbServiceImpl service;
     std::vector<std::string> devices = {"device1"};
-
-    auto result = service.GetReuseDevice(devices);
+    StoreMetaData metaData;
+    auto result = service.GetReuseDevice(devices, metaData);
     EXPECT_EQ(result.size(), 0);
 }
 

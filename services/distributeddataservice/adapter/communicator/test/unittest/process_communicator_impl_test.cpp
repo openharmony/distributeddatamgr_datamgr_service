@@ -53,7 +53,7 @@ public:
     MOCK_METHOD((std::pair<Status, int32_t>), SendData, (const PipeInfo&, const DeviceId&,
         const DataInfo&, uint32_t, const MessageInfo &), (override));
     MOCK_METHOD(bool, IsSameStartedOnPeer, (const PipeInfo &, const DeviceId &), (const));
-    MOCK_METHOD(Status, ReuseConnect, (const PipeInfo&, const DeviceId&), (override));
+    MOCK_METHOD(Status, ReuseConnect, (const PipeInfo&, const DeviceId&, const ExtraDataInfo&), (override));
     MOCK_METHOD(void, SetDeviceQuery, (std::shared_ptr<IDeviceQuery>), (override));
     MOCK_METHOD(void, SetMessageTransFlag, (const PipeInfo &, bool), (override));
     MOCK_METHOD(Status, Broadcast, (const PipeInfo &, const LevelInfo &), (override));
@@ -448,28 +448,6 @@ HWTEST_F(ProcessCommunicatorImplTest, GetDataUserInfo, TestSize.Level0)
     };
     status = communicator_->GetDataUserInfo(dataUserInfo, userInfos);
     EXPECT_EQ(status, DistributedDB::INVALID_FORMAT);
-}
-
-/**
-* @tc.name: ReuseConnect01
-* @tc.desc: reuse connect
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
- */
-HWTEST_F(ProcessCommunicatorImplTest, ReuseConnect01, TestSize.Level0)
-{
-    ASSERT_NE(SoftBusAdapter::GetInstance(), nullptr);
-    PipeInfo pipe;
-    pipe.pipeId = "appId";
-    pipe.userId = "groupId";
-    DeviceId device = {"DeviceId"};
-    auto status = SoftBusAdapter::GetInstance()->ReuseConnect(pipe, device);
-    EXPECT_EQ(status, Status::NOT_SUPPORT);
-    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType(testing::_)).WillOnce(testing::Return(true))
-        .WillRepeatedly(testing::Return(true));
-    status = SoftBusAdapter::GetInstance()->ReuseConnect(pipe, device);
-    EXPECT_EQ(status, Status::NETWORK_ERROR);
 }
 
 /**

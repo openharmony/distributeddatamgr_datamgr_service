@@ -14,13 +14,14 @@
 */
 
 #define LOG_TAG "CommunicatorContext"
+
 #include "communicator_context.h"
+
 #include "log_print.h"
-#include "kvstore_utils.h"
 #include "softbus_error_code.h"
+#include "utils/anonymous.h"
 
 namespace OHOS::DistributedData {
-using KvUtils = OHOS::DistributedKv::KvStoreUtils;
 using Status = OHOS::DistributedKv::Status;
 
 CommunicatorContext &CommunicatorContext::GetInstance()
@@ -92,7 +93,7 @@ void CommunicatorContext::NotifySessionReady(const std::string &deviceId, int32_
             }
         }
         ZLOGI("Notify session begin, deviceId:%{public}s, observer count:%{public}zu",
-            KvUtils::ToBeAnonymous(deviceId).c_str(), observers_.size());
+            Anonymous::Change(deviceId).c_str(), observers_.size());
     }
     if (errCode == SOFTBUS_OK) {
         std::lock_guard<decltype(sessionMutex_)> sessionLockGard(sessionMutex_);
