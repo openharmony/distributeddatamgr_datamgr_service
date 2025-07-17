@@ -24,17 +24,17 @@ namespace OHOS {
 void OnStartFuzzTest(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectAssetsRecvListener> objectAssetsRecvListener = std::make_shared<ObjectAssetsRecvListener>();
-    std::string srcNetworkId = provider.ConsumeRandomLengthString(10);
-    std::string dstNetworkId = provider.ConsumeRandomLengthString(10);
-    std::string sessionId = provider.ConsumeRandomLengthString(10);
-    std::string dstBundleName = provider.ConsumeRandomLengthString(10);
+    std::string srcNetworkId = provider.ConsumeRandomLengthString(100);
+    std::string dstNetworkId = provider.ConsumeRandomLengthString(100);
+    std::string sessionId = provider.ConsumeRandomLengthString(100);
+    std::string dstBundleName = provider.ConsumeRandomLengthString(100);
     objectAssetsRecvListener->OnStart(srcNetworkId, dstNetworkId, sessionId, dstBundleName);
 }
 
 void OnFinishedFuzzTest(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectAssetsRecvListener> objectAssetsRecvListener = std::make_shared<ObjectAssetsRecvListener>();
-    std::string srcNetworkId = provider.ConsumeRandomLengthString(10);
+    std::string srcNetworkId = provider.ConsumeRandomLengthString(100);
     int32_t result = provider.ConsumeIntegral<int32_t>();
     sptr<AssetObj> assetObj = new AssetObj();
     objectAssetsRecvListener->OnFinished(srcNetworkId, assetObj, result);
@@ -43,7 +43,7 @@ void OnFinishedFuzzTest(FuzzedDataProvider &provider)
 void OnRecvProgressFuzzTest(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectAssetsRecvListener> objectAssetsRecvListener = std::make_shared<ObjectAssetsRecvListener>();
-    std::string srcNetworkId = provider.ConsumeRandomLengthString(10);
+    std::string srcNetworkId = provider.ConsumeRandomLengthString(100);
     uint64_t totalBytes = provider.ConsumeIntegral<uint64_t>();
     uint64_t processBytes = provider.ConsumeIntegral<uint64_t>();
     sptr<AssetObj> assetObj1 = new AssetObj();
