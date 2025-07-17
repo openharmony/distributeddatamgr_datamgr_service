@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
- #ifndef OBJECT_SERVICE_LISTENER_FUZZER_H
- #define OBJECT_SERVICE_LISTENER_FUZZER_H
- 
- #define FUZZ_PROJECT_NAME "objectservicelistener_fuzzer"
- 
- #endif // OBJECT_SERVICE_LISTENER_FUZZER_H
+#ifndef OBJECT_SERVICE_LISTENER_FUZZER_H
+#define OBJECT_SERVICE_LISTENER_FUZZER_H
+
+#define FUZZ_PROJECT_NAME "objectservicelistener_fuzzer"
+
+#endif // OBJECT_SERVICE_LISTENER_FUZZER_H
