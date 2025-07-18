@@ -24,7 +24,7 @@ namespace OHOS {
 void SyncStrategiesFuzz001(FuzzedDataProvider &provider)
 {
     int32_t user = provider.ConsumeIntegral<int32_t>();
-    std::string bundleName = provider.ConsumeRandomLengthString();
+    std::string bundleName = provider.ConsumeRandomLengthString(100);
     NetworkSyncStrategy strategy;
     StoreInfo storeInfo;
     storeInfo.user = user;
@@ -42,7 +42,7 @@ void SyncStrategiesFuzz002(FuzzedDataProvider &provider)
 void SyncStrategiesFuzz003(FuzzedDataProvider &provider)
 {
     int32_t user = provider.ConsumeIntegral<int32_t>();
-    std::string bundleName = provider.ConsumeRandomLengthString();
+    std::string bundleName = provider.ConsumeRandomLengthString(100);
     NetworkSyncStrategy strategyInstance;
     strategyInstance.GetStrategy(user, bundleName);
     strategyInstance.GetKey(user);
@@ -51,8 +51,8 @@ void SyncStrategiesFuzz003(FuzzedDataProvider &provider)
     info.user = 1;
     info.bundleName = "StrategyInfo";
     Serializable::json node;
-    std::string key = provider.ConsumeRandomLengthString();
-    std::string valueStr = provider.ConsumeRandomLengthString();
+    std::string key = provider.ConsumeRandomLengthString(100);
+    std::string valueStr = provider.ConsumeRandomLengthString(100);
     int valueInt = provider.ConsumeIntegral<int>();
     float valueFloat = provider.ConsumeFloatingPoint<float>();
     bool valueBool = provider.ConsumeBool();
