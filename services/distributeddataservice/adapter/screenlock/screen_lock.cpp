@@ -94,7 +94,9 @@ void ScreenLock::SubscribeScreenEvent()
             NotifyScreenUnlocked(user);
         });
     }
-    executors_->Execute(GetTask(0));
+    if (executors_ != nullptr) {
+        executors_->Execute(GetTask(0));
+    }
 }
 
 void ScreenLock::UnsubscribeScreenEvent()
@@ -132,7 +134,9 @@ ExecutorPool::Task ScreenLock::GetTask(uint32_t retry)
             ZLOGE("fail to register subscriber!");
             return;
         }
-        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+        if (executors_ != nullptr) {
+            executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+        }
     };
 }
 } // namespace OHOS::DistributedData
