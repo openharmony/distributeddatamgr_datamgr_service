@@ -85,7 +85,9 @@ public:
     void SetUp(){};
     void TearDown(){};
 
-    const std::string STORE_ID = "drag";
+    static constexpr const char *STORE_ID = "drag";
+    static constexpr uint32_t TOKEN_ID = 5;
+    static constexpr const char *APP_ID = "appId";
 };
 
 /**
@@ -465,163 +467,68 @@ HWTEST_F(UdmfServiceImplTest, CheckAppId002, TestSize.Level1)
 }
 
 /**
- * @tc.name: ValidateAndProcessRuntimeData001
- * @tc.desc: invalid appId
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData001, TestSize.Level1)
+* @tc.name: CheckDeleteDataPermission001
+* @tc.desc: runtime is null
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission001, TestSize.Level1)
 {
-    UnifiedData data;
-    std::shared_ptr<UnifiedRecord> record = std::make_shared<PlainText>(UDType::PLAIN_TEXT, "plainTextContent");
-    data.AddRecord(record);
-    std::shared_ptr<UnifiedDataProperties> properties = std::make_shared<UnifiedDataProperties>();
-    std::string tag = "this is a tag of test ValidateAndProcessRuntimeData001";
-    properties->tag = tag;
-    data.SetProperties(std::move(properties));
-
-    std::vector<UnifiedData> dataSet = {data};
+    std::string appId;
     std::shared_ptr<Runtime> runtime;
-    std::vector<UnifiedData> unifiedDataSet;
-    std::vector<std::string> deleteKeys;
     QueryOption query;
-
     UdmfServiceImpl impl;
-    int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
-    EXPECT_EQ(result, UDMF::E_DB_ERROR);
+    bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
+    EXPECT_FALSE(ret);
 }
 
 /**
- * @tc.name: ValidateAndProcessRuntimeData002
- * @tc.desc: Normal test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData002, TestSize.Level1)
+* @tc.name: CheckDeleteDataPermission002
+* @tc.desc: query.tokenId is invalid
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission002, TestSize.Level1)
 {
-    UnifiedData data;
-    data.runtime_ = std::make_shared<Runtime>();
-    data.runtime_->tokenId = 1;
-    std::shared_ptr<UnifiedRecord> record = std::make_shared<PlainText>(UDType::PLAIN_TEXT, "plainTextContent");
-    data.AddRecord(record);
-    std::shared_ptr<UnifiedDataProperties> properties = std::make_shared<UnifiedDataProperties>();
-    std::string tag = "this is a tag of test ValidateAndProcessRuntimeData002";
-    properties->tag = tag;
-    data.SetProperties(std::move(properties));
-
-    std::vector<UnifiedData> dataSet = {data};
-    std::shared_ptr<Runtime> runtime;
-    std::vector<UnifiedData> unifiedDataSet;
-    std::vector<std::string> deleteKeys;
+    std::string appId;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = TOKEN_ID;
     QueryOption query;
-    query.tokenId = 1;
-
     UdmfServiceImpl impl;
-    int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
-    EXPECT_EQ(result, UDMF::E_OK);
+    bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
+    EXPECT_FALSE(ret);
 }
 
 /**
- * @tc.name: ValidateAndProcessRuntimeData003
- * @tc.desc: invalid appId
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData003, TestSize.Level1)
+* @tc.name: CheckDeleteDataPermission003
+* @tc.desc: Normal test
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission003, TestSize.Level1)
 {
-    UnifiedData data;
-    data.runtime_ = std::make_shared<Runtime>();
-    data.runtime_->tokenId = 1;
-    data.runtime_ = std::make_shared<Runtime>();
-    data.runtime_->appId = "appId";
-    std::shared_ptr<UnifiedRecord> record = std::make_shared<PlainText>(UDType::PLAIN_TEXT, "plainTextContent");
-    data.AddRecord(record);
-    std::shared_ptr<UnifiedDataProperties> properties = std::make_shared<UnifiedDataProperties>();
-    std::string tag = "this is a tag of test ValidateAndProcessRuntimeData003";
-    properties->tag = tag;
-    data.SetProperties(std::move(properties));
-
-    std::vector<UnifiedData> dataSet = {data};
-    std::shared_ptr<Runtime> runtime;
-    std::vector<UnifiedData> unifiedDataSet;
-    std::vector<std::string> deleteKeys;
+    std::string appId;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = TOKEN_ID;
     QueryOption query;
-    query.tokenId = 2;
-
+    query.tokenId = TOKEN_ID;
     UdmfServiceImpl impl;
-    int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
-    EXPECT_EQ(result, UDMF::E_OK);
+    bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
+    EXPECT_TRUE(ret);
 }
 
 /**
- * @tc.name: ValidateAndProcessRuntimeData004
- * @tc.desc: invalid appId
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, ValidateAndProcessRuntimeData004, TestSize.Level1)
+* @tc.name: CheckDeleteDataPermission004
+* @tc.desc: bundleName is empty
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission004, TestSize.Level1)
 {
-    UnifiedData data1;
-    data1.runtime_ = std::make_shared<Runtime>();
-    data1.runtime_->tokenId = 1;
-    data1.runtime_ = std::make_shared<Runtime>();
-    data1.runtime_->appId = "appId";
-    std::shared_ptr<UnifiedRecord> record = std::make_shared<PlainText>(UDType::PLAIN_TEXT, "plainTextContent");
-    data1.AddRecord(record);
-    std::shared_ptr<UnifiedDataProperties> properties = std::make_shared<UnifiedDataProperties>();
-    std::string tag = "this is a tag of test ValidateAndProcessRuntimeData004";
-    properties->tag = tag;
-    data1.SetProperties(std::move(properties));
-
-    UnifiedData data2;
-    data2.runtime_ = std::make_shared<Runtime>();
-    data2.runtime_->tokenId = 1;
-    data2.runtime_ = std::make_shared<Runtime>();
-    data2.runtime_->appId = "appId";
-    data2.AddRecord(record);
-    data2.SetProperties(std::move(properties));
-
-    std::vector<UnifiedData> dataSet = { data1, data2 };
-    std::shared_ptr<Runtime> runtime;
-    std::vector<UnifiedData> unifiedDataSet;
-    std::vector<std::string> deleteKeys;
+    std::string appId;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->appId = APP_ID;
     QueryOption query;
-    query.tokenId = 2;
-
+    query.tokenId = TOKEN_ID;
     UdmfServiceImpl impl;
-    int32_t result = impl.ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
-    EXPECT_EQ(result, UDMF::E_OK);
-}
-
-/**
- * @tc.name: CloseStoreWhenCorrupted001
- * @tc.desc: Normal test of CloseStoreWhenCorrupted
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, CloseStoreWhenCorrupted001, TestSize.Level1)
-{
-    std::string intention = "drag";
-    StoreCache::GetInstance().CloseStores();
-    auto store = StoreCache::GetInstance().GetStore(intention);
-    EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
-    int32_t status = UDMF::E_OK;
-    UdmfServiceImpl impl;
-    impl.HandleDbError(intention, status);
-    EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
-}
-
-/**
- * @tc.name: CloseStoreWhenCorrupted002
- * @tc.desc: Abnormal test of CloseStoreWhenCorrupted
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, CloseStoreWhenCorrupted002, TestSize.Level1)
-{
-    std::string intention = "drag";
-    StoreCache::GetInstance().CloseStores();
-    auto store = StoreCache::GetInstance().GetStore(intention);
-    EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 1);
-    int32_t status = UDMF::E_DB_CORRUPTED;
-    UdmfServiceImpl impl;
-    impl.HandleDbError(intention, status);
-    EXPECT_EQ(StoreCache::GetInstance().stores_.Size(), 0);
-    EXPECT_EQ(status, UDMF::E_DB_ERROR);
+    bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
+    EXPECT_FALSE(ret);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

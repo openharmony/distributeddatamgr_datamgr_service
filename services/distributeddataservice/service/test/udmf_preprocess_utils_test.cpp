@@ -179,18 +179,4 @@ HWTEST_F(UdmfPreProcessUtilsTest, GetHtmlFileUris001, TestSize.Level1)
     PreProcessUtils preProcessUtils;
     EXPECT_NO_FATAL_FAILURE(preProcessUtils.GetHtmlFileUris(tokenId, data, isLocal, uris));
 }
-
-/**
-* @tc.name: GetAppId001
-* @tc.desc: Abnormal test of GetAppId, samgrProxy is nullptr
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfPreProcessUtilsTest, GetAppId001, TestSize.Level1)
-{
-    std::string bundleName = "test";
-    PreProcessUtils preProcessUtils;
-    std::string appId = preProcessUtils.GetAppId(bundleName);
-    EXPECT_EQ(appId, "");
-}
 }; // namespace UDMF
