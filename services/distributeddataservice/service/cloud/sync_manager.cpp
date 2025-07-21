@@ -526,7 +526,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
     if (times >= RETRY_TIMES) {
         return [this, user, info = SyncInfo(syncInfo)](Duration, int32_t code, int32_t dbCode,
                    const std::string &prepareTraceId) mutable {
-            return handleRetryFinished(info, user, code, dbCode, prepareTraceId);
+            return HandleRetryFinished(info, user, code, dbCode, prepareTraceId);
         };
     }
     return [this, times, user, info = SyncInfo(syncInfo)](Duration interval, int32_t code, int32_t dbCode,
