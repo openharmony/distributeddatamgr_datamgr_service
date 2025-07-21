@@ -504,7 +504,7 @@ void SyncManager::Report(
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
-bool SyncManager::handleRetryFinished(const SyncInfo &info, int32_t user, int32_t code, int32_t dbCode,
+bool SyncManager::HandleRetryFinished(const SyncInfo &info, int32_t user, int32_t code, int32_t dbCode,
     const std::string &prepareTraceId)
 {
     if (code == E_OK || code == E_SYNC_TASK_MERGED) {
