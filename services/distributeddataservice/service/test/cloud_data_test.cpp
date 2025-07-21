@@ -2006,12 +2006,12 @@ HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetRetryer
+* @tc.name: GetRetryer001
 * @tc.desc: Test the input parameters of different interfaces
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
+HWTEST_F(CloudDataTest, GetRetryer001, TestSize.Level0)
 {
     int32_t user = 100;
     CloudData::SyncManager::SyncInfo info(user);
@@ -2027,6 +2027,28 @@ HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
     EXPECT_TRUE(ret);
     ret = sync.GetRetryer(0, info, user)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
     EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: GetRetryer002
+* @tc.desc: Test the executor_ is nullptr scenarios.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetRetryer002, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager::SyncInfo info(user);
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::Duration duration;
+    std::string prepareTraceId;
+    sync.executor_ = nullptr;
+    int32_t evtId = 100;
+    auto event = std::make_unique<CloudData::SyncManager::Event>(evtId);
+    auto handler = sync.GetClientChangeHandler();
+    handler(*event);
+    auto ret = sync.GetRetryer(0, info, user)(duration, E_CLOUD_DISABLED, E_CLOUD_DISABLED, prepareTraceId);
+    EXPECT_FALSE(ret);
 }
 
 /**

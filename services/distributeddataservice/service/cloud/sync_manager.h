@@ -149,6 +149,8 @@ private:
         const std::string &message = "");
     static void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState,
         int32_t code);
+    static bool handleRetryFinished(const SyncInfo &info, int32_t user, int32_t code, int32_t dbCode,
+        const std::string &prepareTraceId);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
