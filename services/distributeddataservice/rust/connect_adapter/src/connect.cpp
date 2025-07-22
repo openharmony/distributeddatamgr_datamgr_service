@@ -38,10 +38,11 @@ void Connect::OnAbilityConnectDone(const OHOS::AppExecFwk::ElementName &element,
     }
 
     ZLOGD("ability connect success, ability name:%{public}s", element.GetAbilityName().c_str());
-    std::unique_lock<std::mutex> lock(mtx_);
     remoteObject_ = remoteObject;
+    std::unique_lock<std::mutex> lock(mtx_);
     flag_ = true;
     cv_.notify_one();
+    lock.unlock();
 }
 
 void Connect::OnAbilityDisconnectDone(const OHOS::AppExecFwk::ElementName &element, int resultCode)
@@ -49,10 +50,11 @@ void Connect::OnAbilityDisconnectDone(const OHOS::AppExecFwk::ElementName &eleme
     if (resultCode != RESULT_OK) {
         ZLOGE("ability disconnect failed, error code:%{public}d", resultCode);
     }
-    std::unique_lock<std::mutex> lock(mtx_);
     remoteObject_ = nullptr;
+    std::unique_lock<std::mutex> lock(mtx_);
     flag_ = true;
     cv_.notify_one();
+    lock.unlock();
 }
 
 bool Connect::IsConnect()
