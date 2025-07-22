@@ -41,7 +41,7 @@ public:
 
 class ObjectAssetLoader {
 public:
-    static ObjectAssetLoader *GetInstance();
+    static ObjectAssetLoader &GetInstance();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     bool Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
         const DistributedData::Asset& asset);

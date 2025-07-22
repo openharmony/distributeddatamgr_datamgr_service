@@ -84,6 +84,10 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
                 ZLOGE("GetKvStore fail %{public}d", dbStatus);
                 return;
             }
+            if (kvStoreNbDelegate == nullptr) {
+                ZLOGE("GetKvStore kvStoreNbDelegate is nullptr");
+                return;
+            }
             ZLOGI("GetKvStore successsfully");
             store = kvStoreNbDelegate;
             std::vector<uint8_t> tmpKey;
@@ -137,6 +141,10 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     const ObjectRecord &data, const std::string &deviceId, sptr<IRemoteObject> callback)
 {
     auto proxy = iface_cast<ObjectSaveCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        return INVALID_ARGUMENT;
+    }
     if (deviceId.size() == 0) {
         ZLOGE("DeviceId empty, appId: %{public}s, sessionId: %{public}s", appId.c_str(),
             Anonymous::Change(sessionId).c_str());
@@ -189,7 +197,11 @@ int32_t ObjectStoreManager::PushAssets(const std::string &srcBundleName, const s
     if (assets.empty() || data.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == data.end()) {
         return OBJECT_SUCCESS;
     }
-    sptr<AssetObj> assetObj = new AssetObj();
+    sptr<AssetObj> assetObj = new(std::nothrow) AssetObj();
+    if (assetObj == nullptr) {
+        ZLOGE("New AssetObj failed");
+        return OBJECT_INNER_ERROR;
+    }
     assetObj->dstBundleName_ = dstBundleName;
     assetObj->srcBundleName_ = srcBundleName;
     assetObj->dstNetworkId_ = deviceId;
@@ -201,7 +213,7 @@ int32_t ObjectStoreManager::PushAssets(const std::string &srcBundleName, const s
         objectAssetsSendListener_ = new ObjectAssetsSendListener();
     }
     int userId = std::atoi(GetCurrentUser().c_str());
-    auto status =  ObjectAssetLoader::GetInstance()->PushAsset(userId, assetObj, objectAssetsSendListener_);
+    auto status =  ObjectAssetLoader::GetInstance().PushAsset(userId, assetObj, objectAssetsSendListener_);
     return status;
 }
 
@@ -209,6 +221,10 @@ int32_t ObjectStoreManager::RevokeSave(
     const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
     auto proxy = iface_cast<ObjectRevokeSaveCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        return INVALID_ARGUMENT;
+    }
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open failed, errCode = %{public}d", result);
@@ -248,6 +264,10 @@ int32_t ObjectStoreManager::Retrieve(
     const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId)
 {
     auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        return INVALID_ARGUMENT;
+    }
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open object kvstore failed, result: %{public}d", result);
@@ -383,6 +403,10 @@ void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, c
     }
     ZLOGD("ObjectStoreManager::RegisterRemoteCallback start");
     auto proxy = iface_cast<ObjectChangeCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        return;
+    }
     std::string prefix = bundleName + sessionId;
     callbacks_.Compute(tokenId, ([pid, &proxy, &prefix](const uint32_t key, CallbackInfo &value) {
         if (value.pid != pid) {
@@ -429,6 +453,10 @@ void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bun
         return;
     }
     auto proxy = iface_cast<ObjectProgressCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        return;
+    }
     std::string objectKey = bundleName + sessionId;
     sptr<ObjectProgressCallbackProxy> observer;
     processCallbacks_.Compute(
@@ -641,7 +669,7 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, ObjectRecord>& d
     for (const auto& [objectId, assets] : changedAssets) {
         std::string networkId = DmAdaper::GetInstance().ToNetworkID(saveInfo.sourceDeviceId);
         auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
-        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(std::atoi(GetCurrentUser().c_str()),
+        ObjectAssetLoader::GetInstance().TransferAssetsAsync(std::atoi(GetCurrentUser().c_str()),
             saveInfo.bundleName, networkId, assets, [this, block](bool success) {
                 block->SetValue({ false, success });
         });
@@ -753,7 +781,9 @@ Assets ObjectStoreManager::GetAssetsFromDBRecords(const ObjectRecord& result)
         std::string assetPrefix = key.substr(0, key.find(ObjectStore::ASSET_DOT));
         if (!IsAssetKey(key) || assetKey.find(assetPrefix) != assetKey.end() ||
             result.find(assetPrefix + ObjectStore::NAME_SUFFIX) == result.end() ||
-            result.find(assetPrefix + ObjectStore::URI_SUFFIX) == result.end()) {
+            result.find(assetPrefix + ObjectStore::URI_SUFFIX) == result.end() ||
+            result.find(assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX) == result.end() ||
+            result.find(assetPrefix + ObjectStore::SIZE_SUFFIX) == result.end()) {
             continue;
         }
         Asset asset;
@@ -1440,7 +1470,7 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
     }
 
     auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
-    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, appId, deviceId, { dataAsset }, [block](bool ret) {
+    ObjectAssetLoader::GetInstance().TransferAssetsAsync(userId, appId, deviceId, { dataAsset }, [block](bool ret) {
         block->SetValue({ false, ret });
     });
     auto [timeout, success] = block->GetValue();

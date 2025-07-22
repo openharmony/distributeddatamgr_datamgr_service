@@ -165,7 +165,7 @@ static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset
     changedAsset.deviceId = newAsset.first;
     changedAsset.asset = newAsset.second;
     std::vector<Asset> assets{ changedAsset.asset };
-    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(changedAsset.storeInfo.user,
+    ObjectAssetLoader::GetInstance().TransferAssetsAsync(changedAsset.storeInfo.user,
         changedAsset.storeInfo.bundleName, changedAsset.deviceId, assets, [&changedAsset](bool success) {
             if (success) {
                 auto status = UpdateStore(changedAsset);
@@ -362,8 +362,5 @@ static BindEvent::BindEventInfo MakeBindInfo(const ChangedAssetInfo& changedAsse
     bindEventInfo.assetName = changedAsset.bindInfo.assetName;
     return bindEventInfo;
 }
-
-ObjectAssetMachine::ObjectAssetMachine() {}
-
 } // namespace DistributedObject
 } // namespace OHOS

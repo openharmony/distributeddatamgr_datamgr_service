@@ -78,9 +78,9 @@ public:
 
     ObjectStoreManager();
     ~ObjectStoreManager();
-    static ObjectStoreManager *GetInstance()
+    static ObjectStoreManager &GetInstance()
     {
-        static ObjectStoreManager *manager = new ObjectStoreManager();
+        static ObjectStoreManager manager;
         return manager;
     }
     int32_t Save(const std::string &appId, const std::string &sessionId, const ObjectRecord &data,
