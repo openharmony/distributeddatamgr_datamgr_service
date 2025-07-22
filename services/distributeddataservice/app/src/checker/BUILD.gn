@@ -32,7 +32,10 @@ ohos_source_set("distributeddata_checker") {
     "-Oz",
   ]
 
-  include_dirs = [ "${data_service_path}/framework/include" ]
+  include_dirs = [
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/framework/include",
+  ]
 
   if (build_public_version) {
     cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
