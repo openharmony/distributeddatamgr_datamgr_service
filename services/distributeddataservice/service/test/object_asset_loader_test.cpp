@@ -65,8 +65,8 @@ void ObjectAssetLoaderTest::TearDown() {}
 */
 HWTEST_F(ObjectAssetLoaderTest, UploadTest001, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
-    auto result = assetLoader->Transfer(userId_, bundleName_, deviceId_, asset_);
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
+    auto result = assetLoader.Transfer(userId_, bundleName_, deviceId_, asset_);
     ASSERT_EQ(result, false);
 }
 
@@ -79,13 +79,13 @@ HWTEST_F(ObjectAssetLoaderTest, UploadTest001, TestSize.Level0)
 */
 HWTEST_F(ObjectAssetLoaderTest, TransferAssetsAsync001, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
     std::function<void(bool)> lambdaFunc = [](bool success) {
         if (success) {}
     };
     std::vector<Asset> assets{ asset_ };
-    ASSERT_EQ(assetLoader->executors_, nullptr);
-    assetLoader->TransferAssetsAsync(userId_, bundleName_, deviceId_, assets, lambdaFunc);
+    ASSERT_EQ(assetLoader.executors_, nullptr);
+    assetLoader.TransferAssetsAsync(userId_, bundleName_, deviceId_, assets, lambdaFunc);
 }
 
 /**
@@ -97,16 +97,16 @@ HWTEST_F(ObjectAssetLoaderTest, TransferAssetsAsync001, TestSize.Level0)
 */
 HWTEST_F(ObjectAssetLoaderTest, TransferAssetsAsync002, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
     std::function<void(bool)> lambdaFunc = [](bool success) {
         if (success) {}
     };
     std::vector<Asset> assets{ asset_ };
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(5, 3);
     ASSERT_NE(executors, nullptr);
-    assetLoader->SetThreadPool(executors);
-    ASSERT_NE(assetLoader->executors_, nullptr);
-    assetLoader->TransferAssetsAsync(userId_, bundleName_, deviceId_, assets, lambdaFunc);
+    assetLoader.SetThreadPool(executors);
+    ASSERT_NE(assetLoader.executors_, nullptr);
+    assetLoader.TransferAssetsAsync(userId_, bundleName_, deviceId_, assets, lambdaFunc);
 }
 
 /**
@@ -118,14 +118,13 @@ HWTEST_F(ObjectAssetLoaderTest, TransferAssetsAsync002, TestSize.Level0)
 */
 HWTEST_F(ObjectAssetLoaderTest, FinishTask001, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
-    ASSERT_NE(assetLoader, nullptr);
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
     TransferTask task;
     task.downloadAssets.insert(uri_);
-    assetLoader->FinishTask(asset_.uri, true);
-    ASSERT_TRUE(assetLoader->tasks_.Empty());
-    assetLoader->FinishTask(asset_.uri, false);
-    ASSERT_TRUE(assetLoader->tasks_.Empty());
+    assetLoader.FinishTask(asset_.uri, true);
+    ASSERT_TRUE(assetLoader.tasks_.Empty());
+    assetLoader.FinishTask(asset_.uri, false);
+    ASSERT_TRUE(assetLoader.tasks_.Empty());
 }
 
 /**
@@ -137,12 +136,12 @@ HWTEST_F(ObjectAssetLoaderTest, FinishTask001, TestSize.Level0)
 */
 HWTEST_F(ObjectAssetLoaderTest, IsDownloading001, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
-    assetLoader->downloading_.InsertOrAssign(asset_.uri, asset_.hash);
-    auto result = assetLoader->IsDownloading(asset_);
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
+    assetLoader.downloading_.InsertOrAssign(asset_.uri, asset_.hash);
+    auto result = assetLoader.IsDownloading(asset_);
     ASSERT_EQ(result, true);
-    assetLoader->downloading_.Erase(asset_.uri);
-    result = assetLoader->IsDownloading(asset_);
+    assetLoader.downloading_.Erase(asset_.uri);
+    result = assetLoader.IsDownloading(asset_);
     ASSERT_EQ(result, false);
 }
 
@@ -155,11 +154,11 @@ HWTEST_F(ObjectAssetLoaderTest, IsDownloading001, TestSize.Level0)
 */
 HWTEST_F(ObjectAssetLoaderTest, IsDownloaded001, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
-    auto result = assetLoader->IsDownloaded(asset_);
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
+    auto result = assetLoader.IsDownloaded(asset_);
     ASSERT_EQ(result, false);
-    assetLoader->downloaded_.Insert(asset_.uri, "modifyTime_size");
-    result = assetLoader->IsDownloaded(asset_);
+    assetLoader.downloaded_.Insert(asset_.uri, "modifyTime_size");
+    result = assetLoader.IsDownloaded(asset_);
     ASSERT_EQ(result, true);
 }
 
@@ -172,13 +171,12 @@ HWTEST_F(ObjectAssetLoaderTest, IsDownloaded001, TestSize.Level0)
 */
 HWTEST_F(ObjectAssetLoaderTest, UpdateDownloaded001, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
-    ASSERT_NE(assetLoader, nullptr);
-    while (!assetLoader->assetQueue_.empty()) {
-        assetLoader->assetQueue_.pop();
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
+    while (!assetLoader.assetQueue_.empty()) {
+        assetLoader.assetQueue_.pop();
     }
-    assetLoader->UpdateDownloaded(asset_);
-    auto [success, hash] = assetLoader->downloaded_.Find(asset_.uri);
+    assetLoader.UpdateDownloaded(asset_);
+    auto [success, hash] = assetLoader.downloaded_.Find(asset_.uri);
     ASSERT_TRUE(success);
     EXPECT_EQ(hash, asset_.hash);
 }
@@ -192,18 +190,17 @@ HWTEST_F(ObjectAssetLoaderTest, UpdateDownloaded001, TestSize.Level0)
 */
 HWTEST_F(ObjectAssetLoaderTest, UpdateDownloaded002, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
-    ASSERT_NE(assetLoader, nullptr);
-    while (!assetLoader->assetQueue_.empty()) {
-        assetLoader->assetQueue_.pop();
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
+    while (!assetLoader.assetQueue_.empty()) {
+        assetLoader.assetQueue_.pop();
     }
-    for (int i = 0; i <= assetLoader->LAST_DOWNLOAD_ASSET_SIZE; i++) {
-        assetLoader->assetQueue_.push(asset_.uri);
+    for (int i = 0; i <= assetLoader.LAST_DOWNLOAD_ASSET_SIZE; i++) {
+        assetLoader.assetQueue_.push(asset_.uri);
     }
-    assetLoader->UpdateDownloaded(asset_);
-    EXPECT_NE(assetLoader->assetQueue_.size(), ObjectAssetLoader::LAST_DOWNLOAD_ASSET_SIZE);
-    EXPECT_EQ(assetLoader->assetQueue_.size(), ObjectAssetLoader::LAST_DOWNLOAD_ASSET_SIZE + 1);
-    auto [success, hash] = assetLoader->downloaded_.Find(asset_.uri);
+    assetLoader.UpdateDownloaded(asset_);
+    EXPECT_NE(assetLoader.assetQueue_.size(), ObjectAssetLoader::LAST_DOWNLOAD_ASSET_SIZE);
+    EXPECT_EQ(assetLoader.assetQueue_.size(), ObjectAssetLoader::LAST_DOWNLOAD_ASSET_SIZE + 1);
+    auto [success, hash] = assetLoader.downloaded_.Find(asset_.uri);
     EXPECT_EQ(success, false);
     EXPECT_EQ(hash, "");
 }
@@ -215,8 +212,7 @@ HWTEST_F(ObjectAssetLoaderTest, UpdateDownloaded002, TestSize.Level0)
 */
 HWTEST_F(ObjectAssetLoaderTest, PushAsset001, TestSize.Level0)
 {
-    auto assetLoader = ObjectAssetLoader::GetInstance();
-    ASSERT_NE(assetLoader, nullptr);
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
     sptr<AssetObj> assetObj = new AssetObj();
     assetObj->dstBundleName_ = bundleName_;
     assetObj->srcBundleName_ = bundleName_;
@@ -225,8 +221,20 @@ HWTEST_F(ObjectAssetLoaderTest, PushAsset001, TestSize.Level0)
 
     sptr<ObjectAssetsSendListener> sendCallback = new ObjectAssetsSendListener();
     ASSERT_NE(sendCallback, nullptr);
-    int32_t ret = assetLoader->PushAsset(userId_, assetObj, sendCallback);
+    int32_t ret = assetLoader.PushAsset(userId_, assetObj, sendCallback);
     EXPECT_NE(ret, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: PushAsset002
+* @tc.desc: PushAsset test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectAssetLoaderTest, PushAsset002, TestSize.Level0)
+{
+    auto &assetLoader = ObjectAssetLoader::GetInstance();
+    int32_t ret = assetLoader.PushAsset(userId_, nullptr, nullptr);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_INNER_ERROR);
 }
 
 /**
