@@ -2038,15 +2038,15 @@ HWTEST_F(CloudDataTest, GetRetryer001, TestSize.Level0)
 HWTEST_F(CloudDataTest, GetRetryer002, TestSize.Level0)
 {
     int32_t user = 100;
-    CloudData::SyncManager::SyncInfo info(user);
-    CloudData::SyncManager sync;
-    CloudData::SyncManager::Duration duration;
     std::string prepareTraceId;
+    CloudData::SyncManager sync;
     sync.executor_ = nullptr;
     int32_t evtId = 100;
     auto event = std::make_unique<CloudData::SyncManager::Event>(evtId);
     auto handler = sync.GetClientChangeHandler();
     handler(*event);
+    CloudData::SyncManager::Duration duration;
+    CloudData::SyncManager::SyncInfo info(user);
     auto ret = sync.GetRetryer(0, info, user)(duration, E_CLOUD_DISABLED, E_CLOUD_DISABLED, prepareTraceId);
     EXPECT_FALSE(ret);
 }

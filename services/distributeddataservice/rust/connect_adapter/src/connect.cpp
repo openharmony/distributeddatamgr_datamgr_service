@@ -59,7 +59,6 @@ void Connect::OnAbilityDisconnectDone(const OHOS::AppExecFwk::ElementName &eleme
 
 bool Connect::IsConnect()
 {
-    std::lock_guard<std::mutex> lock(mtx_);
     return remoteObject_ != nullptr;
 }
 
