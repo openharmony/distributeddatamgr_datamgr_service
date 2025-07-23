@@ -360,7 +360,7 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
             continue;
         }
         auto entries = record->GetEntries();
-        for (const auto &[type, value] : entries) {
+        for (const auto &[type, value] : *entries) {
             if (!std::holds_alternative<std::shared_ptr<Object>>(value)) {
                 continue;
             }
