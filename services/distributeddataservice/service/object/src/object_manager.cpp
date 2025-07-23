@@ -142,7 +142,7 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
 {
     auto proxy = iface_cast<ObjectSaveCallbackProxy>(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
         return INVALID_ARGUMENT;
     }
     if (deviceId.size() == 0) {
@@ -197,7 +197,7 @@ int32_t ObjectStoreManager::PushAssets(const std::string &srcBundleName, const s
     if (assets.empty() || data.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == data.end()) {
         return OBJECT_SUCCESS;
     }
-    sptr<AssetObj> assetObj = new(std::nothrow) AssetObj();
+    sptr<AssetObj> assetObj = new (std::nothrow) AssetObj();
     if (assetObj == nullptr) {
         ZLOGE("New AssetObj failed");
         return OBJECT_INNER_ERROR;
@@ -213,7 +213,7 @@ int32_t ObjectStoreManager::PushAssets(const std::string &srcBundleName, const s
         objectAssetsSendListener_ = new ObjectAssetsSendListener();
     }
     int userId = std::atoi(GetCurrentUser().c_str());
-    auto status =  ObjectAssetLoader::GetInstance().PushAsset(userId, assetObj, objectAssetsSendListener_);
+    auto status = ObjectAssetLoader::GetInstance().PushAsset(userId, assetObj, objectAssetsSendListener_);
     return status;
 }
 
@@ -222,7 +222,7 @@ int32_t ObjectStoreManager::RevokeSave(
 {
     auto proxy = iface_cast<ObjectRevokeSaveCallbackProxy>(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
         return INVALID_ARGUMENT;
     }
     int32_t result = Open();
@@ -265,7 +265,7 @@ int32_t ObjectStoreManager::Retrieve(
 {
     auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
         return INVALID_ARGUMENT;
     }
     int32_t result = Open();
@@ -404,7 +404,7 @@ void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, c
     ZLOGD("ObjectStoreManager::RegisterRemoteCallback start");
     auto proxy = iface_cast<ObjectChangeCallbackProxy>(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
         return;
     }
     std::string prefix = bundleName + sessionId;
@@ -454,7 +454,7 @@ void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bun
     }
     auto proxy = iface_cast<ObjectProgressCallbackProxy>(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr)? "nullptr" : "not null");
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
         return;
     }
     std::string objectKey = bundleName + sessionId;
