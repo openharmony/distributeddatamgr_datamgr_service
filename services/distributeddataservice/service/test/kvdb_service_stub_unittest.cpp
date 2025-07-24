@@ -158,6 +158,9 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
+    Option options;
+    options.hapName = "testHap";
+    ITypesUtil::Marshal(data, options);
     AppId appId = {"testApp"};
     StoreId storeId = {"testStoreId"};
     auto status = kvdbServiceStub->OnBeforeCreate(appId, storeId, data, reply);
@@ -174,8 +177,30 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate002, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
+    Option options;
+    options.hapName = "testHap";
+    ITypesUtil::Marshal(data, options);
     AppId appId = {"test/App"};
     StoreId storeId = {"test\\StoreId"};
+    auto status = kvdbServiceStub->OnBeforeCreate(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnBeforeCreate003
+ * @tc.desc: Test OnBeforeCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnBeforeCreate003, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    Option options;
+    options.hapName = "./testHap";
+    ITypesUtil::Marshal(data, options);
+    AppId appId = {"testApp"};
+    StoreId storeId = {"testStoreId"};
     auto status = kvdbServiceStub->OnBeforeCreate(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
@@ -191,6 +216,9 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate001, TestSize.Level1)
     MessageParcel data;
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
+    Option options;
+    options.hapName = "testHap";
+    ITypesUtil::Marshal(data, options);
     AppId appId = {"testApp"};
     StoreId storeId = {"testStore"};
     auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
@@ -208,8 +236,30 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate002, TestSize.Level1)
     MessageParcel data;
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
-    AppId appId = {"..testApp"};
-    StoreId storeId = {"..testStore"};
+    Option options;
+    options.hapName = "testHap";
+    ITypesUtil::Marshal(data, options);
+    AppId appId = {"../testApp"};
+    StoreId storeId = {"\\testStore"};
+    auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnAfterCreate003
+ * @tc.desc: Test OnBeforeCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnAfterCreate003, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    Option options;
+    options.hapName = "./testHap";
+    ITypesUtil::Marshal(data, options);
+    AppId appId = {"testApp"};
+    StoreId storeId = {"testStoreId"};
     auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
