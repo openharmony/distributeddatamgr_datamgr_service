@@ -970,7 +970,7 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
 
 int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    ZLOGI("user change, code:%{public}u, user:%{public}s, account:%{public}s", code, user.c_str(), account.c_str());
+    ZLOGI("user change, code:%{public}u, user:%{public}s", code, user.c_str());
     if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         StoreCache::GetInstance().CloseStores();
     }
