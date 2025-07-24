@@ -37,7 +37,7 @@ const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.IKvStoreDataService"
 static const StoreId STOREID = { "kvdb_test_storeid" };
 static const AppId APPID = { "kvdb_test_appid" };
 static const std::string HAPNAME = "testHap";
-static const std::string INVALID_HapName = "./testHap";
+static const std::string INVALID_HAPNAME = "./testHap";
 static const StoreId INVALID_STOREID = { "./kvdb_test_storeid" };
 static const AppId INVALID_APPID = { "\\kvdb_test_appid" };
 
