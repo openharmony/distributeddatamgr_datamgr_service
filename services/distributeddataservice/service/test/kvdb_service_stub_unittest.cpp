@@ -34,11 +34,11 @@ using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
 using Options = OHOS::DistributedKv::Options;
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.IKvStoreDataService";
-static OHOS::DistributedKv::StoreId storeId = { "kvdb_test_storeid" };
+static StoreId storeId = { "kvdb_test_storeid" };
 static AppId appId = { "kvdb_test_appid" };
 static std::string hapName = "testHap";
 static std::string invalidHapName = "./testHap";
-static OHOS::DistributedKv::StoreId invalidStoreId = { "./kvdb_test_storeid" };
+static StoreId invalidStoreId = { "./kvdb_test_storeid" };
 static AppId invalidAppId = { "\\kvdb_test_appid" };
 
 namespace OHOS::Test {
