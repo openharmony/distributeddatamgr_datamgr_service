@@ -105,6 +105,7 @@ public:
         return;
     }
 };
+
 /**
 * @tc.name: BindSnapshots001
 * @tc.desc: RdbGeneralStore BindSnapshots test
