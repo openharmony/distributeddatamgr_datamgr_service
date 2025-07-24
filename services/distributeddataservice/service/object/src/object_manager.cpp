@@ -277,7 +277,7 @@ int32_t ObjectStoreManager::Retrieve(
     ObjectRecord results{};
     int32_t status = RetrieveFromStore(bundleName, sessionId, results);
     if (status != OBJECT_SUCCESS) {
-        ZLOGI("Retrieve from store failed, status: %{public}d, close after one minute.", status);
+        ZLOGE("Retrieve from store failed, status: %{public}d, close after one minute.", status);
         CloseAfterMinute();
         proxy->Completed(ObjectRecord(), false);
         return status;
@@ -287,8 +287,7 @@ int32_t ObjectStoreManager::Retrieve(
     if (assets.empty() || results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == results.end()) {
         allReady = true;
     } else {
-        auto objectKey = bundleName + sessionId;
-        restoreStatus_.ComputeIfPresent(objectKey, [&allReady](const auto &key, auto &value) {
+        restoreStatus_.ComputeIfPresent(bundleName + sessionId, [&allReady](const auto &key, auto &value) {
             if (value == RestoreStatus::ALL_READY) {
                 allReady = true;
                 return false;
@@ -300,13 +299,12 @@ int32_t ObjectStoreManager::Retrieve(
         });
     }
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
+    Close();
     if (status != OBJECT_SUCCESS) {
         ZLOGE("Revoke save failed, status: %{public}d", status);
-        Close();
         proxy->Completed(ObjectRecord(), false);
         return status;
     }
-    Close();
     proxy->Completed(results, allReady);
     if (allReady) {
         ObjectStore::RadarReporter::ReportStateFinished(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,

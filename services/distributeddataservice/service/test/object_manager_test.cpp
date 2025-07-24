@@ -28,7 +28,6 @@
 #include "object_types.h"
 #include "snapshot/machine_status.h"
 
-
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
 using namespace OHOS::DistributedData;
@@ -121,7 +120,7 @@ public:
 
 class ObjectSaveCallback : public ObjectSaveCallbackStub {
 public:
-    ObjectSaveCallback(const std::function<void(const std::map<std::string, int32_t> &)> &callback)
+    explicit ObjectSaveCallback(const std::function<void(const std::map<std::string, int32_t> &)> &callback)
         : callback_(callback)
     {
     }
@@ -134,7 +133,7 @@ private:
 };
 class ObjectRevokeSaveCallback : public ObjectRevokeSaveCallbackStub {
 public:
-    ObjectRevokeSaveCallback(const std::function<void(int32_t)> &callback) : callback_(callback)
+    explicit ObjectRevokeSaveCallback(const std::function<void(int32_t)> &callback) : callback_(callback)
     {
     }
     void Completed(int32_t) override
@@ -146,7 +145,7 @@ private:
 };
 class ObjectRetrieveCallback : public ObjectRetrieveCallbackStub {
 public:
-    ObjectRetrieveCallback(
+    explicit ObjectRetrieveCallback(
         const std::function<void(const std::map<std::string, std::vector<uint8_t>> &, bool)> &callback)
         : callback_(callback)
     {
@@ -161,7 +160,7 @@ private:
 
 class ObjectChangeCallback : public ObjectChangeCallbackStub {
 public:
-    ObjectChangeCallback(
+    explicit ObjectChangeCallback(
         const std::function<void(const std::map<std::string, std::vector<uint8_t>> &, bool)> &callback)
         : callback_(callback)
     {
@@ -176,7 +175,7 @@ private:
 
 class ObjectProgressCallback : public ObjectProgressCallbackStub {
 public:
-    ObjectProgressCallback(const std::function<void(int32_t)> &callback) : callback_(callback)
+    explicit ObjectProgressCallback(const std::function<void(int32_t)> &callback) : callback_(callback)
     {
     }
     void Completed(int32_t progress) override
