@@ -18,6 +18,7 @@
 
 #include <random>
 #include <thread>
+#include <gmock/gmock.h>
 
 #include "bootstrap.h"
 #include "cloud/schema_meta.h"
@@ -226,10 +227,10 @@ HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
 }
 
 /**
-* @tc.name: Close
-* @tc.desc: RdbGeneralStore Close and IsBound function test
-* @tc.type: FUNC
-*/
+ * @tc.name: Close
+ * @tc.desc: RdbGeneralStore Close and IsBound function test
+ * @tc.type: FUNC
+ */
 HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
 {
     auto result = store->IsBound(std::atoi(metaData_.user.c_str()));
@@ -239,8 +240,88 @@ HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
     EXPECT_EQ(ret, GeneralError::E_OK);
     metaData_.storeId = "mock";
     store = std::make_shared<RdbGeneralStore>(metaData_);
+    auto delegate = new MockRelationalStoreDelegate;
+    store->delegate_ = delegate;
+    EXPECT_CALL(*delegate, GetDeviceSyncTaskCount()).WillOnce(testing::Return(2)).WillRepeatedly(testing::Return(2));
+    EXPECT_CALL(*delegate, GetCloudSyncTaskCount()).WillOnce(testing::Return(0)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*delegate, GetDownloadingAssetsCount())
+        .WillOnce(testing::Return(std::make_pair(DBStatus::OK, 0)))
+        .WillRepeatedly(testing::Return(std::make_pair(DBStatus::OK, 0)));
     ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_BUSY);
+}
+
+/**
+ * @tc.name: Close1
+ * @tc.desc: RdbGeneralStore Close and IsBound function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Close1, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    auto delegate = new MockRelationalStoreDelegate;
+    store->delegate_ = delegate;
+    EXPECT_CALL(*delegate, GetDeviceSyncTaskCount()).WillOnce(testing::Return(0)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*delegate, GetCloudSyncTaskCount()).WillOnce(testing::Return(2)).WillRepeatedly(testing::Return(2));
+    EXPECT_CALL(*delegate, GetDownloadingAssetsCount())
+        .WillOnce(testing::Return(std::make_pair(DBStatus::OK, 0)))
+        .WillRepeatedly(testing::Return(std::make_pair(DBStatus::OK, 0)));
+    auto ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_BUSY);
+}
+
+/**
+ * @tc.name: Close2
+ * @tc.desc: RdbGeneralStore Close and IsBound function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Close2, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    auto delegate = new MockRelationalStoreDelegate;
+    store->delegate_ = delegate;
+    EXPECT_CALL(*delegate, GetDeviceSyncTaskCount()).WillOnce(testing::Return(0)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*delegate, GetCloudSyncTaskCount()).WillOnce(testing::Return(0)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*delegate, GetDownloadingAssetsCount())
+        .WillOnce(testing::Return(std::make_pair(DBStatus::OK, 1)))
+        .WillRepeatedly(testing::Return(std::make_pair(DBStatus::OK, 1)));
+    auto ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_BUSY);
+}
+/**
+ * @tc.name: Close3
+ * @tc.desc: RdbGeneralStore Close and IsBound function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Close3, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    auto delegate = new MockRelationalStoreDelegate;
+    store->delegate_ = delegate;
+    auto ret = store->Close(true);
+    EXPECT_EQ(ret, GeneralError::E_OK);
+}
+/**
+ * @tc.name: Close4
+ * @tc.desc: RdbGeneralStore Close and IsBound function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Close4, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    auto delegate = new MockRelationalStoreDelegate;
+    store->delegate_ = delegate;
+    EXPECT_CALL(*delegate, GetDeviceSyncTaskCount()).WillOnce(testing::Return(0)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*delegate, GetCloudSyncTaskCount()).WillOnce(testing::Return(0)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*delegate, GetDownloadingAssetsCount())
+        .WillOnce(testing::Return(std::make_pair(DBStatus::DB_ERROR, 0)))
+        .WillRepeatedly(testing::Return(std::make_pair(DBStatus::DB_ERROR, 0)));
+    auto ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 /**

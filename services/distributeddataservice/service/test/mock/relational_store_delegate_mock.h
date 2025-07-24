@@ -15,6 +15,7 @@
 #ifndef RELATIONAL_STORE_DELEGATE_MOCK_H
 #define RELATIONAL_STORE_DELEGATE_MOCK_H
 #include "rdb_general_store.h"
+#include <gmock/gmock.h>
 namespace DistributedDB {
 class MockRelationalStoreDelegate : public DistributedDB::RelationalStoreDelegate {
 public:
@@ -24,13 +25,6 @@ public:
         const SyncStatusCallback &onComplete, bool wait) override
     {
         return DBStatus::OK;
-    }
-
-    int32_t GetCloudSyncTaskCount() override
-    {
-        static int32_t count = 0;
-        count = (count + 1) % 2; // The result of count + 1 is the remainder of 2.
-        return count;
     }
 
     DBStatus RemoveDeviceData(const std::string &device, const std::string &tableName) override
@@ -148,7 +142,9 @@ public:
         return DBStatus::OK;
     }
     static bool gTestResult;
-
+    MOCK_METHOD(int32_t, GetDeviceSyncTaskCount, (), (override));
+    MOCK_METHOD(int32_t, GetCloudSyncTaskCount, (), (override));
+    MOCK_METHOD((std::pair<DBStatus, int32_t>), GetDownloadingAssetsCount, (), (override));
 protected:
     DBStatus RemoveDeviceDataInner(const std::string &device, ClearMode mode) override
     {

@@ -182,6 +182,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
     observer_.storeId_ = meta.storeId;
     observer_.meta_ = meta;
     RelationalStoreDelegate::Option option = GetOption(meta);
+    option.isNeedCompressOnSync = true;
     option.observer = &observer_;
     if (meta.isEncrypt) {
         option.passwd = GetDBPassword(meta);
@@ -311,7 +312,8 @@ int32_t RdbGeneralStore::Close(bool isForce)
             return GeneralError::E_OK;
         }
         auto [dbStatus, downloadCount] = delegate_->GetDownloadingAssetsCount();
-        if (!isForce && (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0)) {
+        if (!isForce &&
+            (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0 || delegate_->GetDeviceSyncTaskCount() > 0)) {
             return GeneralError::E_BUSY;
         }
         auto status = manager_.CloseStore(delegate_);
