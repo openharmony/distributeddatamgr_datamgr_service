@@ -236,7 +236,7 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate002, TestSize.Level1)
     Options options;
     options.hapName = HAPNAME;
     ITypesUtil::Marshal(data, options);
-    auto status = kvdbServiceStub->OnAfterCreate(INVALID_APPID, INVALID_STORE, data, reply);
+    auto status = kvdbServiceStub->OnAfterCreate(INVALID_APPID, INVALID_STOREID, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 
