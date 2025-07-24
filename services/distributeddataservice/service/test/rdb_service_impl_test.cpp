@@ -1579,7 +1579,7 @@ HWTEST_F(RdbServiceImplTest, CheckParam002, TestSize.Level0)
     result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
-
+    
     param.hapName_ = "test\\..test";
 
     result = service.IsValidParam(param);
