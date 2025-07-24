@@ -66,7 +66,7 @@ public:
     virtual int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
         std::function<void(const std::string &, const LevelInfo &)> listener) = 0;
 
-    virtual Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId) = 0;
+    virtual Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo) = 0;
 };
 } // namespace AppDistributedKv
 } // namespace OHOS

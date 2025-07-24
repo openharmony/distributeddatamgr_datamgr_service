@@ -30,6 +30,7 @@
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/store_debug_info.h"
+#include "mock/device_manager_adapter_mock.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
 #include "store/general_value.h"
@@ -69,6 +70,7 @@ protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
     static CheckerMock checkerMock_;
+    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
     static void InitMetaDataManager();
 };
 
@@ -109,6 +111,14 @@ void RdbServiceImplTest::InitMetaDataManager()
 
 void RdbServiceImplTest::SetUpTestCase()
 {
+    deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+    BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
+    DeviceInfo deviceInfo;
+    deviceInfo.uuid = "ABCD";
+    EXPECT_CALL(*deviceManagerAdapterMock, GetLocalDevice()).WillRepeatedly(Return(deviceInfo));
+    EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return(deviceInfo.uuid));
+    EXPECT_CALL(*deviceManagerAdapterMock, CalcClientUuid(_, _)).WillRepeatedly(Return(deviceInfo.uuid));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(deviceInfo.uuid)).WillRepeatedly(Return(deviceInfo.uuid));
     size_t max = 12;
     size_t min = 5;
 
@@ -121,6 +131,8 @@ void RdbServiceImplTest::SetUpTestCase()
 
 void RdbServiceImplTest::TearDownTestCase()
 {
+    deviceManagerAdapterMock = nullptr;
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 void RdbServiceImplTest::SetUp()
@@ -594,8 +606,8 @@ HWTEST_F(RdbServiceImplTest, GetReuseDevice001, TestSize.Level0)
 {
     RdbServiceImpl service;
     std::vector<std::string> devices = {"device1"};
-
-    auto result = service.GetReuseDevice(devices);
+    StoreMetaData metaData;
+    auto result = service.GetReuseDevice(devices, metaData);
     EXPECT_EQ(result.size(), 0);
 }
 

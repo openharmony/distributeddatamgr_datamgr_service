@@ -185,7 +185,7 @@ private:
     int DoAutoSync(
         const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tableNames);
 
-    std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices);
+    std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices, const StoreMetaData &metaData);
     int DoOnlineSync(const std::vector<std::string> &devices, const Database &dataBase);
 
     int DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData);

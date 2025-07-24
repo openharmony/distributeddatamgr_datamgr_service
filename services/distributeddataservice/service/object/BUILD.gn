@@ -18,6 +18,7 @@ config("object_public_config") {
 
   include_dirs = [
     "${data_service_path}/service/common",
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/utils",
   ]

@@ -149,12 +149,12 @@ HWTEST_F(KVDBServiceStubTest, CheckPermission001, TestSize.Level1)
 
 
 /**
- * @tc.name: OnBeforeCreate
+ * @tc.name: OnBeforeCreate001
  * @tc.desc: Test OnBeforeCreate
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(KVDBServiceStubTest, OnBeforeCreate, TestSize.Level1)
+HWTEST_F(KVDBServiceStubTest, OnBeforeCreate001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -165,18 +165,51 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnAfterCreate
+ * @tc.name: OnBeforeCreate002
+ * @tc.desc: Test OnBeforeCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnBeforeCreate002, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    AppId appId = {"test/App"};
+    StoreId storeId = {"test\\StoreId"};
+    auto status = kvdbServiceStub->OnBeforeCreate(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnAfterCreate001
  * @tc.desc: Test OnAfterCreate
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(KVDBServiceStubTest, OnAfterCreate, TestSize.Level1)
+HWTEST_F(KVDBServiceStubTest, OnAfterCreate001, TestSize.Level1)
 {
     MessageParcel data;
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     AppId appId = {"testApp"};
     StoreId storeId = {"testStore"};
+    auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnAfterCreate002
+ * @tc.desc: Test OnAfterCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnAfterCreate002, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
+    MessageParcel reply;
+    AppId appId = {"..testApp"};
+    StoreId storeId = {"..testStore"};
     auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
@@ -350,5 +383,37 @@ HWTEST_F(KVDBServiceStubTest, OnRemoveDeviceData, TestSize.Level1)
     auto status = kvdbServiceStub->OnRemoveDeviceData(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
+
+/**
+ * @tc.name: IsValidField001
+ * @tc.desc: IsValidField function test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(KVDBServiceStubTest, IsValidField001, TestSize.Level0)
+{
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("validpath"));
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("another_valid_path"));
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("file123"));
+}
+
+/**
+ * @tc.name: IsValidField002
+ * @tc.desc: IsValidField function test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(KVDBServiceStubTest, IsValidField002, TestSize.Level0)
+{
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path/with/forward/slash"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("/starting/slash"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("ending/slash/"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path\\with\\backslash"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("\\starting\\ending"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("ending\\"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField(".."));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path/with\\mixed/slashes"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path\\with/mixed\\slashes"));
+}
+
+
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

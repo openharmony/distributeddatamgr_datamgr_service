@@ -16,8 +16,9 @@
 #define OHOS_DISTRIBUTEDDATA_SERVICE_TEST_BDEVICE_MANAGER_ADAPTER_MOCK_H
 
 #include <gmock/gmock.h>
-#include "device_manager_adapter.h"
+
 #include "commu_types.h"
+#include "device_manager_adapter.h"
 
 namespace OHOS {
 namespace DistributedData {
@@ -30,6 +31,8 @@ public:
     virtual std::vector<DeviceInfo> GetRemoteDevices() = 0;
     virtual bool IsOHOSType(const std::string &) = 0;
     virtual std::vector<std::string> ToUUID(std::vector<DeviceInfo>) = 0;
+    virtual std::vector<std::string> ToUUID(const std::vector<std::string> &) = 0;
+    virtual std::string ToUUID(const std::string &) = 0;
     virtual Status StartWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual Status StopWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual bool IsSameAccount(const AccessCaller &, const AccessCallee &) = 0;
@@ -39,6 +42,7 @@ public:
     virtual std::string ToNetworkID(const std::string &);
     virtual bool CheckAccessControl(const AccessCaller &, const AccessCallee &) = 0;
     virtual DeviceInfo GetLocalDevice() = 0;
+    virtual std::string CalcClientUuid(const std::string &appId, const std::string &uuid) = 0;
     static inline std::shared_ptr<BDeviceManagerAdapter> deviceManagerAdapter = nullptr;
     BDeviceManagerAdapter() = default;
     virtual ~BDeviceManagerAdapter() = default;
@@ -49,6 +53,8 @@ public:
     MOCK_METHOD(std::vector<DeviceInfo>, GetRemoteDevices, ());
     MOCK_METHOD(bool, IsOHOSType, (const std::string &));
     MOCK_METHOD((std::vector<std::string>), ToUUID, (std::vector<DeviceInfo>));
+    MOCK_METHOD((std::vector<std::string>), ToUUID, (const std::vector<std::string> &));
+    MOCK_METHOD(std::string, ToUUID, (const std::string &));
     MOCK_METHOD(Status, StartWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(Status, StopWatchDeviceChange, (const AppDeviceChangeListener *, const PipeInfo &));
     MOCK_METHOD(bool, IsSameAccount, (const AccessCaller &, const AccessCallee &));
@@ -58,6 +64,7 @@ public:
     MOCK_METHOD(std::string, ToNetworkID, (const std::string &));
     MOCK_METHOD(bool, CheckAccessControl, (const AccessCaller &, const AccessCallee &));
     MOCK_METHOD(DeviceInfo, GetLocalDevice, ());
+    MOCK_METHOD(std::string, CalcClientUuid, (const std::string &, const std::string &));
 };
 
 } // namespace DistributedData

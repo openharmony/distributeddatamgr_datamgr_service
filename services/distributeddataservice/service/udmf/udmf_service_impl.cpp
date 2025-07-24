@@ -1156,10 +1156,9 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 
 int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
 {
-    CustomOption option {
-        .intention = UD_INTENTION_DRAG,
-        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
-    };
+    CustomOption option;
+    option.intention = UD_INTENTION_DRAG;
+    option.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
@@ -1174,10 +1173,9 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGE("DelayData callback no exist, key:%{public}s", key.c_str());
         return E_ERROR;
     }
-    QueryOption query {
-        .tokenId = it.second.tokenId,
-        .key = key
-    };
+    QueryOption query;
+    query.tokenId = it.second.tokenId;
+    query.key = key;
     if (option.tokenId != query.tokenId && !IsPermissionInCache(query)) {
         ZLOGE("No permission");
         return E_NO_PERMISSION;
@@ -1205,10 +1203,9 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData)
 {
     ZLOGD("start");
-    QueryOption query {
-        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
-        .key = key
-    };
+    QueryOption query;
+    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    query.key = key;
     if (unifiedData == nullptr) {
         ZLOGE("Data is null, key:%{public}s", key.c_str());
         return E_ERROR;
@@ -1221,10 +1218,9 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
         ZLOGE("Retrieve data failed, key:%{public}s", key.c_str());
         return status;
     }
-    DelayGetDataInfo delayGetDataInfo = {
-        .dataCallback = iUdmfNotifier,
-        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
-    };
+    DelayGetDataInfo delayGetDataInfo;
+    delayGetDataInfo.dataCallback = iUdmfNotifier;
+    delayGetDataInfo.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     delayDataCallback_.InsertOrAssign(key, std::move(delayGetDataInfo));
 
     auto it = dataLoadCallback_.Find(key);

@@ -19,6 +19,7 @@ config("module_private_config") {
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/matrix/include/",
     "../../../framework/include/",
     "../../../service/rdb/",
     "./",
@@ -44,10 +45,10 @@ ohos_static_library("distributeddata_mock_static") {
     "device_manager_adapter_mock.cpp",
     "general_store_mock.cpp",
     "kv_store_nb_delegate_mock.cpp",
-    "meta_data_manager_mock.cpp",
     "network_delegate_mock.cpp",
     "screen_lock_mock.cpp",
     "user_delegate_mock.cpp",
+    "device_matrix_mock.cpp",
   ]
 
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]

@@ -18,6 +18,7 @@
 
 #include <string>
 #include "xcollie/xcollie.h"
+#include "visibility.h"
 
 namespace OHOS::DistributedData {
 class XCollie {
@@ -26,9 +27,9 @@ public:
         XCOLLIE_LOG = 0x1,
         XCOLLIE_RECOVERY = 0x2
     };
-    XCollie(const std::string &tag, uint32_t flag, uint32_t timeoutSeconds = RESTART_TIME_THRESHOLD,
+    API_EXPORT XCollie(const std::string &tag, uint32_t flag, uint32_t timeoutSeconds = RESTART_TIME_THRESHOLD,
         std::function<void(void *)> func = nullptr, void *arg = nullptr);
-    ~XCollie();
+    API_EXPORT ~XCollie();
 
 private:
     int32_t id_ = -1;

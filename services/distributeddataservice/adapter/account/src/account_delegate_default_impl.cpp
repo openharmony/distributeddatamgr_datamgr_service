@@ -20,14 +20,20 @@
 
 namespace OHOS {
 namespace DistributedData {
-namespace {
-constexpr const char *DEFAULT_OHOS_ACCOUNT_UID = ""; // default UID
-}
+static constexpr int32_t FOREGROUND_USER = 100;
+static constexpr const char *DEFAULT_OHOS_ACCOUNT_UID = "default"; // default UID
+
 __attribute__((used)) static bool g_isInit = AccountDelegateDefaultImpl::Init();
 
 std::string AccountDelegateDefaultImpl::GetCurrentAccountId() const
 {
     ZLOGD("no account part, return default.");
+    return DEFAULT_OHOS_ACCOUNT_UID;
+}
+
+std::string AccountDelegateDefaultImpl::GetUnencryptedAccountId(int32_t userId) const
+{
+    (void)userId;
     return DEFAULT_OHOS_ACCOUNT_UID;
 }
 
@@ -87,6 +93,18 @@ AccountDelegateDefaultImpl::~AccountDelegateDefaultImpl()
 void AccountDelegateDefaultImpl::BindExecutor(std::shared_ptr<ExecutorPool> executors)
 {
     ZLOGD("no account part");
+}
+
+bool AccountDelegateDefaultImpl::QueryForegroundUserId(int &foregroundUserId)
+{
+    foregroundUserId = FOREGROUND_USER;
+    return true;
+}
+
+bool AccountDelegateDefaultImpl::IsUserForeground(int32_t userId)
+{
+    (void)userId;
+    return true;
 }
 
 bool AccountDelegateDefaultImpl::Init()

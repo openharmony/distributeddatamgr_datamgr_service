@@ -85,9 +85,10 @@ int32_t CommunicationProviderImpl::ListenBroadcastMsg(const PipeInfo &pipeInfo,
     return SoftBusAdapter::GetInstance()->ListenBroadcastMsg(pipeInfo, std::move(listener));
 }
 
-Status CommunicationProviderImpl::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId)
+Status CommunicationProviderImpl::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    const ExtraDataInfo &extraInfo)
 {
-    return appPipeMgr_.ReuseConnect(pipeInfo, deviceId);
+    return appPipeMgr_.ReuseConnect(pipeInfo, deviceId, extraInfo);
 }
 } // namespace AppDistributedKv
 } // namespace OHOS

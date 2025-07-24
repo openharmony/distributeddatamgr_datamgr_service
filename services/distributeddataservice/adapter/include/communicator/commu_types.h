@@ -52,9 +52,18 @@ enum RouteType : int32_t {
     BUTT,
 };
 
+struct ExtraDataInfo {
+    std::string userId;
+    std::string appId;
+    std::string bundleName;
+    std::string storeId;
+    uint32_t tokenId = 0;
+};
+
 struct DataInfo {
     uint8_t *data;
     uint32_t length;
+    ExtraDataInfo extraInfo;
 };
 
 struct API_EXPORT PipeInfo {
@@ -91,6 +100,15 @@ struct API_EXPORT LevelInfo {
     uint16_t statics;
     uint32_t switches;
     uint16_t switchesLen;
+};
+
+struct API_EXPORT SessionAccessInfo {
+    int32_t userId = -1;
+    std::string bundleName;
+    std::string storeId;
+    std::string accountId;
+    uint32_t tokenId = 0;
+    bool isOHType = true;
 };
 }
 #endif // OHOS_DISTRIBUTED_DATA_ADAPTER_COMMUNICATOR_COMMU_TYPES_H

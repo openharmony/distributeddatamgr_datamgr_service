@@ -1155,12 +1155,16 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const St
     return store;
 }
 
-std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::string> &devices)
+std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::string> &devices,
+    const StoreMetaData &metaData)
 {
     std::vector<std::string> onDevices;
     auto instance = AppDistributedKv::ProcessCommunicatorImpl::GetInstance();
+    AppDistributedKv::ExtraDataInfo extraInfo = { .userId = metaData.user, .bundleName = metaData.bundleName,
+        .storeId = metaData.storeId, .tokenId = metaData.tokenId };
     for (auto &device : devices) {
-        if (instance->ReuseConnect({device}) == Status::SUCCESS) {
+        AppDistributedKv::DeviceId deviceId = { .deviceId = device };
+        if (instance->ReuseConnect(deviceId, extraInfo) == Status::SUCCESS) {
             onDevices.push_back(device);
         }
     }
@@ -1186,7 +1190,7 @@ int RdbServiceImpl::DoAutoSync(
         executors_->Execute([this, table, store, syncParam, async, devices, storeMetaData]() {
             RdbQuery rdbQuery;
             rdbQuery.MakeQuery(table);
-            std::vector<std::string> onDevices = GetReuseDevice(devices);
+            std::vector<std::string> onDevices = GetReuseDevice(devices, storeMetaData);
             if (onDevices.empty()) {
                 ZLOGE("autosync ondevices null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
                 return;

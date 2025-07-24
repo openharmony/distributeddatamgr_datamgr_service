@@ -140,9 +140,6 @@ void RdbServiceImplTokenTest::GetRdbSyncerParam(RdbSyncerParam &param)
  */
 HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo001, TestSize.Level0)
 {
-    EXPECT_CALL(*accTokenMock, GetTokenType(testing::_))
-        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_INVALID))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_INVALID));
     RdbServiceImpl service;
     RdbSyncerParam param;
     int32_t result = service.VerifyPromiseInfo(param);

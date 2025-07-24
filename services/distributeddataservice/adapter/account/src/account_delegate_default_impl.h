@@ -22,6 +22,7 @@ namespace DistributedData {
 class AccountDelegateDefaultImpl final : public AccountDelegateImpl {
 public:
     std::string GetCurrentAccountId() const override;
+    std::string GetUnencryptedAccountId(int32_t userId = 0) const override;
     int32_t GetUserByToken(uint32_t tokenId) const override;
     bool QueryUsers(std::vector<int> &users) override;
     bool QueryForegroundUsers(std::vector<int> &users) override;
@@ -31,6 +32,8 @@ public:
     void SubscribeAccountEvent() override;
     void UnsubscribeAccountEvent() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
+    bool QueryForegroundUserId(int &foregroundUserId) override;
+    bool IsUserForeground(int32_t userId) override;
     static bool Init();
 
 private:
