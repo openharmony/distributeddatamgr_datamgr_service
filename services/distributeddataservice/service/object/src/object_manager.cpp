@@ -645,6 +645,10 @@ void ObjectStoreManager::NotifyDataChanged(const std::map<std::string, ObjectRec
 int32_t ObjectStoreManager::WaitAssets(const std::string& objectKey, const SaveInfo& saveInfo,
     const std::map<std::string, ObjectRecord>& data)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is null");
+        return OBJECT_INNER_ERROR;
+    } 
     auto taskId = executors_->Schedule(std::chrono::seconds(WAIT_TIME), [this, objectKey, data, saveInfo]() {
         ZLOGE("wait assets finisehd timeout, try pull assets, objectKey:%{public}s", objectKey.c_str());
         PullAssets(data, saveInfo);
@@ -714,6 +718,10 @@ void ObjectStoreManager::NotifyAssetsRecvProgress(const std::string &objectKey, 
 void ObjectStoreManager::NotifyAssetsReady(
     const std::string &objectKey, const std::string &bundleName, const std::string &srcNetworkId)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return;
+    }
     restoreStatus_.ComputeIfAbsent(
         objectKey, [](const std::string& key) -> auto {
         return RestoreStatus::NONE;
@@ -837,6 +845,10 @@ void ObjectStoreManager::DoNotify(uint32_t tokenId, const CallbackInfo& value,
 void ObjectStoreManager::DoNotifyAssetsReady(uint32_t tokenId, const CallbackInfo& value,
     const std::string& objectKey, bool allReady)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return;
+    }
     for (const auto& observer : value.observers_) {
         if (objectKey != observer.first) {
             continue;
@@ -857,6 +869,10 @@ void ObjectStoreManager::DoNotifyAssetsReady(uint32_t tokenId, const CallbackInf
 
 void ObjectStoreManager::DoNotifyWaitAssetTimeout(const std::string &objectKey)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return;
+    }
     ObjectStore::RadarReporter::ReportStageError(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
         ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED, ObjectStore::TIMEOUT);
     callbacks_.ForEach([this, &objectKey](uint32_t tokenId, const CallbackInfo &value) {
@@ -974,6 +990,10 @@ void ObjectStoreManager::SyncCompleted(
 
 void ObjectStoreManager::FlushClosedStore()
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return;
+    }
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (!isSyncing_ && syncCount_ == 0 && delegate_ != nullptr) {
         ZLOGD("close store");
@@ -1329,6 +1349,10 @@ void ObjectStoreManager::SaveUserToMeta()
 
 void ObjectStoreManager::CloseAfterMinute()
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr.");
+        return;
+    }
     executors_->Schedule(std::chrono::minutes(INTERVAL), [this]() {
         Close();
     });

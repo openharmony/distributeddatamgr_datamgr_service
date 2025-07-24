@@ -180,7 +180,6 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
         EXPECT_CALL(*devMgrAdapterMock, ToUUID(testing::A<const std::vector<std::string> &>()))
             .WillOnce(Return(std::vector<std::string>{ "mock_uuid_1" }));
         EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-            .WillOnce(testing::Return(false))
             .WillOnce(testing::Return(false));
         EXPECT_CALL(*metaDataManagerMock, Sync(_, _, _)).WillOnce(testing::Return(true));
         auto result = manager.SyncOnStore(prefix, remoteDeviceList, func);
@@ -201,6 +200,89 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
         auto result = manager.SyncOnStore(prefix, remoteDeviceList, func);
         EXPECT_EQ(result, E_DB_ERROR);
     }
+}
+
+/**
+* @tc.name: WaitAssets001
+* @tc.desc: WaitAssets test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, WaitAssets001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = "objectKey";
+    ObjectStoreManager::SaveInfo info;
+    std::map<std::string, ObjectRecord> data;
+    auto ret = manager.WaitAssets(objectKey, info, data);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_INNER_ERROR);
+}
+
+/**
+* @tc.name: NotifyAssetsReady001
+* @tc.desc: NotifyAssetsReady test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, NotifyAssetsReady001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = "objectKey";
+    std::string bundleName = "bundleName";
+    std::string srcNetworkId = "srcNetworkId";
+    manager.NotifyAssetsReady(objectKey, bundleName, srcNetworkId);
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: DoNotifyAssetsReady001
+* @tc.desc: DoNotifyAssetsReady test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, DoNotifyAssetsReady001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    uint32_t tokenId = 0;
+    ObjectStoreManager::CallbackInfo info;
+    std::string objectKey = "objectKey";
+    bool isReady = true;
+    manager.DoNotifyAssetsReady(tokenId, info, objectKey, isReady);
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: DoNotifyWaitAssetTimeout001
+* @tc.desc: DoNotifyWaitAssetTimeout test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, DoNotifyWaitAssetTimeout001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = "objectKey";
+    manager.DoNotifyWaitAssetTimeout(objectKey);
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: FlushClosedStore001
+* @tc.desc: FlushClosedStore test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, FlushClosedStore001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.FlushClosedStore();
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: CloseAfterMinute001
+* @tc.desc: CloseAfterMinute test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, CloseAfterMinute001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.CloseAfterMinute();
+    EXPECT_EQ(manager.executors_, nullptr);
 }
 }; // namespace DistributedDataTest
 } // namespace OHOS::Test

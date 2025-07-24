@@ -299,6 +299,9 @@ bool DirectoryManager::DeleteDirectory(const char* path)
     struct dirent* dirEntry;
     struct stat buf;
     char* curWorkDir = getcwd(nullptr, 0);
+    if (curWorkDir == nullptr) {
+        return false;
+    }
     if ((dir = opendir(path)) == nullptr) {
         return true;
     }
