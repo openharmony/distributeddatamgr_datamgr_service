@@ -158,7 +158,7 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate001, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
-    Option options;
+    Options options;
     options.hapName = "testHap";
     ITypesUtil::Marshal(data, options);
     AppId appId = {"testApp"};
@@ -177,7 +177,7 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate002, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
-    Option options;
+    Options options;
     options.hapName = "testHap";
     ITypesUtil::Marshal(data, options);
     AppId appId = {"test/App"};
@@ -196,7 +196,7 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate003, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
-    Option options;
+    Options options;
     options.hapName = "./testHap";
     ITypesUtil::Marshal(data, options);
     AppId appId = {"testApp"};
@@ -216,7 +216,7 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate001, TestSize.Level1)
     MessageParcel data;
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
-    Option options;
+    Options options;
     options.hapName = "testHap";
     ITypesUtil::Marshal(data, options);
     AppId appId = {"testApp"};
@@ -236,7 +236,7 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate002, TestSize.Level1)
     MessageParcel data;
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
-    Option options;
+    Options options;
     options.hapName = "testHap";
     ITypesUtil::Marshal(data, options);
     AppId appId = {"../testApp"};
@@ -255,7 +255,7 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate003, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
-    Option options;
+    Options options;
     options.hapName = "./testHap";
     ITypesUtil::Marshal(data, options);
     AppId appId = {"testApp"};
