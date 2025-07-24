@@ -247,13 +247,14 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate002, TestSize.Level1)
 
 /**
  * @tc.name: OnAfterCreate003
- * @tc.desc: Test OnBeforeCreate
+ * @tc.desc: Test OnAfterCreate
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(KVDBServiceStubTest, OnAfterCreate003, TestSize.Level1)
 {
     MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     Options options;
     options.hapName = "./testHap";
