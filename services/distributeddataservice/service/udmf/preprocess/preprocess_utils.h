@@ -44,7 +44,6 @@ public:
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
     static bool GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &bundleName);
-    static std::string GetAppId(const std::string &bundleName);
     static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();
 private:
     static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);

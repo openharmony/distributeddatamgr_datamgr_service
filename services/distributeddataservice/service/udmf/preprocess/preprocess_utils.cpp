@@ -33,7 +33,7 @@
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
 #include "ipc_skeleton.h"
-#include "bundle_mgr_interface.h"
+#include "bundle_mgr/bundlemgr_adapter.h"
 namespace OHOS {
 namespace UDMF {
 static constexpr int ID_LEN = 32;
@@ -71,7 +71,8 @@ int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option
     UnifiedKey key(intention, bundleName, GenerateId());
     Privilege privilege;
     privilege.tokenId = option.tokenId;
-    std::string appId = GetAppId(bundleName);
+    int32_t userId = IPCSkeleton::GetCallingUid() / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
+    std::string appId = DistributedData::BundleMgrAdapter::GetInstance().GetBundleAppId(bundleName, userId);
     Runtime runtime;
     runtime.key = key;
     runtime.privileges.emplace_back(privilege);
@@ -149,32 +150,6 @@ bool PreProcessUtils::GetNativeProcessNameByToken(int tokenId, std::string &proc
     }
     processName = nativeInfo.processName;
     return true;
-}
-
-std::string PreProcessUtils::GetAppId(const std::string &bundleName)
-{
-    auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgrProxy == nullptr) {
-        ZLOGE("Failed to get system ability mgr, bundleName:%{public}s", bundleName.c_str());
-        return "";
-    }
-    auto bundleMgrProxy = samgrProxy->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (bundleMgrProxy == nullptr) {
-        ZLOGE("Failed to Get BMS SA, bundleName:%{public}s", bundleName.c_str());
-        return "";
-    }
-    auto bundleManager = iface_cast<AppExecFwk::IBundleMgr>(bundleMgrProxy);
-    if (bundleManager == nullptr) {
-        ZLOGE("Failed to get bundle manager, bundleName:%{public}s", bundleName.c_str());
-        return "";
-    }
-    int32_t uid = IPCSkeleton::GetCallingUid();
-    int32_t userId = uid / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
-    std::string appId = bundleManager->GetAppIdByBundleName(bundleName, userId);
-    if (appId.empty()) {
-        ZLOGE("GetAppIdByBundleName failed, bundleName:%{public}s, uid:%{public}d", bundleName.c_str(), uid);
-    }
-    return appId;
 }
 
 std::string PreProcessUtils::GetLocalDeviceId()
