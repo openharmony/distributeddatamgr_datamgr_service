@@ -34,12 +34,12 @@ using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
 using Options = OHOS::DistributedKv::Options;
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.IKvStoreDataService";
-static StoreId storeId = { "kvdb_test_storeid" };
-static AppId appId = { "kvdb_test_appid" };
-static std::string hapName = "testHap";
-static std::string invalidHapName = "./testHap";
-static StoreId invalidStoreId = { "./kvdb_test_storeid" };
-static AppId invalidAppId = { "\\kvdb_test_appid" };
+static const StoreId STOREID = { "kvdb_test_storeid" };
+static const AppId APPID = { "kvdb_test_appid" };
+static const std::string HAPNAME = "testHap";
+static const std::string INVALID_HapName = "./testHap";
+static const StoreId INVALID_STOREID = { "./kvdb_test_storeid" };
+static const AppId INVALID_APPID = { "\\kvdb_test_appid" };
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
@@ -164,9 +164,9 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate001, TestSize.Level1)
     MessageParcel data;
     MessageParcel reply;
     Options options;
-    options.hapName = hapName;
+    options.hapName = HAPNAME;
     ITypesUtil::Marshal(data, options);
-    auto status = kvdbServiceStub->OnBeforeCreate(appId, storeId, data, reply);
+    auto status = kvdbServiceStub->OnBeforeCreate(APPID, STOREID, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 
@@ -181,9 +181,9 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate002, TestSize.Level1)
     MessageParcel data;
     MessageParcel reply;
     Options options;
-    options.hapName = hapName;
+    options.hapName = HAPNAME;
     ITypesUtil::Marshal(data, options);
-    auto status = kvdbServiceStub->OnBeforeCreate(invalidAppId, invalidStoreId, data, reply);
+    auto status = kvdbServiceStub->OnBeforeCreate(INVALID_APPID, INVALID_STOREID, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 
@@ -198,9 +198,9 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate003, TestSize.Level1)
     MessageParcel data;
     MessageParcel reply;
     Options options;
-    options.hapName = invalidHapName;
+    options.hapName = INVALID_HAPNAME;
     ITypesUtil::Marshal(data, options);
-    auto status = kvdbServiceStub->OnBeforeCreate(appId, storeId, data, reply);
+    auto status = kvdbServiceStub->OnBeforeCreate(APPID, STOREID, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 
@@ -216,9 +216,9 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate001, TestSize.Level1)
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     Options options;
-    options.hapName = hapName;
+    options.hapName = HAPNAME;
     ITypesUtil::Marshal(data, options);
-    auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
+    auto status = kvdbServiceStub->OnAfterCreate(APPID, STOREID, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 
@@ -234,9 +234,9 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate002, TestSize.Level1)
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     Options options;
-    options.hapName = hapName;
+    options.hapName = HAPNAME;
     ITypesUtil::Marshal(data, options);
-    auto status = kvdbServiceStub->OnAfterCreate(invalidAppId, invalidStoreId, data, reply);
+    auto status = kvdbServiceStub->OnAfterCreate(INVALID_APPID, INVALID_STORE, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 
@@ -252,9 +252,9 @@ HWTEST_F(KVDBServiceStubTest, OnAfterCreate003, TestSize.Level1)
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     Options options;
-    options.hapName = invalidHapName;
+    options.hapName = INVALID_HAPNAME;
     ITypesUtil::Marshal(data, options);
-    auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
+    auto status = kvdbServiceStub->OnAfterCreate(APPID, STOREID, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 
