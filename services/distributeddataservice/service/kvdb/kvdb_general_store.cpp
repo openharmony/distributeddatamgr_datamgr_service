@@ -380,7 +380,11 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     syncOption.lockAction = DistributedDB::LockAction::NONE;
     if (storeInfo_.user == 0) {
         std::vector<int32_t> users;
-        AccountDelegate::GetInstance()->QueryUsers(users);
+        auto ret = AccountDelegate::GetInstance()->QueryUsers(users);
+        if (!ret || users.empty()) {
+            ZLOGE("failed to query os accounts, ret:%{public}d", ret);
+            return DBStatus::DB_ERROR;
+        }
         syncOption.users.push_back(std::to_string(users[0]));
     } else {
         syncOption.users.push_back(std::to_string(storeInfo_.user));
