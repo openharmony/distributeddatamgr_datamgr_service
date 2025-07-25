@@ -345,19 +345,25 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
             continue;
         }
         auto entries = record->GetEntries();
-        for (const auto &[type, value] : *entries) {
-            if (!std::holds_alternative<std::shared_ptr<Object>>(value)) {
-                continue;
-            }
-            auto obj = std::get<std::shared_ptr<Object>>(value);
-            if (obj == nullptr) {
-                ZLOGE("ValueType is not Object, Not convert to remote uri!");
-                continue;
-            }
-            std::string dataType;
-            if (obj->GetValue(UNIFORM_DATA_TYPE, dataType) && dataType == GENERAL_FILE_URI) {
-                callback(obj);
-            }
+        if (entries == nullptr) {
+            continue;
+        }
+        auto entry = entries->find(GENERAL_FILE_URI);
+        if (entry == entries->end()) {
+            continue;
+        }
+        auto value = entry->second;
+        if (!std::holds_alternative<std::shared_ptr<Object>>(value)) {
+            continue;
+        }
+        auto obj = std::get<std::shared_ptr<Object>>(value);
+        if (obj == nullptr) {
+            ZLOGE("ValueType is not Object, Not convert to remote uri!");
+            continue;
+        }
+        std::string dataType;
+        if (obj->GetValue(UNIFORM_DATA_TYPE, dataType) && dataType == GENERAL_FILE_URI) {
+            callback(obj);
         }
     }
 }
