@@ -342,10 +342,12 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
 {
     for (auto record : records) {
         if (record == nullptr) {
+            ZLOGW("Record is empty!");
             continue;
         }
         auto entries = record->GetEntries();
         if (entries == nullptr) {
+            ZLOGW("GetEntries returns empty!");
             continue;
         }
         auto entry = entries->find(GENERAL_FILE_URI);
