@@ -183,6 +183,21 @@ HWTEST_F(UdmfServiceImplTest, Sync001, TestSize.Level1)
 }
 
 /**
+* @tc.name: VerifyPermission001
+* @tc.desc: Abnormal test of VerifyPermission, permission is empty
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, VerifyPermission001, TestSize.Level1)
+{
+    std::string permission;
+    uint32_t callerTokenId = 0;
+    UdmfServiceImpl udmfServiceImpl;
+    bool ret = udmfServiceImpl.VerifyPermission(permission, callerTokenId);
+    EXPECT_FALSE(ret);
+}
+
+/**
 * @tc.name: IsRemoteData001
 * @tc.desc: Abnormal test of IsRemoteData, query.key is invalid
 * @tc.type: FUNC
@@ -529,6 +544,46 @@ HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission004, TestSize.Level1)
     UdmfServiceImpl impl;
     bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: VerifyDataAccessPermission001
+ * @tc.desc: no permission
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, VerifyDataAccessPermission001, TestSize.Level1)
+{
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    const QueryOption query;
+    UnifiedData unifiedData;
+
+    UdmfServiceImpl impl;
+    auto result = impl.VerifyDataAccessPermission(runtime, query, unifiedData);
+    EXPECT_EQ(result, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: VerifyDataAccessPermission002
+ * @tc.desc: runtime is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, VerifyDataAccessPermission002, TestSize.Level1)
+{
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    Privilege privilege {
+        .tokenId = TOKEN_ID,
+        .readPermission = STORE_ID,
+        .writePermission = STORE_ID,
+    };
+    runtime->privileges = { privilege };
+    QueryOption query;
+    query.tokenId = TOKEN_ID;
+    UnifiedData unifiedData;
+
+    UdmfServiceImpl impl;
+    auto result = impl.VerifyDataAccessPermission(runtime, query, unifiedData);
+    EXPECT_EQ(runtime->privileges[0].tokenId, query.tokenId);
+    EXPECT_EQ(result, OHOS::UDMF::E_OK);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

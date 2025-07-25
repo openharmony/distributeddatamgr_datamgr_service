@@ -42,6 +42,7 @@
 #include "udmf_utils.h"
 #include "unified_data_helper.h"
 #include "utils/anonymous.h"
+#include "permission_validator.h"
 #include "bundle_mgr/bundlemgr_adapter.h"
 
 namespace OHOS {
@@ -229,17 +230,14 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         ZLOGE("Get data incomplete,key:%{public}s", query.key.c_str());
         return E_NOT_FOUND;
     }
-
-    CheckerManager::CheckInfo info;
-    info.tokenId = query.tokenId;
     std::shared_ptr<Runtime> runtime = unifiedData.GetRuntime();
     if (runtime == nullptr) {
         return E_DB_ERROR;
     }
-    if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info) && !IsPermissionInCache(query)) {
-        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::GET_DATA, GetDataStage::VERIFY_PRIVILEGE, StageRes::FAILED, E_NO_PERMISSION);
-        return E_NO_PERMISSION;
+
+    res = VerifyDataAccessPermission(runtime, query, unifiedData);
+    if (res != E_OK) {
+        return res;
     }
 
     if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
@@ -258,14 +256,33 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         }
     }
 
-    privilegeCache_.erase(query.key);
-
+    {
+        std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
+        privilegeCache_.erase(query.key);
+    }
     PreProcessUtils::SetRemoteData(unifiedData);
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::VerifyDataAccessPermission(std::shared_ptr<Runtime> runtime, const QueryOption &query,
+    const UnifiedData &unifiedData)
+{
+    CheckerManager::CheckInfo info;
+    info.tokenId = query.tokenId;
+
+    if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info) && !IsPermissionInCache(query)) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::GET_DATA, GetDataStage::VERIFY_PRIVILEGE, StageRes::FAILED, E_NO_PERMISSION);
+        ZLOGE("Get data failed,key:%{public}s", query.key.c_str());
+        return E_NO_PERMISSION;
+    }
+
     return E_OK;
 }
 
 bool UdmfServiceImpl::IsPermissionInCache(const QueryOption &query)
 {
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
     auto iter = privilegeCache_.find(query.key);
     if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId) {
         return true;
@@ -281,6 +298,7 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
         }
     }
 
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
     auto iter = privilegeCache_.find(query.key);
     if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId &&
         iter->second.readPermission == PRIVILEGE_READ_AND_KEEP) {
@@ -589,6 +607,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
     Runtime runtime;
     int32_t res = store->GetRuntime(query.key, runtime);
     if (res == E_NOT_FOUND) {
+        std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
         privilegeCache_[query.key] = privilege;
         ZLOGW("Add privilege in cache, key: %{public}s.", query.key.c_str());
         return E_OK;
@@ -609,6 +628,11 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
 {
+    if (!UTILS::IsTokenNative() &&
+        !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(query.tokenId)) {
+        ZLOGE("Tokenid permission verification failed!");
+        return E_NO_PERMISSION;
+    }
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::IDLE, BizState::DFX_BEGIN);
     UnifiedKey key(query.key);
@@ -943,7 +967,8 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
 bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t callerTokenId)
 {
     if (permission.empty()) {
-        return true;
+        ZLOGE("VerifyPermission failed, Permission is empty.");
+        return false;
     }
     int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerTokenId, permission);
     if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
@@ -1181,11 +1206,20 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGE("ProcessUri failed:%{public}d", ret);
         return E_NO_PERMISSION;
     }
-    privilegeCache_.erase(key);
+    {
+        std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
+        privilegeCache_.erase(key);
+    }
     PreProcessUtils::SetRemoteData(unifiedData);
 
     TransferToEntriesIfNeed(query, unifiedData);
-    auto callback = iface_cast<DelayDataCallbackProxy>(it.second.dataCallback);
+    return HandleDelayDataCallback(it.second, unifiedData, key);
+}
+
+int32_t UdmfServiceImpl::HandleDelayDataCallback(DelayGetDataInfo &delayGetDataInfo, UnifiedData &unifiedData,
+    const std::string &key)
+{
+    auto callback = iface_cast<DelayDataCallbackProxy>(delayGetDataInfo.dataCallback);
     if (callback == nullptr) {
         ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
         return E_ERROR;
