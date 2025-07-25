@@ -162,6 +162,7 @@ HWTEST_F(KVDBServiceStubTest, CheckPermission001, TestSize.Level1)
 HWTEST_F(KVDBServiceStubTest, OnBeforeCreate001, TestSize.Level1)
 {
     MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     Options options;
     options.hapName = HAPNAME;
@@ -179,6 +180,7 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate001, TestSize.Level1)
 HWTEST_F(KVDBServiceStubTest, OnBeforeCreate002, TestSize.Level1)
 {
     MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     Options options;
     options.hapName = HAPNAME;
@@ -196,6 +198,7 @@ HWTEST_F(KVDBServiceStubTest, OnBeforeCreate002, TestSize.Level1)
 HWTEST_F(KVDBServiceStubTest, OnBeforeCreate003, TestSize.Level1)
 {
     MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
     Options options;
     options.hapName = INVALID_HAPNAME;
