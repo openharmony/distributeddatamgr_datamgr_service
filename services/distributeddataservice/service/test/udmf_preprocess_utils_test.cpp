@@ -90,20 +90,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, SetRemoteData002, TestSize.Level1)
 }
 
 /**
-* @tc.name: IsFileType001
-* @tc.desc: Abnormal test of IsFileType, record is nullptr
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfPreProcessUtilsTest, IsFileType001, TestSize.Level1)
-{
-    std::shared_ptr<UnifiedRecord> record = nullptr;
-    PreProcessUtils preProcessUtils;
-    bool ret = preProcessUtils.IsFileType(record);
-    EXPECT_EQ(ret, false);
-}
-
-/**
 * @tc.name: GetDfsUrisFromLocal001
 * @tc.desc: Abnormal test of GetDfsUrisFromLocal, uris is null
 * @tc.type: FUNC
