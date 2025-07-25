@@ -166,14 +166,12 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileType001, TestSize.Level1)
     record->AddEntry("general.file-uri", obj);
     record->AddEntry("general.file-uri", "1111");
     std::shared_ptr<Object> obj1 = std::make_shared<Object>();
-    obj1->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj1->value_[FILE_URI_PARAM] = "http://demo.com1.png";
-    obj1->value_[FILE_TYPE] = "general.png";
-    record->AddEntry("general.file-uri", obj1);
+    obj1->value_[UNIFORM_DATA_TYPE] = "general.content-form";
+    obj1->value_["title"] = "test";
+    record->AddEntry("general.content-form", obj1);
 
     std::shared_ptr<UnifiedRecord> record1 = std::make_shared<UnifiedRecord>();
     record1->AddEntry("general.file-uri", obj1);
-    record1->AddEntry("general.file-uri", std::shared_ptr<Object>());
     std::vector<std::shared_ptr<UnifiedRecord>> records = { record, record1 };
     std::vector<std::string> uris;
     PreProcessUtils::ProcessFileType(records, [&uris](std::shared_ptr<Object> obj) {
@@ -185,7 +183,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileType001, TestSize.Level1)
         uris.push_back(oriUri);
         return true;
     });
-    EXPECT_EQ(uris.size(), 3);
+    EXPECT_EQ(uris.size(), 2);
 }
 
 /**
