@@ -1256,7 +1256,11 @@ void CloudServiceImpl::GetSchema(const Event &event)
         storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
     if (storeInfo.user == 0) {
         std::vector<int32_t> users;
-        AccountDelegate::GetInstance()->QueryUsers(users);
+        auto ret = AccountDelegate::GetInstance()->QueryUsers(users);
+        if (!ret || users.empty()) {
+            ZLOGE("failed to query os accounts, ret:%{public}d", ret);
+            return;
+        }
         GetSchemaMeta(users[0], storeInfo.bundleName, storeInfo.instanceId);
     } else {
         GetSchemaMeta(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);

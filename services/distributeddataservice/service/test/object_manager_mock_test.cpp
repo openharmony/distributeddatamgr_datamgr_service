@@ -19,6 +19,7 @@
 #include "device_manager_adapter_mock.h"
 #include "device_matrix_mock.h"
 #include "gtest/gtest.h"
+#include "mock/account_delegate_mock.h"
 #include "mock/meta_data_manager_mock.h"
 #include "object_manager.h"
 
@@ -200,6 +201,67 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
         auto result = manager.SyncOnStore(prefix, remoteDeviceList, func);
         EXPECT_EQ(result, E_DB_ERROR);
     }
+}
+
+/**
+* @tc.name: GetCurrentUser001
+* @tc.desc: Test the scenario where the QueryUsers return false in the GetCurrentUser function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ObjectManagerMockTest, GetCurrentUser001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::vector<int> users;
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
+        .Times(1)
+        .WillOnce(DoAll(
+            SetArgReferee<0>(users),
+            Return(false)));
+    auto result = manager.GetCurrentUser();
+    EXPECT_EQ(result, "");
+}
+
+/**
+* @tc.name: GetCurrentUser002
+* @tc.desc: Test the scenario where the QueryUsers users empty in the GetCurrentUser function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ObjectManagerMockTest, GetCurrentUser002, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::vector<int> users;
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
+        .Times(1)
+        .WillOnce(DoAll(
+            SetArgReferee<0>(users),
+            Invoke([](std::vector<int>& users) { users.clear(); }),
+            Return(true)));
+    auto result = manager.GetCurrentUser();
+    EXPECT_EQ(result, "");
+}
+
+/**
+* @tc.name: GetCurrentUser003
+* @tc.desc: Test the scenario where the QueryUsers return true in the GetCurrentUser function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(ObjectManagerMockTest, GetCurrentUser003, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::vector<int> users = {0, 1};
+    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
+        .Times(1)
+        .WillOnce(DoAll(
+            SetArgReferee<0>(users),
+            Return(true)));
+    auto result = manager.GetCurrentUser();
+    EXPECT_EQ(result, std::to_string(users[0]));
 }
 
 /**

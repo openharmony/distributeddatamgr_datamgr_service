@@ -80,8 +80,8 @@ private:
     std::string FindIntentionMap(const Intention &queryintention);
     bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
     bool IsValidInput(const QueryOption &query, UnifiedData &unifiedData, UnifiedKey &key);
-    int32_t ValidateAndProcessRuntimeData(const std::vector<UnifiedData> &dataSet, std::shared_ptr<Runtime> runtime,
-        std::vector<UnifiedData> &unifiedDataSet, const QueryOption &query, std::vector<std::string> &deleteKeys);
+    bool CheckDeleteDataPermission(std::string &appId, const std::shared_ptr<Runtime> &runtime,
+        const QueryOption &query);
     int32_t CheckAppId(std::shared_ptr<Runtime> runtime, const std::string &bundleName);
     void CloseStoreWhenCorrupted(const std::string &intention, int32_t status);
     void HandleDbError(const std::string &intention, int32_t &status);

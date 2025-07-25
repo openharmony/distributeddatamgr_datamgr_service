@@ -476,6 +476,9 @@ void SyncManager::ReportSyncEvent(const SyncEvent &evt, BizState bizState, int32
 std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
 {
     return [this](const Event &event) {
+        if (executor_ == nullptr) {
+            return;
+        }
         auto &evt = static_cast<const SyncEvent &>(event);
         auto store = evt.GetStoreInfo();
         SyncInfo syncInfo(store.user, store.bundleName, store.storeName);
@@ -501,23 +504,29 @@ void SyncManager::Report(
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
+bool SyncManager::HandleRetryFinished(const SyncInfo &info, int32_t user, int32_t code, int32_t dbCode,
+    const std::string &prepareTraceId)
+{
+    if (code == E_OK || code == E_SYNC_TASK_MERGED) {
+        return true;
+    }
+    info.SetError(code);
+    RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
+                            dbCode },
+        "GetRetryer", BizState::END);
+    SyncManager::Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
+        dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "GetRetryer finish" });
+    Report(FT_CALLBACK, info.bundleName_, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
+        "code=" + std::to_string(code) + ",dbCode=" + std::to_string(static_cast<int32_t>(dbCode)));
+    return true;
+}
+
 SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user)
 {
     if (times >= RETRY_TIMES) {
         return [this, user, info = SyncInfo(syncInfo)](Duration, int32_t code, int32_t dbCode,
                    const std::string &prepareTraceId) mutable {
-            if (code == E_OK || code == E_SYNC_TASK_MERGED) {
-                return true;
-            }
-            info.SetError(code);
-            RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
-                                    dbCode },
-                "GetRetryer", BizState::END);
-            SyncManager::Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
-                dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "GetRetryer finish" });
-            Report(FT_CALLBACK, info.bundleName_, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
-                "code=" + std::to_string(code) + ",dbCode=" + std::to_string(static_cast<int32_t>(dbCode)));
-            return true;
+            return HandleRetryFinished(info, user, code, dbCode, prepareTraceId);
         };
     }
     return [this, times, user, info = SyncInfo(syncInfo)](Duration interval, int32_t code, int32_t dbCode,
@@ -537,6 +546,9 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
             return true;
         }
 
+        if (executor_ == nullptr) {
+            return false;
+        }
         activeInfos_.ComputeIfAbsent(info.syncId_, [this, times, interval, &info](uint64_t key) mutable {
             auto syncId = GenerateId(info.user_);
             auto ref = GenSyncRef(syncId);

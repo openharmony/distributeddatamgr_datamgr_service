@@ -42,6 +42,7 @@
 #include "udmf_utils.h"
 #include "unified_data_helper.h"
 #include "utils/anonymous.h"
+#include "bundle_mgr/bundlemgr_adapter.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -451,7 +452,8 @@ int32_t UdmfServiceImpl::CheckAppId(std::shared_ptr<Runtime> runtime, const std:
         ZLOGE("Update failed: Invalid parameter, runtime->appId is empty");
         return E_INVALID_PARAMETERS;
     }
-    std::string appId = PreProcessUtils::GetAppId(bundleName);
+    int32_t userId = IPCSkeleton::GetCallingUid() / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
+    std::string appId = BundleMgrAdapter::GetInstance().GetBundleAppId(bundleName, userId);
     if (appId.empty() || appId != runtime->appId) {
         ZLOGE("Update failed: runtime->appId %{public}s and bundleName appId %{public}s mismatch",
             runtime->appId.c_str(), appId.c_str());
@@ -485,11 +487,15 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
         return E_OK;
     }
     std::shared_ptr<Runtime> runtime;
+    std::string appId;
     std::vector<std::string> deleteKeys;
-    status = ValidateAndProcessRuntimeData(dataSet, runtime, unifiedDataSet, query, deleteKeys);
-    if (status != E_OK) {
-        ZLOGE("ValidateAndProcessRuntimeData failed.");
-        return status;
+    for (const auto &data : dataSet) {
+        auto runtime = data.GetRuntime();
+        if (!CheckDeleteDataPermission(appId, runtime, query)) {
+            continue;
+        }
+        unifiedDataSet.push_back(data);
+        deleteKeys.emplace_back(UnifiedKey(runtime->key.key).GetKeyCommonPrefix());
     }
     if (deleteKeys.empty()) {
         ZLOGE("No data to delete for this application");
@@ -505,36 +511,26 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::ValidateAndProcessRuntimeData(const std::vector<UnifiedData> &dataSet,
-    std::shared_ptr<Runtime> runtime, std::vector<UnifiedData> &unifiedDataSet, const QueryOption &query,
-    std::vector<std::string> &deleteKeys)
+bool UdmfServiceImpl::CheckDeleteDataPermission(std::string &appId, const std::shared_ptr<Runtime> &runtime,
+    const QueryOption &query)
 {
-    std::string appId;
-    bool isFirstInvoke = false;
-    for (const auto &data : dataSet) {
-        runtime = data.GetRuntime();
-        if (runtime == nullptr) {
-            ZLOGE("Invalid runtime.");
-            return E_DB_ERROR;
-        }
-        if (runtime->tokenId != query.tokenId) {
-            if (runtime->appId.empty()) {
-                continue;
-            }
-            if (!isFirstInvoke) {
-                std::string bundleName;
-                PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName);
-                appId = PreProcessUtils::GetAppId(bundleName);
-                isFirstInvoke = true;
-            }
-            if (appId.empty() || appId != runtime->appId) {
-                continue;
-            }
-        }
-        unifiedDataSet.push_back(data);
-        deleteKeys.emplace_back(UnifiedKey(runtime->key.key).GetKeyCommonPrefix());
+    if (runtime == nullptr) {
+        ZLOGE("Invalid runtime.");
+        return false;
     }
-    return E_OK;
+    if (runtime->tokenId == query.tokenId) {
+        return true;
+    }
+    std::string bundleName;
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, bundleName)) {
+        ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", query.tokenId);
+        return false;
+    }
+    if (CheckAppId(runtime, bundleName) != E_OK) {
+        ZLOGE("Delete failed: tokenId or appId mismatch, bundleName: %{public}s", bundleName.c_str());
+        return false;
+    }
+    return true;
 }
 
 int32_t UdmfServiceImpl::GetSummary(const QueryOption &query, Summary &summary)
@@ -974,7 +970,7 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
 
 int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    ZLOGI("user change, code:%{public}u, user:%{public}s, account:%{public}s", code, user.c_str(), account.c_str());
+    ZLOGI("user change, code:%{public}u, user:%{public}s", code, user.c_str());
     if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         StoreCache::GetInstance().CloseStores();
     }
