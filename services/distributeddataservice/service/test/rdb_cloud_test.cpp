@@ -98,7 +98,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest001, TestSize.Level1)
 {
     BindAssets bindAssets;
     Bytes bytes;
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
     std::string tableName = "testTable";
 
     std::vector<DBVBucket> dataInsert = g_DBVBuckets;
@@ -126,7 +126,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest001, TestSize.Level1)
 HWTEST_F(RdbCloudTest, RdbCloudTest002, TestSize.Level1)
 {
     BindAssets bindAssets;
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
     std::string tableName = "testTable";
     rdbCloud.Lock();
     std::string traceId = "id";
@@ -159,9 +159,8 @@ HWTEST_F(RdbCloudTest, RdbCloudTest002, TestSize.Level1)
 */
 HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 {
-    BindAssets bindAssets;
-    bindAssets.bindAssets = nullptr;
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &bindAssets);
+    BindAssets bindAssets = nullptr;
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
     std::string tableName = "testTable";
     DBVBucket extends = { { "#gid", { "0000000" } }, { "#flag", { true } }, { "#value", { int64_t(100) } },
         { "#float", { double(100) } }, { "#_type", { int64_t(1) } } };
@@ -191,7 +190,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 HWTEST_F(RdbCloudTest, RdbCloudTest004, TestSize.Level1)
 {
     BindAssets bindAssets;
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
 
     auto err = rdbCloud.UnLockCloudDB(OHOS::DistributedRdb::RdbCloud::FLAG::SYSTEM_ABILITY);
     EXPECT_EQ(err, GeneralError::E_NOT_SUPPORT);
@@ -214,7 +213,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest004, TestSize.Level1)
 HWTEST_F(RdbCloudTest, ConvertStatus, TestSize.Level1)
 {
     BindAssets bindAssets;
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
     auto result = rdbCloud.ConvertStatus(GeneralError::E_OK);
     EXPECT_EQ(result, DBStatus::OK);
     result = rdbCloud.ConvertStatus(GeneralError::E_NETWORK_ERROR);
@@ -287,7 +286,7 @@ HWTEST_F(RdbCloudTest, SetPrepareTraceId001, TestSize.Level1)
     EXPECT_CALL(*mockCloudDB, SetPrepareTraceId(_)).Times(0);
     BindAssets bindAssets;
     std::shared_ptr<CloudDB> mockCloudDB = nullptr;
-    RdbCloud rdbCloud(mockCloudDB, &bindAssets);
+    RdbCloud rdbCloud(mockCloudDB, bindAssets);
     rdbCloud.SetPrepareTraceId(traceId);
 }
 
@@ -299,8 +298,7 @@ HWTEST_F(RdbCloudTest, SetPrepareTraceId001, TestSize.Level1)
 HWTEST_F(RdbCloudTest, PostEvent001, TestSize.Level1)
 {
     BindAssets bindAssets;
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &bindAssets);
-    rdbCloud.snapshots_->bindAssets = nullptr;
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), nullptr);
     std::string traceId = "testId";
     rdbCloud.SetPrepareTraceId(traceId);
     std::string tableName = "testTable";
@@ -317,11 +315,10 @@ HWTEST_F(RdbCloudTest, PostEvent001, TestSize.Level1)
 */
 HWTEST_F(RdbCloudTest, PostEvent002, TestSize.Level1)
 {
-    BindAssets snapshots;
-    snapshots.bindAssets = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+    BindAssets snapshots = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
     std::shared_ptr<Snapshot> snapshot;
-    snapshots.bindAssets->insert_or_assign(assetValue1.uri, snapshot);
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &snapshots);
+    snapshots->insert_or_assign(assetValue1.uri, snapshot);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), snapshots);
     std::string tableName = "testTable";
     std::vector<DBVBucket> dataInsert = g_DBVBuckets;
     std::vector<DBVBucket> extendInsert = g_DBVBuckets;
@@ -336,12 +333,11 @@ HWTEST_F(RdbCloudTest, PostEvent002, TestSize.Level1)
 */
 HWTEST_F(RdbCloudTest, PostEvent003, TestSize.Level1)
 {
-    BindAssets snapshots;
-    snapshots.bindAssets = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+    BindAssets snapshots = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
     std::shared_ptr<Snapshot> snapshot;
     std::string uri = "testuri";
-    snapshots.bindAssets->insert_or_assign(uri, snapshot);
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &snapshots);
+    snapshots->insert_or_assign(uri, snapshot);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), snapshots);
     std::string tableName = "testTable";
     std::vector<DBVBucket> dataInsert = g_DBVBuckets;
     std::vector<DBVBucket> extendInsert = g_DBVBuckets;
@@ -356,12 +352,11 @@ HWTEST_F(RdbCloudTest, PostEvent003, TestSize.Level1)
 */
 HWTEST_F(RdbCloudTest, PostEvent004, TestSize.Level1)
 {
-    BindAssets snapshots;
-    snapshots.bindAssets = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+    BindAssets snapshots = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
     std::shared_ptr<Snapshot> snapshot = nullptr;
     std::string uri = "testuri";
-    snapshots.bindAssets->insert_or_assign(uri, snapshot);
-    RdbCloud rdbCloud(std::make_shared<CloudDB>(), &snapshots);
+    snapshots->insert_or_assign(uri, snapshot);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), snapshots);
     std::string tableName = "testTable";
     std::vector<DBVBucket> dataInsert = g_DBVBuckets;
     std::vector<DBVBucket> extendInsert = g_DBVBuckets;
@@ -380,7 +375,7 @@ HWTEST_F(RdbCloudTest, Query001, TestSize.Level1)
     std::string tableName = "testTable";
     EXPECT_CALL(*mockCloudDB, Query(tableName, _)).WillOnce(Return(std::make_pair(E_NETWORK_ERROR, cursor)));
     BindAssets snapshots;
-    RdbCloud rdbCloud(mockCloudDB, &snapshots);
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
     auto result = rdbCloud.Query(tableName, g_DBVBucket, g_DBVBuckets);
     EXPECT_EQ(result, DBStatus::CLOUD_NETWORK_ERROR);
 }
@@ -401,7 +396,7 @@ HWTEST_F(RdbCloudTest, Query002, TestSize.Level1)
     EXPECT_CALL(*mockCursor, IsEnd()).WillOnce(Return(true));
 
     BindAssets snapshots;
-    RdbCloud rdbCloud(mockCloudDB, &snapshots);
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
     auto result = rdbCloud.Query(tableName, g_DBVBucket, g_DBVBuckets);
     EXPECT_EQ(result, DBStatus::QUERY_END);
 }
@@ -422,7 +417,7 @@ HWTEST_F(RdbCloudTest, Query003, TestSize.Level1)
     EXPECT_CALL(*mockCursor, IsEnd()).WillOnce(Return(false));
 
     BindAssets snapshots;
-    RdbCloud rdbCloud(mockCloudDB, &snapshots);
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
     auto result = rdbCloud.Query(tableName, g_DBVBucket, g_DBVBuckets);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
 }

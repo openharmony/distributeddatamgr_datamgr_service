@@ -43,6 +43,7 @@
 #include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
+#include "snapshot/snapshot.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
@@ -235,10 +236,10 @@ RdbGeneralStore::~RdbGeneralStore()
     executor_ = nullptr;
 }
 
-int32_t RdbGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
+int32_t RdbGeneralStore::BindSnapshots(BindAssets bindAssets)
 {
-    if (snapshots_.bindAssets == nullptr) {
-        snapshots_.bindAssets = bindAssets;
+    if (snapshots_ == nullptr) {
+        snapshots_ = bindAssets;
     }
     return GenErr::E_OK;
 }
@@ -270,8 +271,8 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     bindInfo_ = std::move(bindInfo);
     {
         std::unique_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
-        rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);
-        rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
+        rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, snapshots_);
+        rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, snapshots_);
     }
 
     DistributedDB::CloudSyncConfig dbConfig;

@@ -25,6 +25,8 @@
 #include "snapshot/snapshot.h"
 
 namespace OHOS::DistributedRdb {
+using Snapshot = DistributedData::Snapshot;
+using BindAssets = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
 class RdbCloud : public DistributedDB::ICloudDb {
 public:
     enum FLAG : uint8_t {
@@ -35,10 +37,9 @@ public:
     using DBVBucket = DistributedDB::VBucket;
     using DBQueryNodes = std::vector<DistributedDB::QueryNode>;
     using DataBucket = DistributedData::VBucket;
-    using BindAssets = DistributedData::BindAssets;
     using GeneralError = DistributedData::GeneralError;
 
-    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets* bindAssets);
+    explicit RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets bindAssets);
     virtual ~RdbCloud() = default;
     DBStatus BatchInsert(const std::string &tableName, std::vector<DBVBucket> &&record,
         std::vector<DBVBucket> &extend) override;
@@ -67,7 +68,7 @@ private:
     static void ConvertErrorField(DistributedData::VBuckets& extends);
     static constexpr int32_t TO_MS = 1000; // s > ms
     std::shared_ptr<DistributedData::CloudDB> cloudDB_;
-    BindAssets* snapshots_;
+    const BindAssets snapshots_;
     uint8_t flag_ = 0;
     std::mutex mutex_;
 

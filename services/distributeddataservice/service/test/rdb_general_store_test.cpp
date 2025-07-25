@@ -114,7 +114,7 @@ public:
 HWTEST_F(RdbGeneralStoreTest, BindSnapshots001, TestSize.Level1)
 {
     BindAssets bindAssets;
-    auto result = store->BindSnapshots(bindAssets.bindAssets);
+    auto result = store->BindSnapshots(bindAssets);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 
@@ -130,9 +130,9 @@ HWTEST_F(RdbGeneralStoreTest, BindSnapshots002, TestSize.Level1)
     meta.isEncrypt = true;
     auto store = std::make_shared<RdbGeneralStore>(meta);
     ASSERT_NE(store, nullptr);
-    store->snapshots_.bindAssets = nullptr;
+    store->snapshots_ = nullptr;
     BindAssets bindAssets;
-    auto result = store->BindSnapshots(bindAssets.bindAssets);
+    auto result = store->BindSnapshots(bindAssets);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 

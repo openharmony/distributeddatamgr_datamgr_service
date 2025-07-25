@@ -88,7 +88,7 @@ HWTEST_F(RdbAssetLoaderTest, Download, TestSize.Level0)
 {
     BindAssets bindAssets;
     std::shared_ptr<MockAssetLoader> cloudAssetLoader = std::make_shared<MockAssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, bindAssets);
     std::string tableName = "testTable";
     std::string groupId = "testGroup";
     Type prefix;
@@ -109,7 +109,7 @@ HWTEST_F(RdbAssetLoaderTest, BatchDownload, TestSize.Level0)
 {
     BindAssets bindAssets;
     auto cloudAssetLoader = std::make_shared<AssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, bindAssets);
     std::string tableName = "testTable";
     Type prefix;
     std::map<std::string, DistributedDB::Assets> assets;
@@ -133,7 +133,7 @@ HWTEST_F(RdbAssetLoaderTest, Convert001, TestSize.Level0)
 {
     BindAssets bindAssets;
     auto cloudAssetLoader = std::make_shared<AssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, bindAssets);
     Type prefix;
     std::map<std::string, DistributedDB::Assets> assets;
     assets["asset1"].push_back(g_rdbAsset);
@@ -156,7 +156,7 @@ HWTEST_F(RdbAssetLoaderTest, Convert002, TestSize.Level0)
 {
     BindAssets bindAssets;
     auto cloudAssetLoader = std::make_shared<AssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, bindAssets);
     Value prefix;
     VBucket assets;
     std::vector<AssetsRecord> assetsRecords;
@@ -177,7 +177,7 @@ HWTEST_F(RdbAssetLoaderTest, RemoveLocalAssets, TestSize.Level0)
 {
     BindAssets bindAssets;
     std::shared_ptr<MockAssetLoader> cloudAssetLoader = std::make_shared<MockAssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(cloudAssetLoader, bindAssets);
     std::vector<DistributedDB::Asset> assets;
     assets.push_back(g_rdbAsset);
     auto result = rdbAssetLoader.RemoveLocalAssets(assets);
@@ -194,12 +194,12 @@ HWTEST_F(RdbAssetLoaderTest, RemoveLocalAssets, TestSize.Level0)
 HWTEST_F(RdbAssetLoaderTest, CancelDownloadTest, TestSize.Level0)
 {
     BindAssets bindAssets;
-    DistributedRdb::RdbAssetLoader rdbAssetLoader1(nullptr, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader1(nullptr, bindAssets);
     auto result = rdbAssetLoader1.CancelDownload();
     EXPECT_EQ(result, DistributedDB::DBStatus::DB_ERROR);
 
     std::shared_ptr<MockAssetLoader> cloudAssetLoader = std::make_shared<MockAssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader2(cloudAssetLoader, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader2(cloudAssetLoader, bindAssets);
     result = rdbAssetLoader2.CancelDownload();
     EXPECT_EQ(result, DistributedDB::DBStatus::OK);
 }
@@ -213,10 +213,9 @@ HWTEST_F(RdbAssetLoaderTest, CancelDownloadTest, TestSize.Level0)
 */
 HWTEST_F(RdbAssetLoaderTest, PostEvent001, TestSize.Level0)
 {
-    BindAssets bindAssets;
-    bindAssets.bindAssets = nullptr;
+    BindAssets bindAssets = nullptr;
     std::shared_ptr<AssetLoader> assetLoader = std::make_shared<AssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader(assetLoader, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(assetLoader, bindAssets);
     std::string tableName = "testTable";
     std::string groupId = "testGroup";
     Type prefix;
@@ -248,10 +247,9 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent002, TestSize.Level0)
     };
     DistributedData::Assets assets;
     assets.push_back(asset);
-    BindAssets bindAssets;
-    bindAssets.bindAssets = nullptr;
+    BindAssets bindAssets = nullptr;
     std::shared_ptr<AssetLoader> assetLoader = std::make_shared<AssetLoader>();
-    DistributedRdb::RdbAssetLoader rdbAssetLoader(assetLoader, &bindAssets);
+    DistributedRdb::RdbAssetLoader rdbAssetLoader(assetLoader, bindAssets);
     std::set<std::string> skipAssets;
     std::set<std::string> deleteAssets;
     rdbAssetLoader.PostEvent(DistributedData::AssetEvent::DOWNLOAD, assets, skipAssets, deleteAssets);
