@@ -100,6 +100,9 @@ void SchedulerManager::Enable(const Key &key, int32_t userId, const DistributedD
         auto it = schedulerStatusCache_.find(key);
         if (it != schedulerStatusCache_.end()) {
             it->second = true;
+        } else {
+            ZLOGE("enable scheduler key not found, %{public}s, %{public}" PRId64 ", %{public}s",
+                URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         }
         auto timer = timerCache_.find(key);
         if (timer == timerCache_.end()) {
@@ -118,6 +121,9 @@ void SchedulerManager::Disable(const Key &key)
     auto it = schedulerStatusCache_.find(key);
     if (it != schedulerStatusCache_.end()) {
         it->second = false;
+    } else {
+        ZLOGE("disable scheduler key not found, %{public}s, %{public}" PRId64 ", %{public}s",
+            URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
     }
 }
 
@@ -167,9 +173,13 @@ bool SchedulerManager::GetSchedulerStatus(const Key &key)
 {
     bool enabled = false;
     std::lock_guard<std::mutex> lock(mutex_);
+    ZLOGI("get status, total %{public}zu", schedulerStatusCache_.size());
     auto it = schedulerStatusCache_.find(key);
     if (it != schedulerStatusCache_.end()) {
         enabled = it->second;
+    } else {
+        ZLOGE("get scheduler status key not found, %{public}s, %{public}" PRId64 ", %{public}s",
+            URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
     }
     return enabled;
 }

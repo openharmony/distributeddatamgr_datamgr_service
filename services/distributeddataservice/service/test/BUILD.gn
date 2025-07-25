@@ -1347,6 +1347,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "data_share_sys_event_subscriber_test.cpp",
+    "data_share_scheduler_manager_test.cpp",
     "mock/config_factory_mock.cpp",
   ]
 
