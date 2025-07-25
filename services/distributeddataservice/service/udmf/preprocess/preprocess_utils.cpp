@@ -211,18 +211,6 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
     });
 }
 
-bool PreProcessUtils::IsFileType(std::shared_ptr<UnifiedRecord> record)
-{
-    if (record == nullptr) {
-        return false;
-    }
-    if (!std::holds_alternative<std::shared_ptr<Object>>(record->GetOriginValue())) {
-        return false;
-    }
-    auto obj = std::get<std::shared_ptr<Object>>(record->GetOriginValue());
-    return obj->value_.find(ORI_URI) != obj->value_.end();
-}
-
 int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
 {
     std::vector<std::string> uris;
@@ -356,9 +344,6 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
         if (record == nullptr) {
             continue;
         }
-        if (!PreProcessUtils::IsFileType(record)) {
-            continue;
-        }
         auto entries = record->GetEntries();
         for (const auto &[type, value] : *entries) {
             if (!std::holds_alternative<std::shared_ptr<Object>>(value)) {
@@ -369,7 +354,10 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
                 ZLOGE("ValueType is not Object, Not convert to remote uri!");
                 continue;
             }
-            callback(obj);
+            std::string dataType;
+            if (obj->GetValue(UNIFORM_DATA_TYPE, dataType) && dataType == GENERAL_FILE_URI) {
+                callback(obj);
+            }
         }
     }
 }
