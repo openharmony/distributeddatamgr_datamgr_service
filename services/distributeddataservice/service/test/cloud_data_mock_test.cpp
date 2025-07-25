@@ -12,6 +12,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#define LOG_TAG "CloudDataMockTest"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -22,6 +23,7 @@
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
+#include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "mock/account_delegate_mock.h"
 #include "mock/db_store_mock.h"
@@ -308,6 +310,21 @@ HWTEST_F(CloudDataMockTest, GetSchema003, TestSize.Level1)
     EventCenter::GetInstance().PostEvent(std::move(event));
     auto ret = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
     ASSERT_FALSE(ret);
+}
+
+/**
+* @tc.name: OnReadyTest
+* @tc.desc: Test OnReady function
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataMockTest, OnReadyTest, TestSize.Level0)
+{
+    ZLOGI("CloudDataMockTest OnReadyTest start");
+    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(testing::Return(true));
+    auto ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    ZLOGI("CloudDataMockTest OnReadyTest end");
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

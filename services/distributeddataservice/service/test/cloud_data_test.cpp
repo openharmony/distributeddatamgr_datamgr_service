@@ -43,7 +43,6 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
-#include "mock/account_delegate_mock.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
 #include "network/network_delegate.h"
@@ -507,8 +506,9 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level1)
 {
     auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(Return(true));
-    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    cloudServiceImpl_->OnUserChange(
+        static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED), std::to_string(user), "accountId");
 
     sleep(1);
 
@@ -536,8 +536,9 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level1)
     MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
     info.apps[TEST_CLOUD_BUNDLE].cloudSwitch = false;
     MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true);
-    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(Return(true));
-    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    cloudServiceImpl_->OnUserChange(
+        static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED), std::to_string(user), "accountId");
     sleep(1);
 
     auto [status, result] =
@@ -1307,10 +1308,6 @@ HWTEST_F(CloudDataTest, OnReady001, TestSize.Level0)
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_NE(ret, CloudData::CloudService::SUCCESS);
-
-    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(Return(true));
-    ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
-    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
 /**
