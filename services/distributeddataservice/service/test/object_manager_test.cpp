@@ -23,8 +23,9 @@
 #include "bootstrap.h"
 #include "device_manager_adapter_mock.h"
 #include "executor_pool.h"
-#include "kvstore_meta_manager.h"
 #include "kv_store_nb_delegate_mock.h"
+#include "kvstore_meta_manager.h"
+#include "metadata/object_user_meta_data.h"
 #include "object_types.h"
 #include "snapshot/machine_status.h"
 
@@ -36,6 +37,155 @@ using namespace testing;
 using AssetValue = OHOS::CommonType::AssetValue;
 using RestoreStatus = OHOS::DistributedObject::ObjectStoreManager::RestoreStatus;
 namespace OHOS::Test {
+class IObjectSaveCallback {
+public:
+    virtual void Completed(const std::map<std::string, int32_t> &results) = 0;
+};
+class IObjectRevokeSaveCallback {
+public:
+    virtual void Completed(int32_t status) = 0;
+};
+class IObjectRetrieveCallback {
+public:
+    virtual void Completed(const std::map<std::string, std::vector<uint8_t>> &results, bool allReady) = 0;
+};
+class IObjectChangeCallback {
+public:
+    virtual void Completed(const std::map<std::string, std::vector<uint8_t>> &results, bool allReady) = 0;
+};
+
+class IObjectProgressCallback {
+public:
+    virtual void Completed(int32_t progress) = 0;
+};
+
+class ObjectSaveCallbackBroker : public IObjectSaveCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectSaveCallback");
+};
+class ObjectSaveCallbackStub : public IRemoteStub<ObjectSaveCallbackBroker> {
+public:
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
+    {
+        return 0;
+    }
+};
+class ObjectRevokeSaveCallbackBroker : public IObjectRevokeSaveCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectRevokeSaveCallback");
+};
+class ObjectRevokeSaveCallbackStub : public IRemoteStub<ObjectRevokeSaveCallbackBroker> {
+public:
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
+    {
+        return 0;
+    }
+};
+class ObjectRetrieveCallbackBroker : public IObjectRetrieveCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectRetrieveCallback");
+};
+class ObjectRetrieveCallbackStub : public IRemoteStub<ObjectRetrieveCallbackBroker> {
+public:
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
+    {
+        return 0;
+    }
+};
+
+class ObjectChangeCallbackBroker : public IObjectChangeCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectChangeCallback");
+};
+
+class ObjectChangeCallbackStub : public IRemoteStub<ObjectChangeCallbackBroker> {
+public:
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
+    {
+        return 0;
+    }
+};
+
+class ObjectProgressCallbackBroker : public IObjectProgressCallback, public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedObject.IObjectProgressCallback");
+};
+
+class ObjectProgressCallbackStub : public IRemoteStub<ObjectProgressCallbackBroker> {
+public:
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
+    {
+        return 0;
+    }
+};
+
+class ObjectSaveCallback : public ObjectSaveCallbackStub {
+public:
+    explicit ObjectSaveCallback(const std::function<void(const std::map<std::string, int32_t> &)> &callback)
+        : callback_(callback)
+    {
+    }
+    void Completed(const std::map<std::string, int32_t> &results) override
+    {
+    }
+
+private:
+    const std::function<void(const std::map<std::string, int32_t> &)> callback_;
+};
+class ObjectRevokeSaveCallback : public ObjectRevokeSaveCallbackStub {
+public:
+    explicit ObjectRevokeSaveCallback(const std::function<void(int32_t)> &callback) : callback_(callback)
+    {
+    }
+    void Completed(int32_t) override
+    {
+    }
+
+private:
+    const std::function<void(int32_t status)> callback_;
+};
+class ObjectRetrieveCallback : public ObjectRetrieveCallbackStub {
+public:
+    explicit ObjectRetrieveCallback(
+        const std::function<void(const std::map<std::string, std::vector<uint8_t>> &, bool)> &callback)
+        : callback_(callback)
+    {
+    }
+    void Completed(const std::map<std::string, std::vector<uint8_t>> &results, bool allReady) override
+    {
+    }
+
+private:
+    const std::function<void(const std::map<std::string, std::vector<uint8_t>> &, bool)> callback_;
+};
+
+class ObjectChangeCallback : public ObjectChangeCallbackStub {
+public:
+    explicit ObjectChangeCallback(
+        const std::function<void(const std::map<std::string, std::vector<uint8_t>> &, bool)> &callback)
+        : callback_(callback)
+    {
+    }
+    void Completed(const std::map<std::string, std::vector<uint8_t>> &results, bool allReady) override
+    {
+    }
+
+private:
+    const std::function<void(const std::map<std::string, std::vector<uint8_t>> &, bool)> callback_;
+};
+
+class ObjectProgressCallback : public ObjectProgressCallbackStub {
+public:
+    explicit ObjectProgressCallback(const std::function<void(int32_t)> &callback) : callback_(callback)
+    {
+    }
+    void Completed(int32_t progress) override
+    {
+    }
+
+private:
+    const std::function<void(int32_t)> callback_;
+};
 
 class ObjectManagerTest : public testing::Test {
 public:
@@ -118,7 +268,9 @@ void ObjectManagerTest::TearDownTestCase(void)
     devMgrAdapterMock = nullptr;
 }
 
-void ObjectManagerTest::TearDown() {}
+void ObjectManagerTest::TearDown()
+{
+}
 
 /**
 * @tc.name: DeleteNotifier001
@@ -145,12 +297,10 @@ HWTEST_F(ObjectManagerTest, Process001, TestSize.Level0)
 {
     auto syncManager = SequenceSyncManager::GetInstance();
     std::map<std::string, DistributedDB::DBStatus> results;
-    results = {{ "test_cloud", DistributedDB::DBStatus::OK }};
+    results = { { "test_cloud", DistributedDB::DBStatus::OK } };
 
     std::function<void(const std::map<std::string, int32_t> &results)> func;
-    func = [](const std::map<std::string, int32_t> &results) {
-        return results;
-    };
+    func = [](const std::map<std::string, int32_t> &results) { return results; };
     auto result = syncManager->Process(sequenceId_, results, userId_);
     ASSERT_EQ(result, SequenceSyncManager::ERR_SID_NOT_EXIST);
     syncManager->seqIdCallbackRelations_.emplace(sequenceId_, func);
@@ -169,17 +319,38 @@ HWTEST_F(ObjectManagerTest, DeleteNotifierNoLock001, TestSize.Level0)
 {
     auto syncManager = SequenceSyncManager::GetInstance();
     std::function<void(const std::map<std::string, int32_t> &results)> func;
-    func = [](const std::map<std::string, int32_t> &results) {
-        return results;
-    };
+    func = [](const std::map<std::string, int32_t> &results) { return results; };
     syncManager->seqIdCallbackRelations_.emplace(sequenceId_, func);
-    std::vector<uint64_t> seqIds = {sequenceId_, sequenceId_2, sequenceId_3};
+    std::vector<uint64_t> seqIds = { sequenceId_, sequenceId_2, sequenceId_3 };
     std::string userId = "user_1";
     auto result = syncManager->DeleteNotifierNoLock(sequenceId_, userId_);
     ASSERT_EQ(result, SequenceSyncManager::SUCCESS_USER_HAS_FINISHED);
     syncManager->userIdSeqIdRelations_[userId] = seqIds;
     result = syncManager->DeleteNotifierNoLock(sequenceId_, userId_);
     ASSERT_EQ(result, SequenceSyncManager::SUCCESS_USER_IN_USE);
+}
+
+/**
+* @tc.name: SaveToStoreTest
+* @tc.desc: SaveToStore test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, SaveToStoreTest, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string dataDir = "/data/app/el2/100/database";
+    manager.SetData(dataDir, userId_);
+    auto result = manager.Open();
+    ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+    ASSERT_NE(manager.delegate_, nullptr);
+    ObjectRecord data{};
+    result = manager.SaveToStore("appId", "sessionId", "toDeviceId", data);
+    ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+
+    manager.ForceClose();
+    ASSERT_EQ(manager.delegate_, nullptr);
+    result = manager.SaveToStore("appId", "sessionId", "toDeviceId", data);
+    ASSERT_NE(result, DistributedObject::OBJECT_SUCCESS);
 }
 
 /**
@@ -191,12 +362,14 @@ HWTEST_F(ObjectManagerTest, DeleteNotifierNoLock001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, Clear001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    ObjectUserMetaData userMeta;
+    MetaDataManager::GetInstance().SaveMeta(ObjectUserMetaData::GetKey(), userMeta, true);
+    auto &manager = ObjectStoreManager::GetInstance();
     std::string dataDir = "/data/app/el2/100/database";
-    manager->SetData(dataDir, userId_);
-    auto result = manager->Clear();
+    manager.SetData(dataDir, userId_);
+    auto result = manager.Clear();
     ASSERT_EQ(result, OHOS::DistributedObject::OBJECT_SUCCESS);
-    auto size = manager->callbacks_.Size();
+    auto size = manager.callbacks_.Size();
     ASSERT_EQ(size, 0);
 }
 
@@ -209,14 +382,17 @@ HWTEST_F(ObjectManagerTest, Clear001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, registerAndUnregisterRemoteCallback001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    sptr<IRemoteObject> callback;
-    manager->RegisterRemoteCallback(bundleName_, sessionId_, pid_, tokenId_, callback);
-    ObjectStoreManager::CallbackInfo callbackInfo = manager->callbacks_.Find(tokenId_).second;
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::function<void(const std::map<std::string, std::vector<uint8_t>> &, bool)> cb =
+        [](const std::map<std::string, std::vector<uint8_t>> &, bool) {};
+    sptr<ObjectChangeCallbackBroker> objectRemoteResumeCallback = new (std::nothrow) ObjectChangeCallback(cb);
+    ASSERT_NE(objectRemoteResumeCallback, nullptr);
+    manager.RegisterRemoteCallback(bundleName_, sessionId_, pid_, tokenId_, objectRemoteResumeCallback->AsObject());
+    ObjectStoreManager::CallbackInfo callbackInfo = manager.callbacks_.Find(tokenId_).second;
     std::string prefix = bundleName_ + sessionId_;
     ASSERT_NE(callbackInfo.observers_.find(prefix), callbackInfo.observers_.end());
-    manager->UnregisterRemoteCallback(bundleName_, pid_, tokenId_, sessionId_);
-    callbackInfo = manager->callbacks_.Find(tokenId_).second;
+    manager.UnregisterRemoteCallback(bundleName_, pid_, tokenId_, sessionId_);
+    callbackInfo = manager.callbacks_.Find(tokenId_).second;
     ASSERT_EQ(callbackInfo.observers_.find(prefix), callbackInfo.observers_.end());
 }
 
@@ -229,14 +405,15 @@ HWTEST_F(ObjectManagerTest, registerAndUnregisterRemoteCallback001, TestSize.Lev
 */
 HWTEST_F(ObjectManagerTest, registerAndUnregisterRemoteCallback002, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     sptr<IRemoteObject> callback;
     uint32_t tokenId = 101;
-    manager->RegisterRemoteCallback("", sessionId_, pid_, tokenId, callback);
-    manager->RegisterRemoteCallback(bundleName_, "", pid_, tokenId, callback);
-    manager->RegisterRemoteCallback("", "", pid_, tokenId, callback);
-    ASSERT_EQ(manager->callbacks_.Find(tokenId).first, false);
-    manager->UnregisterRemoteCallback("", pid_, tokenId, sessionId_);
+    manager.RegisterRemoteCallback("", sessionId_, pid_, tokenId, callback);
+    manager.RegisterRemoteCallback(bundleName_, "", pid_, tokenId, callback);
+    manager.RegisterRemoteCallback("", "", pid_, tokenId, callback);
+    manager.RegisterRemoteCallback(bundleName_, sessionId_, pid_, tokenId, nullptr);
+    ASSERT_EQ(manager.callbacks_.Find(tokenId).first, false);
+    manager.UnregisterRemoteCallback("", pid_, tokenId, sessionId_);
 }
 
 /**
@@ -248,7 +425,7 @@ HWTEST_F(ObjectManagerTest, registerAndUnregisterRemoteCallback002, TestSize.Lev
 */
 HWTEST_F(ObjectManagerTest, NotifyDataChanged001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::string bundleName1_ = "com.examples.ophm.notepad";
     std::string objectKey = bundleName1_ + sessionId_;
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data;
@@ -257,13 +434,13 @@ HWTEST_F(ObjectManagerTest, NotifyDataChanged001, TestSize.Level0)
     data1_.push_back(RestoreStatus::DATA_READY);
     data1_.push_back(RestoreStatus::ASSETS_READY);
     data1_.push_back(RestoreStatus::ALL_READY);
-    data1 = {{ "objectKey", data1_ }};
-    data = {{ objectKey, data1 }};
+    data1 = { { "objectKey", data1_ } };
+    data = { { objectKey, data1 } };
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(5, 3); // executor pool
-    manager->SetThreadPool(executors);
-    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).first, false);
-    manager->NotifyDataChanged(data, {});
-    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).second, RestoreStatus::DATA_READY);
+    manager.SetThreadPool(executors);
+    ASSERT_EQ(manager.restoreStatus_.Find(objectKey).first, false);
+    manager.NotifyDataChanged(data, {});
+    ASSERT_EQ(manager.restoreStatus_.Find(objectKey).second, RestoreStatus::DATA_READY);
 }
 
 /**
@@ -275,16 +452,16 @@ HWTEST_F(ObjectManagerTest, NotifyDataChanged001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, NotifyAssetsReady001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::string objectKey = bundleName_ + sessionId_;
     std::string srcNetworkId = "1";
-    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).first, false);
-    manager->NotifyAssetsReady(objectKey, srcNetworkId);
-    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).second, RestoreStatus::ASSETS_READY);
-    manager->restoreStatus_.Clear();
-    manager->restoreStatus_.Insert(objectKey, RestoreStatus::DATA_READY);
-    manager->NotifyAssetsReady(objectKey, srcNetworkId);
-    ASSERT_EQ(manager->restoreStatus_.Find(objectKey).second, RestoreStatus::ALL_READY);
+    ASSERT_EQ(manager.restoreStatus_.Find(objectKey).first, false);
+    manager.NotifyAssetsReady(objectKey, srcNetworkId);
+    ASSERT_EQ(manager.restoreStatus_.Find(objectKey).second, RestoreStatus::ASSETS_READY);
+    manager.restoreStatus_.Clear();
+    manager.restoreStatus_.Insert(objectKey, RestoreStatus::DATA_READY);
+    manager.NotifyAssetsReady(objectKey, srcNetworkId);
+    ASSERT_EQ(manager.restoreStatus_.Find(objectKey).second, RestoreStatus::ALL_READY);
 }
 
 /**
@@ -294,36 +471,36 @@ HWTEST_F(ObjectManagerTest, NotifyAssetsReady001, TestSize.Level0)
  */
 HWTEST_F(ObjectManagerTest, NotifyAssetsReady002, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    std::string objectKey="com.example.myapplicaiton123456";
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = "com.example.myapplicaiton123456";
     std::string srcNetworkId = "654321";
 
-    manager->restoreStatus_.Clear();
-    manager->NotifyAssetsStart(objectKey, srcNetworkId);
-    auto [has0, value0] = manager->restoreStatus_.Find(objectKey);
+    manager.restoreStatus_.Clear();
+    manager.NotifyAssetsStart(objectKey, srcNetworkId);
+    auto [has0, value0] = manager.restoreStatus_.Find(objectKey);
     EXPECT_TRUE(has0);
     EXPECT_EQ(value0, RestoreStatus::NONE);
 
-    manager->restoreStatus_.Clear();
-    manager->NotifyAssetsReady(objectKey, srcNetworkId);
-    auto [has1, value1] = manager->restoreStatus_.Find(objectKey);
+    manager.restoreStatus_.Clear();
+    manager.NotifyAssetsReady(objectKey, srcNetworkId);
+    auto [has1, value1] = manager.restoreStatus_.Find(objectKey);
     EXPECT_TRUE(has1);
     EXPECT_EQ(value1, RestoreStatus::ASSETS_READY);
 
-    manager->restoreStatus_.Clear();
-    manager->restoreStatus_.Insert(objectKey, RestoreStatus::DATA_NOTIFIED);
-    manager->NotifyAssetsReady(objectKey, srcNetworkId);
-    auto [has2, value2] = manager->restoreStatus_.Find(objectKey);
+    manager.restoreStatus_.Clear();
+    manager.restoreStatus_.Insert(objectKey, RestoreStatus::DATA_NOTIFIED);
+    manager.NotifyAssetsReady(objectKey, srcNetworkId);
+    auto [has2, value2] = manager.restoreStatus_.Find(objectKey);
     EXPECT_TRUE(has2);
     EXPECT_EQ(value2, RestoreStatus::ALL_READY);
 
-    manager->restoreStatus_.Clear();
-    manager->restoreStatus_.Insert(objectKey, RestoreStatus::DATA_READY);
-    manager->NotifyAssetsReady(objectKey, srcNetworkId);
-    auto [has3, value3] = manager->restoreStatus_.Find(objectKey);
+    manager.restoreStatus_.Clear();
+    manager.restoreStatus_.Insert(objectKey, RestoreStatus::DATA_READY);
+    manager.NotifyAssetsReady(objectKey, srcNetworkId);
+    auto [has3, value3] = manager.restoreStatus_.Find(objectKey);
     EXPECT_TRUE(has3);
     EXPECT_EQ(value3, RestoreStatus::ALL_READY);
-    manager->restoreStatus_.Clear();
+    manager.restoreStatus_.Clear();
 }
 
 /**
@@ -335,18 +512,18 @@ HWTEST_F(ObjectManagerTest, NotifyAssetsReady002, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, NotifyChange001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::map<std::string, std::vector<uint8_t>> data;
     std::map<std::string, std::vector<uint8_t>> data1;
     std::vector<uint8_t> data1_;
     data1_.push_back(RestoreStatus::DATA_READY);
     data_.push_back(RestoreStatus::ALL_READY);
-    data = {{ "test_cloud", data_ }};
-    data1 = {{ "p_###SAVEINFO###001", data1_ }};
-    manager->NotifyChange(data1);
-    EXPECT_FALSE(manager->restoreStatus_.Find("p_###SAVEINFO###001").first);
-    manager->NotifyChange(data);
-    EXPECT_FALSE(manager->restoreStatus_.Find("test_cloud").first);
+    data = { { "test_cloud", data_ } };
+    data1 = { { "p_###SAVEINFO###001", data1_ } };
+    manager.NotifyChange(data1);
+    EXPECT_FALSE(manager.restoreStatus_.Find("p_###SAVEINFO###001").first);
+    manager.NotifyChange(data);
+    EXPECT_FALSE(manager.restoreStatus_.Find("test_cloud").first);
 }
 
 /**
@@ -356,11 +533,11 @@ HWTEST_F(ObjectManagerTest, NotifyChange001, TestSize.Level0)
  */
 HWTEST_F(ObjectManagerTest, NotifyChange002, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
-    manager->SetThreadPool(executor);
+    manager.SetThreadPool(executor);
     std::map<std::string, std::vector<uint8_t>> data{};
-    std::vector<uint8_t> value{0};
+    std::vector<uint8_t> value{ 0 };
     std::string bundleName = "com.example.myapplication";
     std::string sessionId = "123456";
     std::string source = "source";
@@ -381,13 +558,13 @@ HWTEST_F(ObjectManagerTest, NotifyChange002, TestSize.Level0)
     data.insert_or_assign(assetPrefix + ObjectStore::SIZE_SUFFIX, value);
     data.insert_or_assign("testkey", value);
     EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
-    manager->NotifyChange(data);
-    EXPECT_TRUE(manager->restoreStatus_.Contains(bundleName+sessionId));
-    auto [has, taskId] = manager->objectTimer_.Find(bundleName+sessionId);
+    manager.NotifyChange(data);
+    EXPECT_TRUE(manager.restoreStatus_.Contains(bundleName + sessionId));
+    auto [has, taskId] = manager.objectTimer_.Find(bundleName + sessionId);
     EXPECT_TRUE(has);
-    manager->restoreStatus_.Clear();
-    manager->executors_->Remove(taskId);
-    manager->objectTimer_.Clear();
+    manager.restoreStatus_.Clear();
+    manager.executors_->Remove(taskId);
+    manager.objectTimer_.Clear();
 }
 
 /**
@@ -397,30 +574,30 @@ HWTEST_F(ObjectManagerTest, NotifyChange002, TestSize.Level0)
  */
 HWTEST_F(ObjectManagerTest, ComputeStatus001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
-    manager->SetThreadPool(executor);
-    std::string objectKey="com.example.myapplicaiton123456";
+    manager.SetThreadPool(executor);
+    std::string objectKey = "com.example.myapplicaiton123456";
     std::map<std::string, std::map<std::string, std::vector<uint8_t>>> data{};
-    manager->restoreStatus_.Clear();
-    manager->ComputeStatus(objectKey, {}, data);
-    auto [has0, value0] = manager->restoreStatus_.Find(objectKey);
+    manager.restoreStatus_.Clear();
+    manager.ComputeStatus(objectKey, {}, data);
+    auto [has0, value0] = manager.restoreStatus_.Find(objectKey);
     EXPECT_TRUE(has0);
     EXPECT_EQ(value0, RestoreStatus::DATA_READY);
-    auto [has1, taskId1] = manager->objectTimer_.Find(objectKey);
+    auto [has1, taskId1] = manager.objectTimer_.Find(objectKey);
     EXPECT_TRUE(has1);
-    manager->executors_->Remove(taskId1);
-    manager->objectTimer_.Clear();
-    manager->restoreStatus_.Clear();
+    manager.executors_->Remove(taskId1);
+    manager.objectTimer_.Clear();
+    manager.restoreStatus_.Clear();
 
-    manager->restoreStatus_.Insert(objectKey, RestoreStatus::ASSETS_READY);
-    manager->ComputeStatus(objectKey, {}, data);
-    auto [has2, value2] = manager->restoreStatus_.Find(objectKey);
+    manager.restoreStatus_.Insert(objectKey, RestoreStatus::ASSETS_READY);
+    manager.ComputeStatus(objectKey, {}, data);
+    auto [has2, value2] = manager.restoreStatus_.Find(objectKey);
     EXPECT_TRUE(has2);
     EXPECT_EQ(value2, RestoreStatus::ALL_READY);
-    auto [has3, taskId3] = manager->objectTimer_.Find(objectKey);
+    auto [has3, taskId3] = manager.objectTimer_.Find(objectKey);
     EXPECT_FALSE(has3);
-    manager->restoreStatus_.Clear();
+    manager.restoreStatus_.Clear();
 }
 
 /**
@@ -432,20 +609,20 @@ HWTEST_F(ObjectManagerTest, ComputeStatus001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, Open001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->kvStoreDelegateManager_ = nullptr;
-    auto result = manager->Open();
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.kvStoreDelegateManager_ = nullptr;
+    auto result = manager.Open();
     ASSERT_EQ(result, DistributedObject::OBJECT_INNER_ERROR);
     std::string dataDir = "/data/app/el2/100/database";
-    manager->SetData(dataDir, userId_);
-    manager->delegate_ = nullptr;
-    result = manager->Open();
+    manager.SetData(dataDir, userId_);
+    manager.delegate_ = nullptr;
+    result = manager.Open();
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
-    manager->delegate_ = manager->OpenObjectKvStore();
-    result = manager->Open();
+    manager.delegate_ = manager.OpenObjectKvStore();
+    result = manager.Open();
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
-    manager->ForceClose();
-    ASSERT_EQ(manager->delegate_, nullptr);
+    manager.ForceClose();
+    ASSERT_EQ(manager.delegate_, nullptr);
 }
 
 /**
@@ -457,13 +634,13 @@ HWTEST_F(ObjectManagerTest, Open001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, OnAssetChanged001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::shared_ptr<Snapshot> snapshot = std::make_shared<ObjectSnapshot>();
     auto snapshotKey = appId_ + "_" + sessionId_;
-    auto result = manager->OnAssetChanged(tokenId_, appId_, sessionId_, deviceId_, assetValue_);
+    auto result = manager.OnAssetChanged(tokenId_, appId_, sessionId_, deviceId_, assetValue_);
     ASSERT_EQ(result, DistributedObject::OBJECT_INNER_ERROR);
-    manager->snapshots_.Insert(snapshotKey, snapshot);
-    result = manager->OnAssetChanged(tokenId_, appId_, sessionId_, deviceId_, assetValue_);
+    manager.snapshots_.Insert(snapshotKey, snapshot);
+    result = manager.OnAssetChanged(tokenId_, appId_, sessionId_, deviceId_, assetValue_);
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
 }
 
@@ -476,17 +653,17 @@ HWTEST_F(ObjectManagerTest, OnAssetChanged001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, DeleteSnapshot001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::shared_ptr<Snapshot> snapshot = std::make_shared<ObjectSnapshot>();
     auto snapshotKey = bundleName_ + "_" + sessionId_;
-    auto snapshots = manager->snapshots_.Find(snapshotKey).second;
+    auto snapshots = manager.snapshots_.Find(snapshotKey).second;
     ASSERT_EQ(snapshots, nullptr);
-    manager->DeleteSnapshot(bundleName_, sessionId_);
+    manager.DeleteSnapshot(bundleName_, sessionId_);
 
-    manager->snapshots_.Insert(snapshotKey, snapshot);
-    snapshots = manager->snapshots_.Find(snapshotKey).second;
+    manager.snapshots_.Insert(snapshotKey, snapshot);
+    snapshots = manager.snapshots_.Find(snapshotKey).second;
     ASSERT_NE(snapshots, nullptr);
-    manager->DeleteSnapshot(bundleName_, sessionId_);
+    manager.DeleteSnapshot(bundleName_, sessionId_);
 }
 
 /**
@@ -498,19 +675,19 @@ HWTEST_F(ObjectManagerTest, DeleteSnapshot001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, FlushClosedStore001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->isSyncing_ = true;
-    manager->syncCount_ = 10; // test syncCount_
-    manager->delegate_ = nullptr;
-    manager->FlushClosedStore();
-    manager->isSyncing_ = false;
-    manager->FlushClosedStore();
-    manager->syncCount_ = 0; // test syncCount_
-    manager->FlushClosedStore();
-    manager->delegate_ = manager->OpenObjectKvStore();
-    ASSERT_NE(manager->delegate_, nullptr);
-    manager->FlushClosedStore();
-    ASSERT_EQ(manager->delegate_, nullptr);
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.isSyncing_ = true;
+    manager.syncCount_ = 10; // test syncCount_
+    manager.delegate_ = nullptr;
+    manager.FlushClosedStore();
+    manager.isSyncing_ = false;
+    manager.FlushClosedStore();
+    manager.syncCount_ = 0; // test syncCount_
+    manager.FlushClosedStore();
+    manager.delegate_ = manager.OpenObjectKvStore();
+    ASSERT_NE(manager.delegate_, nullptr);
+    manager.FlushClosedStore();
+    ASSERT_EQ(manager.delegate_, nullptr);
 }
 
 /**
@@ -522,13 +699,13 @@ HWTEST_F(ObjectManagerTest, FlushClosedStore001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, Close001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->syncCount_ = 1; // test syncCount_
-    manager->Close();
-    ASSERT_EQ(manager->syncCount_, 1); // 1 is for testing
-    manager->delegate_ = manager->OpenObjectKvStore();
-    manager->Close();
-    ASSERT_EQ(manager->syncCount_, 0); // 0 is for testing
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.syncCount_ = 1; // test syncCount_
+    manager.Close();
+    ASSERT_EQ(manager.syncCount_, 1); // 1 is for testing
+    manager.delegate_ = manager.OpenObjectKvStore();
+    manager.Close();
+    ASSERT_EQ(manager.syncCount_, 0); // 0 is for testing
 }
 
 /**
@@ -540,15 +717,15 @@ HWTEST_F(ObjectManagerTest, Close001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, RetrieveFromStore001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     DistributedDB::KvStoreNbDelegateMock mockDelegate;
-    manager->delegate_ = &mockDelegate;
+    manager.delegate_ = &mockDelegate;
     std::vector<uint8_t> id;
-    id.push_back(1);  // for testing
-    id.push_back(2);  // for testing
+    id.push_back(1); // for testing
+    id.push_back(2); // for testing
     std::map<std::string, std::vector<uint8_t>> results;
-    results = {{ "test_cloud", id }};
-    auto result = manager->RetrieveFromStore(appId_, sessionId_, results);
+    results = { { "test_cloud", id } };
+    auto result = manager.RetrieveFromStore(appId_, sessionId_, results);
     ASSERT_EQ(result, OBJECT_SUCCESS);
 }
 
@@ -561,28 +738,26 @@ HWTEST_F(ObjectManagerTest, RetrieveFromStore001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, SyncCompleted001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     auto syncManager = SequenceSyncManager::GetInstance();
     std::map<std::string, DistributedDB::DBStatus> results;
-    results = {{ "test_cloud", DistributedDB::DBStatus::OK }};
+    results = { { "test_cloud", DistributedDB::DBStatus::OK } };
     std::function<void(const std::map<std::string, int32_t> &results)> func;
-    func = [](const std::map<std::string, int32_t> &results) {
-        return results;
-    };
-    manager->userId_ = "99";
+    func = [](const std::map<std::string, int32_t> &results) { return results; };
+    manager.userId_ = "99";
     std::vector<uint64_t> userId;
     userId.push_back(99);
     userId.push_back(100);
-    manager->SyncCompleted(results, sequenceId_);
-    syncManager->userIdSeqIdRelations_ = {{ "test_cloud", userId }};
-    manager->SyncCompleted(results, sequenceId_);
+    manager.SyncCompleted(results, sequenceId_);
+    syncManager->userIdSeqIdRelations_ = { { "test_cloud", userId } };
+    manager.SyncCompleted(results, sequenceId_);
     userId.clear();
     syncManager->seqIdCallbackRelations_.emplace(sequenceId_, func);
-    manager->SyncCompleted(results, sequenceId_);
+    manager.SyncCompleted(results, sequenceId_);
     userId.push_back(99);
     userId.push_back(100);
-    manager->SyncCompleted(results, sequenceId_);
-    EXPECT_FALSE(manager->isSyncing_);
+    manager.SyncCompleted(results, sequenceId_);
+    EXPECT_FALSE(manager.isSyncing_);
 }
 
 /**
@@ -594,12 +769,12 @@ HWTEST_F(ObjectManagerTest, SyncCompleted001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, SplitEntryKey001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::string key1 = "";
     std::string key2 = "ObjectManagerTest";
-    auto result = manager->SplitEntryKey(key1);
+    auto result = manager.SplitEntryKey(key1);
     ASSERT_EQ(result.empty(), true);
-    result = manager->SplitEntryKey(key2);
+    result = manager.SplitEntryKey(key2);
     ASSERT_EQ(result.empty(), true);
 }
 
@@ -610,9 +785,9 @@ HWTEST_F(ObjectManagerTest, SplitEntryKey001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, SplitEntryKey002, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::string key1 = "com.example.myapplication_sessionId_source_target_1234567890_p_propertyName";
-    auto res = manager->SplitEntryKey(key1);
+    auto res = manager.SplitEntryKey(key1);
     EXPECT_EQ(res[0], "com.example.myapplication");
     EXPECT_EQ(res[1], "sessionId");
     EXPECT_EQ(res[2], "source");
@@ -621,19 +796,19 @@ HWTEST_F(ObjectManagerTest, SplitEntryKey002, TestSize.Level0)
     EXPECT_EQ(res[5], "p_propertyName");
 
     std::string key2 = "com.example.myapplication_sessionId_source_target_000_p_propertyName";
-    res = manager->SplitEntryKey(key2);
+    res = manager.SplitEntryKey(key2);
     EXPECT_TRUE(res.empty());
 
     std::string key3 = "com.example.myapplicationsessionIdsourcetarget_1234567890_p_propertyName";
-    res = manager->SplitEntryKey(key3);
+    res = manager.SplitEntryKey(key3);
     EXPECT_TRUE(res.empty());
 
     std::string key4 = "com.example.myapplicationsessionIdsource_target_1234567890_p_propertyName";
-    res = manager->SplitEntryKey(key4);
+    res = manager.SplitEntryKey(key4);
     EXPECT_TRUE(res.empty());
 
     std::string key5 = "com.example.myapplicationsessionId_source_target_1234567890_p_propertyName";
-    res = manager->SplitEntryKey(key5);
+    res = manager.SplitEntryKey(key5);
     EXPECT_TRUE(res.empty());
 }
 
@@ -646,18 +821,18 @@ HWTEST_F(ObjectManagerTest, SplitEntryKey002, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, ProcessOldEntry001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->delegate_ = manager->OpenObjectKvStore();
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.delegate_ = manager.OpenObjectKvStore();
     std::vector<DistributedDB::Entry> entries;
-    auto status = manager->delegate_->GetEntries(std::vector<uint8_t>(appId_.begin(), appId_.end()), entries);
+    auto status = manager.delegate_->GetEntries(std::vector<uint8_t>(appId_.begin(), appId_.end()), entries);
     ASSERT_EQ(status, DistributedDB::DBStatus::NOT_FOUND);
-    manager->ProcessOldEntry(appId_);
+    manager.ProcessOldEntry(appId_);
 
     DistributedDB::KvStoreNbDelegateMock mockDelegate;
-    manager->delegate_ = &mockDelegate;
-    status = manager->delegate_->GetEntries(std::vector<uint8_t>(appId_.begin(), appId_.end()), entries);
+    manager.delegate_ = &mockDelegate;
+    status = manager.delegate_->GetEntries(std::vector<uint8_t>(appId_.begin(), appId_.end()), entries);
     ASSERT_EQ(status, DistributedDB::DBStatus::OK);
-    manager->ProcessOldEntry(appId_);
+    manager.ProcessOldEntry(appId_);
 }
 
 /**
@@ -669,13 +844,13 @@ HWTEST_F(ObjectManagerTest, ProcessOldEntry001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, ProcessSyncCallback001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::map<std::string, int32_t> results;
-    manager->ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
-    results.insert({"local", 1}); // for testing
+    manager.ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
+    results.insert({ "local", 1 }); // for testing
     ASSERT_EQ(results.empty(), false);
     ASSERT_NE(results.find("local"), results.end());
-    manager->ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
+    manager.ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
 }
 
 /**
@@ -686,23 +861,23 @@ HWTEST_F(ObjectManagerTest, ProcessSyncCallback001, TestSize.Level0)
 HWTEST_F(ObjectManagerTest, ProcessSyncCallback002, TestSize.Level0)
 {
     std::string dataDir = "/data/app/el2/100/database";
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::map<std::string, int32_t> results;
-    
-    results.insert({"remote", 1}); // for testing
+
+    results.insert({ "remote", 1 }); // for testing
     ASSERT_EQ(results.empty(), false);
     ASSERT_EQ(results.find("local"), results.end());
 
-    manager->kvStoreDelegateManager_ = nullptr;
+    manager.kvStoreDelegateManager_ = nullptr;
     // open store failed -> success
-    manager->ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
+    manager.ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
 
     // open store success -> success
-    manager->SetData(dataDir, userId_);
-    ASSERT_NE(manager->kvStoreDelegateManager_, nullptr);
-    manager->delegate_ = manager->OpenObjectKvStore();
-    ASSERT_NE(manager->delegate_, nullptr);
-    manager->ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
+    manager.SetData(dataDir, userId_);
+    ASSERT_NE(manager.kvStoreDelegateManager_, nullptr);
+    manager.delegate_ = manager.OpenObjectKvStore();
+    ASSERT_NE(manager.delegate_, nullptr);
+    manager.ProcessSyncCallback(results, appId_, sessionId_, deviceId_);
 }
 
 /**
@@ -714,32 +889,32 @@ HWTEST_F(ObjectManagerTest, ProcessSyncCallback002, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, IsAssetComplete001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::map<std::string, std::vector<uint8_t>> results;
     std::vector<uint8_t> completes;
     completes.push_back(1); // for testing
     completes.push_back(2); // for testing
     std::string assetPrefix = "IsAssetComplete_test";
-    results.insert({assetPrefix, completes});
-    auto result = manager->IsAssetComplete(results, assetPrefix);
+    results.insert({ assetPrefix, completes });
+    auto result = manager.IsAssetComplete(results, assetPrefix);
     ASSERT_EQ(result, false);
-    results.insert({assetPrefix + ObjectStore::NAME_SUFFIX, completes});
-    result = manager->IsAssetComplete(results, assetPrefix);
+    results.insert({ assetPrefix + ObjectStore::NAME_SUFFIX, completes });
+    result = manager.IsAssetComplete(results, assetPrefix);
     ASSERT_EQ(result, false);
-    results.insert({assetPrefix + ObjectStore::URI_SUFFIX, completes});
-    result = manager->IsAssetComplete(results, assetPrefix);
+    results.insert({ assetPrefix + ObjectStore::URI_SUFFIX, completes });
+    result = manager.IsAssetComplete(results, assetPrefix);
     ASSERT_EQ(result, false);
-    results.insert({assetPrefix + ObjectStore::PATH_SUFFIX, completes});
-    result = manager->IsAssetComplete(results, assetPrefix);
+    results.insert({ assetPrefix + ObjectStore::PATH_SUFFIX, completes });
+    result = manager.IsAssetComplete(results, assetPrefix);
     ASSERT_EQ(result, false);
-    results.insert({assetPrefix + ObjectStore::CREATE_TIME_SUFFIX, completes});
-    result = manager->IsAssetComplete(results, assetPrefix);
+    results.insert({ assetPrefix + ObjectStore::CREATE_TIME_SUFFIX, completes });
+    result = manager.IsAssetComplete(results, assetPrefix);
     ASSERT_EQ(result, false);
-    results.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, completes});
-    result = manager->IsAssetComplete(results, assetPrefix);
+    results.insert({ assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, completes });
+    result = manager.IsAssetComplete(results, assetPrefix);
     ASSERT_EQ(result, false);
-    results.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, completes});
-    result = manager->IsAssetComplete(results, assetPrefix);
+    results.insert({ assetPrefix + ObjectStore::SIZE_SUFFIX, completes });
+    result = manager.IsAssetComplete(results, assetPrefix);
     ASSERT_EQ(result, true);
 }
 
@@ -752,18 +927,18 @@ HWTEST_F(ObjectManagerTest, IsAssetComplete001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::map<std::string, std::vector<uint8_t>> results;
     std::vector<uint8_t> completes;
     completes.push_back(1); // for testing
     completes.push_back(2); // for testing
     std::string assetPrefix = "IsAssetComplete_test";
-    results.insert({assetPrefix, completes});
-    results.insert({assetPrefix + ObjectStore::NAME_SUFFIX, completes});
-    results.insert({assetPrefix + ObjectStore::URI_SUFFIX, completes});
-    results.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, completes});
-    results.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, completes});
-    auto result = manager->GetAssetsFromDBRecords(results);
+    results.insert({ assetPrefix, completes });
+    results.insert({ assetPrefix + ObjectStore::NAME_SUFFIX, completes });
+    results.insert({ assetPrefix + ObjectStore::URI_SUFFIX, completes });
+    results.insert({ assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, completes });
+    results.insert({ assetPrefix + ObjectStore::SIZE_SUFFIX, completes });
+    auto result = manager.GetAssetsFromDBRecords(results);
     ASSERT_EQ(result.empty(), false);
 }
 
@@ -774,14 +949,14 @@ HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords002, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::map<std::string, std::vector<uint8_t>> result;
 
-    std::vector<uint8_t> value0{0};
+    std::vector<uint8_t> value0{ 0 };
     std::string data0 = "[STRING]test";
     value0.insert(value0.end(), data0.begin(), data0.end());
 
-    std::vector<uint8_t> value1{0};
+    std::vector<uint8_t> value1{ 0 };
     std::string data1 = "(string)test";
     value1.insert(value1.end(), data1.begin(), data1.end());
 
@@ -790,26 +965,26 @@ HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords002, TestSize.Level0)
     std::string assetPrefix0 = prefix + "_p_asset0";
     std::string assetPrefix1 = prefix + "_p_asset1";
 
-    result.insert({dataKey, value0});
-    auto assets = manager->GetAssetsFromDBRecords(result);
-    EXPECT_TRUE(assets.empty());
-    
-    result.clear();
-    result.insert({assetPrefix0 + ObjectStore::URI_SUFFIX, value0});
-    assets = manager->GetAssetsFromDBRecords(result);
+    result.insert({ dataKey, value0 });
+    auto assets = manager.GetAssetsFromDBRecords(result);
     EXPECT_TRUE(assets.empty());
 
     result.clear();
-    result.insert({assetPrefix1 + ObjectStore::NAME_SUFFIX, value1});
-    assets = manager->GetAssetsFromDBRecords(result);
+    result.insert({ assetPrefix0 + ObjectStore::URI_SUFFIX, value0 });
+    assets = manager.GetAssetsFromDBRecords(result);
     EXPECT_TRUE(assets.empty());
 
     result.clear();
-    result.insert({assetPrefix0 + ObjectStore::NAME_SUFFIX, value0});
-    result.insert({assetPrefix0 + ObjectStore::URI_SUFFIX, value0});
-    result.insert({assetPrefix0 + ObjectStore::MODIFY_TIME_SUFFIX, value0});
-    result.insert({assetPrefix0 + ObjectStore::SIZE_SUFFIX, value0});
-    assets = manager->GetAssetsFromDBRecords(result);
+    result.insert({ assetPrefix1 + ObjectStore::NAME_SUFFIX, value1 });
+    assets = manager.GetAssetsFromDBRecords(result);
+    EXPECT_TRUE(assets.empty());
+
+    result.clear();
+    result.insert({ assetPrefix0 + ObjectStore::NAME_SUFFIX, value0 });
+    result.insert({ assetPrefix0 + ObjectStore::URI_SUFFIX, value0 });
+    result.insert({ assetPrefix0 + ObjectStore::MODIFY_TIME_SUFFIX, value0 });
+    result.insert({ assetPrefix0 + ObjectStore::SIZE_SUFFIX, value0 });
+    assets = manager.GetAssetsFromDBRecords(result);
     ASSERT_EQ(assets.size(), 1);
     EXPECT_EQ(assets[0].name, "test");
     EXPECT_EQ(assets[0].uri, "test");
@@ -818,11 +993,11 @@ HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords002, TestSize.Level0)
     EXPECT_EQ(assets[0].hash, "test_test");
 
     result.clear();
-    result.insert({assetPrefix1 + ObjectStore::NAME_SUFFIX, value1});
-    result.insert({assetPrefix1 + ObjectStore::URI_SUFFIX, value1});
-    result.insert({assetPrefix1 + ObjectStore::MODIFY_TIME_SUFFIX, value1});
-    result.insert({assetPrefix1 + ObjectStore::SIZE_SUFFIX, value1});
-    assets = manager->GetAssetsFromDBRecords(result);
+    result.insert({ assetPrefix1 + ObjectStore::NAME_SUFFIX, value1 });
+    result.insert({ assetPrefix1 + ObjectStore::URI_SUFFIX, value1 });
+    result.insert({ assetPrefix1 + ObjectStore::MODIFY_TIME_SUFFIX, value1 });
+    result.insert({ assetPrefix1 + ObjectStore::SIZE_SUFFIX, value1 });
+    assets = manager.GetAssetsFromDBRecords(result);
     ASSERT_EQ(assets.size(), 1);
     EXPECT_EQ(assets[0].name, "(string)test");
     EXPECT_EQ(assets[0].uri, "(string)test");
@@ -840,14 +1015,14 @@ HWTEST_F(ObjectManagerTest, GetAssetsFromDBRecords002, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, RegisterAssetsLister001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    manager->objectAssetsSendListener_ = nullptr;
-    manager->objectAssetsRecvListener_ = nullptr;
-    auto result = manager->RegisterAssetsLister();
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.objectAssetsSendListener_ = nullptr;
+    manager.objectAssetsRecvListener_ = nullptr;
+    auto result = manager.RegisterAssetsLister();
     ASSERT_EQ(result, true);
-    manager->objectAssetsSendListener_ = new ObjectAssetsSendListener();
-    manager->objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
-    result = manager->RegisterAssetsLister();
+    manager.objectAssetsSendListener_ = new ObjectAssetsSendListener();
+    manager.objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
+    result = manager.RegisterAssetsLister();
     ASSERT_EQ(result, true);
 }
 
@@ -860,14 +1035,14 @@ HWTEST_F(ObjectManagerTest, RegisterAssetsLister001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, PushAssets001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::map<std::string, std::vector<uint8_t>> data;
     std::string assetPrefix = "PushAssets_test";
     std::vector<uint8_t> completes;
     completes.push_back(1); // for testing
     completes.push_back(2); // for testing
-    data.insert({assetPrefix, completes});
-    auto result = manager->PushAssets(appId_, appId_, sessionId_, data, deviceId_);
+    data.insert({ assetPrefix, completes });
+    auto result = manager.PushAssets(appId_, appId_, sessionId_, data, deviceId_);
     ASSERT_EQ(result, DistributedObject::OBJECT_SUCCESS);
 }
 
@@ -878,9 +1053,9 @@ HWTEST_F(ObjectManagerTest, PushAssets001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, PushAssets002, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::map<std::string, std::vector<uint8_t>> data;
-    std::vector<uint8_t> value{0};
+    std::vector<uint8_t> value{ 0 };
     std::string data0 = "[STRING]test";
     value.insert(value.end(), data0.begin(), data0.end());
 
@@ -890,19 +1065,19 @@ HWTEST_F(ObjectManagerTest, PushAssets002, TestSize.Level0)
     std::string fieldsPrefix = "p_";
     std::string deviceIdKey = "__deviceId";
 
-    data.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
-    data.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
-    data.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
-    data.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
-    data.insert({fieldsPrefix + deviceIdKey, value});
+    data.insert({ assetPrefix + ObjectStore::NAME_SUFFIX, value });
+    data.insert({ assetPrefix + ObjectStore::URI_SUFFIX, value });
+    data.insert({ assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value });
+    data.insert({ assetPrefix + ObjectStore::SIZE_SUFFIX, value });
+    data.insert({ fieldsPrefix + deviceIdKey, value });
 
-    manager->objectAssetsSendListener_ = nullptr;
-    int32_t ret = manager->PushAssets(appId_, appId_, sessionId_, data, deviceId_);
+    manager.objectAssetsSendListener_ = nullptr;
+    int32_t ret = manager.PushAssets(appId_, appId_, sessionId_, data, deviceId_);
     EXPECT_NE(ret, DistributedObject::OBJECT_SUCCESS);
 
-    manager->objectAssetsSendListener_ = new ObjectAssetsSendListener();
-    ASSERT_NE(manager->objectAssetsSendListener_, nullptr);
-    ret = manager->PushAssets(appId_, appId_, sessionId_, data, deviceId_);
+    manager.objectAssetsSendListener_ = new ObjectAssetsSendListener();
+    ASSERT_NE(manager.objectAssetsSendListener_, nullptr);
+    ret = manager.PushAssets(appId_, appId_, sessionId_, data, deviceId_);
     EXPECT_NE(ret, DistributedObject::OBJECT_SUCCESS);
 }
 
@@ -915,9 +1090,7 @@ HWTEST_F(ObjectManagerTest, AddNotifier001, TestSize.Level0)
 {
     auto syncManager = SequenceSyncManager::GetInstance();
     std::function<void(const std::map<std::string, int32_t> &results)> func;
-    func = [](const std::map<std::string, int32_t> &results) {
-        return results;
-    };
+    func = [](const std::map<std::string, int32_t> &results) { return results; };
     auto sequenceId_ = syncManager->AddNotifier(userId_, func);
     auto result = syncManager->DeleteNotifier(sequenceId_, userId_);
     ASSERT_EQ(result, SequenceSyncManager::SUCCESS_USER_HAS_FINISHED);
@@ -932,9 +1105,7 @@ HWTEST_F(ObjectManagerTest, AddNotifier002, TestSize.Level0)
 {
     auto syncManager = SequenceSyncManager::GetInstance();
     std::function<void(const std::map<std::string, int32_t> &results)> func;
-    func = [](const std::map<std::string, int32_t> &results) {
-        return results;
-    };
+    func = [](const std::map<std::string, int32_t> &results) { return results; };
     auto sequenceId = syncManager->AddNotifier(userId_, func);
     ASSERT_NE(sequenceId, sequenceId_);
     auto result = syncManager->DeleteNotifier(sequenceId_, userId_);
@@ -948,10 +1119,10 @@ HWTEST_F(ObjectManagerTest, AddNotifier002, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerTest, BindAsset001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::string bundleName = "BindAsset";
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    auto result = manager->BindAsset(tokenId, bundleName, sessionId_, assetValue_, assetBindInfo_);
+    auto result = manager.BindAsset(tokenId, bundleName, sessionId_, assetValue_, assetBindInfo_);
     ASSERT_EQ(result, DistributedObject::OBJECT_DBSTATUS_ERROR);
 }
 
@@ -985,7 +1156,7 @@ HWTEST_F(ObjectManagerTest, OnFinished001, TestSize.Level1)
 */
 HWTEST_F(ObjectManagerTest, GetObjectData001, TestSize.Level1)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
 
     std::string bundleName = bundleName_;
     std::string sessionId = sessionId_;
@@ -999,9 +1170,9 @@ HWTEST_F(ObjectManagerTest, GetObjectData001, TestSize.Level1)
     // p_name not asset key
     std::string p_name = "p_namejpg";
     std::string key = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
-    std::map<std::string, std::vector<uint8_t>> changedData = {{ key, data_ }};
+    std::map<std::string, std::vector<uint8_t>> changedData = { { key, data_ } };
     bool hasAsset = false;
-    auto ret = manager->GetObjectData(changedData, saveInfo, hasAsset);
+    auto ret = manager.GetObjectData(changedData, saveInfo, hasAsset);
     EXPECT_FALSE(ret.empty());
     EXPECT_FALSE(hasAsset);
 }
@@ -1013,7 +1184,7 @@ HWTEST_F(ObjectManagerTest, GetObjectData001, TestSize.Level1)
 */
 HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
 
     std::string bundleName = "";
     std::string sessionId = "";
@@ -1035,9 +1206,9 @@ HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
     timestamp = "1234567890";
     std::string p_name = "p_name.jpg";
     std::string key = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
-    std::map<std::string, std::vector<uint8_t>> changedData = {{ key, data_ }};
+    std::map<std::string, std::vector<uint8_t>> changedData = { { key, data_ } };
     bool hasAsset = false;
-    auto ret = manager->GetObjectData(changedData, saveInfo, hasAsset);
+    auto ret = manager.GetObjectData(changedData, saveInfo, hasAsset);
     EXPECT_FALSE(ret.empty());
     EXPECT_EQ(saveInfo.bundleName, bundleName);
     EXPECT_TRUE(hasAsset);
@@ -1048,9 +1219,9 @@ HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
     // p_name not asset key
     p_name = "p_namejpg";
     std::string key_1 = bundleName + "_" + sessionId + "_" + source + "_" + target + "_" + timestamp + "_" + p_name;
-    std::map<std::string, std::vector<uint8_t>> changedData_1 = {{ key_1, data_ }};
+    std::map<std::string, std::vector<uint8_t>> changedData_1 = { { key_1, data_ } };
     hasAsset = false;
-    ret = manager->GetObjectData(changedData_1, saveInfo, hasAsset);
+    ret = manager.GetObjectData(changedData_1, saveInfo, hasAsset);
     EXPECT_FALSE(ret.empty());
     EXPECT_NE(saveInfo.bundleName, bundleName);
     EXPECT_FALSE(hasAsset);
@@ -1063,8 +1234,8 @@ HWTEST_F(ObjectManagerTest, GetObjectData002, TestSize.Level1)
 */
 HWTEST_F(ObjectManagerTest, InitUserMeta001, TestSize.Level1)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    auto status = manager->InitUserMeta();
+    auto &manager = ObjectStoreManager::GetInstance();
+    auto status = manager.InitUserMeta();
     ASSERT_EQ(status, DistributedObject::OBJECT_SUCCESS);
 }
 
@@ -1077,14 +1248,17 @@ HWTEST_F(ObjectManagerTest, InitUserMeta001, TestSize.Level1)
 */
 HWTEST_F(ObjectManagerTest, registerAndUnregisterProgressObserverCallback001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    sptr<IRemoteObject> callback;
-    manager->RegisterProgressObserverCallback(bundleName_, sessionId_, pid_, tokenId_, callback);
-    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager->processCallbacks_.Find(tokenId_).second;
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::function<void(int32_t)> cb = [](int32_t progress) {};
+    sptr<ObjectProgressCallbackBroker> objectRemoteResumeCallback = new (std::nothrow) ObjectProgressCallback(cb);
+    ASSERT_NE(objectRemoteResumeCallback, nullptr);
+    manager.RegisterProgressObserverCallback(bundleName_, sessionId_, pid_, tokenId_,
+        objectRemoteResumeCallback->AsObject());
+    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager.processCallbacks_.Find(tokenId_).second;
     std::string objectKey = bundleName_ + sessionId_;
     ASSERT_NE(progressCallbackInfo.observers_.find(objectKey), progressCallbackInfo.observers_.end());
-    manager->UnregisterProgressObserverCallback(bundleName_, pid_, tokenId_, sessionId_);
-    progressCallbackInfo = manager->processCallbacks_.Find(tokenId_).second;
+    manager.UnregisterProgressObserverCallback(bundleName_, pid_, tokenId_, sessionId_);
+    progressCallbackInfo = manager.processCallbacks_.Find(tokenId_).second;
     ASSERT_EQ(progressCallbackInfo.observers_.find(objectKey), progressCallbackInfo.observers_.end());
 }
 
@@ -1097,19 +1271,19 @@ HWTEST_F(ObjectManagerTest, registerAndUnregisterProgressObserverCallback001, Te
 */
 HWTEST_F(ObjectManagerTest, registerAndUnregisterProgressObserverCallback002, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     sptr<IRemoteObject> callback;
     uint32_t tokenId = 101;
-    manager->RegisterProgressObserverCallback("", sessionId_, pid_, tokenId, callback);
-    manager->RegisterProgressObserverCallback(bundleName_, "", pid_, tokenId, callback);
-    manager->RegisterProgressObserverCallback("", "", pid_, tokenId, callback);
-    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager->processCallbacks_.Find(tokenId_).second;
+    manager.RegisterProgressObserverCallback("", sessionId_, pid_, tokenId, callback);
+    manager.RegisterProgressObserverCallback(bundleName_, "", pid_, tokenId, callback);
+    manager.RegisterProgressObserverCallback("", "", pid_, tokenId, callback);
+    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager.processCallbacks_.Find(tokenId_).second;
     progressCallbackInfo.pid = pid_;
-    manager->RegisterProgressObserverCallback(bundleName_, sessionId_, pid_, tokenId_, callback);
-    ASSERT_EQ(manager->processCallbacks_.Find(tokenId).first, false);
-    manager->UnregisterProgressObserverCallback("", pid_, tokenId, sessionId_);
-    manager->UnregisterProgressObserverCallback("", pid_, tokenId, "");
-    manager->UnregisterProgressObserverCallback(bundleName_, pid_, tokenId, "");
+    manager.RegisterProgressObserverCallback(bundleName_, sessionId_, pid_, tokenId_, callback);
+    ASSERT_EQ(manager.processCallbacks_.Find(tokenId).first, false);
+    manager.UnregisterProgressObserverCallback("", pid_, tokenId, sessionId_);
+    manager.UnregisterProgressObserverCallback("", pid_, tokenId, "");
+    manager.UnregisterProgressObserverCallback(bundleName_, pid_, tokenId, "");
 }
 
 /**
@@ -1121,17 +1295,17 @@ HWTEST_F(ObjectManagerTest, registerAndUnregisterProgressObserverCallback002, Te
 */
 HWTEST_F(ObjectManagerTest, NotifyAssetsRecvProgress001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::string objectKey = bundleName_ + sessionId_;
     std::string errProgress = "errProgress";
     int32_t progress = 100;
-    ASSERT_EQ(manager->assetsRecvProgress_.Find(objectKey).first, true);
-    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager->processCallbacks_.Find(tokenId_).second;
-    manager->NotifyAssetsRecvProgress(errProgress, progress);
-    manager->assetsRecvProgress_.Clear();
-    manager->assetsRecvProgress_.Insert(objectKey, progress);
+    ASSERT_EQ(manager.assetsRecvProgress_.Find(objectKey).first, true);
+    ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager.processCallbacks_.Find(tokenId_).second;
+    manager.NotifyAssetsRecvProgress(errProgress, progress);
+    manager.assetsRecvProgress_.Clear();
+    manager.assetsRecvProgress_.Insert(objectKey, progress);
     progressCallbackInfo.observers_.clear();
-    manager->NotifyAssetsRecvProgress(errProgress, progress);
+    manager.NotifyAssetsRecvProgress(errProgress, progress);
 }
 
 /**
@@ -1177,5 +1351,105 @@ HWTEST_F(ObjectManagerTest, OnFinished002, TestSize.Level1)
     int32_t result_1 = 0;
     ret = listener.OnFinished(srcNetworkId, assetObj_1, result_1);
     EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: Save001
+* @tc.desc: Save test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, Save001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string appId = "appId";
+    std::string sessionId = "sessionId";
+    ObjectRecord data;
+    std::string deviceId = "deviceId";
+    auto ret = manager.Save(appId, sessionId, data, deviceId, nullptr);
+    EXPECT_EQ(ret, DistributedKv::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: Save002
+* @tc.desc: Save test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, Save002, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string appId = "appId";
+    std::string sessionId = "sessionId";
+    ObjectRecord data;
+    std::string deviceId = "";
+    std::function<void(const std::map<std::string, int32_t> &)> cb = [](const std::map<std::string, int32_t> &) {};
+    sptr<ObjectSaveCallbackBroker> objectSaveCallback = new (std::nothrow) ObjectSaveCallback(cb);
+    ASSERT_NE(objectSaveCallback, nullptr);
+    auto ret = manager.Save(appId, sessionId, data, deviceId, objectSaveCallback->AsObject());
+    EXPECT_EQ(ret, DistributedKv::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: RevokeSave001
+* @tc.desc: RevokeSave test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, RevokeSave001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string appId = "appId";
+    std::string sessionId = "sessionId";
+    auto ret = manager.RevokeSave(appId, sessionId, nullptr);
+    EXPECT_EQ(ret, DistributedKv::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: RevokeSave002
+* @tc.desc: RevokeSave test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, RevokeSave002, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string appId = "appId";
+    std::string sessionId = "sessionId";
+    std::function<void(int32_t status)> cb = [](int32_t) {};
+    sptr<ObjectRevokeSaveCallbackBroker> objectRevokeSaveCallback = new (std::nothrow) ObjectRevokeSaveCallback(cb);
+    ASSERT_NE(objectRevokeSaveCallback, nullptr);
+    auto ret = manager.RevokeSave(appId, sessionId, objectRevokeSaveCallback->AsObject());
+    EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: Retrieve001
+* @tc.desc: Retrieve test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, Retrieve001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "bundleName";
+    std::string sessionId = "sessionId";
+    uint32_t tokenId = 0;
+    auto ret = manager.Retrieve(bundleName, sessionId, nullptr, tokenId);
+    EXPECT_EQ(ret, DistributedKv::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: Retrieve002
+* @tc.desc: Retrieve test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, Retrieve002, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "bundleName";
+    std::string sessionId = "sessionId";
+    uint32_t tokenId = 0;
+    std::function<void(const std::map<std::string, std::vector<uint8_t>> &, bool)> cb =
+        [](const std::map<std::string, std::vector<uint8_t>> &, bool) {};
+    sptr<ObjectRetrieveCallbackBroker> objectRetrieveCallback = new (std::nothrow) ObjectRetrieveCallback(cb);
+    ASSERT_NE(objectRetrieveCallback, nullptr);
+    auto ret = manager.Retrieve(bundleName, sessionId, objectRetrieveCallback->AsObject(), tokenId);
+    EXPECT_EQ(ret, DistributedKv::KEY_NOT_FOUND);
 }
 } // namespace OHOS::Test

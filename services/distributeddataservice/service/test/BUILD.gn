@@ -946,6 +946,7 @@ ohos_unittest("ObjectManagerMockTest") {
     "object_manager_mock_test.cpp",
     "mock/meta_data_manager_mock.cpp",
     "mock/device_matrix_mock.cpp",
+    "mock/distributed_file_daemon_manager_mock.cpp",
   ]
 
   include_dirs = [

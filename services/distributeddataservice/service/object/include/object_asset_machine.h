@@ -50,12 +50,8 @@ struct DFAAction {
 
 class ObjectAssetMachine {
 public:
-    ObjectAssetMachine();
-
     static int32_t DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& changedAsset, Asset& asset,
         const std::pair<std::string, Asset>& newAsset = std::pair<std::string, Asset>());
-
-private:
 };
 } // namespace DistributedObject
 } // namespace OHOS

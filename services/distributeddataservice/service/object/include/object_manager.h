@@ -78,9 +78,9 @@ public:
 
     ObjectStoreManager();
     ~ObjectStoreManager();
-    static ObjectStoreManager *GetInstance()
+    static ObjectStoreManager &GetInstance()
     {
-        static ObjectStoreManager *manager = new ObjectStoreManager();
+        static ObjectStoreManager manager;
         return manager;
     }
     int32_t Save(const std::string &appId, const std::string &sessionId, const ObjectRecord &data,
@@ -114,6 +114,7 @@ public:
          const std::string& deviceId, const ObjectStore::Asset& asset);
     void DeleteSnapshot(const std::string &bundleName, const std::string &sessionId);
     int32_t AutoLaunchStore();
+    bool UnRegisterAssetsLister();
 private:
     constexpr static const char *SEPERATOR = "_";
     constexpr static const char *TIME_REGEX = "_\\d{10}_p_";

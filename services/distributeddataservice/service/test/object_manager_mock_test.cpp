@@ -21,10 +21,12 @@
 #include "gtest/gtest.h"
 #include "mock/account_delegate_mock.h"
 #include "mock/meta_data_manager_mock.h"
+#include "mock/distributed_file_daemon_manager_mock.h"
 #include "object_manager.h"
 
 using namespace OHOS::DistributedObject;
 using namespace OHOS::DistributedData;
+using namespace OHOS::Storage::DistributedFile;
 using namespace testing::ext;
 using namespace testing;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
@@ -44,6 +46,8 @@ public:
         BDeviceManagerAdapter::deviceManagerAdapter = devMgrAdapterMock;
         deviceMatrixMock = std::make_shared<DeviceMatrixMock>();
         BDeviceMatrix::deviceMatrix = deviceMatrixMock;
+        fileDaemonMgrMock = std::make_shared<DistributedFileDaemonManagerMock>();
+        BDistributedFileDaemonManager::fileDaemonManger_ = fileDaemonMgrMock;
     }
     static void TearDownTestCase(void)
     {
@@ -55,12 +59,15 @@ public:
         BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
         deviceMatrixMock = nullptr;
         BDeviceMatrix::deviceMatrix = nullptr;
+        fileDaemonMgrMock = nullptr;
+        BDistributedFileDaemonManager::fileDaemonManger_ = nullptr;
     }
 
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
     static inline std::shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
     static inline std::shared_ptr<DeviceMatrixMock> deviceMatrixMock = nullptr;
+    static inline std::shared_ptr<DistributedFileDaemonManagerMock> fileDaemonMgrMock = nullptr;
     void SetUp(){};
     void TearDown(){};
 };
@@ -73,7 +80,9 @@ public:
  */
 HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    EXPECT_CALL(*fileDaemonMgrMock, RegisterAssetCallback(_))
+     .WillOnce(testing::Return(0));
+    auto &manager = ObjectStoreManager::GetInstance();
     StoreMetaData meta;
     meta.deviceId = "test_device_id";
     meta.user = "0";
@@ -82,12 +91,12 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync001, TestSize.Level0)
     std::vector<std::string> uuids = { "test_uuid" };
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_)).WillOnce(testing::Return(false));
-    bool isNeedSync = manager->IsNeedMetaSync(meta, uuids);
+    bool isNeedSync = manager.IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(isNeedSync, true);
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
         .WillOnce(testing::Return(true))
         .WillOnce(testing::Return(false));
-    isNeedSync = manager->IsNeedMetaSync(meta, uuids);
+    isNeedSync = manager.IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(isNeedSync, true);
 }
 
@@ -99,7 +108,7 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync001, TestSize.Level0)
  */
 HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync002, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     StoreMetaData meta;
     meta.deviceId = "test_device_id";
     meta.user = "0";
@@ -111,7 +120,7 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync002, TestSize.Level0)
     EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _))
         .WillRepeatedly(Return(std::make_pair(true, DeviceMatrix::META_STORE_MASK)));
 
-    bool result = manager->IsNeedMetaSync(meta, uuids);
+    bool result = manager.IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(result, true);
 }
 
@@ -123,7 +132,7 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync002, TestSize.Level0)
  */
 HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     StoreMetaData meta;
     meta.deviceId = "test_device_id";
     meta.user = "0";
@@ -135,7 +144,7 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
     EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
     EXPECT_CALL(*deviceMatrixMock, GetMask(_, _)).WillOnce(Return(std::make_pair(true, DeviceMatrix::META_STORE_MASK)));
 
-    bool result = manager->IsNeedMetaSync(meta, uuids);
+    bool result = manager.IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(result, true);
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillRepeatedly(Return(true));
@@ -144,7 +153,7 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
 
     EXPECT_CALL(*deviceMatrixMock, GetMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
 
-    result = manager->IsNeedMetaSync(meta, uuids);
+    result = manager.IsNeedMetaSync(meta, uuids);
     EXPECT_EQ(result, false);
 }
 
@@ -156,7 +165,7 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
  */
 HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::function<void(const std::map<std::string, int32_t> &results)> func;
     func = [](const std::map<std::string, int32_t> &results) { return results; };
     std::string prefix = "ObjectManagerTest";
@@ -170,7 +179,7 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
     // local device
     {
         std::vector<std::string> localDeviceList = { "local" };
-        auto result = manager->SyncOnStore(prefix, localDeviceList, func);
+        auto result = manager.SyncOnStore(prefix, localDeviceList, func);
         EXPECT_EQ(result, OBJECT_SUCCESS);
     }
 
@@ -181,10 +190,9 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
         EXPECT_CALL(*devMgrAdapterMock, ToUUID(testing::A<const std::vector<std::string> &>()))
             .WillOnce(Return(std::vector<std::string>{ "mock_uuid_1" }));
         EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-            .WillOnce(testing::Return(false))
             .WillOnce(testing::Return(false));
         EXPECT_CALL(*metaDataManagerMock, Sync(_, _, _)).WillOnce(testing::Return(true));
-        auto result = manager->SyncOnStore(prefix, remoteDeviceList, func);
+        auto result = manager.SyncOnStore(prefix, remoteDeviceList, func);
         EXPECT_EQ(result, OBJECT_SUCCESS);
     }
 
@@ -199,7 +207,7 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
             .WillOnce(testing::Return(true));
         EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
         EXPECT_CALL(*deviceMatrixMock, GetMask(_, _)).WillOnce(Return(std::make_pair(true, 0)));
-        auto result = manager->SyncOnStore(prefix, remoteDeviceList, func);
+        auto result = manager.SyncOnStore(prefix, remoteDeviceList, func);
         EXPECT_EQ(result, E_DB_ERROR);
     }
 }
@@ -213,14 +221,14 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
 */
 HWTEST_F(ObjectManagerMockTest, GetCurrentUser001, TestSize.Level1)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::vector<int> users;
     EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
         .Times(1)
         .WillOnce(DoAll(
             SetArgReferee<0>(users),
             Return(false)));
-    auto result = manager->GetCurrentUser();
+    auto result = manager.GetCurrentUser();
     EXPECT_EQ(result, "");
 }
 
@@ -233,7 +241,7 @@ HWTEST_F(ObjectManagerMockTest, GetCurrentUser001, TestSize.Level1)
 */
 HWTEST_F(ObjectManagerMockTest, GetCurrentUser002, TestSize.Level1)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::vector<int> users;
     EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
         .Times(1)
@@ -241,7 +249,7 @@ HWTEST_F(ObjectManagerMockTest, GetCurrentUser002, TestSize.Level1)
             SetArgReferee<0>(users),
             Invoke([](std::vector<int>& users) { users.clear(); }),
             Return(true)));
-    auto result = manager->GetCurrentUser();
+    auto result = manager.GetCurrentUser();
     EXPECT_EQ(result, "");
 }
 
@@ -254,15 +262,122 @@ HWTEST_F(ObjectManagerMockTest, GetCurrentUser002, TestSize.Level1)
 */
 HWTEST_F(ObjectManagerMockTest, GetCurrentUser003, TestSize.Level1)
 {
-    auto manager = ObjectStoreManager::GetInstance();
+    auto &manager = ObjectStoreManager::GetInstance();
     std::vector<int> users = {0, 1};
     EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
         .Times(1)
         .WillOnce(DoAll(
             SetArgReferee<0>(users),
             Return(true)));
-    auto result = manager->GetCurrentUser();
+    auto result = manager.GetCurrentUser();
     EXPECT_EQ(result, std::to_string(users[0]));
+}
+
+/**
+* @tc.name: WaitAssets001
+* @tc.desc: WaitAssets test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, WaitAssets001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = "objectKey";
+    ObjectStoreManager::SaveInfo info;
+    std::map<std::string, ObjectRecord> data;
+    auto ret = manager.WaitAssets(objectKey, info, data);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_INNER_ERROR);
+}
+
+/**
+* @tc.name: NotifyAssetsReady001
+* @tc.desc: NotifyAssetsReady test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, NotifyAssetsReady001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = "objectKey";
+    std::string bundleName = "bundleName";
+    std::string srcNetworkId = "srcNetworkId";
+    manager.NotifyAssetsReady(objectKey, bundleName, srcNetworkId);
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: DoNotifyAssetsReady001
+* @tc.desc: DoNotifyAssetsReady test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, DoNotifyAssetsReady001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    uint32_t tokenId = 0;
+    ObjectStoreManager::CallbackInfo info;
+    std::string objectKey = "objectKey";
+    bool isReady = true;
+    manager.DoNotifyAssetsReady(tokenId, info, objectKey, isReady);
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: DoNotifyWaitAssetTimeout001
+* @tc.desc: DoNotifyWaitAssetTimeout test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, DoNotifyWaitAssetTimeout001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string objectKey = "objectKey";
+    manager.DoNotifyWaitAssetTimeout(objectKey);
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: FlushClosedStore001
+* @tc.desc: FlushClosedStore test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, FlushClosedStore001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.FlushClosedStore();
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: CloseAfterMinute001
+* @tc.desc: CloseAfterMinute test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, CloseAfterMinute001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.CloseAfterMinute();
+    EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: UnRegisterAssetsLister001
+* @tc.desc: UnRegisterAssetsLister test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, UnRegisterAssetsLister001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.objectAssetsRecvListener_ = nullptr;
+    auto ret = manager.UnRegisterAssetsLister();
+    EXPECT_EQ(ret, true);
+    EXPECT_CALL(*fileDaemonMgrMock, RegisterAssetCallback(_))
+     .WillOnce(testing::Return(0));
+    manager.RegisterAssetsLister();
+    EXPECT_CALL(*fileDaemonMgrMock, UnRegisterAssetCallback(_))
+     .WillOnce(testing::Return(-1));
+    ret = manager.UnRegisterAssetsLister();
+    EXPECT_EQ(ret, false);
+    EXPECT_CALL(*fileDaemonMgrMock, UnRegisterAssetCallback(_))
+     .WillOnce(testing::Return(0));
+    ret = manager.UnRegisterAssetsLister();
+    EXPECT_EQ(ret, true);
 }
 }; // namespace DistributedDataTest
 } // namespace OHOS::Test

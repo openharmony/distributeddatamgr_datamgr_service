@@ -324,7 +324,7 @@ bool DirectoryManager::DeleteDirectory(const char* path)
         }
     }
     closedir(dir);
-    if (chdir(curWorkDir) == -1 || rmdir(path) == -1) {
+    if (curWorkDir == nullptr || chdir(curWorkDir) == -1 || rmdir(path) == -1) {
         return false;
     }
     return true;

@@ -48,7 +48,7 @@ protected:
 void ObjectAssetMachineTest::SetUpTestCase(void)
 {
     auto executors = std::make_shared<ExecutorPool>(2, 1);
-    ObjectAssetLoader::GetInstance()->SetThreadPool(executors);
+    ObjectAssetLoader::GetInstance().SetThreadPool(executors);
 }
 
 void ObjectAssetMachineTest::SetUp()
