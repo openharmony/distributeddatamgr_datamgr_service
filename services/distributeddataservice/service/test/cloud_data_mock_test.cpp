@@ -313,18 +313,26 @@ HWTEST_F(CloudDataMockTest, GetSchema003, TestSize.Level1)
 }
 
 /**
-* @tc.name: OnReadyTest
-* @tc.desc: Test OnReady function
+* @tc.name: OnReadyTest_LoginAccount
+* @tc.desc: Test OnReady function when IsLoginAccount is true or false
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataMockTest, OnReadyTest, TestSize.Level0)
+HWTEST_F(CloudDataMockTest, OnReadyTest_LoginAccount, TestSize.Level0)
 {
-    ZLOGI("CloudDataMockTest OnReadyTest start");
-    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(testing::Return(true));
-    auto ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    ZLOGI("CloudDataMockTest OnReadyTest_LoginAccount start");
+    std::string device = "test";
+    auto ret = cloudServiceImpl_->OnReady(device);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-    ZLOGI("CloudDataMockTest OnReadyTest end");
+
+    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(testing::Return(false));
+    ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_NE(ret, CloudData::CloudService::SUCCESS);
+
+    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(testing::Return(true));
+    ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    ZLOGI("CloudDataMockTest OnReadyTest_LoginAccount end");
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

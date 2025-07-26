@@ -1296,21 +1296,6 @@ HWTEST_F(CloudDataTest, NotifyDataChange003, TestSize.Level1)
 }
 
 /**
-* @tc.name: OnReady001
-* @tc.desc: Test OnReady function
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, OnReady001, TestSize.Level0)
-{
-    std::string device = "test";
-    auto ret = cloudServiceImpl_->OnReady(device);
-    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-    ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
-    EXPECT_NE(ret, CloudData::CloudService::SUCCESS);
-}
-
-/**
 * @tc.name: Offline
 * @tc.desc:
 * @tc.type: FUNC
