@@ -378,7 +378,6 @@ HWTEST_F(ObjectManagerMockTest, UnRegisterAssetsLister001, TestSize.Level1)
      .WillOnce(testing::Return(0));
     ret = manager.UnRegisterAssetsLister();
     EXPECT_EQ(ret, true);
-    
 }
 }; // namespace DistributedDataTest
 } // namespace OHOS::Test
