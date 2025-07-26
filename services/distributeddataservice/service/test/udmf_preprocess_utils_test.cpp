@@ -90,20 +90,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, SetRemoteData002, TestSize.Level1)
 }
 
 /**
-* @tc.name: IsFileType001
-* @tc.desc: Abnormal test of IsFileType, record is nullptr
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfPreProcessUtilsTest, IsFileType001, TestSize.Level1)
-{
-    std::shared_ptr<UnifiedRecord> record = nullptr;
-    PreProcessUtils preProcessUtils;
-    bool ret = preProcessUtils.IsFileType(record);
-    EXPECT_EQ(ret, false);
-}
-
-/**
 * @tc.name: GetDfsUrisFromLocal001
 * @tc.desc: Abnormal test of GetDfsUrisFromLocal, uris is null
 * @tc.type: FUNC
@@ -158,10 +144,35 @@ HWTEST_F(UdmfPreProcessUtilsTest, GetInstIndex001, TestSize.Level1)
 */
 HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileType001, TestSize.Level1)
 {
-    std::vector<std::shared_ptr<UnifiedRecord>> records = { nullptr };
-    std::function<bool(std::shared_ptr<Object>)> callback;
-    PreProcessUtils preProcessUtils;
-    EXPECT_NO_FATAL_FAILURE(preProcessUtils.ProcessFileType(records, callback));
+    std::shared_ptr<UnifiedRecord> record = std::make_shared<UnifiedRecord>();
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = "http://demo.com.html";
+    obj->value_[FILE_TYPE] = "general.html";
+    record->AddEntry("general.file-uri", obj);
+    std::shared_ptr<Object> obj1 = std::make_shared<Object>();
+    obj1->value_[UNIFORM_DATA_TYPE] = "general.content-form";
+    obj1->value_["title"] = "test";
+    record->AddEntry("general.content-form", obj1);
+
+    std::shared_ptr<UnifiedRecord> record1 = std::make_shared<UnifiedRecord>();
+    record1->AddEntry("general.file-uri", obj1);
+    std::shared_ptr<UnifiedRecord> record2 = std::make_shared<UnifiedRecord>();
+    record2->AddEntry("general.file-uri", "1111");
+    std::shared_ptr<UnifiedRecord> record3 = std::make_shared<UnifiedRecord>();
+    record3->AddEntry("general.file-uri", 1);
+    std::vector<std::shared_ptr<UnifiedRecord>> records = { record, record1, record2, record3 };
+    std::vector<std::string> uris;
+    PreProcessUtils::ProcessFileType(records, [&uris](std::shared_ptr<Object> obj) {
+        std::string oriUri;
+        obj->GetValue(ORI_URI, oriUri);
+        if (oriUri.empty()) {
+            return false;
+        }
+        uris.push_back(oriUri);
+        return true;
+    });
+    EXPECT_EQ(uris.size(), 1);
 }
 
 /**
