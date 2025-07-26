@@ -25,6 +25,7 @@
 #include "executor_pool.h"
 #include "kv_store_nb_delegate_mock.h"
 #include "kvstore_meta_manager.h"
+#include "metadata/object_user_meta_data.h"
 #include "object_types.h"
 #include "snapshot/machine_status.h"
 
@@ -361,6 +362,8 @@ HWTEST_F(ObjectManagerTest, SaveToStoreTest, TestSize.Level1)
 */
 HWTEST_F(ObjectManagerTest, Clear001, TestSize.Level0)
 {
+    ObjectUserMetaData userMeta;
+    MetaDataManager::GetInstance().SaveMeta(ObjectUserMetaData::GetKey(), userMeta, true);
     auto &manager = ObjectStoreManager::GetInstance();
     std::string dataDir = "/data/app/el2/100/database";
     manager.SetData(dataDir, userId_);

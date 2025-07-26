@@ -299,9 +299,6 @@ bool DirectoryManager::DeleteDirectory(const char* path)
     struct dirent* dirEntry;
     struct stat buf;
     char* curWorkDir = getcwd(nullptr, 0);
-    if (curWorkDir == nullptr) {
-        return false;
-    }
     if ((dir = opendir(path)) == nullptr) {
         return true;
     }
@@ -327,7 +324,7 @@ bool DirectoryManager::DeleteDirectory(const char* path)
         }
     }
     closedir(dir);
-    if (chdir(curWorkDir) == -1 || rmdir(path) == -1) {
+    if (curWorkDir == nullptr || chdir(curWorkDir) == -1 || rmdir(path) == -1) {
         return false;
     }
     return true;
