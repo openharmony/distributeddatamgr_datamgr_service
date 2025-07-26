@@ -93,6 +93,7 @@ public:
     const uint32_t MAX_VALUE_SIZE = 4 * 1024 * 1024;
     const std::string STORE_ID = "drag";
     const std::string KEY_PREFIX = "TEST_";
+    const std::string SUMMARY_KEY_PREFIX = "SUMMARY_KEY_PREFIX";
     const std::string EMPTY_DEVICE_ID = "";
     const std::string BUNDLE_NAME = "udmf_test";
     static constexpr size_t tempUdataRecordSize = 1;
@@ -643,10 +644,21 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
     bool result = store->Init();
     EXPECT_TRUE(result);
     Summary summary;
-    UnifiedKey key(KEY_PREFIX);
-    auto status = store->GetSummary(key, summary);
-    ASSERT_EQ(status, E_NOT_FOUND);
+    summary.summary = {
+        { "general.file", 10 },
+        { "general.png", 10 },
+        { "general.html", 10 },
+        { "general.jpeg", 10 },
+        { "general.avi", 10},
+        { "aabbcc", 10}
+    };
+    UnifiedKey key(SUMMARY_KEY_PREFIX);
+    auto status = store->PutSummary(key, summary);
+    EXPECT_EQ(status, E_OK);
+    status = store->GetSummary(key, summary);
+    ASSERT_EQ(status, E_OK);
 }
+
 
 /**
 * @tc.name: GetRuntime001

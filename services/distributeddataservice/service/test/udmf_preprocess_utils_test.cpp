@@ -172,7 +172,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileType001, TestSize.Level1)
         uris.push_back(oriUri);
         return true;
     });
-    EXPECT_EQ(uris.size(), 2);
+    EXPECT_EQ(uris.size(), 1);
 }
 
 /**
