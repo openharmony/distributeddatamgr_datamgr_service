@@ -114,6 +114,7 @@ public:
          const std::string& deviceId, const ObjectStore::Asset& asset);
     void DeleteSnapshot(const std::string &bundleName, const std::string &sessionId);
     int32_t AutoLaunchStore();
+    void UnRegisterAssetsLister();
 private:
     constexpr static const char *SEPERATOR = "_";
     constexpr static const char *TIME_REGEX = "_\\d{10}_p_";

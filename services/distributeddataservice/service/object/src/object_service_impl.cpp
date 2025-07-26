@@ -438,6 +438,7 @@ void ObjectServiceImpl::DumpObjectServiceInfo(int fd, std::map<std::string, std:
 ObjectServiceImpl::~ObjectServiceImpl()
 {
     DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
+    ObjectStoreManager::GetInstance().UnRegisterAssetsLister();
 }
 
 int32_t ObjectServiceImpl::OnBind(const BindInfo &bindInfo)
