@@ -1156,6 +1156,7 @@ ohos_unittest("DataShareServiceImplTest") {
   include_dirs = [
     "${data_service_path}/service/config/include",
     "${data_service_path}/framework/include/metadata",
+    "${data_service_path}/service/data_share/common",
   ]
 
   sources = [
@@ -1260,7 +1261,6 @@ ohos_unittest("DataShareServiceImplTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
     "kv_store:distributeddb",
     "qos_manager:concurrent_task_client",
     "qos_manager:qos",

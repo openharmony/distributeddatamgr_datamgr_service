@@ -54,7 +54,7 @@ HWTEST_F(DataShareSchedulerManagerTest, EnableScheduler001, TestSize.Level1)
     tplt.scheduler_ = "scheduler test";
     std::string dataDir = "/data/service/el1/public/database/distributeddata/kvdb";
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 1);
-    auto kvDelegate = KvDBDelegate::GetInstance(false, dataDir, executors);
+    auto kvDelegate = KvDBDelegate::GetInstance(dataDir, executors);
     ASSERT_NE(kvDelegate, nullptr);
     TemplateData data(key.uri, key.bundleName, key.subscriberId, USER_TEST, tplt);
     auto ret = kvDelegate->Upsert(KvDBDelegate::TEMPLATE_TABLE, data);
@@ -95,7 +95,7 @@ HWTEST_F(DataShareSchedulerManagerTest, DisableScheduler001, TestSize.Level1)
     tplt.scheduler_ = "scheduler test";
     std::string dataDir = "/data/service/el1/public/database/distributeddata/kvdb";
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 1);
-    auto kvDelegate = KvDBDelegate::GetInstance(false, dataDir, executors);
+    auto kvDelegate = KvDBDelegate::GetInstance(dataDir, executors);
     ASSERT_NE(kvDelegate, nullptr);
     TemplateData data(key.uri, key.bundleName, key.subscriberId, USER_TEST, tplt);
     auto ret = kvDelegate->Upsert(KvDBDelegate::TEMPLATE_TABLE, data);
