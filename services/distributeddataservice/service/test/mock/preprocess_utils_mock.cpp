@@ -94,11 +94,6 @@ bool PreProcessUtils::GetNativeProcessNameByToken(int tokenId, std::string &proc
     return true;
 }
 
-std::string PreProcessUtils::GetAppId(const std::string &bundleName)
-{
-    return "com.demo.test";
-}
-
 std::string PreProcessUtils::GetLocalDeviceId()
 {
     return "123";

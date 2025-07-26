@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,7 +13,7 @@
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-ohos_source_set("distributeddata_checker") {
+ohos_source_set("distributedata_bundlemgr") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -22,38 +22,22 @@ ohos_source_set("distributeddata_checker") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = [
-    "bundle_checker.cpp",
-    "system_checker.cpp",
-  ]
+  sources = [ "bundlemgr_adapter.cpp" ]
 
-  cflags_cc = [
-    "-fvisibility=hidden",
-    "-Oz",
-  ]
-
-  include_dirs = [
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/framework/include",
-  ]
+  cflags_cc = [ "-fvisibility=hidden" ]
 
   if (build_public_version) {
     cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
   }
+
+  include_dirs = [ "${data_service_path}/adapter/include/bundle_mgr" ]
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
-  deps = [ "${data_service_path}/adapter/utils:distributeddata_utils" ]
-  cflags = [ "-Oz" ]
+
   external_deps = [
-    "ability_base:base",
-    "ability_base:want",
     "access_token:libaccesstoken_sdk",
-    "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
     "hilog:libhilog",
-    "ipc:ipc_core",
     "kv_store:datamgr_common",
-    "samgr:samgr_proxy",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

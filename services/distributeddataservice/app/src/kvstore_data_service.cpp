@@ -29,6 +29,7 @@
 #include "auth_delegate.h"
 #include "auto_launch_export.h"
 #include "bootstrap.h"
+#include "bundle_mgr/bundlemgr_adapter.h"
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
 #include "communicator_context.h"
@@ -930,7 +931,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(StoreMetaMapping(meta).GetKey(), true);
                 PermitDelegate::GetInstance().DelCache(meta.GetKeyWithoutPath());
             }
-            CheckerManager::GetInstance().ClearCache();
+            BundleMgrAdapter::GetInstance().ClearCache();
             g_kvStoreAccountEventStatus = 0;
             break;
         }
@@ -1050,7 +1051,7 @@ void KvStoreDataService::OnSessionReady(const AppDistributedKv::DeviceInfo &info
 
 int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
+    BundleMgrAdapter::GetInstance().DeleteCache(bundleName, user);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppUninstall(bundleName, user, index);
@@ -1061,7 +1062,7 @@ int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t u
 
 int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
-    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
+    BundleMgrAdapter::GetInstance().DeleteCache(bundleName, user);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppUpdate(bundleName, user, index);
@@ -1072,7 +1073,7 @@ int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user
 
 int32_t KvStoreDataService::OnInstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
+    BundleMgrAdapter::GetInstance().DeleteCache(bundleName, user);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppInstall(bundleName, user, index);
@@ -1093,7 +1094,7 @@ int32_t KvStoreDataService::OnScreenUnlocked(int32_t user)
 int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
     int32_t tokenId)
 {
-    CheckerManager::GetInstance().DeleteCache(bundleName, userId, appIndex);
+    BundleMgrAdapter::GetInstance().DeleteCache(bundleName, userId);
     auto callerToken = IPCSkeleton::GetCallingTokenID();
     NativeTokenInfo nativeTokenInfo;
     if (AccessTokenKit::GetNativeTokenInfo(callerToken, nativeTokenInfo) != RET_SUCCESS ||
