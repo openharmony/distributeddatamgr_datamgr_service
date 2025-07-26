@@ -110,15 +110,17 @@ bool ObjectStoreManager::RegisterAssetsLister()
     return true;
 }
 
-void ObjectStoreManager::UnRegisterAssetsLister()
+bool ObjectStoreManager::UnRegisterAssetsLister()
 {
     ZLOGI("ObjectStoreManager UnRegisterAssetsLister");
     if (objectAssetsRecvListener_ != nullptr) {
         auto status = DistributedFileDaemonManager::GetInstance().UnRegisterAssetCallback(objectAssetsRecvListener_);
         if (status != DistributedDB::DBStatus::OK) {
             ZLOGE("UnRegister assetsRecvListener err %{public}d", status);
+            return false;
         }
     }
+    return true;
 }
 
 void ObjectStoreManager::ProcessSyncCallback(const std::map<std::string, int32_t> &results, const std::string &appId,
@@ -659,7 +661,7 @@ int32_t ObjectStoreManager::WaitAssets(const std::string& objectKey, const SaveI
     if (executors_ == nullptr) {
         ZLOGE("executors_ is null");
         return OBJECT_INNER_ERROR;
-    } 
+    }
     auto taskId = executors_->Schedule(std::chrono::seconds(WAIT_TIME), [this, objectKey, data, saveInfo]() {
         ZLOGE("wait assets finisehd timeout, try pull assets, objectKey:%{public}s", objectKey.c_str());
         PullAssets(data, saveInfo);

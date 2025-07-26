@@ -21,10 +21,12 @@
 #include "gtest/gtest.h"
 #include "mock/account_delegate_mock.h"
 #include "mock/meta_data_manager_mock.h"
+#include "mock/distributed_file_daemon_manager_mock.h"
 #include "object_manager.h"
 
 using namespace OHOS::DistributedObject;
 using namespace OHOS::DistributedData;
+using namespace OHOS::Storage::DistributedFile;
 using namespace testing::ext;
 using namespace testing;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
@@ -44,6 +46,8 @@ public:
         BDeviceManagerAdapter::deviceManagerAdapter = devMgrAdapterMock;
         deviceMatrixMock = std::make_shared<DeviceMatrixMock>();
         BDeviceMatrix::deviceMatrix = deviceMatrixMock;
+        fileDaemonMgrMock = std::make_shared<DistributedFileDaemonManagerMock>();
+        BDistributedFileDaemonManager::fileDaemonManger_ = fileDaemonMgrMock;
     }
     static void TearDownTestCase(void)
     {
@@ -55,12 +59,15 @@ public:
         BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
         deviceMatrixMock = nullptr;
         BDeviceMatrix::deviceMatrix = nullptr;
+        fileDaemonMgrMock = nullptr;
+        BDistributedFileDaemonManager::fileDaemonManger_ = nullptr;
     }
 
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
     static inline std::shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
     static inline std::shared_ptr<DeviceMatrixMock> deviceMatrixMock = nullptr;
+    static inline std::shared_ptr<DistributedFileDaemonManagerMock> fileDaemonMgrMock = nullptr;
     void SetUp(){};
     void TearDown(){};
 };
@@ -73,6 +80,8 @@ public:
  */
 HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync001, TestSize.Level0)
 {
+    EXPECT_CALL(*fileDaemonMgrMock, RegisterAssetCallback(_))
+     .WillOnce(testing::Return(0));
     auto &manager = ObjectStoreManager::GetInstance();
     StoreMetaData meta;
     meta.deviceId = "test_device_id";
@@ -345,6 +354,31 @@ HWTEST_F(ObjectManagerMockTest, CloseAfterMinute001, TestSize.Level1)
     auto &manager = ObjectStoreManager::GetInstance();
     manager.CloseAfterMinute();
     EXPECT_EQ(manager.executors_, nullptr);
+}
+
+/**
+* @tc.name: UnRegisterAssetsLister001
+* @tc.desc: UnRegisterAssetsLister test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, UnRegisterAssetsLister001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.objectAssetsRecvListener_ = nullptr;
+    auto ret = manager.UnRegisterAssetsLister();
+    EXPECT_EQ(ret, true);
+    EXPECT_CALL(*fileDaemonMgrMock, RegisterAssetCallback(_))
+     .WillOnce(testing::Return(0));
+    manager.RegisterAssetsLister();
+    EXPECT_CALL(*fileDaemonMgrMock, UnRegisterAssetCallback(_))
+     .WillOnce(testing::Return(-1));
+    ret = manager.UnRegisterAssetsLister();
+    EXPECT_EQ(ret, false);
+    EXPECT_CALL(*fileDaemonMgrMock, UnRegisterAssetCallback(_))
+     .WillOnce(testing::Return(0));
+    ret = manager.UnRegisterAssetsLister();
+    EXPECT_EQ(ret, true);
+    
 }
 }; // namespace DistributedDataTest
 } // namespace OHOS::Test
