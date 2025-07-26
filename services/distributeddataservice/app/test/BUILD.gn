@@ -147,6 +147,12 @@ ohos_unittest("KvStoreDataServiceTest") {
 
 ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
   module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
   sources = [
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
@@ -170,6 +176,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_meta_manager_update_key_test.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -184,6 +191,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
     "file_api:securitylabel",
+    "googletest:gmock",
     "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",

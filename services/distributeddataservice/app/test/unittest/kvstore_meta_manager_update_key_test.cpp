@@ -14,23 +14,24 @@
 */
 #define LOG_TAG "KvstoreMetaManagerUpdateKeyTest"
 
-#include "metadata/meta_data_manager.h"
-
 #include "bootstrap.h"
 #include "device_manager_adapter.h"
+#include "device_manager_adapter_mock.h"
+#include "executor_pool.h"
+#include "gtest/gtest.h"
 #include "kvstore_meta_manager.h"
 #include "log_print.h"
 #include "metadata/device_meta_data.h"
+#include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
 #include "metadata/version_meta_data.h"
-#include "executor_pool.h"
 #include "semaphore_ex.h"
 #include "store_types.h"
-#include "gtest/gtest.h"
 namespace {
 using namespace testing::ext;
+using namespace testing;
 using namespace OHOS::DistributedData;
 using KvStoreMetaManager = OHOS::DistributedKv::KvStoreMetaManager;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
@@ -38,6 +39,14 @@ class KvstoreMetaManagerUpdateKeyTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
+        deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+        BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
+        DeviceInfo deviceInfo;
+        deviceInfo.uuid = "ABCD";
+        EXPECT_CALL(*deviceManagerAdapterMock, GetLocalDevice()).WillRepeatedly(Return(deviceInfo));
+        EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return(deviceInfo.uuid));
+        EXPECT_CALL(*deviceManagerAdapterMock, CalcClientUuid(_, _)).WillRepeatedly(Return(deviceInfo.uuid));
+        EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(deviceInfo.uuid)).WillRepeatedly(Return(deviceInfo.uuid));
         auto executors = std::make_shared<OHOS::ExecutorPool>(1, 0);
         Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
@@ -45,15 +54,22 @@ public:
         KvStoreMetaManager::GetInstance().BindExecutor(executors);
         KvStoreMetaManager::GetInstance().InitMetaParameter();
     }
+
     static void TearDownTestCase()
     {
+        deviceManagerAdapterMock = nullptr;
+        BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
     }
+
     void SetUp()
     {
     }
+
     void TearDown()
     {
     }
+    
+    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
 };
 
 /**

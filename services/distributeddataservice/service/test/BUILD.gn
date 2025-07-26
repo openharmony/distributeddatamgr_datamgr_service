@@ -619,11 +619,13 @@ ohos_unittest("RdbServiceImplTest") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "${data_service_path}/service/test/mock/cursor_mock.cpp",
+    "mock/device_manager_adapter_mock.cpp",
     "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
