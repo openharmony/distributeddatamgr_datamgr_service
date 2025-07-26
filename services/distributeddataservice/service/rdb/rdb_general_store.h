@@ -43,9 +43,9 @@ public:
     using GenErr = DistributedData::GeneralError;
     using RdbStore = OHOS::NativeRdb::RdbStore;
     using Reference = DistributedData::Reference;
-    using Snapshot = DistributedData::Snapshot;
-    using BindAssets = DistributedData::BindAssets;
     using DBPassword = DistributedDB::CipherPassword;
+    using Snapshot = DistributedData::Snapshot;
+    using BindAssets = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
@@ -84,7 +84,7 @@ public:
     void SetConfig(const StoreConfig &storeConfig) override;
     int32_t AddRef() override;
     int32_t Release() override;
-    int32_t BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets) override;
+    int32_t BindSnapshots(BindAssets bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
     int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     std::pair<int32_t, uint32_t> LockCloudDB() override;

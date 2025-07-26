@@ -45,10 +45,6 @@ public:
     virtual bool IsBoundAsset(const Asset& asset) = 0;
 
 };
-
-struct BindAssets {
-    std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets;
-};
 } // namespace DistributedData
 } // namespace OHOS
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_SNAPSHOT_SNAPSHOT_H
