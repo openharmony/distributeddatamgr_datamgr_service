@@ -1455,25 +1455,12 @@ HWTEST_F(ObjectManagerTest, Retrieve002, TestSize.Level1)
 
 /**
 * @tc.name: Destructor001
-* @tc.desc: ObjectStoreManager destructor test.
-* @tc.type: FUNC
-*/
-HWTEST_F(ObjectManagerTest, Destructor001, TestSize.Level1)
-{
-    auto manager = ObjectStoreManager::GetInstance();
-    ASSERT_NE(manager, nullptr);
-    delete manager;
-}
-
-/**
-* @tc.name: Destructor001
 * @tc.desc: ObjectStoreManager oull assets001 test.
 * @tc.type: FUNC
 */
 HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
 {
-    auto manager = ObjectStoreManager::GetInstance();
-    ASSERT_NE(manager, nullptr);
+    auto &manager = ObjectStoreManager::GetInstance();
     
     std::map<std::string, ObjectRecord> data;
     ObjectRecord record;
@@ -1490,7 +1477,7 @@ HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
     data.insert({"test_object", record});
     
     ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
-    manager->PullAssets(data, saveInfo);
+    manager.PullAssets(data, saveInfo);
     ASSERT_TRUE(true);
 }
 
