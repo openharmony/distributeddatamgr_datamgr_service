@@ -103,15 +103,15 @@ public:
     {
         return 0;
     }
-    int32_t GetDfsSwitchStatus(const std::string &networkId, int32_t &switchStatus) override
+    int32_t GetDfsSwitchStatus(const std::string &networkId, int32_t &switchStatus)
     {
         return 0;
     }
-    int32_t UpdateDfsSwitchStatus(int32_t switchStatus) override
+    int32_t UpdateDfsSwitchStatus(int32_t switchStatus)
     {
         return 0;
     }
-    int32_t GetConnectedDeviceList(std::vector<DfsDeviceInfo> &deviceList) override
+    int32_t GetConnectedDeviceList(std::vector<DfsDeviceInfo> &deviceList)
     {
         return 0;
     }
