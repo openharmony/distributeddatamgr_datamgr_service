@@ -1452,4 +1452,646 @@ HWTEST_F(ObjectManagerTest, Retrieve002, TestSize.Level1)
     auto ret = manager.Retrieve(bundleName, sessionId, objectRetrieveCallback->AsObject(), tokenId);
     EXPECT_EQ(ret, DistributedKv::KEY_NOT_FOUND);
 }
+
+/**
+* @tc.name: Destructor001
+* @tc.desc: ObjectStoreManager destructor test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, Destructor001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    delete manager;
+}
+
+/**
+* @tc.name: Destructor001
+* @tc.desc: ObjectStoreManager oull assets001 test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
+HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
+{
+    auto manager = ObjectStoreManager::GetInstance();
+    ASSERT_NE(manager, nullptr);
+    
+    std::map<std::string, ObjectRecord> data;
+    ObjectRecord record;
+    std::vector<uint8_t> value{0};
+    std::string dataStr = "[STRING]test_asset";
+    value.insert(value.end(), dataStr.begin(), dataStr.end());
+    
+    std::string assetPrefix = "test_asset";
+    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
+    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
+    
+    data.insert({"test_object", record});
+    
+    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
+    manager->PullAssets(data, saveInfo);
+    ASSERT_TRUE(true);
+}
+
+
 } // namespace OHOS::Test
