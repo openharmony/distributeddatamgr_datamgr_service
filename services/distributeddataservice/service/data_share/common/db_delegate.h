@@ -129,7 +129,7 @@ public:
     static constexpr const char *DATA_TABLE = "data_";
     static constexpr const char *PROXYDATA_TABLE = "proxydata_";
     static std::shared_ptr<KvDBDelegate> GetInstance(
-        bool reInit = false, const std::string &dir = "", const std::shared_ptr<ExecutorPool> &executors = nullptr);
+        const std::string &dir = "", const std::shared_ptr<ExecutorPool> &executors = nullptr);
     virtual ~KvDBDelegate() = default;
     virtual std::pair<int32_t, int32_t> Upsert(const std::string &collectionName, const KvData &value) = 0;
     virtual std::pair<int32_t, int32_t> Delete(const std::string &collectionName, const std::string &filter) = 0;
