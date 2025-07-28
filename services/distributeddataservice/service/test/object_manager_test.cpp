@@ -1478,7 +1478,7 @@ HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
     
     ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
     manager.PullAssets(data, saveInfo);
-    ASSERT_TRUE(true);
+    EXPECT_EQ(saveInfo.bundleName, bundleName_);
 }
 
 } // namespace OHOS::Test
