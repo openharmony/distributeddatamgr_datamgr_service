@@ -1473,20 +1473,4 @@ HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
     auto ptr2 = manager.GetSnapShots(bundleName, storeName);
     EXPECT_EQ(ptr1, ptr2);
 }
-
-HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
-{
-    auto &manager = ObjectStoreManager::GetInstance();
-    std::string bundleName = "bundleA";
-    std::string storeName = "storeA";
-
-    auto ptr1 = manager.GetSnapShots(bundleName, storeName);
-    ASSERT_NE(ptr1, nullptr);
-    EXPECT_TRUE(ptr1->empty());
-    auto snapshot = std::make_shared<ObjectSnapshot>();
-    (*ptr1)["snap1"] = snapshot;
-
-    auto ptr2 = manager.GetSnapShots(bundleName, storeName);
-    EXPECT_EQ(ptr1, ptr2);
-}
 } // namespace OHOS::Test
