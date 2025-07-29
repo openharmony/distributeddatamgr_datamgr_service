@@ -1472,5 +1472,6 @@ HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
 
     auto ptr2 = manager.GetSnapShots(bundleName, storeName);
     EXPECT_EQ(ptr1, ptr2);
+    EXPECT_EQ((*ptr2)["snap1"], snapshot);
 }
 } // namespace OHOS::Test
