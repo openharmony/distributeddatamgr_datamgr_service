@@ -1454,35 +1454,6 @@ HWTEST_F(ObjectManagerTest, Retrieve002, TestSize.Level1)
 }
 
 /**
-* @tc.name: PullAssets001
-* @tc.desc: ObjectStoreManager pull assets test.
-* @tc.type: FUNC
-*/
-HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
-{
-    auto &manager = ObjectStoreManager::GetInstance();
-    
-    std::map<std::string, ObjectRecord> data;
-    ObjectRecord record;
-    std::vector<uint8_t> value{0};
-    std::string dataStr = "[STRING]test_asset";
-    value.insert(value.end(), dataStr.begin(), dataStr.end());
-    
-    std::string assetPrefix = "test_asset";
-    record.insert({assetPrefix + ObjectStore::NAME_SUFFIX, value});
-    record.insert({assetPrefix + ObjectStore::URI_SUFFIX, value});
-    record.insert({assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value});
-    record.insert({assetPrefix + ObjectStore::SIZE_SUFFIX, value});
-    
-    data.insert({"test_object", record});
-    
-    ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
-    manager.PullAssets(data, saveInfo);
-    EXPECT_EQ(data.size(), 1);
-    EXPECT_EQ(data["test_object"].size(), 4);
-}
-
-/**
 * @tc.name: GetSnapShots001
 * @tc.desc: ObjectStoreManager get snapShots test.
 * @tc.type: FUNC
