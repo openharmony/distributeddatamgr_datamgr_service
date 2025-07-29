@@ -167,13 +167,13 @@ void DBDelegate::EraseStoreCache(const int32_t tokenId)
     storesEncrypt_.Erase(tokenId);
 }
 
-std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
-    bool reInit, const std::string &dir, const std::shared_ptr<ExecutorPool> &executors)
+std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(const std::string &dir,
+    const std::shared_ptr<ExecutorPool> &executors)
 {
     static std::shared_ptr<KvDBDelegate> delegate = nullptr;
     static std::mutex mutex;
     std::lock_guard<decltype(mutex)> lock(mutex);
-    if ((delegate == nullptr || reInit) && executors != nullptr) {
+    if (delegate == nullptr && executors != nullptr) {
         delegate = std::make_shared<KvDelegate>(dir, executors);
     }
     return delegate;

@@ -619,11 +619,13 @@ ohos_unittest("RdbServiceImplTest") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "${data_service_path}/service/test/mock/cursor_mock.cpp",
+    "mock/device_manager_adapter_mock.cpp",
     "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
@@ -1155,6 +1157,7 @@ ohos_unittest("DataShareServiceImplTest") {
   include_dirs = [
     "${data_service_path}/service/config/include",
     "${data_service_path}/framework/include/metadata",
+    "${data_service_path}/service/data_share/common",
   ]
 
   sources = [
@@ -1260,7 +1263,6 @@ ohos_unittest("DataShareServiceImplTest") {
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
-    "kv_store:distributeddb",
     "qos_manager:concurrent_task_client",
     "qos_manager:qos",
     "relational_store:native_rdb",
@@ -1348,6 +1350,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "data_share_sys_event_subscriber_test.cpp",
+    "data_share_scheduler_manager_test.cpp",
     "mock/config_factory_mock.cpp",
   ]
 

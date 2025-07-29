@@ -21,11 +21,12 @@
 #include <unistd.h>
 
 #include "log_print.h"
+#include "utils/anonymous.h"
 #include "utils/time_utils.h"
-
 namespace OHOS {
 namespace DistributedDataDfx {
 using namespace DistributedKv;
+using Anonymous = DistributedData::Anonymous;
 namespace {
 constexpr const char *DATAMGR_DOMAIN = "DISTDATAMGR";
 // fault key
@@ -141,7 +142,7 @@ void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::share
                 .arraySize = 0 },
             { .name = { *STORE_ID },
                 .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
+                .v = { .s = const_cast<char *>(Anonymous::Change(msg.storeId).c_str()) },
                 .arraySize = 0 },
             { .name = { *MODULE_NAME },
                 .t = HISYSEVENT_STRING,
@@ -187,7 +188,7 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
                 .arraySize = 0 },
             { .name = { *STORE_ID },
                 .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
+                .v = { .s = const_cast<char *>(Anonymous::Change(msg.storeId).c_str()) },
                 .arraySize = 0 },
             { .name = { *SYNC_ERROR_INFO },
                 .t = HISYSEVENT_STRING,
@@ -256,7 +257,7 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::s
                 .arraySize = 0 },
             { .name = { *STORE_ID },
                 .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(msg.storeId.c_str()) },
+                .v = { .s = const_cast<char *>(Anonymous::Change(msg.storeId).c_str()) },
                 .arraySize = 0 },
             { .name = { *BEHAVIOUR_INFO },
                 .t = HISYSEVENT_STRING,
@@ -314,7 +315,7 @@ void HiViewAdapter::ReportDbSize(const StatisticWrap<DbStat> &stat)
             .arraySize = 0 },
         { .name = { *STORE_ID },
             .t = HISYSEVENT_STRING,
-            .v = { .s = const_cast<char *>(stat.val.storeId.c_str()) },
+            .v = { .s = const_cast<char *>(Anonymous::Change(stat.val.storeId).c_str()) },
             .arraySize = 0 },
         { .name = { *DB_SIZE }, .t = HISYSEVENT_UINT64, .v = { .ui64 = dbSize }, .arraySize = 0 },
     };
@@ -391,7 +392,7 @@ void HiViewAdapter::InvokeTraffic()
                 .arraySize = 0 },
             { .name = { *DEVICE_ID },
                 .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(deviceId.c_str()) },
+                .v = { .s = const_cast<char *>(Anonymous::Change(deviceId).c_str()) },
                 .arraySize = 0 },
             { .name = { *SEND_SIZE },
                 .t = HISYSEVENT_INT64,

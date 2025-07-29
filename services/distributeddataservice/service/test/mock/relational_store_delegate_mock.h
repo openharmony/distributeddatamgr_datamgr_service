@@ -25,14 +25,36 @@ public:
     {
         return DBStatus::OK;
     }
-
+    static inline int32_t cloudSyncTask = 0;
+    static bool SetCloudSyncTaskCount(int32_t task)
+    {
+        cloudSyncTask = task;
+        return true;
+    }
+    static inline int32_t deviceSyncTask = 0;
+    static bool SetDeviceTaskCount(int32_t task)
+    {
+        deviceSyncTask = task;
+        return true;
+    }
+    static inline int32_t downloadingAssetsCount = 0;
+    static bool SetDownloadingAssetsCount(int32_t task)
+    {
+        downloadingAssetsCount = task;
+        return true;
+    }
     int32_t GetCloudSyncTaskCount() override
     {
-        static int32_t count = 0;
-        count = (count + 1) % 2; // The result of count + 1 is the remainder of 2.
-        return count;
+        return cloudSyncTask;
     }
-
+    std::pair<DBStatus, int32_t> GetDownloadingAssetsCount() override
+    {
+        return {DBStatus::OK, downloadingAssetsCount};
+    }
+    int32_t GetDeviceSyncTaskCount() override
+    {
+        return deviceSyncTask;
+    }
     DBStatus RemoveDeviceData(const std::string &device, const std::string &tableName) override
     {
         return DBStatus::OK;
@@ -148,7 +170,6 @@ public:
         return DBStatus::OK;
     }
     static bool gTestResult;
-
 protected:
     DBStatus RemoveDeviceDataInner(const std::string &device, ClearMode mode) override
     {

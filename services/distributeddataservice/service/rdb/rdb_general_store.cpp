@@ -43,6 +43,7 @@
 #include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
+#include "snapshot/snapshot.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
@@ -182,6 +183,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
     observer_.storeId_ = meta.storeId;
     observer_.meta_ = meta;
     RelationalStoreDelegate::Option option = GetOption(meta);
+    option.isNeedCompressOnSync = true;
     option.observer = &observer_;
     if (meta.isEncrypt) {
         option.passwd = GetDBPassword(meta);
@@ -235,10 +237,10 @@ RdbGeneralStore::~RdbGeneralStore()
     executor_ = nullptr;
 }
 
-int32_t RdbGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
+int32_t RdbGeneralStore::BindSnapshots(BindAssets bindAssets)
 {
-    if (snapshots_.bindAssets == nullptr) {
-        snapshots_.bindAssets = bindAssets;
+    if (snapshots_ == nullptr) {
+        snapshots_ = bindAssets;
     }
     return GenErr::E_OK;
 }
@@ -270,8 +272,8 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     bindInfo_ = std::move(bindInfo);
     {
         std::unique_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
-        rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);
-        rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
+        rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, snapshots_);
+        rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, snapshots_);
     }
 
     DistributedDB::CloudSyncConfig dbConfig;
@@ -311,7 +313,8 @@ int32_t RdbGeneralStore::Close(bool isForce)
             return GeneralError::E_OK;
         }
         auto [dbStatus, downloadCount] = delegate_->GetDownloadingAssetsCount();
-        if (!isForce && (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0)) {
+        if (!isForce &&
+            (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0 || delegate_->GetDeviceSyncTaskCount() > 0)) {
             return GeneralError::E_BUSY;
         }
         auto status = manager_.CloseStore(delegate_);

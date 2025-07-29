@@ -114,7 +114,7 @@ public:
 HWTEST_F(RdbGeneralStoreTest, BindSnapshots001, TestSize.Level1)
 {
     BindAssets bindAssets;
-    auto result = store->BindSnapshots(bindAssets.bindAssets);
+    auto result = store->BindSnapshots(bindAssets);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 
@@ -130,9 +130,9 @@ HWTEST_F(RdbGeneralStoreTest, BindSnapshots002, TestSize.Level1)
     meta.isEncrypt = true;
     auto store = std::make_shared<RdbGeneralStore>(meta);
     ASSERT_NE(store, nullptr);
-    store->snapshots_.bindAssets = nullptr;
+    store->snapshots_ = nullptr;
     BindAssets bindAssets;
-    auto result = store->BindSnapshots(bindAssets.bindAssets);
+    auto result = store->BindSnapshots(bindAssets);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 
@@ -227,7 +227,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
 
 /**
 * @tc.name: Close
-* @tc.desc: RdbGeneralStore Close and IsBound function test
+* @tc.desc: RdbGeneralStore Close and isforce is false and GetDeviceSyncTaskCount is 2
 * @tc.type: FUNC
 */
 HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
@@ -239,8 +239,66 @@ HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
     EXPECT_EQ(ret, GeneralError::E_OK);
     metaData_.storeId = "mock";
     store = std::make_shared<RdbGeneralStore>(metaData_);
+    MockRelationalStoreDelegate::SetCloudSyncTaskCount(0);
+    MockRelationalStoreDelegate::SetDownloadingAssetsCount(0);
+    MockRelationalStoreDelegate::SetDeviceTaskCount(2);
     ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_BUSY);
+}
+
+/**
+ * @tc.name: Close1
+ * @tc.desc: RdbGeneralStore Close and isforce is false and GetCloudSyncTaskCount is 1
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Close1, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    MockRelationalStoreDelegate::SetCloudSyncTaskCount(1);
+    auto ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_BUSY);
+}
+/**
+ * @tc.name: Close2
+ * @tc.desc: RdbGeneralStore Close and isforce is false and DownloadingAssetsCount is 1
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Close2, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    MockRelationalStoreDelegate::SetCloudSyncTaskCount(0);
+    MockRelationalStoreDelegate::SetDownloadingAssetsCount(1);
+    auto ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_BUSY);
+}
+/**
+ * @tc.name: Close3
+ * @tc.desc: RdbGeneralStore Close and isforce is true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Close3, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    auto ret = store->Close(true);
+    EXPECT_EQ(ret, GeneralError::E_OK);
+}
+/**
+ * @tc.name: Close4
+ * @tc.desc: RdbGeneralStore Close and there is no task
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, Close4, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    MockRelationalStoreDelegate::SetCloudSyncTaskCount(0);
+    MockRelationalStoreDelegate::SetDownloadingAssetsCount(0);
+    MockRelationalStoreDelegate::SetDeviceTaskCount(0);
+    auto ret = store->Close();
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 /**

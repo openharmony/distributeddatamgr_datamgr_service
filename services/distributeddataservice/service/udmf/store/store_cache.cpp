@@ -57,7 +57,7 @@ std::shared_ptr<Store> StoreCache::GetStore(std::string intention)
     });
     std::unique_lock<std::mutex> lock(taskMutex_);
     if (taskId_ == ExecutorPool::INVALID_TASK_ID && executorPool_ != nullptr) {
-        taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
+        taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), [this]() { this->GarbageCollect(); });
     }
     return store;
 }
@@ -75,7 +75,7 @@ void StoreCache::GarbageCollect()
     std::unique_lock<std::mutex> lock(taskMutex_);
     if (!stores_.Empty() && executorPool_ != nullptr) {
         ZLOGD("GarbageCollect, stores size:%{public}zu", stores_.Size());
-        taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), std::bind(&StoreCache::GarbageCollect, this));
+        taskId_ = executorPool_->Schedule(std::chrono::minutes(INTERVAL), [this]() { this->GarbageCollect(); });
     } else {
         taskId_ = ExecutorPool::INVALID_TASK_ID;
     }

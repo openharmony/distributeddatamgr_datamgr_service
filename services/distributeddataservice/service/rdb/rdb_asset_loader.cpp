@@ -27,8 +27,8 @@
 using namespace DistributedDB;
 using ValueProxy = OHOS::DistributedData::ValueProxy;
 namespace OHOS::DistributedRdb {
-RdbAssetLoader::RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader, BindAssets* bindAssets)
-    : assetLoader_(std::move(cloudAssetLoader)), snapshots_(bindAssets)
+RdbAssetLoader::RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader, BindAssets bindAssets)
+    : assetLoader_(std::move(cloudAssetLoader)), snapshots_(std::move(bindAssets))
 {
 }
 
@@ -169,11 +169,11 @@ void RdbAssetLoader::PostEvent(DistributedData::AssetEvent eventId, DistributedD
             deleteAssets.insert(downLoadAsset.uri);
             continue;
         }
-        if (snapshots_ == nullptr || snapshots_->bindAssets == nullptr) {
+        if (snapshots_ == nullptr) {
             continue;
         }
-        auto it = snapshots_->bindAssets->find(downLoadAsset.uri);
-        if (it == snapshots_->bindAssets->end() || it->second == nullptr) {
+        auto it = snapshots_->find(downLoadAsset.uri);
+        if (it == snapshots_->end() || it->second == nullptr) {
             continue;
         }
         auto snapshot = it->second;
@@ -185,7 +185,7 @@ void RdbAssetLoader::PostEvent(DistributedData::AssetEvent eventId, DistributedD
         } else {
             auto skipPos = skipAssets.find(downLoadAsset.uri);
             auto deletePos = deleteAssets.find(downLoadAsset.uri);
-            if (skipPos != skipAssets.end() || deletePos != skipAssets.end()) {
+            if (skipPos != skipAssets.end() || deletePos != deleteAssets.end()) {
                 continue;
             }
             snapshot->Downloaded(downLoadAsset);

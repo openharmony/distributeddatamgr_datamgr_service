@@ -792,6 +792,10 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
     if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         return SUCCESS;
     }
+    if (!Account::GetInstance()->IsLoginAccount()) {
+        ZLOGW("current user is not logged in.");
+        return E_NOT_LOGIN;
+    }
     std::vector<int32_t> users;
     Account::GetInstance()->QueryForegroundUsers(users);
     if (users.empty()) {

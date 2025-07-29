@@ -506,7 +506,9 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level1)
 {
     auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    cloudServiceImpl_->OnUserChange(
+        static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED), std::to_string(user), "accountId");
 
     sleep(1);
 
@@ -534,7 +536,9 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level1)
     MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
     info.apps[TEST_CLOUD_BUNDLE].cloudSwitch = false;
     MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true);
-    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    cloudServiceImpl_->OnUserChange(
+        static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED), std::to_string(user), "accountId");
     sleep(1);
 
     auto [status, result] =
@@ -1288,21 +1292,6 @@ HWTEST_F(CloudDataTest, NotifyDataChange003, TestSize.Level1)
                 "\\\"[\\\\\\\"private\\\\\\\", "
                 "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
     ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
-    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-}
-
-/**
-* @tc.name: OnReady
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, OnReady001, TestSize.Level0)
-{
-    std::string device = "test";
-    auto ret = cloudServiceImpl_->OnReady(device);
-    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-    ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 

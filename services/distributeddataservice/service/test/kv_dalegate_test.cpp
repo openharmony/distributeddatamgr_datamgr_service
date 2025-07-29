@@ -16,19 +16,24 @@
 
 #include <gtest/gtest.h>
 #include <unistd.h>
+#include <fstream>
+#include <algorithm>
+#include <iterator>
 #include "data_share_profile_config.h"
+#include "db_delegate.h"
 #include "executor_pool.h"
-#include "grd_error.h"
+#include "grd_base/grd_error.h"
 #include "kv_delegate.h"
 #include "log_print.h"
+#include "proxy_data_manager.h"
+#include "parameters.h"
 
 namespace OHOS::Test {
 using namespace testing::ext;
 using namespace OHOS::DataShare;
 class KvDelegateTest : public testing::Test {
 public:
-    static constexpr int64_t USER_TEST = 100;
-    static void SetUpTestCase(void){};
+    static void SetUpTestCase(void);
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
@@ -42,6 +47,49 @@ const char* g_backupFiles[] = {
 };
 const char* BACKUP_SUFFIX = ".backup";
 std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(5, 3);
+bool g_isRK3568 = false;
+
+void KvDelegateTest::SetUpTestCase(void)
+{
+    static std::once_flag flag;
+    static std::string product;
+    const std::string invalidProduct { "default" };
+    std::call_once(flag, []() {
+        product = OHOS::system::GetParameter("const.build.product", "");
+    });
+    if (product == invalidProduct)  {
+        std::cout << "This test is not for " << invalidProduct << ", skip it." << std::endl;
+        g_isRK3568 = true;
+        return;
+    }
+}
+
+bool FileComparison(const std::string& file1, const std::string& file2)
+{
+    std::ifstream f1(file1, std::ios::binary);
+    std::ifstream f2(file2, std::ios::binary);
+
+    if (!f1.is_open() || !f2.is_open()) {
+        ZLOGI("fail to open files!");
+        return false; // fail to open files
+    }
+
+    // compare file size
+    f1.seekg(0, std::ios::end);
+    f2.seekg(0, std::ios::end);
+    if (f1.tellg() != f2.tellg()) {
+        ZLOGI("File size is different!");
+        return false;
+    }
+    f1.seekg(0);
+    f2.seekg(0);
+
+    return std::equal(
+        std::istreambuf_iterator<char>(f1),
+        std::istreambuf_iterator<char>(),
+        std::istreambuf_iterator<char>(f2)
+    );
+}
 
 /**
 * @tc.name: RestoreIfNeedt001
@@ -398,6 +446,228 @@ HWTEST_F(KvDelegateTest, GetBatch002, TestSize.Level1)
     std::vector<std::string> result;
     auto result1 = kvDelegate.GetBatch(collectionName, filter, projection, result);
     EXPECT_EQ(result1, GRD_INVALID_ARGS);
-    ZLOGI("GetBatch001 end");
+    ZLOGI("GetBatch002 end");
+}
+
+/**
+* @tc.name: KVDelegateGetInstanceTest001
+* @tc.desc: Test KvDelegate::GetInstance() function when both delegate and executors are null.
+* @tc.type: FUNC
+* @tc.require:issueICNFIF
+* @tc.precon: None
+* @tc.step:
+    1.Call KvDBDelegate::GetInstance() to initialize kvDBDelegate.
+* @tc.experct: Init failed. delegate is nullptr.
+*/
+HWTEST_F(KvDelegateTest, KVDelegateGetInstanceTest001, TestSize.Level0) {
+    ZLOGI("KVDelegateGetInstanceTest001 start");
+    auto delegate = KvDBDelegate::GetInstance("/data/test", nullptr);
+    EXPECT_EQ(delegate, nullptr);
+    ZLOGI("KVDelegateGetInstanceTest001 end");
+}
+
+/**
+* @tc.name: KVDelegateGetInstanceTest002
+* @tc.desc: Test KvDelegate::GetInstance() function when delegate is null and executors is not null.
+* @tc.type: FUNC
+* @tc.require:issueICNFIF
+* @tc.precon: None
+* @tc.step:
+    1.Call KvDBDelegate::GetInstance() to initialize kvDBDelegate.
+    2.Call KvDBDelegate::GetInstance() to get kvDelegate when delegate is already initialized.
+* @tc.experct: Init failed. delegate is nullptr.
+*/
+HWTEST_F(KvDelegateTest, KVDelegateGetInstanceTest002, TestSize.Level0) {
+    ZLOGI("KVDelegateGetInstanceTest002 start");
+    auto executors = std::make_shared<ExecutorPool>(2, 1);
+    auto delegate = KvDBDelegate::GetInstance("/data/test", executors);
+    EXPECT_NE(delegate, nullptr);
+    delegate = KvDBDelegate::GetInstance("/data/test", executors);
+    EXPECT_NE(delegate, nullptr);
+    ZLOGI("KVDelegateGetInstanceTest002 end");
+}
+
+/**
+* @tc.name: KVDelegateGetInstanceTest003
+* @tc.desc: Test KvDelegate::GetInstance() function when delegate is not null and executors is null.
+* @tc.type: FUNC
+* @tc.require:issueICNFIF
+* @tc.precon: None
+* @tc.step:
+    1.Call KvDBDelegate::GetInstance() to initialize kvDBDelegate.
+    2.Call KvDBDelegate::GetInstance() with empty executors to get kvDelegate when delegate is already initialized
+* @tc.experct: Init failed. delegate is nullptr.
+*/
+HWTEST_F(KvDelegateTest, KVDelegateGetInstanceTest003, TestSize.Level0) {
+    ZLOGI("KVDelegateGetInstanceTest003 start");
+    auto executors = std::make_shared<ExecutorPool>(2, 1);
+    auto delegate = KvDBDelegate::GetInstance("/data/test", executors);
+    EXPECT_NE(delegate, nullptr);
+    delegate = KvDBDelegate::GetInstance("/data/test", nullptr);
+    EXPECT_NE(delegate, nullptr);
+    ZLOGI("KVDelegateGetInstanceTest003 end");
+}
+
+/**
+* @tc.name: KVDelegateResetBackupTest001
+* @tc.desc: Test KvDelegate::Init() when does not satisfy reset schedule conditions. Insert two datasets with the
+    second time waitTime_ set to 3600s. First scheduled backup waitTime is 1s. absoluteWaitTime_ is set
+    to 0ms to make sure backup schedule will not be reset to wait another 3600, First scheduled backup should be
+    done and not reset, and second inserted data should be included in the backup process, thus the backup
+    database should remain same as the original database with two dataset.
+* @tc.type: FUNC
+* @tc.require:issueICNFIF
+* @tc.precon: None
+* @tc.step:
+    1.Initilize a KvDelegate object.
+    2.set waitTime_ to 1s.
+    3.call Upsert() to insert a dataset.
+    4.Call NotifyBackup() to set hasChange_ condition to true to allow backup.
+    5.Keep scheduled backup from being reset by setting absoluteWaitTime_ to 0ms.
+    6.Set waitTime_ to 3600s to make sure if backup schedule resets, it will be reset to 3600s.
+    7.call Upsert() to insert another dataset.
+    8.Call NotifyBackup() to set hasChange_ condition to true to allow backup.
+* @tc.experct: backup file should be the same as original file.
+*/
+HWTEST_F(KvDelegateTest, KVDelegateResetBackupTest001, TestSize.Level0) {
+    if (g_isRK3568) {
+        GTEST_SKIP();
+    }
+    ZLOGI("KVDelegateResetBackupTest001 start");
+    auto executors = std::make_shared<ExecutorPool>(2, 1);
+    auto delegate = new KvDelegate("/data/test", executors);
+    delegate->waitTime_ = 2; // 1s
+    std::vector<std::string> proxyDataList = {"name", "age", "job"};
+    std::vector<std::string> proxyDataList1 = {"test", "hellow", "world"};
+    auto value = ProxyDataList(ProxyDataListNode(proxyDataList, 24, 12));
+    auto value1 = ProxyDataList(ProxyDataListNode(proxyDataList1, 10, 24));
+    auto result = delegate->Upsert("proxydata_", value);
+    delegate->NotifyBackup();
+    EXPECT_EQ(result.first, 0);
+
+    // Set absoluteWaitTime_ to 0ms to make sure backup schedule will not be reset to wait another 3600s.
+    delegate->absoluteWaitTime_ = 0;
+    delegate->waitTime_ = 3600;
+    auto result1 = delegate->Upsert("proxydata_", value1);
+    delegate->NotifyBackup();
+    EXPECT_EQ(result1.first, 0);
+    // First scheduled backup waitTime is 1s. Margin of error is 1s.
+    sleep(2);
+    // Backup shoud be done because schdule did not reset.
+    for (auto &fileName : g_backupFiles) {
+        std::string src = delegate->path_ + "/" + fileName;
+        std::string dst = src;
+        dst.append(BACKUP_SUFFIX);
+        EXPECT_TRUE(FileComparison(src, dst));
+    }
+    ZLOGI("KVDelegateResetBackupTest001 end");
+}
+
+/**
+* @tc.name: KVDelegateRestoreTest001
+* @tc.desc: Test RestoreIfNeed() after backup is done
+* @tc.type: FUNC
+* @tc.require:issueICNFIF
+* @tc.precon: None
+* @tc.step:
+    1.Creat a KvDelegate object with an initialized executorPool.
+    2.Set waitTime_ to 2s.
+    3.Call Upsert() to insert a dataset.
+    4.Get the dataset just inserted.
+    5.Call NotifyBackup() to set hasChange_ condition to true to allow backup.
+    6.Call FileComparison() to compare original database with backup database.
+    7.Delete original database and call RestoreIfNeed() with GRD_REBUILD_DATABASE as input param.
+* @tc.experct: Successfully Get the dataset previously inserted.
+*/
+HWTEST_F(KvDelegateTest, KVDelegateRestoreTest001, TestSize.Level1) {
+    if (g_isRK3568) {
+        GTEST_SKIP();
+    }
+    ZLOGI("KVDelegateRestoreTest001 start");
+    auto executors = std::make_shared<ExecutorPool>(2, 1);
+    auto delegate = new KvDelegate("/data/test", executors);
+    delegate->waitTime_ = 1;
+    std::vector<std::string> proxyDataList = {"name", "age", "job"};
+    auto value = ProxyDataList(ProxyDataListNode(proxyDataList, 24, 12));
+    auto result = delegate->Upsert("proxydata_", value);
+    delegate->NotifyBackup();
+    EXPECT_EQ(result.first, 0);
+    Id id = Id(std::to_string(12), 24);
+    std::string queryResult = "";
+
+    auto result1 = delegate->Get("proxydata_", id, queryResult);
+
+    EXPECT_EQ(result1, 0);
+    // Scheduled backup waitTime is 1s, 1s for margin of error.
+    sleep(2);
+    for (auto &fileName : g_backupFiles) {
+        std::string src = delegate->path_ + "/" + fileName;
+        std::string dst = src;
+        dst.append(BACKUP_SUFFIX);
+        EXPECT_TRUE(FileComparison(src, dst));
+    }
+
+    EXPECT_EQ(std::remove("/data/test/dataShare.db"), 0);
+    bool restoreRet = delegate->RestoreIfNeed(GRD_REBUILD_DATABASE);
+    EXPECT_TRUE(restoreRet);
+
+    std::string queryRetAfterRestore = "";
+    result1 = delegate->Get("proxydata_", id, queryRetAfterRestore);
+    EXPECT_EQ(result1, 0);
+    ZLOGI("KVDelegateRestoreTest001 end");
+}
+
+/**
+* @tc.name: KVDelegateInitTest001
+* @tc.desc: Test KvDelegate::Init() function when executors_ are null.
+* @tc.type: FUNC
+* @tc.require:issueICNFIF
+* @tc.precon: None
+* @tc.step:
+    1.Initilize a KvDelegate object.
+    2.Set executors_ to nullptr.
+    3.Call Init() function.
+    4.Call Init() function again.
+* @tc.experct: Database init success, db_ is not nullptr.
+*/
+HWTEST_F(KvDelegateTest, KVDelegateInitTest001, TestSize.Level0) {
+    ZLOGI("KVDelegateInitTest001 start");
+    auto executors = std::make_shared<ExecutorPool>(2, 1);
+    auto delegate = new KvDelegate("/data/test", executors);
+    EXPECT_NE(delegate, nullptr);
+    delegate->executors_ = nullptr;
+    bool result = delegate->Init();
+    EXPECT_TRUE(result);
+    EXPECT_NE(delegate->db_, nullptr);
+    EXPECT_TRUE(delegate->isInitDone_);
+    EXPECT_EQ(delegate->absoluteWaitTime_, 0);
+    bool result1 = delegate->Init();
+    EXPECT_TRUE(result1);
+    EXPECT_TRUE(delegate->isInitDone_);
+    ZLOGI("KVDelegateInitTest001 end");
+}
+
+/**
+* @tc.name: KVDelegateInitTest002
+* @tc.desc: Test KvDelegate::Init() function when executors_ is not null.
+* @tc.type: FUNC
+* @tc.require:issueICNFIF
+* @tc.precon: None
+* @tc.step:
+    1.Initilize a KvDelegate object.
+    2.call Init() function.
+* @tc.experct: Init success. Schedule success, taskId is not invalid.
+*/
+HWTEST_F(KvDelegateTest, KVDelegateInitTest002, TestSize.Level0) {
+    ZLOGI("KVDelegateInitTest002 start");
+    auto executors = std::make_shared<ExecutorPool>(2, 1);
+    auto delegate = new KvDelegate("/data/test", executors);
+    bool result = delegate->Init();
+    EXPECT_TRUE(result);
+    EXPECT_NE(delegate->db_, nullptr);
+    EXPECT_TRUE(delegate->isInitDone_);
+    EXPECT_NE(delegate->absoluteWaitTime_, 0);
+    EXPECT_NE(delegate->taskId_, ExecutorPool::INVALID_TASK_ID);
+    ZLOGI("KVDelegateInitTest002 end");
 }
 } // namespace OHOS::Test
