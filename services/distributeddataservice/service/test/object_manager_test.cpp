@@ -1465,7 +1465,7 @@ HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
     std::string storeName = "storeA";
 
     auto ptr1 = manager.GetSnapShots(bundleName, storeName);
-    EXPECT_NE(ptr1, nullptr);
+    ASSERT_NE(ptr1, nullptr);
     EXPECT_TRUE(ptr1->empty());
     auto snapshot = std::make_shared<ObjectSnapshot>();
     (*ptr1)["snap1"] = snapshot;
