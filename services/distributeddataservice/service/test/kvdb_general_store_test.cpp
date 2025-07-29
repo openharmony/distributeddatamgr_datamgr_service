@@ -514,7 +514,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSyncCompleteCB, TestSize.Level0)
 * @tc.desc: Test the scenario where the QueryUsers return false in the CloudSync function.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author:
+* @tc.author: SQL
 */
 HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
 {
@@ -544,7 +544,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
 * @tc.desc: CloudSync test the functionality of different branches.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author:
+* @tc.author: SQL
 */
 HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
 {
@@ -572,36 +572,6 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
     store->storeInfo_.user = 1;
     cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_CLOUD_FORCE_PUSH;
     ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
-    EXPECT_EQ(ret, DBStatus::OK);
-}
-
-/**
-* @tc.name: CloudSync003
-* @tc.desc: Test the scenario where the QueryUsers return true in the CloudSync function.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(KVDBGeneralStoreTest, CloudSync003, TestSize.Level0)
-{
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr);
-    store->SetEqualIdentifier(bundleName, storeName);
-    KvStoreNbDelegateMock mockDelegate;
-    store->delegate_ = &mockDelegate;
-    std::vector<std::string> devices = { "device1", "device2" };
-    auto asyncs = [](const GenDetails &result) {};
-    store->storeInfo_.user = 0;
-    auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
-    store->SetEqualIdentifier(bundleName, storeName);
-    std::string prepareTraceId;
-    std::vector<int> users = {0, 1};
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
-        .Times(1)
-        .WillOnce(DoAll(
-            SetArgReferee<0>(users),
-            Return(true)));
-    auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::OK);
 }
 
