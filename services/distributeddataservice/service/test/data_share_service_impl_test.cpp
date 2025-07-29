@@ -48,49 +48,51 @@ public:
     static constexpr int64_t TEST_SUB_ID = 100;
     static constexpr uint32_t CUREEENT_USER_ID = 123;
     static constexpr uint32_t NATIVE_USER_ID = 0;
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
+    static void SetUpTestCase(void)
+    {
+        accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+        if (accountDelegateMock != nullptr) {
+            AccountDelegate::instance_ = nullptr;
+            AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+        }
+    }
+    static void TearDownTestCase(void)
+    {
+        if (accountDelegateMock != nullptr) {
+            delete accountDelegateMock;
+            accountDelegateMock = nullptr;
+        }
+    }
     void SetSelfTokenInfo(int32_t user);
     void SetUp();
     void TearDown();
+    static inline AccountDelegateMock *accountDelegateMock = nullptr;
 };
 
 void DataShareServiceImplTest::SetSelfTokenInfo(int32_t user)
 {
-    HapInfoParams info = {
-        .userID = user,
+    HapInfoParams info = { .userID = user,
         .bundleName = "ohos.datasharetest.demo",
         .instIndex = 0,
-        .appIDDesc = "ohos.datasharetest.demo"
-    };
-    HapPolicyParams policy = {
-        .apl = APL_NORMAL,
+        .appIDDesc = "ohos.datasharetest.demo" };
+    HapPolicyParams policy = { .apl = APL_NORMAL,
         .domain = "test.domain",
-        .permList = {
-            {
-                .permissionName = "ohos.permission.test",
-                .bundleName = "ohos.datasharetest.demo",
-                .grantMode = 1,
-                .availableLevel = APL_NORMAL,
-                .label = "label",
-                .labelId = 1,
-                .description = "ohos.datasharetest.demo",
-                .descriptionId = 1
-            }
-        },
-        .permStateList = {
-            {
-                .permissionName = "ohos.permission.test",
-                .isGeneral = true,
-                .resDeviceID = { "local" },
-                .grantStatus = { PermissionState::PERMISSION_GRANTED },
-                .grantFlags = { 1 }
-            }
-        }
-    };
+        .permList = { { .permissionName = "ohos.permission.test",
+            .bundleName = "ohos.datasharetest.demo",
+            .grantMode = 1,
+            .availableLevel = APL_NORMAL,
+            .label = "label",
+            .labelId = 1,
+            .description = "ohos.datasharetest.demo",
+            .descriptionId = 1 } },
+        .permStateList = { { .permissionName = "ohos.permission.test",
+            .isGeneral = true,
+            .resDeviceID = { "local" },
+            .grantStatus = { PermissionState::PERMISSION_GRANTED },
+            .grantFlags = { 1 } } } };
     AccessTokenKit::AllocHapToken(info, policy);
-    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
-        info.userID, info.bundleName, info.instIndex);
+    auto testTokenId =
+        Security::AccessToken::AccessTokenKit::GetHapTokenID(info.userID, info.bundleName, info.instIndex);
     SetSelfTokenID(testTokenId);
 }
 void DataShareServiceImplTest::SetUp(void)
@@ -333,13 +335,13 @@ HWTEST_F(DataShareServiceImplTest, SubscribePublishedData001, TestSize.Level1)
 
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
-    std::vector<OperationResult> result =  dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
+    std::vector<OperationResult> result = dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
     EXPECT_NE(result.size(), uris.size());
     for (auto const &operationResult : result) {
         EXPECT_EQ(operationResult.errCode_, 0);
     }
 
-    result =  dataShareServiceImpl.UnsubscribePublishedData(uris, subscriberId);
+    result = dataShareServiceImpl.UnsubscribePublishedData(uris, subscriberId);
     EXPECT_NE(result.size(), uris.size());
     for (auto const &operationResult : result) {
         EXPECT_EQ(operationResult.errCode_, 0);
@@ -531,11 +533,8 @@ HWTEST_F(DataShareServiceImplTest, DataProviderConfig001, TestSize.Level1)
 {
     ZLOGI("DataShareServiceImplTest DataProviderConfig001 start");
     SetSelfTokenInfo(NATIVE_USER_ID);
-    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
-        NATIVE_USER_ID, BUNDLE_NAME, 0);
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryForegroundUserId(testing::_))
-        .Times(1)
-        .WillOnce(testing::Return(false));
+    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(NATIVE_USER_ID, BUNDLE_NAME, 0);
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(testing::_)).Times(1).WillOnce(testing::Return(false));
     DataProviderConfig config(SLIENT_ACCESS_URI, testTokenId);
     EXPECT_EQ(config.providerInfo_.uri, SLIENT_ACCESS_URI);
     EXPECT_EQ(config.providerInfo_.currentUserId, NATIVE_USER_ID);
@@ -557,9 +556,8 @@ HWTEST_F(DataShareServiceImplTest, UpdateLaunchInfo001, TestSize.Level1)
     DataShareServiceImpl dataShareServiceImpl;
     // cover branch of config is nullptr
     dataShareServiceImpl.UpdateLaunchInfo();
-    
-    std::string prefix = StoreMetaData::GetPrefix(
-        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid });
+
+    std::string prefix = StoreMetaData::GetPrefix({ DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid });
     std::vector<StoreMetaData> storeMetaData;
     MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true);
     EXPECT_EQ(storeMetaData.size(), 0);

@@ -43,8 +43,8 @@ static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
-static constexpr const char *TEST_CLOUD_PATH =
-    "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/test_cloud_store";
+static constexpr const char *TEST_CLOUD_PATH = "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/"
+                                               "test_cloud_store";
 class CloudDataMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -54,6 +54,7 @@ public:
 
     static SchemaMeta schemaMeta_;
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
+
 protected:
     static void InitMetaData();
     static void InitSchemaMeta();
@@ -62,6 +63,7 @@ protected:
     static StoreMetaData metaData_;
     static CloudInfo cloudInfo_;
     static NetworkDelegateMock delegate_;
+    static inline AccountDelegateMock *accountDelegateMock = nullptr;
 };
 
 class CloudServerMock : public CloudServer {
@@ -176,10 +178,14 @@ void CloudDataMockTest::InitCloudInfo()
 
 void CloudDataMockTest::SetUpTestCase(void)
 {
+    accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+    if (accountDelegateMock != nullptr) {
+        AccountDelegate::instance_ = nullptr;
+        AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+    }
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
-    MetaDataManager::GetInstance().SetSyncer([](const auto &, auto) {
-        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
-    });
+    MetaDataManager::GetInstance().SetSyncer(
+        [](const auto &, auto) { DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK); });
 
     auto cloudServerMock = new CloudServerMock();
     CloudServer::RegisterCloudInstance(cloudServerMock);
@@ -198,7 +204,13 @@ void CloudDataMockTest::SetUpTestCase(void)
     InitSchemaMeta();
 }
 
-void CloudDataMockTest::TearDownTestCase() {}
+void CloudDataMockTest::TearDownTestCase()
+{
+    if (accountDelegateMock != nullptr) {
+        delete accountDelegateMock;
+        accountDelegateMock = nullptr;
+    }
+}
 
 void CloudDataMockTest::SetUp()
 {
@@ -234,17 +246,11 @@ HWTEST_F(CloudDataMockTest, GetSchema001, TestSize.Level1)
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), true));
     SchemaMeta schemaMeta;
     ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
-    std::vector<int> users = {0, 1};
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
-        .Times(1)
-        .WillOnce(DoAll(
-            SetArgReferee<0>(users),
-            Return(true)));
-    EXPECT_CALL(AccountDelegateMock::Init(), IsVerified(_))
-        .Times(1)
-        .WillOnce(DoAll(Return(true)));
-    DistributedData::StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE,
-        TEST_CLOUD_STORE, 0 };
+    std::vector<int> users = { 0, 1 };
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).Times(1).WillOnce(DoAll(Return(true)));
+    DistributedData::StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE,
+        0 };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
     EventCenter::GetInstance().PostEvent(std::move(event));
     auto ret = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
@@ -268,14 +274,12 @@ HWTEST_F(CloudDataMockTest, GetSchema002, TestSize.Level1)
     ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
 
     std::vector<int> users;
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
         .Times(1)
-        .WillOnce(DoAll(
-            SetArgReferee<0>(users),
-            Invoke([](std::vector<int>& users) { users.clear(); }),
-            Return(true)));
-    DistributedData::StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE,
-        TEST_CLOUD_STORE, 0 };
+        .WillOnce(
+            DoAll(SetArgReferee<0>(users), Invoke([](std::vector<int> &users) { users.clear(); }), Return(true)));
+    DistributedData::StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE,
+        0 };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
     EventCenter::GetInstance().PostEvent(std::move(event));
     auto ret = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
@@ -299,13 +303,9 @@ HWTEST_F(CloudDataMockTest, GetSchema003, TestSize.Level1)
     ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
 
     std::vector<int> users;
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
-        .Times(1)
-        .WillOnce(DoAll(
-            SetArgReferee<0>(users),
-            Return(false)));
-    DistributedData::StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE,
-        TEST_CLOUD_STORE, 0 };
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(false)));
+    DistributedData::StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE,
+        0 };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, storeInfo);
     EventCenter::GetInstance().PostEvent(std::move(event));
     auto ret = MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
@@ -325,11 +325,11 @@ HWTEST_F(CloudDataMockTest, OnReadyTest_LoginAccount, TestSize.Level0)
     auto ret = cloudServiceImpl_->OnReady(device);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 
-    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(testing::Return(false));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).Times(1).WillOnce(testing::Return(false));
     ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_NE(ret, CloudData::CloudService::SUCCESS);
 
-    EXPECT_CALL(AccountDelegateMock::Init(), IsLoginAccount()).Times(1).WillOnce(testing::Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).Times(1).WillOnce(testing::Return(true));
     ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     ZLOGI("CloudDataMockTest OnReadyTest_LoginAccount end");
