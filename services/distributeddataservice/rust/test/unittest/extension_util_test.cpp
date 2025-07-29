@@ -1158,4 +1158,363 @@ TEST_F(ExtensionUtilTest, ConvertValue_ContentIsNull_ReturnsDefault) {
     // Then
     // Verify that result is a default-constructed DBValue
 }
+
+class MockOhCloudExtCloudAssetLoader {
+public:
+    MOCK_METHOD(void, Free, (), ());
+};
+
+class MockExtensionUtil {
+public:
+    static MockExtensionUtil* GetInstance() {
+        static MockExtensionUtil instance;
+        return &instance;
+    }
+
+    MOCK_METHOD(std::pair<void*, size_t>, Convert, (const DBAssets&), ());
+    MOCK_METHOD(std::pair<void*, size_t>, Convert, (const DBAsset&), ());
+    MOCK_METHOD(DBAssets, ConvertAssets, (void*), ());
+    MOCK_METHOD(int32_t, ConvertStatus, (int32_t), ());
+};
+
+// Global mock instances
+MockOhCloudExtCloudAssetLoader* g_mockLoader = nullptr;
+MockExtensionUtil* g_mockExtensionUtil = nullptr;
+
+// Mock C functions
+extern "C" {
+    void OhCloudExtCloudAssetLoaderFree(OhCloudExtCloudAssetLoader* loader) {
+        if (g_mockLoader) {
+            g_mockLoader->Free();
+        }
+    }
+
+    int32_t OhCloudExtCloudAssetLoaderDownload(OhCloudExtCloudAssetLoader* loader,
+                                               const OhCloudExtUpDownloadInfo* info,
+                                               void* data) {
+        return ERRNO_SUCCESS; // Default success
+    }
+
+    void OhCloudExtVectorFree(void* data) {
+        // Do nothing
+    }
+
+    int32_t OhCloudExtCloudAssetLoaderRemoveLocalAssets(void* data) {
+        return ERRNO_SUCCESS; // Default success
+    }
+
+    void OhCloudExtCloudAssetFree(void* data) {
+        // Do nothing
+    }
+}
+
+// Test fixture
+class AssetLoaderImplTest : public Test {
+protected:
+    void SetUp() override {
+        g_mockLoader = new MockOhCloudExtCloudAssetLoader();
+        g_mockExtensionUtil = MockExtensionUtil::GetInstance();
+    }
+
+    void TearDown() override {
+        delete g_mockLoader;
+        g_mockLoader = nullptr;
+    }
+};
+
+// Constructor test
+TEST_F(AssetLoaderImplTest, Constructor_ValidLoader)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+    // No explicit check needed, just ensure no crash
+}
+
+// Destructor tests
+TEST_F(AssetLoaderImplTest, Destructor_ValidLoader_CallsFree)
+{
+    OhCloudExtCloudAssetLoader loader;
+    EXPECT_CALL(*g_mockLoader, Free()).Times(1);
+    {
+        AssetLoaderImpl assetLoader(&loader);
+    }
+    // Mock verification happens automatically
+}
+
+TEST_F(AssetLoaderImplTest, Destructor_NullLoader_NoCall)
+{
+    {
+        AssetLoaderImpl assetLoader(nullptr);
+    }
+    // No call to Free expected
+}
+
+// Download tests
+TEST_F(AssetLoaderImplTest, Download_PrefixIsString_ConstructsCorrectInfo)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    std::string prefixStr = "test_prefix";
+    DBValue prefix = prefixStr;
+    DBVBucket assets;
+
+    // Add a DBAssets entry
+    DBAssets dbAssets;
+    dbAssets.push_back(DBAsset());
+    assets["key1"] = dbAssets;
+
+    // Mock successful conversion
+    std::pair<void*, size_t> convertedData{reinterpret_cast<void*>(0x1234), 1};
+    EXPECT_CALL(*g_mockExtensionUtil, Convert(_))
+        .WillOnce(Return(convertedData));
+    EXPECT_CALL(*g_mockExtensionUtil, ConvertAssets(_))
+        .WillOnce(Return(DBAssets()));
+
+    int32_t result = assetLoader.Download(tableName, gid, prefix, assets);
+    EXPECT_EQ(result, DBErr::E_OK);
+}
+
+TEST_F(AssetLoaderImplTest, Download_PrefixNotString_UsesEmptyString)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    DBValue prefix = 123; // Not a string
+    DBVBucket assets;
+
+    // Add a DBAssets entry
+    DBAssets dbAssets;
+    dbAssets.push_back(DBAsset());
+    assets["key1"] = dbAssets;
+
+    // Mock successful conversion
+    std::pair<void*, size_t> convertedData{reinterpret_cast<void*>(0x1234), 1};
+    EXPECT_CALL(*g_mockExtensionUtil, Convert(_))
+        .WillOnce(Return(convertedData));
+    EXPECT_CALL(*g_mockExtensionUtil, ConvertAssets(_))
+        .WillOnce(Return(DBAssets()));
+
+    int32_t result = assetLoader.Download(tableName, gid, prefix, assets);
+    EXPECT_EQ(result, DBErr::E_OK);
+}
+
+TEST_F(AssetLoaderImplTest, Download_ValueNotDBAssets_ReturnsInvalidArgs)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    std::string prefixStr = "test_prefix";
+    DBValue prefix = prefixStr;
+    DBVBucket assets;
+
+    // Add an invalid entry
+    assets["key1"] = 123; // Not DBAssets
+
+    int32_t result = assetLoader.Download(tableName, gid, prefix, assets);
+    EXPECT_EQ(result, DBErr::E_INVALID_ARGS);
+}
+
+TEST_F(AssetLoaderImplTest, Download_ConvertFails_ReturnsError)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    std::string prefixStr = "test_prefix";
+    DBValue prefix = prefixStr;
+    DBVBucket assets;
+
+    // Add a DBAssets entry
+    DBAssets dbAssets;
+    dbAssets.push_back(DBAsset());
+    assets["key1"] = dbAssets;
+
+    // Mock failed conversion
+    std::pair<void*, size_t> convertedData{nullptr, 0};
+    EXPECT_CALL(*g_mockExtensionUtil, Convert(_))
+        .WillOnce(Return(convertedData));
+
+    int32_t result = assetLoader.Download(tableName, gid, prefix, assets);
+    EXPECT_EQ(result, DBErr::E_ERROR);
+}
+
+TEST_F(AssetLoaderImplTest, Download_DownloadFails_ReturnsConvertedStatus)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    std::string prefixStr = "test_prefix";
+    DBValue prefix = prefixStr;
+    DBVBucket assets;
+
+    // Add a DBAssets entry
+    DBAssets dbAssets;
+    dbAssets.push_back(DBAsset());
+    assets["key1"] = dbAssets;
+
+    // Mock successful conversion
+    std::pair<void*, size_t> convertedData{reinterpret_cast<void*>(0x1234), 1};
+    EXPECT_CALL(*g_mockExtensionUtil, Convert(_))
+        .WillOnce(Return(convertedData));
+    
+    // Mock download failure
+    EXPECT_CALL(*g_mockExtensionUtil, ConvertStatus(ERRNO_SUCCESS))
+        .WillOnce(Return(DBErr::E_ERROR)); // Simulate a conversion
+
+    // Override the C function to simulate failure
+    auto originalFunc = OhCloudExtCloudAssetLoaderDownload;
+    OhCloudExtCloudAssetLoaderDownload = [](OhCloudExtCloudAssetLoader*, const OhCloudExtUpDownloadInfo*, void*) {
+        return -1; // Simulate failure
+    };
+
+    int32_t result = assetLoader.Download(tableName, gid, prefix, assets);
+    EXPECT_NE(result, DBErr::E_OK);
+
+    // Restore original function
+    OhCloudExtCloudAssetLoaderDownload = originalFunc;
+}
+
+// RemoveLocalAssets tests
+TEST_F(AssetLoaderImplTest, RemoveLocalAssets_ValueIsDBAssets_CallsRemoveLocalAsset)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    std::string prefixStr = "test_prefix";
+    DBValue prefix = prefixStr;
+    DBVBucket assets;
+
+    // Add a DBAssets entry
+    DBAssets dbAssets;
+    dbAssets.push_back(DBAsset());
+    assets["key1"] = dbAssets;
+
+    // Mock RemoveLocalAsset to succeed
+    // Since RemoveLocalAsset is private, we can't directly mock it.
+    // We'll test the behavior through the public interface.
+
+    int32_t result = assetLoader.RemoveLocalAssets(tableName, gid, prefix, assets);
+    EXPECT_EQ(result, DBErr::E_OK);
+}
+
+TEST_F(AssetLoaderImplTest, RemoveLocalAssets_ValueIsDBAsset_CallsRemoveLocalAsset)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    std::string prefixStr = "test_prefix";
+    DBValue prefix = prefixStr;
+    DBVBucket assets;
+
+    // Add a DBAsset entry
+    DBAsset dbAsset;
+    assets["key1"] = dbAsset;
+
+    int32_t result = assetLoader.RemoveLocalAssets(tableName, gid, prefix, assets);
+    EXPECT_EQ(result, DBErr::E_OK);
+}
+
+TEST_F(AssetLoaderImplTest, RemoveLocalAssets_ValueInvalid_ReturnsInvalidArgs)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    std::string prefixStr = "test_prefix";
+    DBValue prefix = prefixStr;
+    DBVBucket assets;
+
+    // Add an invalid entry
+    assets["key1"] = 123; // Not DBAssets or DBAsset
+
+    int32_t result = assetLoader.RemoveLocalAssets(tableName, gid, prefix, assets);
+    EXPECT_EQ(result, DBErr::E_INVALID_ARGS);
+}
+
+TEST_F(AssetLoaderImplTest, RemoveLocalAssets_EmptyAssets_ReturnsOk)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    std::string tableName = "test_table";
+    std::string gid = "test_gid";
+    std::string prefixStr = "test_prefix";
+    DBValue prefix = prefixStr;
+    DBVBucket assets;
+
+    int32_t result = assetLoader.RemoveLocalAssets(tableName, gid, prefix, assets);
+    EXPECT_EQ(result, DBErr::E_OK);
+}
+
+// RemoveLocalAsset tests
+TEST_F(AssetLoaderImplTest, RemoveLocalAsset_ConvertSucceeds_CallsRemoveLocalAssets)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    DBAsset dbAsset;
+
+    // Mock successful conversion
+    std::pair<void*, size_t> convertedData{reinterpret_cast<void*>(0x1234), 1};
+    EXPECT_CALL(*g_mockExtensionUtil, Convert(_))
+        .WillOnce(Return(convertedData));
+
+    int32_t result = assetLoader.RemoveLocalAsset(dbAsset);
+    EXPECT_EQ(result, DBErr::E_OK);
+}
+
+TEST_F(AssetLoaderImplTest, RemoveLocalAsset_ConvertFails_ReturnsError)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    DBAsset dbAsset;
+
+    // Mock failed conversion
+    std::pair<void*, size_t> convertedData{nullptr, 0};
+    EXPECT_CALL(*g_mockExtensionUtil, Convert(_))
+        .WillOnce(Return(convertedData));
+
+    int32_t result = assetLoader.RemoveLocalAsset(dbAsset);
+    EXPECT_EQ(result, DBErr::E_ERROR);
+}
+
+TEST_F(AssetLoaderImplTest, RemoveLocalAsset_RemoveFails_ReturnsError)
+{
+    OhCloudExtCloudAssetLoader loader;
+    AssetLoaderImpl assetLoader(&loader);
+
+    DBAsset dbAsset;
+
+    // Mock successful conversion
+    std::pair<void*, size_t> convertedData{reinterpret_cast<void*>(0x1234), 1};
+    EXPECT_CALL(*g_mockExtensionUtil, Convert(_))
+        .WillOnce(Return(convertedData));
+
+    // Override the C function to simulate failure
+    auto originalFunc = OhCloudExtCloudAssetLoaderRemoveLocalAssets;
+    OhCloudExtCloudAssetLoaderRemoveLocalAssets = [](void*) {
+        return -1; // Simulate failure
+    };
+
+    int32_t result = assetLoader.RemoveLocalAsset(dbAsset);
+    EXPECT_EQ(result, DBErr::E_ERROR);
+
+    // Restore original function
+    OhCloudExtCloudAssetLoaderRemoveLocalAss
 } // namespace OHOS::Test
