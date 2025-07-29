@@ -129,4 +129,68 @@ HWTEST_F(ExtensionUtilTest, Convert004, TestSize.Level1)
     EXPECT_EQ(asset, nullptr);
     EXPECT_EQ(assetLen, 0);
 }
+
+/**
+* @tc.name: ConvertVBuckets001
+* @tc.desc: Test that convert DBVBuckets to empty.
+* @tc.type: FUNC
+*/
+HWTEST_F(ExtensionUtilTest, ConvertVBuckets001, TestSize.Level1)
+{
+    DBVBuckets buckets;
+    auto [result, size] = ExtensionUtil::Convert(std::move(buckets));
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(size, 0);
+}
+
+/**
+* @tc.name: ConvertVBuckets002
+* @tc.desc: Test that convert function DBVBucket is DBAsset type.
+* @tc.type: FUNC
+*/
+HWTEST_F(ExtensionUtilTest, ConvertVBuckets002, TestSize.Level1)
+{
+    DBVBuckets buckets;
+    DBVBucket bucket;
+    DBAsset dbAsset;
+    bucket["dbAsset"] = dbAsset;
+    buckets.push_back(bucket);
+    auto [result, size] = ExtensionUtil::Convert(std::move(buckets));
+    EXPECT_NE(result, nullptr);
+    EXPECT_GT(size, 0);
+}
+
+/**
+* @tc.name: ConvertVBuckets003
+* @tc.desc: Test that convert function DBVBucket is DBAssets type.
+* @tc.type: FUNC
+*/
+HWTEST_F(ExtensionUtilTest, ConvertVBuckets003, TestSize.Level1)
+{
+    DBVBuckets buckets;
+    DBVBucket bucket;
+    DBAssets dbAssets;
+    bucket["dbAsset"] = dbAssets;
+    buckets.push_back(bucket);
+    auto [result, size] = ExtensionUtil::Convert(std::move(buckets));
+    EXPECT_NE(result, nullptr);
+    EXPECT_GT(size, 0);
+}
+
+/**
+* @tc.name: ConvertVBuckets004
+* @tc.desc: Test that convert function DBVBucket is str type.
+* @tc.type: FUNC
+*/
+HWTEST_F(ExtensionUtilTest, ConvertVBuckets004, TestSize.Level1)
+{
+    DBVBuckets buckets;
+    DBVBucket bucket;
+    std::string key = "123";
+    bucket["dbAsset"] = key;
+    buckets.push_back(bucket);
+    auto [result, size] = ExtensionUtil::Convert(std::move(buckets));
+    EXPECT_NE(result, nullptr);
+    EXPECT_GT(size, 0);
+}
 } // namespace OHOS::Test
