@@ -1478,7 +1478,31 @@ HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
     
     ObjectStoreManager::SaveInfo saveInfo(bundleName_, sessionId_, deviceId_, "target_device", "1234567890");
     manager.PullAssets(data, saveInfo);
-    EXPECT_EQ(saveInfo.bundleName, bundleName_);
+    EXPECT_EQ(data.size(), 1);
+    EXPECT_EQ(data["test_object"].size(), 4);
+}
+
+/**
+* @tc.name: GetSnapShots001
+* @tc.desc: 验证GetSnapShots返回的指针有效且同key多次调用返回同一对象
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "bundleA";
+    std::string storeName = "storeA";
+    std::string bundleName2 = "bundleB";
+    std::string storeName2 = "storeB";
+
+    // 第一次获取
+    auto ptr1 = manager.GetSnapShots(bundleName, storeName);
+    EXPECT_TRUE(ptr1->empty());
+    auto snapshot = std::make_shared<ObjectSnapshot>();
+    (*ptr1)["snap1"] = snapshot;
+
+    auto ptr2 = manager.GetSnapShots(bundleName, storeName);
+    EXPECT_EQ(ptr1, ptr2);
 }
 
 } // namespace OHOS::Test
