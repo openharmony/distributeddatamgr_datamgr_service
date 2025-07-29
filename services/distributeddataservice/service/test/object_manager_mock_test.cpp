@@ -175,6 +175,7 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
  */
 HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
 {
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).Times(2).WillRepeatedly(Return(0));
     auto &manager = ObjectStoreManager::GetInstance();
     std::function<void(const std::map<std::string, int32_t> &results)> func;
     func = [](const std::map<std::string, int32_t> &results) { return results; };
