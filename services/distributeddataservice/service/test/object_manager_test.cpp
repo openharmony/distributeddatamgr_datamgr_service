@@ -1454,8 +1454,8 @@ HWTEST_F(ObjectManagerTest, Retrieve002, TestSize.Level1)
 }
 
 /**
-* @tc.name: Destructor001
-* @tc.desc: ObjectStoreManager oull assets001 test.
+* @tc.name: PullAssets001
+* @tc.desc: ObjectStoreManager pull assets test.
 * @tc.type: FUNC
 */
 HWTEST_F(ObjectManagerTest, PullAssets001, TestSize.Level1)
