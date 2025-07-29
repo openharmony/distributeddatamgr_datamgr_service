@@ -183,6 +183,7 @@ void CloudDataMockTest::SetUpTestCase(void)
         AccountDelegate::instance_ = nullptr;
         AccountDelegate::RegisterAccountInstance(accountDelegateMock);
     }
+    // 2 means that the GetUserByToken interface will be called twice
     EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).Times(2).WillRepeatedly(Return(0));
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     MetaDataManager::GetInstance().SetSyncer(
