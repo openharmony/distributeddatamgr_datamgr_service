@@ -1463,8 +1463,6 @@ HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
     auto &manager = ObjectStoreManager::GetInstance();
     std::string bundleName = "bundleA";
     std::string storeName = "storeA";
-    std::string bundleName2 = "bundleB";
-    std::string storeName2 = "storeB";
 
     auto ptr1 = manager.GetSnapShots(bundleName, storeName);
     EXPECT_NE(ptr1, nullptr);
