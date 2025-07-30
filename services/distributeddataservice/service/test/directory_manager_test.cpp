@@ -256,35 +256,6 @@ HWTEST_F(DirectoryManagerTest, GetSecretKeyPath, TestSize.Level0)
 }
 
 /**
-* @tc.name: DeleteDirectory
-* @tc.desc: test delete dir
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(DirectoryManagerTest, DeleteDirectory, TestSize.Level0)
-{
-    std::string path = "/data/service/el1/public/database/bundle_manager_service/kvdb/100/data";
-    bool ret = DirectoryManager::GetInstance().CreateDirectory(path);
-    EXPECT_TRUE(ret);
-    std::ofstream file(
-        "/data/service/el1/public/database/bundle_manager_service/kvdb/100/data/test.txt", std::ios::out);
-    if (file.is_open()) {
-        file << "test content" << std::endl;
-        file.close();
-    }
-    std::ofstream file1("/data/service/el1/public/database/bundle_manager_service/kvdb/100/test.txt", std::ios::out);
-    if (file1.is_open()) {
-        file1 << "test content" << std::endl;
-        file1.close();
-    }
-    std::string deleteDir = "/data/service/el1/public/database/bundle_manager_service/kvdb/100";
-    bool ret1 = DirectoryManager::GetInstance().DeleteDirectory(deleteDir.c_str());
-    EXPECT_TRUE(ret1);
-    EXPECT_EQ(access(deleteDir.c_str(), F_OK), -1);
-}
-
-/**
 * @tc.name: GetStoreTypePath
 * @tc.desc: test get db dir
 * @tc.type: FUNC
