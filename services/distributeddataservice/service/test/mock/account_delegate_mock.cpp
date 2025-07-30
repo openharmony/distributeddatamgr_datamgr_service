@@ -30,7 +30,7 @@ bool AccountDelegate::RegisterAccountInstance(AccountDelegate *instance)
 
 AccountDelegate *AccountDelegate::GetInstance()
 {
-    return &(AccountDelegateMock::Init());
+    return instance_;
 }
 } // namespace DistributedData
 } // namespace OHOS

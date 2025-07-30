@@ -13,12 +13,14 @@
 * limitations under the License.
 */
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "user_delegate.h"
-#include "device_manager_adapter_mock.h"
+#include <gtest/gtest.h>
+
 #include "account_delegate_mock.h"
+#include "device_manager_adapter_mock.h"
 #include "metadata/meta_data_manager.h"
+#include "user_delegate.h"
+
 
 using namespace OHOS::DistributedData;
 using namespace testing::ext;
@@ -52,21 +54,35 @@ class UserDelegateMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp()
+    {
+    }
+    void TearDown()
+    {
+    }
     static inline shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
+    static inline AccountDelegateMock *accountDelegateMock = nullptr;
 };
 
 void UserDelegateMockTest::SetUpTestCase(void)
 {
     devMgrAdapterMock = make_shared<DeviceManagerAdapterMock>();
     BDeviceManagerAdapter::deviceManagerAdapter = devMgrAdapterMock;
+    accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+    if (accountDelegateMock != nullptr) {
+        AccountDelegate::instance_ = nullptr;
+        AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+    }
 }
 
 void UserDelegateMockTest::TearDownTestCase(void)
 {
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
     devMgrAdapterMock = nullptr;
+    if (accountDelegateMock != nullptr) {
+        delete accountDelegateMock;
+        accountDelegateMock = nullptr;
+    }
 }
 
 /**
@@ -91,16 +107,12 @@ HWTEST_F(UserDelegateMockTest, GetLocalUserStatus, TestSize.Level0)
 */
 HWTEST_F(UserDelegateMockTest, InitLocalUserMeta, TestSize.Level0)
 {
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
-        .Times(1)
-        .WillOnce(Return(false));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(Return(false));
     bool ret = UserDelegate::GetInstance().InitLocalUserMeta();
     EXPECT_FALSE(ret);
 
     std::vector<int> users;
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
-        .Times(1)
-        .WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
     ret = UserDelegate::GetInstance().InitLocalUserMeta();
     UserDelegate::GetInstance().DeleteUsers("users");
     EXPECT_FALSE(ret);
@@ -147,7 +159,7 @@ HWTEST_F(UserDelegateMockTest, GetUsers, TestSize.Level0)
 */
 HWTEST_F(UserDelegateMockTest, Init, TestSize.Level0)
 {
-    EXPECT_CALL(AccountDelegateMock::Init(), Subscribe(_)).WillRepeatedly(Return(0));
+    EXPECT_CALL(*accountDelegateMock, Subscribe(_)).WillRepeatedly(Return(0));
     DeviceInfo devInfo = { .uuid = "HJJ4FGAGAAGA45WF3663FAGA" };
     EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
     std::shared_ptr<ExecutorPool> poolPtr = std::make_shared<ExecutorPool>(1, 0);
@@ -156,12 +168,11 @@ HWTEST_F(UserDelegateMockTest, Init, TestSize.Level0)
     instance.executors_ = poolPtr;
     ASSERT_NE(instance.executors_, nullptr);
 
-    std::vector<int> users = {0, 1};
-    EXPECT_CALL(AccountDelegateMock::Init(), QueryUsers(_))
-        .WillRepeatedly(DoAll(SetArgReferee<0>(users), Return(true)));
+    std::vector<int> users = { 0, 1 };
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillRepeatedly(DoAll(SetArgReferee<0>(users), Return(true)));
     EXPECT_TRUE(instance.InitLocalUserMeta());
     instance.Init(poolPtr);
     ASSERT_TRUE(instance.executors_ != nullptr);
 }
-}
-}
+} // namespace DistributedDataTest
+} // namespace OHOS::Test

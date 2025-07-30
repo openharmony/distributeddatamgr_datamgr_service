@@ -24,11 +24,6 @@ namespace DistributedData {
 class AccountDelegateMock : public AccountDelegate {
 public:
     virtual ~AccountDelegateMock() = default;
-    static AccountDelegateMock& Init()
-    {
-        static AccountDelegateMock instance;
-        return instance;
-    }
     MOCK_METHOD(int32_t, Subscribe, (std::shared_ptr<AccountDelegate::Observer>));
     MOCK_METHOD(int32_t, Unsubscribe, (std::shared_ptr<AccountDelegate::Observer>));
     MOCK_METHOD(std::string, GetCurrentAccountId, (), (const));
