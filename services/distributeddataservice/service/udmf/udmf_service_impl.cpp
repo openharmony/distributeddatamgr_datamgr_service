@@ -998,8 +998,6 @@ int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, co
         || code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPED)
         || code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         StoreCache::GetInstance().CloseStores();
-    } else if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_DELETE)) {
-        StoreCache::GetInstance().DeleteStores(user);
     }
     return Feature::OnUserChange(code, user, account);
 }

@@ -45,7 +45,6 @@ public:
     Status GetRuntime(const std::string &key, Runtime &runtime) override;
     Status PutSummary(UnifiedKey &key, const Summary &summary) override;
     bool Init() override;
-    bool DeleteStore(const std::string &userId) override;
 
 private:
     static constexpr const char *DATA_PREFIX = "udmf://";

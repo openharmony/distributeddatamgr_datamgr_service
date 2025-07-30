@@ -345,7 +345,7 @@ HWTEST_F(UdmfServiceImplTest, OnUserChangeTest003, TestSize.Level1)
     stores = StoreCache::GetInstance().stores_.Size();
     ASSERT_EQ(stores, 1);
 
-    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_DELETE);
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED);
     std::string user = "OH_USER_test";
     std::string account = "OH_ACCOUNT_test";
     UdmfServiceImpl udmfServiceImpl;
@@ -362,33 +362,6 @@ HWTEST_F(UdmfServiceImplTest, OnUserChangeTest003, TestSize.Level1)
 * @tc.require:
 */
 HWTEST_F(UdmfServiceImplTest, OnUserChangeTest004, TestSize.Level1)
-{
-    // Clear store
-    StoreCache::GetInstance().CloseStores();
-    auto stores = StoreCache::GetInstance().stores_.Size();
-    ASSERT_EQ(stores, 0);
-    // Init store
-    // StoreCache::GetInstance().GetStore(STORE_ID);
-    // stores = StoreCache::GetInstance().stores_.Size();
-    // ASSERT_EQ(stores, 1);
-
-    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_DELETE);
-    std::string user = "100";
-    std::string account = "OH_ACCOUNT_test";
-    UdmfServiceImpl udmfServiceImpl;
-    auto status = udmfServiceImpl.OnUserChange(code, user, account);
-    ASSERT_EQ(status, UDMF::E_OK);
-    stores = StoreCache::GetInstance().stores_.Size();
-    ASSERT_EQ(stores, 0);
-}
-
-/**
-* @tc.name: OnUserChangeTest005
-* @tc.desc: OnUserChange test
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfServiceImplTest, OnUserChangeTest005, TestSize.Level1)
 {
     // Clear store
     StoreCache::GetInstance().CloseStores();

@@ -605,23 +605,5 @@ Status RuntimeStore::MarkWhenCorrupted(DistributedDB::DBStatus status)
     }
     return E_DB_ERROR;
 }
-
-bool RuntimeStore::DeleteStore(const std::string &userId)
-{
-    DistributedData::StoreMetaData saveMeta;
-    if (!BuildMetaDataParam(saveMeta)) {
-        return false;
-    }
-    saveMeta.user = userId;
-    saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    ZLOGE("Create directory, dataDir: %{public}s.", saveMeta.dataDir.c_str());
-    SetDelegateManager(saveMeta.dataDir, saveMeta.appId, saveMeta.user);
-    auto retStatus = delegateManager_->DeleteKvStore(storeId_);
-    if (retStatus != DBStatus::OK) {
-        ZLOGE("DeleteKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
-        return false;
-    }
-    return true;
-}
 } // namespace UDMF
 } // namespace OHOS
