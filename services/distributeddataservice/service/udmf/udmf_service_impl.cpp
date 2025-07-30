@@ -21,6 +21,7 @@
 #include "tokenid_kit.h"
 
 #include "accesstoken_kit.h"
+#include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
@@ -35,7 +36,6 @@
 #include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
 #include "dfx/reporter.h"
-#include "store_account_observer.h"
 #include "system_ability_definition.h"
 #include "uri_permission_manager.h"
 #include "udmf_radar_reporter.h"
@@ -77,8 +77,6 @@ UdmfServiceImpl::Factory::Factory()
         }
         return product_;
     }, FeatureSystem::BIND_NOW);
-    auto observer = std::make_shared<RuntimeStoreAccountObserver>();
-    DistributedData::AccountDelegate::GetInstance()->Subscribe(observer);
 }
 
 UdmfServiceImpl::Factory::~Factory()
@@ -996,8 +994,12 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
 int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
     ZLOGI("user change, code:%{public}u, user:%{public}s", code, user.c_str());
-    if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+    if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPING)
+        || code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPED)
+        || code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         StoreCache::GetInstance().CloseStores();
+    } else if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_DELETE)) {
+        StoreCache::GetInstance().DeleteStores(user);
     }
     return Feature::OnUserChange(code, user, account);
 }

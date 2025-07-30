@@ -1591,6 +1591,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/app/src",
+    "${data_service_path}/framework/include/account",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf",

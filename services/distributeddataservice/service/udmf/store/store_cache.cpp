@@ -109,5 +109,16 @@ bool StoreCache::IsValidIntention(const std::string &intention)
 {
     return UnifiedDataUtils::GetIntentionByString(intention) != UD_INTENTION_BUTT;
 }
+
+void StoreCache::DeleteStores(const std::string &userId)
+{
+    for (const auto &[key, intention] : UD_INTENTION_MAP) {
+        std::string storeId = intention;
+        storeId.append(userId);
+        auto storePtr = std::make_shared<RuntimeStore>(storeId);
+        storePtr->DeleteStore(userId);
+    }
+}
+
 } // namespace UDMF
 } // namespace OHOS

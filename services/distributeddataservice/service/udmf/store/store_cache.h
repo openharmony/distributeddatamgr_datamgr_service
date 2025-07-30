@@ -29,6 +29,7 @@ public:
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     void CloseStores();
     void RemoveStore(const std::string &intention);
+    void DeleteStores(const std::string &userId);
 
 private:
     StoreCache() {}
