@@ -134,8 +134,8 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
 
     predicates.EqualTo("", "");
     std::vector<std::string> columns;
-    int errVal = 0;
-    auto resQuery = dataShareServiceImpl.Query(uri, "", predicates, columns, errVal);
+    DataShareOption option;
+    auto [errVal, resQuery] = dataShareServiceImpl.Query(uri, "", predicates, columns, option);
     int resultSet = 0;
     if (resQuery != nullptr) {
         resQuery->GetRowCount(resultSet);
