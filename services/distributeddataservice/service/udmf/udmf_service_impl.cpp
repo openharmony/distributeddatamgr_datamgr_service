@@ -672,16 +672,19 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
     int32_t id = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
     StoreMetaData meta = StoreMetaData(std::to_string(id), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
-    if (IsNeedMetaSync(meta, uuids) && !MetaDataManager::GetInstance().Sync(uuids,
-        [devices, callback, store] (auto &results) {
-            if (store->Sync(devices, callback) != E_OK) {
+    if (IsNeedMetaSync(meta, uuids)) {
+        bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
+            auto successRes = ProcessResult(results);
+            if (store->Sync(successRes, callback) != E_OK) {
                 ZLOGE("Store sync failed");
                 RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
                     BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
+            }
+        });
+        if (!res) {
+            ZLOGE("Meta sync failed");
         }
-    })) {
-        ZLOGE("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
-        return E_DB_ERROR;
+        return res ? E_OK : E_DB_ERROR;
     }
     if (store->Sync(devices, callback) != E_OK) {
         ZLOGE("Store sync failed");
@@ -1293,6 +1296,19 @@ void UdmfServiceImpl::HandleDbError(const std::string &intention, int32_t &statu
         // reset status to E_DB_ERROR
         status = E_DB_ERROR;
     }
+}
+
+std::vector<std::string> UdmfServiceImpl::ProcessResult(const std::map<std::string, int32_t> &results)
+{
+    std::vector<std::string> devices;
+    for (const auto &[uuid, status] : results) {
+        if (static_cast<DistributedDB::DBStatus>(status) == DistributedDB::DBStatus::OK) {
+            DeviceMatrix::GetInstance().OnExchanged(uuid, DeviceMatrix::META_STORE_MASK);
+            devices.emplace_back(uuid);
+        }
+    }
+    ZLOGI("Meta sync finish, total size:%{public}zu, success size:%{public}zu", results.size(), devices.size());
+    return devices;
 }
 } // namespace UDMF
 } // namespace OHOS
