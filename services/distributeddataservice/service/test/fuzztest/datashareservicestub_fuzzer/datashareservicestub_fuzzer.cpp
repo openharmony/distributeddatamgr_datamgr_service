@@ -30,7 +30,7 @@ using namespace OHOS::DataShare;
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DataShare.IDataShareService";
 constexpr uint32_t CODE_MIN = 0;
-constexpr uint32_t CODE_MAX = IDataShareService::DATA_SHARE_SERVICE_CMD_MAX + 1;
+constexpr uint32_t CODE_MAX = static_cast<uint32_t>(IDataShareService::DATA_SHARE_SERVICE_CMD_MAX) + 1;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
@@ -52,6 +52,40 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     dataShareServiceStub->OnRemoteRequest(code, request, reply);
     return true;
 }
+
+bool OnRemoteRequestFuzz01(uint32_t code, FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    dataShareServiceImpl->OnBind(
+        { "DataShareServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    request.RewindRead(0);
+    MessageParcel reply;
+    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
+    dataShareServiceStub->OnRemoteRequest(code, request, reply);
+    return true;
+}
+
+bool OnRemoteRequestFuzz02(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    dataShareServiceImpl->OnBind(
+        { "DataShareServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    request.RewindRead(0);
+    MessageParcel reply;
+    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
+    dataShareServiceStub->OnRemoteRequest(IDataShareService::DATA_SHARE_CMD_SYSTEM_CODE, request, reply);
+    return true;
+}
 } // namespace OHOS
 
 /* Fuzzer entry point */
@@ -59,5 +93,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
     OHOS::OnRemoteRequestFuzz(provider);
+    uint32_t codeTest = OHOS::CODE_MIN;
+    while (codeTest <= OHOS::CODE_MAX) {
+        OHOS::OnRemoteRequestFuzz01(codeTest, provider);
+        codeTest++;
+    }
+    OHOS::OnRemoteRequestFuzz02(provider);
     return 0;
 }
