@@ -16,6 +16,7 @@
 #define LOG_TAG "UdmfServiceImplTest"
 #include "udmf_service_impl.h"
 #include "accesstoken_kit.h"
+#include "account_delegate.h"
 #include "bootstrap.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
@@ -281,14 +282,104 @@ HWTEST_F(UdmfServiceImplTest, SetAppShareOption004, TestSize.Level1)
 */
 HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
 {
-    uint32_t code = 4;
+    // Clear store
+    StoreCache::GetInstance().CloseStores();
+    auto stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+    // Init store
+    StoreCache::GetInstance().GetStore("SystemShare");
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
+
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPING);
     std::string user = "OH_USER_test";
     std::string account = "OH_ACCOUNT_test";
     UdmfServiceImpl udmfServiceImpl;
     auto status = udmfServiceImpl.OnUserChange(code, user, account);
     ASSERT_EQ(status, UDMF::E_OK);
-    auto sizeAfter = StoreCache::GetInstance().stores_.Size();
-    ASSERT_EQ(sizeAfter, 0);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+}
+
+/**
+* @tc.name: OnUserChangeTest002
+* @tc.desc: OnUserChange test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, OnUserChangeTest002, TestSize.Level1)
+{
+    // Clear store
+    StoreCache::GetInstance().CloseStores();
+    auto stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+    // Init store
+    StoreCache::GetInstance().GetStore(STORE_ID);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
+
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPED);
+    std::string user = "OH_USER_test";
+    std::string account = "OH_ACCOUNT_test";
+    UdmfServiceImpl udmfServiceImpl;
+    auto status = udmfServiceImpl.OnUserChange(code, user, account);
+    ASSERT_EQ(status, UDMF::E_OK);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+}
+
+/**
+* @tc.name: OnUserChangeTest003
+* @tc.desc: OnUserChange test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, OnUserChangeTest003, TestSize.Level1)
+{
+    // Clear store
+    StoreCache::GetInstance().CloseStores();
+    auto stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+    // Init store
+    StoreCache::GetInstance().GetStore(STORE_ID);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
+
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED);
+    std::string user = "OH_USER_test";
+    std::string account = "OH_ACCOUNT_test";
+    UdmfServiceImpl udmfServiceImpl;
+    auto status = udmfServiceImpl.OnUserChange(code, user, account);
+    ASSERT_EQ(status, UDMF::E_OK);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+}
+
+/**
+* @tc.name: OnUserChangeTest004
+* @tc.desc: OnUserChange test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, OnUserChangeTest004, TestSize.Level1)
+{
+    // Clear store
+    StoreCache::GetInstance().CloseStores();
+    auto stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+    // Init store
+    StoreCache::GetInstance().GetStore(STORE_ID);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
+
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_UNLOCKED);
+    std::string user = "OH_USER_test";
+    std::string account = "OH_ACCOUNT_test";
+    UdmfServiceImpl udmfServiceImpl;
+    auto status = udmfServiceImpl.OnUserChange(code, user, account);
+    ASSERT_EQ(status, UDMF::E_OK);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
 }
 
 /**

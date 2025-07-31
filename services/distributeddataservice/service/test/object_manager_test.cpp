@@ -1452,4 +1452,26 @@ HWTEST_F(ObjectManagerTest, Retrieve002, TestSize.Level1)
     auto ret = manager.Retrieve(bundleName, sessionId, objectRetrieveCallback->AsObject(), tokenId);
     EXPECT_EQ(ret, DistributedKv::KEY_NOT_FOUND);
 }
+
+/**
+* @tc.name: GetSnapShots001
+* @tc.desc: ObjectStoreManager get snapShots test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "bundleA";
+    std::string storeName = "storeA";
+
+    auto ptr1 = manager.GetSnapShots(bundleName, storeName);
+    ASSERT_NE(ptr1, nullptr);
+    EXPECT_TRUE(ptr1->empty());
+    auto snapshot = std::make_shared<ObjectSnapshot>();
+    (*ptr1)["snap1"] = snapshot;
+
+    auto ptr2 = manager.GetSnapShots(bundleName, storeName);
+    EXPECT_EQ(ptr1, ptr2);
+    EXPECT_EQ((*ptr2)["snap1"], snapshot);
+}
 } // namespace OHOS::Test

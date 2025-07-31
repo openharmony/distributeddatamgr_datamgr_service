@@ -52,7 +52,6 @@ ohos_source_set("udmf_server") {
     "preprocess/preprocess_utils.cpp",
     "preprocess/udmf_notifier_proxy.cpp",
     "store/runtime_store.cpp",
-    "store/store_account_observer.cpp",
     "store/store_cache.cpp",
     "udmf_service_impl.cpp",
     "udmf_service_stub.cpp",

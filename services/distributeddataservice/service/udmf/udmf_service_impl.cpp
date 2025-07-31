@@ -21,6 +21,7 @@
 #include "tokenid_kit.h"
 
 #include "accesstoken_kit.h"
+#include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
@@ -35,7 +36,6 @@
 #include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
 #include "dfx/reporter.h"
-#include "store_account_observer.h"
 #include "system_ability_definition.h"
 #include "uri_permission_manager.h"
 #include "udmf_radar_reporter.h"
@@ -77,8 +77,6 @@ UdmfServiceImpl::Factory::Factory()
         }
         return product_;
     }, FeatureSystem::BIND_NOW);
-    auto observer = std::make_shared<RuntimeStoreAccountObserver>();
-    DistributedData::AccountDelegate::GetInstance()->Subscribe(observer);
 }
 
 UdmfServiceImpl::Factory::~Factory()
@@ -663,14 +661,15 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
         syncInfo.businessUdKey = query.key;
         std::lock_guard<std::mutex> lock(mutex_);
         asyncProcessInfoMap_.insert_or_assign(syncInfo.businessUdKey, syncInfo);
-        ZLOGD("store.Sync: name=%{public}s, id=%{public}u, status=%{public}u, total=%{public}u, finish=%{public}u",
-            syncInfo.srcDevName.c_str(), syncInfo.syncId, syncInfo.syncStatus,
-            syncInfo.syncTotal, syncInfo.syncFinished);
     };
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
-    int32_t id = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
-    StoreMetaData meta = StoreMetaData(std::to_string(id), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
+    int userId = 0;
+    if (!AccountDelegate::GetInstance()->QueryForegroundUserId(userId)) {
+        ZLOGE("QueryForegroundUserId failed");
+        return E_ERROR;
+    }
+    auto meta = BuildMeta(key.intention, userId);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
     if (IsNeedMetaSync(meta, uuids)) {
         bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
@@ -683,6 +682,8 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
         });
         if (!res) {
             ZLOGE("Meta sync failed");
+            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
         }
         return res ? E_OK : E_DB_ERROR;
     }
@@ -999,7 +1000,9 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
 int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
     ZLOGI("user change, code:%{public}u, user:%{public}s", code, user.c_str());
-    if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+    if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPING)
+        || code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPED)
+        || code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         StoreCache::GetInstance().CloseStores();
     }
     return Feature::OnUserChange(code, user, account);
@@ -1296,6 +1299,15 @@ void UdmfServiceImpl::HandleDbError(const std::string &intention, int32_t &statu
         // reset status to E_DB_ERROR
         status = E_DB_ERROR;
     }
+}
+
+StoreMetaData UdmfServiceImpl::BuildMeta(const std::string &storeId, int userId)
+{
+    StoreMetaData meta;
+    meta.user = std::to_string(userId);
+    meta.storeId = storeId;
+    meta.bundleName = Bootstrap::GetInstance().GetProcessLabel();
+    return meta;
 }
 
 std::vector<std::string> UdmfServiceImpl::ProcessResult(const std::map<std::string, int32_t> &results)

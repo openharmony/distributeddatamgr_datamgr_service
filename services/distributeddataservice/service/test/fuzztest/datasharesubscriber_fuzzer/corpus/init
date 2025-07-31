@@ -13,24 +13,4 @@
  * limitations under the License.
  */
 
-#include "account_delegate_mock.h"
-
-namespace OHOS {
-namespace DistributedData {
-AccountDelegate *AccountDelegate::instance_ = nullptr;
-
-bool AccountDelegate::RegisterAccountInstance(AccountDelegate *instance)
-{
-    if (instance_ != nullptr) {
-        return false;
-    }
-    instance_ = instance;
-    return true;
-}
-
-AccountDelegate *AccountDelegate::GetInstance()
-{
-    return instance_;
-}
-} // namespace DistributedData
-} // namespace OHOS
+FUZZ

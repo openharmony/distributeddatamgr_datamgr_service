@@ -13,24 +13,9 @@
  * limitations under the License.
  */
 
-#include "account_delegate_mock.h"
+#ifndef DATAMGR_SERVICE_DATA_SHARE_SUBSCRIBER_FUZZER_H
+#define DATAMGR_SERVICE_DATA_SHARE_SUBSCRIBER_FUZZER_H
 
-namespace OHOS {
-namespace DistributedData {
-AccountDelegate *AccountDelegate::instance_ = nullptr;
+#define FUZZ_PROJECT_NAME "datasharesubscriber_fuzzer"
 
-bool AccountDelegate::RegisterAccountInstance(AccountDelegate *instance)
-{
-    if (instance_ != nullptr) {
-        return false;
-    }
-    instance_ = instance;
-    return true;
-}
-
-AccountDelegate *AccountDelegate::GetInstance()
-{
-    return instance_;
-}
-} // namespace DistributedData
-} // namespace OHOS
+#endif // DATAMGR_SERVICE_DATA_SHARE_SUBSCRIBER_FUZZER_H

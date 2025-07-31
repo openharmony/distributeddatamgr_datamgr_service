@@ -50,6 +50,7 @@ group("fuzztest") {
     deps += [ 
       "datashareservicestub_fuzzer:fuzztest",
       "datashareserviceimpl_fuzzer:fuzztest",
+      "datasharesubscriber_fuzzer:fuzztest",
     ]
   }
 

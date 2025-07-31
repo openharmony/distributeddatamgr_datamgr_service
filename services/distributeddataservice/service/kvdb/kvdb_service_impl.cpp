@@ -1094,18 +1094,39 @@ Status KVDBServiceImpl::DoSync(const StoreMetaData &meta, const SyncInfo &info, 
 Status KVDBServiceImpl::DoSyncInOrder(
     const StoreMetaData &meta, const SyncInfo &info, const SyncEnd &complete, int32_t type)
 {
+    ZLOGD("type:%{public}d seqId:0x%{public}" PRIx64 " remote:%{public}zu appId:%{public}s storeId:%{public}s", type,
+        info.seqId, info.devices.size(), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
     auto uuids = ConvertDevices(info.devices);
     if (uuids.empty()) {
+        ZLOGW("no device seqId:0x%{public}" PRIx64 " remote:%{public}zu appId:%{public}s storeId:%{public}s",
+            info.seqId, info.devices.size(), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
         return Status::DEVICE_NOT_ONLINE;
     }
     if (IsNeedMetaSync(meta, uuids)) {
-        auto result = MetaDataManager::GetInstance().Sync(uuids, [this, meta, info, complete, type](const auto &results) {
+        auto recv = DeviceMatrix::GetInstance().GetRecvLevel(uuids[0],
+            static_cast<DeviceMatrix::LevelType>(DataType::TYPE_DYNAMICAL));
+        RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_START,
+            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+            std::to_string(info.syncId), DATA_TYPE, meta.dataType, WATER_VERSION, recv.second);
+        auto result = MetaDataManager::GetInstance().Sync(
+            uuids, [this, meta, info, complete, type](const auto &results) {
+            RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_SUCCESS,
+                SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+                std::to_string(info.syncId), DATA_TYPE, meta.dataType);
             auto ret = ProcessResult(results);
             if (ret.first.empty()) {
+                DoComplete(meta, info, RefCount(), ret.second);
                 return;
             }
             auto status = DoSyncBegin(ret.first, meta, info, complete, type);
+            ZLOGD("data sync status:%{public}d appId:%{public}s, storeId:%{public}s",
+                static_cast<int32_t>(status), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
         });
+        if (!result) {
+            RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_FAILED, ERROR_CODE, Status::ERROR,
+                BIZ_STATE, END, SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName,
+                CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
+        }
         return result ? Status::SUCCESS : Status::ERROR;
     }
     return DoSyncBegin(uuids, meta, info, complete, type);
