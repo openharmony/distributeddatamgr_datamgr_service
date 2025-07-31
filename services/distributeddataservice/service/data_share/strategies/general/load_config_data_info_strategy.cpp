@@ -22,7 +22,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_errno.h"
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 LoadConfigDataInfoStrategy::LoadConfigDataInfoStrategy()

@@ -28,7 +28,7 @@
 #include "itypes_util.h"
 #include "log_print.h"
 #include "qos.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 #include "dataproxy_handle_common.h"
 

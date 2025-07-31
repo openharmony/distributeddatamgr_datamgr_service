@@ -17,7 +17,7 @@
 #include "load_config_from_data_proxy_node_strategy.h"
 
 #include "bundle_mgr_proxy.h"
-#include "common/uri_utils.h"
+#include "common/utils.h"
 #include "data_share_profile_config.h"
 #include "datashare_errno.h"
 #include "log_print.h"
@@ -71,7 +71,7 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         return true;
     }
     context->errCode = E_URI_NOT_EXIST;
-    ZLOGI("not find DataProperties! %{private}s is private", context->uri.c_str());
+    ZLOGI("not find DataProperties! %{public}s is private", URIUtils::Anonymous(context->uri).c_str());
     return false;
 }
 

@@ -19,7 +19,7 @@
 #include "extension_mgr_proxy.h"
 #include "log_print.h"
 #include "datashare_errno.h"
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 ExtensionAbilityManager &ExtensionAbilityManager::GetInstance()

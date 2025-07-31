@@ -22,7 +22,7 @@
 #include "bundle_mgr_proxy.h"
 #include "data_share_profile_config.h"
 #include "hap_module_info.h"
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 using ExtensionAbility = OHOS::AppExecFwk::ExtensionAbilityInfo;

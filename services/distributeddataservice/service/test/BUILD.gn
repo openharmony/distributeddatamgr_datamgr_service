@@ -1175,7 +1175,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
     "${data_service_path}/service/data_share/common/seq_strategy.cpp",
-    "${data_service_path}/service/data_share/common/uri_utils.cpp",
+    "${data_service_path}/service/data_share/common/utils.cpp",
     "${data_service_path}/service/data_share/data/published_data.cpp",
     "${data_service_path}/service/data_share/data/resultset_json_formatter.cpp",
     "${data_service_path}/service/data_share/data/template_data.cpp",
@@ -1219,6 +1219,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_types_util_test.cpp",
     "kv_dalegate_test.cpp",
     "mock/account_delegate_mock.cpp",
+    "data_share_uri_utils_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1318,7 +1319,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
     "${data_service_path}/service/data_share/common/seq_strategy.cpp",
-    "${data_service_path}/service/data_share/common/uri_utils.cpp",
+    "${data_service_path}/service/data_share/common/utils.cpp",
     "${data_service_path}/service/data_share/data/published_data.cpp",
     "${data_service_path}/service/data_share/data/resultset_json_formatter.cpp",
     "${data_service_path}/service/data_share/data/template_data.cpp",
