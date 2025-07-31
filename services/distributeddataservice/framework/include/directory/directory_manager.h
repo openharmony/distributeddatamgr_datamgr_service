@@ -46,7 +46,6 @@ public:
     API_EXPORT std::vector<uint32_t> GetVersions();
     API_EXPORT void Initialize(const std::vector<Strategy> &strategies, const std::vector<StoreType> &storeTypes);
     API_EXPORT bool CreateDirectory(const std::string &path) const;
-    API_EXPORT bool DeleteDirectory(const char* path);
 
 private:
     using Action = std::string (DirectoryManager::*)(const StoreMetaData &) const;

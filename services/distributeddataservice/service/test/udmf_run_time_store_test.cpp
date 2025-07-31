@@ -29,7 +29,6 @@
 #include "runtime_store.h"
 #include "text.h"
 #include "token_setproc.h"
-#include "store_account_observer.h"
 #include "directory_manager.h"
 
 using namespace testing::ext;
@@ -711,35 +710,6 @@ HWTEST_F(UdmfRunTimeStoreTest, GetRuntime002, TestSize.Level1)
     Runtime outRuntime;
     auto status = store->GetRuntime(key, outRuntime);
     EXPECT_EQ(status, E_NOT_FOUND);
-}
-
-/**
-* @tc.name: OnAccountChanged001
-* @tc.desc: Abnormal testcase of OnAccountChanged
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfRunTimeStoreTest, OnAccountChanged001, TestSize.Level1)
-{
-    RuntimeStoreAccountObserver observer;
-    const AccountEventInfo eventInfo = {
-        .status = AccountStatus::DEVICE_ACCOUNT_DELETE
-    };
-    DistributedData::StoreMetaData metaData;
-    uint32_t token = IPCSkeleton::GetSelfTokenID();
-    metaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    metaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    metaData.user = eventInfo.userId;
-    metaData.tokenId = token;
-    metaData.securityLevel = DistributedKv::SecurityLevel::S1;
-    metaData.area = DistributedKv::Area::EL1;
-    metaData.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
-    metaData.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(metaData);
-    std::string userPath = metaData.dataDir.append("/").append(eventInfo.userId);
-    observer.OnAccountChanged(eventInfo, 0);
-    EXPECT_EQ(access(userPath.c_str(), F_OK), -1);
-    SetSelfTokenID(0);
-    observer.OnAccountChanged(eventInfo, 0);
 }
 
 /**
