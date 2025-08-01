@@ -99,13 +99,13 @@ private:
     };
     static Factory factory_;
     mutable std::recursive_mutex cacheMutex_;
-    std::map<std::string, Privilege> privilegeCache_;
+    std::map<std::string, Privilege> privilegeCache_ {};
     std::shared_ptr<ExecutorPool> executors_;
 
     std::mutex mutex_;
-    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_;
-    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_;
-    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_;
+    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_ {};
+    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
+    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_ {};
 };
 } // namespace UDMF
 } // namespace OHOS
