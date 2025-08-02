@@ -1,0 +1,41 @@
+/*
+* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_BUNDLEINFO_UTILS_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_BUNDLEINFO_UTILS_H
+
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <utility>
+
+namespace OHOS::DistributedData {
+using Callback = std::function<std::pair<int, bool>(const std::string &bundleName, int32_t userId)>;
+class Bundle_Utils {
+public:
+    Bundle_Utils() = default;
+    static std::shared_ptr<Bundle_Utils> GetInstance();
+
+    std::pair<int, bool> CheckSilentConfig(const std::string &bundleName, int32_t userId);
+
+    void SetBundleInfoCallback(Callback callback);
+
+private:
+    std::mutex lock_;
+    Callback bundleInfoCallback_;
+};
+}
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_BUNDLEINFO_UTILS_H
