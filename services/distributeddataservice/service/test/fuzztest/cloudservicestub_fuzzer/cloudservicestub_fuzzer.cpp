@@ -69,13 +69,15 @@ void AllocAndSetHapToken()
 
 bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr<CloudServiceImpl> cloudServiceImpl = std::make_shared<CloudServiceImpl>();
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    cloudServiceImpl->OnBind(
-        { "CloudServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-
+    static std::shared_ptr<CloudServiceImpl> cloudServiceImpl = std::make_shared<CloudServiceImpl>();
+    static std::once_flag onceFlag;
+    std::call_once(onceFlag, [&]() {
+        std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+        cloudServiceImpl->OnBind(
+            { "CloudServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    });
+    
     AllocAndSetHapToken();
-
     uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
