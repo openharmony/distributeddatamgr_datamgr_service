@@ -558,19 +558,14 @@ ohos_unittest("RdbResultSetImplTest") {
 }
 
 ohos_unittest("RdbServiceTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/service/common/value_proxy.cpp",
-    "${data_service_path}/service/rdb/cache_cursor.cpp",
-    "${data_service_path}/service/rdb/rdb_asset_loader.cpp",
-    "${data_service_path}/service/rdb/rdb_cloud.cpp",
-    "${data_service_path}/service/rdb/rdb_cursor.cpp",
-    "${data_service_path}/service/rdb/rdb_general_store.cpp",
-    "${data_service_path}/service/rdb/rdb_notifier_proxy.cpp",
-    "${data_service_path}/service/rdb/rdb_query.cpp",
-    "${data_service_path}/service/rdb/rdb_result_set_impl.cpp",
-    "${data_service_path}/service/rdb/rdb_result_set_stub.cpp",
-    "${data_service_path}/service/rdb/rdb_watcher.cpp",
     "cache_cursor_test.cpp",
     "mock/general_watcher_mock.cpp",
     "mock/relational_store_manager_mock.cpp",
@@ -607,10 +602,41 @@ ohos_unittest("RdbServiceTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/backup:distributeddata_backup",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/dumper:distributeddata_dumper",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
+    "${data_service_path}/service/permission:distributeddata_permit",
   ]
+
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.theme_screenlock_mgr)) {
+    deps +=
+        [ "${data_service_path}/adapter/screenlock:distributeddata_screenlock" ]
+  }
+
+  if (datamgr_service_cloud) {
+    deps += [ "${data_service_path}/service/cloud:distributeddata_cloud" ]
+  }
+
+  if (datamgr_service_kvdb) {
+    deps += [ "${data_service_path}/service/kvdb:distributeddata_kvdb" ]
+  }
+
+  if (datamgr_service_rdb) {
+    deps += [ "${data_service_path}/service/rdb:distributeddata_rdb" ]
+  }
+
+  if (datamgr_service_object) {
+    deps += [ "${data_service_path}/service/object:distributeddata_object" ]
+  }
 }
 
 ohos_unittest("RdbServiceImplTest") {
