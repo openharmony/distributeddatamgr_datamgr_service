@@ -53,7 +53,7 @@ protected:
 
 void ObjectServiceImplTest::SetUp()
 {
-    uri_ = "file:://com.examples.hmos.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
+    uri_ = "file:://com.examples.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
     ObjectStore::Asset asset{
         .id = "test_name",
         .name = uri_,
@@ -93,7 +93,7 @@ void ObjectServiceImplTest::TearDown()
  */
 HWTEST_F(ObjectServiceImplTest, OnAssetChanged001, TestSize.Level1)
 {
-    std::string bundleName = "com.examples.hmos.notepad";
+    std::string bundleName = "com.examples.notepad";
     OHOS::Security::AccessToken::AccessTokenID tokenId =
         OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, bundleName, 0);
         SetSelfTokenID(tokenId);
@@ -112,7 +112,7 @@ HWTEST_F(ObjectServiceImplTest, OnAssetChanged001, TestSize.Level1)
  */
 HWTEST_F(ObjectServiceImplTest, BindAssetStore001, TestSize.Level1)
 {
-    std::string bundleName = "com.examples.hmos.notepad";
+    std::string bundleName = "com.examples.notepad";
     OHOS::Security::AccessToken::AccessTokenID tokenId =
         OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, bundleName, 0);
         SetSelfTokenID(tokenId);
@@ -131,7 +131,7 @@ HWTEST_F(ObjectServiceImplTest, BindAssetStore001, TestSize.Level1)
  */
 HWTEST_F(ObjectServiceImplTest, DeleteSnapshot001, TestSize.Level1)
 {
-    std::string bundleName = "com.examples.hmos.notepad";
+    std::string bundleName = "com.examples.notepad";
     OHOS::Security::AccessToken::AccessTokenID tokenId =
         OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, bundleName, 0);
         SetSelfTokenID(tokenId);
