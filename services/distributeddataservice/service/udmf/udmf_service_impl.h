@@ -89,6 +89,9 @@ private:
         const std::string &key);
     int32_t VerifyDataAccessPermission(std::shared_ptr<Runtime> runtime, const QueryOption &query,
         const UnifiedData &unifiedData);
+    std::vector<std::string> ProcessResult(const std::map<std::string, int32_t> &results);
+    DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
+
     class Factory {
     public:
         Factory();
