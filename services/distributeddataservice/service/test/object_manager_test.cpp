@@ -205,7 +205,7 @@ protected:
     uint64_t sequenceId_2 = 20;
     uint64_t sequenceId_3 = 30;
     std::string userId_ = "100";
-    std::string bundleName_ = "com.examples.hmos.notepad";
+    std::string bundleName_ = "com.examples.notepad";
     OHOS::ObjectStore::AssetBindInfo assetBindInfo_;
     pid_t pid_ = 10;
     uint32_t tokenId_ = 100;
@@ -215,7 +215,7 @@ protected:
 
 void ObjectManagerTest::SetUp()
 {
-    uri_ = "file:://com.examples.hmos.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
+    uri_ = "file:://com.examples.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
     Asset asset{
         .name = "test_name",
         .uri = uri_,

@@ -43,7 +43,7 @@ protected:
 
 void ObjectAssetLoaderTest::SetUp()
 {
-    uri_ = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
+    uri_ = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
     Asset asset{
         .name = "test_name",
         .uri = uri_,
