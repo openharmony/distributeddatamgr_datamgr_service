@@ -406,7 +406,7 @@ HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
     ZLOGI("SyncTest start");
     mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    auto store = std::make_shared<KVDBGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
     uint32_t syncMode = GeneralStore::SyncMode::NEARBY_SUBSCRIBE_REMOTE;
     uint32_t highMode = GeneralStore::HighMode::MANUAL_SYNC_MODE;
@@ -537,7 +537,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSyncCompleteCB, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
 {
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    auto store = std::make_shared<KVDBGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
     store->SetEqualIdentifier(bundleName, storeName);
     KvStoreNbDelegateMock mockDelegate;
@@ -563,7 +563,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
 {
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    auto store = std::make_shared<KVDBGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
     store->SetEqualIdentifier(bundleName, storeName);
     KvStoreNbDelegateMock mockDelegate;
@@ -597,7 +597,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, CloudSync003, TestSize.Level0)
 {
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    auto store = std::make_shared<KVDBGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
     store->SetEqualIdentifier(bundleName, storeName);
     KvStoreNbDelegateMock mockDelegate;
@@ -649,7 +649,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync002, TestSize.Level0)
 {
     mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    auto store = std::make_shared<KVDBGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
     uint32_t syncMode = GeneralStore::SyncMode::CLOUD_BEGIN;
     uint32_t highMode = GeneralStore::HighMode::MANUAL_SYNC_MODE;
@@ -682,7 +682,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync003, TestSize.Level0)
 {
     mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    auto store = std::make_shared<KVDBGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
     uint32_t syncMode = GeneralStore::SyncMode::NEARBY_END;
     uint32_t highMode = GeneralStore::HighMode::MANUAL_SYNC_MODE;
@@ -965,7 +965,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync001, TestSize.Level0)
 {
     mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    auto store = std::make_shared<KVDBGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
     uint32_t syncMode = GeneralStore::SyncMode::CLOUD_BEGIN;
     uint32_t highMode = GeneralStore::HighMode::MANUAL_SYNC_MODE;
