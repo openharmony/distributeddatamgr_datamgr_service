@@ -27,7 +27,7 @@ using Callback = std::function<std::pair<int, bool>(const std::string &bundleNam
 class BundleUtils {
 public:
     BundleUtils() = default;
-    BundleUtils &GetInstance();
+    static BundleUtils &GetInstance();
 
     std::pair<int, bool> CheckSilentConfig(const std::string &bundleName, int32_t userId);
 

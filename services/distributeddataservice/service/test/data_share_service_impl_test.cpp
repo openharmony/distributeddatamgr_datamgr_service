@@ -570,13 +570,14 @@ HWTEST_F(DataShareServiceImplTest, UpdateLaunchInfo001, TestSize.Level1)
 * @tc.name: BundleMgrProxyTest001
 * @tc.desc: Test the CheckSilentConfig method of BundleMgrProxy
 * @tc.type: FUNC
-* @tc.require: 
+* @tc.require:
 */
 HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest001, TestSize.Level1)
 {
     ZLOGI("DataShareServiceImplTest BundleMgrProxyTest001 start");
     int32_t user = static_cast<int32_t>(USER_TEST);
     auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
     auto [err, ret] = bundleMgr->CheckSilentConfig(BUNDLE_NAME, user);
     EXPECT_EQ(err, OHOS::DataShare::E_SILENT_PROXY_DISABLE);
     EXPECT_EQ(ret, false);
@@ -590,7 +591,7 @@ HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest001, TestSize.Level1)
 * @tc.name: BundleUtilsTest001
 * @tc.desc: Test the SetBundleInfoCallback and CheckSilentConfig methods of BundleUtils
 * @tc.type: FUNC
-* @tc.require: 
+* @tc.require:
 */
 HWTEST_F(DataShareServiceImplTest, BundleUtilsTest001, TestSize.Level1)
 {

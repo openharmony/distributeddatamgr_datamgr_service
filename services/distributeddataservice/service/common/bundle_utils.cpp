@@ -30,7 +30,6 @@ void BundleUtils::SetBundleInfoCallback(Callback callback)
 
 std::pair<int, bool> BundleUtils::CheckSilentConfig(const std::string &bundleName, int32_t userId)
 {
-    std::lock_guard<std::mutex> lock(lock_);
     if (bundleInfoCallback_ == nullptr) {
         return std::make_pair(-1, false);
     }
