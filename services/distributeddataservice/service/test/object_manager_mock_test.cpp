@@ -422,6 +422,8 @@ HWTEST_F(ObjectManagerMockTest, InitUserMeta003, TestSize.Level1)
 {
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
             .WillOnce(testing::Return(false));
+    DeviceInfo devInfo = { .uuid = "666" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillOnce(Return(devInfo));
     auto &manager = ObjectStoreManager::GetInstance();
     std::vector<int> users = { 0, 1 };
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
