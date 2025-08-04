@@ -707,7 +707,7 @@ bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
         CapMetaData capMeta;
         auto capKey = CapMetaRow::GetKeyFor(uuid);
         if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
-            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData)) {
             isAfterMeta = true;
             break;
         }
