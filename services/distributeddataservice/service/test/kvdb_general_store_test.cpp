@@ -965,7 +965,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync001, TestSize.Level0)
 {
     mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
-    auto store = std::make_shared<KVDBGeneralStore>(metaData_);
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     uint32_t syncMode = GeneralStore::SyncMode::CLOUD_BEGIN;
     uint32_t highMode = GeneralStore::HighMode::MANUAL_SYNC_MODE;
