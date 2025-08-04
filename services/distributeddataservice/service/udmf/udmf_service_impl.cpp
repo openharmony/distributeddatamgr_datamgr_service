@@ -684,8 +684,9 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
             ZLOGE("Meta sync failed");
             RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
                 BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
+            return E_DB_ERROR;
         }
-        return res ? E_OK : E_DB_ERROR;
+        return E_OK;
     }
     if (store->Sync(devices, callback) != E_OK) {
         ZLOGE("Store sync failed");
