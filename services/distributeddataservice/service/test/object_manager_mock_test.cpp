@@ -377,5 +377,58 @@ HWTEST_F(ObjectManagerMockTest, UnRegisterAssetsLister001, TestSize.Level1)
     ret = manager.UnRegisterAssetsLister();
     EXPECT_EQ(ret, true);
 }
+
+/**
+* @tc.name: InitUserMeta001
+* @tc.desc: Test the scenario where the QueryUsers return false in the GetCurrentUser function.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, InitUserMeta001, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+            .WillOnce(testing::Return(false));
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::vector<int> users;
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(false)));
+    auto status = manager.InitUserMeta();
+    ASSERT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
+}
+
+/**
+* @tc.name: InitUserMeta002
+* @tc.desc: Test the scenario where the QueryUsers users empty in the GetCurrentUser function.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, InitUserMeta002, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+            .WillOnce(testing::Return(false));
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::vector<int> users;
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
+        .Times(1)
+        .WillOnce(
+            DoAll(SetArgReferee<0>(users), Invoke([](std::vector<int> &users) { users.clear(); }), Return(true)));
+    auto status = manager.InitUserMeta();
+    ASSERT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
+}
+
+/**
+* @tc.name: InitUserMeta003
+* @tc.desc: Test the scenario where the QueryUsers return true in the GetCurrentUser function.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, InitUserMeta003, TestSize.Level1)
+{
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+            .WillOnce(testing::Return(false));
+    DeviceInfo devInfo = { .uuid = "666" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillOnce(Return(devInfo));
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::vector<int> users = { 0, 1 };
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
+    auto status = manager.InitUserMeta();
+    ASSERT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
+}
 }; // namespace DistributedDataTest
 } // namespace OHOS::Test
