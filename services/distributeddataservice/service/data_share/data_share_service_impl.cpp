@@ -55,6 +55,7 @@
 #include "sys_event_subscriber.h"
 #include "system_ability_definition.h"
 #include "system_ability_status_change_stub.h"
+#include "task_executor.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
 #include "xcollie.h"
@@ -601,6 +602,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    NativeRdb::TaskExecutor::GetInstance().SetExecutor(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     DBDelegate::SetExecutorPool(binderInfo.executors);
     HiViewAdapter::GetInstance().SetThreadPool(binderInfo.executors);
