@@ -881,15 +881,15 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
         return RDB_NO_META;
     }
     SetReturnParam(meta, param);
-    if (param.isSilent_) {
+    if (param.isNeedSetAcl_) {
         return RDB_OK;
     }
     if (param.isSearchable_) {
-        param.isSilent_ = true;
+        param.isNeedSetAcl_ = true;
         return RDB_OK;
     }
-    auto [err, flag] = Bundle_Utils::GetInstance()->CheckSilentConfig(meta.bundleName, std::stoi(meta.user));
-    param.isSilent_ = flag;
+    auto [err, flag] = BundleUtils::GetInstance().CheckSilentConfig(meta.bundleName, std::stoi(meta.user));
+    param.isNeedSetAcl_ = flag;
     return RDB_OK;
 }
 

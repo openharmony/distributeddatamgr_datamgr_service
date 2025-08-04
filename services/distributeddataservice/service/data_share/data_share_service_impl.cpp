@@ -673,7 +673,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     auto task = [](const std::string &bundleName, int32_t userId) {
         return BundleMgrProxy::GetInstance()->CheckSilentConfig(bundleName, userId);
     };
-    Bundle_Utils::GetInstance()->SetBundleInfoCallback(task);
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
     ZLOGI("end");
     return E_OK;
 }

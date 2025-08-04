@@ -16,22 +16,19 @@
 #include "bundle_utils.h"
 
 namespace OHOS::DistributedData {
-std::shared_ptr<Bundle_Utils> Bundle_Utils::GetInstance()
+BundleUtils &BundleUtils::GetInstance()
 {
-    static std::shared_ptr<Bundle_Utils> instance = nullptr;
-    if (instance == nullptr) {
-        instance = std::make_shared<Bundle_Utils>();
-    }
+    static BundleUtils instance;
     return instance;
 }
 
-void Bundle_Utils::SetBundleInfoCallback(Callback callback)
+void BundleUtils::SetBundleInfoCallback(Callback callback)
 {
     std::lock_guard<std::mutex> lock(lock_);
     bundleInfoCallback_ = callback;
 }
 
-std::pair<int, bool> Bundle_Utils::CheckSilentConfig(const std::string &bundleName, int32_t userId)
+std::pair<int, bool> BundleUtils::CheckSilentConfig(const std::string &bundleName, int32_t userId)
 {
     std::lock_guard<std::mutex> lock(lock_);
     if (bundleInfoCallback_ == nullptr) {

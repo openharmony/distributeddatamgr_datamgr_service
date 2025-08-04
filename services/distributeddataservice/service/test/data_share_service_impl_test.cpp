@@ -588,7 +588,7 @@ HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest001, TestSize.Level1)
 
 /**
 * @tc.name: BundleUtilsTest001
-* @tc.desc: Test the SetBundleInfoCallback and CheckSilentConfig methods of Bundle_Utils
+* @tc.desc: Test the SetBundleInfoCallback and CheckSilentConfig methods of BundleUtils
 * @tc.type: FUNC
 * @tc.require: 
 */
@@ -596,15 +596,15 @@ HWTEST_F(DataShareServiceImplTest, BundleUtilsTest001, TestSize.Level1)
 {
     ZLOGI("DataShareServiceImplTest BundleUtilsTest001 start");
 
-    auto [err, ret] = Bundle_Utils::GetInstance()->CheckSilentConfig("", 0);
+    auto [err, ret] = BundleUtils::GetInstance().CheckSilentConfig("", 0);
     EXPECT_EQ(err, -1);
     EXPECT_EQ(ret, false);
 
     auto task = [](const std::string &bundleName, int32_t userId) {
         return std::make_pair(0, true);
     };
-    Bundle_Utils::GetInstance()->SetBundleInfoCallback(task);
-    auto [err2, ret2] = Bundle_Utils::GetInstance()->CheckSilentConfig("", 0);
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
+    auto [err2, ret2] = BundleUtils::GetInstance().CheckSilentConfig("", 0);
     EXPECT_EQ(err2, 0);
     EXPECT_EQ(ret2, true);
     ZLOGI("DataShareServiceImplTest BundleUtilsTest001 end");

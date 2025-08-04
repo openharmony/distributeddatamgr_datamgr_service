@@ -24,10 +24,10 @@
 
 namespace OHOS::DistributedData {
 using Callback = std::function<std::pair<int, bool>(const std::string &bundleName, int32_t userId)>;
-class Bundle_Utils {
+class BundleUtils {
 public:
-    Bundle_Utils() = default;
-    static std::shared_ptr<Bundle_Utils> GetInstance();
+    BundleUtils() = default;
+    BundleUtils &GetInstance();
 
     std::pair<int, bool> CheckSilentConfig(const std::string &bundleName, int32_t userId);
 
