@@ -888,7 +888,7 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
         param.isNeedSetAcl_ = true;
         return RDB_OK;
     }
-    auto [err, flag] = BundleUtils::GetInstance().CheckSilentConfig(meta.bundleName, std::stoi(meta.user));
+    auto [err, flag] = BundleUtils::GetInstance().CheckSilentConfig(meta.bundleName, std::atoi(meta.user.c_str()));
     param.isNeedSetAcl_ = flag;
     return RDB_OK;
 }

@@ -25,14 +25,19 @@ BundleUtils &BundleUtils::GetInstance()
 void BundleUtils::SetBundleInfoCallback(Callback callback)
 {
     std::lock_guard<std::mutex> lock(lock_);
-    bundleInfoCallback_ = callback;
+    bundleInfoCallback_ = std::move(callback);
 }
 
 std::pair<int, bool> BundleUtils::CheckSilentConfig(const std::string &bundleName, int32_t userId)
 {
-    if (bundleInfoCallback_ == nullptr) {
+    Callback callback;
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        callback = bundleInfoCallback_;
+    }
+    if (callback == nullptr) {
         return std::make_pair(-1, false);
     }
-    return bundleInfoCallback_(bundleName, userId);
+    return callback(bundleName, userId);
 }
 }

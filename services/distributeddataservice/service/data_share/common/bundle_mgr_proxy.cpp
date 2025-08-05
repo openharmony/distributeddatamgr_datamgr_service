@@ -296,7 +296,8 @@ std::pair<int, bool> BundleMgrProxy::CheckSilentConfig(const std::string &bundle
     AppExecFwk::BundleInfo bundleInfo;
     auto bmsClient = GetBundleMgrProxy();
     if (bmsClient == nullptr) {
-        ZLOGE("GetBundleMgrProxy is nullptr!");
+        ZLOGE(
+            "GetBundleMgrProxy is nullptr! bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
         return std::make_pair(E_BMS_NOT_READY, false);
     }
 
