@@ -626,7 +626,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
 {
-    if (!UTILS::IsTokenNative() &&
+    if (!UTILS::IsTokenNative() ||
         !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(query.tokenId)) {
         ZLOGE("Tokenid permission verification failed!");
         return E_NO_PERMISSION;
