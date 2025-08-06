@@ -19,6 +19,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "bootstrap.h"
+#include "bundle_utils.h"
 #include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
@@ -880,6 +881,16 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
         return RDB_NO_META;
     }
     SetReturnParam(meta, param);
+    // there is no need to set acl, path is has acl
+    if (param.isNeedSetAcl_) {
+        return RDB_OK;
+    }
+    if (param.isSearchable_) {
+        param.isNeedSetAcl_ = true;
+        return RDB_OK;
+    }
+    auto [err, flag] = BundleUtils::GetInstance().CheckSilentConfig(meta.bundleName, std::atoi(meta.user.c_str()));
+    param.isNeedSetAcl_ = flag;
     return RDB_OK;
 }
 
