@@ -881,6 +881,7 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
         return RDB_NO_META;
     }
     SetReturnParam(meta, param);
+    // there is no need to set acl, path is has acl
     if (param.isNeedSetAcl_) {
         return RDB_OK;
     }
