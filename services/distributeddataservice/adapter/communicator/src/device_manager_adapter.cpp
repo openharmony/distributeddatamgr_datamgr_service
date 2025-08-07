@@ -523,6 +523,9 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
         ZLOGE("failed, result:%{public}d, networkId:%{public}s", ret, Anonymous::Change(networkId).c_str());
         return "";
     }
+    dvInfo.uuid = uuid;
+    dvInfo.networkId = networkId;
+    deviceInfos_.Set(uuid, dvInfo);
     return uuid;
 }
 
