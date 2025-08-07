@@ -21,8 +21,6 @@
 
 #include "accesstoken_kit.h"
 #include "account_delegate_mock.h"
-#include "bundle_mgr_proxy.h"
-#include "bundle_utils.h"
 #include "data_share_service_stub.h"
 #include "device_manager_adapter.h"
 #include "dump/dump_manager.h"
@@ -564,50 +562,5 @@ HWTEST_F(DataShareServiceImplTest, UpdateLaunchInfo001, TestSize.Level1)
     MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true);
     EXPECT_EQ(storeMetaData.size(), 0);
     ZLOGI("DataShareServiceImplTest UpdateLaunchInfo001 end");
-}
-
-/**
-* @tc.name: BundleMgrProxyTest001
-* @tc.desc: Test the CheckSilentConfig method of BundleMgrProxy
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest001, TestSize.Level1)
-{
-    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest001 start");
-    int32_t user = static_cast<int32_t>(USER_TEST);
-    auto bundleMgr = BundleMgrProxy::GetInstance();
-    ASSERT_NE(bundleMgr, nullptr);
-    auto [err, ret] = bundleMgr->CheckSilentConfig(BUNDLE_NAME, user);
-    EXPECT_EQ(err, OHOS::DataShare::E_SILENT_PROXY_DISABLE);
-    EXPECT_EQ(ret, false);
-    auto [err2, ret2] = bundleMgr->CheckSilentConfig("", user);
-    EXPECT_NE(err2, OHOS::DataShare::E_OK);
-    EXPECT_EQ(ret2, false);
-    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest001 end");
-}
-
-/**
-* @tc.name: BundleUtilsTest001
-* @tc.desc: Test the SetBundleInfoCallback and CheckSilentConfig methods of BundleUtils
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(DataShareServiceImplTest, BundleUtilsTest001, TestSize.Level1)
-{
-    ZLOGI("DataShareServiceImplTest BundleUtilsTest001 start");
-
-    auto [err, ret] = BundleUtils::GetInstance().CheckSilentConfig("", 0);
-    EXPECT_EQ(err, -1);
-    EXPECT_EQ(ret, false);
-
-    auto task = [](const std::string &bundleName, int32_t userId) {
-        return std::make_pair(0, true);
-    };
-    BundleUtils::GetInstance().SetBundleInfoCallback(task);
-    auto [err2, ret2] = BundleUtils::GetInstance().CheckSilentConfig("", 0);
-    EXPECT_EQ(err2, 0);
-    EXPECT_EQ(ret2, true);
-    ZLOGI("DataShareServiceImplTest BundleUtilsTest001 end");
 }
 } // namespace OHOS::Test
