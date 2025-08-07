@@ -22,8 +22,6 @@
 
 #include "account/account_delegate.h"
 #include "app_connect_manager.h"
-#include "bundle_mgr_proxy.h"
-#include "bundle_utils.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "concurrent_task_client.h"
@@ -57,6 +55,7 @@
 #include "sys_event_subscriber.h"
 #include "system_ability_definition.h"
 #include "system_ability_status_change_stub.h"
+#include "task_executor.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
 #include "xcollie.h"
@@ -603,6 +602,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     KvDBDelegate::GetInstance(saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    NativeRdb::TaskExecutor::GetInstance().SetExecutor(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     DBDelegate::SetExecutorPool(binderInfo.executors);
     HiViewAdapter::GetInstance().SetThreadPool(binderInfo.executors);
@@ -610,11 +610,6 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     SubscribeConcurrentTask();
     SubscribeTimeChanged();
     SubscribeChange();
-
-    auto task = [](const std::string &bundleName, int32_t userId) {
-        return BundleMgrProxy::GetInstance()->CheckSilentConfig(bundleName, userId);
-    };
-    BundleUtils::GetInstance().SetBundleInfoCallback(task);
     ZLOGI("end");
     return E_OK;
 }

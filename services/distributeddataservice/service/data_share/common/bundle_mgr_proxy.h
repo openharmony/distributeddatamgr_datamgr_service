@@ -85,7 +85,6 @@ public:
         BundleConfig &bundleConfig, int32_t appIndex = 0);
     int GetBundleInfoFromBMSWithCheck(const std::string &bundleName, int32_t userId,
         BundleConfig &bundleConfig, int32_t appIndex = 0);
-    std::pair<int, bool> CheckSilentConfig(const std::string &bundleName, int32_t userId);
     void Delete(const std::string &bundleName, int32_t userId, int32_t appIndex);
     sptr<IRemoteObject> CheckBMS();
     std::pair<int, std::string> GetCallerAppIdentifier(const std::string &bundleName, int32_t userId);
