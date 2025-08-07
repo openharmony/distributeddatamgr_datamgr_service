@@ -47,6 +47,7 @@ static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *TEST_CLOUD_PATH = "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/"
                                                "test_cloud_store";
+static constexpr const int32_t TEST_TOKEN_FLAG_CALL_COUNT = 3;                                              
 class CloudDataMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -191,7 +192,9 @@ void CloudDataMockTest::SetUpTestCase(void)
 
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).Times(3).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(TEST_TOKEN_FLAG_CALL_COUNT)
+        .WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
 
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     MetaDataManager::GetInstance().SetSyncer(

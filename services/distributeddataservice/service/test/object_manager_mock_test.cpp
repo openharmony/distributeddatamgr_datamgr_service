@@ -496,7 +496,7 @@ HWTEST_F(ObjectManagerMockTest, IsContinue001, TestSize.Level1)
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
         .Times(1)
         .WillOnce(Return(ATokenTypeEnum::TOKEN_NATIVE));
-	auto ret = objectServiceImpl->IsContinue(isContinue);
+    auto ret = objectServiceImpl->IsContinue(isContinue);
     EXPECT_EQ(ret, DistributedObject::OBJECT_INNER_ERROR);
 }
 
@@ -515,7 +515,7 @@ HWTEST_F(ObjectManagerMockTest, IsContinue002, TestSize.Level1)
     EXPECT_CALL(*accTokenMock, GetHapTokenInfo(_, _))
         .Times(1)
         .WillOnce(Return(0));
-	auto ret = objectServiceImpl->IsContinue(isContinue);
+    auto ret = objectServiceImpl->IsContinue(isContinue);
     EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
 }
 }; // namespace DistributedDataTest

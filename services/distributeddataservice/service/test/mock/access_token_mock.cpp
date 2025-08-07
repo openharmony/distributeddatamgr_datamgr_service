@@ -19,6 +19,9 @@ namespace Security {
 namespace AccessToken {
 ATokenTypeEnum AccessTokenKit::GetTokenTypeFlag(AccessTokenID tokenID)
 {
+    if (BAccessTokenKit::accessTokenkit == nullptr) {
+        return ATokenTypeEnum::TOKEN_INVALID;
+    }
     return BAccessTokenKit::accessTokenkit->GetTokenTypeFlag(tokenID);
 }
 
