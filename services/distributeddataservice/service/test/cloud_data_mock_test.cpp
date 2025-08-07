@@ -47,7 +47,7 @@ static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *TEST_CLOUD_PATH = "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/"
                                                "test_cloud_store";
-static constexpr const int32_t TEST_TOKEN_FLAG_CALL_COUNT = 3;                                              
+static constexpr const int32_t TEST_TOKEN_FLAG_CALL_COUNT = 3;
 class CloudDataMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
