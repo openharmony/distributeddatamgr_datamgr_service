@@ -1600,6 +1600,9 @@ std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::ConvertCursor(std::shared
 
 CloudServiceImpl::HapInfo CloudServiceImpl::GetHapInfo(uint32_t tokenId)
 {
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        return { 0, 0, ""};
+    }
     HapTokenInfo tokenInfo;
     int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (errCode != RET_SUCCESS) {

@@ -1455,6 +1455,9 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
         return true;
     });
 
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        return GeneralError::E_ERROR;
+    }
     HapTokenInfo tokenInfo;
     auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (status != RET_SUCCESS) {
