@@ -1187,7 +1187,6 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 
   sources = [
-    "${data_service_path}/service/common/bundle_utils.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
@@ -1318,7 +1317,6 @@ ohos_unittest("DataShareServiceImplMockTest") {
   include_dirs = [ "${data_service_path}/service/config/include" ]
 
   sources = [
-    "${data_service_path}/service/common/bundle_utils.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
     "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",

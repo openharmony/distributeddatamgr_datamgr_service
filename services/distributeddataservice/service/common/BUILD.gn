@@ -23,7 +23,6 @@ ohos_source_set("distributeddata_common") {
     ubsan = true
   }
   sources = [
-    "bundle_utils.cpp",
     "common_types_utils.cpp",
     "value_proxy.cpp",
     "xcollie.cpp",
