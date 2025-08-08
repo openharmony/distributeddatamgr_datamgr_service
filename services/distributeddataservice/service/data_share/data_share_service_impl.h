@@ -40,7 +40,7 @@
 #include "rdb_notify_strategy.h"
 #include "subscribe_strategy.h"
 #include "template_strategy.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "visibility.h"
 
 namespace OHOS::DataShare {

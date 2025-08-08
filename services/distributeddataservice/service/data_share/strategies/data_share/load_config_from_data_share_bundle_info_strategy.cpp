@@ -20,7 +20,7 @@
 #include "data_share_profile_config.h"
 #include "datashare_errno.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {

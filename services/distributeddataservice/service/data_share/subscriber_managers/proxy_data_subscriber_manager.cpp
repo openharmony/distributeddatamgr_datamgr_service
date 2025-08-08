@@ -21,7 +21,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "proxy_data_manager.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {

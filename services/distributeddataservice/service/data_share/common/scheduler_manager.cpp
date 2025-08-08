@@ -20,7 +20,7 @@
 
 #include "log_print.h"
 #include "timer_info.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 #include "log_debug.h"
 

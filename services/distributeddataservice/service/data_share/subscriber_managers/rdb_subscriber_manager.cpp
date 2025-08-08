@@ -24,7 +24,7 @@
 #include "log_print.h"
 #include "scheduler_manager.h"
 #include "template_data.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -116,7 +116,8 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
 {
     int result = E_OK;
     rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
-        ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
+        ZLOGI("add subscriber, uri %{public}s tokenId 0x%{public}x",
+            URIUtils::Anonymous(key.uri).c_str(), context->callerTokenId);
         auto callerTokenId = IPCSkeleton::GetCallingTokenID();
         auto callerPid = IPCSkeleton::GetCallingPid();
         value.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);

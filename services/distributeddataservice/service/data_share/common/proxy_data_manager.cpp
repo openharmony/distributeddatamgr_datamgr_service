@@ -20,7 +20,7 @@
 #include "dataproxy_handle_common.h"
 #include "log_print.h"
 #include "proxy_data_manager.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -201,7 +201,8 @@ int32_t PublishedProxyData::InsertProxyData(std::shared_ptr<KvDBDelegate> kvDele
     kvDelegate->Get(KvDBDelegate::PROXYDATA_TABLE, listFilter, "{}", listQueryResult);
     if (!listQueryResult.empty()) {
         if (!ProxyDataListNode::Unmarshall(listQueryResult, proxyDataList)) {
-            ZLOGE("ProxyDataListNode unmarshall failed, %{private}s", listQueryResult.c_str());
+            ZLOGE("ProxyDataListNode unmarshall failed, %{public}s",
+                StringUtils::GeneralAnonymous(listQueryResult).c_str());
             return INNER_ERROR;
         }
     }
@@ -251,7 +252,7 @@ int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &call
     }
     ProxyDataNode data;
     if (!ProxyDataNode::Unmarshall(queryResult, data)) {
-        ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
+        ZLOGE("Unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
         return INNER_ERROR;
     }
     DataShareProxyData tempProxyData(data.proxyData.uri, data.proxyData.value, data.proxyData.allowList);
@@ -290,7 +291,7 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
     } else {
         ProxyDataNode oldData;
         if (!ProxyDataNode::Unmarshall(queryResult, oldData)) {
-            ZLOGE("ProxyDataNode unmarshall failed, %{private}s", queryResult.c_str());
+            ZLOGE("ProxyDataNode unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
             return INNER_ERROR;
         }
         if (callerBundleInfo.tokenId != oldData.tokenId) {
@@ -384,7 +385,7 @@ int32_t ProxyDataList::Query(uint32_t tokenId, int32_t userId, std::vector<std::
     }
     ProxyDataListNode data;
     if (!ProxyDataListNode::Unmarshall(queryResult, data)) {
-        ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
+        ZLOGE("Unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
         return invalidNum;
     }
 

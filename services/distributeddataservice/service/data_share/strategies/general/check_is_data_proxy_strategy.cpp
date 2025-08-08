@@ -14,7 +14,7 @@
  */
 #include "check_is_data_proxy_strategy.h"
 
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 bool CheckIsDataProxyStrategy::operator()(std::shared_ptr<Context> context)

@@ -22,7 +22,7 @@
 #include "general/load_config_data_info_strategy.h"
 #include "log_print.h"
 #include "published_data.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
