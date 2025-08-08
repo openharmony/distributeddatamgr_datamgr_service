@@ -202,7 +202,7 @@ HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
         EXPECT_CALL(*devMgrAdapterMock, ToUUID(testing::A<const std::vector<std::string> &>()))
             .WillOnce(Return(std::vector<std::string>{ "mock_uuid_1" }));
         EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(testing::Return(false));
-        EXPECT_CALL(*metaDataManagerMock, Sync(_, _, _)).WillOnce(testing::Return(true));
+        EXPECT_CALL(*metaDataManagerMock, Sync(_, _, _, _)).WillOnce(testing::Return(true));
         auto result = manager.SyncOnStore(prefix, remoteDeviceList, func);
         EXPECT_EQ(result, OBJECT_SUCCESS);
     }

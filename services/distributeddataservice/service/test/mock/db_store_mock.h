@@ -114,6 +114,8 @@ public:
     DBStatus SetReceiveDataInterceptor(const DataInterceptor &interceptor) override;
     DBStatus GetDeviceEntries(const std::string &device, std::vector<Entry> &entries) const override;
     DBStatus Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess) override;
+    DBStatus Sync(const DeviceSyncOption &option,
+        const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete) override;
     DBStatus CancelSync(uint32_t syncId) override;
     DatabaseStatus GetDatabaseStatus() const override;
 private:
