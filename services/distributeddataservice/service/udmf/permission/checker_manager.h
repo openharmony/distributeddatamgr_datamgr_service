@@ -24,7 +24,7 @@ namespace UDMF {
 class CheckerManager {
 public:
     struct CheckInfo {
-        uint32_t tokenId;
+        uint32_t tokenId {0};
     };
 
     class Checker {
@@ -41,7 +41,7 @@ public:
     bool IsValid(const std::vector<Privilege> &privileges, const CheckInfo &info);
 
 private:
-    std::map<std::string, Checker *> checkers_;
+    std::map<std::string, Checker *> checkers_ {};
     ConcurrentMap<std::string, std::function<Checker *()>> getters_;
 };
 } // namespace UDMF

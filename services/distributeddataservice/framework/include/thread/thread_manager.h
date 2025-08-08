@@ -29,7 +29,7 @@ public:
 
 private:
     ThreadManager();
-    uint32_t minThreadNum_ = 5;  // default min executor pool thread num
+    uint32_t minThreadNum_ = 4;  // default min executor pool thread num
     uint32_t maxThreadNum_ = 12; // default max executor pool thread num
     uint32_t ipcThreadNum_ = 16; // normal ipc num
 };

@@ -22,6 +22,7 @@
 
 #include "account/account_delegate.h"
 #include "app_connect_manager.h"
+#include "block_data.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "concurrent_task_client.h"
@@ -55,6 +56,7 @@
 #include "sys_event_subscriber.h"
 #include "system_ability_definition.h"
 #include "system_ability_status_change_stub.h"
+#include "task_executor.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
 #include "xcollie.h"
@@ -62,6 +64,7 @@
 #include "parameters.h"
 #include "dataproxy_handle_common.h"
 #include "proxy_data_manager.h"
+#include "qos_manager.h"
 #include "datashare_observer.h"
 #include "subscriber_managers/proxy_data_subscriber_manager.h"
 
@@ -73,6 +76,8 @@ using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
 // decimal base
 static constexpr int DECIMAL_BASE = 10;
+static constexpr int MAX_QUERYTIMEOUT_COUNT = 8;
+std::atomic<int32_t> DataShareServiceImpl::queryTimeoutCount_ = 0;
 DataShareServiceImpl::BindInfo DataShareServiceImpl::binderInfo_;
 class DataShareServiceImpl::SystemAbilityStatusChangeListener
     : public SystemAbilityStatusChangeStub {
@@ -220,17 +225,73 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
     return ExecuteEx(uri, extUri, callingTokenId, false, callBack);
 }
 
-std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::string &uri, const std::string &extUri,
-    const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode)
+std::pair<int32_t, std::shared_ptr<DataShareResultSet>> DataShareServiceImpl::QueryTimeout(const std::string &uri,
+    const std::string &extUri, const DataSharePredicates &predicates,
+    const std::vector<std::string> &columns, DataShareOption &option)
+{
+    // 1. This function itself is an IPC call. 2. It is not allowed for other non-IPC requests to call this function.
+    int count = queryTimeoutCount_.fetch_add(1);
+    if (count >= MAX_QUERYTIMEOUT_COUNT) {
+        queryTimeoutCount_.fetch_sub(1);
+        ZLOGW("Query Timeout busy, uri: %{public}s", URIUtils::Anonymous(uri).c_str());
+        return std::make_pair(E_RESULTSET_BUSY, nullptr);
+    }
+    auto pid = IPCSkeleton::GetCallingPid();
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto resultTuple = std::make_shared<OHOS::BlockData<std::tuple<bool, int,
+        std::shared_ptr<DataShareResultSet>>, std::chrono::milliseconds>>(option.timeout,
+            std::tuple{false, 0, nullptr});
+    std::shared_ptr<std::atomic<bool>> overTime = std::make_shared<std::atomic<bool>>(false);
+    binderInfo_.executors->Execute([uri, extUri, predicates, columns, resultTuple,
+        pid, tokenId, overTime, this]() {
+        // set thread qos
+        QosManager qosManager;
+        if (overTime->load()) {
+            queryTimeoutCount_.fetch_sub(1);
+            return;
+        }
+        std::shared_ptr<DataShareResultSet> resultSet = nullptr;
+        auto callBack = [&uri, &predicates, &columns, pid, tokenId, &resultTuple, &resultSet, this]
+            (ProviderInfo &info, DistributedData::StoreMetaData &,
+            std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
+            std::string func = __FUNCTION__;
+            TimeoutReport timeoutReport({info.bundleName, info.moduleName, "", func, tokenId}, true);
+            auto [err, result] = dbDelegate->Query(info.tableName, predicates, columns, pid, tokenId);
+            if (err != E_OK) {
+                ReportExcuteFault(tokenId, info, err, func);
+            }
+            resultSet = std::move(result);
+            timeoutReport.Report();
+            return std::make_pair(err, E_OK);
+        };
+        auto [errVal, status] = ExecuteEx(uri, extUri, tokenId, true, callBack);
+        resultTuple->SetValue({true, errVal, std::move(resultSet)});
+        queryTimeoutCount_.fetch_sub(1);
+    });
+    auto [finish, status, res] = resultTuple->GetValue();
+    if (finish) {
+        return std::make_pair(status, res);
+    }
+    overTime->store(true);
+    ZLOGW("Query Timeout, uri: %{public}s", URIUtils::Anonymous(uri).c_str());
+    return std::make_pair(E_TIMEOUT_ERROR, nullptr);
+}
+
+std::pair<int32_t, std::shared_ptr<DataShareResultSet>> DataShareServiceImpl::Query(const std::string &uri,
+    const std::string &extUri, const DataSharePredicates &predicates,
+    const std::vector<std::string> &columns, DataShareOption &option)
 {
     std::string func = __FUNCTION__;
-    XCollie xcollie(std::string(LOG_TAG) + "::" + func,
-                    XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
-    if (GetSilentProxyStatus(uri, false) != E_OK) {
+    XCollie xcollie(std::string(LOG_TAG) + "::" + func, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
+    int errCode = GetSilentProxyStatus(uri, false);
+    if (errCode != E_OK) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
-        return nullptr;
+        return std::make_pair(errCode, nullptr);
     }
-    std::shared_ptr<DataShareResultSet> resultSet;
+    if (option.timeout != 0 && binderInfo_.executors != nullptr) {
+        return QueryTimeout(uri, extUri, predicates, columns, option);
+    }
+    std::shared_ptr<DataShareResultSet> resultSet = nullptr;
     auto callingPid = IPCSkeleton::GetCallingPid();
     auto callingTokenId = IPCSkeleton::GetCallingTokenID();
     auto callBack = [&uri, &predicates, &columns, &resultSet, &callingPid, &callingTokenId, &func, this]
@@ -248,8 +309,7 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         return std::make_pair(err, E_OK);
     };
     auto [errVal, status] = ExecuteEx(uri, extUri, callingTokenId, true, callBack);
-    errCode = errVal;
-    return resultSet;
+    return std::make_pair(errVal, resultSet);
 }
 
 int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt)
@@ -601,6 +661,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
     KvDBDelegate::GetInstance(saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    NativeRdb::TaskExecutor::GetInstance().SetExecutor(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     DBDelegate::SetExecutorPool(binderInfo.executors);
     HiViewAdapter::GetInstance().SetThreadPool(binderInfo.executors);

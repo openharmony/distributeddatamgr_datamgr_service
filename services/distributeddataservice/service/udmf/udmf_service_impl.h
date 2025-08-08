@@ -89,6 +89,9 @@ private:
         const std::string &key);
     int32_t VerifyDataAccessPermission(std::shared_ptr<Runtime> runtime, const QueryOption &query,
         const UnifiedData &unifiedData);
+    std::vector<std::string> ProcessResult(const std::map<std::string, int32_t> &results);
+    DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
+
     class Factory {
     public:
         Factory();
@@ -99,13 +102,13 @@ private:
     };
     static Factory factory_;
     mutable std::recursive_mutex cacheMutex_;
-    std::map<std::string, Privilege> privilegeCache_;
+    std::map<std::string, Privilege> privilegeCache_ {};
     std::shared_ptr<ExecutorPool> executors_;
 
     std::mutex mutex_;
-    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_;
-    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_;
-    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_;
+    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_ {};
+    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
+    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_ {};
 };
 } // namespace UDMF
 } // namespace OHOS
