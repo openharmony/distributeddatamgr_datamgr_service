@@ -42,8 +42,8 @@ public:
      *        and replacing the middle part with placeholder
      * @param name Original string to be processed (non-empty assumed)
      * @return std::string Anonymized result according to length rules:
-     *     1. Length 鈮?4: Returns DEFAULT_ANONYMOUS ("******")
-     *     2. 4 < Length 鈮?8: Returns first 4 chars + REPLACE_CHAIN ("***")
+     *     1. Length <= 4: Returns DEFAULT_ANONYMOUS ("******")
+     *     2. 4 < Length <= 8: Returns first 4 chars + REPLACE_CHAIN ("***")
      *     3. Length > 8: Returns first 4 chars + REPLACE_CHAIN + last 4 chars
      * @example
      *     "abcdefghi" -> "abcd***fghi"
