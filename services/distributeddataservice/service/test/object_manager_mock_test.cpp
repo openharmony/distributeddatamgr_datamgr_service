@@ -169,13 +169,12 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
 
 /**
  * @tc.name: SyncOnStore001
- * @tc.desc: Test SyncOnStore.
+ * @tc.desc: Test SyncOnStore
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(ObjectManagerMockTest, SyncOnStore001, TestSize.Level0)
 {
-    // 2 means that the GetUserByToken interface will be called twice
     EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).Times(2).WillRepeatedly(Return(0));
     auto &manager = ObjectStoreManager::GetInstance();
     std::function<void(const std::map<std::string, int32_t> &results)> func;

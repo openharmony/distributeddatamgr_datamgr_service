@@ -80,19 +80,19 @@ int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, co
     return OBJECT_SUCCESS;
 }
 
+
 int32_t ObjectAssetsRecvListener::OnRecvProgress(
     const std::string &srcNetworkId, const sptr<AssetObj> &assetObj, uint64_t totalBytes, uint64_t processBytes)
 {
     if (assetObj == nullptr || totalBytes == 0) {
-        ZLOGE("OnRecvProgress error! srcNetworkId:%{public}s, totalBytes: %{public}llu",
+        ZLOGE("OnRecvProgress error! srcNetworkId:%{public}s, totalBytes: %{public}lu",
             DistributedData::Anonymous::Change(srcNetworkId).c_str(), totalBytes);
         return OBJECT_INNER_ERROR;
     }
 
     auto objectKey = assetObj->dstBundleName_ + assetObj->sessionId_;
-    ZLOGI("srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}llu,"
-          "processBytes: %{public}llu.",
-        DistributedData::Anonymous::Change(srcNetworkId).c_str(),
+    ZLOGI("OnRecvProgress, srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}lu,"
+          "processBytes: %{public}lu.", DistributedData::Anonymous::Change(srcNetworkId).c_str(),
         DistributedData::Anonymous::Change(objectKey).c_str(), totalBytes, processBytes);
 
     int32_t progress = static_cast<int32_t>((processBytes * 100.0 / totalBytes) * 0.9);
