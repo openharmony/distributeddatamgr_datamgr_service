@@ -1156,7 +1156,7 @@ HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level0)
     auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
 
-    CloudData::Details details;
+    CloudData::Details details{};
     uint32_t tokenId = 0;
     cloudServiceImpl_->OnAsyncComplete(tokenId, seqNum, std::move(details));
 }

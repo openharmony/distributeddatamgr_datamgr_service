@@ -92,9 +92,8 @@ int32_t ObjectAssetsRecvListener::OnRecvProgress(
 
     auto objectKey = assetObj->dstBundleName_ + assetObj->sessionId_;
     ZLOGI("OnRecvProgress, srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}lu,"
-          "processBytes: %{public}lu.", DistributedData::Anonymous::Change(srcNetworkId).c_str(),
+        "processBytes: %{public}lu.", DistributedData::Anonymous::Change(srcNetworkId).c_str(),
         DistributedData::Anonymous::Change(objectKey).c_str(), totalBytes, processBytes);
-
     int32_t progress = static_cast<int32_t>((processBytes * 100.0 / totalBytes) * 0.9);
     ObjectStoreManager::GetInstance().NotifyAssetsRecvProgress(objectKey, progress);
     return OBJECT_SUCCESS;
