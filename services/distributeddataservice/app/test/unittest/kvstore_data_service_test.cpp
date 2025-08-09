@@ -82,7 +82,6 @@ void KvStoreDataServiceTest::SetUpTestCase(void)
     KvStoreMetaManager::GetInstance().BindExecutor(executors);
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     KvStoreMetaManager::GetInstance().InitMetaListener();
-    DeviceManagerAdapter::GetInstance().Init(executors);
 }
 
 void KvStoreDataServiceTest::TearDownTestCase(void)
