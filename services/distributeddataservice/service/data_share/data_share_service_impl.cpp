@@ -44,7 +44,7 @@
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
-#include "common/uri_utils.h"
+#include "common/utils.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "matching_skills.h"
@@ -870,15 +870,16 @@ int32_t DataShareServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t
 
 void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 {
-    ZLOGD_MACRO("%{private}s try notified", uri.c_str());
+    auto anonymous = URIUtils::Anonymous(uri);
+    ZLOGD_MACRO("%{private}s try notified", anonymous.c_str());
     auto context = std::make_shared<Context>(uri);
     if (!GetCallerBundleName(context->callerBundleName)) {
-        ZLOGE("get bundleName error, %{private}s", uri.c_str());
+        ZLOGE("get bundleName error, %{private}s", anonymous.c_str());
         return;
     }
     auto ret = rdbNotifyStrategy_.Execute(context);
     if (ret) {
-        ZLOGI("%{private}s start notified", uri.c_str());
+        ZLOGI("%{private}s start notified", anonymous.c_str());
         RdbSubscriberManager::GetInstance().Emit(uri, context);
     }
 }
@@ -1193,7 +1194,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            providerInfo.bundleName.c_str(), providerInfo.tableName.c_str(), tokenId,
+            providerInfo.bundleName.c_str(), StringUtils::GeneralAnonymous(providerInfo.tableName).c_str(), tokenId,
             URIUtils::Anonymous(providerInfo.uri).c_str());
         return std::make_pair(code, 0);
     }
@@ -1262,7 +1263,7 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
     auto [code, metaData] = dbConfig.GetMetaData(dbArg);
     if (code != E_OK) {
         ZLOGE("Get metaData fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            calledInfo.bundleName.c_str(), DistributedData::Anonymous::Change(calledInfo.tableName).c_str(), tokenId,
+            calledInfo.bundleName.c_str(), StringUtils::GeneralAnonymous(calledInfo.tableName).c_str(), tokenId,
             URIUtils::Anonymous(calledInfo.uri).c_str());
         return E_METADATA_NOT_EXISTS;
     }

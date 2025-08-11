@@ -18,6 +18,7 @@
 #include "log_print.h"
 #include "subscriber_managers/published_data_subscriber_manager.h"
 #include "utils/base64_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 bool PublishedData::HasVersion() const
@@ -151,7 +152,7 @@ int32_t PublishedData::Query(const std::string &filter, PublishedDataNode::Data 
     }
     PublishedDataNode data;
     if (!PublishedDataNode::Unmarshall(queryResult, data)) {
-        ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
+        ZLOGE("Unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
         return E_ERROR;
     }
     publishedData = std::move(data.value);
@@ -235,12 +236,12 @@ void PublishedData::UpdateTimestamp(
     int32_t status =
         delegate->Get(KvDBDelegate::DATA_TABLE, Id(GenId(key, bundleName, subscriberId), userId), queryResult);
     if (status != E_OK) {
-        ZLOGE("db Get failed, %{private}s %{public}d", queryResult.c_str(), status);
+        ZLOGE("db Get failed, %{public}s %{public}d", StringUtils::GeneralAnonymous(queryResult).c_str(), status);
         return;
     }
     PublishedDataNode data;
     if (!PublishedDataNode::Unmarshall(queryResult, data)) {
-        ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
+        ZLOGE("Unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
         return;
     }
     auto now = time(nullptr);
@@ -251,7 +252,7 @@ void PublishedData::UpdateTimestamp(
     data.timestamp = now;
     auto [errorCode, count] = delegate->Upsert(KvDBDelegate::DATA_TABLE, PublishedData(data));
     if (errorCode == E_OK) {
-        ZLOGI("update timestamp %{private}s", data.key.c_str());
+        ZLOGI("update timestamp %{public}s", StringUtils::GeneralAnonymous(data.key).c_str());
     }
 }
 

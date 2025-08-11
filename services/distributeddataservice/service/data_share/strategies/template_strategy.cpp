@@ -20,7 +20,7 @@
 #include "datashare_errno.h"
 #include "general/load_config_common_strategy.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 int32_t TemplateStrategy::Execute(std::shared_ptr<Context> context, std::function<bool()> process)

@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "URIUtils"
+#define LOG_TAG "Utils"
 
-#include "uri_utils.h"
+#include "utils.h"
 
 #include <string>
 
@@ -24,6 +24,10 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
+// Size of the characters that need to be left for both head and tail.
+constexpr int32_t REVEAL_SIZE = 4;
+constexpr const char *REPLACE_CHAIN = "***";
+constexpr const char *DEFAULT_ANONYMOUS = "******";
 bool URIUtils::GetInfoFromURI(const std::string &uri, UriInfo &uriInfo)
 {
     Uri uriTemp(uri);
@@ -147,7 +151,7 @@ std::pair<bool, uint32_t> URIUtils::Strtoul(const std::string &str)
     }
     char* end = nullptr;
     errno = 0;
-    data = strtoul(str.c_str(), &end, 10);
+    data = strtoul(str.c_str(), &end, END_LENGTH);
     if (errno == ERANGE || end == nullptr || end == str || *end != '\0') {
         return std::make_pair(false, data);
     }
@@ -180,4 +184,20 @@ std::map<std::string, std::string> URIUtils::GetQueryParams(const std::string& u
     }
     return params;
 }
+
+std::string StringUtils::GeneralAnonymous(const std::string &name)
+{
+    // To short to be partial anonymized
+    if (name.length() <= REVEAL_SIZE) {
+        return DEFAULT_ANONYMOUS;
+    }
+
+    // only leave HEAD
+    if (name.length() <= (REVEAL_SIZE + REVEAL_SIZE)) {
+        return (name.substr(0, REVEAL_SIZE) + REPLACE_CHAIN);
+    }
+    // leave 4 char at head and tail respectively
+    return (name.substr(0, REVEAL_SIZE) + REPLACE_CHAIN + name.substr(name.length() - REVEAL_SIZE, REVEAL_SIZE));
+}
+
 } // namespace OHOS::DataShare

@@ -60,7 +60,7 @@ ohos_source_set("data_share_service") {
     "common/rdb_delegate.cpp",
     "common/scheduler_manager.cpp",
     "common/seq_strategy.cpp",
-    "common/uri_utils.cpp",
+    "common/utils.cpp",
     "data/published_data.cpp",
     "data/resultset_json_formatter.cpp",
     "data/template_data.cpp",

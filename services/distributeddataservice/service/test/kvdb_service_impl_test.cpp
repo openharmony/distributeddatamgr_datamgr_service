@@ -1508,6 +1508,24 @@ HWTEST_F(KvdbServiceImplTest, syncTest003, TestSize.Level0)
 }
 
 /**
+* @tc.name: SyncTest004
+* @tc.desc: twin application sync test
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, SyncTest004, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
+        .WillOnce(testing::Return(0))
+        .WillRepeatedly(testing::Return(0));
+    SyncInfo syncInfo;
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
+    ASSERT_EQ(status, Status::NOT_SUPPORT);
+}
+
+/**
 * @tc.name: GetSyncParamTest001
 * @tc.desc: GetStoreIds
 * @tc.type: FUNC
