@@ -27,7 +27,6 @@
 #include "ishared_result_set.h"
 #include "itypes_util.h"
 #include "log_print.h"
-#include "qos_manager.h"
 #include "utils.h"
 #include "utils/anonymous.h"
 #include "dataproxy_handle_common.h"
