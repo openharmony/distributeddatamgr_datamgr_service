@@ -15,21 +15,26 @@
 
 #define LOG_TAG "ObjectManagerMockTest"
 #include <gmock/gmock.h>
+#include <ipc_skeleton.h>
 
 #include "device_manager_adapter_mock.h"
 #include "device_matrix_mock.h"
 #include "gtest/gtest.h"
+#include "mock/access_token_mock.h"
 #include "mock/account_delegate_mock.h"
 #include "mock/distributed_file_daemon_manager_mock.h"
 #include "mock/meta_data_manager_mock.h"
 #include "object_manager.h"
+#include "object_service_impl.h"
 
 
 using namespace OHOS::DistributedObject;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Storage::DistributedFile;
+using namespace OHOS::Security::AccessToken;
 using namespace testing::ext;
 using namespace testing;
+using AssetValue = OHOS::CommonType::AssetValue;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
 using OnComplete = OHOS::DistributedData::MetaDataManager::OnComplete;
 
@@ -54,6 +59,8 @@ public:
             AccountDelegate::instance_ = nullptr;
             AccountDelegate::RegisterAccountInstance(accountDelegateMock);
         }
+        accTokenMock = std::make_shared<AccessTokenKitMock>();
+        BAccessTokenKit::accessTokenkit = accTokenMock;
     }
     static void TearDownTestCase(void)
     {
@@ -71,6 +78,8 @@ public:
             delete accountDelegateMock;
             accountDelegateMock = nullptr;
         }
+        accTokenMock = nullptr;
+        BAccessTokenKit::accessTokenkit = nullptr;
     }
 
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
@@ -79,8 +88,14 @@ public:
     static inline std::shared_ptr<DeviceMatrixMock> deviceMatrixMock = nullptr;
     static inline std::shared_ptr<DistributedFileDaemonManagerMock> fileDaemonMgrMock = nullptr;
     static inline AccountDelegateMock *accountDelegateMock = nullptr;
+    static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
     void SetUp() {};
     void TearDown() {};
+
+protected:
+    std::string sessionId_ = "123";
+    OHOS::ObjectStore::AssetBindInfo assetBindInfo_;
+    AssetValue assetValue_;
 };
 
 /**
@@ -391,7 +406,7 @@ HWTEST_F(ObjectManagerMockTest, InitUserMeta001, TestSize.Level1)
     std::vector<int> users;
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(false)));
     auto status = manager.InitUserMeta();
-    ASSERT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
+    EXPECT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
 }
 
 /**
@@ -410,7 +425,7 @@ HWTEST_F(ObjectManagerMockTest, InitUserMeta002, TestSize.Level1)
         .WillOnce(
             DoAll(SetArgReferee<0>(users), Invoke([](std::vector<int> &users) { users.clear(); }), Return(true)));
     auto status = manager.InitUserMeta();
-    ASSERT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
+    EXPECT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
 }
 
 /**
@@ -428,7 +443,80 @@ HWTEST_F(ObjectManagerMockTest, InitUserMeta003, TestSize.Level1)
     std::vector<int> users = { 0, 1 };
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
     auto status = manager.InitUserMeta();
-    ASSERT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
+    EXPECT_EQ(status, DistributedObject::OBJECT_INNER_ERROR);
+}
+
+/**
+* @tc.name: BindAsset001
+* @tc.desc: Test BindAsset function when GetTokenTypeFlag is not TOKEN_HAP.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, BindAsset001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "BindAsset";
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillOnce(Return(ATokenTypeEnum::TOKEN_NATIVE));
+    auto result = manager.BindAsset(tokenId, bundleName, sessionId_, assetValue_, assetBindInfo_);
+    EXPECT_EQ(result, DistributedObject::OBJECT_DBSTATUS_ERROR);
+}
+
+/**
+* @tc.name: BindAsset002
+* @tc.desc: Test BindAsset function when GetTokenTypeFlag is TOKEN_HAP.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, BindAsset002, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "BindAsset";
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillOnce(Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(_, _))
+        .Times(1)
+        .WillOnce(Return(0));
+    auto result = manager.BindAsset(tokenId, bundleName, sessionId_, assetValue_, assetBindInfo_);
+    EXPECT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+}
+
+/**
+* @tc.name: IsContinue001
+* @tc.desc: Test IsContinue function when GetTokenTypeFlag is not TOKEN_HAP.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, IsContinue001, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    bool isContinue = false;
+    EXPECT_CALL(*fileDaemonMgrMock, UnRegisterAssetCallback(_)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillOnce(Return(ATokenTypeEnum::TOKEN_NATIVE));
+    auto ret = objectServiceImpl->IsContinue(isContinue);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_INNER_ERROR);
+}
+
+/**
+* @tc.name: IsContinue002
+* @tc.desc: Test IsContinue function when GetTokenTypeFlag is TOKEN_HAP.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, IsContinue002, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    bool isContinue = false;
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(2)
+        .WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(_, _))
+        .Times(1)
+        .WillOnce(Return(0));
+    auto ret = objectServiceImpl->IsContinue(isContinue);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
 }
 }; // namespace DistributedDataTest
 } // namespace OHOS::Test

@@ -128,6 +128,7 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "mock/access_token_mock.cpp",
     "mock/account_delegate_mock.cpp",
     "cloud_data_mock_test.cpp",
   ]
@@ -966,6 +967,7 @@ ohos_unittest("ObjectManagerMockTest") {
     "../object/src/object_service_stub.cpp",
     "../object/src/object_snapshot.cpp",
     "../object/src/object_types_utils.cpp",
+    "mock/access_token_mock.cpp",
     "mock/account_delegate_mock.cpp",
     "mock/device_manager_adapter_mock.cpp",
     "mock/kv_store_nb_delegate_mock.cpp",
