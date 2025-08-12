@@ -27,6 +27,7 @@ public:
     void SetServiceReady();
 
 private:
+    class QosManager;
     static constexpr std::chrono::milliseconds TIME_THRESHOLD = std::chrono::milliseconds(500);
     static bool CheckInterfaceToken(MessageParcel& data);
     int32_t OnQuery(MessageParcel& data, MessageParcel& reply);
