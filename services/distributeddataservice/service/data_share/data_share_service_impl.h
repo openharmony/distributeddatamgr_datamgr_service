@@ -30,7 +30,6 @@
 #include "data_share_db_config.h"
 #include "data_share_service_stub.h"
 #include "data_share_silent_config.h"
-#include "datashare_option.h"
 #include "datashare_template.h"
 #include "db_delegate.h"
 #include "eventcenter/event.h"
@@ -40,7 +39,7 @@
 #include "rdb_notify_strategy.h"
 #include "subscribe_strategy.h"
 #include "template_strategy.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "visibility.h"
 
 namespace OHOS::DataShare {
@@ -51,9 +50,8 @@ public:
         DistributedData::StoreMetaData &, std::shared_ptr<DBDelegate>)>;
     DataShareServiceImpl() = default;
     virtual ~DataShareServiceImpl();
-    std::pair<int32_t, std::shared_ptr<DataShareResultSet>> Query(const std::string &uri, const std::string &extUri,
-        const DataSharePredicates &predicates, const std::vector<std::string> &columns,
-        DataShareOption &option) override;
+    std::shared_ptr<DataShareResultSet> Query(const std::string &uri, const std::string &extUri,
+        const DataSharePredicates &predicates, const std::vector<std::string> &columns, int &errCode) override;
     int32_t AddTemplate(const std::string &uri, const int64_t subscriberId, const Template &tplt) override;
     int32_t DelTemplate(const std::string &uri, const int64_t subscriberId) override;
     std::vector<OperationResult> Publish(const Data &data, const std::string &bundleNameOfProvider) override;
@@ -156,9 +154,6 @@ private:
     bool VerifyPermission(const std::string &bundleName, const std::string &permission,
         bool isFromExtension, const int32_t tokenId);
     bool GetCallerBundleInfo(BundleInfo &callerBundleInfo);
-    std::pair<int32_t, std::shared_ptr<DataShareResultSet>> QueryTimeout(const std::string &uri,
-        const std::string &extUri, const DataSharePredicates &predicates, const std::vector<std::string> &columns,
-        DataShareOption &option);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
@@ -174,7 +169,6 @@ private:
     static BindInfo binderInfo_;
     std::shared_ptr<TimerReceiver> timerReceiver_ = nullptr;
     DataShareSilentConfig dataShareSilentConfig_;
-    static std::atomic<int32_t> queryTimeoutCount_;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_DATA_SERVICE_IMPL_H

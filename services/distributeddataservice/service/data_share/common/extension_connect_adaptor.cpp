@@ -24,7 +24,7 @@
 #include "extension_ability_info.h"
 #include "extension_mgr_proxy.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 ExtensionConnectAdaptor::ExtensionConnectAdaptor() : data_(std::make_shared<BlockData<bool>>(1))

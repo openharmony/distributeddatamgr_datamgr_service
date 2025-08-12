@@ -21,20 +21,36 @@
 #include <cinttypes>
 #include "common_utils.h"
 #include "data_share_obs_proxy.h"
-#include "datashare_option.h"
 #include "hiview_adapter.h"
 #include "hiview_fault_adapter.h"
 #include "ipc_skeleton.h"
 #include "ishared_result_set.h"
 #include "itypes_util.h"
 #include "log_print.h"
-#include "qos_manager.h"
-#include "uri_utils.h"
+#include "qos.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 #include "dataproxy_handle_common.h"
 
 namespace OHOS {
 namespace DataShare {
+
+class DataShareServiceStub::QosManager {
+public:
+    QosManager()
+    {
+#ifndef IS_EMULATOR
+        // set thread qos QOS_USER_INTERACTIVE
+        QOS::SetThreadQos(QOS::QosLevel::QOS_USER_INTERACTIVE);
+#endif
+    }
+    ~QosManager()
+    {
+#ifndef IS_EMULATOR
+        QOS::ResetThreadQos();
+#endif
+    }
+};
 
 bool DataShareServiceStub::CheckInterfaceToken(MessageParcel &data)
 {
@@ -109,18 +125,19 @@ int32_t DataShareServiceStub::OnDeleteEx(MessageParcel &data, MessageParcel &rep
 
 int32_t DataShareServiceStub::OnQuery(MessageParcel &data, MessageParcel &reply)
 {
+    std::string uri;
+    std::string extUri;
     DataSharePredicates predicate;
     std::vector<std::string> columns;
-    DataShareParamSet paramSet;
-    if (!ITypesUtil::Unmarshal(data, paramSet, predicate, columns)) {
-        ZLOGE("Unmarshal uri:%{public}s columns size:%{public}zu", URIUtils::Anonymous(paramSet.uri).c_str(),
+    if (!ITypesUtil::Unmarshal(data, uri, extUri, predicate, columns)) {
+        ZLOGE("Unmarshal uri:%{public}s columns size:%{public}zu", URIUtils::Anonymous(uri).c_str(),
             columns.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto [errCode, resultset] = Query(paramSet.uri, paramSet.extUri, predicate, columns, paramSet.option);
-    auto result = ISharedResultSet::WriteToParcel(resultset, reply);
-    if (!ITypesUtil::Marshal(reply, errCode)) {
-        ZLOGE("Marshal status:0x%{public}x", errCode);
+    int status = 0;
+    auto result = ISharedResultSet::WriteToParcel(Query(uri, extUri, predicate, columns, status), reply);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;
@@ -340,7 +357,7 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     // set thread qos
-    QosManager qos;
+    DataShareServiceStub::QosManager qos;
 
     int tryTimes = TRY_TIMES;
     while (!isReady_.load() && tryTimes > 0) {

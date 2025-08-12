@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cinttypes>
 #define LOG_TAG "ObjectDataListener"
 
 #include "object_data_listener.h"
@@ -85,14 +86,15 @@ int32_t ObjectAssetsRecvListener::OnRecvProgress(
     const std::string &srcNetworkId, const sptr<AssetObj> &assetObj, uint64_t totalBytes, uint64_t processBytes)
 {
     if (assetObj == nullptr || totalBytes == 0) {
-        ZLOGE("OnRecvProgress error! srcNetworkId:%{public}s, totalBytes: %{public}llu",
+        ZLOGE("OnRecvProgress error! srcNetworkId:%{public}s, totalBytes: %{public}" PRIu64,
             DistributedData::Anonymous::Change(srcNetworkId).c_str(), totalBytes);
         return OBJECT_INNER_ERROR;
     }
 
     auto objectKey = assetObj->dstBundleName_ + assetObj->sessionId_;
-    ZLOGI("OnRecvProgress, srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}llu,"
-        "processBytes: %{public}llu.", DistributedData::Anonymous::Change(srcNetworkId).c_str(),
+    ZLOGI("srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}" PRIu64
+          ", processBytes: %{public}" PRIu64 ".",
+        DistributedData::Anonymous::Change(srcNetworkId).c_str(),
         DistributedData::Anonymous::Change(objectKey).c_str(), totalBytes, processBytes);
     int32_t progress = static_cast<int32_t>((processBytes * 100.0 / totalBytes) * 0.9);
     ObjectStoreManager::GetInstance().NotifyAssetsRecvProgress(objectKey, progress);

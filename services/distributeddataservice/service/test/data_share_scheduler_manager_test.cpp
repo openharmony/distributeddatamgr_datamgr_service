@@ -43,7 +43,7 @@ public:
     1.Add a template
     2.Creat a SchedulerManager object
     3.call Enable Scheduler function
-* @tc.experct: not find key, Enable SchedulerStatus and GetSchedulerStatus return false
+* @tc.expect: not find key, Enable SchedulerStatus and GetSchedulerStatus return false
 */
 HWTEST_F(DataShareSchedulerManagerTest, EnableScheduler001, TestSize.Level1)
 {
@@ -84,7 +84,7 @@ HWTEST_F(DataShareSchedulerManagerTest, EnableScheduler001, TestSize.Level1)
     1.Add a template
     2.Creat a SchedulerManager object
     3.call Disable Scheduler function
-* @tc.experct: not find key, Disable SchedulerStatus and GetSchedulerStatus return false
+* @tc.expect: not find key, Disable SchedulerStatus and GetSchedulerStatus return false
 */
 HWTEST_F(DataShareSchedulerManagerTest, DisableScheduler001, TestSize.Level1)
 {
@@ -112,5 +112,49 @@ HWTEST_F(DataShareSchedulerManagerTest, DisableScheduler001, TestSize.Level1)
     EXPECT_EQ(ret.first, OHOS::DataShare::E_OK);
     EXPECT_GT(ret.second, 0);
     ZLOGI("DisableScheduler001 end");
+}
+
+/**
+* @tc.name: ChangeStatusCacheSize001
+* @tc.desc: test statusCache size changed when getting scheduler status
+* @tc.type: FUNC
+* @tc.require:
+* @tc.precon: None
+* @tc.step:
+    1.Add a template
+    2.Creat a SchedulerManager object
+    3.Change the size of statusCache
+    4.call GetSchedulerStatus function
+* @tc.expect: the size of SchedulerStatus changed and print log
+*/
+HWTEST_F(DataShareSchedulerManagerTest, ChangeStatusCacheSize001, TestSize.Level1)
+{
+    ZLOGI("ChangeStatusCacheSize001 start");
+    Key key("uri1", 12345, "name1");
+    Template tplt;
+    tplt.predicates_.emplace_back("test", "predicate test");
+    tplt.scheduler_ = "scheduler test";
+    std::string dataDir = "/data/service/el1/public/database/distributeddata/kvdb";
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 1);
+    auto kvDelegate = KvDBDelegate::GetInstance(dataDir, executors);
+    ASSERT_NE(kvDelegate, nullptr);
+    TemplateData data(key.uri, key.bundleName, key.subscriberId, USER_TEST, tplt);
+    auto ret = kvDelegate->Upsert(KvDBDelegate::TEMPLATE_TABLE, data);
+    EXPECT_EQ(ret.first, OHOS::DataShare::E_OK);
+    EXPECT_GT(ret.second, 0);
+
+    auto &manager = SchedulerManager::GetInstance();
+    manager.Disable(key);
+    Key key2("testUri", 12345, "testName");
+    manager.schedulerStatusCache_.emplace(key2, false);
+    bool status = manager.GetSchedulerStatus(key);
+    EXPECT_FALSE(status);
+    manager.schedulerStatusCache_.erase(key2);
+
+    ret = kvDelegate->Delete(KvDBDelegate::TEMPLATE_TABLE,
+        static_cast<std::string>(Id(TemplateData::GenId(key.uri, key.bundleName, key.subscriberId), USER_TEST)));
+    EXPECT_EQ(ret.first, OHOS::DataShare::E_OK);
+    EXPECT_GT(ret.second, 0);
+    ZLOGI("ChangeStatusCacheSize001 end");
 }
 } // namespace OHOS::Test

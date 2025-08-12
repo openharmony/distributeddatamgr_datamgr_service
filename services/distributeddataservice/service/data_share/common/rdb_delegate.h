@@ -24,7 +24,7 @@
 #include "rdb_errno.h"
 #include "rdb_helper.h"
 #include "rdb_store.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "rdb_utils.h"
 
 namespace OHOS::DataShare {
