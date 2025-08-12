@@ -118,6 +118,7 @@ int32_t ObjectServiceImpl::IsContinue(bool &result)
 {
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     if (Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId) != Security::AccessToken::TOKEN_HAP) {
+        ZLOGE("TokenType is not TOKEN_HAP, tokenId: %{public}u", tokenId);
         return OBJECT_INNER_ERROR;
     }
     Security::AccessToken::HapTokenInfo tokenInfo;
