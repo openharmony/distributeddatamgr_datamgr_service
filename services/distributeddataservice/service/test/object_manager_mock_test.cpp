@@ -184,7 +184,7 @@ HWTEST_F(ObjectManagerMockTest, IsNeedMetaSync003, TestSize.Level0)
 
 /**
  * @tc.name: SyncOnStore001
- * @tc.desc: Test SyncOnStore.
+ * @tc.desc: Test SyncOnStore
  * @tc.type: FUNC
  * @tc.require:
  */

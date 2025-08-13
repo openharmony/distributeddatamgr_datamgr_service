@@ -81,6 +81,7 @@ int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, co
     return OBJECT_SUCCESS;
 }
 
+
 int32_t ObjectAssetsRecvListener::OnRecvProgress(
     const std::string &srcNetworkId, const sptr<AssetObj> &assetObj, uint64_t totalBytes, uint64_t processBytes)
 {
@@ -95,7 +96,6 @@ int32_t ObjectAssetsRecvListener::OnRecvProgress(
           ", processBytes: %{public}" PRIu64 ".",
         DistributedData::Anonymous::Change(srcNetworkId).c_str(),
         DistributedData::Anonymous::Change(objectKey).c_str(), totalBytes, processBytes);
-
     int32_t progress = static_cast<int32_t>((processBytes * 100.0 / totalBytes) * 0.9);
     ObjectStoreManager::GetInstance().NotifyAssetsRecvProgress(objectKey, progress);
     return OBJECT_SUCCESS;
