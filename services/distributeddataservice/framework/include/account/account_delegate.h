@@ -67,8 +67,8 @@ public:
     API_EXPORT virtual void UnsubscribeAccountEvent() = 0;
     API_EXPORT virtual bool QueryUsers(std::vector<int> &users) = 0;
     API_EXPORT virtual bool QueryForegroundUsers(std::vector<int> &users) = 0;
-    API_EXPORT virtual bool IsLoginAccount() = 0;
     API_EXPORT virtual bool QueryForegroundUserId(int &foregroundUserId) = 0;
+    API_EXPORT virtual bool IsLoginAccount() = 0;
     API_EXPORT virtual bool IsVerified(int userId) = 0;
     API_EXPORT virtual bool RegisterHashFunc(HashFunc hash) = 0;
     API_EXPORT virtual bool IsDeactivating(int userId) = 0;
