@@ -127,6 +127,7 @@ void RdbServiceImplTest::SetUpTestCase()
     InitMetaData();
     Bootstrap::GetInstance().LoadCheckers();
     CryptoManager::GetInstance().GenerateRootKey();
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
 }
 
 void RdbServiceImplTest::TearDownTestCase()
@@ -336,6 +337,26 @@ HWTEST_F(RdbServiceImplTest, RemoteQuery002, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
+    std::vector<std::string> selectionArgs;
+    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    auto ret = service.RemoteQuery(param, deviceId, "", selectionArgs);
+    EXPECT_EQ(ret.first, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: RemoteQuery003
+ * @tc.desc: test RemoteQuery, when CheckAccess pass but query failed.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, RemoteQuery003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "RemoteQuery003";
     std::vector<std::string> selectionArgs;
     auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     auto ret = service.RemoteQuery(param, deviceId, "", selectionArgs);
@@ -630,6 +651,31 @@ HWTEST_F(RdbServiceImplTest, DoAutoSync001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: DoAutoSync002
+ * @tc.desc: Test DoAutoSync when the store is null.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: my
+ */
+HWTEST_F(RdbServiceImplTest, DoAutoSync002, TestSize.Level0)
+{
+    StoreMetaMapping metaMapping;
+    InitMapping(metaMapping);
+    metaMapping.dataDir = "path";
+    metaMapping.devicePath = "path1";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+    RdbServiceImpl service;
+    std::vector<std::string> devices = {"device1"};
+    DistributedData::Database dataBase;
+    std::vector<std::string> tables = {"table1"};
+    dataBase.bundleName = "bundleName";
+    dataBase.name = "storeName";
+    dataBase.user = "100";
+    auto result = service.DoAutoSync(devices, dataBase, tables);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
  * @tc.name: DoOnlineSync001
  * @tc.desc: Test DoOnlineSync when all tables have deviceSyncFields.
  * @tc.type: FUNC
@@ -756,6 +802,27 @@ HWTEST_F(RdbServiceImplTest, AfterOpen003, TestSize.Level0)
     param.storeName_ = metaData_.storeId;
     int32_t result = service.AfterOpen(param);
 
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: AfterOpen004
+ * @tc.desc: Test AfterOpen when CheckAccess pass and CheckParam pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, AfterOpen004, TestSize.Level0)
+{
+    metaData_.isSearchable = true;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    int32_t result = service.AfterOpen(param);
+ 
     EXPECT_EQ(result, RDB_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
 }
@@ -1117,6 +1184,39 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables003, TestSize.Level0)
 }
 
 /**
+ * @tc.name: SetDistributedTables004
+ * @tc.desc: Test SetDistributedTables when type is device.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "SetDistributedTables004";
+    param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    std::vector<std::string> tables;
+    std::vector<OHOS::DistributedRdb::Reference> references;
+
+    auto meta = service.GetStoreMetaData(param);
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
+        auto store = new (std::nothrow) GeneralStoreMock();
+        return store;
+    };
+    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
+
+    int32_t result =
+        service.SetDistributedTables(param, tables, references, false,
+                                     DistributedTableType::DISTRIBUTED_DEVICE);
+    EXPECT_EQ(result, RDB_OK);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
  * @tc.name: Sync001
  * @tc.desc: Test Sync when CheckAccess not pass.
  * @tc.type: FUNC
@@ -1154,6 +1254,47 @@ HWTEST_F(RdbServiceImplTest, Sync002, TestSize.Level0)
     int32_t result = service.Sync(param, option, predicates, nullptr);
     EXPECT_EQ(result, RDB_ERROR);
 }
+
+/**
+ * @tc.name: Sync003
+ * @tc.desc: Test Sync when mode is nearby begin.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, Sync003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "Sync003";
+    RdbService::Option option { DistributedData::GeneralStore::NEARBY_BEGIN };
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: Sync004
+ * @tc.desc: Test Sync when mode is cloud begin.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, Sync004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "Sync004";
+    RdbService::Option option { DistributedData::GeneralStore::CLOUD_BEGIN };
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
 
 /**
  * @tc.name: QuerySharingResource001
@@ -1534,6 +1675,45 @@ HWTEST_F(RdbServiceImplTest, VerifyPromiseInfo002, TestSize.Level0)
 }
 
 /**
+ * @tc.name: VerifyPromiseInfo003
+ * @tc.desc: Test VerifyPromiseInfo when tokenId and uid are not in promiseInfo.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, VerifyPromiseInfo003, TestSize.Level0)
+{
+    StoreMetaDataLocal localMeta;
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    localMeta.isAutoSync = true;
+    localMeta.promiseInfo.tokenIds = {tokenId};
+    localMeta.promiseInfo.uids = {};
+    localMeta.promiseInfo.permissionNames = {};
+    metaData_.dataDir = "path";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true), true);
+
+    StoreMetaMapping storeMetaMapping(metaData_);
+    storeMetaMapping.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData_) + "/" + TEST_STORE;
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.type_ = metaData_.storeType;
+    param.level_ = metaData_.securityLevel;
+    param.area_ = metaData_.area;
+    param.hapName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.isSearchable_ = metaData_.isSearchable;
+    param.haMode_ = metaData_.haMode;
+    param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
+    param.user_ = metaData_.user;
+    int32_t result = service.VerifyPromiseInfo(param);
+    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyLocal(), true), true);
+}
+
+/**
  * @tc.name: CheckParam001
  * @tc.desc: Test VerifyPromiseInfo when bundleName_ contain '/'.
  * @tc.type: FUNC
@@ -1832,11 +2012,161 @@ HWTEST_F(RdbServiceImplTest, Delete_001, TestSize.Level1)
     param.bundleName_ = "";
     auto errCode = service.Delete(param);
     EXPECT_EQ(errCode, RDB_ERROR);
+    param.bundleName_ = "bundleName";
+    param.storeName_ = "storeName";
+    param.user_ =  "0";
+    errCode = service.Delete(param);
+    EXPECT_EQ(errCode, RDB_OK);
+}
+
+/**
+ * @tc.name: Delete_002
+ * @tc.desc: Test Delete_002.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbServiceImplTest, Delete_002, TestSize.Level1)
+{
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = "0";
+    metaMapping.bundleName = "bundleName";
+    metaMapping.storeId = "storeName";
+    metaMapping.instanceId = 1;
+
+    StoreMetaData meta1;
+    meta1.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta1.user = "0";
+    meta1.bundleName = "bundleName";
+    meta1.storeId = "storeName";
+    meta1.dataDir = DirectoryManager::GetInstance().GetStorePath(meta1) + "/" + metaMapping.storeId;
+    meta1.instanceId = 1;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+
+    metaMapping.cloudPath = meta1.dataDir;
+    metaMapping.devicePath = meta1.dataDir;
+    metaMapping.searchPath = meta1.dataDir;
+    metaMapping.dataDir = meta1.dataDir;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+
+    StoreMetaData meta2;
+    meta2.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta2.user = "0";
+    meta2.bundleName = "bundleName";
+    meta2.storeId = "storeName";
+    meta2.dataDir ="path2";
+    meta2.instanceId = 1;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta2.GetKey(), meta2, true), true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaMapping.bundleName;
+    param.storeName_ = metaMapping.storeId;
+    param.user_ = metaMapping.user;
+    auto errCode = service.Delete(param);
+    EXPECT_EQ(errCode, RDB_OK);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+    EXPECT_EQ(metaMapping.cloudPath, "");
+    EXPECT_EQ(metaMapping.devicePath, "");
+    EXPECT_EQ(metaMapping.searchPath, "");
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta2.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: Delete_003
+ * @tc.desc: Test Delete_003.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbServiceImplTest, Delete_003, TestSize.Level1)
+{
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = "0";
+    metaMapping.bundleName = "bundleName";
+    metaMapping.storeId = "storeName";
+
+    StoreMetaData meta1;
+    meta1.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta1.user = "0";
+    meta1.bundleName = "bundleName";
+    meta1.storeId = "storeName";
+    meta1.dataDir = DirectoryManager::GetInstance().GetStorePath(meta1) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+
+    metaMapping.cloudPath = "path2";
+    metaMapping.devicePath = "path2";
+    metaMapping.searchPath = "path2";
+    metaMapping.dataDir = meta1.dataDir;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+
+    StoreMetaData meta2;
+    meta2.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta2.user = "0";
+    meta2.bundleName = "bundleName";
+    meta2.storeId = "storeName";
+    meta2.dataDir ="path2";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta2.GetKey(), meta2, true), true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaMapping.bundleName;
+    param.storeName_ = metaMapping.storeId;
+    param.user_ = metaMapping.user;
+    auto errCode = service.Delete(param);
+    EXPECT_EQ(errCode, RDB_OK);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+    EXPECT_EQ(metaMapping.cloudPath, "path2");
+    EXPECT_EQ(metaMapping.devicePath, "path2");
+    EXPECT_EQ(metaMapping.searchPath, "path2");
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta2.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: Delete_004
+ * @tc.desc: Test Delete_004.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbServiceImplTest, Delete_004, TestSize.Level1)
+{
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = "0";
+    metaMapping.bundleName = "bundleName";
+    metaMapping.storeId = "storeName";
+    metaMapping.instanceId = 1;
+
+    StoreMetaData meta1;
+    meta1.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta1.user = "0";
+    meta1.bundleName = "bundleName";
+    meta1.storeId = "storeName";
+    meta1.dataDir = "path1";
+    meta1.instanceId = 1;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+
+    metaMapping.cloudPath = "path2";
+    metaMapping.devicePath = "path2";
+    metaMapping.searchPath = "path2";
+    metaMapping.dataDir = DirectoryManager::GetInstance().GetStorePath(meta1) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaMapping.bundleName;
+    param.storeName_ = metaMapping.storeId;
+    param.user_ = metaMapping.user;
+    auto errCode = service.Delete(param);
+    EXPECT_EQ(errCode, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
 }
 
 /**
  * @tc.name: RegisterEvent_001
- * @tc.desc: Test Delete when param is invalid.
+ * @tc.desc: Test RegisterEvent_001.
  * @tc.type: FUNC
  */
 HWTEST_F(RdbServiceImplTest, RegisterEvent_001, TestSize.Level1)
@@ -1855,7 +2185,7 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_001, TestSize.Level1)
 
 /**
  * @tc.name: RegisterEvent_002
- * @tc.desc: Test Delete when param is invalid.
+ * @tc.desc: Test RegisterEvent_002.
  * @tc.type: FUNC
  */
 HWTEST_F(RdbServiceImplTest, RegisterEvent_002, TestSize.Level1)
@@ -1881,20 +2211,24 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_002, TestSize.Level1)
 
 /**
  * @tc.name: RegisterEvent_003
- * @tc.desc: Test Delete when param is invalid.
+ * @tc.desc: Test RegisterEvent_003.
  * @tc.type: FUNC
  */
 HWTEST_F(RdbServiceImplTest, RegisterEvent_003, TestSize.Level1)
 {
     StoreMetaMapping metaMapping;
     InitMapping(metaMapping);
-    metaMapping.cloudPath ="path";
+    metaMapping.cloudPath ="path1";
     metaMapping.dataDir ="path";
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
 
-    StoreMetaData meta(metaMapping);
+    StoreMetaData meta;
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta.user = "100";
+    meta.bundleName = "bundleName";
+    meta.storeId = "storeName";
     meta.dataDir ="path1";
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), metaMapping, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     RdbServiceImpl service;
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = "bundleName";
@@ -1912,7 +2246,7 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_003, TestSize.Level1)
 
 /**
  * @tc.name: RegisterEvent_004
- * @tc.desc: Test Delete when param is invalid.
+ * @tc.desc: Test RegisterEvent_005.
  * @tc.type: FUNC
  */
 HWTEST_F(RdbServiceImplTest, RegisterEvent_004, TestSize.Level1)
@@ -1921,11 +2255,9 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_004, TestSize.Level1)
     InitMapping(metaMapping);
     metaMapping.cloudPath ="path";
     metaMapping.dataDir ="path";
+    metaMapping.storeType = StoreMetaData::STORE_KV_BEGIN;
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
 
-    StoreMetaData meta(metaMapping);
-    meta.storeType = StoreMetaData::STORE_KV_BEGIN;
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), metaMapping, true), true);
     RdbServiceImpl service;
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = "bundleName";
@@ -1938,12 +2270,11 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_004, TestSize.Level1)
     EXPECT_EQ(result, 1); // CODE_SYNC
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
 /**
  * @tc.name: RegisterEvent_005
- * @tc.desc: Test Delete when param is invalid.
+ * @tc.desc: Test RegisterEvent_005
  * @tc.type: FUNC
  */
 HWTEST_F(RdbServiceImplTest, RegisterEvent_005, TestSize.Level1)
@@ -1952,12 +2283,9 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_005, TestSize.Level1)
     InitMapping(metaMapping);
     metaMapping.cloudPath ="path";
     metaMapping.dataDir ="path";
+    metaMapping.storeType = StoreMetaData::STORE_OBJECT_BEGIN;
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
 
-    StoreMetaData meta(metaMapping);
-
-    meta.storeType = StoreMetaData::STORE_OBJECT_BEGIN;
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), metaMapping, true), true);
     RdbServiceImpl service;
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = "bundleName";
@@ -1970,87 +2298,20 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_005, TestSize.Level1)
     EXPECT_EQ(result, 1); // CODE_SYNC
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
 /**
  * @tc.name: RegisterEvent_006
- * @tc.desc: Test Delete when param is invalid.
+ * @tc.desc: Test RegisterEvent_006
  * @tc.type: FUNC
  */
 HWTEST_F(RdbServiceImplTest, RegisterEvent_006, TestSize.Level1)
 {
     StoreMetaMapping metaMapping;
     InitMapping(metaMapping);
-    metaMapping.cloudPath ="path";
+    metaMapping.cloudPath ="path1";
     metaMapping.dataDir ="path";
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
-
-    StoreMetaData meta(metaMapping);
-    meta.storeType = StoreMetaData::STORE_RELATIONAL_BEGIN;
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), metaMapping, true), true);
-    RdbServiceImpl service;
-    DistributedData::StoreInfo storeInfo;
-    storeInfo.bundleName = "bundleName";
-    storeInfo.storeName = "storeName";
-    storeInfo.user = 100;
-    storeInfo.path = "path";
-    auto event = std::make_unique<CloudEvent>(CloudEvent::CLOUD_SYNC, storeInfo);
-    EXPECT_NE(event, nullptr);
-    auto result = EventCenter::GetInstance().PostEvent(move(event));
-    EXPECT_EQ(result, 1); // CODE_SYNC
-
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
-}
-
-/**
- * @tc.name: RegisterEvent_007
- * @tc.desc: Test Delete when param is invalid.
- * @tc.type: FUNC
- */
-HWTEST_F(RdbServiceImplTest, RegisterEvent_007, TestSize.Level1)
-{
-    StoreMetaMapping metaMapping;
-    InitMapping(metaMapping);
-    metaMapping.cloudPath ="path";
-    metaMapping.dataDir ="path";
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
-
-    StoreMetaData meta(metaMapping);
-    meta.storeType = StoreMetaData::STORE_RELATIONAL_END;
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), metaMapping, true), true);
-    RdbServiceImpl service;
-    DistributedData::StoreInfo storeInfo;
-    storeInfo.bundleName = "bundleName";
-    storeInfo.storeName = "storeName";
-    storeInfo.user = 100;
-    storeInfo.path = "path";
-    auto event = std::make_unique<CloudEvent>(CloudEvent::CLOUD_SYNC, storeInfo);
-    EXPECT_NE(event, nullptr);
-    auto result = EventCenter::GetInstance().PostEvent(move(event));
-    EXPECT_EQ(result, 1); // CODE_SYNC
-
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
-}
-
-/**
- * @tc.name: RegisterEvent_008
- * @tc.desc: Test Delete when param is invalid.
- * @tc.type: FUNC
- */
-HWTEST_F(RdbServiceImplTest, RegisterEvent_008, TestSize.Level1)
-{
-    StoreMetaMapping metaMapping;
-    InitMapping(metaMapping);
-    metaMapping.cloudPath ="path";
-    metaMapping.dataDir ="path";
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
-
-    StoreMetaData meta(metaMapping);
-    meta.dataDir = "path1";
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), metaMapping, true), true);
 
     RdbServiceImpl service;
     DistributedData::StoreInfo storeInfo;
@@ -2064,130 +2325,6 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_008, TestSize.Level1)
     EXPECT_EQ(result, 1); // CODE_SYNC
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
-}
-
-/**
- * @tc.name: RegisterEvent_009
- * @tc.desc: Test Delete when param is invalid.
- * @tc.type: FUNC
- */
-HWTEST_F(RdbServiceImplTest, RegisterEvent_009, TestSize.Level1)
-{
-    StoreMetaMapping metaMapping;
-    InitMapping(metaMapping);
-    metaMapping.cloudPath ="path";
-    metaMapping.dataDir ="path";
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
-
-    StoreMetaData meta(metaMapping);
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), metaMapping, true), true);
-    RdbServiceImpl service;
-    DistributedData::StoreInfo storeInfo;
-    storeInfo.bundleName = "bundleName";
-    storeInfo.storeName = "storeName";
-    storeInfo.user = 100;
-    storeInfo.path = "path";
-    auto event = std::make_unique<CloudEvent>(CloudEvent::CLOUD_SYNC, storeInfo);
-    EXPECT_NE(event, nullptr);
-    auto result = EventCenter::GetInstance().PostEvent(move(event));
-    EXPECT_EQ(result, 1); // CODE_SYNC
-
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
-}
-
-/**
- * @tc.name: SetDistributedTables004
- * @tc.desc: Test SetDistributedTables when type is device.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zhaojh
- */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables004, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = "SetDistributedTables004";
-    param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
-    std::vector<std::string> tables;
-    std::vector<OHOS::DistributedRdb::Reference> references;
-
-    auto meta = service.GetStoreMetaData(param);
-    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
-
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
-        auto store = new (std::nothrow) GeneralStoreMock();
-        return store;
-    };
-    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
-
-    int32_t result =
-        service.SetDistributedTables(param, tables, references, false,
-                                     DistributedTableType::DISTRIBUTED_DEVICE);
-    EXPECT_EQ(result, RDB_OK);
-    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
-}
-
-/**
- * @tc.name: RemoteQuery003
- * @tc.desc: test RemoteQuery, when CheckAccess pass but query failed.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zhaojh
- */
-HWTEST_F(RdbServiceImplTest, RemoteQuery003, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = "RemoteQuery003";
-    std::vector<std::string> selectionArgs;
-    auto deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    auto ret = service.RemoteQuery(param, deviceId, "", selectionArgs);
-    EXPECT_EQ(ret.first, RDB_ERROR);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
-}
-
-/**
- * @tc.name: Sync003
- * @tc.desc: Test Sync when mode is nearby begin.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zhaojh
- */
-HWTEST_F(RdbServiceImplTest, Sync003, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = "Sync003";
-    RdbService::Option option { DistributedData::GeneralStore::NEARBY_BEGIN };
-    PredicatesMemo predicates;
-
-    int32_t result = service.Sync(param, option, predicates, nullptr);
-    EXPECT_EQ(result, RDB_OK);
-}
-
-/**
- * @tc.name: Sync004
- * @tc.desc: Test Sync when mode is cloud begin.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: zhaojh
- */
-HWTEST_F(RdbServiceImplTest, Sync004, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = "Sync004";
-    RdbService::Option option { DistributedData::GeneralStore::CLOUD_BEGIN };
-    PredicatesMemo predicates;
-
-    int32_t result = service.Sync(param, option, predicates, nullptr);
-    EXPECT_EQ(result, RDB_OK);
 }
 
 /**

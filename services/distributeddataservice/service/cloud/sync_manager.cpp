@@ -976,9 +976,6 @@ void SyncManager::BatchReport(int32_t userId, const TraceIds &traceIds, SyncStag
 
 std::string SyncManager::GetPath(const StoreMetaData &meta)
 {
-    if (!meta.dataDir.empty()) {
-        return meta.dataDir;
-    }
     StoreMetaMapping mapping(meta);
     MetaDataManager::GetInstance().LoadMeta(mapping.GetKey(), mapping, true);
     return mapping.cloudPath.empty() ? mapping.dataDir : mapping.cloudPath;

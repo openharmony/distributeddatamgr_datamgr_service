@@ -637,7 +637,7 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
     });
     if (isCreate) {
         AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_),
-            GetPath(param));
+            GetPath(param), RemoveSuffix(param.storeName_));
     }
     return RDB_OK;
 }
@@ -666,7 +666,7 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
     });
     if (destroyed) {
         AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_),
-            GetPath(param));
+            GetPath(param), RemoveSuffix(param.storeName_));
     }
     return RDB_OK;
 }
@@ -724,15 +724,13 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    if (param.bundleName_.empty()) {
-        ZLOGE("bundleName is empty! tokenId:%{public}d.", tokenId);
-        return RDB_ERROR;
-    }
     auto storeMeta = GetStoreMetaData(param);
     StoreMetaMapping storeMetaMapping(storeMeta);
     MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
-    storeMeta.dataDir = storeMetaMapping.dataDir;
-    AutoCache::GetInstance().CloseStore(tokenId, storeMeta.dataDir);
+    if (!MetaDataManager::GetInstance().LoadMeta(storeMeta.GetKey(), storeMeta, true)) {
+        storeMeta.dataDir = storeMetaMapping.dataDir;
+    }
+    AutoCache::GetInstance().CloseStore(tokenId, storeMeta.dataDir, RemoveSuffix(param.storeName_));
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyWithoutPath());
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
@@ -873,9 +871,8 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    auto meta = GetStoreMetaData(param);
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
-    if (!isCreated) {
+    auto [exist, meta] = LoadStoreMetaData(param);
+    if (!exist) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_NO_META;
@@ -1043,6 +1040,33 @@ void RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
             return;
         });
     }
+}
+
+std::pair<bool, StoreMetaData> RdbServiceImpl::LoadStoreMetaData(const RdbSyncerParam &param)
+{
+    StoreMetaData metaData;
+    metaData.uid = IPCSkeleton::GetCallingUid();
+    metaData.tokenId = IPCSkeleton::GetCallingTokenID();
+    auto [instanceId, user] = GetInstIndexAndUser(metaData.tokenId, param.bundleName_);
+    metaData.instanceId = instanceId;
+    metaData.bundleName = param.bundleName_;
+    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData.storeId = RemoveSuffix(param.storeName_);
+    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) != TOKEN_HAP && param.subUser_ != 0) {
+        metaData.user = std::to_string(param.subUser_);
+    } else {
+        metaData.user = std::to_string(user);
+    }
+    metaData.storeType = param.type_;
+    metaData.securityLevel = param.level_;
+    metaData.area = param.area_;
+    metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
+    metaData.appType = "harmony";
+    metaData.hapName = param.hapName_;
+    metaData.customDir = param.customDir_;
+    metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
+    auto exist = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
+    return {exist, metaData};
 }
 
 StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
@@ -1520,8 +1544,7 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    auto userId = GetSubUser(param.subUser_);
-    AutoCache::GetInstance().Disable(tokenId, GetPath(param));
+    AutoCache::GetInstance().Disable(tokenId, GetPath(param), storeId);
     return RDB_OK;
 }
 
@@ -1529,8 +1552,7 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    auto userId = GetSubUser(param.subUser_);
-    AutoCache::GetInstance().Enable(tokenId, GetPath(param));
+    AutoCache::GetInstance().Enable(tokenId, GetPath(param), storeId);
     return RDB_OK;
 }
 
@@ -1748,6 +1770,11 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
     MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
     meta.dataDir = metaMapping.dataDir;
     StoreMetaDataLocal localMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true)) {
+        StoreMetaMapping metaMapping(meta);
+        MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+        meta.dataDir = metaMapping.dataDir;
+    }
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true);
     if (!isCreated) {
         ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),

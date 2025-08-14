@@ -315,7 +315,7 @@ bool CloudServiceImpl::GetStoreMetaData(StoreMetaData &meta)
     }
     StoreMetaDataLocal localMetaData;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMetaData, true) || !localMetaData.isPublic) {
-        ZLOGE("failed, no store LocalMeta. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+        ZLOGE("meta empty, no store LocalMeta. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         return false;
     }

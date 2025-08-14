@@ -323,11 +323,6 @@ std::string StoreMetaMapping::GetDeviceStoreMetaKey() const
     return GetStoreMetaKeyWithPath(devicePath);
 }
 
-std::string StoreMetaMapping::GetSearchStoreMetaKey() const
-{
-    return GetStoreMetaKeyWithPath(searchPath);
-}
-
 std::string StoreMetaMapping::GetPrefix(const std::initializer_list<std::string> &fields)
 {
     return GetKey(fields).append(Constant::KEY_SEPARATOR);
