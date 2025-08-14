@@ -17,7 +17,6 @@ config("module_public_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "${data_service_path}/adapter/include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/permission/include",

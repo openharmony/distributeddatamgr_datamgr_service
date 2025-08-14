@@ -25,6 +25,7 @@
 #include "bootstrap.h"
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
+#include "checker/checker_manager.h"
 #include "checker_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
@@ -43,7 +44,6 @@
 #include "unified_data_helper.h"
 #include "utils/anonymous.h"
 #include "permission_validator.h"
-#include "bundle_mgr/bundlemgr_adapter.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -468,8 +468,7 @@ int32_t UdmfServiceImpl::CheckAppId(std::shared_ptr<Runtime> runtime, const std:
         ZLOGE("Update failed: Invalid parameter, runtime->appId is empty");
         return E_INVALID_PARAMETERS;
     }
-    int32_t userId = IPCSkeleton::GetCallingUid() / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
-    std::string appId = BundleMgrAdapter::GetInstance().GetBundleAppId(bundleName, userId);
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId({IPCSkeleton::GetCallingUid(), runtime->tokenId, bundleName});
     if (appId.empty() || appId != runtime->appId) {
         ZLOGE("Update failed: runtime->appId %{public}s and bundleName appId %{public}s mismatch",
             runtime->appId.c_str(), appId.c_str());
