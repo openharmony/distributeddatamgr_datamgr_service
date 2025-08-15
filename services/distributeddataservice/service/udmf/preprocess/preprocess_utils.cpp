@@ -71,7 +71,8 @@ int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option
     UnifiedKey key(intention, bundleName, GenerateId());
     Privilege privilege;
     privilege.tokenId = option.tokenId;
-    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId({IPCSkeleton::GetCallingUid(), option.tokenId, bundleName});
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(
+        { IPCSkeleton::GetCallingUid(), option.tokenId, bundleName });
     Runtime runtime;
     runtime.key = key;
     runtime.privileges.emplace_back(privilege);
