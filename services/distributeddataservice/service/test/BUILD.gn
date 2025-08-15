@@ -129,6 +129,7 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "mock/access_token_mock.cpp",
     "mock/account_delegate_mock.cpp",
     "cloud_data_mock_test.cpp",
   ]
@@ -968,6 +969,7 @@ ohos_unittest("ObjectManagerMockTest") {
     "../object/src/object_service_stub.cpp",
     "../object/src/object_snapshot.cpp",
     "../object/src/object_types_utils.cpp",
+    "mock/access_token_mock.cpp",
     "mock/account_delegate_mock.cpp",
     "mock/device_manager_adapter_mock.cpp",
     "mock/kv_store_nb_delegate_mock.cpp",
@@ -1189,7 +1191,6 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 
   sources = [
-    "${data_service_path}/service/common/bundle_utils.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
@@ -1204,7 +1205,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
     "${data_service_path}/service/data_share/common/seq_strategy.cpp",
-    "${data_service_path}/service/data_share/common/uri_utils.cpp",
+    "${data_service_path}/service/data_share/common/utils.cpp",
     "${data_service_path}/service/data_share/data/published_data.cpp",
     "${data_service_path}/service/data_share/data/resultset_json_formatter.cpp",
     "${data_service_path}/service/data_share/data/template_data.cpp",
@@ -1248,6 +1249,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_types_util_test.cpp",
     "kv_dalegate_test.cpp",
     "mock/account_delegate_mock.cpp",
+    "data_share_uri_utils_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1320,7 +1322,6 @@ ohos_unittest("DataShareServiceImplMockTest") {
   include_dirs = [ "${data_service_path}/service/config/include" ]
 
   sources = [
-    "${data_service_path}/service/common/bundle_utils.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
     "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
@@ -1348,7 +1349,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
     "${data_service_path}/service/data_share/common/seq_strategy.cpp",
-    "${data_service_path}/service/data_share/common/uri_utils.cpp",
+    "${data_service_path}/service/data_share/common/utils.cpp",
     "${data_service_path}/service/data_share/data/published_data.cpp",
     "${data_service_path}/service/data_share/data/resultset_json_formatter.cpp",
     "${data_service_path}/service/data_share/data/template_data.cpp",

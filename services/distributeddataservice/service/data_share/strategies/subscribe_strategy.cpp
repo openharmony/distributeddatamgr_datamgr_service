@@ -21,7 +21,7 @@
 #include "general/load_config_data_info_strategy.h"
 #include "general/permission_strategy.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 int32_t SubscribeStrategy::Execute(std::shared_ptr<Context> context, std::function<int32_t()> process)

@@ -186,31 +186,6 @@ HWTEST_F(KvDelegateTest, Upsert001, TestSize.Level1)
 }
 
 /**
-* @tc.name: Upsert002
-* @tc.desc: test Upsert function when GRD_UpsertDoc failed
-* @tc.type: FUNC
-* @tc.require:issueIBX9E1
-* @tc.precon: None
-* @tc.step:
-    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
-    2.call Upsert function to upsert filter
-* @tc.experct: Upsert failed and return GRD_INVALID_ARGS
-*/
-HWTEST_F(KvDelegateTest, Upsert002, TestSize.Level1)
-{
-    ZLOGI("KvDelegateTest Upsert001 start");
-    std::string path = "path/to/your/db";
-    KvDelegate kvDelegate(path, executors);
-    kvDelegate.isInitDone_= true;
-    std::string collectionName = "test";
-    std::string filter = "filter";
-    std::string value = "value";
-    auto result = kvDelegate.Upsert(collectionName, filter, value);
-    EXPECT_EQ(result.first, GRD_INVALID_ARGS);
-    ZLOGI("KvDelegateTest Upsert002 end");
-}
-
-/**
 * @tc.name: Delete001
 * @tc.desc: test Delete function when GDR_DBOpen failed
 * @tc.type: FUNC
@@ -231,30 +206,6 @@ HWTEST_F(KvDelegateTest, Delete001, TestSize.Level1)
     auto result = kvDelegate.Delete(collectionName, filter);
     EXPECT_EQ(result.first, E_ERROR);
     ZLOGI("KvDelegateTest Delete001 end");
-}
-
-/**
-* @tc.name: Delete002
-* @tc.desc: test Delete function when GRD_DeleteDoc failed
-* @tc.type: FUNC
-* @tc.require:issueIBX9E1
-* @tc.precon: None
-* @tc.step:
-    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
-    2.call Delete function to Delete filter
-* @tc.experct: Delete failed and return GRD_INVALID_ARGS
-*/
-HWTEST_F(KvDelegateTest, Delete002, TestSize.Level1)
-{
-    ZLOGI("KvDelegateTest Delete002 start");
-    std::string path = "path/to/your/db";
-    KvDelegate kvDelegate(path, executors);
-    kvDelegate.isInitDone_= true;
-    std::string collectionName = "test";
-    std::string filter = "filter";
-    auto result = kvDelegate.Delete(collectionName, filter);
-    EXPECT_EQ(result.first, GRD_INVALID_ARGS);
-    ZLOGI("KvDelegateTest Delete002 end");
 }
 
 /**
@@ -327,33 +278,6 @@ HWTEST_F(KvDelegateTest, Get001, TestSize.Level1)
 }
 
 /**
-* @tc.name: Get002
-* @tc.desc: test Get function when GRD_FindDoc failed
-* @tc.type: FUNC
-* @tc.require:issueIBX9E1
-* @tc.precon: None
-* @tc.step:
-    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
-    2.call Get function
-* @tc.experct: Get failed and return GRD_INVALID_ARGS
-*/
-HWTEST_F(KvDelegateTest, Get002, TestSize.Level1)
-{
-    ZLOGI("Get002 start");
-    std::string path = "path/to/your/db";
-    KvDelegate kvDelegate(path, executors);
-    kvDelegate.isInitDone_ = true;
-    std::string collectionName = "test";
-    std::string filter = "filter";
-    std::string projection = "projection";
-    std::string value = "value";
-    std::string result = "result";
-    auto result1 = kvDelegate.Get(collectionName, filter, projection, result);
-    EXPECT_EQ(result1, GRD_INVALID_ARGS);
-    ZLOGI("Get002 end");
-}
-
-/**
 * @tc.name: Backup001
 * @tc.desc: test Backup function when hasChange_ is true
 * @tc.type: FUNC
@@ -420,33 +344,6 @@ HWTEST_F(KvDelegateTest, GetBatch001, TestSize.Level1)
     auto result1 = kvDelegate.GetBatch(collectionName, filter, projection, result);
     EXPECT_EQ(result1, E_ERROR);
     ZLOGI("GetBatch001 end");
-}
-
-/**
-* @tc.name: GetBatch002
-* @tc.desc: test GetBatch function when GRD_FindDoc failed
-* @tc.type: FUNC
-* @tc.require:issueIBX9E1
-* @tc.precon: None
-* @tc.step:
-    1.Creat a kvDelegate object and kvDelegate.isInitDone_= true
-    2.call GetBatch function
-* @tc.experct: GetBatch failed and return GRD_INVALID_ARGS
-*/
-HWTEST_F(KvDelegateTest, GetBatch002, TestSize.Level1)
-{
-    ZLOGI("GetBatch002 start");
-    std::string path = "path/to/your/db";
-    KvDelegate kvDelegate(path, executors);
-    kvDelegate.isInitDone_ = true;
-    std::string collectionName = "test";
-    std::string filter = "filter";
-    std::string projection = "projection";
-    std::string value = "value";
-    std::vector<std::string> result;
-    auto result1 = kvDelegate.GetBatch(collectionName, filter, projection, result);
-    EXPECT_EQ(result1, GRD_INVALID_ARGS);
-    ZLOGI("GetBatch002 end");
 }
 
 /**

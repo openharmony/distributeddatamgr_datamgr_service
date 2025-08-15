@@ -572,6 +572,283 @@ void IsFileMangerIntentionFuzz(FuzzedDataProvider &provider)
     auto intention = provider.ConsumeRandomLengthString();
     udmfServiceImpl->IsFileMangerIntention(intention);
 }
+
+void CheckAppIdFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string intention = provider.ConsumeRandomLengthString();
+    std::string bundleName = provider.ConsumeRandomLengthString();
+    std::string appId = provider.ConsumeRandomLengthString();
+    std::string groupId = provider.ConsumeRandomLengthString();
+    uint32_t tokenid = provider.ConsumeIntegral<uint32_t>();
+    Privilege privilege;
+    privilege.tokenId = tokenid;
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data.AddRecord(record);
+    UnifiedKey key(intention, bundleName, groupId);
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->key = key;
+    runtime->privileges.emplace_back(privilege);
+    runtime->sourcePackage = bundleName;
+    runtime->createPackage = bundleName;
+    runtime->recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
+    runtime->tokenId = tokenid;
+    runtime->appId = appId;
+    udmfServiceImpl->CheckAppId(runtime, bundleName);
+}
+
+void CheckDeleteDataPermissionFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string bundleName = provider.ConsumeRandomLengthString();
+    std::string appId = provider.ConsumeRandomLengthString();
+    uint32_t tokenid = provider.ConsumeIntegral<uint32_t>();
+    Privilege privilege;
+    privilege.tokenId = tokenid;
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data.AddRecord(record);
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->key = udKey;
+    runtime->privileges.emplace_back(privilege);
+    runtime->sourcePackage = bundleName;
+    runtime->createPackage = bundleName;
+    runtime->recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
+    runtime->tokenId = tokenid;
+    runtime->appId = appId;
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    udmfServiceImpl->CheckDeleteDataPermission(appId, runtime, query);
+}
+
+void StoreSyncFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey key = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    QueryOption query;
+    query.key = key.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    std::vector<std::string> devices = { "11", "22" };
+    udmfServiceImpl->StoreSync(key, query, devices);
+}
+
+void SetAppShareOptionFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string intention = provider.ConsumeRandomLengthString();
+    int32_t shareOption = provider.ConsumeIntegral<uint32_t>();
+    udmfServiceImpl->SetAppShareOption(intention, shareOption);
+}
+
+void RemoveAppShareOptionFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string intention = provider.ConsumeRandomLengthString();
+    udmfServiceImpl->RemoveAppShareOption(intention);
+}
+
+void QueryDataCommonFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data.AddRecord(record);
+    std::shared_ptr<Store> store;
+    std::vector<UnifiedData> dataSet = { data };
+    udmfServiceImpl->QueryDataCommon(query, dataSet, store);
+}
+
+void ClearAsynProcessByKeyFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string businessUdKey = provider.ConsumeRandomLengthString();
+    udmfServiceImpl->ClearAsynProcessByKey(businessUdKey);
+}
+
+void TransferToEntriesIfNeedFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    std::shared_ptr<Object> obj1 = std::make_shared<Object>();
+    obj1->value_[UNIFORM_DATA_TYPE] = "general.image-uri";
+    obj1->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj1->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    std::shared_ptr<Object> obj2 = std::make_shared<Object>();
+    obj2->value_[UNIFORM_DATA_TYPE] = "general.txt-uri";
+    obj2->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj2->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    std::shared_ptr<Object> obj3 = std::make_shared<Object>();
+    obj3->value_[UNIFORM_DATA_TYPE] = "general.html-uri";
+    obj3->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj3->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    auto record1 = std::make_shared<UnifiedRecord>(FILE_URI, obj1);
+    auto record2 = std::make_shared<UnifiedRecord>(FILE_URI, obj2);
+    auto record3 = std::make_shared<UnifiedRecord>(FILE_URI, obj3);
+    data.AddRecord(record);
+    data.AddRecord(record1);
+    data.AddRecord(record2);
+    data.AddRecord(record3);
+    udmfServiceImpl->TransferToEntriesIfNeed(query, data);
+}
+
+void IsValidOptionsNonDragFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey key = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
+    std::string intention = UD_INTENTION_MAP.at(option.intention);
+    udmfServiceImpl->IsValidOptionsNonDrag(key, intention);
+}
+
+void CloseStoreWhenCorruptedFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string intention = provider.ConsumeRandomLengthString();
+    int32_t status = provider.ConsumeIntegral<uint32_t>();
+    udmfServiceImpl->CloseStoreWhenCorrupted(intention, status);
+}
+
+void HandleDbErrorFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string intention = provider.ConsumeRandomLengthString();
+    int32_t status = provider.ConsumeIntegral<uint32_t>();
+    udmfServiceImpl->HandleDbError(intention, status);
+}
+
+void BuildMetaFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string storeId = provider.ConsumeRandomLengthString();
+    int userId = provider.ConsumeIntegral<int>();
+    udmfServiceImpl->BuildMeta(storeId, userId);
+}
+
+void ProcessResultFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::map<std::string, int32_t> results;
+    std::string key = provider.ConsumeRandomLengthString();
+    int32_t value = provider.ConsumeIntegral<int32_t>();
+    results.emplace(std::make_pair(key, value));
+    udmfServiceImpl->ProcessResult(results);
+}
+
+void RegisterAsyncProcessInfoFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string businessUdKey = provider.ConsumeRandomLengthString();
+    udmfServiceImpl->RegisterAsyncProcessInfo(businessUdKey);
+}
+
+void IsNeedMetaSyncFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    DistributedData::StoreMetaData meta;
+    uint8_t len = provider.ConsumeIntegral<uint8_t>();
+    std::vector<std::string> uuids(len);
+    for (int i = 0; i < len; i++) {
+        std::string uuid = provider.ConsumeRandomLengthString();
+        uuids[i] = uuid;
+    }
+    udmfServiceImpl->IsNeedMetaSync(meta, uuids);
+}
+
+void VerifyDataAccessPermissionFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data.AddRecord(record);
+    udmfServiceImpl->VerifyDataAccessPermission(runtime, query, data);
+}
+
+void HandleDelayDataCallbackFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    DelayGetDataInfo delayGetDataInfo;
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    unifiedData.AddRecord(record);
+    std::string key = provider.ConsumeRandomLengthString();
+    udmfServiceImpl->HandleDelayDataCallback(delayGetDataInfo, unifiedData, key);
+}
 }
 
 /* Fuzzer entry point */
@@ -620,5 +897,22 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::ProcessDataFuzz(provider);
     OHOS::VerifyIntentionPermissionFuzz(provider);
     OHOS::IsFileMangerIntentionFuzz(provider);
+    OHOS::CheckAppIdFuzz(provider);
+    OHOS::CheckDeleteDataPermissionFuzz(provider);
+    OHOS::StoreSyncFuzz(provider);
+    OHOS::SetAppShareOptionFuzz(provider);
+    OHOS::RemoveAppShareOptionFuzz(provider);
+    OHOS::QueryDataCommonFuzz(provider);
+    OHOS::ClearAsynProcessByKeyFuzz(provider);
+    OHOS::TransferToEntriesIfNeedFuzz(provider);
+    OHOS::IsValidOptionsNonDragFuzz(provider);
+    OHOS::CloseStoreWhenCorruptedFuzz(provider);
+    OHOS::HandleDbErrorFuzz(provider);
+    OHOS::BuildMetaFuzz(provider);
+    OHOS::ProcessResultFuzz(provider);
+    OHOS::RegisterAsyncProcessInfoFuzz(provider);
+    OHOS::IsNeedMetaSyncFuzz(provider);
+    OHOS::VerifyDataAccessPermissionFuzz(provider);
+    OHOS::HandleDelayDataCallbackFuzz(provider);
     return 0;
 }

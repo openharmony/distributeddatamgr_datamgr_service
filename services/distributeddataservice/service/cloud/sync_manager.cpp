@@ -763,10 +763,7 @@ bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
     if (queryKey.accountId.empty()) {
         return false;
     }
-    if (std::find(kvApps_.begin(), kvApps_.end(), queryKey.bundleName) != kvApps_.end()) {
-        return false;
-    }
-    return true;
+    return kvApps_.find(queryKey.bundleName) == kvApps_.end();
 }
 
 std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(

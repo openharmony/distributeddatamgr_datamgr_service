@@ -119,11 +119,7 @@ void RdbServiceImplTest::SetUpTestCase()
     EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, CalcClientUuid(_, _)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(deviceInfo.uuid)).WillRepeatedly(Return(deviceInfo.uuid));
-    size_t max = 12;
-    size_t min = 5;
 
-    auto dmExecutor = std::make_shared<ExecutorPool>(max, min);
-    DeviceManagerAdapter::GetInstance().Init(dmExecutor);
     InitMetaData();
     Bootstrap::GetInstance().LoadCheckers();
     CryptoManager::GetInstance().GenerateRootKey();

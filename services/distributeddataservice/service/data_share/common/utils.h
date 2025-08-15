@@ -35,6 +35,24 @@ struct UriConfig {
     std::string scheme;
 };
 
+class StringUtils {
+public:
+    /**
+     * @brief Anonymizes the input string by preserving specified length at head/tail
+     *        and replacing the middle part with placeholder
+     * @param name Original string to be processed (non-empty assumed)
+     * @return std::string Anonymized result according to length rules:
+     *     1. Length <= 4: Returns DEFAULT_ANONYMOUS ("******")
+     *     2. 4 < Length <= 8: Returns first 4 chars + REPLACE_CHAIN ("***")
+     *     3. Length > 8: Returns first 4 chars + REPLACE_CHAIN + last 4 chars
+     * @example
+     *     "abcdefghi" -> "abcd***fghi"
+     *     "12345"   -> "1234***"
+     *     "AB"      -> "******"
+     */
+    static std::string GeneralAnonymous(const std::string &name);
+};
+
 class URIUtils {
 public:
     static bool GetInfoFromURI(const std::string &uri, UriInfo &uriInfo);
@@ -67,7 +85,6 @@ private:
         PARAM_SIZE
     };
     static constexpr int32_t END_LENGTH = 10;
-    static constexpr const char *DEFAULT_ANONYMOUS = "******";
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_URI_UTILS_H

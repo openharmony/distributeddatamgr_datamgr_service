@@ -23,7 +23,7 @@
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {

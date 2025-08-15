@@ -525,6 +525,7 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
         return GeneralError::E_ALREADY_CLOSED;
     }
     DBStatus status = OK;
+    ClearKvMetaDataOption option;
     switch (mode) {
         case CLOUD_INFO:
             status = delegate_->RemoveDeviceData(
@@ -534,7 +535,6 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
             status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
             break;
         case CLEAN_WATER:
-            ClearKvMetaDataOption option;
             option.type = ClearKvMetaOpType::CLEAN_CLOUD_WATERMARK;
             status = delegate_->ClearMetaData(option);
             break;

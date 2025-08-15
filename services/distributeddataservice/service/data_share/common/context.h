@@ -16,6 +16,7 @@
 #ifndef DATASHARESERVICE_CONTEXT_H
 #define DATASHARESERVICE_CONTEXT_H
 
+#include <algorithm>
 #include <list>
 #include <memory>
 #include <string>
@@ -34,7 +35,13 @@ class Context {
 public:
     explicit Context() {}
     explicit Context(const std::string &uri) : uri(uri) {}
-    virtual ~Context() = default;
+    virtual ~Context()
+    {
+        if (secretMetaKey.size() > 0) {
+            std::fill(secretMetaKey.begin(), secretMetaKey.end(), '\0');
+        }
+    }
+
     std::string uri;
     int32_t currentUserId = -1;
     int32_t visitedUserId = -1;

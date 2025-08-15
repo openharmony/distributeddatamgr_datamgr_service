@@ -23,7 +23,7 @@
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "system_ability_definition.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "ipc_skeleton.h"
 #include "hiview_fault_adapter.h"
 
@@ -289,30 +289,5 @@ std::pair<int, std::vector<HapModuleInfo>> BundleMgrProxy::ConvertHapModuleInfo(
         hapModuleInfos.emplace_back(hapModuleInfo);
     }
     return std::make_pair(E_OK, hapModuleInfos);
-}
-
-std::pair<int, bool> BundleMgrProxy::CheckSilentConfig(const std::string &bundleName, int32_t userId)
-{
-    AppExecFwk::BundleInfo bundleInfo;
-    auto bmsClient = GetBundleMgrProxy();
-    if (bmsClient == nullptr) {
-        ZLOGE(
-            "GetBundleMgrProxy is nullptr! bundleName is %{public}s, userId is %{public}d", bundleName.c_str(), userId);
-        return std::make_pair(E_BMS_NOT_READY, false);
-    }
-
-    auto ret = bmsClient->GetBundleInfo(bundleName,
-        static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE), bundleInfo, userId);
-    if (!ret) {
-        ZLOGE("Get bundleInfo failed! ret: %{public}d", ret);
-        return std::make_pair(E_ERROR, false);
-    }
-
-    for (auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
-        if (!hapModuleInfo.proxyDatas.empty()) {
-            return std::make_pair(E_OK, true);
-        }
-    }
-    return std::make_pair(E_SILENT_PROXY_DISABLE, false);
 }
 } // namespace OHOS::DataShare

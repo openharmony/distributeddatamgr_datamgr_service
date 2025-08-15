@@ -73,6 +73,7 @@ ohos_fuzztest("CloudServiceStubFuzzTest") {
     "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:datamgr_common",

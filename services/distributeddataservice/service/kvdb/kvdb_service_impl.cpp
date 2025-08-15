@@ -245,6 +245,12 @@ void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, Progres
 
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo)
 {
+    auto instanceId = GetInstIndex(IPCSkeleton::GetCallingTokenID(), appId);
+    if (instanceId != 0) {
+        ZLOGE("twin application not allow sync, instanceId:%{public}d, appId:%{public}s, storeId:%{public}s",
+            instanceId, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        return Status::NOT_SUPPORT;
+    }
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);

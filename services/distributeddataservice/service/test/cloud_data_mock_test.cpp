@@ -25,6 +25,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "mock/access_token_mock.h"
 #include "mock/account_delegate_mock.h"
 #include "mock/db_store_mock.h"
 #include "network_delegate_mock.h"
@@ -33,6 +34,7 @@ using namespace testing::ext;
 using namespace testing;
 using namespace DistributedDB;
 using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 namespace OHOS::Test {
@@ -45,6 +47,7 @@ static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *TEST_CLOUD_PATH = "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/"
                                                "test_cloud_store";
+static constexpr const int32_t TEST_TOKEN_FLAG_CALL_COUNT = 3;
 class CloudDataMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -52,6 +55,7 @@ public:
     void SetUp();
     void TearDown();
 
+    static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
     static SchemaMeta schemaMeta_;
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
 
@@ -185,6 +189,13 @@ void CloudDataMockTest::SetUpTestCase(void)
     }
     // 2 means that the GetUserByToken interface will be called twice
     EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).Times(2).WillRepeatedly(Return(0));
+
+    accTokenMock = std::make_shared<AccessTokenKitMock>();
+    BAccessTokenKit::accessTokenkit = accTokenMock;
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(TEST_TOKEN_FLAG_CALL_COUNT)
+        .WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     MetaDataManager::GetInstance().SetSyncer(
         [](const auto &, auto) { DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK); });
@@ -212,6 +223,8 @@ void CloudDataMockTest::TearDownTestCase()
         delete accountDelegateMock;
         accountDelegateMock = nullptr;
     }
+    accTokenMock = nullptr;
+    BAccessTokenKit::accessTokenkit = nullptr;
 }
 
 void CloudDataMockTest::SetUp()
@@ -327,6 +340,7 @@ HWTEST_F(CloudDataMockTest, OnReadyTest_LoginAccount, TestSize.Level0)
 {
     ZLOGI("CloudDataMockTest OnReadyTest_LoginAccount start");
     std::string device = "test";
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_)).WillRepeatedly(testing::Return(false));
     auto ret = cloudServiceImpl_->OnReady(device);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 
@@ -338,6 +352,52 @@ HWTEST_F(CloudDataMockTest, OnReadyTest_LoginAccount, TestSize.Level0)
     ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     ZLOGI("CloudDataMockTest OnReadyTest_LoginAccount end");
+}
+
+
+/**
+* @tc.name: GetHapInfo001
+* @tc.desc: Test GetHapInfo function when GetTokenTypeFlag is not TOKEN_HAP.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataMockTest, GetHapInfo001, TestSize.Level1)
+{
+    ZLOGI("CloudDataMockTest GetHapInfo001 start");
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back(TEST_CLOUD_BUNDLE);
+    std::vector<std::string> columns;
+    CloudData::Participants participants;
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillOnce(Return(ATokenTypeEnum::TOKEN_NATIVE));
+    auto [ret, _] = cloudServiceImpl_->AllocResourceAndShare(TEST_CLOUD_STORE, predicates, columns, participants);
+    EXPECT_EQ(ret, E_ERROR);
+    ZLOGI("CloudDataMockTest GetHapInfo001 end");
+}
+
+/**
+* @tc.name: GetHapInfo002
+* @tc.desc: Test GetHapInfo function when GetTokenTypeFlag is TOKEN_HAP.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataMockTest, GetHapInfo002, TestSize.Level1)
+{
+    ZLOGI("CloudDataMockTest GetHapInfo002 start");
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back(TEST_CLOUD_BUNDLE);
+    std::vector<std::string> columns;
+    CloudData::Participants participants;
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillOnce(Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(_, _))
+        .Times(1)
+        .WillOnce(Return(-1));
+    auto [ret, _] = cloudServiceImpl_->AllocResourceAndShare(TEST_CLOUD_STORE, predicates, columns, participants);
+    EXPECT_EQ(ret, E_ERROR);
+    ZLOGI("CloudDataMockTest GetHapInfo002 end");
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
