@@ -468,7 +468,8 @@ int32_t UdmfServiceImpl::CheckAppId(std::shared_ptr<Runtime> runtime, const std:
         ZLOGE("Update failed: Invalid parameter, runtime->appId is empty");
         return E_INVALID_PARAMETERS;
     }
-    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId({IPCSkeleton::GetCallingUid(), runtime->tokenId, bundleName});
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(
+        { IPCSkeleton::GetCallingUid(), runtime->tokenId, bundleName });
     if (appId.empty() || appId != runtime->appId) {
         ZLOGE("Update failed: runtime->appId %{public}s and bundleName appId %{public}s mismatch",
             runtime->appId.c_str(), appId.c_str());
