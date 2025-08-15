@@ -221,6 +221,8 @@ private:
 
     static StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
 
+    static std::pair<bool, StoreMetaData> LoadStoreMetaData(const RdbSyncerParam &param);
+
     static std::string GetPath(const RdbSyncerParam &param);
 
     static StoreMetaData GetStoreMetaData(const Database &dataBase);
