@@ -105,6 +105,8 @@ public:
     DBStatus SetCloudSyncConfig(const CloudSyncConfig &config);
     DBStatus GetDeviceEntries(const std::string &device, std::vector<Entry> &entries) const;
     DBStatus Sync(const DeviceSyncOption &option, const DeviceSyncProcessCallback &onProcess);
+    DBStatus Sync(const DeviceSyncOption &option,
+        const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete);
     DBStatus CancelSync(uint32_t syncId);
     DatabaseStatus GetDatabaseStatus() const;
     DBStatus ClearMetaData(ClearKvMetaDataOption option);

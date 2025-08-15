@@ -351,6 +351,17 @@ DBStatus DBStoreMock::Sync(const DeviceSyncOption &option, const DeviceSyncProce
     return NOT_SUPPORT;
 }
 
+DBStatus DBStoreMock::Sync(const DeviceSyncOption &option,
+    const std::function<void(const std::map<std::string, DBStatus> &)> &onComplete)
+{
+    std::map<std::string, DBStatus> result;
+    for (const auto &device : option.devices) {
+        result[device] = OK;
+    }
+    onComplete(result);
+    return OK;
+}
+
 DBStatus DBStoreMock::CancelSync(uint32_t syncId)
 {
     return NOT_SUPPORT;

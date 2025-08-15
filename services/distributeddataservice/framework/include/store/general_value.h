@@ -101,6 +101,7 @@ struct SyncParam {
     std::string prepareTraceId;
     int32_t user;
     bool asyncDownloadAsset = false;
+    bool isRetry = true;
 };
 
 enum SyncStage : int8_t {

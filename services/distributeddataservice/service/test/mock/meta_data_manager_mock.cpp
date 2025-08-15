@@ -41,9 +41,9 @@ bool OHOS::DistributedData::MetaDataManager::LoadMeta(const std::string &key, Se
 }
 
 bool OHOS::DistributedData::MetaDataManager::Sync(const std::vector<std::string> &devices,
-    MetaDataManager::OnComplete complete, bool wait)
+    MetaDataManager::OnComplete complete, bool wait, bool isRetry)
 {
-    return BMetaDataManager::metaDataManager->Sync(devices, complete, wait);
+    return BMetaDataManager::metaDataManager->Sync(devices, complete, wait, isRetry);
 }
 
 template<>

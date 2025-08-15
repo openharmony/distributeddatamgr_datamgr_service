@@ -219,7 +219,7 @@ int32_t KVDBServiceStub::OnSync(const AppId &appId, const StoreId &storeId, Mess
     SyncInfo syncInfo;
     int32_t subUser;
     if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.mode, syncInfo.devices, syncInfo.delay, syncInfo.query,
-        subUser)) {
+        subUser, syncInfo.isRetry)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
