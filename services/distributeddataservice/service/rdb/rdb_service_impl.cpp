@@ -1771,12 +1771,11 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
         StoreMetaMapping metaMapping(meta);
         MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
         meta.dataDir = metaMapping.dataDir;
-    }
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true);
-    if (!isCreated) {
-        ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),
-            meta.GetStoreAlias().c_str());
-        return RDB_ERROR;
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true)) {
+            ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str());
+            return RDB_ERROR;
+        }
     }
     ATokenTypeEnum type = AccessTokenKit::GetTokenType(tokenId);
     if (type == ATokenTypeEnum::TOKEN_NATIVE || type == ATokenTypeEnum::TOKEN_SHELL) {
