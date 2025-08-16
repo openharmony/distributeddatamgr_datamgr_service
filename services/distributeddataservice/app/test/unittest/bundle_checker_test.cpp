@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -19,7 +19,6 @@
 #include "bootstrap.h"
 #include "hap_token_info.h"
 #include "nativetoken_kit.h"
-#include "utils/crypto.h"
 #include "utils/crypto.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -88,13 +87,12 @@ void BundleCheckerTest::TearDown()
 }
 
 /**
-* @tc.name: SystemChecker bms
-* @tc.desc: checker the bundle name of the system abilities.
+* @tc.name: GetAppIdTest001
+* @tc.desc: get appId from cache.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: Sven Wang
 */
-HWTEST_F(BundleCheckerTest, SystemCheckerBMS, TestSize.Level0)
+HWTEST_F(BundleCheckerTest, GetAppIdTest001, TestSize.Level0)
 {
     CheckerManager::StoreInfo info;
     auto tokenId = AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
