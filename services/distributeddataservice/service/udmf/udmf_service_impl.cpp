@@ -417,11 +417,12 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
-    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, bundleName)) {
+    std::string specificBundleName;
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, specificBundleName, bundleName)) {
         ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", query.tokenId);
         return E_ERROR;
     }
-    if (key.bundleName != bundleName && !HasDatahubPriviledge(bundleName)) {
+    if (key.bundleName != specificBundleName && !HasDatahubPriviledge(bundleName)) {
         ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
@@ -538,7 +539,8 @@ bool UdmfServiceImpl::CheckDeleteDataPermission(std::string &appId, const std::s
         return true;
     }
     std::string bundleName;
-    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, bundleName)) {
+    std::string specificBundleName;
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, specificBundleName, bundleName)) {
         ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", query.tokenId);
         return false;
     }
@@ -1156,12 +1158,13 @@ bool UdmfServiceImpl::IsValidOptionsNonDrag(UnifiedKey &key, const std::string &
 int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier, std::string &key)
 {
     std::string bundleName;
+    std::string specificBundleName;
     auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(tokenId, bundleName)) {
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(tokenId, specificBundleName, bundleName)) {
         ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", tokenId);
         return E_ERROR;
     }
-    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, dataLoadInfo.sequenceKey);
+    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), specificBundleName, dataLoadInfo.sequenceKey);
     key = udkey.GetUnifiedKey();
     dataLoadCallback_.Insert(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
 

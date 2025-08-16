@@ -63,12 +63,13 @@ int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option
         return E_ERROR;
     }
     std::string bundleName;
-    if (!GetSpecificBundleNameByTokenId(option.tokenId, bundleName)) {
+    std::string specificBundleName;
+    if (!GetSpecificBundleNameByTokenId(option.tokenId, specificBundleName, bundleName)) {
         ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", option.tokenId);
         return E_ERROR;
     }
     std::string intention = it->second;
-    UnifiedKey key(intention, bundleName, GenerateId());
+    UnifiedKey key(intention, specificBundleName, GenerateId());
     Privilege privilege;
     privilege.tokenId = option.tokenId;
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(
@@ -500,12 +501,13 @@ std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
     return std::to_string(hapTokenInfo.apiVersion);
 }
 
-bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &bundleName)
+bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName, std::string &bundleName)
 {
     Security::AccessToken::HapTokenInfo hapInfo;
     if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
         == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
-        return GetSpecificBundleName(hapInfo.bundleName, hapInfo.instIndex, bundleName);
+        bundleName = hapInfo.bundleName;
+        return GetSpecificBundleName(hapInfo.bundleName, hapInfo.instIndex, specificBundleName);
     }
     if (UTILS::IsTokenNative()) {
         ZLOGI("TypeATokenTypeEnum is TOKEN_NATIVE");
