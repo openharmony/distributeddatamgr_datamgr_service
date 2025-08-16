@@ -560,6 +560,30 @@ ohos_unittest("RouteHeadHandlerImplTest") {
   part_name = "datamgr_service"
 }
 
+ohos_unittest("BundleCheckerTest") {
+  module_out_path = module_output_path
+  sources = [ "unittest/bundle_checker_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
+  ]
+
+  deps = [
+    "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+}
+
 ###############################################################################
 
 group("unittest") {
@@ -567,6 +591,7 @@ group("unittest") {
   deps = []
 
   deps += [
+    ":BundleCheckerTest",
     ":FeatureStubImplTest",
     ":KvStoreDataServiceClearTest",
     ":KvStoreDataServiceTest",
