@@ -515,6 +515,7 @@ bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::stri
         std::string processName;
         if (GetNativeProcessNameByToken(tokenId, processName)) {
             bundleName = std::move(processName);
+            specificBundleName = bundleName;
             return true;
         }
     }
