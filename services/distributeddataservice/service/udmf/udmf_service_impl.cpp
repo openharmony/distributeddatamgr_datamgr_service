@@ -438,8 +438,27 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
         HandleDbError(key.intention, res);
         return res;
     }
+    auto verifyRes = VerifyUpdatePermission(query, data, bundleName);
+    if (verifyRes != E_OK) {
+        ZLOGE("VerifyUpdatePermission failed:%{public}d, key: %{public}s.", verifyRes, query.key.c_str());
+        return verifyRes;
+    }
+    std::shared_ptr<Runtime> runtime = data.GetRuntime();
+    runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
+    unifiedData.SetRuntime(*runtime);
+    PreProcessUtils::SetRecordUid(unifiedData);
+    if ((res = store->Update(unifiedData)) != E_OK) {
+        ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
+        HandleDbError(key.intention, res);
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::VerifyUpdatePermission(const QueryOption &query, UnifiedData &data, std::string &bundleName)
+{
     if (data.IsEmpty()) {
-        ZLOGE("Invalid parameter, unified data has no record; intention: %{public}s.", key.intention.c_str());
+        ZLOGE("Invalid parameter, unified data has no record");
         return E_INVALID_PARAMETERS;
     }
     std::shared_ptr<Runtime> runtime = data.GetRuntime();
@@ -451,14 +470,6 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
         CheckAppId(runtime, bundleName) != E_OK) {
         ZLOGE("Update failed: tokenId or appId mismatch, bundleName: %{public}s", bundleName.c_str());
         return E_INVALID_PARAMETERS;
-    }
-    runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
-    unifiedData.SetRuntime(*runtime);
-    PreProcessUtils::SetRecordUid(unifiedData);
-    if ((res = store->Update(unifiedData)) != E_OK) {
-        ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
-        HandleDbError(key.intention, res);
-        return E_DB_ERROR;
     }
     return E_OK;
 }
