@@ -88,8 +88,9 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, GetAlterableBundleNameByTokenId001, TestSi
     EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillOnce(Return(RET_FAILED));
     EXPECT_CALL(*accessTokenKitMock, GetTokenTypeFlag(_)).WillOnce(Return(TOKEN_SHELL));
     std::string bundleName = "";
+    std::string specificBundleName = "";
     PreProcessUtils preProcessUtils;
-    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, bundleName);
+    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, specificBundleName, bundleName);
     EXPECT_EQ(ret, false);
 }
 
@@ -106,8 +107,9 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, GetAlterableBundleNameByTokenId002, TestSi
     EXPECT_CALL(*accessTokenKitMock, GetTokenTypeFlag(_)).WillOnce(Return(TOKEN_NATIVE));
     EXPECT_CALL(*accessTokenKitMock, GetNativeTokenInfo(_, _)).WillOnce(Return(RET_SUCCESS));
     std::string bundleName = "";
+    std::string specificBundleName = "";
     PreProcessUtils preProcessUtils;
-    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, bundleName);
+    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, specificBundleName, bundleName);
     EXPECT_EQ(ret, true);
 }
 
@@ -122,8 +124,9 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, GetAlterableBundleNameByTokenId003, TestSi
     uint32_t tokenId = 9999;
     EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillOnce(Return(RET_SUCCESS));
     std::string bundleName = "";
+    std::string specificBundleName = "";
     PreProcessUtils preProcessUtils;
-    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, bundleName);
+    bool ret = preProcessUtils.GetSpecificBundleNameByTokenId(tokenId, specificBundleName, bundleName);
     EXPECT_EQ(ret, true);
 }
 }; // namespace UDMF
