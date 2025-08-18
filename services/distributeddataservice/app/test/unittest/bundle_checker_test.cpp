@@ -103,7 +103,7 @@ HWTEST_F(BundleCheckerTest, GetAppIdTest001, TestSize.Level0)
     std::string appIdInCache;
     ASSERT_TRUE(!checker.GetAppId(info).empty());
     checker.appIds_.Get("com.ohos.dlpmanager###100", appIdInCache);
-    ASSERT_TRUE(!appIdInCache.empty());
+    ASSERT_FALSE(appIdInCache.empty());
     ASSERT_EQ(Crypto::Sha256(appIdInCache), checker.GetAppId(info));
 
     checker.DeleteCache(info.bundleName, 100, 0);
