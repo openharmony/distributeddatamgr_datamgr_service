@@ -501,7 +501,8 @@ std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
     return std::to_string(hapTokenInfo.apiVersion);
 }
 
-bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName, std::string &bundleName)
+bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
+    std::string &bundleName)
 {
     Security::AccessToken::HapTokenInfo hapInfo;
     if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
