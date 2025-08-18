@@ -47,6 +47,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 constexpr int32_t SYSTEM_USER_ID = 0;
+constexpr int32_t TIMEOUT_TIME = 20; // hours
 static constexpr const char *FT_GET_STORE = "GET_STORE";
 static constexpr const char *FT_CALLBACK = "CALLBACK";
 SyncManager::SyncInfo::SyncInfo(
@@ -364,6 +365,9 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         UpdateStartSyncInfo(cloudSyncInfos);
         auto code = IsValid(info, cloud);
         if (code != E_OK) {
+            if (code == E_NETWORK_ERROR) {
+                networkRecoveryManager_.RecordSyncApps(info.bundleName_);
+            }
             BatchUpdateFinishState(cloudSyncInfos, code);
             BatchReport(info.user_, traceIds, SyncStage::END, code, "!IsValid");
             return;
@@ -1083,5 +1087,63 @@ GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)
 int32_t SyncManager::ConvertValidGeneralCode(int32_t code)
 {
     return (code >= E_OK && code < E_BUSY) ? code : E_ERROR;
+}
+
+void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
+{
+    ZLOGI("network disconnected.");
+    currentEvent_ = std::make_unique<NetWorkEvent>();
+    currentEvent_->disconnectTime = std::chrono::system_clock::now();
+}
+
+void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
+{
+    ZLOGI("network connected.");
+    if (!currentEvent_) {
+        ZLOGE("network connected, but no sync event.");
+        return;
+    }
+    auto now = std::chrono::system_clock::now();
+    auto duration = now - currentEvent_->disconnectTime;
+    auto hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
+    bool timeout = (hours > TIMEOUT_TIME);
+
+    std::vector<int32_t> users;
+    if (!Account::GetInstance()->QueryForegroundUsers(users) || users.empty()) {
+        ZLOGE("no foreground user, skip sync.");
+        return;
+    }
+    auto& syncManager = syncManager_;
+    for (auto user : users) {
+        CloudInfo cloud;
+        cloud.user = user;
+        if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
+            continue;
+        }
+        ZLOGI("network connected, sync hours:%{public}ld", hours);
+        const auto& apps = timeout ? ExtractBundleNames(cloud.apps) : currentEvent_->syncApps;
+        for (const auto& app : apps) {
+            ZLOGI("sync app:%{public}s, user:%{public}d", app.c_str(), user);
+            SyncInfo info(user, app);
+            syncManager.DoCloudSync(std::move(info));
+        }
+    }
+    currentEvent_.reset();
+}
+
+void SyncManager::NetworkRecoveryManager::RecordSyncApps(const std::string &bundleName)
+{
+    if (currentEvent_) {
+        ZLOGI("record sync bundleName:%{public}s", bundleName.c_str());
+        currentEvent_->syncApps.insert(bundleName);
+    }
+}
+std::unordered_set<std::string> SyncManager::NetworkRecoveryManager::ExtractBundleNames(const std::map<std::string, CloudInfo::AppInfo> apps)
+{
+    std::unordered_set<std::string> bundleNames;
+    for (auto &app : apps) {
+        bundleNames.insert(app.first);
+    }
+    return bundleNames;
 }
 } // namespace OHOS::CloudData

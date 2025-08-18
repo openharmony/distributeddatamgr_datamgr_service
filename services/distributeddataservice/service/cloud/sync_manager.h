@@ -31,6 +31,7 @@
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "utils/ref_count.h"
+#include <unordered_set>
 
 namespace OHOS::CloudData {
 class SyncManager {
@@ -104,7 +105,24 @@ public:
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
     static std::string GetPath(const StoreMetaData &meta);
-
+    class NetworkRecoveryManager {
+    public:
+        NetworkRecoveryManager(SyncManager &syncManager): syncManager_(syncManager) {}
+        void OnNetworkDisconnected();
+        void OnNetworkConnected();
+        void RecordSyncApps(const std::string &bundleName);
+    private:
+        std::unordered_set<std::string> ExtractBundleNames(const std::map<std::string, DistributedData::CloudInfo::AppInfo> apps);
+        struct NetWorkEvent {
+            std::chrono::system_clock::time_point disconnectTime;
+            std::unordered_set<std::string> syncApps;
+        };
+        std::unique_ptr<NetWorkEvent> currentEvent_;
+        SyncManager &syncManager_;
+    };
+    NetworkRecoveryManager& GetNetworkRecoveryManager() {
+        return networkRecoveryManager_;
+    }
 private:
     using Event = DistributedData::Event;
     using Task = ExecutorPool::Task;
@@ -185,6 +203,7 @@ private:
     ConcurrentMap<QueryKey, std::map<SyncId, CloudLastSyncInfo>> lastSyncInfos_;
     std::set<std::string> kvApps_;
     ConcurrentMap<int32_t, std::map<std::string, std::set<std::string>>> compensateSyncInfos_;
+    NetworkRecoveryManager networkRecoveryManager_{*this};
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

@@ -796,19 +796,11 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
         ZLOGW("current user is not logged in.");
         return E_NOT_LOGIN;
     }
-    std::vector<int32_t> users;
-    Account::GetInstance()->QueryForegroundUsers(users);
-    if (users.empty()) {
-        return SUCCESS;
-    }
+
     if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         return NETWORK_ERROR;
     }
-    for (auto user : users) {
-        DoKvCloudSync(user, "", MODE_ONLINE);
-        Execute(GenTask(0, user, CloudSyncScene::NETWORK_RECOVERY,
-            { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
-    }
+    syncManager_.GetNetworkRecoveryManager().OnNetworkConnected();
     return SUCCESS;
 }
 
@@ -825,6 +817,7 @@ int32_t CloudServiceImpl::Offline(const std::string &device)
     }
     auto it = users.begin();
     syncManager_.StopCloudSync(*it);
+    syncManager_.GetNetworkRecoveryManager().OnNetworkDisconnected();
     return SUCCESS;
 }
 
