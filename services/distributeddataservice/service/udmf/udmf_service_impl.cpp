@@ -67,6 +67,7 @@ constexpr const char *DEVICE_PHONE_TAG = "phone";
 constexpr const char *DEVICE_DEFAULT_TAG = "default";
 constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
 constexpr uint32_t FOUNDATION_UID = 5523;
+constexpr uint32_t WAIT_TIME = 1;
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -174,12 +175,26 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
         msg.appId = "unknown";
-        res = E_ERROR;
-    } else {
-        msg.appId = bundleName;
+        Reporter::GetInstance()->GetBehaviourReporter()->UDMFReport(msg);
+        return E_ERROR;
+    }
+    
+    msg.appId = bundleName;
+    bool isDelayLoad = dataLoadCallback_.ComputeIfPresent(key, [&unifiedData](auto &key, BlockDelayData &val) {
+        blockDelayDataCache_.ComputeIfAbsent(query.key, [&query](auto &key) {
+            auto blockData = std::make_shared<BlockData<std::optional<UnifiedData>>>(WAIT_TIME);
+            return BlockDelayData { blockData, query.tokenId };
+        });
+        auto data = val.blockData->GetValue();
+        if (data != std::nullopt) {
+            unifiedData = *data;
+            return false;
+        }
+        return true;
+    });
+    if (!isDelayLoad) {
         res = RetrieveData(query, unifiedData);
     }
-    TransferToEntriesIfNeed(query, unifiedData);
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
     for (const auto &record : unifiedData.GetRecords()) {
@@ -259,6 +274,7 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         privilegeCache_.erase(query.key);
     }
     PreProcessUtils::SetRemoteData(unifiedData);
+    TransferToEntriesIfNeed(query, unifiedData);
     return E_OK;
 }
 
@@ -1184,6 +1200,12 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 
 int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
 {
+    bool isDataLoading = delayDataCallback_.Contains(key);
+    if (!isDataLoading && !blockDelayDataCache_.Contains(key)) {
+        ZLOGE("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+
     CustomOption option;
     option.intention = UD_INTENTION_DRAG;
     option.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
@@ -1196,13 +1218,9 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGW("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
     }
 
-    auto it = delayDataCallback_.Find(key);
-    if (!it.first) {
-        ZLOGE("DelayData callback no exist, key:%{public}s", key.c_str());
-        return E_ERROR;
-    }
     QueryOption query;
-    query.tokenId = it.second.tokenId;
+    query.tokenId = isDataLoading ? delayDataCallback_.Find(key).second.tokenId :
+        blockDelayDataCache_.Find(key).second.tokenId;
     query.key = key;
     if (option.tokenId != query.tokenId && !IsPermissionInCache(query)) {
         ZLOGE("No permission");
@@ -1218,9 +1236,13 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         privilegeCache_.erase(key);
     }
     PreProcessUtils::SetRemoteData(unifiedData);
-
     TransferToEntriesIfNeed(query, unifiedData);
-    return HandleDelayDataCallback(it.second, unifiedData, key);
+
+    if (!isDataLoading) {
+        blockDelayDataCache_.Find(key).second.blockData->SetValue(unifiedData);
+        return E_OK;
+    }
+    return HandleDelayDataCallback(delayDataCallback_.Find(key).second, unifiedData, key);
 }
 
 int32_t UdmfServiceImpl::HandleDelayDataCallback(DelayGetDataInfo &delayGetDataInfo, UnifiedData &unifiedData,

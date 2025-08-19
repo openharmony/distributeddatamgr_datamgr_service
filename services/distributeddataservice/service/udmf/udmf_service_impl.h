@@ -22,6 +22,7 @@
 #include "metadata/store_meta_data.h"
 #include "checker_manager.h"
 #include "udmf_notifier_proxy.h"
+#include "block_data.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -109,6 +110,12 @@ private:
     std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_;
     ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_;
     ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_;
+
+    struct BlockDelayData {
+        std::shared_ptr<BlockData<std::optional<UnifiedData>>> blockData;
+        uint32_t tokenId;
+    };
+    ConcurrentMap<std::string, BlockDelayData> blockDelayDataCache_;
 };
 } // namespace UDMF
 } // namespace OHOS
