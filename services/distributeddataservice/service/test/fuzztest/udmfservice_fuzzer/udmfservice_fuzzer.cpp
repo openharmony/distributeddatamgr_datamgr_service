@@ -387,7 +387,10 @@ void OnGetAppShareOptionFuzz(FuzzedDataProvider &provider)
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
     MessageParcel requestUpdate;
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
+    requestUpdate.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    requestUpdate.RewindRead(0);
     CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
     std::string intention = UD_INTENTION_MAP.at(option.intention);
     ITypesUtil::Marshal(requestUpdate, intention);
@@ -658,16 +661,49 @@ void StoreSyncFuzz(FuzzedDataProvider &provider)
 void SetAppShareOptionFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    std::string intention = provider.ConsumeRandomLengthString();
-    int32_t shareOption = provider.ConsumeIntegral<uint32_t>();
-    udmfServiceImpl->SetAppShareOption(intention, shareOption);
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
+    MessageParcel requestUpdate;
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
+    requestUpdate.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    requestUpdate.RewindRead(0);
+    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
+    std::string intention = UD_INTENTION_MAP.at(option.intention);
+    ITypesUtil::Marshal(requestUpdate, intention);
+
+    MessageParcel replyUpdate;
+    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_APP_SHARE_OPTION),
+        requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+    executor = nullptr;
 }
 
 void RemoveAppShareOptionFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    std::string intention = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->RemoveAppShareOption(intention);
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
+    MessageParcel requestUpdate;
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
+    requestUpdate.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    requestUpdate.RewindRead(0);
+    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
+    std::string intention = UD_INTENTION_MAP.at(option.intention);
+    ITypesUtil::Marshal(requestUpdate, intention);
+
+    MessageParcel replyUpdate;
+    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::REMOVE_APP_SHARE_OPTION),
+        requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+    executor = nullptr;
 }
 
 void QueryDataCommonFuzz(FuzzedDataProvider &provider)
@@ -698,8 +734,24 @@ void QueryDataCommonFuzz(FuzzedDataProvider &provider)
 void ClearAsynProcessByKeyFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
+    MessageParcel requestUpdate;
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
+    requestUpdate.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    requestUpdate.RewindRead(0);
     std::string businessUdKey = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->ClearAsynProcessByKey(businessUdKey);
+    ITypesUtil::Marshal(requestUpdate, businessUdKey);
+
+    MessageParcel replyUpdate;
+    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::CLEAR_ASYN_PROCESS_BY_KEY),
+        requestUpdate, replyUpdate);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+    executor = nullptr;
 }
 
 void TransferToEntriesIfNeedFuzz(FuzzedDataProvider &provider)
