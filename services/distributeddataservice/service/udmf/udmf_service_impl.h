@@ -16,13 +16,13 @@
 #ifndef UDMF_SERVICE_IMPL_H
 #define UDMF_SERVICE_IMPL_H
 
-#include "store_cache.h"
-#include "udmf_service_stub.h"
+#include "block_data.h"
+#include "checker_manager.h"
 #include "kv_store_delegate_manager.h"
 #include "metadata/store_meta_data.h"
-#include "checker_manager.h"
+#include "store_cache.h"
 #include "udmf_notifier_proxy.h"
-#include "block_data.h"
+#include "udmf_service_stub.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -93,6 +93,7 @@ private:
     std::vector<std::string> ProcessResult(const std::map<std::string, int32_t> &results);
     DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
     int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
+    bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res);
 
     class Factory {
     public:
@@ -114,7 +115,7 @@ private:
 
     struct BlockDelayData {
         uint32_t tokenId {0};
-        std::shared_ptr<BlockData<std::optional<UnifiedData>>> blockData;
+        std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
     };
     ConcurrentMap<std::string, BlockDelayData> blockDelayDataCache_ {};
 };

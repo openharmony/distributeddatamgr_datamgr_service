@@ -67,7 +67,7 @@ constexpr const char *DEVICE_PHONE_TAG = "phone";
 constexpr const char *DEVICE_DEFAULT_TAG = "default";
 constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
 constexpr uint32_t FOUNDATION_UID = 5523;
-constexpr uint32_t WAIT_TIME = 1;
+constexpr uint32_t WAIT_TIME = 800;
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -176,23 +176,13 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
         msg.appId = "unknown";
         Reporter::GetInstance()->GetBehaviourReporter()->UDMFReport(msg);
+        ZLOGE("Failed to get bundle name by token, token:%{public}d", query.tokenId);
         return E_ERROR;
     }
-    
     msg.appId = bundleName;
-    bool isDelayLoad = dataLoadCallback_.ComputeIfPresent(key, [&unifiedData](auto &key, BlockDelayData &val) {
-        blockDelayDataCache_.ComputeIfAbsent(query.key, [&query](auto &key) {
-            auto blockData = std::make_shared<BlockData<std::optional<UnifiedData>>>(WAIT_TIME);
-            return BlockDelayData { blockData, query.tokenId };
-        });
-        auto data = val.blockData->GetValue();
-        if (data != std::nullopt) {
-            unifiedData = *data;
-            return false;
-        }
-        return true;
-    });
-    if (!isDelayLoad) {
+
+    bool handledByDelay = HandleDelayLoad(query, unifiedData, res);
+    if (!handledByDelay) {
         res = RetrieveData(query, unifiedData);
     }
     auto errFind = ERROR_MAP.find(res);
@@ -205,7 +195,34 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     msg.dataType = types;
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->GetBehaviourReporter()->UDMFReport(msg);
+    if (res != E_OK) {
+        ZLOGE("GetData failed, res:%{public}d, key:%{public}s", res, query.key.c_str());
+    }
     return res;
+}
+
+bool UdmfServiceImpl::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
+{
+    return dataLoadCallback_.ComputeIfPresent(query.key, [&](const auto &key, auto &callback) {
+        std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
+        auto [found, cache] = blockDelayDataCache_.Find(key);
+        if (!found) {
+            blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
+            blockDelayDataCache_.Insert(key, BlockDelayData{query.tokenId, blockData});
+            callback->HandleDelayObserver(key, DataLoadInfo());
+        } else {
+            blockData = cache.blockData;
+        }
+        ZLOGI("Start waiting for data, key:%{public}s", key.c_str());
+        auto dataOpt = blockData->GetValue();
+        if (dataOpt.has_value()) {
+            unifiedData = *dataOpt;
+            blockDelayDataCache_.Erase(key);
+            return false;
+        }
+        res = E_NOT_FOUND;
+        return true;
+    });
 }
 
 bool UdmfServiceImpl::CheckDragParams(UnifiedKey &key, const QueryOption &query)
@@ -262,11 +279,9 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
             return E_NO_PERMISSION;
         }
     }
-    if (!IsReadAndKeep(runtime->privileges, query)) {
-        if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
-            ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
-            return E_DB_ERROR;
-        }
+    if (!IsReadAndKeep(runtime->privileges, query) && LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
+        ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
+        return E_DB_ERROR;
     }
 
     {
@@ -1214,8 +1229,10 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 
 int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
 {
-    bool isDataLoading = delayDataCallback_.Contains(key);
-    if (!isDataLoading && !blockDelayDataCache_.Contains(key)) {
+    auto delayIt = delayDataCallback_.Find(key);
+    auto blockIt = blockDelayDataCache_.Find(key);
+    bool isDataLoading = (delayIt.first);
+    if (!isDataLoading && !blockIt.first) {
         ZLOGE("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
         return E_ERROR;
     }
@@ -1233,8 +1250,7 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     }
 
     QueryOption query;
-    query.tokenId = isDataLoading ? delayDataCallback_.Find(key).second.tokenId :
-        blockDelayDataCache_.Find(key).second.tokenId;
+    query.tokenId = isDataLoading ? delayIt.second.tokenId : blockIt.second.tokenId;
     query.key = key;
     if (option.tokenId != query.tokenId && !IsPermissionInCache(query)) {
         ZLOGE("No permission");
@@ -1253,10 +1269,10 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     TransferToEntriesIfNeed(query, unifiedData);
 
     if (!isDataLoading) {
-        blockDelayDataCache_.Find(key).second.blockData->SetValue(unifiedData);
+        blockIt.second.blockData->SetValue(unifiedData);
         return E_OK;
     }
-    return HandleDelayDataCallback(delayDataCallback_.Find(key).second, unifiedData, key);
+    return HandleDelayDataCallback(delayIt.second, unifiedData, key);
 }
 
 int32_t UdmfServiceImpl::HandleDelayDataCallback(DelayGetDataInfo &delayGetDataInfo, UnifiedData &unifiedData,
