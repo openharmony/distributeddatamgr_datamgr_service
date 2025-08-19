@@ -108,15 +108,15 @@ private:
     std::shared_ptr<ExecutorPool> executors_;
 
     std::mutex mutex_;
-    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_;
-    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_;
-    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_;
+    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_ {};
+    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
+    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_ {};
 
     struct BlockDelayData {
+        uint32_t tokenId {0};
         std::shared_ptr<BlockData<std::optional<UnifiedData>>> blockData;
-        uint32_t tokenId;
     };
-    ConcurrentMap<std::string, BlockDelayData> blockDelayDataCache_;
+    ConcurrentMap<std::string, BlockDelayData> blockDelayDataCache_ {};
 };
 } // namespace UDMF
 } // namespace OHOS
