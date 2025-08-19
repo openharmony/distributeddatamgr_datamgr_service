@@ -34,7 +34,7 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
 {
     if (Account::GetInstance()->IsDeactivating(atoi(metaData.user.c_str()))) {
         ZLOGW("user %{public}s is deactivating, storeName: %{public}s", metaData.user.c_str(),
-              metaData.GetStoreAlias().c_str());
+              StringUtils::GeneralAnonymous(metaData.GetStoreAlias()).c_str());
         return nullptr;
     }
     std::shared_ptr<DBDelegate> store;
@@ -63,7 +63,7 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
     if (success) {
         return store;
     }
-    ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
+    ZLOGE("creator failed, storeName: %{public}s", StringUtils::GeneralAnonymous(metaData.GetStoreAlias()).c_str());
     auto eraseFunc = [&metaData]
         (auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
         stores.erase(metaData.storeId);

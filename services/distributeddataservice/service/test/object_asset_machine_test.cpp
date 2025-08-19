@@ -53,7 +53,7 @@ void ObjectAssetMachineTest::SetUpTestCase(void)
 
 void ObjectAssetMachineTest::SetUp()
 {
-    uri_ = "file:://com.huawei.hmos.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
+    uri_ = "file:://com.examples.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
     Asset asset{
         .name = "test_name",
         .uri = uri_,

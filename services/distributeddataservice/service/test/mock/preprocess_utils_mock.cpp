@@ -188,8 +188,10 @@ bool PreProcessUtils::GetSpecificBundleName(const std::string &bundleName, int32
     return true;
 }
 
-bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &bundleName)
+bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
+    std::string &bundleName)
 {
+    specificBundleName = "specificBundleName";
     bundleName = "bundleName";
     return true;
 }

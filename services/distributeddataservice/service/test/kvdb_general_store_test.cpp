@@ -419,6 +419,7 @@ HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
     EXPECT_NE(ret.first, GeneralError::E_OK);
     auto status = store->Close();
     EXPECT_EQ(status, GeneralError::E_OK);
+    delete store;
 }
 
 /**
@@ -533,7 +534,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSyncCompleteCB, TestSize.Level0)
 * @tc.desc: Test the scenario where the QueryUsers return false in the CloudSync function.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
 {
@@ -552,6 +553,8 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(false)));
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::DB_ERROR);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**
@@ -559,7 +562,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
 * @tc.desc: CloudSync test the functionality of different branches.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
 {
@@ -586,6 +589,40 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
     cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_CLOUD_FORCE_PUSH;
     ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::OK);
+    store->delegate_ = nullptr;
+    delete store;
+}
+
+/**
+* @tc.name: CloudSync003
+* @tc.desc: Test the scenario where the QueryUsers return true in the CloudSync function.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(KVDBGeneralStoreTest, CloudSync003, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    store->SetEqualIdentifier(bundleName, storeName);
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    std::vector<std::string> devices = { "device1", "device2" };
+    auto asyncs = [](const GenDetails &result) {};
+    store->storeInfo_.user = 0;
+    auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
+    store->SetEqualIdentifier(bundleName, storeName);
+    std::string prepareTraceId;
+    std::vector<int> users = {0, 1};
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
+        .Times(1)
+        .WillOnce(DoAll(
+            SetArgReferee<0>(users),
+            Return(true)));
+    auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
+    EXPECT_EQ(ret, DBStatus::OK);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**
@@ -613,7 +650,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetIdentifierParams, TestSize.Level0)
 * @tc.desc: Sync test the functionality of 3 < syncMode < 7 branches.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(KVDBGeneralStoreTest, Sync002, TestSize.Level0)
 {
@@ -639,6 +676,8 @@ HWTEST_F(KVDBGeneralStoreTest, Sync002, TestSize.Level0)
     store->SetConfig(storeConfig);
     ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret.first, GeneralError::E_OK);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**
@@ -646,7 +685,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync002, TestSize.Level0)
 * @tc.desc: Sync test the functionality of different branches.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(KVDBGeneralStoreTest, Sync003, TestSize.Level0)
 {
@@ -689,6 +728,8 @@ HWTEST_F(KVDBGeneralStoreTest, Sync003, TestSize.Level0)
     syncParam.mode = mixMode;
     ret = store->Sync(devices, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret.first, GeneralError::E_INVALID_ARGS);
+    store->delegate_ = nullptr;
+    delete store;
 }
 
 /**

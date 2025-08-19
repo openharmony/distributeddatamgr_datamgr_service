@@ -137,6 +137,24 @@ HWTEST_F(RdbGeneralStoreTest, BindSnapshots002, TestSize.Level1)
 }
 
 /**
+@tc.name: BindSnapshots003
+@tc.desc: RdbGeneralStore BindSnapshots not nullptr test
+@tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, BindSnapshots003, TestSize.Level1)
+{
+    DistributedData::StoreMetaData meta;
+    meta = metaData_;
+    meta.isEncrypt = true;
+    auto store = std::make_shared<RdbGeneralStore>(meta);
+    ASSERT_NE(store, nullptr);
+    BindAssets bindAssets = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
+    store->snapshots_ = bindAssets;
+    auto result = store->BindSnapshots(bindAssets);
+    EXPECT_EQ(result, GeneralError::E_OK);
+}
+
+/**
 * @tc.name: Bind001
 * @tc.desc: RdbGeneralStore Bind bindInfo test
 * @tc.type: FUNC

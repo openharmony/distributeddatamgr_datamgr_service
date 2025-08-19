@@ -180,7 +180,7 @@ HWTEST_F(UdmfServiceImplTest, Sync001, TestSize.Level1)
     std::vector<std::string> devices = {"device1"};
     UdmfServiceImpl udmfServiceImpl;
     int32_t ret = udmfServiceImpl.Sync(query, devices);
-    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+    EXPECT_EQ(ret, E_NO_PERMISSION);
 }
 
 /**
@@ -415,7 +415,7 @@ HWTEST_F(UdmfServiceImplTest, SyncTest001, TestSize.Level0)
     std::vector<std::string> devices = {"remote_device"};
 
     auto ret = udmfServiceImpl.Sync(query, devices);
-    EXPECT_EQ(ret, UDMF::E_DB_ERROR);
+    EXPECT_EQ(ret, UDMF::E_NO_PERMISSION);
 }
 
 /**

@@ -129,9 +129,10 @@ void ConnectManager::OnDestory()
 {
 }
 
-int32_t ConnectManager::ApplyConnect(__attribute__((unused)) const std::string &networkId, ConnectTask task)
+int32_t ConnectManager::ApplyConnect(__attribute__((unused)) const std::string &networkId,
+    __attribute__((unused)) ApplyTask applyTask, ConnectTask connectTask)
 {
-    task();
+    connectTask();
     return 0;
 }
 } // OHOS::AppDistributedKv

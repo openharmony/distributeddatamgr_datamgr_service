@@ -1155,6 +1155,10 @@ HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level0)
     uint32_t seqNum = 10;
     auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+
+    CloudData::Details details{};
+    uint32_t tokenId = 0;
+    cloudServiceImpl_->OnAsyncComplete(tokenId, seqNum, std::move(details));
 }
 
 /**
@@ -2801,6 +2805,7 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level1)
 */
 HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level1)
 {
+    ZLOGI("CloudServiceImplTest UpdateSchemaFromHap004 start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudInfo::AppInfo exampleAppInfo;
     exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;

@@ -41,7 +41,7 @@ protected:
 
 void ObjectSnapshotTest::SetUp()
 {
-    uri_ = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
+    uri_ = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
     Asset asset{
         .name = "test_name",
         .uri = uri_,
@@ -85,7 +85,7 @@ HWTEST_F(ObjectSnapshotTest, UploadTest001, TestSize.Level0)
     auto snapshot = std::make_shared<ObjectSnapshot>();
     Asset asset{
         .name = "test_name",
-        .uri = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
+        .uri = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
         .modifyTime = "modifyTime1",
         .size = "size1",
         .hash = "modifyTime1_size1",
@@ -124,7 +124,7 @@ HWTEST_F(ObjectSnapshotTest, DownloadTest001, TestSize.Level0)
     auto snapshot = std::make_shared<ObjectSnapshot>();
     Asset asset{
         .name = "test_name",
-        .uri = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
+        .uri = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
         .modifyTime = "modifyTime1",
         .size = "size1",
         .hash = "modifyTime1_size1",
@@ -163,7 +163,7 @@ HWTEST_F(ObjectSnapshotTest, GetAssetStatusTest001, TestSize.Level0)
     auto snapshot = std::make_shared<ObjectSnapshot>();
     Asset asset{
         .name = "test_name",
-        .uri = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
+        .uri = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
         .modifyTime = "modifyTime1",
         .size = "size1",
         .hash = "modifyTime1_size1",
@@ -202,7 +202,7 @@ HWTEST_F(ObjectSnapshotTest, UploadedTest001, TestSize.Level0)
     auto snapshot = std::make_shared<ObjectSnapshot>();
     Asset asset{
         .name = "test_name",
-        .uri = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
+        .uri = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
         .modifyTime = "modifyTime1",
         .size = "size1",
         .hash = "modifyTime1_size1",
@@ -241,7 +241,7 @@ HWTEST_F(ObjectSnapshotTest, DownloadedTest001, TestSize.Level0)
     auto snapshot = std::make_shared<ObjectSnapshot>();
     Asset asset{
         .name = "test_name",
-        .uri = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
+        .uri = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
         .modifyTime = "modifyTime1",
         .size = "size1",
         .hash = "modifyTime1_size1",
@@ -280,7 +280,7 @@ HWTEST_F(ObjectSnapshotTest, TransferredTest001, TestSize.Level0)
     auto snapshot = std::make_shared<ObjectSnapshot>();
     Asset asset{
         .name = "test_name",
-        .uri = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
+        .uri = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
         .modifyTime = "modifyTime1",
         .size = "size1",
         .hash = "modifyTime1_size1",
@@ -320,7 +320,7 @@ HWTEST_F(ObjectSnapshotTest, OnDataChangedTest001, TestSize.Level0)
     std::string deviceId = "object_snapshot_test_1";
     Asset asset{
         .name = "test_name",
-        .uri = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
+        .uri = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
         .modifyTime = "modifyTime1",
         .size = "size1",
         .hash = "modifyTime1_size1",
@@ -360,7 +360,7 @@ HWTEST_F(ObjectSnapshotTest, BindAsset001, TestSize.Level0)
     auto snapshot = std::make_shared<ObjectSnapshot>();
     Asset asset{
         .name = "test_name",
-        .uri = "file:://com.example.hmos.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
+        .uri = "file:://com.example.notepad/data/storage/el2/distributedfiles/dir/asset2.jpg",
         .modifyTime = "modifyTime1",
         .size = "size1",
         .hash = "modifyTime1_size1",

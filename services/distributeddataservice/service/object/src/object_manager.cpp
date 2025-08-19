@@ -1455,6 +1455,10 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
         return true;
     });
 
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        ZLOGE("TokenType is not TOKEN_HAP, token:0x%{public}x, bundleName:%{public}s", tokenId, appId.c_str());
+        return GeneralError::E_ERROR;
+    }
     HapTokenInfo tokenInfo;
     auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (status != RET_SUCCESS) {

@@ -23,7 +23,7 @@
 #include "db_delegate.h"
 #include "extension_ability_info.h"
 #include "metadata/store_meta_data.h"
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 class DataShareDbConfig {

@@ -20,7 +20,7 @@
 #include "general/load_config_data_info_strategy.h"
 #include "general/load_config_from_bundle_info_strategy.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "log_debug.h"
 
 namespace OHOS::DataShare {

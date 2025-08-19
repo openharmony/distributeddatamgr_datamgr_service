@@ -117,6 +117,10 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
 int32_t ObjectServiceImpl::IsContinue(bool &result)
 {
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    if (Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId) != Security::AccessToken::TOKEN_HAP) {
+        ZLOGE("TokenType is not TOKEN_HAP, tokenId: %{public}u", tokenId);
+        return OBJECT_INNER_ERROR;
+    }
     Security::AccessToken::HapTokenInfo tokenInfo;
     auto status = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (status != 0) {

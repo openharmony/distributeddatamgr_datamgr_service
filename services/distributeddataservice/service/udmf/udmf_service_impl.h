@@ -92,6 +92,7 @@ private:
         const UnifiedData &unifiedData);
     std::vector<std::string> ProcessResult(const std::map<std::string, int32_t> &results);
     DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
+    int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
 
     class Factory {
     public:
@@ -103,7 +104,7 @@ private:
     };
     static Factory factory_;
     mutable std::recursive_mutex cacheMutex_;
-    std::map<std::string, Privilege> privilegeCache_;
+    std::map<std::string, Privilege> privilegeCache_ {};
     std::shared_ptr<ExecutorPool> executors_;
 
     std::mutex mutex_;

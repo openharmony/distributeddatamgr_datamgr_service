@@ -52,21 +52,24 @@ public:
 
     API_EXPORT std::pair<int32_t, Store> GetDBStore(const StoreMetaData &meta, const Watchers &watchers);
 
-    API_EXPORT Stores GetStoresIfPresent(uint32_t tokenId, const std::string &path = "");
+    API_EXPORT Stores GetStoresIfPresent(
+        uint32_t tokenId, const std::string &path = "", const std::string &storeId = "");
 
-    API_EXPORT void CloseStore(uint32_t tokenId, const std::string &path = "");
-
+    API_EXPORT void CloseStore(uint32_t tokenId, const std::string &path = "", const std::string &storeId = "");
+ 
     API_EXPORT void CloseStore(const Filter &filter);
-
-    API_EXPORT void SetObserver(uint32_t tokenId, const Watchers &watchers, const std::string &path);
-
-    API_EXPORT void Enable(uint32_t tokenId, const std::string &path = "");
-
-    API_EXPORT void Disable(uint32_t tokenId, const std::string &path = "");
+ 
+    API_EXPORT void SetObserver(
+        uint32_t tokenId, const Watchers &watchers, const std::string &path, const std::string &storeId = "");
+ 
+    API_EXPORT void Enable(uint32_t tokenId, const std::string &path = "", const std::string &storeId = "");
+ 
+    API_EXPORT void Disable(uint32_t tokenId, const std::string &path = "", const std::string &storeId = "");
 
 private:
     AutoCache();
     ~AutoCache();
+    std::string GenerateKey(const std::string &path, const std::string &storeId) const;
     void GarbageCollect(bool isForce);
     void StartTimer();
     struct Delegate : public GeneralWatcher {

@@ -64,7 +64,7 @@ ohos_fuzztest("DataShareServiceImplFuzzTest") {
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
     "${data_service_path}/service/data_share/common/seq_strategy.cpp",
-    "${data_service_path}/service/data_share/common/uri_utils.cpp",
+    "${data_service_path}/service/data_share/common/utils.cpp",
     "${data_service_path}/service/data_share/data/published_data.cpp",
     "${data_service_path}/service/data_share/data/resultset_json_formatter.cpp",
     "${data_service_path}/service/data_share/data/template_data.cpp",

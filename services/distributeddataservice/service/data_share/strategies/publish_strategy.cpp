@@ -22,7 +22,7 @@
 #include "general/permission_strategy.h"
 #include "log_print.h"
 #include "published_data.h"
-#include "uri_utils.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 int32_t PublishStrategy::Execute(std::shared_ptr<Context> context, const PublishedDataItem &item)

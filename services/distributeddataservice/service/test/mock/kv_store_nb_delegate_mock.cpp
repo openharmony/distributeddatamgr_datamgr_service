@@ -328,6 +328,12 @@ DBStatus KvStoreNbDelegateMock::Sync(const DeviceSyncOption &option, const Devic
     return DBStatus::OK;
 }
 
+DBStatus KvStoreNbDelegateMock::Sync(const DeviceSyncOption &option,
+    const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete)
+{
+    return DBStatus::OK;
+}
+
 DBStatus KvStoreNbDelegateMock::CancelSync(uint32_t syncId)
 {
     return DBStatus::OK;

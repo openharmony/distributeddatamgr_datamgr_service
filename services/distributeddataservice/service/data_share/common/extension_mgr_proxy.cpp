@@ -23,7 +23,7 @@
 #include "log_print.h"
 #include "system_ability_definition.h"
 #include "want.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "datashare_errno.h"
 
 namespace OHOS::DataShare {

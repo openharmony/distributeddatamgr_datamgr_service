@@ -205,7 +205,7 @@ protected:
     uint64_t sequenceId_2 = 20;
     uint64_t sequenceId_3 = 30;
     std::string userId_ = "100";
-    std::string bundleName_ = "com.examples.hmos.notepad";
+    std::string bundleName_ = "com.examples.notepad";
     OHOS::ObjectStore::AssetBindInfo assetBindInfo_;
     pid_t pid_ = 10;
     uint32_t tokenId_ = 100;
@@ -215,7 +215,7 @@ protected:
 
 void ObjectManagerTest::SetUp()
 {
-    uri_ = "file:://com.examples.hmos.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
+    uri_ = "file:://com.examples.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
     Asset asset{
         .name = "test_name",
         .uri = uri_,
@@ -1298,14 +1298,14 @@ HWTEST_F(ObjectManagerTest, NotifyAssetsRecvProgress001, TestSize.Level0)
     auto &manager = ObjectStoreManager::GetInstance();
     std::string objectKey = bundleName_ + sessionId_;
     std::string errProgress = "errProgress";
-    int32_t progress = 100;
-    ASSERT_EQ(manager.assetsRecvProgress_.Find(objectKey).first, true);
+    int32_t progress = 99;
     ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager.processCallbacks_.Find(tokenId_).second;
-    manager.NotifyAssetsRecvProgress(errProgress, progress);
+    manager.NotifyAssetsRecvProgress(objectKey, progress);
+    ASSERT_EQ(manager.assetsRecvProgress_.Find(objectKey).first, true);
     manager.assetsRecvProgress_.Clear();
     manager.assetsRecvProgress_.Insert(objectKey, progress);
-    progressCallbackInfo.observers_.clear();
     manager.NotifyAssetsRecvProgress(errProgress, progress);
+    progressCallbackInfo.observers_.clear();
 }
 
 /**

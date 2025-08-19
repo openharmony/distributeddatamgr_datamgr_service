@@ -23,7 +23,7 @@
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "system_ability_definition.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "ipc_skeleton.h"
 #include "hiview_fault_adapter.h"
 

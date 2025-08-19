@@ -201,6 +201,8 @@ private:
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static void Report(const std::string &faultType, DistributedDataDfx::Fault errCode, const std::string &bundleName,
         const std::string &appendix);
+    QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
+                                         const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
 
     static std::pair<int32_t, SchemaMeta> GetSchemaFromHap(const HapInfo &hapInfo);
     static int32_t UpdateSchemaFromHap(const HapInfo &hapInfo);
@@ -209,8 +211,6 @@ private:
     static void UpdateE2eeEnable(const std::string &schemaKey, bool newE2eeEnable, const std::string &bundleName);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
-    QueryLastResults AssembleLastResults(const std::vector<Database> &databases,
-                                         const std::map<std::string, CloudLastSyncInfo> &lastSyncInfos);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

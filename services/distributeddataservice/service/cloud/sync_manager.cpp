@@ -763,10 +763,7 @@ bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
     if (queryKey.accountId.empty()) {
         return false;
     }
-    if (std::find(kvApps_.begin(), kvApps_.end(), queryKey.bundleName) != kvApps_.end()) {
-        return false;
-    }
-    return true;
+    return kvApps_.find(queryKey.bundleName) == kvApps_.end();
 }
 
 std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(
@@ -976,9 +973,6 @@ void SyncManager::BatchReport(int32_t userId, const TraceIds &traceIds, SyncStag
 
 std::string SyncManager::GetPath(const StoreMetaData &meta)
 {
-    if (!meta.dataDir.empty()) {
-        return meta.dataDir;
-    }
     StoreMetaMapping mapping(meta);
     MetaDataManager::GetInstance().LoadMeta(mapping.GetKey(), mapping, true);
     return mapping.cloudPath.empty() ? mapping.dataDir : mapping.cloudPath;
