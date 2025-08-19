@@ -35,7 +35,17 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
 
-  sources = [ "softbusadapter_fuzzer.cpp" ]
+  sources = [
+    "${data_service_path}/adapter/communicator/src/communicator_context.cpp",
+    "${data_service_path}/adapter/communicator/src/device_manager_adapter.cpp",
+    "${data_service_path}/adapter/communicator/src/softbus_client.cpp",
+    "softbusadapter_fuzzer.cpp",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
