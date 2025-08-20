@@ -756,7 +756,7 @@ void KVDBServiceImpl::UpdateSecretKeyMeta(const StoreMetaData &metaData, const s
     MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), oldSecretKey, true);
     CryptoManager::CryptoParams oldDecryptParams = { .area = oldSecretKey.area, .userId = metaData.user,
         .nonce = oldSecretKey.nonce };
-    auto decryptPwd = CryptoManager::GetInstance().Decrypt(oldSecretKey.skey, oldDecryptParams);
+    auto decryptPwd = CryptoManager::GetInstance().Decrypt(oldSecretKey.sKey, oldDecryptParams);
     std::string oldPwd = std::string(decryptPwd.begin(), decryptPwd.end());
     std::string pwd = std::string(password.begin(), password.end());
 
