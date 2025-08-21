@@ -107,20 +107,20 @@ public:
     static std::string GetPath(const StoreMetaData &meta);
     class NetworkRecoveryManager {
     public:
-        NetworkRecoveryManager(SyncManager &syncManager) : syncManager_(syncManager)
+        explicit NetworkRecoveryManager(SyncManager &syncManager) : syncManager_(syncManager)
         {
         }
         void OnNetworkDisconnected();
         void OnNetworkConnected();
-        void RecordSyncApps(const std::string &bundleName);
+        void RecordSyncApps(const int32_t user, const std::string &bundleName);
 
     private:
-        std::unordered_set<std::string> ExtractBundleNames(
-            const std::map<std::string, DistributedData::CloudInfo::AppInfo> apps);
+        void CompensateSync(bool timeout);
         struct NetWorkEvent {
             std::chrono::system_clock::time_point disconnectTime;
-            std::unordered_set<std::string> syncApps;
+            std::map<int32_t, std::unordered_set<std::string>> syncApps;
         };
+        std::mutex syncAppsMutex_;
         std::unique_ptr<NetWorkEvent> currentEvent_;
         SyncManager &syncManager_;
     };

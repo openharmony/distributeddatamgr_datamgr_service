@@ -365,8 +365,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         UpdateStartSyncInfo(cloudSyncInfos);
         auto code = IsValid(info, cloud);
         if (code != E_OK) {
-            if (code == E_NETWORK_ERROR) {
-                networkRecoveryManager_.RecordSyncApps(info.bundleName_);
+            if (code == E_NETWORK_ERROR && retry) {
+                networkRecoveryManager_.RecordSyncApps(info.user_, info.bundleName_);
             }
             BatchUpdateFinishState(cloudSyncInfos, code);
             BatchReport(info.user_, traceIds, SyncStage::END, code, "!IsValid");
@@ -1098,53 +1098,61 @@ void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
 
 void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
 {
-    ZLOGI("network connected.");
+    ZLOGI("network connected start.");
     if (!currentEvent_) {
-        ZLOGE("network connected, but no sync event.");
+        ZLOGE("network connected, but currentEvent_ is not initialized.");
         return;
     }
     auto now = std::chrono::system_clock::now();
     auto duration = now - currentEvent_->disconnectTime;
     auto hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
     bool timeout = (hours > TIMEOUT_TIME);
+    CompensateSync(timeout);
+    currentEvent_.reset();
+    ZLOGI("network connected end, sync hours:%{public}ld", hours);
+}
 
+void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, const std::string &bundleName)
+{
+    if (currentEvent_) {
+        ZLOGI("record sync user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
+        std::lock_guard<std::mutex> lock(syncAppsMutex_);
+        currentEvent_->syncApps[user].insert(bundleName);
+    }
+}
+void SyncManager::NetworkRecoveryManager::CompensateSync(bool timeout)
+{
     std::vector<int32_t> users;
     if (!Account::GetInstance()->QueryForegroundUsers(users) || users.empty()) {
         ZLOGE("no foreground user, skip sync.");
         return;
     }
-    auto &syncManager = syncManager_;
-    for (auto user : users) {
-        CloudInfo cloud;
-        cloud.user = user;
-        if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
-            continue;
+    if (timeout) {
+        for (auto user : users) {
+            CloudInfo cloud;
+            cloud.user = user;
+            if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
+                ZLOGE("load cloud info fail, user:%{public}d", user);
+                continue;
+            }
+            for (const auto &app : cloud.apps) {
+                ZLOGI("sync start bundleName:%{public}s, user:%{public}d", app.second.bundleName.c_str(), user);
+                syncManager_.DoCloudSync(SyncInfo(user, app.second.bundleName));
+            }
         }
-        ZLOGI("network connected, sync hours:%{public}ld", hours);
-        const auto &apps = timeout ? ExtractBundleNames(cloud.apps) : currentEvent_->syncApps;
-        for (const auto &app : apps) {
-            ZLOGI("sync app:%{public}s, user:%{public}d", app.c_str(), user);
-            SyncInfo info(user, app);
-            syncManager.DoCloudSync(std::move(info));
+    } else {
+        std::lock_guard<std::mutex> lock(syncAppsMutex_);
+        for (int32_t user : users) {
+            auto item = currentEvent_->syncApps.find(user);
+            if (item == currentEvent_->syncApps.end()) {
+                continue;
+            }
+            const auto &apps = item->second;
+            for (const auto &app : apps) {
+                ZLOGI("sync start bundleName:%{public}s, user:%{public}d", app.c_str(), user);
+                syncManager_.DoCloudSync(SyncInfo(user, app));
+            }
         }
     }
-    currentEvent_.reset();
-}
-
-void SyncManager::NetworkRecoveryManager::RecordSyncApps(const std::string &bundleName)
-{
-    if (currentEvent_) {
-        ZLOGI("record sync bundleName:%{public}s", bundleName.c_str());
-        currentEvent_->syncApps.insert(bundleName);
-    }
-}
-std::unordered_set<std::string> SyncManager::NetworkRecoveryManager::ExtractBundleNames(
-    const std::map<std::string, CloudInfo::AppInfo> apps)
-{
-    std::unordered_set<std::string> bundleNames;
-    for (auto &app : apps) {
-        bundleNames.insert(app.first);
-    }
-    return bundleNames;
 }
 } // namespace OHOS::CloudData
