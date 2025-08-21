@@ -1113,7 +1113,7 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
         ZLOGE("no foreground user, skip sync.");
         return;
     }
-    auto& syncManager = syncManager_;
+    auto &syncManager = syncManager_;
     for (auto user : users) {
         CloudInfo cloud;
         cloud.user = user;
@@ -1121,8 +1121,8 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
             continue;
         }
         ZLOGI("network connected, sync hours:%{public}ld", hours);
-        const auto& apps = timeout ? ExtractBundleNames(cloud.apps) : currentEvent_->syncApps;
-        for (const auto& app : apps) {
+        const auto &apps = timeout ? ExtractBundleNames(cloud.apps) : currentEvent_->syncApps;
+        for (const auto &app : apps) {
             ZLOGI("sync app:%{public}s, user:%{public}d", app.c_str(), user);
             SyncInfo info(user, app);
             syncManager.DoCloudSync(std::move(info));
@@ -1138,7 +1138,8 @@ void SyncManager::NetworkRecoveryManager::RecordSyncApps(const std::string &bund
         currentEvent_->syncApps.insert(bundleName);
     }
 }
-std::unordered_set<std::string> SyncManager::NetworkRecoveryManager::ExtractBundleNames(const std::map<std::string, CloudInfo::AppInfo> apps)
+std::unordered_set<std::string> SyncManager::NetworkRecoveryManager::ExtractBundleNames(
+    const std::map<std::string, CloudInfo::AppInfo> apps)
 {
     std::unordered_set<std::string> bundleNames;
     for (auto &app : apps) {
