@@ -1120,6 +1120,7 @@ void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, con
         currentEvent_->syncApps[user].insert(bundleName);
     }
 }
+
 void SyncManager::NetworkRecoveryManager::CompensateSync(bool timeout)
 {
     std::vector<int32_t> users;

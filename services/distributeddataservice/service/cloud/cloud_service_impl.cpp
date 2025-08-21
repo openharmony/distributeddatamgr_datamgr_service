@@ -801,11 +801,9 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
     if (users.empty()) {
         return SUCCESS;
     }
-
     if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         return NETWORK_ERROR;
     }
-
     for (auto user : users) {
         Execute(GenTask(0, user, CloudSyncScene::NETWORK_RECOVERY,
             { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
