@@ -26,6 +26,7 @@ struct API_EXPORT AppIDMetaData final : public Serializable {
     API_EXPORT AppIDMetaData();
     API_EXPORT AppIDMetaData(const std::string &appId, const std::string &bundleName);
     API_EXPORT ~AppIDMetaData();
+    API_EXPORT bool operator==(const AppIDMetaData &appIdMetaData) const;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
     API_EXPORT std::string GetKey() const;

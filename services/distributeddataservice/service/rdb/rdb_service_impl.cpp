@@ -914,13 +914,17 @@ void RdbServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std:
     auto encryptKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
     if (!encryptKey.empty() && !encryptParams.nonce.empty()) {
         SecretKeyMetaData secretKey;
+        SecretKeyMetaData oldSecretKey;
         secretKey.storeType = metaData.storeType;
         secretKey.area = metaData.area;
         secretKey.sKey = encryptKey;
         secretKey.nonce = encryptParams.nonce;
         auto time = system_clock::to_time_t(system_clock::now());
         secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
-        MetaDataManager::GetInstance().SaveMeta(metaData.GetSecretKey(), secretKey, true);
+        if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), oldSecretKey, true) ||
+            secretKey != oldSecretKey) {
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetSecretKey(), secretKey, true);
+        }
     }
     SecretKeyMetaData cloneKey;
     auto metaKey = metaData.GetCloneSecretKey();
@@ -988,8 +992,12 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
 bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old)
 {
     AppIDMetaData appIdMeta;
+    AppIDMetaData oldAppIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;
+    if (MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), appIdMeta, true) && appIdMeta == oldAppIdMeta) {
+        return true;
+    }
     if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
         ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
             "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
@@ -1741,6 +1749,12 @@ int32_t RdbServiceImpl::SavePromiseInfo(const StoreMetaData &metaData, const Rdb
         return RDB_OK;
     }
     StoreMetaDataLocal localMeta;
+    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), localMeta, true)) {
+        if (param.tokenIds_ == localMeta.promiseInfo.tokenIds && param.uids_ == localMeta.promiseInfo.uids &&
+            param.permissionNames_ == localMeta.promiseInfo.permissionNames) {
+            return RDB_OK;
+        }
+    }
     localMeta.promiseInfo.tokenIds = param.tokenIds_;
     localMeta.promiseInfo.uids = param.uids_;
     localMeta.promiseInfo.permissionNames = param.permissionNames_;
