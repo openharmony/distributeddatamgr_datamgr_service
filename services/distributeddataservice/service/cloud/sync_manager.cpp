@@ -365,7 +365,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         UpdateStartSyncInfo(cloudSyncInfos);
         auto code = IsValid(info, cloud);
         if (code != E_OK) {
-            if (code == E_NETWORK_ERROR && retry) {
+            if (code == E_NETWORK_ERROR) {
                 networkRecoveryManager_.RecordSyncApps(info.user_, info.bundleName_);
             }
             BatchUpdateFinishState(cloudSyncInfos, code);
@@ -1107,9 +1107,20 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
     auto duration = now - currentEvent_->disconnectTime;
     auto hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
     bool timeout = (hours > TIMEOUT_TIME);
-    CompensateSync(timeout);
+    std::vector<int32_t> users;
+    if (!Account::GetInstance()->QueryForegroundUsers(users) || users.empty()) {
+        ZLOGE("no foreground user, skip sync.");
+        return;
+    }
+    for (auto user : users) {
+        auto syncApps = GetAppList(user, timeout);
+        for (const auto &bundleName : syncApps) {
+            ZLOGI("sync start bundleName:%{public}s, user:%{public}d", bundleName.c_str(), user);
+            syncManager_.DoCloudSync(SyncInfo(user, bundleName, "", {}, MODE_ONLINE));
+        }
+    }
     currentEvent_.reset();
-    ZLOGI("network connected end, sync hours:%{public}ld", hours);
+    ZLOGI("network connected end, network disconnect duration :%{public}ld hours", hours);
 }
 
 void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, const std::string &bundleName)
@@ -1117,43 +1128,42 @@ void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, con
     if (currentEvent_) {
         ZLOGI("record sync user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
         std::lock_guard<std::mutex> lock(syncAppsMutex_);
-        currentEvent_->syncApps[user].insert(bundleName);
+        auto &syncApps = currentEvent_->syncApps[user];
+        if (std::find(syncApps.begin(), syncApps.end(), bundleName) == syncApps.end()) {
+            syncApps.push_back(bundleName);
+        }
     }
 }
 
-void SyncManager::NetworkRecoveryManager::CompensateSync(bool timeout)
+std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const int32_t user, bool timeout)
 {
-    std::vector<int32_t> users;
-    if (!Account::GetInstance()->QueryForegroundUsers(users) || users.empty()) {
-        ZLOGE("no foreground user, skip sync.");
-        return;
-    }
+    std::vector<std::string> appList;
     if (timeout) {
-        for (auto user : users) {
-            CloudInfo cloud;
-            cloud.user = user;
-            if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
-                ZLOGE("load cloud info fail, user:%{public}d", user);
-                continue;
-            }
-            for (const auto &app : cloud.apps) {
-                ZLOGI("sync start bundleName:%{public}s, user:%{public}d", app.second.bundleName.c_str(), user);
-                syncManager_.DoCloudSync(SyncInfo(user, app.second.bundleName));
+        CloudInfo cloud;
+        cloud.user = user;
+        if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
+            ZLOGE("load cloud info fail, user:%{public}d", user);
+            return appList;
+        }
+        auto stores = CheckerManager::GetInstance().GetDynamicStores();
+        auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+        stores.insert(stores.end(), staticStores.begin(), staticStores.end());
+        for (const auto &store : stores) {
+            appList.push_back(store.bundleName);
+        }
+        for (const auto &app : cloud.apps) {
+            if (std::find(appList.begin(), appList.end(), app.second.bundleName) == appList.end()) {
+                appList.push_back(app.second.bundleName);
             }
         }
     } else {
         std::lock_guard<std::mutex> lock(syncAppsMutex_);
-        for (int32_t user : users) {
-            auto item = currentEvent_->syncApps.find(user);
-            if (item == currentEvent_->syncApps.end()) {
-                continue;
-            }
-            const auto &apps = item->second;
-            for (const auto &app : apps) {
-                ZLOGI("sync start bundleName:%{public}s, user:%{public}d", app.c_str(), user);
-                syncManager_.DoCloudSync(SyncInfo(user, app));
-            }
+        auto item = currentEvent_->syncApps.find(user);
+        if (item == currentEvent_->syncApps.end()) {
+            return appList;
         }
+        appList = item->second;
     }
+    return appList;
 }
 } // namespace OHOS::CloudData

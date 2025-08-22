@@ -31,7 +31,6 @@
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "utils/ref_count.h"
-#include <unordered_set>
 
 namespace OHOS::CloudData {
 class SyncManager {
@@ -115,10 +114,10 @@ public:
         void RecordSyncApps(const int32_t user, const std::string &bundleName);
 
     private:
-        void CompensateSync(bool timeout);
+        std::vector<std::string> GetAppList(const int32_t user, bool timeout);
         struct NetWorkEvent {
             std::chrono::system_clock::time_point disconnectTime;
-            std::map<int32_t, std::unordered_set<std::string>> syncApps;
+            std::map<int32_t, std::vector<std::string>> syncApps;
         };
         std::mutex syncAppsMutex_;
         std::unique_ptr<NetWorkEvent> currentEvent_;
