@@ -31,6 +31,7 @@
 #include "scheduler_manager.h"
 #include "string_wrapper.h"
 #include "utils/anonymous.h"
+#include "utils.h"
 #include "want_params.h"
 #include "db_delegate.h"
 #include "log_debug.h"
@@ -298,7 +299,7 @@ std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::st
     }
     auto resultSet = store_->QueryByStep(sql, selectionArgs);
     if (resultSet == nullptr) {
-        ZLOGE("Query failed %{private}s", sql.c_str());
+        ZLOGE("Query failed %{public}s", StringUtils::GeneralAnonymous(sql).c_str());
         return "";
     }
     int rowCount;
@@ -318,7 +319,7 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
     }
     auto resultSet = store_->QuerySql(sql);
     if (resultSet == nullptr) {
-        ZLOGE("Query failed %{private}s", sql.c_str());
+        ZLOGE("Query failed %{public}s", StringUtils::GeneralAnonymous(sql).c_str());
         return resultSet;
     }
     int rowCount;

@@ -209,14 +209,14 @@ void SchedulerManager::SetTimer(
           duration, key.subscriberId, key.bundleName.c_str());
     auto it = timerCache_.find(key);
     if (it != timerCache_.end()) {
-        ZLOGD_MACRO("has current taskId: %{private}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
+        ZLOGD_MACRO("has current taskId: %{public}s, subscriberId is %{public}" PRId64 ", bundleName is %{public}s",
             URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         auto timerId = it->second;
         ResetTimerTask(timerId, reminderTime);
         return;
     }
     auto callback = [key, metaData, userId, this]() {
-        ZLOGI("schedule notify start, uri is %{private}s, subscriberId is %{public}" PRId64 ", bundleName is "
+        ZLOGI("schedule notify start, uri is %{public}s, subscriberId is %{public}" PRId64 ", bundleName is "
             "%{public}s", URIUtils::Anonymous(key.uri).c_str(),
             key.subscriberId, key.bundleName.c_str());
         int64_t timerId = EraseTimerTaskId(key);
