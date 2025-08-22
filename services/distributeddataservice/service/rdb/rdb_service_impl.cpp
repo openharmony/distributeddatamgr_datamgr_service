@@ -995,7 +995,7 @@ bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaDat
     AppIDMetaData oldAppIdMeta;
     appIdMeta.bundleName = meta.bundleName;
     appIdMeta.appId = meta.appId;
-    if (MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), appIdMeta, true) && appIdMeta == oldAppIdMeta) {
+    if (MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), oldAppIdMeta, true) && appIdMeta == oldAppIdMeta) {
         return true;
     }
     if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
