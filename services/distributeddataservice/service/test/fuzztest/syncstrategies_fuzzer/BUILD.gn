@@ -41,6 +41,7 @@ ohos_fuzztest("SyncStrategiesFuzzTest") {
 
   deps = [
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/cloud:distributeddata_cloud",
     "${data_service_path}/service/common:distributeddata_common",
