@@ -261,9 +261,9 @@ int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t 
         ZLOGE("get bundleName error, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    ZLOGI("Add template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s,"
+    ZLOGI("Add template, uri %{public}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s,"
           "predicates size %{public}zu.",
-        uri.c_str(), subscriberId, tpltId.bundleName_.c_str(), tplt.predicates_.size());
+        URIUtils::Anonymous(uri).c_str(), subscriberId, tpltId.bundleName_.c_str(), tplt.predicates_.size());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &tplt, &context]() -> int32_t {
         auto result = TemplateManager::GetInstance().Add(
             Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->visitedUserId, tplt);
@@ -281,7 +281,7 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
         ZLOGE("get bundleName error, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.",
+    ZLOGI("Delete template, uri %{public}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.",
         URIUtils::Anonymous(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &context]() -> int32_t {
         return TemplateManager::GetInstance().Delete(
@@ -870,15 +870,15 @@ int32_t DataShareServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t
 void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 {
     auto anonymous = URIUtils::Anonymous(uri);
-    ZLOGD_MACRO("%{private}s try notified", anonymous.c_str());
+    ZLOGD_MACRO("%{public}s try notified", anonymous.c_str());
     auto context = std::make_shared<Context>(uri);
     if (!GetCallerBundleName(context->callerBundleName)) {
-        ZLOGE("get bundleName error, %{private}s", anonymous.c_str());
+        ZLOGE("get bundleName error, %{public}s", anonymous.c_str());
         return;
     }
     auto ret = rdbNotifyStrategy_.Execute(context);
     if (ret) {
-        ZLOGI("%{private}s start notified", anonymous.c_str());
+        ZLOGI("%{public}s start notified", anonymous.c_str());
         RdbSubscriberManager::GetInstance().Emit(uri, context);
     }
 }
