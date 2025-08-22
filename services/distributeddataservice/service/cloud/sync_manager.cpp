@@ -16,6 +16,7 @@
 #include "sync_manager.h"
 
 #include <chrono>
+#include <unordered_set>
 
 #include "account/account_delegate.h"
 #include "bootstrap.h"
@@ -1137,32 +1138,38 @@ void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, con
 
 std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const int32_t user, bool timeout)
 {
-    std::vector<std::string> appList;
-    if (timeout) {
-        CloudInfo cloud;
-        cloud.user = user;
-        if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
-            ZLOGE("load cloud info fail, user:%{public}d", user);
-            return appList;
-        }
-        auto stores = CheckerManager::GetInstance().GetDynamicStores();
-        auto staticStores = CheckerManager::GetInstance().GetStaticStores();
-        stores.insert(stores.end(), staticStores.begin(), staticStores.end());
-        for (const auto &store : stores) {
-            appList.push_back(store.bundleName);
-        }
-        for (const auto &app : cloud.apps) {
-            if (std::find(appList.begin(), appList.end(), app.second.bundleName) == appList.end()) {
-                appList.push_back(app.second.bundleName);
-            }
-        }
-    } else {
+    if (!timeout) {
         std::lock_guard<std::mutex> lock(syncAppsMutex_);
-        auto item = currentEvent_->syncApps.find(user);
-        if (item == currentEvent_->syncApps.end()) {
-            return appList;
+        if (auto it = currentEvent_->syncApps.find(user); it != currentEvent_->syncApps.end()) {
+            return it->second;
         }
-        appList = item->second;
+        return {};
+    }
+
+    CloudInfo cloud;
+    cloud.user = user;
+    if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
+        ZLOGE("load cloud info fail, user:%{public}d", user);
+        return {};
+    }
+    const size_t totalCount = cloud.apps.size();
+    std::vector<std::string> appList;
+    appList.reserve(totalCount);
+    std::unordered_set<std::string> uniqueSet;
+    uniqueSet.reserve(totalCount);
+    auto addApp = [&](const std::string &bundleName) {
+        if (uniqueSet.insert(bundleName).second) {
+            appList.push_back(bundleName);
+        }
+    };
+    auto stores = CheckerManager::GetInstance().GetDynamicStores();
+    auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+    stores.insert(stores.end(), staticStores.begin(), staticStores.end());
+    for (const auto &store : stores) {
+        addApp(store.bundleName);
+    }
+    for (const auto &[_, app] : cloud.apps) {
+        addApp(app.bundleName);
     }
     return appList;
 }
