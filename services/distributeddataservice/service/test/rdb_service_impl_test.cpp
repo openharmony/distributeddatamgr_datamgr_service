@@ -25,6 +25,7 @@
 #include "device_matrix.h"
 #include "event_center.h"
 #include "ipc_skeleton.h"
+#include "metadata/appid_meta_data.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
@@ -791,15 +792,34 @@ HWTEST_F(RdbServiceImplTest, AfterOpen002, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTest, AfterOpen003, TestSize.Level0)
 {
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
     RdbServiceImpl service;
     RdbSyncerParam param;
     param.bundleName_ = metaData_.bundleName;
     param.storeName_ = metaData_.storeId;
+    param.tokenIds_ = {123};
+    param.uids_ = {123};
+    param.permissionNames_ = {};
+    AppIDMetaData appIdMeta;
+    appIdMeta.bundleName = metaData_.bundleName;
+    appIdMeta.appId = metaData_.appId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true), true);
+    StoreMetaDataLocal localMeta;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true), true);
     int32_t result = service.AfterOpen(param);
-
     EXPECT_EQ(result, RDB_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+    param.tokenIds_ = {123};
+    param.uids_ = {456};
+    result = service.AfterOpen(param);
+    EXPECT_EQ(result, RDB_OK);
+    param.permissionNames_ = {"com.example.myapplication"};
+    result = service.AfterOpen(param);
+    EXPECT_EQ(result, RDB_OK);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyLocal(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(appIdMeta.GetKey(), true), true);
 }
 
 /**
