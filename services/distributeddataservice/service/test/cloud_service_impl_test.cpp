@@ -40,6 +40,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
+#include "mock/account_delegate_mock.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
 #include "mock/meta_data_manager_mock.h"
@@ -68,6 +69,8 @@ static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
+constexpr const int32_t DISCONNECT_TIME = 21;
+constexpr const int32_t MOCK_USER = 200;
 class CloudServiceImplTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -78,6 +81,7 @@ public:
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static NetworkDelegateMock delegate_;
+    static inline AccountDelegateMock *accountDelegateMock = nullptr;
 };
 std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceImpl_ =
     std::make_shared<CloudData::CloudServiceImpl>();
@@ -777,6 +781,176 @@ HWTEST_F(ComponentConfigTest, ComponentConfig, TestSize.Level0)
     EXPECT_EQ(node["lib"], componentConfig.lib);
     EXPECT_EQ(node["constructor"], componentConfig.constructor);
     EXPECT_EQ(node["destructor"], componentConfig.destructor);
+}
+
+/**
+ * @tc.name: NetworkRecoveryTest001
+ * @tc.desc: test the compensatory sync strategy for network disconnection times of less than 20 hours
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest001, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+    if (accountDelegateMock != nullptr) {
+        AccountDelegate::instance_ = nullptr;
+        AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+    }
+
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(Invoke([&](std::vector<int> &users) -> bool {
+        users = { MOCK_USER };
+        return true;
+    }));
+    // 2 means that the QueryForegroundUsers interface will be called twice
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
+        .Times(2)
+        .WillRepeatedly(Invoke([&](std::vector<int> &users) -> bool {
+            users = { MOCK_USER };
+            return true;
+        }));
+    std::string bundleName = "com.ohos.test";
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = bundleName;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(bundleName, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_NE(recoveryManager.currentEvent_, nullptr);
+    recoveryManager.RecordSyncApps(MOCK_USER, bundleName);
+    recoveryManager.RecordSyncApps(MOCK_USER, bundleName);
+    EXPECT_EQ(recoveryManager.currentEvent_->syncApps.size(), 1);
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
+}
+
+/**
+ * @tc.name: NetworkRecoveryTest002
+ * @tc.desc: test the compensatory sync strategy for network disconnection times of more than 20 hours
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest002, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(Invoke([&](std::vector<int> &users) -> bool {
+        users = { MOCK_USER };
+        return true;
+    }));
+    // 2 means that the QueryForegroundUsers interface will be called twice
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
+        .Times(2)
+        .WillRepeatedly(Invoke([&](std::vector<int> &users) -> bool {
+            users = { MOCK_USER };
+            return true;
+        }));
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_NE(recoveryManager.currentEvent_, nullptr);
+    recoveryManager.currentEvent_->disconnectTime -= std::chrono::hours(DISCONNECT_TIME);
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
+}
+
+/**
+ * @tc.name: NetworkRecoveryTest003
+ * @tc.desc: The test only calls the network connection interface but not disconnect
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest003, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_)).WillOnce(Invoke([&](std::vector<int> &users) -> bool {
+        users = { MOCK_USER };
+        return true;
+    }));
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    recoveryManager.RecordSyncApps(MOCK_USER, "");
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
+}
+
+/**
+ * @tc.name: NetworkRecoveryTest004
+ * @tc.desc: The QueryForegroundUsers interface call fails when the network is restored
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    recoveryManager.OnNetworkDisconnected();
+    auto returnWithUserList =
+        [](const std::vector<int> &users) {
+            return Invoke([=](std::vector<int> &outUsers) -> bool {
+                outUsers = users;
+                return true;
+            });
+        };
+
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
+        .WillOnce(returnWithUserList({ MOCK_USER }))
+        .WillOnce(Return(false));
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    ASSERT_NE(recoveryManager.currentEvent_, nullptr);
+
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
+        .WillOnce(returnWithUserList({ MOCK_USER }))
+        .WillOnce(returnWithUserList({}));
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_NE(recoveryManager.currentEvent_, nullptr);
+}
+
+/**
+ * @tc.name: NetworkRecoveryTest005
+ * @tc.desc: The test network connection interface call fails when the load cloudInfo failed
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest005, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(Invoke([&](std::vector<int> &users) -> bool {
+        users = { MOCK_USER };
+        return true;
+    }));
+    // 2 means that the QueryForegroundUsers interface will be called twice
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
+        .Times(2)
+        .WillRepeatedly(Invoke([&](std::vector<int> &users) -> bool {
+            users = { MOCK_USER };
+            return true;
+        }));
+    CloudInfo cloudInfo;
+    cloudInfo.user = MOCK_USER;
+    MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_NE(recoveryManager.currentEvent_, nullptr);
+    recoveryManager.currentEvent_->disconnectTime -= std::chrono::hours(DISCONNECT_TIME);
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
+    if (accountDelegateMock != nullptr) {
+        delete accountDelegateMock;
+        accountDelegateMock = nullptr;
+    }
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
