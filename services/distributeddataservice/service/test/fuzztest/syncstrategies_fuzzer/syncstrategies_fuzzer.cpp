@@ -26,8 +26,8 @@ void SyncStrategiesFuzz001(FuzzedDataProvider &provider)
 {
     int32_t user = provider.ConsumeIntegral<int32_t>();
     std::string bundleName = provider.ConsumeRandomLengthString(100);
-    static bool initialized = NetworkDelegateNormalImpl::Init();
-    (void)initialized;
+    static NetworkDelegateNormalImpl delegate;
+    NetworkDelegate::RegisterNetworkInstance(&delegate);
     NetworkSyncStrategy strategy;
     StoreInfo storeInfo;
     storeInfo.user = user;
