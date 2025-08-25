@@ -73,25 +73,27 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest001, TestSize.Level0)
     StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
     std::vector<std::string> devices = {"remote_device"};
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillOnce(Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false))
+        .WillOnce(testing::Return(false));
     auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillOnce(Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false))
+        .WillOnce(testing::Return(true));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillOnce(Return(true))
-        .WillOnce(Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(true))
+        .WillOnce(testing::Return(false));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillOnce(Return(true))
-        .WillOnce(Return(true));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(true))
+        .WillOnce(testing::Return(true));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
 }
@@ -111,9 +113,9 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest002, TestSize.Level0)
     StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
     std::vector<std::string> devices = {"remote_device"};
 
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
-        .WillOnce(Return(false))
-        .WillOnce(Return(false));
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false))
+        .WillOnce(testing::Return(false));
     auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
     EXPECT_EQ(isNeedSync, true);
     // mock mask
