@@ -115,6 +115,18 @@ public:
     {
         return 0;
     }
+    int32_t RegisterFileDfsListener(const std::string &instanceId, const sptr<IFileDfsListener> &listener) override
+    {
+        return 0;
+    }
+    int32_t UnregisterFileDfsListener(const std::string &instanceId) override
+    {
+        return 0;
+    }
+    int32_t IsSameAccountDevice(const std::string &networkId, bool &isSameAccount) override
+    {
+        return 0;
+    }
 };
 } // namespace DistributedFile
 } // namespace Storage
