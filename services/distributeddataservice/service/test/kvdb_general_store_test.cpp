@@ -59,10 +59,9 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
-
 protected:
-    static constexpr const char *bundleName = "test_distributeddata";
-    static constexpr const char *storeName = "test_service_meta";
+    static constexpr const char *BUNDLE_NAME = "test_distributeddata";
+    static constexpr const char *STORE_NAME = "test_service_meta";
 
     void InitMetaData();
     static std::vector<uint8_t> Random(uint32_t len);
@@ -76,15 +75,15 @@ static const uint32_t KEY_LENGTH = 32;
 
 void KVDBGeneralStoreTest::InitMetaData()
 {
-    metaData_.bundleName = bundleName;
-    metaData_.appId = bundleName;
+    metaData_.bundleName  = BUNDLE_NAME;
+    metaData_.appId = BUNDLE_NAME;
     metaData_.user = "0";
     metaData_.area = OHOS::DistributedKv::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
     metaData_.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
-    metaData_.storeId = storeName;
-    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(bundleName) + "/kvdb";
+    metaData_.storeId = STORE_NAME;
+    metaData_.dataDir = "/data/service/el1/public/database/" + std::string(BUNDLE_NAME) + "/kvdb";
     metaData_.securityLevel = SecurityLevel::S2;
 }
 
@@ -404,7 +403,7 @@ HWTEST_F(KVDBGeneralStoreTest, BusyClose, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, SyncTest, TestSize.Level0)
 {
     ZLOGI("SyncTest start");
-    mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
+    mkdir(("/data/service/el1/public/database/" + std::string(BUNDLE_NAME)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
@@ -540,14 +539,14 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
 {
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
-    store->SetEqualIdentifier(bundleName, storeName);
+    store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     std::vector<std::string> devices = { "device1", "device2" };
     auto asyncs = [](const GenDetails &result) {};
     store->storeInfo_.user = 0;
     auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
-    store->SetEqualIdentifier(bundleName, storeName);
+    store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
     std::vector<int> users;
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(false)));
@@ -568,20 +567,22 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
 {
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
-    store->SetEqualIdentifier(bundleName, storeName);
+    store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     std::vector<std::string> devices = { "device1", "device2" };
     auto asyncs = [](const GenDetails &result) {};
     store->storeInfo_.user = 0;
     auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
-    store->SetEqualIdentifier(bundleName, storeName);
+    store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
     std::vector<int> users;
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
         .Times(1)
-        .WillOnce(
-            DoAll(SetArgReferee<0>(users), Invoke([](std::vector<int> &users) { users.clear(); }), Return(true)));
+        .WillOnce(DoAll(
+            SetArgReferee<0>(users),
+            Invoke([](std::vector<int>& users) { users.clear(); }),
+            Return(true)));
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::DB_ERROR);
 
@@ -604,14 +605,14 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync003, TestSize.Level0)
 {
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
-    store->SetEqualIdentifier(bundleName, storeName);
+    store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     std::vector<std::string> devices = { "device1", "device2" };
     auto asyncs = [](const GenDetails &result) {};
     store->storeInfo_.user = 0;
     auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
-    store->SetEqualIdentifier(bundleName, storeName);
+    store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
     std::vector<int> users = {0, 1};
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
@@ -654,7 +655,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetIdentifierParams, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, Sync002, TestSize.Level0)
 {
-    mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
+    mkdir(("/data/service/el1/public/database/" + std::string(BUNDLE_NAME)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
@@ -689,7 +690,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync002, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, Sync003, TestSize.Level0)
 {
-    mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
+    mkdir(("/data/service/el1/public/database/" + std::string(BUNDLE_NAME)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
@@ -974,7 +975,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBOption001, TestSize.Level0)
 */
 HWTEST_F(KVDBGeneralStoreTest, Sync001, TestSize.Level0)
 {
-    mkdir(("/data/service/el1/public/database/" + std::string(bundleName)).c_str(),
+    mkdir(("/data/service/el1/public/database/" + std::string(BUNDLE_NAME)).c_str(),
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
@@ -1209,7 +1210,7 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest, TestSize.Level0)
     delete store3;
 
     // Test observer registration
-    metaData_.storeId = storeName;
+    metaData_.storeId = STORE_NAME;
     metaData_.storeType = DistributedKv::KvStoreType::SINGLE_VERSION;
     auto store4 = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store4, nullptr);

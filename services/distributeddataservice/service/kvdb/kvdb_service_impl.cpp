@@ -111,8 +111,8 @@ void KVDBServiceImpl::Init()
             }
             meta.user = "0";
             StoreMetaDataLocal localMeta;
-            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true) || !localMeta.isPublic ||
-                !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true) ||
+                !MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true) || !localMeta.isPublic) {
                 ZLOGE("meta empty, not public store. bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
                     meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
                 return;
@@ -217,7 +217,7 @@ Status KVDBServiceImpl::Close(const AppId &appId, const StoreId &storeId, int32_
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }
-    AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir);
+    AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
     return SUCCESS;
@@ -577,7 +577,7 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
     });
     if (isCreate) {
         AutoCache::GetInstance().SetObserver(metaData.tokenId,
-            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir);
+            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir, storeId);
     }
     return SUCCESS;
 }
@@ -609,7 +609,7 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
     });
     if (destroyed) {
         AutoCache::GetInstance().SetObserver(metaData.tokenId,
-            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir);
+            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir, storeId);
     }
     return SUCCESS;
 }
@@ -695,7 +695,7 @@ Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, co
             return Status::ERROR;
         }
     }
-    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, meta.dataDir);
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, meta.dataDir, storeId);
     for (auto store : stores) {
         store->SetConfig({ storeConfig.cloudConfig.enableCloud });
     }
@@ -1127,7 +1127,7 @@ Status KVDBServiceImpl::DoSyncInOrder(
             auto status = DoSyncBegin(ret.first, meta, info, complete, type);
             ZLOGD("data sync status:%{public}d appId:%{public}s, storeId:%{public}s",
                 static_cast<int32_t>(status), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
-        });
+        }, false, info.isRetry);
         if (!result) {
             RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_FAILED, ERROR_CODE, Status::ERROR,
                 BIZ_STATE, END, SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName,
@@ -1229,15 +1229,14 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     }
     SyncParam syncParam{};
     syncParam.mode = mode;
+    syncParam.isRetry = info.isRetry;
     RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_START, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
         SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
-    auto ret = store->Sync(
-        devices, query,
+    auto ret = store->Sync(devices, query,
         [this, complete](const GenDetails &result) mutable {
             auto deviceStatus = HandleGenBriefDetails(result);
             complete(deviceStatus);
-        },
-        syncParam);
+        }, syncParam);
     auto status = Status(ret.first);
     if (status != Status::SUCCESS) {
         RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_FAILED, ERROR_CODE, status, BIZ_STATE, END,

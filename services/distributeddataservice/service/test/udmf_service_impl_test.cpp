@@ -676,5 +676,158 @@ HWTEST_F(UdmfServiceImplTest, VerifyDataAccessPermission002, TestSize.Level1)
     EXPECT_EQ(runtime->privileges[0].tokenId, query.tokenId);
     EXPECT_EQ(result, OHOS::UDMF::E_OK);
 }
+
+/**
+ * @tc.name: HandleDelayLoad001
+ * @tc.desc: Returns true when data not arrives
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleDelayLoad001, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+
+    UnifiedData result;
+    int32_t res = UDMF::E_OK;
+
+    UdmfServiceImpl service;
+    service.dataLoadCallback_.Insert(query.key, nullptr);
+
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    UdmfServiceImpl::BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    service.blockDelayDataCache_.Insert(query.key, data);
+
+    bool handled = service.HandleDelayLoad(query, result, res);
+
+    service.dataLoadCallback_.Erase(query.key);
+    service.blockDelayDataCache_.Erase(query.key);
+
+    EXPECT_TRUE(handled);
+    EXPECT_EQ(res, UDMF::E_NOT_FOUND);
+}
+
+/**
+ * @tc.name: HandleDelayLoad002
+ * @tc.desc: Returns false when not exist
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleDelayLoad002, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+
+    UnifiedData result;
+    int32_t res = UDMF::E_OK;
+
+    UdmfServiceImpl service;
+    bool handled = service.HandleDelayLoad(query, result, res);
+
+    EXPECT_FALSE(handled);
+}
+
+/**
+ * @tc.name: HandleDelayLoad003
+ * @tc.desc: Returns true when data arrives
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleDelayLoad003, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+
+    UnifiedData result;
+    int32_t res = UDMF::E_OK;
+
+    UnifiedData insertedData;
+    insertedData.AddRecord(std::make_shared<UnifiedRecord>());
+
+    UdmfServiceImpl service;
+    service.dataLoadCallback_.Insert(query.key, nullptr);
+
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    UdmfServiceImpl::BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    service.blockDelayDataCache_.Insert(query.key, data);
+
+    data.blockData->SetValue(insertedData);
+    bool handled = service.HandleDelayLoad(query, result, res);
+
+    EXPECT_TRUE(handled);
+    EXPECT_EQ(res, UDMF::E_OK);
+}
+
+/**
+ * @tc.name: PushDelayData002
+ * @tc.desc: DelayData callback and block cache not exist
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData002, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+    UnifiedData insertedData;
+    insertedData.AddRecord(std::make_shared<UnifiedRecord>());
+
+    UdmfServiceImpl service;
+    auto status = service.PushDelayData(query.key, insertedData);
+    EXPECT_EQ(status, UDMF::E_ERROR);
+}
+
+/**
+ * @tc.name: PushDelayData003
+ * @tc.desc: No permission
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData003, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+    
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    UdmfServiceImpl::BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    UdmfServiceImpl service;
+    service.blockDelayDataCache_.Insert(query.key, data);
+    
+    UnifiedData insertedData;
+    auto status = service.PushDelayData(query.key, insertedData);
+    EXPECT_EQ(status, UDMF::E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: PushDelayData004
+ * @tc.desc: PushDelayData success
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData004, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = IPCSkeleton::GetSelfTokenID();
+    
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    UdmfServiceImpl::BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    UdmfServiceImpl service;
+    service.blockDelayDataCache_.Insert(query.key, data);
+
+    Privilege privilege;
+    privilege.tokenId = query.tokenId;
+    service.privilegeCache_[query.key] = privilege;
+
+    UnifiedData insertedData;
+    auto status = service.PushDelayData(query.key, insertedData);
+    EXPECT_EQ(status, UDMF::E_OK);
+}
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

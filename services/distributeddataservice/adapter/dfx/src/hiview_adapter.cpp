@@ -135,6 +135,7 @@ void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::share
         return;
     }
     ExecutorPool::Task task([dfxCode, msg]() {
+        std::string storeId = Anonymous::Change(msg.storeId);
         struct HiSysEventParam params[] = {
             { .name = { *APP_ID },
                 .t = HISYSEVENT_STRING,
@@ -142,7 +143,7 @@ void HiViewAdapter::ReportDBFault(int dfxCode, const DBFaultMsg &msg, std::share
                 .arraySize = 0 },
             { .name = { *STORE_ID },
                 .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(Anonymous::Change(msg.storeId).c_str()) },
+                .v = { .s = const_cast<char *>(storeId.c_str()) },
                 .arraySize = 0 },
             { .name = { *MODULE_NAME },
                 .t = HISYSEVENT_STRING,
@@ -172,6 +173,7 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
     }
     ExecutorPool ::Task task([dfxCode, msg]() {
         std::string message;
+        std::string storeId = Anonymous::Change(msg.storeId);
         for (size_t i = 0; i < msg.deviceId.size(); i++) {
             message.append("No: ").append(std::to_string(i))
                 .append(" sync to device: ").append(msg.deviceId[i])
@@ -188,7 +190,7 @@ void HiViewAdapter::ReportCommFault(int dfxCode, const CommFaultMsg &msg, std::s
                 .arraySize = 0 },
             { .name = { *STORE_ID },
                 .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(Anonymous::Change(msg.storeId).c_str()) },
+                .v = { .s = const_cast<char *>(storeId.c_str()) },
                 .arraySize = 0 },
             { .name = { *SYNC_ERROR_INFO },
                 .t = HISYSEVENT_STRING,
@@ -244,6 +246,7 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::s
     }
     ExecutorPool::Task task([dfxCode, msg]() {
         std::string message;
+        std::string storeId = Anonymous::Change(msg.storeId);
         message.append("Behaviour type : ").append(std::to_string(static_cast<int>(msg.behaviourType)))
             .append(" behaviour info : ").append(msg.extensionInfo);
         struct HiSysEventParam params[] = {
@@ -257,7 +260,7 @@ void HiViewAdapter::ReportBehaviour(int dfxCode, const BehaviourMsg &msg, std::s
                 .arraySize = 0 },
             { .name = { *STORE_ID },
                 .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(Anonymous::Change(msg.storeId).c_str()) },
+                .v = { .s = const_cast<char *>(storeId.c_str()) },
                 .arraySize = 0 },
             { .name = { *BEHAVIOUR_INFO },
                 .t = HISYSEVENT_STRING,
@@ -303,7 +306,7 @@ void HiViewAdapter::ReportDbSize(const StatisticWrap<DbStat> &stat)
     if (!vh.CalcValueHash(stat.val.userId, userId)) {
         return;
     }
-
+    std::string storeId = Anonymous::Change(stat.val.storeId);
     struct HiSysEventParam params[] = {
         { .name = { *USER_ID },
             .t = HISYSEVENT_STRING,
@@ -315,7 +318,7 @@ void HiViewAdapter::ReportDbSize(const StatisticWrap<DbStat> &stat)
             .arraySize = 0 },
         { .name = { *STORE_ID },
             .t = HISYSEVENT_STRING,
-            .v = { .s = const_cast<char *>(Anonymous::Change(stat.val.storeId).c_str()) },
+            .v = { .s = const_cast<char *>(storeId.c_str()) },
             .arraySize = 0 },
         { .name = { *DB_SIZE }, .t = HISYSEVENT_UINT64, .v = { .ui64 = dbSize }, .arraySize = 0 },
     };
@@ -384,6 +387,7 @@ void HiViewAdapter::InvokeTraffic()
         if (!vh.CalcValueHash(kv.second.val.deviceId, deviceId)) {
             continue;
         }
+        std::string devId  = Anonymous::Change(deviceId);
         struct HiSysEventParam params[] = {
             { .name = { *TAG }, .t = HISYSEVENT_STRING, .v = { .s = const_cast<char *>(POWERSTATS) }, .arraySize = 0 },
             { .name = { *APP_ID },
@@ -392,7 +396,7 @@ void HiViewAdapter::InvokeTraffic()
                 .arraySize = 0 },
             { .name = { *DEVICE_ID },
                 .t = HISYSEVENT_STRING,
-                .v = { .s = const_cast<char *>(Anonymous::Change(deviceId).c_str()) },
+                .v = { .s = const_cast<char *>(devId.c_str()) },
                 .arraySize = 0 },
             { .name = { *SEND_SIZE },
                 .t = HISYSEVENT_INT64,

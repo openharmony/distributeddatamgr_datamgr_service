@@ -27,6 +27,8 @@ struct API_EXPORT SecretKeyMetaData final : public Serializable {
 
     API_EXPORT SecretKeyMetaData();
     API_EXPORT ~SecretKeyMetaData();
+    API_EXPORT bool operator==(const SecretKeyMetaData &secretKey) const;
+    API_EXPORT bool operator!=(const SecretKeyMetaData &secretKey) const;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
 

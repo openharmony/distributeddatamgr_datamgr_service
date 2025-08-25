@@ -443,11 +443,9 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
             dbStatus =
                 delegate_->UnSubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
         } else if (syncMode < NEARBY_END) {
-            if (kvQuery->IsEmpty()) {
-                dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), false);
-            } else {
-                dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
-            }
+            DeviceSyncOption syncOption = { .devices = devices, .mode = dbMode, .query = dbQuery, .isWait = false,
+                .isRetry = syncParam.isRetry };
+            dbStatus = delegate_->Sync(syncOption, GetDBSyncCompleteCB(std::move(async)));
         } else {
             ZLOGE("Err sync mode! sync mode:%{public}d", syncMode);
             dbStatus = DistributedDB::INVALID_ARGS;
