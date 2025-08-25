@@ -114,12 +114,12 @@ public:
         void RecordSyncApps(const int32_t user, const std::string &bundleName);
 
     private:
-        std::vector<std::string> GetAppList(const int32_t user, bool timeout);
+        std::vector<std::string> GetAppList(const int32_t user);
         struct NetWorkEvent {
             std::chrono::system_clock::time_point disconnectTime;
             std::map<int32_t, std::vector<std::string>> syncApps;
         };
-        std::mutex syncAppsMutex_;
+        std::mutex eventMutex_;
         std::unique_ptr<NetWorkEvent> currentEvent_;
         SyncManager &syncManager_;
     };

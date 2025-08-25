@@ -1093,6 +1093,7 @@ int32_t SyncManager::ConvertValidGeneralCode(int32_t code)
 void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
 {
     ZLOGI("network disconnected.");
+    std::lock_guard<std::mutex> lock(eventMutex_);
     currentEvent_ = std::make_unique<NetWorkEvent>();
     currentEvent_->disconnectTime = std::chrono::system_clock::now();
 }
@@ -1100,12 +1101,17 @@ void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
 void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
 {
     ZLOGI("network connected start.");
-    if (!currentEvent_) {
-        ZLOGE("network connected, but currentEvent_ is not initialized.");
-        return;
+    std::unique_ptr<NetWorkEvent> event;
+    {
+        std::lock_guard<std::mutex> lock(eventMutex_);
+        if (!currentEvent_) {
+            ZLOGE("network connected, but currentEvent_ is not initialized.");
+            return;
+        }
+        event = std::move(currentEvent_);
     }
     auto now = std::chrono::system_clock::now();
-    auto duration = now - currentEvent_->disconnectTime;
+    auto duration = now - event->disconnectTime;
     auto hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
     bool timeout = (hours > TIMEOUT_TIME);
     std::vector<int32_t> users;
@@ -1114,21 +1120,23 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
         return;
     }
     for (auto user : users) {
-        auto syncApps = GetAppList(user, timeout);
+        std::vector<std::string> syncApps(event->syncApps[user]);
+        if (timeout) {
+            syncApps = GetAppList(user);
+        }
         for (const auto &bundleName : syncApps) {
             ZLOGI("sync start bundleName:%{public}s, user:%{public}d", bundleName.c_str(), user);
             syncManager_.DoCloudSync(SyncInfo(user, bundleName, "", {}, MODE_ONLINE));
         }
     }
-    currentEvent_.reset();
     ZLOGI("network connected end, network disconnect duration :%{public}ld hours", hours);
 }
 
 void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, const std::string &bundleName)
 {
+    std::lock_guard<std::mutex> lock(eventMutex_);
     if (currentEvent_) {
         ZLOGI("record sync user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
-        std::lock_guard<std::mutex> lock(syncAppsMutex_);
         auto &syncApps = currentEvent_->syncApps[user];
         if (std::find(syncApps.begin(), syncApps.end(), bundleName) == syncApps.end()) {
             syncApps.push_back(bundleName);
@@ -1136,16 +1144,8 @@ void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, con
     }
 }
 
-std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const int32_t user, bool timeout)
+std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const int32_t user)
 {
-    if (!timeout) {
-        std::lock_guard<std::mutex> lock(syncAppsMutex_);
-        if (auto it = currentEvent_->syncApps.find(user); it != currentEvent_->syncApps.end()) {
-            return it->second;
-        }
-        return {};
-    }
-
     CloudInfo cloud;
     cloud.user = user;
     if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
