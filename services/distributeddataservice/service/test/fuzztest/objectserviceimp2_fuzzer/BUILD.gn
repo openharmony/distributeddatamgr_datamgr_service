@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("ObjectServiceImpFuzzTest") {
+ohos_fuzztest("ObjectServiceImp2FuzzTest") {
   module_out_path = "datamgr_service/datamgr_service"
 
   include_dirs = [
@@ -69,6 +69,6 @@ ohos_fuzztest("ObjectServiceImpFuzzTest") {
 group("fuzztest") {
   testonly = true
 
-  deps = [ ":ObjectServiceImpFuzzTest" ]
+  deps = [ ":ObjectServiceImp2FuzzTest" ]
 }
 ###############################################################################

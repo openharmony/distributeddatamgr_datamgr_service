@@ -433,6 +433,7 @@ void ObjectServiceImpl::RegisterHandler()
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
 }
 // LCOV_EXCL_STOP
+
 void ObjectServiceImpl::DumpObjectServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
 {
     (void)params;
