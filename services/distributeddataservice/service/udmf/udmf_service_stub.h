@@ -45,7 +45,6 @@ private:
     int32_t OnRemoveAppShareOption(MessageParcel &data, MessageParcel &reply);
     int32_t OnObtainAsynProcess(MessageParcel &data, MessageParcel &reply);
     int32_t OnClearAsynProcessByKey(MessageParcel &data, MessageParcel &reply);
-    int32_t OnInvokeHap(MessageParcel &data, MessageParcel &reply);
     int32_t OnPushDelayData(MessageParcel &data, MessageParcel &reply);
     int32_t OnSetDelayInfo(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetDataIfAvailable(MessageParcel &data, MessageParcel &reply);

@@ -1197,7 +1197,8 @@ bool UdmfServiceImpl::IsValidOptionsNonDrag(UnifiedKey &key, const std::string &
     return false;
 }
 
-int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier, std::string &key)
+int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
+    std::string &key)
 {
     std::string bundleName;
     std::string specificBundleName;
