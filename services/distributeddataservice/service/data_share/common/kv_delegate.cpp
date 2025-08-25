@@ -282,7 +282,7 @@ std::pair<int32_t, int32_t> KvDelegate::Upsert(const std::string &collectionName
         int version = -1;
         if (GetVersion(collectionName, id, version)) {
             if (value.GetVersion() <= version) {
-                ZLOGE("GetVersion failed,%{public}s id %{private}s %{public}d %{public}d", collectionName.c_str(),
+                ZLOGE("GetVersion failed,%{public}s id %{public}s %{public}d %{public}d", collectionName.c_str(),
                       id.c_str(), value.GetVersion(), version);
                 return std::make_pair(E_VERSION_NOT_NEWER, 0);
             }
