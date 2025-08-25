@@ -1160,11 +1160,11 @@ void KvStoreDataService::DumpStoreInfo(int fd, std::map<std::string, std::vector
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    std::vector<int32_t> users;
-    int32_t user = 0;
-    AccountDelegate::GetInstance()->QueryForegroundUsers(users);
-    if (users.size() > 0) {
-        user = users[0];
+    int user = 0;
+    auto ret = AccountDelegate::GetInstance()->QueryForegroundUserId(user);
+    if (!ret) {
+        ZLOGE("get foreground userid failed");
+        return;
     }
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
         metas, true)) {
@@ -1321,11 +1321,11 @@ void KvStoreDataService::DumpUserInfo(int fd, std::map<std::string, std::vector<
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    std::vector<int32_t> users;
-    int32_t user = 0;
-    AccountDelegate::GetInstance()->QueryForegroundUsers(users);
-    if (users.size() > 0) {
-        user = users[0];
+    int user = 0;
+    auto ret = AccountDelegate::GetInstance()->QueryForegroundUserId(user);
+    if (!ret) {
+        ZLOGE("get foreground userid failed");
+        return;
     }
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
         metas, true)) {
@@ -1428,11 +1428,11 @@ void KvStoreDataService::DumpBundleInfo(int fd, std::map<std::string, std::vecto
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    std::vector<int32_t> users;
-    int32_t user = 0;
-    AccountDelegate::GetInstance()->QueryForegroundUsers(users);
-    if (users.size() > 0) {
-        user = users[0];
+    int user = 0;
+    auto ret = AccountDelegate::GetInstance()->QueryForegroundUserId(user);
+    if (!ret) {
+        ZLOGE("get foreground userid failed");
+        return;
     }
     if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
         metas, true)) {
