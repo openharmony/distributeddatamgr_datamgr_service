@@ -1160,7 +1160,14 @@ void KvStoreDataService::DumpStoreInfo(int fd, std::map<std::string, std::vector
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
+    std::vector<int32_t> users;
+    int32_t user = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+    if (users.size() > 0) {
+        user = users[0];
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
+        metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }
@@ -1314,7 +1321,14 @@ void KvStoreDataService::DumpUserInfo(int fd, std::map<std::string, std::vector<
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
+    std::vector<int32_t> users;
+    int32_t user = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+    if (users.size() > 0) {
+        user = users[0];
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
+        metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }
@@ -1414,7 +1428,14 @@ void KvStoreDataService::DumpBundleInfo(int fd, std::map<std::string, std::vecto
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
+    std::vector<int32_t> users;
+    int32_t user = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+    if (users.size() > 0) {
+        user = users[0];
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
+        metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }
