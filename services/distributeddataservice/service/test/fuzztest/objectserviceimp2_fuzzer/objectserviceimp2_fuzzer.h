@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#ifndef OBJECT_SERVICE_IMP_FUZZER_H
-#define OBJECT_SERVICE_IMP_FUZZER_H
+#ifndef OBJECT_SERVICE_IMP2_FUZZER_H
+#define OBJECT_SERVICE_IMP2_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "objectserviceimp_fuzzer"
+#define FUZZ_PROJECT_NAME "objectserviceimp2_fuzzer"
 
-#endif // OBJECT_SERVICE_IMP_FUZZER_H
+#endif // OBJECT_SERVICE_IMP2_FUZZER_H

@@ -39,6 +39,7 @@ bool ScreenManager::RegisterInstance(std::shared_ptr<ScreenManager> instance)
     return true;
 }
 
+// LCOV_EXCL_START
 void ScreenManager::Subscribe(std::shared_ptr<Observer> observer)
 {
     return;
@@ -68,4 +69,5 @@ bool ScreenManager::IsLocked()
 {
     return false;
 }
+// LCOV_EXCL_STOP
 } // namespace OHOS::DistributedData

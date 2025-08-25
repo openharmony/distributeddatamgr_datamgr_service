@@ -414,6 +414,7 @@ ObjectServiceImpl::ObjectServiceImpl()
     EventCenter::GetInstance().Subscribe(BindEvent::BIND_SNAPSHOT, process);
 }
 
+// LCOV_EXCL_START
 void ObjectServiceImpl::RegisterObjectServiceInfo()
 {
     DumpManager::Config serviceInfoConfig;
@@ -431,7 +432,7 @@ void ObjectServiceImpl::RegisterHandler()
     };
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
 }
-
+// LCOV_EXCL_STOP
 void ObjectServiceImpl::DumpObjectServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
 {
     (void)params;

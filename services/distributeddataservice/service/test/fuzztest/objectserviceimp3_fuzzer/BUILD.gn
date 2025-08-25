@@ -24,7 +24,7 @@ ohos_fuzztest("ObjectServiceImpFuzzTest") {
   ]
 
   fuzz_config_file =
-      "${data_service_path}/service/test/fuzztest/objectserviceimp_fuzzer"
+      "${data_service_path}/service/test/fuzztest/objectserviceimp3_fuzzer"
 
   cflags = [
     "-g",
@@ -35,7 +35,7 @@ ohos_fuzztest("ObjectServiceImpFuzzTest") {
   ]
 
   sources = [
-    "objectserviceimp_fuzzer.cpp",
+    "objectserviceimp3_fuzzer.cpp",
   ]
 
   deps = [
