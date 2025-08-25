@@ -14,6 +14,7 @@
  */
 
 #include <fuzzer/FuzzedDataProvider.h>
+#include "src/network_delegate_normal_impl.h"
 #include "syncstrategies_fuzzer.h"
 #include "sync_strategies/network_sync_strategy.h"
 
@@ -25,6 +26,8 @@ void SyncStrategiesFuzz001(FuzzedDataProvider &provider)
 {
     int32_t user = provider.ConsumeIntegral<int32_t>();
     std::string bundleName = provider.ConsumeRandomLengthString(100);
+    static NetworkDelegateNormalImpl delegate;
+    NetworkDelegate::RegisterNetworkInstance(&delegate);
     NetworkSyncStrategy strategy;
     StoreInfo storeInfo;
     storeInfo.user = user;
