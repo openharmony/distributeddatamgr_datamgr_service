@@ -330,6 +330,12 @@ DBStatus KvStoreNbDelegateCorruptionMock::Sync(const DeviceSyncOption &option,
     return DBStatus::OK;
 }
 
+DBStatus KvStoreNbDelegateCorruptionMock::Sync(const DeviceSyncOption &option,
+    const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete)
+{
+    return DBStatus::OK;
+}
+
 DBStatus KvStoreNbDelegateCorruptionMock::CancelSync(uint32_t syncId)
 {
     return DBStatus::OK;

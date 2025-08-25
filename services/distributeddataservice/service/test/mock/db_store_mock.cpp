@@ -378,6 +378,12 @@ DBStatus DBStoreMock::Sync(const DeviceSyncOption &option, const DeviceSyncProce
     return NOT_SUPPORT;
 }
 
+DBStatus DBStoreMock::Sync(const DeviceSyncOption &option,
+    const std::function<void(const std::map<std::string, DBStatus> &devicesMap)> &onComplete)
+{
+    return NOT_SUPPORT;
+}
+
 DBStatus DBStoreMock::CancelSync(uint32_t syncId)
 {
     return NOT_SUPPORT;

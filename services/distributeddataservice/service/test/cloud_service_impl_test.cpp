@@ -15,7 +15,6 @@
 #define LOG_TAG "CloudServiceImplTest"
 #include "cloud_service_impl.h"
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
 
@@ -54,6 +53,7 @@
 #include "store/auto_cache.h"
 #include "store/store_info.h"
 #include "token_setproc.h"
+#include "directory/directory_manager.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -62,6 +62,7 @@ using namespace OHOS::Security::AccessToken;
 using Confirmation = OHOS::CloudData::Confirmation;
 using Status = OHOS::CloudData::CloudService::Status;
 using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
@@ -78,31 +79,72 @@ public:
     void SetUp();
     void TearDown();
 
+    static void InitMetaData();
+    static void CheckDelMeta(StoreMetaMapping &metaMapping, StoreMetaData &meta, StoreMetaData &meta1);
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
-    static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static NetworkDelegateMock delegate_;
+protected:
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
+    static StoreMetaData metaData_;
     static inline AccountDelegateMock *accountDelegateMock = nullptr;
 };
 std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceImpl_ =
     std::make_shared<CloudData::CloudServiceImpl>();
 NetworkDelegateMock CloudServiceImplTest::delegate_;
+std::shared_ptr<DBStoreMock> CloudServiceImplTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
+StoreMetaData CloudServiceImplTest::metaData_;
+
+void CloudServiceImplTest::CheckDelMeta(StoreMetaMapping &metaMapping, StoreMetaData &meta, StoreMetaData &meta1)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
+    metaMapping.cloudPath = "";
+    metaMapping.dataDir = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+    meta.user = "100";
+    auto res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+ 
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
+    metaMapping.dataDir = "";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+    meta.user = "100";
+    res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+}
+
+void CloudServiceImplTest::InitMetaData()
+{
+    metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData_.appId = "test_rdb_cloud_service_impl_appid";
+    metaData_.bundleName = "test_rdb_cloud_service_impl_bundleName";
+    metaData_.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    metaData_.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
+    metaData_.area = OHOS::DistributedKv::EL1;
+    metaData_.instanceId = 0;
+    metaData_.isAutoSync = true;
+    metaData_.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
+    metaData_.storeId = "test_cloud_service_impl_store";
+    metaData_.dataDir = "/test_cloud_service_impl_store";
+}
 
 void CloudServiceImplTest::SetUpTestCase(void)
 {
-    metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
-    BMetaDataManager::metaDataManager = metaDataManagerMock;
     size_t max = 12;
     size_t min = 5;
     auto executor = std::make_shared<ExecutorPool>(max, min);
     DeviceManagerAdapter::GetInstance().Init(executor);
+    Bootstrap::GetInstance().LoadCheckers();
+    CryptoManager::GetInstance().GenerateRootKey();
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     NetworkDelegate::RegisterNetworkInstance(&delegate_);
+    InitMetaData();
 }
 
-void CloudServiceImplTest::TearDownTestCase()
-{
-    metaDataManagerMock = nullptr;
-    BMetaDataManager::metaDataManager = nullptr;
-}
+void CloudServiceImplTest::TearDownTestCase() { }
 
 void CloudServiceImplTest::SetUp() { }
 
@@ -553,10 +595,21 @@ HWTEST_F(CloudServiceImplTest, ConfirmInvitation001, TestSize.Level0)
  */
 HWTEST_F(CloudServiceImplTest, GetStoreMetaData_001, TestSize.Level1)
 {
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(true)).WillOnce(Return(false));
     StoreMetaData meta;
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta.user = "0";
+    meta.bundleName = "bundleName";
+    meta.storeId = "storeName";
+    meta.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + meta.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
-    EXPECT_EQ(res, false);
+    EXPECT_EQ(res, true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+    meta.instanceId = 1;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
 /**
@@ -566,11 +619,54 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_001, TestSize.Level1)
  */
 HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
 {
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillOnce(Return(false));
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = "0";
+    metaMapping.bundleName = "bundleName";
+    metaMapping.storeId = "storeName";
+    metaMapping.cloudPath = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+ 
     StoreMetaData meta;
-    meta.user = "0";
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta.user = "100";
+    meta.bundleName = "bundleName";
+    meta.storeId = "storeName";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
+ 
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    meta.instanceId = 1;
+    metaMapping.instanceId = 1;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+    meta.user = "100";
+    res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+ 
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    metaMapping.cloudPath = "";
+    metaMapping.dataDir = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+    meta.user = "100";
+    res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+ 
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    metaMapping.dataDir = "";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    meta.user = "100";
+    res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+ 
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
 /**
@@ -580,11 +676,30 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
  */
 HWTEST_F(CloudServiceImplTest, GetStoreMetaData_003, TestSize.Level1)
 {
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillOnce(Return(false));
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = "0";
+    metaMapping.bundleName = "bundleName";
+    metaMapping.storeId = "storeName";
+    metaMapping.cloudPath = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
     StoreMetaData meta;
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     meta.user = "100";
+    meta.bundleName = "bundleName";
+    meta.storeId = "storeName";
+    StoreMetaData meta1;
+    meta1.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta1.user = "0";
+    meta1.bundleName = "bundleName";
+    meta1.storeId = "storeName";
+    meta1.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + meta.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+    StoreMetaDataLocal localMetaData;
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
 }
 
 /**
@@ -595,11 +710,53 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_003, TestSize.Level1)
  */
 HWTEST_F(CloudServiceImplTest, GetStoreMetaData_004, TestSize.Level1)
 {
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillOnce(Return(false)).WillRepeatedly(Return(true));
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = "0";
+    metaMapping.bundleName = "bundleName";
+    metaMapping.storeId = "storeName";
+    metaMapping.instanceId = 1;
+    metaMapping.cloudPath = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
     StoreMetaData meta;
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     meta.user = "100";
+    meta.bundleName = "bundleName";
+    meta.storeId = "storeName";
+    meta.instanceId = 1;
+    StoreMetaData meta1;
+    meta1.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta1.user = "0";
+    meta1.bundleName = "bundleName";
+    meta1.storeId = "storeName";
+    meta1.instanceId = 1;
+    meta1.dataDir = DirectoryManager::GetInstance().GetStorePath(meta1) + "/" + meta1.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+    StoreMetaDataLocal localMetaData;
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
+    CheckDelMeta(metaMapping, meta, meta1);
+ 
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKeyLocal(), localMetaData, true), true);
+    meta.user = "100";
+    res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, false);
+ 
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKeyLocal(), true), true);
+    localMetaData.isPublic = true;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKeyLocal(), localMetaData, true), true);
+    meta.user = "100";
+    metaMapping.cloudPath = DirectoryManager::GetInstance().GetStorePath(meta1) + "/" + meta1.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+    res = cloudServiceImpl_->GetStoreMetaData(meta);
+    EXPECT_EQ(res, true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKeyLocal(), true), true);
 }
 
 /**
@@ -609,17 +766,43 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_004, TestSize.Level1)
  */
 HWTEST_F(CloudServiceImplTest, PreShare_001, TestSize.Level1)
 {
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _)).WillRepeatedly(Return(false));
     StoreInfo storeInfo;
-    storeInfo.path = "";
+    storeInfo.bundleName = "bundleName";
+    storeInfo.storeName = "storeName";
+    storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    storeInfo.user = 100;
+    StoreMetaMapping storeMetaMapping;
+    storeMetaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    storeMetaMapping.user = "100";
+    storeMetaMapping.bundleName = "bundleName";
+    storeMetaMapping.storeId = "storeName";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true), true);
     std::shared_ptr<GenQuery> query;
     auto [errCode, cursor] = cloudServiceImpl_->PreShare(storeInfo, *query);
     EXPECT_EQ(errCode, E_ERROR);
     ASSERT_EQ(cursor, nullptr);
-    storeInfo.path = "test";
-    std::tie(errCode, cursor) = cloudServiceImpl_->PreShare(storeInfo, *query);
-    EXPECT_EQ(errCode, E_ERROR);
-    ASSERT_EQ(cursor, nullptr);
+    storeInfo.path = "path";
+    storeMetaMapping.cloudPath = "path1";
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true), true);
+    auto [errCode1, cursor1] = cloudServiceImpl_->PreShare(storeInfo, *query);
+    EXPECT_EQ(errCode1, E_ERROR);
+    ASSERT_EQ(cursor1, nullptr);
+    storeInfo.path = "path";
+    storeMetaMapping.cloudPath = "path";
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true), true);
+    auto [errCode2, cursor2] = cloudServiceImpl_->PreShare(storeInfo, *query);
+    EXPECT_EQ(errCode2, E_ERROR);
+    ASSERT_EQ(cursor2, nullptr);
+    storeInfo.instanceId = 1;
+    storeMetaMapping.instanceId = 1;
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true), true);
+    auto [errCode3, cursor3] = cloudServiceImpl_->PreShare(storeInfo, *query);
+    EXPECT_EQ(errCode3, E_ERROR);
+    ASSERT_EQ(cursor3, nullptr);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true), true);
 }
 
 /**

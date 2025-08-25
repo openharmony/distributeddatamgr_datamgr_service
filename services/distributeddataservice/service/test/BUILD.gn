@@ -57,6 +57,7 @@ ohos_unittest("CloudDataTest") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   module_out_path = module_output_path
   sources = [
@@ -851,6 +852,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   module_out_path = module_output_path
   sources = [

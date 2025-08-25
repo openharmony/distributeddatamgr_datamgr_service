@@ -85,7 +85,8 @@ public:
     API_EXPORT bool Subscribe(std::shared_ptr<Filter> filter, Observer observer);
     API_EXPORT bool Subscribe(std::string prefix, Observer observer, bool isLocal = false);
     API_EXPORT bool Unsubscribe(std::string filter);
-    API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait = false);
+    API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait = false,
+        bool isRetry = true);
 
 private:
     MetaDataManager();

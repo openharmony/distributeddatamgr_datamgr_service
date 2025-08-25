@@ -27,6 +27,7 @@ namespace OHOS {
 namespace AppDistributedKv {
 class API_EXPORT ConnectManager {
 public:
+    using ApplyTask = std::function<void(int32_t errcode)>;
     using ConnectTask = std::function<void(void)>;
     using CloseSessionTask = std::function<bool(const std::string &networkId)>;
     using SessionCloseListener = std::function<void(const std::string &networkId)>;
@@ -51,7 +52,7 @@ public:
 
     virtual void OnStart();
     virtual void OnDestory();
-    virtual int32_t ApplyConnect(const std::string &networkId, ConnectTask task);
+    virtual int32_t ApplyConnect(const std::string &networkId, ApplyTask applyTask, ConnectTask connectTask);
 
 private:
     static std::mutex mtx_;
