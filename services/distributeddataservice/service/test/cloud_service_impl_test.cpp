@@ -1076,6 +1076,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
     ASSERT_NE(cloudServiceImpl_, nullptr);
     auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
     recoveryManager.OnNetworkDisconnected();
+    ASSERT_NE(recoveryManager.currentEvent_, nullptr);
     auto returnWithUserList =
         [](const std::vector<int> &users) {
             return Invoke([=](std::vector<int> &outUsers) -> bool {
@@ -1089,14 +1090,16 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
         .WillOnce(returnWithUserList({ MOCK_USER }))
         .WillOnce(Return(false));
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
-    ASSERT_NE(recoveryManager.currentEvent_, nullptr);
+    EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
 
+    recoveryManager.OnNetworkDisconnected();
+    ASSERT_NE(recoveryManager.currentEvent_, nullptr);
     EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .WillOnce(returnWithUserList({ MOCK_USER }))
         .WillOnce(returnWithUserList({}));
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
-    EXPECT_NE(recoveryManager.currentEvent_, nullptr);
+    EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
 }
 
 /**
