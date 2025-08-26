@@ -424,7 +424,7 @@ bool OnQueryLastSyncInfoFuzz(FuzzedDataProvider &provider)
             return { INVALID_ARGUMENT, results };
         }
     }
-    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
+XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     DistributedDB::RuntimeConfig::SetCloudTranslate(std::make_shared<RdbCloudDataTranslate>());
     std::vector<int> users;
     Account::GetInstance()->QueryUsers(users);
@@ -451,10 +451,6 @@ bool OnQueryLastSyncInfoFuzz(FuzzedDataProvider &provider)
     if (status != SUCCESS) {
         return false;
     }
-    auto stores = CheckerManager::GetInstance().GetDynamicStores();
-    auto staticStores = CheckerManager::GetInstance().GetStaticStores();
-    stores.insert(stores.end(), staticStores.begin(), staticStores.end());
-    auto keys = cloudInfo.GetSchemaKey();
 }
 } // namespace OHOS
 
