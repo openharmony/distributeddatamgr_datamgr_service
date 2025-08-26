@@ -16,6 +16,10 @@
 #ifndef UDMF_STORE_H
 #define UDMF_STORE_H
 
+#include <string>
+#include <shared_mutex>
+#include <mutex>
+
 #include "unified_data.h"
 
 namespace OHOS {

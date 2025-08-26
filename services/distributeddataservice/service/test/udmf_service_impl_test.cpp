@@ -32,13 +32,12 @@
 #include "token_setproc.h"
 
 using namespace testing::ext;
-using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using namespace OHOS::UDMF;
-using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Entry = DistributedDB::Entry;
 using Key = DistributedDB::Key;
 using Value = DistributedDB::Value;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using UnifiedData = OHOS::UDMF::UnifiedData;
 using Summary =  OHOS::UDMF::Summary;
 namespace OHOS::Test {
@@ -411,7 +410,7 @@ HWTEST_F(UdmfServiceImplTest, SyncTest001, TestSize.Level0)
     query.tokenId = 1;
     query.intention  = UD_INTENTION_DRAG;
     UdmfServiceImpl udmfServiceImpl;
-    StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
+    DistributedData::StoreMetaData meta = DistributedData::StoreMetaData("100", "distributeddata", "drag");
     std::vector<std::string> devices = {"remote_device"};
 
     auto ret = udmfServiceImpl.Sync(query, devices);
@@ -539,6 +538,164 @@ HWTEST_F(UdmfServiceImplTest, IsValidInput004, TestSize.Level1)
     UdmfServiceImpl impl;
     bool result = impl.IsValidInput(query, unifiedData, key);
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: UpdateData002
+ * @tc.desc: invalid parameter
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UpdateData002, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.key = "udmf://DataHub/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7";
+    query.tokenId = 99999;
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+
+    UdmfServiceImpl impl;
+    EXPECT_NE(impl.UpdateData(query, unifiedData), E_OK);
+}
+
+/**
+ * @tc.name: UpdateData003
+ * @tc.desc: invalid parameter
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UpdateData003, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.key = "udmf://DataHub/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7";
+    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+
+    UdmfServiceImpl impl;
+    EXPECT_NE(impl.UpdateData(query, unifiedData), E_OK);
+}
+
+/**
+ * @tc.name: UpdateData004
+ * @tc.desc: invalid parameter
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UpdateData004, TestSize.Level1)
+{
+    QueryOption query;
+    UnifiedData unifiedData;
+
+    query.key = "invalid_key";
+    UdmfServiceImpl impl;
+    EXPECT_EQ(impl.UpdateData(query, unifiedData), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: SaveData002
+* @tc.desc: invalid parameter
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, SaveData002, TestSize.Level1)
+{
+    CustomOption option;
+    QueryOption query;
+    UnifiedData unifiedData;
+    std::string key = "";
+
+    UdmfServiceImpl impl;
+    EXPECT_EQ(impl.SaveData(option, unifiedData, key), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: SaveData003
+* @tc.desc: invalid parameter
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, SaveData003, TestSize.Level1)
+{
+    CustomOption option;
+    QueryOption query;
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    std::string key = "";
+    option.intention = Intention::UD_INTENTION_BASE;
+
+    UdmfServiceImpl impl;
+    EXPECT_EQ(impl.SaveData(option, unifiedData, key), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: SaveData004
+* @tc.desc: invalid parameter
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, SaveData004, TestSize.Level1)
+{
+    CustomOption option;
+    QueryOption query;
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    std::string key = "";
+    option.intention = Intention::UD_INTENTION_DATA_HUB;
+    option.tokenId = 99999;
+
+    UdmfServiceImpl impl;
+    EXPECT_NE(impl.SaveData(option, unifiedData, key), E_OK);
+}
+
+/**
+ * @tc.name: IsValidInput005
+ * @tc.desc: valid input
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsValidInput005, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.key = "udmf://drag/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7";
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    UnifiedKey key("udmf://drag/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7");
+    EXPECT_TRUE(key.IsValid());
+
+    UdmfServiceImpl impl;
+    bool result = impl.IsValidInput(query, unifiedData, key);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: PushDelayData001
+ * @tc.desc: valid input
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData001, TestSize.Level1)
+{
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    std::string key = "invalid key";
+
+    UdmfServiceImpl impl;
+    auto result = impl.PushDelayData(key, unifiedData);
+    EXPECT_NE(result, E_OK);
 }
 
 /**
