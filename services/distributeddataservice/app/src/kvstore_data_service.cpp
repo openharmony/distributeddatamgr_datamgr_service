@@ -364,10 +364,6 @@ void KvStoreDataService::OnStart()
     Handler handlerStoreInfo = std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1,
         std::placeholders::_2);
     DumpManager::GetInstance().AddHandler("STORE_INFO", uintptr_t(this), handlerStoreInfo);
-    RegisterUserInfo();
-    Handler handlerUserInfo = std::bind(&KvStoreDataService::DumpUserInfo, this, std::placeholders::_1,
-        std::placeholders::_2);
-    DumpManager::GetInstance().AddHandler("USER_INFO", uintptr_t(this), handlerUserInfo);
     RegisterBundleInfo();
     Handler handlerBundleInfo = std::bind(&KvStoreDataService::DumpBundleInfo, this, std::placeholders::_1,
         std::placeholders::_2);
@@ -1160,7 +1156,14 @@ void KvStoreDataService::DumpStoreInfo(int fd, std::map<std::string, std::vector
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
+    int user = 0;
+    auto ret = AccountDelegate::GetInstance()->QueryForegroundUserId(user);
+    if (!ret) {
+        ZLOGE("get foreground userid failed");
+        return;
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
+        metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }
@@ -1246,21 +1249,6 @@ std::string KvStoreDataService::GetIndentation(int size)
     return indentation;
 }
 
-void KvStoreDataService::RegisterUserInfo()
-{
-    DumpManager::Config userInfoConfig;
-    userInfoConfig.fullCmd = "--user-info";
-    userInfoConfig.abbrCmd = "-u";
-    userInfoConfig.dumpName = "USER_INFO";
-    userInfoConfig.countPrintf = PRINTF_COUNT_2;
-    userInfoConfig.infoName = " <UId>";
-    userInfoConfig.minParamsNum = 0;
-    userInfoConfig.maxParamsNum = MAXIMUM_PARAMETER_LIMIT; // User contains no more than three parameters
-    userInfoConfig.childNode = "BUNDLE_INFO";
-    userInfoConfig.dumpCaption = { "| Display all the user statistics", "| Display the user statistics by UserId" };
-    DumpManager::GetInstance().AddConfig(userInfoConfig.dumpName, userInfoConfig);
-}
-
 void KvStoreDataService::BuildData(std::map<std::string, UserInfo> &datas, const std::vector<StoreMetaData> &metas)
 {
     for (auto &meta : metas) {
@@ -1308,20 +1296,6 @@ void KvStoreDataService::PrintfInfo(int fd, const std::map<std::string, UserInfo
     }
     dprintf(fd, "--------------------------------------UserInfo--------------------------------------\n%s\n",
         info.c_str());
-}
-
-void KvStoreDataService::DumpUserInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
-{
-    std::vector<StoreMetaData> metas;
-    std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
-        ZLOGE("get full meta failed");
-        return;
-    }
-    FilterData(metas, params);
-    std::map<std::string, UserInfo> datas;
-    BuildData(datas, metas);
-    PrintfInfo(fd, datas);
 }
 
 void KvStoreDataService::RegisterBundleInfo()
@@ -1414,7 +1388,14 @@ void KvStoreDataService::DumpBundleInfo(int fd, std::map<std::string, std::vecto
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
+    int user = 0;
+    auto ret = AccountDelegate::GetInstance()->QueryForegroundUserId(user);
+    if (!ret) {
+        ZLOGE("get foreground userid failed");
+        return;
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
+        metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }
