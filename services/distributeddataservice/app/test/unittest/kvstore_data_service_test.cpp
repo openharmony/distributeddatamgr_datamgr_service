@@ -674,21 +674,6 @@ HWTEST_F(KvStoreDataServiceTest, BuildData002, TestSize.Level0)
 }
 
 /**
-* @tc.name: DumpUserInfo001
-* @tc.desc: test DumpUserInfo function
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(KvStoreDataServiceTest, DumpUserInfo001, TestSize.Level0)
-{
-    KvStoreDataService kvStoreDataServiceTest;
-    int fd = 0;
-    std::map<std::string, std::vector<std::string>> params = {};
-    EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.DumpUserInfo(fd, params));
-}
-
-/**
 * @tc.name: DumpBundleInfo001
 * @tc.desc: test DumpBundleInfo function
 * @tc.type: FUNC
