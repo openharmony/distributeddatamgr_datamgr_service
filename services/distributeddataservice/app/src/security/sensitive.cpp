@@ -119,7 +119,7 @@ uint32_t Sensitive::GetSensitiveLevel(const std::string &udid)
         return DATA_SEC_LEVEL1;
     }
     level = DATA_SEC_LEVEL1;
-    int32_t result = DATASL_GetHighestSecLevel(&query, &level);
+    result = DATASL_GetHighestSecLevel(&query, &level);
     DATASL_OnStop();
     if (result != DEVSL_SUCCESS) {
         ZLOGE("get highest level failed(%{public}s)! level: %{public}d, error: %d",
