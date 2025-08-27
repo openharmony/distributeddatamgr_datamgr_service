@@ -113,12 +113,12 @@ uint32_t Sensitive::GetSensitiveLevel(const std::string &udid)
         ZLOGE("init query params failed! udid:[%{public}s]", Anonymous::Change(udid).c_str());
         return DATA_SEC_LEVEL1;
     }
-    auto ret = DATASL_OnStart();
-    if (ret != DEVSL_SUCCESS) {
+    auto result = DATASL_OnStart();
+    if (result != DEVSL_SUCCESS) {
         ZLOGI("datasl on start failed, ret:%{public}d", ret);
         return DATA_SEC_LEVEL1;
     }
-    uint32_t level = DATA_SEC_LEVEL1;
+    level = DATA_SEC_LEVEL1;
     int32_t result = DATASL_GetHighestSecLevel(&query, &level);
     DATASL_OnStop();
     if (result != DEVSL_SUCCESS) {
