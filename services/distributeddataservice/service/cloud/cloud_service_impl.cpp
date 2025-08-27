@@ -808,7 +808,7 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
         Execute(GenTask(0, user, CloudSyncScene::NETWORK_RECOVERY,
             { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     }
-    syncManager_.GetNetworkRecoveryManager().OnNetworkConnected();
+    syncManager_.OnNetworkConnected();
     return SUCCESS;
 }
 
@@ -825,7 +825,7 @@ int32_t CloudServiceImpl::Offline(const std::string &device)
     }
     auto it = users.begin();
     syncManager_.StopCloudSync(*it);
-    syncManager_.GetNetworkRecoveryManager().OnNetworkDisconnected();
+    syncManager_.OnNetworkDisconnected();
     return SUCCESS;
 }
 

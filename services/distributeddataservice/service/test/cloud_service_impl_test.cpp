@@ -1003,7 +1003,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest001, TestSize.Level0)
     cloudInfo.apps = apps;
     cloudInfo.user = MOCK_USER;
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
-    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
     cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_NE(recoveryManager.currentEvent_, nullptr);
     recoveryManager.RecordSyncApps(MOCK_USER, bundleName);
@@ -1035,7 +1035,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest002, TestSize.Level0)
             users = { MOCK_USER };
             return true;
         }));
-    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
     cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_NE(recoveryManager.currentEvent_, nullptr);
     recoveryManager.currentEvent_->disconnectTime -= std::chrono::hours(DISCONNECT_TIME);
@@ -1058,7 +1058,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest003, TestSize.Level0)
         users = { MOCK_USER };
         return true;
     }));
-    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
     recoveryManager.RecordSyncApps(MOCK_USER, "");
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
@@ -1074,7 +1074,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest003, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
-    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
     recoveryManager.OnNetworkDisconnected();
     ASSERT_NE(recoveryManager.currentEvent_, nullptr);
     auto returnWithUserList =
@@ -1127,7 +1127,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest005, TestSize.Level0)
     CloudInfo cloudInfo;
     cloudInfo.user = MOCK_USER;
     MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
-    auto &recoveryManager = cloudServiceImpl_->syncManager_.GetNetworkRecoveryManager();
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
     cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_NE(recoveryManager.currentEvent_, nullptr);
     recoveryManager.currentEvent_->disconnectTime -= std::chrono::hours(DISCONNECT_TIME);

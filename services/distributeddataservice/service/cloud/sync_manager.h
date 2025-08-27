@@ -123,11 +123,9 @@ public:
         std::unique_ptr<NetWorkEvent> currentEvent_;
         SyncManager &syncManager_;
     };
-    NetworkRecoveryManager &GetNetworkRecoveryManager()
-    {
-        return networkRecoveryManager_;
-    }
 
+    void OnNetworkDisconnected();
+    void OnNetworkConnected();
 private:
     using Event = DistributedData::Event;
     using Task = ExecutorPool::Task;

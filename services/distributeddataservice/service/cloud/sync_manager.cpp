@@ -1087,6 +1087,16 @@ int32_t SyncManager::ConvertValidGeneralCode(int32_t code)
     return (code >= E_OK && code < E_BUSY) ? code : E_ERROR;
 }
 
+void SyncManager::OnNetworkDisconnected()
+{
+    networkRecoveryManager_.OnNetworkDisconnected();
+}
+
+void SyncManager::OnNetworkConnected()
+{
+    networkRecoveryManager_.OnNetworkConnected();
+}
+
 void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
 {
     ZLOGI("network disconnected.");
@@ -1097,7 +1107,6 @@ void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
 
 void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
 {
-    ZLOGI("network connected start.");
     std::unique_ptr<NetWorkEvent> event;
     {
         std::lock_guard<std::mutex> lock(eventMutex_);
@@ -1126,17 +1135,17 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
             syncManager_.DoCloudSync(SyncInfo(user, bundleName, "", {}, MODE_ONLINE));
         }
     }
-    ZLOGI("network connected end, network disconnect duration :%{public}ld hours", hours);
+    ZLOGI("network connected success, network disconnect duration :%{public}ld hours", hours);
 }
 
 void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, const std::string &bundleName)
 {
     std::lock_guard<std::mutex> lock(eventMutex_);
     if (currentEvent_) {
-        ZLOGI("record sync user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
         auto &syncApps = currentEvent_->syncApps[user];
         if (std::find(syncApps.begin(), syncApps.end(), bundleName) == syncApps.end()) {
             syncApps.push_back(bundleName);
+            ZLOGI("record sync user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
         }
     }
 }
@@ -1154,19 +1163,19 @@ std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const i
     appList.reserve(totalCount);
     std::unordered_set<std::string> uniqueSet;
     uniqueSet.reserve(totalCount);
-    auto addApp = [&](const std::string &bundleName) {
-        if (uniqueSet.insert(bundleName).second) {
-            appList.push_back(bundleName);
+    auto addApp = [&](std::string bundleName) {
+        if (uniqueSet.insert(std::move(bundleName)).second) {
+            appList.push_back(std::move(bundleName));
         }
     };
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
     auto staticStores = CheckerManager::GetInstance().GetStaticStores();
     stores.insert(stores.end(), staticStores.begin(), staticStores.end());
     for (const auto &store : stores) {
-        addApp(store.bundleName);
+        addApp(std::move(store.bundleName));
     }
     for (const auto &[_, app] : cloud.apps) {
-        addApp(app.bundleName);
+        addApp(std::move(app.bundleName));
     }
     return appList;
 }
