@@ -30,7 +30,9 @@ group("fuzztest") {
   if (datamgr_service_object) {
     deps += [
       "objectservicestub_fuzzer:fuzztest",
-      "objectserviceimp_fuzzer:fuzztest",
+      "objectserviceimp1_fuzzer:fuzztest",
+      "objectserviceimp2_fuzzer:fuzztest",
+      "objectserviceimp3_fuzzer:fuzztest",
       "objectservicelistener_fuzzer:fuzztest",
     ]
   }
