@@ -414,25 +414,27 @@ ObjectServiceImpl::ObjectServiceImpl()
     EventCenter::GetInstance().Subscribe(BindEvent::BIND_SNAPSHOT, process);
 }
 
-// LCOV_EXCL_START
 void ObjectServiceImpl::RegisterObjectServiceInfo()
 {
+    // LCOV_EXCL_START
     DumpManager::Config serviceInfoConfig;
     serviceInfoConfig.fullCmd = "--feature-info";
     serviceInfoConfig.abbrCmd = "-f";
     serviceInfoConfig.dumpName = "FEATURE_INFO";
     serviceInfoConfig.dumpCaption = { "| Display all the service statistics" };
     DumpManager::GetInstance().AddConfig("FEATURE_INFO", serviceInfoConfig);
+    // LCOV_EXCL_STOP
 }
 
 void ObjectServiceImpl::RegisterHandler()
 {
+    // LCOV_EXCL_START
     Handler handler = [this](int fd, std::map<std::string, std::vector<std::string>> &params) {
         DumpObjectServiceInfo(fd, params);
     };
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
+    // LCOV_EXCL_STOP
 }
-// LCOV_EXCL_STOP
 
 void ObjectServiceImpl::DumpObjectServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
 {

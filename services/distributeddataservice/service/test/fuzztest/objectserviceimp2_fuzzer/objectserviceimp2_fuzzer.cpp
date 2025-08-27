@@ -35,9 +35,6 @@ void RegisterDataObserverFuzzTest(FuzzedDataProvider &provider)
 void OnAppUninstallFuzzTest(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    if (objectServiceImpl->factory_.staticActs_ == nullptr) {
-        return;
-    }
     std::string bundleName = provider.ConsumeRandomLengthString(100);
     int32_t user = provider.ConsumeIntegral<int32_t>();
     int32_t index = provider.ConsumeIntegral<int32_t>();

@@ -64,10 +64,9 @@ void ScreenManager::UnsubscribeScreenEvent()
 {
     return;
 }
-
+// LCOV_EXCL_STOP
 bool ScreenManager::IsLocked()
 {
     return false;
 }
-// LCOV_EXCL_STOP
 } // namespace OHOS::DistributedData
