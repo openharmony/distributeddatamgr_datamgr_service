@@ -199,6 +199,8 @@ private:
         bool& hasAsset);
     void CloseAfterMinute();
     int32_t Open();
+    std::shared_ptr<DistributedDB::KvStoreDelegateManager> GetKvStoreDelegateManager();
+    void InitKvStoreDelegateManager(const std::string &userId);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;
@@ -219,6 +221,7 @@ private:
              + DmAdaper::GetInstance().GetLocalDevice().udid;
     };
     mutable std::shared_timed_mutex rwMutex_;
+    mutable std::shared_timed_mutex rwKvStoreMutex_;
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
     ObjectDataListener objectDataListener_;
