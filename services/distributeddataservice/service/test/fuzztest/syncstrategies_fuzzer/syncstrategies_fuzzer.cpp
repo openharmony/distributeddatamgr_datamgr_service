@@ -51,8 +51,9 @@ void SyncStrategiesFuzz003(FuzzedDataProvider &provider)
     strategyInstance.GetKey(user);
 
     NetworkSyncStrategy::StrategyInfo info;
-    info.user = 1;
-    info.bundleName = "StrategyInfo";
+    info.user = provider.ConsumeIntegral<int32_t>();
+    info.bundleName = provider.ConsumeRandomLengthString(100);
+    info.strategy = provider.ConsumeIntegral<uint32_t>();
     Serializable::json node;
     std::string key = provider.ConsumeRandomLengthString(100);
     std::string valueStr = provider.ConsumeRandomLengthString(100);
