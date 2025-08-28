@@ -48,7 +48,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 constexpr int32_t SYSTEM_USER_ID = 0;
-constexpr int32_t TIMEOUT_TIME = 20; // hours
+constexpr int32_t NETWORK_DISCONNECT_TIMEOUT_HOURS = 20;
 static constexpr const char *FT_GET_STORE = "GET_STORE";
 static constexpr const char *FT_CALLBACK = "CALLBACK";
 SyncManager::SyncInfo::SyncInfo(
@@ -514,6 +514,9 @@ bool SyncManager::HandleRetryFinished(const SyncInfo &info, int32_t user, int32_
 {
     if (code == E_OK || code == E_SYNC_TASK_MERGED) {
         return true;
+    }
+    if (code == E_NETWORK_ERROR) {
+        networkRecoveryManager_.RecordSyncApps(user, info.bundleName_);
     }
     info.SetError(code);
     RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
@@ -1110,7 +1113,7 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
     std::unique_ptr<NetWorkEvent> event;
     {
         std::lock_guard<std::mutex> lock(eventMutex_);
-        if (!currentEvent_) {
+        if (currentEvent_ == nullptr) {
             ZLOGE("network connected, but currentEvent_ is not initialized.");
             return;
         }
@@ -1119,7 +1122,7 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
     auto now = std::chrono::system_clock::now();
     auto duration = now - event->disconnectTime;
     auto hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
-    bool timeout = (hours > TIMEOUT_TIME);
+    bool timeout = (hours > NETWORK_DISCONNECT_TIMEOUT_HOURS);
     std::vector<int32_t> users;
     if (!Account::GetInstance()->QueryForegroundUsers(users) || users.empty()) {
         ZLOGE("no foreground user, skip sync.");
@@ -1141,7 +1144,7 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
 void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, const std::string &bundleName)
 {
     std::lock_guard<std::mutex> lock(eventMutex_);
-    if (currentEvent_) {
+    if (currentEvent_ != nullptr) {
         auto &syncApps = currentEvent_->syncApps[user];
         if (std::find(syncApps.begin(), syncApps.end(), bundleName) == syncApps.end()) {
             syncApps.push_back(bundleName);
@@ -1164,7 +1167,7 @@ std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const i
     std::unordered_set<std::string> uniqueSet;
     uniqueSet.reserve(totalCount);
     auto addApp = [&](std::string bundleName) {
-        if (uniqueSet.insert(std::move(bundleName)).second) {
+        if (uniqueSet.insert(bundleName).second) {
             appList.push_back(std::move(bundleName));
         }
     };
