@@ -1129,10 +1129,7 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
         return;
     }
     for (auto user : users) {
-        std::vector<std::string> syncApps(event->syncApps[user]);
-        if (timeout) {
-            syncApps = GetAppList(user);
-        }
+        const auto &syncApps = timeout ? GetAppList(user) : event->syncApps[user];
         for (const auto &bundleName : syncApps) {
             ZLOGI("sync start bundleName:%{public}s, user:%{public}d", bundleName.c_str(), user);
             syncManager_.DoCloudSync(SyncInfo(user, bundleName, "", {}, MODE_ONLINE));

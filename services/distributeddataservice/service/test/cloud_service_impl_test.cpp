@@ -83,6 +83,8 @@ public:
     static void CheckDelMeta(StoreMetaMapping &metaMapping, StoreMetaData &meta, StoreMetaData &meta1);
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
     static NetworkDelegateMock delegate_;
+    static auto ReturnWithUserList(const std::vector<int>& users);
+
 protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
@@ -131,12 +133,22 @@ void CloudServiceImplTest::InitMetaData()
     metaData_.dataDir = "/test_cloud_service_impl_store";
 }
 
+auto CloudServiceImplTest::ReturnWithUserList(const std::vector<int> &users)
+{
+    return Invoke([=](std::vector<int> &outUsers) -> bool {
+        outUsers = users;
+        return true;
+    });
+}
+
 void CloudServiceImplTest::SetUpTestCase(void)
 {
     size_t max = 12;
     size_t min = 5;
     auto executor = std::make_shared<ExecutorPool>(max, min);
     DeviceManagerAdapter::GetInstance().Init(executor);
+    cloudServiceImpl_->OnBind(
+        { "CloudServiceImplTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     Bootstrap::GetInstance().LoadCheckers();
     CryptoManager::GetInstance().GenerateRootKey();
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
@@ -977,38 +989,49 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest001, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     accountDelegateMock = new (std::nothrow) AccountDelegateMock();
-    if (accountDelegateMock != nullptr) {
-        AccountDelegate::instance_ = nullptr;
-        AccountDelegate::RegisterAccountInstance(accountDelegateMock);
-    }
+    ASSERT_NE(accountDelegateMock, nullptr);
+    AccountDelegate::instance_ = nullptr;
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock);
 
     EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
-    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(Invoke([&](std::vector<int> &users) -> bool {
-        users = { MOCK_USER };
-        return true;
-    }));
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(ReturnWithUserList({ MOCK_USER }));
     // 2 means that the QueryForegroundUsers interface will be called twice
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(2)
-        .WillRepeatedly(Invoke([&](std::vector<int> &users) -> bool {
-            users = { MOCK_USER };
-            return true;
-        }));
-    std::string bundleName = "com.ohos.test";
+        .WillRepeatedly(ReturnWithUserList({ MOCK_USER }));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(MOCK_USER));
+    delegate_.isNetworkAvailable_ = false;
     CloudInfo::AppInfo appInfo;
-    appInfo.bundleName = bundleName;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
     std::map<std::string, CloudInfo::AppInfo> apps;
-    apps.emplace(bundleName, appInfo);
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
     CloudInfo cloudInfo;
     cloudInfo.apps = apps;
     cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
     MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
     auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
     cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
-    EXPECT_NE(recoveryManager.currentEvent_, nullptr);
-    recoveryManager.RecordSyncApps(MOCK_USER, bundleName);
-    recoveryManager.RecordSyncApps(MOCK_USER, bundleName);
+    ASSERT_NE(recoveryManager.currentEvent_, nullptr);
+
+    SchemaMeta schemaMeta;
+    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    schemaMeta.databases.emplace_back(database);
+    MetaDataManager::GetInstance().SaveMeta(CloudInfo::GetSchemaKey(cloudInfo.user, TEST_CLOUD_BUNDLE), schemaMeta,
+        true);
+    CloudData::CloudService::Option option;
+    option.syncMode = DistributedData::GeneralStore::CLOUD_BEGIN;
+    auto async = [](const DistributedRdb::Details &details) {};
+    cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, option, async);
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(MOCK_USER));
+    cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, option, async);
+    sleep(1);
     EXPECT_EQ(recoveryManager.currentEvent_->syncApps.size(), 1);
+    delegate_.isNetworkAvailable_ = true;
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
 }
@@ -1023,6 +1046,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest002, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(Invoke([&](std::vector<int> &users) -> bool {
         users = { MOCK_USER };
@@ -1031,13 +1055,10 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest002, TestSize.Level0)
     // 2 means that the QueryForegroundUsers interface will be called twice
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(2)
-        .WillRepeatedly(Invoke([&](std::vector<int> &users) -> bool {
-            users = { MOCK_USER };
-            return true;
-        }));
+        .WillRepeatedly(ReturnWithUserList({ MOCK_USER }));
     auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
     cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
-    EXPECT_NE(recoveryManager.currentEvent_, nullptr);
+    ASSERT_NE(recoveryManager.currentEvent_, nullptr);
     recoveryManager.currentEvent_->disconnectTime -= std::chrono::hours(DISCONNECT_TIME);
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
@@ -1053,13 +1074,16 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest002, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest003, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
-    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_)).WillOnce(Invoke([&](std::vector<int> &users) -> bool {
-        users = { MOCK_USER };
-        return true;
-    }));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_)).WillOnce(ReturnWithUserList({ MOCK_USER }));
     auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
-    recoveryManager.RecordSyncApps(MOCK_USER, "");
+    CloudData::CloudService::Option option;
+    option.syncMode = DistributedData::GeneralStore::CLOUD_BEGIN;
+    auto async = [](const DistributedRdb::Details &details) {};
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(MOCK_USER));
+    cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, option, async);
+    sleep(1);
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
 }
@@ -1074,30 +1098,26 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest003, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(ReturnWithUserList({ MOCK_USER }));
+    cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
-    recoveryManager.OnNetworkDisconnected();
     ASSERT_NE(recoveryManager.currentEvent_, nullptr);
-    auto returnWithUserList =
-        [](const std::vector<int> &users) {
-            return Invoke([=](std::vector<int> &outUsers) -> bool {
-                outUsers = users;
-                return true;
-            });
-        };
 
     EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
-        .WillOnce(returnWithUserList({ MOCK_USER }))
+        .WillOnce(ReturnWithUserList({ MOCK_USER }))
         .WillOnce(Return(false));
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
 
-    recoveryManager.OnNetworkDisconnected();
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(ReturnWithUserList({ MOCK_USER }));
+    cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     ASSERT_NE(recoveryManager.currentEvent_, nullptr);
     EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
-        .WillOnce(returnWithUserList({ MOCK_USER }))
-        .WillOnce(returnWithUserList({}));
+        .WillOnce(ReturnWithUserList({ MOCK_USER }))
+        .WillOnce(ReturnWithUserList({}));
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(recoveryManager.currentEvent_, nullptr);
 }
@@ -1112,24 +1132,19 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest005, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
-    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(Invoke([&](std::vector<int> &users) -> bool {
-        users = { MOCK_USER };
-        return true;
-    }));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(ReturnWithUserList({ MOCK_USER }));
     // 2 means that the QueryForegroundUsers interface will be called twice
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(2)
-        .WillRepeatedly(Invoke([&](std::vector<int> &users) -> bool {
-            users = { MOCK_USER };
-            return true;
-        }));
+        .WillRepeatedly(ReturnWithUserList({ MOCK_USER }));
     CloudInfo cloudInfo;
     cloudInfo.user = MOCK_USER;
     MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
     auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
     cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
-    EXPECT_NE(recoveryManager.currentEvent_, nullptr);
+    ASSERT_NE(recoveryManager.currentEvent_, nullptr);
     recoveryManager.currentEvent_->disconnectTime -= std::chrono::hours(DISCONNECT_TIME);
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(recoveryManager.currentEvent_, nullptr);

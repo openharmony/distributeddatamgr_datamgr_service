@@ -104,6 +104,10 @@ public:
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
     static std::string GetPath(const StoreMetaData &meta);
+    void OnNetworkDisconnected();
+    void OnNetworkConnected();
+
+private:
     class NetworkRecoveryManager {
     public:
         explicit NetworkRecoveryManager(SyncManager &syncManager) : syncManager_(syncManager)
@@ -123,10 +127,6 @@ public:
         std::unique_ptr<NetWorkEvent> currentEvent_;
         SyncManager &syncManager_;
     };
-
-    void OnNetworkDisconnected();
-    void OnNetworkConnected();
-private:
     using Event = DistributedData::Event;
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
