@@ -31,7 +31,6 @@ ohos_source_set("distributeddata_screenlock") {
 
   cflags_cc = [
     "-fvisibility=hidden",
-    "-fstack-protector-strong",
   ]
 
   public_configs = [ ":module_public_config" ]
