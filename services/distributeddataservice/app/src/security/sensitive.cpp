@@ -115,10 +115,10 @@ uint32_t Sensitive::GetSensitiveLevel(const std::string &udid)
     }
     auto result = DATASL_OnStart();
     if (result != DEVSL_SUCCESS) {
-        ZLOGI("datasl on start failed, ret:%{public}d", result);
+        ZLOGE("datasl on start failed, ret:%{public}d", result);
         return DATA_SEC_LEVEL1;
     }
-    level = DATA_SEC_LEVEL1;
+    uint32_t level = DATA_SEC_LEVEL1;
     result = DATASL_GetHighestSecLevel(&query, &level);
     DATASL_OnStop();
     if (result != DEVSL_SUCCESS) {
