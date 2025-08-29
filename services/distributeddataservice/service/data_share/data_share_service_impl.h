@@ -160,7 +160,6 @@ private:
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     static constexpr const char *EXT_URI_SCHEMA = "datashare://";
     static constexpr const char *NO_PERMISSION = "noPermission";
-    static constexpr const char *CONNECT_SUPPORT_CROSS_USER = "const.abilityms.connect_support_cross_user";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;
