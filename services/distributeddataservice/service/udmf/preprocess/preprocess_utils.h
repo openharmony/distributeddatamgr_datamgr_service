@@ -26,8 +26,8 @@ public:
     static std::string GenerateId();
     static time_t GetTimestamp();
     static int32_t GetHapUidByToken(uint32_t tokenId, int &userId);
-    static bool GetHapBundleNameByToken(int tokenId, std::string &bundleName);
-    static bool GetNativeProcessNameByToken(int tokenId, std::string &processName);
+    static bool GetHapBundleNameByToken(uint32_t tokenId, std::string &bundleName);
+    static bool GetNativeProcessNameByToken(uint32_t tokenId, std::string &processName);
     static std::string GetLocalDeviceId();
     static void SetRemoteData(UnifiedData &data);
     static int32_t SetRemoteUri(uint32_t tokenId, UnifiedData &data);
