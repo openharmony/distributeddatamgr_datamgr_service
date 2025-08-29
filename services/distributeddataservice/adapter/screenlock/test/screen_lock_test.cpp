@@ -53,6 +53,8 @@ public:
     void TearDown()
     {
     }
+protected:
+    static constexpr int32_t MAX_RETRY_TIME = 300;
 };
 
 /**
@@ -124,5 +126,58 @@ HWTEST_F(ScreenLockTest, SubscribeScreenEvent001, TestSize.Level0)
     EXPECT_NE(screenLock->eventSubscriber_, nullptr);
     screenLock->UnsubscribeScreenEvent();
     screenLock->executors_ = nullptr;
+}
+
+/**
+* @tc.name: SubscribeScreenEvent002
+* @tc.desc: subscribe ScreenEvent
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(ScreenLockTest, SubscribeScreenEvent002, TestSize.Level0)
+{
+    auto screenLock = std::make_shared<ScreenLock>();
+    EXPECT_EQ(screenLock->executors_, nullptr);
+    EXPECT_EQ(screenLock->eventSubscriber_, nullptr);
+    screenLock->SubscribeScreenEvent();
+    EXPECT_NE(screenLock->eventSubscriber_, nullptr);
+    screenLock->UnsubscribeScreenEvent();
+}
+
+/**
+* @tc.name: GetTask001
+* @tc.desc: subscribe ScreenEvent
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(ScreenLockTest, GetTask001, TestSize.Level0)
+{
+    auto screenLock = std::make_shared<ScreenLock>();
+    EXPECT_EQ(screenLock->executors_, nullptr);
+    EXPECT_EQ(screenLock->eventSubscriber_, nullptr);
+    auto Task = screenLock->GetTask(0);
+    Task();
+    auto executor = std::make_shared<OHOS::ExecutorPool>(12, 5);
+    screenLock->BindExecutor(executor);
+    ASSERT_NE(screenLock->executors_, nullptr);
+    Task = screenLock->GetTask(MAX_RETRY_TIME - 1);
+    Task();
+}
+
+/**
+* @tc.name: GetTask002
+* @tc.desc: subscribe ScreenEvent
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(ScreenLockTest, GetTask002, TestSize.Level0)
+{
+    auto screenLock = std::make_shared<ScreenLock>();
+    EXPECT_EQ(screenLock->executors_, nullptr);
+    EXPECT_EQ(screenLock->eventSubscriber_, nullptr);
+    screenLock->SubscribeScreenEvent();
+    EXPECT_NE(screenLock->eventSubscriber_, nullptr);
+    auto Task = screenLock->GetTask(0);
+    Task();
 }
 } // namespace
