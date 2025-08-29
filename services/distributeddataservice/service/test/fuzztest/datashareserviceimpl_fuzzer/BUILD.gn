@@ -98,6 +98,7 @@ ohos_fuzztest("DataShareServiceImplFuzzTest") {
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
     "datashareserviceimpl_fuzzer.cpp",
   ]
 
