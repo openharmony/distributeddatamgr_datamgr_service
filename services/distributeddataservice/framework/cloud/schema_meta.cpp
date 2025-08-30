@@ -40,6 +40,17 @@ bool SchemaMeta::Unmarshal(const Serializable::json &node)
     return true;
 }
 
+bool SchemaMeta::operator==(const SchemaMeta &meta) const
+{
+    return (metaVersion == meta.metaVersion) && (version == meta.version) && (bundleName == meta.bundleName) &&
+        (databases == meta.databases) && (e2eeEnable == meta.e2eeEnable);
+}
+
+bool SchemaMeta::operator!=(const SchemaMeta &meta) const
+{
+    return !operator==(meta);
+}
+
 std::vector<std::string> Database::GetTableNames() const
 {
     std::vector<std::string> tableNames;
@@ -99,6 +110,18 @@ bool Database::Unmarshal(const Serializable::json &node)
     return true;
 }
 
+bool Database::operator==(const Database &database) const
+{
+    return (name == database.name) && (alias == database.alias) && (tables == database.tables) &&
+        (version == database.version) && (bundleName == database.bundleName) && (user == database.user) &&
+        (deviceId == database.deviceId) && (autoSyncType == database.autoSyncType);
+}
+
+bool Database::operator!=(const Database &database) const
+{
+    return !operator==(database);
+}
+
 bool Table::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(name)], name);
@@ -122,6 +145,18 @@ bool Table::Unmarshal(const Serializable::json &node)
     return true;
 }
 
+bool Table::operator==(const Table &table) const
+{
+    return (name == table.name) && (alias == table.alias) && (fields == table.fields) &&
+        (deviceSyncFields == table.deviceSyncFields) && (cloudSyncFields == table.cloudSyncFields) &&
+        (sharedTableName == table.sharedTableName);
+}
+
+bool Table::operator!=(const Table &table) const
+{
+    return !operator==(table);
+}
+
 bool Field::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(colName)], colName);
@@ -143,6 +178,16 @@ bool Field::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(columnName), colName);
     GetValue(node, GET_NAME(notNull), nullable);
     return true;
+}
+bool Field::operator==(const Field &field) const
+{
+    return (colName == field.colName) && (alias == field.alias) && (type == field.type) &&
+        (primary == field.primary) && (nullable == field.nullable);
+}
+
+bool Field::operator!=(const Field &field) const
+{
+    return !operator==(field);
 }
 
 Database SchemaMeta::GetDataBase(const std::string &storeId)

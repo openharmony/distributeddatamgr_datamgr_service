@@ -25,6 +25,8 @@ struct API_EXPORT Field final : public Serializable {
     bool nullable = true;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    bool operator==(const Field &field) const;
+    bool operator!=(const Field &field) const;
 };
 
 struct API_EXPORT Table final : public Serializable {
@@ -36,6 +38,8 @@ struct API_EXPORT Table final : public Serializable {
     std::vector<std::string> cloudSyncFields = {};
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    bool operator==(const Table &table) const;
+    bool operator!=(const Table &table) const;
 };
 
 struct API_EXPORT Database final : public Serializable {
@@ -53,6 +57,8 @@ struct API_EXPORT Database final : public Serializable {
     API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    bool operator==(const Database &database) const;
+    bool operator!=(const Database &database) const;
 };
 
 class API_EXPORT SchemaMeta final : public Serializable {
@@ -95,6 +101,8 @@ public:
     bool IsValid() const;
     Database GetDataBase(const std::string &storeId);
     std::vector<std::string> GetStores();
+    bool operator==(const SchemaMeta &meta) const;
+    bool operator!=(const SchemaMeta &meta) const;
 };
 
 // Table mode of device data sync time

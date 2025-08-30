@@ -31,6 +31,18 @@ bool CloudMark::Unmarshal(const Serializable::json &node)
     return true;
 }
 
+bool CloudMark::operator==(const CloudMark &cloudMark) const
+{
+    return bundleName == cloudMark.bundleName && deviceId == cloudMark.deviceId && index == cloudMark.index &&
+        isClearWaterMark == cloudMark.isClearWaterMark && storeId == cloudMark.storeId &&
+        userId == cloudMark.userId;
+}
+
+bool CloudMark::operator!=(const CloudMark &cloudMark) const
+{
+    return !operator==(cloudMark);
+}
+
 std::string CloudMark::GetKey()
 {
     return GetKey({ deviceId, std::to_string(userId), "default", bundleName, storeId, std::to_string(index) });

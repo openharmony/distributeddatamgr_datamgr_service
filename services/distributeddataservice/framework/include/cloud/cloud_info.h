@@ -32,6 +32,8 @@ public:
 
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
+        bool operator==(const AppInfo &info) const;
+        bool operator!=(const AppInfo &info) const;
     };
     int32_t user = 0;
     std::string id = "";
@@ -57,6 +59,9 @@ public:
 
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    bool IsMapEqual(const std::map<std::string, AppInfo> &appInfos) const;
+    bool operator==(const CloudInfo &info) const;
+    bool operator!=(const CloudInfo &info) const;
 
 private:
     static constexpr const char *INFO_PREFIX = "CLOUD_INFO";

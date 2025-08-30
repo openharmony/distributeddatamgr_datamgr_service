@@ -134,18 +134,24 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         Report(FT_ENABLE_CLOUD, Fault::CSF_CLOUD_INFO, "", "EnableCloud ret=" + std::to_string(status));
         return status;
     }
-    cloudInfo.enableCloud = true;
+    if (cloudInfo.id != id) {
+        ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s", Anonymous::Change(id).c_str(),
+            Anonymous::Change(cloudInfo.id).c_str());
+        return INVALID_ARGUMENT;
+    }
+    auto newCloudInfo = cloudInfo;
+    newCloudInfo.enableCloud = true;
     for (const auto &[bundle, value] : switches) {
-        if (!cloudInfo.Exist(bundle)) {
+        if (!newCloudInfo.Exist(bundle)) {
             continue;
         }
-        cloudInfo.apps[bundle].cloudSwitch = (value == SWITCH_ON);
+        newCloudInfo.apps[bundle].cloudSwitch = (value == SWITCH_ON);
         ZLOGI("EnableCloud: change app[%{public}s] switch to %{public}d", bundle.c_str(), value);
     }
-    if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
-        return ERROR;
+    if (newCloudInfo != cloudInfo) {
+        MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true);
     }
-    Execute(GenTask(0, cloudInfo.user, CloudSyncScene::ENABLE_CLOUD,
+    Execute(GenTask(0, newCloudInfo.user, CloudSyncScene::ENABLE_CLOUD,
         { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     ZLOGI("EnableCloud success, id:%{public}s, count:%{public}zu", Anonymous::Change(id).c_str(), switches.size());
     return SUCCESS;
@@ -179,11 +185,12 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
             Anonymous::Change(cloudInfo.id).c_str());
         return INVALID_ARGUMENT;
     }
-    cloudInfo.enableCloud = false;
-    if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
-        return ERROR;
+    auto newCloudInfo = cloudInfo;
+    newCloudInfo.enableCloud = false;
+    if (newCloudInfo != cloudInfo) {
+        MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true);
     }
-    Execute(GenTask(0, cloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
+    Execute(GenTask(0, newCloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
     ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
@@ -225,13 +232,14 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
         }
         ZLOGI("add app switch, bundleName:%{public}s", bundleName.c_str());
     }
-    cloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
-    if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
-        return ERROR;
+    auto newCloudInfo = cloudInfo;
+    newCloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
+    if (newCloudInfo != cloudInfo) {
+        MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true);
     }
-    Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
-    if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        SyncManager::SyncInfo info(cloudInfo.user, bundleName);
+    Execute(GenTask(0, newCloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
+    if (newCloudInfo.enableCloud && appSwitch == SWITCH_ON) {
+        SyncManager::SyncInfo info(newCloudInfo.user, bundleName);
         syncManager_.DoCloudSync(info);
     }
     ZLOGI("ChangeAppSwitch success, id:%{public}s app:%{public}s, switch:%{public}d", Anonymous::Change(id).c_str(),
@@ -865,6 +873,10 @@ int32_t CloudServiceImpl::UpdateCloudInfoFromServer(int32_t user)
         ZLOGE("userId:%{public}d, status:%{public}d", user, status);
         return E_ERROR;
     }
+    auto [errCode, oldCloudInfo] = GetCloudInfoFromMeta(user);
+    if (errCode == SUCCESS && oldCloudInfo == cloudInfo) {
+        return E_OK;
+    }
     return MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true) ? E_OK : E_ERROR;
 }
 
@@ -883,7 +895,9 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user, CloudSyncScene scene)
         MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
         return true;
     }
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    if (cloudInfo != oldInfo) {
+        MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    }
     if (oldInfo.id != cloudInfo.id) {
         ReleaseUserInfo(user, scene);
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
@@ -935,7 +949,9 @@ bool CloudServiceImpl::UpdateSchema(int32_t user, CloudSyncScene scene)
             UpgradeSchemaMeta(user, oldMeta);
             UpdateClearWaterMark(hapInfo, schemaMeta, oldMeta);
         }
-        MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true);
+        if (oldMeta != schemaMeta) {
+            MetaDataManager::GetInstance().SaveMeta(key, schemaMeta, true);
+        }
     }
     return true;
 }
@@ -1080,16 +1096,19 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
     }
     UpgradeSchemaMeta(userId, schemaMeta);
     HapInfo hapInfo{ .user = userId, .instIndex = instanceId, .bundleName = bundleName };
-    std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
+    SchemaMeta newMeta;
+    std::tie(status, newMeta) = GetSchemaFromHap(hapInfo);
     if (status == SUCCESS) {
-        MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
-        return { status, schemaMeta };
+        if (newMeta != schemaMeta) {
+            MetaDataManager::GetInstance().SaveMeta(schemaKey, newMeta, true);
+        }
+        return { status, newMeta };
     }
     if (!Account::GetInstance()->IsVerified(userId)) {
         ZLOGE("user:%{public}d is locked!", userId);
         return { ERROR, schemaMeta };
     }
-    std::tie(status, schemaMeta) = GetAppSchemaFromServer(userId, bundleName);
+    std::tie(status, newMeta) = GetAppSchemaFromServer(userId, bundleName);
     if (status == NOT_SUPPORT) {
         ZLOGW("app not support, del cloudInfo! userId:%{public}d, bundleName:%{public}s", userId, bundleName.c_str());
         MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
@@ -1098,8 +1117,10 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
     if (status != SUCCESS) {
         return { status, schemaMeta };
     }
-    MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
-    return { SUCCESS, schemaMeta };
+    if (newMeta != schemaMeta) {
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, newMeta, true);
+    }
+    return { SUCCESS, newMeta };
 }
 
 std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
@@ -1112,26 +1133,31 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
         ZLOGW("user:%{public}d is locked!", userId);
         return { ERROR, cloudInfo };
     }
-    std::tie(status, cloudInfo) = GetCloudInfoFromServer(userId);
+    CloudInfo newInfo;
+    std::tie(status, newInfo) = GetCloudInfoFromServer(userId);
     if (status != SUCCESS) {
         ZLOGE("userId:%{public}d, status:%{public}d", userId, status);
         return { status, cloudInfo };
     }
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
-    return { SUCCESS, cloudInfo };
+    if (newInfo != cloudInfo) {
+        MetaDataManager::GetInstance().SaveMeta(newInfo.GetKey(), newInfo, true);
+    }
+    return { SUCCESS, newInfo };
 }
 
 int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     Subscription sub;
-    if (MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(user), sub, true)) {
+    if (MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(user), sub, true) &&
+        sub.expiresTime.find(bundleName) != sub.expiresTime.end()) {
         sub.expiresTime.erase(bundleName);
         MetaDataManager::GetInstance().SaveMeta(Subscription::GetKey(user), sub, true);
     }
 
     CloudInfo cloudInfo;
     cloudInfo.user = user;
-    if (MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
+    if (MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true) &&
+        cloudInfo.apps.find(bundleName) != cloudInfo.apps.end()) {
         cloudInfo.apps.erase(bundleName);
         MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
     }
@@ -1206,7 +1232,9 @@ int32_t CloudServiceImpl::UpdateSchemaFromHap(const HapInfo &hapInfo)
     if (MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
         UpdateClearWaterMark(hapInfo, newSchemaMeta, schemaMeta);
     }
-    MetaDataManager::GetInstance().SaveMeta(schemaKey, newSchemaMeta, true);
+    if (newSchemaMeta != schemaMeta) {
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, newSchemaMeta, true);
+    }
     return SUCCESS;
 }
 
@@ -1232,7 +1260,11 @@ void CloudServiceImpl::UpdateClearWaterMark(
         if (dbMap.find(database.name) != dbMap.end() && database.version != dbMap[database.name]) {
             metaData.storeId = database.name;
             metaData.isClearWaterMark = true;
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+            CloudMark newMark;
+            MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), newMark, true);
+            if (newMark != metaData) {
+                MetaDataManager::GetInstance().SaveMeta(newMark.GetKey(), newMark, true);
+            }
             ZLOGI("clear watermark, storeId:%{public}s, newVersion:%{public}d, oldVersion:%{public}d",
                 Anonymous::Change(metaData.storeId).c_str(), database.version, dbMap[database.name]);
         }
@@ -1900,6 +1932,9 @@ int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Valu
     MetaDataManager::GetInstance().LoadMeta(info.GetKey(), oldInfo, true);
     ZLOGI("Strategy[user:%{public}d,bundleName:%{public}s] to [%{public}d] from [%{public}d]",
           info.user, info.bundleName.c_str(), info.strategy, oldInfo.strategy);
+    if (oldInfo == info) {
+        return SUCCESS;
+    }
     return MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true) ? SUCCESS : ERROR;
 }
 
