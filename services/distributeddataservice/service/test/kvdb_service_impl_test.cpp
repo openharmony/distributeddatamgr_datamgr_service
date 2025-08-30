@@ -326,6 +326,31 @@ HWTEST_F(KvdbServiceImplTest, OnInitialize001, TestSize.Level0)
 }
 
 /**
+* @tc.name: OnInitialize002
+* @tc.desc: OnInitialize function test.
+* @tc.type: FUNC
+* @tc.author: my
+*/
+HWTEST_F(KvdbServiceImplTest, OnInitialize002, TestSize.Level0)
+{
+    auto result = kvdbServiceImpl_->OnInitialize();
+    EXPECT_EQ(result, Status::SUCCESS);
+    DistributedData::StoreInfo storeInfo;
+    storeInfo.bundleName = "bundleName";
+    storeInfo.storeName = "storeName";
+    storeInfo.user = 100;
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+    .WillOnce(testing::Return(false))
+    .WillRepeatedly(testing::Return(true));
+
+    auto event = std::make_unique<CloudEvent>(CloudEvent::CLOUD_SYNC, storeInfo);
+    EXPECT_NE(event, nullptr);
+    result = EventCenter::GetInstance().PostEvent(move(event));
+    EXPECT_EQ(result, 1); // CODE_SYNC
+}
+
+/**
 * @tc.name: GetStoreIdsTest001
 * @tc.desc: GetStoreIds
 * @tc.type: FUNC

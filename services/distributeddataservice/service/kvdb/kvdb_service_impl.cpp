@@ -104,9 +104,9 @@ void KVDBServiceImpl::Init()
         StoreMetaMapping meta(storeInfo);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str(), meta.user.c_str());
             if (meta.user == "0") {
-                ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
-                    meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
                 return;
             }
             meta.user = "0";
