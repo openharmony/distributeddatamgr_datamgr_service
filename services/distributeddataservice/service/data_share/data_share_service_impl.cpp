@@ -22,6 +22,8 @@
 
 #include "account/account_delegate.h"
 #include "app_connect_manager.h"
+#include "bundle_mgr_proxy.h"
+#include "bundle_utils.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "concurrent_task_client.h"
@@ -610,6 +612,10 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     SubscribeConcurrentTask();
     SubscribeTimeChanged();
     SubscribeChange();
+    auto task = [](const std::string &bundleName, int32_t userId, const std::string &storeName) {
+        return BundleMgrProxy::GetInstance()->IsConfigSilentProxy(bundleName, userId, storeName);
+    };
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
     ZLOGI("end");
     return E_OK;
 }

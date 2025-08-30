@@ -21,6 +21,8 @@
 
 #include "accesstoken_kit.h"
 #include "account_delegate_mock.h"
+#include "bundle_mgr_proxy.h"
+#include "bundle_utils.h"
 #include "data_share_service_stub.h"
 #include "device_manager_adapter.h"
 #include "dump/dump_manager.h"
@@ -562,5 +564,94 @@ HWTEST_F(DataShareServiceImplTest, UpdateLaunchInfo001, TestSize.Level1)
     MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true);
     EXPECT_EQ(storeMetaData.size(), 0);
     ZLOGI("DataShareServiceImplTest UpdateLaunchInfo001 end");
+}
+
+/**
+* @tc.name: BundleMgrProxyTest001
+* @tc.desc: Test the IsConfigSilentProxy method of BundleMgrProxy
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest001 start");
+    int32_t user = static_cast<int32_t>(USER_TEST);
+    std::string storeName = "";
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+    auto [err, ret] = bundleMgr->IsConfigSilentProxy(BUNDLE_NAME, user, storeName);
+    EXPECT_EQ(err, OHOS::DataShare::E_SILENT_PROXY_DISABLE);
+    EXPECT_EQ(ret, false);
+    auto [err1, ret1] = bundleMgr->IsConfigSilentProxy("", user, storeName);
+    EXPECT_NE(err1, OHOS::DataShare::E_OK);
+    EXPECT_EQ(ret1, false);
+ 
+    // wirte data to LRU cache
+    storeName = "test";
+    DataShare::SilentBundleInfo silentBundleInfo(BUNDLE_NAME, user);
+    bundleMgr->UpdateSilentConfig(silentBundleInfo, storeName, true);
+    auto [err2, ret2] = bundleMgr->IsConfigSilentProxy(BUNDLE_NAME, user, storeName);
+    EXPECT_EQ(err2, OHOS::DataShare::E_OK);
+    EXPECT_EQ(ret2, true);
+ 
+    bundleMgr->isSilent_.Delete(silentBundleInfo);
+    EXPECT_EQ(bundleMgr->isSilent_.Size(), 0);
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest001 end");
+}
+ 
+/**
+* @tc.name: BundleMgrProxyTest002
+* @tc.desc: Test the UpdateSilentConfig method of BundleMgrProxy
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest002, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest002 start");
+ 
+    int32_t user = static_cast<int32_t>(USER_TEST);
+    std::string storeName = "test";
+    DataShare::SilentBundleInfo silentBundleInfo(BUNDLE_NAME, user);
+ 
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+ 
+    // insert data to isSilent_
+    bundleMgr->UpdateSilentConfig(silentBundleInfo, storeName, true);
+    EXPECT_EQ(bundleMgr->isSilent_.Size(), 1);
+    bundleMgr->UpdateSilentConfig(silentBundleInfo, storeName + "1", true);
+    EXPECT_EQ(bundleMgr->isSilent_.Size(), 1);
+    // Update isSilent_
+    bundleMgr->UpdateSilentConfig(silentBundleInfo, storeName, false);
+    EXPECT_EQ(bundleMgr->isSilent_.Size(), 1);
+    // delete data
+    bundleMgr->isSilent_.Delete(DataShare::SilentBundleInfo(BUNDLE_NAME, user));
+    EXPECT_EQ(bundleMgr->isSilent_.Size(), 0);
+ 
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest002 end");
+}
+ 
+/**
+* @tc.name: BundleUtilsTest001
+* @tc.desc: Test the SetBundleInfoCallback and IsConfigSilentProxy methods of BundleUtils
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleUtilsTest001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleUtilsTest001 start");
+ 
+    auto [err, ret] = BundleUtils::GetInstance().IsConfigSilentProxy("", 0, "");
+    EXPECT_EQ(err, -1);
+    EXPECT_EQ(ret, false);
+ 
+    auto task = [](const std::string &bundleName, int32_t userId, const std::string &storeName) {
+        return std::make_pair(0, true);
+    };
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
+    auto [err2, ret2] = BundleUtils::GetInstance().IsConfigSilentProxy("", 0, "");
+    EXPECT_EQ(err2, 0);
+    EXPECT_EQ(ret2, true);
+    ZLOGI("DataShareServiceImplTest BundleUtilsTest001 end");
 }
 } // namespace OHOS::Test
