@@ -106,6 +106,8 @@ public:
 
     int32_t BeforeOpen(RdbSyncerParam &param) override;
 
+    std::pair<int32_t, bool> IsSupportSilent(const RdbSyncerParam &param) override;
+
     int32_t AfterOpen(const RdbSyncerParam &param) override;
 
     int32_t ReportStatistic(const RdbSyncerParam &param, const RdbStatEvent &statEvent) override;

@@ -19,6 +19,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "bootstrap.h"
+#include "bundle_utils.h"
 #include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
@@ -878,6 +879,20 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
     }
     SetReturnParam(meta, param);
     return RDB_OK;
+}
+
+std::pair<int32_t, bool> RdbServiceImpl::IsSupportSilent(const RdbSyncerParam &param)
+{
+    XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return {RDB_ERROR, false};
+    }
+    auto meta = GetStoreMetaData(param);
+    auto [err, flag] =
+        BundleUtils::GetInstance().IsConfigSilentProxy(meta.bundleName, std::atoi(meta.user.c_str()), meta.storeId);
+    return {RDB_OK, flag};
 }
 
 void RdbServiceImpl::SetReturnParam(const StoreMetaData &metadata, RdbSyncerParam &param)

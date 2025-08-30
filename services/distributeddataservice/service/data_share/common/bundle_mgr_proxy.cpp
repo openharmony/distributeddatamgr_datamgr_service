@@ -192,6 +192,7 @@ void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId, int32
         bundleCache_.Erase(bundleName + std::to_string(userId));
     }
     callerInfoCache_.Erase(bundleName + std::to_string(userId));
+    isSilent_.Delete(SilentBundleInfo(bundleName, userId));
     return;
 }
 
@@ -289,5 +290,64 @@ std::pair<int, std::vector<HapModuleInfo>> BundleMgrProxy::ConvertHapModuleInfo(
         hapModuleInfos.emplace_back(hapModuleInfo);
     }
     return std::make_pair(E_OK, hapModuleInfos);
+}
+
+void BundleMgrProxy::UpdateSilentConfig(const SilentBundleInfo &silentBundleInfo, const std::string &storeName,
+    bool isSilent)
+{
+    std::map<std::string, bool> storeNameMap;
+    if (isSilent_.Get(silentBundleInfo, storeNameMap)) {
+        storeNameMap.insert_or_assign(storeName, isSilent);
+    } else {
+        storeNameMap.emplace(storeName, isSilent);
+    }
+    isSilent_.Set(silentBundleInfo, storeNameMap);
+}
+ 
+std::pair<int, bool> BundleMgrProxy::IsConfigSilentProxy(const std::string &bundleName, int32_t userId,
+    const std::string &storeName)
+{
+    std::map<std::string, bool> storeNameMap;
+    SilentBundleInfo silentBundleInfo(bundleName, userId);
+    if (isSilent_.Get(silentBundleInfo, storeNameMap)) {
+        auto it = storeNameMap.find(storeName);
+        if (it != storeNameMap.end()) {
+            auto flag = it->second ? E_OK : E_SILENT_PROXY_DISABLE;
+            return {flag, it->second};
+        }
+    }
+ 
+    auto bmsClient = GetBundleMgrProxy();
+    if (bmsClient == nullptr) {
+        ZLOGE("GetBundleMgrProxy is nullptr! bundle is %{public}s, user is %{public}d.", bundleName.c_str(), userId);
+        return std::make_pair(E_BMS_NOT_READY, false);
+    }
+ 
+    AppExecFwk::BundleInfo bundleInfo;
+    bool result = bmsClient->GetBundleInfo(bundleName,
+        static_cast<int32_t>(AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE), bundleInfo, userId);
+    if (!result) {
+        ZLOGE("Get bundleInfo failed! ret: %{public}d, bundle is %{public}s, user is %{public}d.",
+            result, bundleName.c_str(), userId);
+        return std::make_pair(E_ERROR, false);
+    }
+ 
+    auto [errCode, hapModuleInfos] = ConvertHapModuleInfo(bundleInfo);
+    for (auto &hapModuleInfo : hapModuleInfos) {
+        for (auto &data : hapModuleInfo.proxyDatas) {
+            const auto &profileInfo = data.profileInfo;
+            if (profileInfo.resultCode == ERROR) {
+                ZLOGE("Profile unmarshall error.bundleName: %{public}s, userId: %{public}d",
+                    bundleName.c_str(), userId);
+                return std::make_pair(E_SILENT_PROXY_DISABLE, false);
+            }
+            if (profileInfo.profile.storeName == storeName) {
+                UpdateSilentConfig(silentBundleInfo, storeName, true);
+                return std::make_pair(E_OK, true);
+            }
+        }
+    }
+    UpdateSilentConfig(silentBundleInfo, storeName, false);
+    return std::make_pair(E_SILENT_PROXY_DISABLE, false);
 }
 } // namespace OHOS::DataShare

@@ -48,6 +48,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
   ]
 
   sources = [
+    "${data_service_path}/service/common/bundle_utils.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
