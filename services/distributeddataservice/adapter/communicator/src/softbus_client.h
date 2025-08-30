@@ -56,14 +56,14 @@ public:
         QOS_BUTT
     };
 
-    SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId, const std::string& networkId,
-        uint32_t type = QOS_HML, const SessionAccessInfo &accessInfo = {});
+    SoftBusClient(const PipeInfo &pipeInfo, const DeviceId &deviceId, const std::string &networkId,
+        uint32_t type = QOS_HML);
     ~SoftBusClient();
 
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
     Status CheckStatus();
-    Status OpenConnect(const ISocketListener *listener);
+    Status OpenConnect(const ISocketListener *listener, const SessionAccessInfo &accessInfo);
     Status SendData(const DataInfo &dataInfo);
     bool operator==(int32_t socket) const;
     bool operator==(const std::string &deviceId) const;
@@ -73,7 +73,7 @@ public:
     int32_t GetSocket() const;
     uint32_t GetQoSType() const;
     int32_t GetSoftBusError();
-    Status ReuseConnect(const ISocketListener *listener);
+    Status ReuseConnect(const ISocketListener *listener, const SessionAccessInfo &accessInfo);
     std::string GetNetworkId() const;
     void UpdateNetworkId(const std::string &networkId);
 
@@ -81,7 +81,7 @@ private:
     int32_t Open(int32_t socket, uint32_t type, const ISocketListener *listener, bool async = true);
     std::pair<int32_t, uint32_t> GetMtu(int32_t socket);
     Time CalcExpireTime() const;
-    int32_t CreateSocket() const;
+    int32_t CreateSocket(const SessionAccessInfo &accessInfo) const;
     void UpdateBindInfo(int32_t socket, uint32_t mtu, int32_t status, bool async = true);
 
     static constexpr int32_t INVALID_SOCKET_ID = -1;
@@ -122,7 +122,6 @@ private:
     int32_t bindState_ = -1;
     int32_t softBusError_ = 0;
     std::string networkId_;
-    SessionAccessInfo accessInfo_;
 };
 } // namespace OHOS::AppDistributedKv
 #endif // DISTRIBUTEDDATAMGR_DATAMGR_SERVICE_SOFTBUS_CLIENT_H
