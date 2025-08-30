@@ -188,7 +188,7 @@ void SoftBusAdapter::GetExpireTime(std::shared_ptr<SoftBusClient> &conn)
 std::pair<Status, int32_t> SoftBusAdapter::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
     const DataInfo &dataInfo, uint32_t length, const MessageInfo &info)
 {
-    std::shared_ptr<SoftBusClient> conn = GetConnect(pipeInfo, deviceId, dataInfo.extraInfo);
+    std::shared_ptr<SoftBusClient> conn = GetConnect(pipeInfo, deviceId);
     if (conn == nullptr) {
         return std::make_pair(Status::ERROR, 0);
     }
@@ -197,7 +197,7 @@ std::pair<Status, int32_t> SoftBusAdapter::SendData(const PipeInfo &pipeInfo, co
         return std::make_pair(Status::RATE_LIMIT, 0);
     }
     if (status != Status::SUCCESS) {
-        return OpenConnect(conn, deviceId);
+        return OpenConnect(conn, deviceId, dataInfo.extraInfo);
     }
     status = conn->SendData(dataInfo);
     if ((status != Status::NETWORK_ERROR) && (status != Status::RATE_LIMIT)) {
@@ -247,8 +247,7 @@ bool SoftBusAdapter::ConfigSessionAccessInfo(const ExtraDataInfo &extraInfo, Ses
     return true;
 }
 
-std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId,
-    const ExtraDataInfo &extraInfo)
+std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId)
 {
     std::string networkId = DeviceManagerAdapter::GetInstance().ToNetworkID(deviceId.deviceId);
     if (networkId.empty()) {
@@ -256,16 +255,10 @@ std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeIn
         return nullptr;
     }
     std::shared_ptr<SoftBusClient> conn;
-    auto isOHType = DeviceManagerAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
-    SessionAccessInfo sessionAccessInfo = { .isOHType = isOHType };
-    if (isOHType && !ConfigSessionAccessInfo(extraInfo, sessionAccessInfo)) {
-        ZLOGE("peer device is not oh device or config accessInfo fail, deviceId:%{public}s",
-            Anonymous::Change(deviceId.deviceId).c_str());
-        return nullptr;
-    }
-    uint32_t qosType = isOHType ? SoftBusClient::QOS_HML : SoftBusClient::QOS_BR;
+    uint32_t qosType = DeviceManagerAdapter::GetInstance().IsOHOSType(deviceId.deviceId) ? SoftBusClient::QOS_HML :
+        SoftBusClient::QOS_BR;
     connects_.Compute(deviceId.deviceId,
-        [&pipeInfo, &deviceId, &sessionAccessInfo, &conn, qosType, &networkId](const auto &key,
+        [&pipeInfo, &deviceId, &conn, qosType, &networkId](const auto &key,
             std::vector<std::shared_ptr<SoftBusClient>> &connects) -> bool {
             for (auto &connect : connects) {
                 if (connect == nullptr) {
@@ -276,7 +269,7 @@ std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeIn
                     return true;
                 }
             }
-            auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, networkId, qosType, sessionAccessInfo);
+            auto connect = std::make_shared<SoftBusClient>(pipeInfo, deviceId, networkId, qosType);
             connects.emplace_back(connect);
             conn = connect;
             return true;
@@ -285,7 +278,7 @@ std::shared_ptr<SoftBusClient> SoftBusAdapter::GetConnect(const PipeInfo &pipeIn
 }
 
 std::pair<Status, int32_t> SoftBusAdapter::OpenConnect(const std::shared_ptr<SoftBusClient> &conn,
-    const DeviceId &deviceId)
+    const DeviceId &deviceId, const ExtraDataInfo &extraInfo)
 {
     auto networkId = DeviceManagerAdapter::GetInstance().ToNetworkID(deviceId.deviceId);
     if (conn != nullptr) {
@@ -296,13 +289,20 @@ std::pair<Status, int32_t> SoftBusAdapter::OpenConnect(const std::shared_ptr<Sof
             conn->UpdateNetworkId(networkId);
         }
     }
+    auto isOHType = DeviceManagerAdapter::GetInstance().IsOHOSType(deviceId.deviceId);
+    SessionAccessInfo sessionAccessInfo = { .isOHType = isOHType };
+    if (isOHType && !ConfigSessionAccessInfo(extraInfo, sessionAccessInfo)) {
+        ZLOGE("peer device is not oh device or config accessInfo fail, isOHType:%{public}d, deviceId:%{public}s",
+            isOHType, Anonymous::Change(deviceId.deviceId).c_str());
+        return std::make_pair(Status::ERROR, 0);
+    }
     auto applyTask = [deviceId](int32_t errcode) {
         CommunicatorContext::GetInstance().NotifySessionReady(deviceId.deviceId, errcode);
     };
-    auto connectTask = [this, connect = std::weak_ptr<SoftBusClient>(conn)]() {
+    auto connectTask = [this, connect = std::weak_ptr<SoftBusClient>(conn), &sessionAccessInfo]() {
         auto conn = connect.lock();
         if (conn != nullptr) {
-            conn->OpenConnect(&clientListener_);
+            conn->OpenConnect(&clientListener_, sessionAccessInfo);
         }
     };
     ConnectManager::GetInstance()->ApplyConnect(networkId, applyTask, connectTask);
@@ -713,11 +713,16 @@ Status SoftBusAdapter::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &de
     if (!isOHOSType) {
         return Status::NOT_SUPPORT;
     }
-    std::shared_ptr<SoftBusClient> conn = GetConnect(pipeInfo, deviceId, extraInfo);
+    std::shared_ptr<SoftBusClient> conn = GetConnect(pipeInfo, deviceId);
     if (conn == nullptr) {
         return Status::ERROR;
     }
-    auto status = conn->ReuseConnect(&clientListener_);
+    SessionAccessInfo sessionAccessInfo;
+    if (!ConfigSessionAccessInfo(extraInfo, sessionAccessInfo)) {
+        ZLOGE("config accessInfo fail, deviceId:%{public}s", Anonymous::Change(deviceId.deviceId).c_str());
+        return Status::ERROR;
+    }
+    auto status = conn->ReuseConnect(&clientListener_, sessionAccessInfo);
     if (status != Status::SUCCESS) {
         return status;
     }

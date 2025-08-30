@@ -94,10 +94,10 @@ private:
     Task GetCloseSessionTask();
     bool CloseSession(const std::string &networkId);
     void GetExpireTime(std::shared_ptr<SoftBusClient> &conn);
-    std::pair<Status, int32_t> OpenConnect(const std::shared_ptr<SoftBusClient> &conn, const DeviceId &deviceId);
-    bool ConfigSessionAccessInfo(const ExtraDataInfo &extraInfo, SessionAccessInfo &sessionAccessInfo);
-    std::shared_ptr<SoftBusClient> GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId,
+    std::pair<Status, int32_t> OpenConnect(const std::shared_ptr<SoftBusClient> &conn, const DeviceId &deviceId,
         const ExtraDataInfo &extraInfo);
+    bool ConfigSessionAccessInfo(const ExtraDataInfo &extraInfo, SessionAccessInfo &sessionAccessInfo);
+    std::shared_ptr<SoftBusClient> GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId);
 
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
 
