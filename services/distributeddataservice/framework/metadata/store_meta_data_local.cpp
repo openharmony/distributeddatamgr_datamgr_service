@@ -38,6 +38,16 @@ bool PolicyValue::IsValueEffect() const
     return (index > 0);
 }
 
+bool PolicyValue::operator==(const PolicyValue &policyValue) const
+{
+    return type == policyValue.type && index == policyValue.index && valueUint == policyValue.valueUint;
+}
+
+bool PolicyValue::operator!=(const PolicyValue &policyValue) const
+{
+    return !(*this == policyValue);
+}
+
 bool StoreMetaDataLocal::HasPolicy(uint32_t type)
 {
     for (const auto &policy : policies) {

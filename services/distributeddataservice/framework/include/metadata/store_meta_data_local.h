@@ -27,6 +27,8 @@ struct API_EXPORT PolicyValue final : public Serializable {
     uint32_t valueUint = 0;
     API_EXPORT PolicyValue() = default;
     API_EXPORT ~PolicyValue() = default;
+    API_EXPORT bool operator==(const PolicyValue &policyValue) const;
+    API_EXPORT bool operator!=(const PolicyValue &policyValue) const;
     API_EXPORT bool IsValueEffect() const;
     API_EXPORT bool Marshal(json &node) const override;
     API_EXPORT bool Unmarshal(const json &node) override;
