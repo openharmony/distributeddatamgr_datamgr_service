@@ -827,7 +827,7 @@ Status KVDBServiceImpl::AfterCreate(
     return status;
 }
 
-void KVDBServiceImpl::SaveAppIDMeta(const StoreMetaData &metaData)
+void KVDBServiceImpl::SaveAppIdMeta(const StoreMetaData &metaData)
 {
     AppIDMetaData appIdMeta;
     AppIDMetaData oldAppIdMeta;
@@ -987,11 +987,11 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
     }
     StoreMetaDataLocal oldLocalMetaData;
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), oldLocalMetaData, true)
-    && oldLocalMetaData == localMetaData && oldLocalMetaData.schema && localMetaData.schema
+    && oldLocalMetaData == localMetaData && oldLocalMetaData.schema == localMetaData.schema
     && oldLocalMetaData.policies == localMetaData.policies) {
         return;
     }
-    MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMetaData, true)
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMetaData, true);
 }
 
 StoreMetaData KVDBServiceImpl::LoadStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser)
