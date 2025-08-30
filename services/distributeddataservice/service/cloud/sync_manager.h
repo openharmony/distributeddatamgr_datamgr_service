@@ -104,8 +104,29 @@ public:
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
     static std::string GetPath(const StoreMetaData &meta);
+    void OnNetworkDisconnected();
+    void OnNetworkConnected();
 
 private:
+    class NetworkRecoveryManager {
+    public:
+        explicit NetworkRecoveryManager(SyncManager &syncManager) : syncManager_(syncManager)
+        {
+        }
+        void OnNetworkDisconnected();
+        void OnNetworkConnected();
+        void RecordSyncApps(const int32_t user, const std::string &bundleName);
+
+    private:
+        std::vector<std::string> GetAppList(const int32_t user);
+        struct NetWorkEvent {
+            std::chrono::system_clock::time_point disconnectTime;
+            std::map<int32_t, std::vector<std::string>> syncApps;
+        };
+        std::mutex eventMutex_;
+        std::unique_ptr<NetWorkEvent> currentEvent_;
+        SyncManager &syncManager_;
+    };
     using Event = DistributedData::Event;
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
@@ -149,7 +170,7 @@ private:
         const std::string &message = "");
     static void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState,
         int32_t code);
-    static bool HandleRetryFinished(const SyncInfo &info, int32_t user, int32_t code, int32_t dbCode,
+    bool HandleRetryFinished(const SyncInfo &info, int32_t user, int32_t code, int32_t dbCode,
         const std::string &prepareTraceId);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
@@ -185,6 +206,7 @@ private:
     ConcurrentMap<QueryKey, std::map<SyncId, CloudLastSyncInfo>> lastSyncInfos_;
     std::set<std::string> kvApps_;
     ConcurrentMap<int32_t, std::map<std::string, std::set<std::string>>> compensateSyncInfos_;
+    NetworkRecoveryManager networkRecoveryManager_{ *this };
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
