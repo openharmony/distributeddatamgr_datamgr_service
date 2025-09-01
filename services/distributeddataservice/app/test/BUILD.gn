@@ -587,9 +587,9 @@ ohos_unittest("BundleCheckerTest") {
 ohos_unittest("KvStoreDumpTest") {
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/app/src/checker/bundlechecker.cpp",
+    "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
-    "${data_service_path}/app/src/clone/clonebackupinfo.cpp",
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
     "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
