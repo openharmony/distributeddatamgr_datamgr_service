@@ -82,13 +82,13 @@ int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId, int &userId)
     return E_OK;
 }
 
-bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleName)
+bool PreProcessUtils::GetHapBundleNameByToken(uint32_t tokenId, std::string &bundleName)
 {
     bundleName = "processName";
     return true;
 }
 
-bool PreProcessUtils::GetNativeProcessNameByToken(int tokenId, std::string &processName)
+bool PreProcessUtils::GetNativeProcessNameByToken(uint32_t tokenId, std::string &processName)
 {
     processName = "processName";
     return true;
@@ -188,8 +188,10 @@ bool PreProcessUtils::GetSpecificBundleName(const std::string &bundleName, int32
     return true;
 }
 
-bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &bundleName)
+bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
+    std::string &bundleName)
 {
+    specificBundleName = "specificBundleName";
     bundleName = "bundleName";
     return true;
 }

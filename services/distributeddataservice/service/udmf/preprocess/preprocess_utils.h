@@ -26,8 +26,8 @@ public:
     static std::string GenerateId();
     static time_t GetTimestamp();
     static int32_t GetHapUidByToken(uint32_t tokenId, int &userId);
-    static bool GetHapBundleNameByToken(int tokenId, std::string &bundleName);
-    static bool GetNativeProcessNameByToken(int tokenId, std::string &processName);
+    static bool GetHapBundleNameByToken(uint32_t tokenId, std::string &bundleName);
+    static bool GetNativeProcessNameByToken(uint32_t tokenId, std::string &processName);
     static std::string GetLocalDeviceId();
     static void SetRemoteData(UnifiedData &data);
     static int32_t SetRemoteUri(uint32_t tokenId, UnifiedData &data);
@@ -43,7 +43,8 @@ public:
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
-    static bool GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &bundleName);
+    static bool GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
+        std::string &bundleName);
     static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();
 private:
     static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);

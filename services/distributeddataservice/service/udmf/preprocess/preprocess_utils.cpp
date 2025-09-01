@@ -16,13 +16,13 @@
 
 #include "preprocess_utils.h"
 
-#include <iomanip>
 #include <sstream>
 
 #include "bundle_info.h"
 #include "dds_trace.h"
 #include "udmf_radar_reporter.h"
 #include "accesstoken_kit.h"
+#include "checker/checker_manager.h"
 #include "device_manager_adapter.h"
 #include "file_mount_manager.h"
 #include "iservice_registry.h"
@@ -33,7 +33,6 @@
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
 #include "ipc_skeleton.h"
-#include "bundle_mgr/bundlemgr_adapter.h"
 namespace OHOS {
 namespace UDMF {
 static constexpr int ID_LEN = 32;
@@ -63,16 +62,17 @@ int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option
         return E_ERROR;
     }
     std::string bundleName;
-    if (!GetSpecificBundleNameByTokenId(option.tokenId, bundleName)) {
+    std::string specificBundleName;
+    if (!GetSpecificBundleNameByTokenId(option.tokenId, specificBundleName, bundleName)) {
         ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", option.tokenId);
         return E_ERROR;
     }
     std::string intention = it->second;
-    UnifiedKey key(intention, bundleName, GenerateId());
+    UnifiedKey key(intention, specificBundleName, GenerateId());
     Privilege privilege;
     privilege.tokenId = option.tokenId;
-    int32_t userId = IPCSkeleton::GetCallingUid() / OHOS::AppExecFwk::Constants::BASE_USER_RANGE;
-    std::string appId = DistributedData::BundleMgrAdapter::GetInstance().GetBundleAppId(bundleName, userId);
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(
+        { IPCSkeleton::GetCallingUid(), option.tokenId, bundleName });
     Runtime runtime;
     runtime.key = key;
     runtime.privileges.emplace_back(privilege);
@@ -111,6 +111,10 @@ time_t PreProcessUtils::GetTimestamp()
 
 int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId, int &userId)
 {
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        ZLOGE("TokenType is not TOKEN_HAP");
+        return E_ERROR;
+    }
     Security::AccessToken::HapTokenInfo tokenInfo;
     auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (result != Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
@@ -121,14 +125,8 @@ int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId, int &userId)
     return E_OK;
 }
 
-bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleName)
+bool PreProcessUtils::GetHapBundleNameByToken(uint32_t tokenId, std::string &bundleName)
 {
-    Security::AccessToken::HapTokenInfo hapInfo;
-    if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
-        == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
-        bundleName = hapInfo.bundleName;
-        return true;
-    }
     if (UTILS::IsTokenNative()) {
         ZLOGD("TypeATokenTypeEnum is TOKEN_HAP");
         std::string processName;
@@ -137,11 +135,17 @@ bool PreProcessUtils::GetHapBundleNameByToken(int tokenId, std::string &bundleNa
             return true;
         }
     }
+    Security::AccessToken::HapTokenInfo hapInfo;
+    if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
+        == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
+        bundleName = hapInfo.bundleName;
+        return true;
+    }
     ZLOGE("Get bundle name faild");
     return false;
 }
 
-bool PreProcessUtils::GetNativeProcessNameByToken(int tokenId, std::string &processName)
+bool PreProcessUtils::GetNativeProcessNameByToken(uint32_t tokenId, std::string &processName)
 {
     Security::AccessToken::NativeTokenInfo nativeInfo;
     if (Security::AccessToken::AccessTokenKit::GetNativeTokenInfo(tokenId, nativeInfo)
@@ -500,20 +504,23 @@ std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
     return std::to_string(hapTokenInfo.apiVersion);
 }
 
-bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &bundleName)
+bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
+    std::string &bundleName)
 {
-    Security::AccessToken::HapTokenInfo hapInfo;
-    if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
-        == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
-        return GetSpecificBundleName(hapInfo.bundleName, hapInfo.instIndex, bundleName);
-    }
     if (UTILS::IsTokenNative()) {
         ZLOGI("TypeATokenTypeEnum is TOKEN_NATIVE");
         std::string processName;
         if (GetNativeProcessNameByToken(tokenId, processName)) {
             bundleName = std::move(processName);
+            specificBundleName = bundleName;
             return true;
         }
+    }
+    Security::AccessToken::HapTokenInfo hapInfo;
+    if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
+        == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
+        bundleName = hapInfo.bundleName;
+        return GetSpecificBundleName(hapInfo.bundleName, hapInfo.instIndex, specificBundleName);
     }
     ZLOGE("Get bundle name faild, tokenid:%{public}u", tokenId);
     return false;
