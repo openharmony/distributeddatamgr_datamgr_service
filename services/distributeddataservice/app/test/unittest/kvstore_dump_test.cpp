@@ -12,3 +12,248 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "auth_delegate.h"
+#include "account/account_delegate.h"
+#include "account_delegate_mock.h"
+#include "bootstrap.h"
+#include "db_store_mock.h"
+#include "device_manager_adapter.h"
+#include "device_manager_adapter_mock.h"
+#include "executor_pool.h"
+#include <memory>
+#include "metadata/secret_key_meta_data.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/appid_meta_data.h"
+#include <nlohmann/json.hpp>
+#include "bootstrap.h"
+#include "gtest/gtest.h"
+#include "kvstore_data_service.h"
+#include "serializable/serializable.h"
+#include "system_ability.h"
+#include "system_ability_definition.h"
+#include "upgrade_manager.h"
+#include "utils/base64_utils.h"
+
+using namespace testing;
+using namespace testing::ext;
+using namespace OHOS;
+using namespace OHOS::AppDistributedKv;
+using namespace OHOS::DistributedData;
+
+namespace OHOS::Test {
+static constexpr const char *TEST_BUNDLE_NAME = "TestApplication";
+static constexpr const char *TEST_STORE_NAME = "TestStore";
+static constexpr const char *TEST_UUID = "ABCD";
+
+class KvStoreDumpTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+    static void ConfigSendParameters(bool isCancel);
+    static MessageInfo msgInfo_;
+    static std::string foregroundUserId_;
+    static AppDistributedKv::DeviceInfo localDeviceInfo_;
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
+    static StoreMetaData metaData_;
+    static inline AccountDelegateMock *accountDelegateMock = nullptr;
+    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
+};
+
+std::string KvStoreDumpTest::foregroundUserId_ = "0";
+AppDistributedKv::DeviceInfo KvStoreDumpTest::localDeviceInfo_;
+std::shared_ptr<DBStoreMock> KvStoreDumpTest::dbStoreMock_;
+
+void KvStoreDumpTest::SetUpTestCase(void)
+{
+    dbStoreMock_ = std::make_shared<DBStoreMock>();
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+    accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+    if (accountDelegateMock != nullptr) {
+    AccountDelegate::instance_ = nullptr;
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+    }
+    deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+    BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
+    DeviceInfo deviceInfo;
+    deviceInfo.uuid = TEST_UUID;
+    EXPECT_CALL(*deviceManagerAdapterMock, GetLocalDevice()).WillRepeatedly(Return(deviceInfo));
+}
+
+void KvStoreDumpTest::TearDownTestCase(void)
+{
+    if (accountDelegateMock != nullptr) {
+    delete accountDelegateMock;
+    accountDelegateMock = nullptr;
+    }
+    deviceManagerAdapterMock = nullptr;
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
+}
+
+void KvStoreDumpTest::SetUp(void)
+{}
+
+void KvStoreDumpTest::TearDown(void)
+{
+    ConfigSendParameters(true);
+}
+
+void KvStoreDumpTest::ConfigSendParameters(bool isCancel)
+{
+    StoreMetaData localMetaData;
+    localMetaData.deviceId = TEST_UUID;
+    localMetaData.user = foregroundUserId_;
+    localMetaData.bundleName = TEST_BUNDLE_NAME;
+    localMetaData.storeId = TEST_STORE_NAME;
+
+    if (isCancel) {
+        MetaDataManager::GetInstance().DelMeta(localMetaData.GetKeyWithoutPath());
+    } else {
+        MetaDataManager::GetInstance().SaveMeta(localMetaData.GetKeyWithoutPath(), localMetaData);
+    }
+}
+
+/**
+@tc.name: DumpStoreInfo001
+@tc.desc: test DumpStoreInfo function
+@tc.type: FUNC
+@tc.require:
+@tc.author: SQL
+*/
+HWTEST_F(KvStoreDumpTest, DumpStoreInfo001, TestSize.Level0)
+{
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 0;
+    std::map<std::string, std::vector<std::string>> params = {};
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
+}
+
+/**
+@tc.name: DumpStoreInfo002
+@tc.desc: test DumpStoreInfo function
+@tc.type: FUNC
+@tc.require:
+@tc.author: SQL
+*/
+HWTEST_F(KvStoreDumpTest, DumpStoreInfo002, TestSize.Level0)
+{
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params = {};
+    if (accountDelegateMock != nullptr) {
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
+    }
+    ConfigSendParameters(false);
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
+}
+
+/**
+@tc.name: DumpStoreInfo003
+@tc.desc: test DumpStoreInfo function
+@tc.type: FUNC
+@tc.require:
+@tc.author: SQL
+*/
+HWTEST_F(KvStoreDumpTest, DumpStoreInfo003, TestSize.Level0)
+{
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params = {};
+    if (accountDelegateMock != nullptr) {
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(false));
+    }
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
+}
+
+/**
+@tc.name: DumpStoreInfo004
+@tc.desc: test DumpStoreInfo function
+@tc.type: FUNC
+@tc.require:
+@tc.author: SQL
+*/
+HWTEST_F(KvStoreDumpTest, DumpStoreInfo004, TestSize.Level0)
+{
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params = {};
+    if (accountDelegateMock != nullptr) {
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
+    }
+    ConfigSendParameters(true);
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
+}
+
+/**
+* @tc.name: DumpBundleInfo001
+* @tc.desc: test DumpBundleInfo function
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: SQL
+*/
+HWTEST_F(KvStoreDataServiceTest, DumpBundleInfo001, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    int fd = 0;
+    std::map<std::string, std::vector<std::string>> params = {};
+    EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.DumpBundleInfo(fd, params));
+}
+
+/**
+@tc.name: DumpBundleInfo002
+@tc.desc: test DumpBundleInfo function
+@tc.type: FUNC
+@tc.require:
+@tc.author: SQL
+*/
+HWTEST_F(KvStoreDumpTest, DumpBundleInfo002, TestSize.Level0)
+{
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params = {};
+    if (accountDelegateMock != nullptr) {
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
+    }
+    ConfigSendParameters(false);
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
+}
+
+/**
+@tc.name: DumpBundleInfo003
+@tc.desc: test DumpBundleInfo function
+@tc.type: FUNC
+@tc.require:
+@tc.author: SQL
+*/
+HWTEST_F(KvStoreDumpTest, DumpBundleInfo003, TestSize.Level0)
+{
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params = {};
+    if (accountDelegateMock != nullptr) {
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(false));
+    }
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
+}
+
+/**
+@tc.name: DumpBundleInfo004
+@tc.desc: test DumpBundleInfo function
+@tc.type: FUNC
+@tc.require:
+@tc.author: SQL
+*/
+HWTEST_F(KvStoreDumpTest, DumpBundleInfo004, TestSize.Level0)
+{
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params = {};
+    if (accountDelegateMock != nullptr) {
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
+    }
+    ConfigSendParameters(false);
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
+}
+}
