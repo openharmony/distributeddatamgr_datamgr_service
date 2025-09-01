@@ -978,6 +978,8 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
 
 void KvStoreDataService::InitSecurityAdapter(std::shared_ptr<ExecutorPool> executors)
 {
+    auto ret = DATASL_OnStart();
+    ZLOGI("datasl on start ret:%d", ret);
     security_ = std::make_shared<Security>(executors);
     if (security_ == nullptr) {
         ZLOGE("security is nullptr.");
