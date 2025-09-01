@@ -13,27 +13,13 @@
  * limitations under the License.
  */
 
-#include "auth_delegate.h"
-#include "account/account_delegate.h"
 #include "account_delegate_mock.h"
-#include "bootstrap.h"
 #include "db_store_mock.h"
 #include "device_manager_adapter.h"
 #include "device_manager_adapter_mock.h"
-#include "executor_pool.h"
-#include <memory>
-#include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
-#include "metadata/appid_meta_data.h"
-#include <nlohmann/json.hpp>
-#include "bootstrap.h"
 #include "gtest/gtest.h"
 #include "kvstore_data_service.h"
-#include "serializable/serializable.h"
-#include "system_ability.h"
-#include "system_ability_definition.h"
-#include "upgrade_manager.h"
-#include "utils/base64_utils.h"
 
 using namespace testing;
 using namespace testing::ext;

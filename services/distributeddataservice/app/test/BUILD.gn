@@ -609,7 +609,7 @@ ohos_unittest("KvStoreDumpTest") {
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_dump_test.cpp",
     "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
-    "${data_service_path}service/test/mock/db_store_mock.cpp","
+    "${data_service_path}/service/test/mock/db_store_mock.cpp","
     "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
     "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
 ]
