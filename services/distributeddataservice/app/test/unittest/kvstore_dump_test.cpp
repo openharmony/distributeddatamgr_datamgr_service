@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -119,8 +119,6 @@ void KvStoreDumpTest::ConfigSendParameters(bool isCancel)
 @tc.name: DumpStoreInfo001
 @tc.desc: test DumpStoreInfo function
 @tc.type: FUNC
-@tc.require:
-@tc.author: SQL
 */
 HWTEST_F(KvStoreDumpTest, DumpStoreInfo001, TestSize.Level0)
 {
@@ -134,8 +132,6 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo001, TestSize.Level0)
 @tc.name: DumpStoreInfo002
 @tc.desc: test DumpStoreInfo function
 @tc.type: FUNC
-@tc.require:
-@tc.author: SQL
 */
 HWTEST_F(KvStoreDumpTest, DumpStoreInfo002, TestSize.Level0)
 {
@@ -153,8 +149,6 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo002, TestSize.Level0)
 @tc.name: DumpStoreInfo003
 @tc.desc: test DumpStoreInfo function
 @tc.type: FUNC
-@tc.require:
-@tc.author: SQL
 */
 HWTEST_F(KvStoreDumpTest, DumpStoreInfo003, TestSize.Level0)
 {
@@ -171,8 +165,6 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo003, TestSize.Level0)
 @tc.name: DumpStoreInfo004
 @tc.desc: test DumpStoreInfo function
 @tc.type: FUNC
-@tc.require:
-@tc.author: SQL
 */
 HWTEST_F(KvStoreDumpTest, DumpStoreInfo004, TestSize.Level0)
 {
@@ -190,8 +182,6 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo004, TestSize.Level0)
 * @tc.name: DumpBundleInfo001
 * @tc.desc: test DumpBundleInfo function
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
 */
 HWTEST_F(KvStoreDataServiceTest, DumpBundleInfo001, TestSize.Level0)
 {
@@ -205,8 +195,6 @@ HWTEST_F(KvStoreDataServiceTest, DumpBundleInfo001, TestSize.Level0)
 @tc.name: DumpBundleInfo002
 @tc.desc: test DumpBundleInfo function
 @tc.type: FUNC
-@tc.require:
-@tc.author: SQL
 */
 HWTEST_F(KvStoreDumpTest, DumpBundleInfo002, TestSize.Level0)
 {
@@ -224,8 +212,6 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo002, TestSize.Level0)
 @tc.name: DumpBundleInfo003
 @tc.desc: test DumpBundleInfo function
 @tc.type: FUNC
-@tc.require:
-@tc.author: SQL
 */
 HWTEST_F(KvStoreDumpTest, DumpBundleInfo003, TestSize.Level0)
 {
@@ -242,8 +228,6 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo003, TestSize.Level0)
 @tc.name: DumpBundleInfo004
 @tc.desc: test DumpBundleInfo function
 @tc.type: FUNC
-@tc.require:
-@tc.author: SQL
 */
 HWTEST_F(KvStoreDumpTest, DumpBundleInfo004, TestSize.Level0)
 {
