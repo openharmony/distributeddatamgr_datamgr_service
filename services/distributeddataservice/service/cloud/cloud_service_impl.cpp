@@ -149,7 +149,9 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         ZLOGI("EnableCloud: change app[%{public}s] switch to %{public}d", bundle.c_str(), value);
     }
     if (newCloudInfo != cloudInfo) {
-        MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true);
+        if (!MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true)) {
+            return ERROR;
+        }
     }
     Execute(GenTask(0, newCloudInfo.user, CloudSyncScene::ENABLE_CLOUD,
         { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
@@ -188,7 +190,9 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
     auto newCloudInfo = cloudInfo;
     newCloudInfo.enableCloud = false;
     if (newCloudInfo != cloudInfo) {
-        MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true);
+        if (!MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true)) {
+            return ERROR;
+        }
     }
     Execute(GenTask(0, newCloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
     ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
@@ -235,7 +239,9 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     auto newCloudInfo = cloudInfo;
     newCloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
     if (newCloudInfo != cloudInfo) {
-        MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true);
+        if (!MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true)) {
+            return ERROR;
+        }
     }
     Execute(GenTask(0, newCloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (newCloudInfo.enableCloud && appSwitch == SWITCH_ON) {
