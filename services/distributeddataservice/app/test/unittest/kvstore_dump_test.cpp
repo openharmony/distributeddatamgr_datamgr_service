@@ -169,12 +169,12 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo004, TestSize.Level0)
 * @tc.desc: test DumpBundleInfo function
 * @tc.type: FUNC
 */
-HWTEST_F(KvStoreDataServiceTest, DumpBundleInfo001, TestSize.Level0)
+HWTEST_F(KvStoreDumpTest, DumpBundleInfo001, TestSize.Level0)
 {
-    KvStoreDataService kvStoreDataServiceTest;
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
     int fd = 0;
     std::map<std::string, std::vector<std::string>> params = {};
-    EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.DumpBundleInfo(fd, params));
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
 }
 
 /**
