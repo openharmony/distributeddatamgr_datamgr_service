@@ -204,11 +204,9 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
-    CloudSyncScene scene;
+    CloudSyncScene scene = CloudSyncScene::SWITCH_OFF;
     if (appSwitch == SWITCH_ON) {
         scene = CloudSyncScene::SWITCH_ON;
-    } else {
-        scene = CloudSyncScene::SWITCH_OFF;
     }
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
