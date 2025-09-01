@@ -33,9 +33,9 @@ bool CloudMark::Unmarshal(const Serializable::json &node)
 
 bool CloudMark::operator==(const CloudMark &cloudMark) const
 {
-    return bundleName == cloudMark.bundleName && deviceId == cloudMark.deviceId && index == cloudMark.index &&
-        isClearWaterMark == cloudMark.isClearWaterMark && storeId == cloudMark.storeId &&
-        userId == cloudMark.userId;
+    return (bundleName == cloudMark.bundleName) && (deviceId == cloudMark.deviceId) && (index == cloudMark.index) &&
+        (isClearWaterMark == cloudMark.isClearWaterMark) && (storeId == cloudMark.storeId) &&
+        (userId == cloudMark.userId);
 }
 
 bool CloudMark::operator!=(const CloudMark &cloudMark) const
