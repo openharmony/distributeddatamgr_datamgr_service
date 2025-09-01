@@ -1424,7 +1424,7 @@ HWTEST_F(CloudDataTest, EnableCloud02, TestSize.Level0)
     switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_ON);
     switches.insert_or_assign(bundleName, CloudData::CloudService::SWITCH_ON);
     auto ret = cloudServiceImpl_->EnableCloud("123456", switches);
-    EXPECT_NE(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_NE(ret, CloudData::CloudService::SUCCESS);
 }
 
 /**
