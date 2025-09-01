@@ -1260,10 +1260,10 @@ void CloudServiceImpl::UpdateClearWaterMark(
         if (dbMap.find(database.name) != dbMap.end() && database.version != dbMap[database.name]) {
             metaData.storeId = database.name;
             metaData.isClearWaterMark = true;
-            CloudMark newMark;
-            MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), newMark, true);
-            if (newMark != metaData) {
-                MetaDataManager::GetInstance().SaveMeta(newMark.GetKey(), newMark, true);
+            CloudMark oldMark;
+            MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), oldMark, true);
+            if (oldMark != metaData) {
+                MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
             }
             ZLOGI("clear watermark, storeId:%{public}s, newVersion:%{public}d, oldVersion:%{public}d",
                 Anonymous::Change(metaData.storeId).c_str(), database.version, dbMap[database.name]);
