@@ -149,7 +149,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
             return ERROR;
         }
     }
-    Execute(GenTask(0, newCloudInfo.user, CloudSyncScene::ENABLE_CLOUD,
+    Execute(GenTask(0, cloudInfo.user, CloudSyncScene::ENABLE_CLOUD,
         { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
     ZLOGI("EnableCloud success, id:%{public}s, count:%{public}zu", Anonymous::Change(id).c_str(), switches.size());
     return SUCCESS;
