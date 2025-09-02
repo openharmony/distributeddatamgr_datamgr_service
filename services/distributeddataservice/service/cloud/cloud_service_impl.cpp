@@ -134,18 +134,18 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         Report(FT_ENABLE_CLOUD, Fault::CSF_CLOUD_INFO, "", "EnableCloud ret=" + std::to_string(status));
         return status;
     }
-
-    auto newCloudInfo = cloudInfo;
-    newCloudInfo.enableCloud = true;
+    cloudInfo.enableCloud = true;
     for (const auto &[bundle, value] : switches) {
-        if (!newCloudInfo.Exist(bundle)) {
+        if (!cloudInfo.Exist(bundle)) {
             continue;
         }
-        newCloudInfo.apps[bundle].cloudSwitch = (value == SWITCH_ON);
+        newCloudInfcloudInfoo.apps[bundle].cloudSwitch = (value == SWITCH_ON);
         ZLOGI("EnableCloud: change app[%{public}s] switch to %{public}d", bundle.c_str(), value);
     }
-    if (newCloudInfo != cloudInfo) {
-        if (!MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true)) {
+    CloudInfo oldCloudInfo;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), oldCloudInfo, true);
+    if (oldCloudInfo != cloudInfo) {
+        if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
             return ERROR;
         }
     }
