@@ -140,7 +140,7 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo002, TestSize.Level0)
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
     if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId()).WillOnce(Return(true));
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(userid)).WillOnce(Return(true));
     }
     ConfigSendParameters(true);
     std::vector metas;
@@ -160,7 +160,7 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo002, TestSize.Level0)
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
     if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId()).WillOnce(Return(true));
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
     }
     ConfigSendParameters(true);
     std::vector metas;
@@ -182,7 +182,7 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo003, TestSize.Level0)
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
     if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId()).WillOnce(Return(true));
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
     }
     ConfigSendParameters(false);
     std::vector metas;
@@ -202,7 +202,7 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo003, TestSize.Level0)
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
     if (accountDelegateMock != nullptr) {
-    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId()).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
     }
     ConfigSendParameters(false);
     std::vector metas;
