@@ -39,7 +39,7 @@ public:
     void SetUp();
     void TearDown();
     static void ConfigSendParameters(bool isCancel);
-    static void MockUserId()
+    static void MockUserId();
     static std::string foregroundUserId_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
