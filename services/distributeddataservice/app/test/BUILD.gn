@@ -584,6 +584,76 @@ ohos_unittest("BundleCheckerTest") {
   ]
 }
 
+ohos_unittest("DDMSDumpTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/checker/bundle_checker.cpp",
+    "${data_service_path}/app/src/checker/system_checker.cpp",
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
+    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
+    "${data_service_path}/app/src/db_info_handle_impl.cpp",
+    "${data_service_path}/app/src/feature_stub_impl.cpp",
+    "${data_service_path}/app/src/installer/installer.cpp",
+    "${data_service_path}/app/src/installer/installer_impl.cpp",
+    "${data_service_path}/app/src/kvstore_account_observer.cpp",
+    "${data_service_path}/app/src/kvstore_data_service.cpp",
+    "${data_service_path}/app/src/kvstore_data_service_stub.cpp",
+    "${data_service_path}/app/src/kvstore_device_listener.cpp",
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/app/src/kvstore_screen_observer.cpp",
+    "${data_service_path}/app/src/security/security.cpp",
+    "${data_service_path}/app/src/security/sensitive.cpp",
+    "${data_service_path}/app/src/session_manager/route_head_handler_impl.cpp",
+    "${data_service_path}/app/src/session_manager/session_manager.cpp",
+    "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
+    "${data_service_path}/app/src/task_manager.cpp",
+    "${data_service_path}/app/test/unittest/ddms_dump_test.cpp",
+    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
+    "${data_service_path}/service/test/mock/db_store_mock.cpp",
+    "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
+    "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
+]
+  sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    integer_overflow = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "file_api:securitylabel",
+    "googletest:gmock",
+    "googletest:gtest_main",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "memmgr:memmgrclient",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+  part_name = "datamgr_service"
+}
 ###############################################################################
 
 group("unittest") {
@@ -595,6 +665,7 @@ group("unittest") {
     ":FeatureStubImplTest",
     ":KvStoreDataServiceClearTest",
     ":KvStoreDataServiceTest",
+    ":DDMSDumpTest",
     ":KvStoreMetaManagerUpdateKeyTest",
     ":SessionManagerTest",
     ":UpgradeManagerTest",
