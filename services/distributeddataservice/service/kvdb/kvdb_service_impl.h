@@ -27,6 +27,7 @@
 #include "kvdb_service_stub.h"
 #include "kvdb_watcher.h"
 #include "kvstore_sync_manager.h"
+#include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
