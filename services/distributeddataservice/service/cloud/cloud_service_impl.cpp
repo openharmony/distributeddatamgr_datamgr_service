@@ -1129,16 +1129,13 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
         ZLOGW("user:%{public}d is locked!", userId);
         return { ERROR, cloudInfo };
     }
-    CloudInfo newInfo;
-    std::tie(status, newInfo) = GetCloudInfoFromServer(userId);
+    std::tie(status, cloudInfo) = GetCloudInfoFromServer(userId);
     if (status != SUCCESS) {
         ZLOGE("userId:%{public}d, status:%{public}d", userId, status);
         return { status, cloudInfo };
     }
-    if (newInfo != cloudInfo) {
-        MetaDataManager::GetInstance().SaveMeta(newInfo.GetKey(), newInfo, true);
-    }
-    return { SUCCESS, newInfo };
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+    return { SUCCESS, cloudInfo };
 }
 
 int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
