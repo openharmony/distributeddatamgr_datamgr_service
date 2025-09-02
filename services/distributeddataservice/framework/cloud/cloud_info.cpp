@@ -54,7 +54,7 @@ bool CloudInfo::IsMapEqual(const std::map<std::string, AppInfo> &appInfos) const
         return false;
     }
     for (auto it = apps.begin(), newIt = appInfos.begin(); it != apps.end(); ++it, ++newIt) {
-        if (it.second != newIt.second) {
+        if (it->second != newIt->second) {
             return false;
         }
     }
