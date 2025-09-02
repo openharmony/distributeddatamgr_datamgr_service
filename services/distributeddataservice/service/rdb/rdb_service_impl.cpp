@@ -489,7 +489,7 @@ void RdbServiceImpl::SaveAutoSyncDeviceId(const StoreMetaData &meta, const std::
         if (iter != specialUUIDs.end()) {
             std::swap(*iter, specialUUIDs.back());
         } else {
-            specialUUIDs.push_back(device);
+            specialUUIDs.push_back(sha256UUID);
         }
     }
     if (specialUUIDs.size() > ALLOW_AUTO_SYNC_DEVICE) {
