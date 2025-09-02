@@ -63,9 +63,9 @@ bool CloudInfo::IsAppsEqual(const std::map<std::string, AppInfo> &appInfos) cons
 
 bool CloudInfo::operator==(const CloudInfo &info) const
 {
-    return (user == info.user) && (id == info.id) && (totalSpace == info.totalSpace) &&
-        (remainSpace == info.remainSpace) && (enableCloud == info.enableCloud) && IsAppsEqual(info.apps) &&
-        (maxNumber == info.maxNumber) && (maxSize == info.maxSize);
+    return std::tie(user, id, totalSpace, remainSpace, enableCloud, maxNumber, maxSize) ==
+        std::tie(info.user, info.id, info.totalSpace, info.remainSpace, info.enableCloud, info.maxNumber,
+        info.maxSize) && IsAppsEqual(info.apps);
 }
 
 bool CloudInfo::operator!=(const CloudInfo &info) const

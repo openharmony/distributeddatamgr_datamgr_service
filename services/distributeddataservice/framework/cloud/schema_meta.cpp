@@ -42,8 +42,8 @@ bool SchemaMeta::Unmarshal(const Serializable::json &node)
 
 bool SchemaMeta::operator==(const SchemaMeta &meta) const
 {
-    return (metaVersion == meta.metaVersion) && (version == meta.version) && (bundleName == meta.bundleName) &&
-        (databases == meta.databases) && (e2eeEnable == meta.e2eeEnable);
+    return std::tie(metaVersion, version, bundleName, databases, e2eeEnable) ==
+        std::tie(meta.metaVersion, meta.version, meta.bundleName, meta.databases, meta.e2eeEnable);
 }
 
 bool SchemaMeta::operator!=(const SchemaMeta &meta) const
@@ -112,9 +112,9 @@ bool Database::Unmarshal(const Serializable::json &node)
 
 bool Database::operator==(const Database &database) const
 {
-    return (name == database.name) && (alias == database.alias) && (tables == database.tables) &&
-        (version == database.version) && (bundleName == database.bundleName) && (user == database.user) &&
-        (deviceId == database.deviceId) && (autoSyncType == database.autoSyncType);
+    return std::tie(name, alias, tables, version, bundleName, user, deviceId, autoSyncType) ==
+        std::tie(database.name, database.alias, database.tables, database.version, database.bundleName, database.user,
+        database.deviceId, database.autoSyncType);
 }
 
 bool Database::operator!=(const Database &database) const
@@ -147,9 +147,9 @@ bool Table::Unmarshal(const Serializable::json &node)
 
 bool Table::operator==(const Table &table) const
 {
-    return (name == table.name) && (alias == table.alias) && (fields == table.fields) &&
-        (deviceSyncFields == table.deviceSyncFields) && (cloudSyncFields == table.cloudSyncFields) &&
-        (sharedTableName == table.sharedTableName);
+    return std::tie(name, alias, fields, deviceSyncFields, cloudSyncFields, sharedTableName) ==
+        std::tie(table.name, table.alias, table.fields, table.deviceSyncFields, table.cloudSyncFields,
+        table.sharedTableName);
 }
 
 bool Table::operator!=(const Table &table) const
@@ -181,8 +181,8 @@ bool Field::Unmarshal(const Serializable::json &node)
 }
 bool Field::operator==(const Field &field) const
 {
-    return (colName == field.colName) && (alias == field.alias) && (type == field.type) &&
-        (primary == field.primary) && (nullable == field.nullable);
+    return std::tie(colName, alias, type, primary, nullable) ==
+        std::tie(field.colName, field.alias, field.type, field.primary, field.nullable);
 }
 
 bool Field::operator!=(const Field &field) const
