@@ -3207,7 +3207,7 @@ HWTEST_F(CloudDataTest, StrategyInfo, TestSize.Level0)
     info2.strategy = CloudData::NetworkSyncStrategy::Strategy::BUTT;
     ret = info2 == info1;
     EXPECT_TRUE(ret);
-    info2.buddleName = "test_cloud_bundleName2";
+    info2.bundleName = "test_cloud_bundleName2";
     ret = info2 == info1;
     EXPECT_FALSE(ret);
     info2.user = 1;
