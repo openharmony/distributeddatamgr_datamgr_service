@@ -53,10 +53,8 @@ bool CloudInfo::IsMapEqual(const std::map<std::string, AppInfo> &appInfos) const
     if (apps.size() != appInfos.size()) {
         return false;
     }
-
     for (const auto &pair : apps) {
-        auto it = appInfos.find(pair.first);
-        if (it == appInfos.end() || it->second == pair.second) {
+        if (pair.second != appInfos.at(pair.first)) {
             return false;
         }
     }
