@@ -26,7 +26,7 @@
 #include "cloud/cloud_mark.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
-#include "device_sync_app/device_sync_app_manager.h"
+#include "sync_mgr/sync_mgr.h"
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
 #include "crypto/crypto_manager.h"
