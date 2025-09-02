@@ -58,8 +58,8 @@ void KvStoreDumpTest::SetUpTestCase(void)
     dbStoreMock_ = std::make_shared<DBStoreMock>();
     accountDelegateMock = new (std::nothrow) AccountDelegateMock();
     if (accountDelegateMock != nullptr) {
-    AccountDelegate::instance_ = nullptr;
-    AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+        AccountDelegate::instance_ = nullptr;
+        AccountDelegate::RegisterAccountInstance(accountDelegateMock);
     }
     deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
     BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
@@ -71,8 +71,8 @@ void KvStoreDumpTest::SetUpTestCase(void)
 void KvStoreDumpTest::TearDownTestCase(void)
 {
     if (accountDelegateMock != nullptr) {
-    delete accountDelegateMock;
-    accountDelegateMock = nullptr;
+        delete accountDelegateMock;
+        accountDelegateMock = nullptr;
     }
     deviceManagerAdapterMock = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
@@ -106,7 +106,7 @@ void KvStoreDumpTest::ConfigSendParameters(bool isCancel)
 @tc.desc: test DumpStoreInfo function
 @tc.type: FUNC
 */
-    HWTEST_F(KvStoreDumpTest, DumpStoreInfo001, TestSize.Level0)
+HWTEST_F(KvStoreDumpTest, DumpStoreInfo001, TestSize.Level0)
 {
     DistributedKv::KvStoreDataService KvStoreDumpTest;
     int fd = 0;
@@ -202,7 +202,7 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo003, TestSize.Level0)
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
     if (accountDelegateMock != nullptr) {
-    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
     }
     ConfigSendParameters(false);
     std::vector<StoreMetaData> metas;
