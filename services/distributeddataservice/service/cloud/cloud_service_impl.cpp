@@ -139,7 +139,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         if (!cloudInfo.Exist(bundle)) {
             continue;
         }
-        newCloudInfcloudInfoo.apps[bundle].cloudSwitch = (value == SWITCH_ON);
+        cloudInfo.apps[bundle].cloudSwitch = (value == SWITCH_ON);
         ZLOGI("EnableCloud: change app[%{public}s] switch to %{public}d", bundle.c_str(), value);
     }
     CloudInfo oldCloudInfo;
