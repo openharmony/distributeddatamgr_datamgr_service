@@ -95,8 +95,8 @@ bool CloudInfo::AppInfo::Unmarshal(const Serializable::json &node)
 
 bool CloudInfo::AppInfo::operator==(const AppInfo &info) const
 {
-    return (bundleName == info.bundleName) && (appId == info.appId) && (version == info.version) &&
-        (instanceId == info.instanceId) && (cloudSwitch == info.cloudSwitch);
+    return std::tie(bundleName, appId, version, instanceId, cloudSwitch) == std::tie(info.bundleName, info.appId,
+        info.version, info.instanceId, info.cloudSwitch);
 }
 
 bool CloudInfo::AppInfo::operator!=(const AppInfo &info) const
