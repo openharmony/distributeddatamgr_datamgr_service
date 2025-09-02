@@ -17,6 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_GLOBAL_CONFIG_H
 #include "model/app_access_check_config.h"
 #include "model/app_id_mapping_config.h"
+#include "model/auto_sync_app_config.h"
 #include "model/backup_config.h"
 #include "model/checker_config.h"
 #include "model/cloud_config.h"
@@ -25,7 +26,6 @@
 #include "model/directory_config.h"
 #include "model/network_config.h"
 #include "model/thread_config.h"
-#include "model/device_sync_app_white_list_config.h"
 #include "serializable/serializable.h"
 namespace OHOS {
 namespace DistributedData {
@@ -44,7 +44,7 @@ public:
     std::vector<AppIdMappingConfig> *appIdMapping = nullptr;
     ThreadConfig *thread = nullptr;
     DataShareConfig *dataShare = nullptr;
-    DeviceSyncAppWhiteListConfig *deviceSyncAppWhiteList = nullptr;
+    std::vector<AutoSyncAppConfig> *autoSyncApps = nullptr;
     AppAccessCheckConfig *syncAppList = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;

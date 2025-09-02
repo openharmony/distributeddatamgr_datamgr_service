@@ -97,9 +97,9 @@ DataShareConfig *ConfigFactory::GetDataShareConfig()
     return config_.dataShare;
 }
 
-DeviceSyncAppWhiteListConfig *ConfigFactory::GetDeviceSyncAppWhiteListConfig()
+std::vector<AutoSyncAppConfig> *ConfigFactory::GetAutoSyncAppConfig()
 {
-    return config_.deviceSyncAppWhiteList;
+    return config_.autoSyncApps;
 }
 
 AppAccessCheckConfig *ConfigFactory::GetSyncAppsConfig()

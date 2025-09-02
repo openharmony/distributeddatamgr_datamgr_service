@@ -961,7 +961,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
     if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        auto force = DeviceSyncAppManager::GetInstance().Check(
+        auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
             {observer_.meta_.appId, observer_.meta_.bundleName, database.version});
         delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
     }
