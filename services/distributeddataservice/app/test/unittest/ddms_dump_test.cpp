@@ -31,7 +31,6 @@ namespace OHOS::Test {
 static constexpr const char *TEST_BUNDLE_NAME = "TestApplication";
 static constexpr const char *TEST_STORE_NAME = "TestStore";
 static constexpr const char *TEST_UUID = "ABCD";
-static int32_t userid = 0;
 
 class DDMSDumpTest : public testing::Test {
 public:
@@ -102,9 +101,11 @@ void DDMSDumpTest::ConfigSendParameters(bool isCancel)
 
 void DDMSDumpTest::MockUserId()
 {
-    if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(userId)).WillOnce(Return(true));
+    int32_t userId = 0;
+    if (accountDelegateMock == nullptr) {
+        return;
     }
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(userId)).WillOnce(Return(true));
 }
 
 /**
