@@ -264,7 +264,6 @@ ohos_unittest("SessionManagerTest") {
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
     "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
   ]
 
   if (datamgr_service_power) {
@@ -402,7 +401,6 @@ ohos_unittest("FeatureStubImplTest") {
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
   ]
 
   cflags = [
@@ -528,7 +526,6 @@ ohos_unittest("RouteHeadHandlerImplTest") {
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
   ]
 
   if (datamgr_service_power) {
