@@ -441,8 +441,7 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
         return { RDB_ERROR, nullptr };
     }
     std::vector<std::string> devices = { DmAdapter::GetInstance().ToUUID(device) };
-    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(
-                                             devices, [](auto &results) {}, true)) {
+    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
     }
@@ -1280,17 +1279,9 @@ int RdbServiceImpl::DoAutoSync(const std::vector<std::string> &devices, const St
             syncDevices.push_back(device);
         }
     }
-    if (syncDevices.empty()) {
-        ZLOGE("Designated sync device not in cache storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
-        return RDB_ERROR;
-    }
     auto store = GetStore(storeMetaData);
-    if (store == nullptr) {
-        ZLOGE("autosync store null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
-        return RDB_ERROR;
-    }
-    if (executors_ == nullptr) {
-        ZLOGE("autosync executors_ null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
+    if (syncDevices.empty() || executors_ == nullptr || store == nullptr) {
+        ZLOGE("Designated sync device not in cache storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
         return RDB_ERROR;
     }
     SyncParam syncParam = { 0, 0 };
