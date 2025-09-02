@@ -1413,27 +1413,11 @@ HWTEST_F(CloudDataTest, EnableCloud01, TestSize.Level0)
 
 /**
 * @tc.name: EnableCloud02
-* @tc.desc: Test the EnableCloud function to ensure that the id in cloudinfo does not equal the passed id.
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, EnableCloud02, TestSize.Level0)
-{
-    std::string bundleName = "testName";
-    std::map<std::string, int32_t> switches;
-    switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_ON);
-    switches.insert_or_assign(bundleName, CloudData::CloudService::SWITCH_ON);
-    auto ret = cloudServiceImpl_->EnableCloud("123456", switches);
-    EXPECT_NE(ret, CloudData::CloudService::SUCCESS);
-}
-
-/**
-* @tc.name: EnableCloud03
 * @tc.desc: Test the EnableCloud function to SWITCH_OFF.
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, EnableCloud03, TestSize.Level0)
+HWTEST_F(CloudDataTest, EnableCloud02, TestSize.Level0)
 {
     std::map<std::string, int32_t> switches;
     switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF);

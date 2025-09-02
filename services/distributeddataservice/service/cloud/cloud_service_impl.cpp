@@ -134,11 +134,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         Report(FT_ENABLE_CLOUD, Fault::CSF_CLOUD_INFO, "", "EnableCloud ret=" + std::to_string(status));
         return status;
     }
-    if (cloudInfo.id != id) {
-        ZLOGE("invalid args, [input] id:%{public}s, [exist] id:%{public}s", Anonymous::Change(id).c_str(),
-            Anonymous::Change(cloudInfo.id).c_str());
-        return INVALID_ARGUMENT;
-    }
+
     auto newCloudInfo = cloudInfo;
     newCloudInfo.enableCloud = true;
     for (const auto &[bundle, value] : switches) {

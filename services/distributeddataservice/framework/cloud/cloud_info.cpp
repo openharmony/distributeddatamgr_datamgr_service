@@ -48,13 +48,13 @@ bool CloudInfo::Unmarshal(const Serializable::json &node)
     return true;
 }
 
-bool CloudInfo::IsMapEqual(const std::map<std::string, AppInfo> &appInfos) const
+bool CloudInfo::IsAppsEqual(const std::map<std::string, AppInfo> &appInfos) const
 {
     if (apps.size() != appInfos.size()) {
         return false;
     }
-    for (auto it = apps.begin(), newIt = appInfos.begin(); it != apps.end(); ++it, ++newIt) {
-        if (it->second != newIt->second) {
+    for (auto it = apps.begin(), rIt = appInfos.begin(); it != apps.end(); ++it, ++rIt) {
+        if (it->second != rIt->second) {
             return false;
         }
     }
@@ -64,7 +64,7 @@ bool CloudInfo::IsMapEqual(const std::map<std::string, AppInfo> &appInfos) const
 bool CloudInfo::operator==(const CloudInfo &info) const
 {
     return (user == info.user) && (id == info.id) && (totalSpace == info.totalSpace) &&
-        (remainSpace == info.remainSpace) && (enableCloud == info.enableCloud) && IsMapEqual(info.apps) &&
+        (remainSpace == info.remainSpace) && (enableCloud == info.enableCloud) && IsAppsEqual(info.apps) &&
         (maxNumber == info.maxNumber) && (maxSize == info.maxSize);
 }
 

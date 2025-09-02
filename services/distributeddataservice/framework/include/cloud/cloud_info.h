@@ -59,7 +59,6 @@ public:
 
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
-    bool IsMapEqual(const std::map<std::string, AppInfo> &appInfos) const;
     bool operator==(const CloudInfo &info) const;
     bool operator!=(const CloudInfo &info) const;
 
@@ -68,6 +67,7 @@ private:
     static constexpr const char *SCHEMA_PREFIX = "CLOUD_SCHEMA";
 
     static std::string GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields);
+    bool IsAppsEqual(const std::map<std::string, AppInfo> &appInfos) const;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_INFO_H

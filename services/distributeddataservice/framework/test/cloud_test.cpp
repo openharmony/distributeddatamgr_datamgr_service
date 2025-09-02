@@ -261,7 +261,7 @@ HWTEST_F(CloudInfoTest, CloudInfoTest001, TestSize.Level0)
 * @tc.desc: CloudInfo Overload function test.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(CloudInfoTest, CloudInfoTest002, TestSize.Level0)
 {
@@ -317,7 +317,7 @@ HWTEST_F(CloudInfoTest, AppInfoTest001, TestSize.Level0)
 * @tc.desc: AppInfoTest Overload function test.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(CloudInfoTest, AppInfoTest002, TestSize.Level0)
 {
@@ -376,7 +376,7 @@ HWTEST_F(CloudInfoTest, TableTest001, TestSize.Level0)
 * @tc.desc: Table Overload function test.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(CloudInfoTest, TableTest002, TestSize.Level0)
 {
@@ -411,7 +411,7 @@ HWTEST_F(CloudInfoTest, TableTest002, TestSize.Level0)
 * @tc.desc: Field Overload function test.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(CloudInfoTest, FieldTest, TestSize.Level0)
 {
@@ -662,7 +662,7 @@ HWTEST_F(CloudInfoTest, SchemaMeta001, TestSize.Level0)
 * @tc.desc: SchemaMeta Overload function test.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(CloudInfoTest, SchemaMeta002, TestSize.Level0)
 {
@@ -720,7 +720,7 @@ HWTEST_F(CloudEventTest, GetEventId, TestSize.Level0)
 * @tc.desc: CloudMark Overload function test.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(CloudInfoTest, CloudMarkTest, TestSize.Level0)
 {
