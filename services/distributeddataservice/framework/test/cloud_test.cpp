@@ -344,19 +344,19 @@ HWTEST_F(CloudInfoTest, CloudInfoTest003, TestSize.Level0)
 
     CloudInfo cloudInfo2 = cloudInfo1;
     cloudInfo2.apps["ohos.test.demo"].cloudSwitch = true;
-    auto ret = cloudInfo2 == cloudInfo1;
+    autoauto ret = cloudInfo2 == cloudInfo1;
     EXPECT_EQ(ret, false);
     cloudInfo2.apps["ohos.test.demo"].instanceId = 1;
-    auto ret = cloudInfo2 == cloudInfo1;
+    ret = cloudInfo2 == cloudInfo1;
     EXPECT_EQ(ret, false);
     cloudInfo2.apps["ohos.test.demo"].version = 1;
-    auto ret = cloudInfo2 == cloudInfo1;
+    ret = cloudInfo2 == cloudInfo1;
     EXPECT_EQ(ret, false);
     cloudInfo2.apps["ohos.test.demo"].appId = "test2_id";
-    auto ret = cloudInfo2 == cloudInfo1;
+    ret = cloudInfo2 == cloudInfo1;
     EXPECT_EQ(ret, false);
     cloudInfo2.apps["ohos.test.demo"].bundleName = "ohos.test.demo2";
-    auto ret = cloudInfo2 == cloudInfo1;
+    ret = cloudInfo2 == cloudInfo1;
     EXPECT_EQ(ret, false);
     ret = cloudInfo2 != cloudInfo1;
     EXPECT_EQ(ret, true);
