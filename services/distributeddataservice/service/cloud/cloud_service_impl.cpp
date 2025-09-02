@@ -1097,19 +1097,16 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
     }
     UpgradeSchemaMeta(userId, schemaMeta);
     HapInfo hapInfo{ .user = userId, .instIndex = instanceId, .bundleName = bundleName };
-    SchemaMeta newMeta;
-    std::tie(status, newMeta) = GetSchemaFromHap(hapInfo);
+    std::tie(status, schemaMeta) = GetSchemaFromHap(hapInfo);
     if (status == SUCCESS) {
-        if (newMeta != schemaMeta) {
-            MetaDataManager::GetInstance().SaveMeta(schemaKey, newMeta, true);
-        }
-        return { status, newMeta };
+        MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+        return { status, schemaMeta };
     }
     if (!Account::GetInstance()->IsVerified(userId)) {
         ZLOGE("user:%{public}d is locked!", userId);
         return { ERROR, schemaMeta };
     }
-    std::tie(status, newMeta) = GetAppSchemaFromServer(userId, bundleName);
+    std::tie(status, schemaMeta) = GetAppSchemaFromServer(userId, bundleName);
     if (status == NOT_SUPPORT) {
         ZLOGW("app not support, del cloudInfo! userId:%{public}d, bundleName:%{public}s", userId, bundleName.c_str());
         MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
@@ -1118,10 +1115,8 @@ std::pair<int32_t, SchemaMeta> CloudServiceImpl::GetSchemaMeta(int32_t userId, c
     if (status != SUCCESS) {
         return { status, schemaMeta };
     }
-    if (newMeta != schemaMeta) {
-        MetaDataManager::GetInstance().SaveMeta(schemaKey, newMeta, true);
-    }
-    return { SUCCESS, newMeta };
+    MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+    return { SUCCESS, schemaMeta };
 }
 
 std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
