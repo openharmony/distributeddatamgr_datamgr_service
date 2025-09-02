@@ -55,7 +55,6 @@ std::shared_ptr<DBStoreMock> KvStoreDumpTest::dbStoreMock_;
 void KvStoreDumpTest::SetUpTestCase(void)
 {
     dbStoreMock_ = std::make_shared<DBStoreMock>();
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     accountDelegateMock = new (std::nothrow) AccountDelegateMock();
     if (accountDelegateMock != nullptr) {
     AccountDelegate::instance_ = nullptr;
@@ -106,14 +105,29 @@ void KvStoreDumpTest::ConfigSendParameters(bool isCancel)
 @tc.desc: test DumpStoreInfo function
 @tc.type: FUNC
 */
-HWTEST_F(KvStoreDumpTest, DumpStoreInfo001, TestSize.Level0)
+    HWTEST_F(KvStoreDumpTest, DumpStoreInfo001, TestSize.Level0)
 {
     DistributedKv::KvStoreDataService KvStoreDumpTest;
     int fd = 0;
     std::map<std::string, std::vector<std::string>> params = {};
+    EXPECT_EQ(accountDelegateMock->QueryForegroundUserId(userid), false);
     EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
 }
 
+/**
+
+@tc.name: DumpBundleInfo001
+@tc.desc: test DumpBundleInfo function
+@tc.type: FUNC
+*/
+HWTEST_F(KvStoreDumpTest, DumpBundleInfo001, TestSize.Level0)
+{
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 0;
+    std::map<std::string, std::vector<std::string>> params = {};
+    EXPECT_EQ(accountDelegateMock->QueryForegroundUserId(userid), false);
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
+}
 /**
 @tc.name: DumpStoreInfo002
 @tc.desc: test DumpStoreInfo function
@@ -125,56 +139,13 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo002, TestSize.Level0)
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
     if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
-    }
-    ConfigSendParameters(false);
-    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
-}
-
-/**
-@tc.name: DumpStoreInfo003
-@tc.desc: test DumpStoreInfo function
-@tc.type: FUNC
-*/
-HWTEST_F(KvStoreDumpTest, DumpStoreInfo003, TestSize.Level0)
-{
-    DistributedKv::KvStoreDataService KvStoreDumpTest;
-    int fd = 1;
-    std::map<std::string, std::vector<std::string>> params = {};
-    if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(false));
-    }
-    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
-}
-
-/**
-@tc.name: DumpStoreInfo004
-@tc.desc: test DumpStoreInfo function
-@tc.type: FUNC
-*/
-HWTEST_F(KvStoreDumpTest, DumpStoreInfo004, TestSize.Level0)
-{
-    DistributedKv::KvStoreDataService KvStoreDumpTest;
-    int fd = 1;
-    std::map<std::string, std::vector<std::string>> params = {};
-    if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId()).WillOnce(Return(true));
     }
     ConfigSendParameters(true);
+    std::vector metas;
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId }), metas,
+        true), false);
     EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
-}
-
-/**
-* @tc.name: DumpBundleInfo001
-* @tc.desc: test DumpBundleInfo function
-* @tc.type: FUNC
-*/
-HWTEST_F(KvStoreDumpTest, DumpBundleInfo001, TestSize.Level0)
-{
-    DistributedKv::KvStoreDataService KvStoreDumpTest;
-    int fd = 0;
-    std::map<std::string, std::vector<std::string>> params = {};
-    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
 }
 
 /**
@@ -188,9 +159,34 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo002, TestSize.Level0)
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
     if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId()).WillOnce(Return(true));
+    }
+    ConfigSendParameters(true);
+    std::vector metas;
+    auto res = MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId }),
+        metas, true);
+    EXPECT_EQ(res, false);
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
+}
+
+/**
+@tc.name: DumpStoreInfo003
+@tc.desc: test DumpStoreInfo function
+@tc.type: FUNC
+*/
+HWTEST_F(KvStoreDumpTest, DumpStoreInfo003, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+    DistributedKv::KvStoreDataService KvStoreDumpTest;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params = {};
+    if (accountDelegateMock != nullptr) {
+        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId()).WillOnce(Return(true));
     }
     ConfigSendParameters(false);
+    std::vector metas;
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId }), metas,
+        true), true);
     EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
 }
 
@@ -205,25 +201,12 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo003, TestSize.Level0)
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
     if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(false));
-    }
-    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
-}
-
-/**
-@tc.name: DumpBundleInfo004
-@tc.desc: test DumpBundleInfo function
-@tc.type: FUNC
-*/
-HWTEST_F(KvStoreDumpTest, DumpBundleInfo004, TestSize.Level0)
-{
-    DistributedKv::KvStoreDataService KvStoreDumpTest;
-    int fd = 1;
-    std::map<std::string, std::vector<std::string>> params = {};
-    if (accountDelegateMock != nullptr) {
-        EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId()).WillOnce(Return(true));
     }
     ConfigSendParameters(false);
-    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
+    std::vector metas;
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId }), metas,
+        true), true);
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
 }
 }
