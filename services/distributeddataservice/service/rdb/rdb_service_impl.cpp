@@ -1275,7 +1275,7 @@ int RdbServiceImpl::DoAutoSync(const std::vector<std::string> &devices, const St
     std::vector<std::string> syncDevices;
     for (auto &device : devices) {
         auto sha256UUID = Crypto::Sha256(device);
-        if (std::find(specialUUIDs.begin(), specialUUIDs.end(), device) != specialUUIDs.end()) {
+        if (std::find(specialUUIDs.begin(), specialUUIDs.end(), sha256UUID) != specialUUIDs.end()) {
             syncDevices.push_back(device);
         }
     }
