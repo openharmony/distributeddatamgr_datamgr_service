@@ -183,14 +183,15 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
             Anonymous::Change(cloudInfo.id).c_str());
         return INVALID_ARGUMENT;
     }
-    auto newCloudInfo = cloudInfo;
-    newCloudInfo.enableCloud = false;
-    if (newCloudInfo != cloudInfo) {
-        if (!MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true)) {
+    cloudInfo.enableCloud = false;
+    CloudInfo oldCloudInfo;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), oldCloudInfo, true);
+    if (oldCloudInfo != cloudInfo) {
+        if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
             return ERROR;
         }
     }
-    Execute(GenTask(0, newCloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
+    Execute(GenTask(0, cloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
     ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
@@ -228,18 +229,18 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
                 "ChangeAppSwitch ret=" + std::to_string(status));
             return INVALID_ARGUMENT;
         }
-        ZLOGI("add app switch, bundleName:%{public}s", bundleName.c_str());
     }
-    auto newCloudInfo = cloudInfo;
-    newCloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
-    if (newCloudInfo != cloudInfo) {
-        if (!MetaDataManager::GetInstance().SaveMeta(newCloudInfo.GetKey(), newCloudInfo, true)) {
+    cloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
+    CloudInfo oldCloudInfo;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), oldCloudInfo, true);
+    if (oldCloudInfo != cloudInfo) {
+        if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
             return ERROR;
         }
     }
-    Execute(GenTask(0, newCloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
-    if (newCloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        SyncManager::SyncInfo info(newCloudInfo.user, bundleName);
+    Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
+    if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
+        SyncManager::SyncInfo info(cloudInfo.user, bundleName);
         syncManager_.DoCloudSync(info);
     }
     ZLOGI("ChangeAppSwitch success, id:%{public}s app:%{public}s, switch:%{public}d", Anonymous::Change(id).c_str(),

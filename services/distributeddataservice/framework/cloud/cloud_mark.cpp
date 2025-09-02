@@ -35,7 +35,7 @@ bool CloudMark::operator==(const CloudMark &cloudMark) const
 {
     return std::tie(bundleName, deviceId, index, isClearWaterMark, storeId, userId) ==
         std::tie(cloudMark.bundleName, cloudMark.deviceId, cloudMark.index, cloudMark.isClearWaterMark,
-            cloudMark.storeId, cloudMark.userId);
+        cloudMark.storeId, cloudMark.userId);
 }
 
 bool CloudMark::operator!=(const CloudMark &cloudMark) const
