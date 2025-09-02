@@ -31,6 +31,7 @@ namespace OHOS::Test {
 static constexpr const char *TEST_BUNDLE_NAME = "TestApplication";
 static constexpr const char *TEST_STORE_NAME = "TestStore";
 static constexpr const char *TEST_UUID = "ABCD";
+static int32_t userid = 0;
 
 class KvStoreDumpTest : public testing::Test {
 public:
