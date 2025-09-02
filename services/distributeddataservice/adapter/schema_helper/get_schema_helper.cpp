@@ -16,7 +16,7 @@
 #define LOG_TAG "SchemaHelper"
 #include "get_schema_helper.h"
 
-#include "bundle_mgr_interface.h"
+#include "bundlemgr/bundle_mgr_interface.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "log_print.h"

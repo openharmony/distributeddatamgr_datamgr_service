@@ -48,6 +48,7 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
   ]
 
   sources = [
+    "${data_service_path}/service/config/src/model/auto_sync_app_config.cpp",
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
     "${data_service_path}/service/backup/src/backup_manager.cpp",
@@ -61,7 +62,6 @@ ohos_fuzztest("KvdbServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/cloud_config.cpp",
     "${data_service_path}/service/config/src/model/component_config.cpp",
     "${data_service_path}/service/config/src/model/datashare_config.cpp",
-    "${data_service_path}/service/config/src/model/device_sync_app_white_list_config.cpp",
     "${data_service_path}/service/config/src/model/directory_config.cpp",
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",

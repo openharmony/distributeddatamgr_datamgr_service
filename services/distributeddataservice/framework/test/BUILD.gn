@@ -400,9 +400,9 @@ ohos_unittest("ConnectManagerTest") {
   external_deps = [ "kv_store:datamgr_common" ]
 }
 
-ohos_unittest("DeviceSyncAppManagerTest") {
+ohos_unittest("SyncManagerTest") {
   module_out_path = module_output_path
-  sources = [ "device_sync_app_manager_test.cpp" ]
+  sources = [ "sync_manager_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [ "kv_store:datamgr_common" ]
@@ -423,7 +423,6 @@ group("unittest") {
     ":ConnectManagerTest",
     ":ConstantTest",
     ":CryptoTest",
-    ":DeviceSyncAppManagerTest",
     ":EventCenterTest",
     ":EventTest",
     ":FeatureTest",
@@ -436,6 +435,7 @@ group("unittest") {
     ":StoreMetaDataLocalTest",
     ":StoreTest",
     ":SubscriptionTest",
+    ":SyncManagerTest",
   ]
 }
 ###############################################################################

@@ -45,6 +45,7 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
   ]
 
   sources = [
+    "${data_service_path}/service/config/src/model/auto_sync_app_config.cpp",
     "${data_service_path}/service/backup/src/backup_manager.cpp",
     "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
     "${data_service_path}/service/common/common_types_utils.cpp",
@@ -57,7 +58,6 @@ ohos_fuzztest("ObjectServiceStubFuzzTest") {
     "${data_service_path}/service/config/src/model/cloud_config.cpp",
     "${data_service_path}/service/config/src/model/component_config.cpp",
     "${data_service_path}/service/config/src/model/datashare_config.cpp",
-    "${data_service_path}/service/config/src/model/device_sync_app_white_list_config.cpp",
     "${data_service_path}/service/config/src/model/directory_config.cpp",
     "${data_service_path}/service/config/src/model/global_config.cpp",
     "${data_service_path}/service/config/src/model/network_config.cpp",

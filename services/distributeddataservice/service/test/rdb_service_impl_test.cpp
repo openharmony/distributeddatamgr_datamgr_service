@@ -640,10 +640,10 @@ HWTEST_F(RdbServiceImplTest, DoAutoSync001, TestSize.Level0)
 {
     RdbServiceImpl service;
     std::vector<std::string> devices = {"device1"};
-    DistributedData::Database dataBase;
+    StoreMetaData meta;
     std::vector<std::string> tables = {"table1"};
 
-    auto result = service.DoAutoSync(devices, dataBase, tables);
+    auto result = service.DoAutoSync(devices, meta, tables);
     EXPECT_EQ(result, RDB_ERROR);
 }
 
@@ -662,13 +662,14 @@ HWTEST_F(RdbServiceImplTest, DoAutoSync002, TestSize.Level0)
     metaMapping.devicePath = "path1";
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
     RdbServiceImpl service;
+    StoreMetaData meta;
     std::vector<std::string> devices = {"device1"};
     DistributedData::Database dataBase;
     std::vector<std::string> tables = {"table1"};
-    dataBase.bundleName = "bundleName";
-    dataBase.name = "storeName";
-    dataBase.user = "100";
-    auto result = service.DoAutoSync(devices, dataBase, tables);
+    meta.bundleName = "bundleName";
+    meta.storeId= "storeName";
+    meta.user = "100";
+    auto result = service.DoAutoSync(devices, meta, tables);
     EXPECT_EQ(result, RDB_ERROR);
 }
 
@@ -682,7 +683,6 @@ HWTEST_F(RdbServiceImplTest, DoAutoSync002, TestSize.Level0)
 HWTEST_F(RdbServiceImplTest, DoOnlineSync001, TestSize.Level0)
 {
     RdbServiceImpl service;
-    std::vector<std::string> devices = {"device1"};
     DistributedData::Database dataBase;
     dataBase.name = TEST_STORE;
 
@@ -695,7 +695,7 @@ HWTEST_F(RdbServiceImplTest, DoOnlineSync001, TestSize.Level0)
 
     dataBase.tables = {table1, table2};
 
-    auto result = service.DoOnlineSync(devices, dataBase);
+    auto result = service.DoOnlineSync("device1", dataBase);
     EXPECT_EQ(result, RDB_ERROR);
 }
 

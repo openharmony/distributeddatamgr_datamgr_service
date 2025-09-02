@@ -383,7 +383,7 @@ void KvStoreDataService::LoadConfigs()
     Bootstrap::GetInstance().LoadBackup(executors_);
     Bootstrap::GetInstance().LoadCloud();
     Bootstrap::GetInstance().LoadAppIdMappings();
-    Bootstrap::GetInstance().LoadDeviceSyncAppWhiteLists();
+    Bootstrap::GetInstance().LoadAutoSyncApps();
     Bootstrap::GetInstance().LoadSyncTrustedApp();
 }
 
@@ -905,7 +905,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
             g_kvStoreAccountEventStatus = 1;
             // delete all kvstore meta belong to this user
             std::vector<StoreMetaData> metaData;
-            MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({""}), metaData, true);
+            MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), metaData, true);
             for (const auto &meta : metaData) {
                 if (meta.user != eventInfo.userId) {
                     continue;
