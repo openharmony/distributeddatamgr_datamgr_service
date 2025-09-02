@@ -344,7 +344,7 @@ HWTEST_F(CloudInfoTest, CloudInfoTest003, TestSize.Level0)
 
     CloudInfo cloudInfo2 = cloudInfo1;
     cloudInfo2.apps["ohos.test.demo"].cloudSwitch = true;
-    autoauto ret = cloudInfo2 == cloudInfo1;
+    auto ret = cloudInfo2 == cloudInfo1;
     EXPECT_EQ(ret, false);
     cloudInfo2.apps["ohos.test.demo"].instanceId = 1;
     ret = cloudInfo2 == cloudInfo1;
