@@ -143,7 +143,7 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo002, TestSize.Level0)
         EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(userid)).WillOnce(Return(true));
     }
     ConfigSendParameters(true);
-    std::vector metas;
+    std::vector<StoreMetaData> metas;
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId }), metas,
         true), false);
     EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
@@ -163,7 +163,7 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo002, TestSize.Level0)
         EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
     }
     ConfigSendParameters(true);
-    std::vector metas;
+    std::vector<StoreMetaData> metas;
     auto res = MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId }),
         metas, true);
     EXPECT_EQ(res, false);
@@ -185,7 +185,7 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo003, TestSize.Level0)
         EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
     }
     ConfigSendParameters(false);
-    std::vector metas;
+    std::vector<StoreMetaData> metas;
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId }), metas,
         true), true);
     EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
@@ -205,7 +205,7 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo003, TestSize.Level0)
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_)).WillOnce(Return(true));
     }
     ConfigSendParameters(false);
-    std::vector metas;
+    std::vector<StoreMetaData> metas;
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId }), metas,
         true), true);
     EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
