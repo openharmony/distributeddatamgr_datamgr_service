@@ -144,8 +144,9 @@ HWTEST_F(KvStoreDumpTest, DumpStoreInfo002, TestSize.Level0)
     }
     ConfigSendParameters(true);
     std::vector<StoreMetaData> metas;
-    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId_ }), metas,
-        true), false);
+    auto res = MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId_ }),
+        metas, true);
+    EXPECT_EQ(res, false);
     EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
 }
 
@@ -167,7 +168,7 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo002, TestSize.Level0)
     auto res = MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId_ }),
         metas, true);
     EXPECT_EQ(res, false);
-    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
 }
 
 /**
@@ -208,6 +209,6 @@ HWTEST_F(KvStoreDumpTest, DumpBundleInfo003, TestSize.Level0)
     std::vector<StoreMetaData> metas;
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId_ }), metas,
         true), true);
-    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpStoreInfo(fd, params));
+    EXPECT_NO_FATAL_FAILURE(KvStoreDumpTest.DumpBundleInfo(fd, params));
 }
 }
