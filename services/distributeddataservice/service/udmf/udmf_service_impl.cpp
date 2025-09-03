@@ -146,6 +146,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         if (ret != E_OK) {
             ZLOGW("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
                   unifiedData.GetRuntime()->createPackage.c_str());
+            return ret;
         }
     }
     PreProcessUtils::SetRecordUid(unifiedData);
