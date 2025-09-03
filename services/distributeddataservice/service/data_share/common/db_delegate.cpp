@@ -21,6 +21,7 @@
 #include "log_print.h"
 #include "rdb_delegate.h"
 #include "log_debug.h"
+#include "store/general_store.h"
 
 namespace OHOS::DataShare {
 using Account = DistributedData::AccountDelegate;
@@ -32,9 +33,11 @@ std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData,
     const std::string &extUri, const std::string &backup)
 {
-    if (Account::GetInstance()->IsDeactivating(atoi(metaData.user.c_str()))) {
-        ZLOGW("user %{public}s is deactivating, storeName: %{public}s", metaData.user.c_str(),
-              StringUtils::GeneralAnonymous(metaData.GetStoreAlias()).c_str());
+    if (metaData.area > DistributedData::GeneralStore::Area::EL1 &&
+       (Account::GetInstance()->IsDeactivating(atoi(metaData.user.c_str())) ||
+        !Account::GetInstance()->IsVerified(atoi(metaData.user.c_str())))) {
+        ZLOGW("user %{public}s is deactivating or unverified, storeName: %{public}s, area: %{public}d",
+              metaData.user.c_str(), StringUtils::GeneralAnonymous(metaData.GetStoreAlias()).c_str(), metaData.area);
         return nullptr;
     }
     std::shared_ptr<DBDelegate> store;
