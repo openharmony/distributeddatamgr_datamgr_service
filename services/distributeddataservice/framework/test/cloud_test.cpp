@@ -283,37 +283,26 @@ HWTEST_F(CloudInfoTest, CloudInfoTest002, TestSize.Level0)
     cloudInfo1.apps["ohos.test.demo"] = cloudInfoAppInfo1;
 
     CloudInfo cloudInfo2 = cloudInfo1;
-    auto ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, true);
-    ret = cloudInfo2 != cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(cloudInfo2, cloudInfo1);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
 
     cloudInfo2.maxSize = 1;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.maxNumber = 1;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.enableCloud = true;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.remainSpace = 1;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.totalSpace = 1;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.id = "test2_id";
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.user = 222;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].cloudSwitch = true;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
-    ret = cloudInfo2 != cloudInfo1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    EXPECT_EQ(cloudInfo2, cloudInfo1);
 }
 
 /**
@@ -344,22 +333,15 @@ HWTEST_F(CloudInfoTest, CloudInfoTest003, TestSize.Level0)
 
     CloudInfo cloudInfo2 = cloudInfo1;
     cloudInfo2.apps["ohos.test.demo"].cloudSwitch = true;
-    auto ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].instanceId = 1;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
-    cloudInfo2.apps["ohos.test.demo"].version = 1;
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.apps["ohos.test.demo"].version = 1;EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].appId = "test2_id";
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].bundleName = "ohos.test.demo2";
-    ret = cloudInfo2 == cloudInfo1;
-    EXPECT_EQ(ret, false);
-    ret = cloudInfo2 != cloudInfo1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    EXPECT_EQ(cloudInfo2, cloudInfo1);
 }
 
 /**
@@ -404,28 +386,20 @@ HWTEST_F(CloudInfoTest, AppInfoTest002, TestSize.Level0)
     cloudInfoAppInfo1.cloudSwitch = false;
 
     CloudInfo::AppInfo cloudInfoAppInfo2 = cloudInfoAppInfo1;
-    auto ret = cloudInfoAppInfo2 == cloudInfoAppInfo1;
-    EXPECT_EQ(ret, true);
-    ret = cloudInfoAppInfo2 != cloudInfoAppInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(cloudInfoAppInfo2, cloudInfoAppInfo1);
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
 
     cloudInfoAppInfo2.cloudSwitch = true;
-    ret = cloudInfoAppInfo2 == cloudInfoAppInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
     cloudInfoAppInfo2.instanceId = 1;
-    ret = cloudInfoAppInfo2 == cloudInfoAppInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
     cloudInfoAppInfo2.version = 1;
-    ret = cloudInfoAppInfo2 == cloudInfoAppInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
     cloudInfoAppInfo2.appId = "test2_id";
-    ret = cloudInfoAppInfo2 == cloudInfoAppInfo1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
     cloudInfoAppInfo2.bundleName = "ohos.test.demo2";
-    ret = cloudInfoAppInfo2 == cloudInfoAppInfo1;
-    EXPECT_EQ(ret, false);
-    ret = cloudInfoAppInfo2 != cloudInfoAppInfo1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
+    EXPECT_EQ(cloudInfoAppInfo2, cloudInfoAppInfo1);
 }
 
 /**
@@ -481,31 +455,22 @@ HWTEST_F(CloudInfoTest, TableTest002, TestSize.Level0)
     table1.fields.push_back(field1);
 
     Table table2 = table1;
-    auto ret = table2 == table1;
-    EXPECT_EQ(ret, true);
-    ret = table2 != table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(table2, table1);
+    EXPECT_NE(table2, table1);
 
     table2.sharedTableName = "share";
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.cloudSyncFields.push_back("cloud");
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.deviceSyncFields.push_back("device");
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.fields[0].primary = true;
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.alias = "test2_alias";
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.name = "test2_name";
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
-    ret = table2 != table1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(table2, table1);
+    EXPECT_EQ(table2, table1);
 }
 
 /**
@@ -532,22 +497,16 @@ HWTEST_F(CloudInfoTest, TableTest003, TestSize.Level0)
 
     Table table2 = table1;
     table2.fields[0].nullable = true;
-    auto ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.fields[0].primary = false;
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.fields[0].type = 2;
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.fields[0].alias = "test2_alias";
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(table2, table1);
     table2.fields[0].colName = "test1_colName";
-    ret = table2 == table1;
-    EXPECT_EQ(ret, false);
-    ret = table2 != table1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(table2, table1);
+    EXPECT_EQ(table2, table1);
 }
 
 /**
@@ -568,28 +527,20 @@ HWTEST_F(CloudInfoTest, FieldTest, TestSize.Level0)
 
 
     Field field2 = field1;
-    auto ret = field2 == field1;
-    EXPECT_EQ(ret, true);
-    ret = field2 != field1;
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(field2, field1);
+    EXPECT_NE(field2, field1);
 
     field2.nullable = true;
-    ret = field2 == field1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(field2, field1);
     field2.primary = false;
-    ret = field2 == field1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(field2, field1);
     field2.type = 2;
-    ret = field2 == field1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(field2, field1);
     field2.alias = "test2_alias";
-    ret = field2 == field1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(field2, field1);
     field2.colName = "test2_colName";
-    ret = field2 == field1;
-    EXPECT_EQ(ret, false);
-    ret = field2 != field1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(field2, field1);
+    EXPECT_EQ(field2, field1);
 }
 
 /**
@@ -843,28 +794,20 @@ HWTEST_F(CloudInfoTest, SchemaMeta002, TestSize.Level0)
     schemaMeta1.e2eeEnable = false;
 
     SchemaMeta schemaMeta2 = schemaMeta1;
-    auto ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, true);
-    ret = schemaMeta2 != schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(schemaMeta2, schemaMeta1);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
 
     schemaMeta2.e2eeEnable = true;
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].alias = "test_cloud_database_alias_2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.bundleName = "test_cloud_bundleName2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.version = 2;
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.metaVersion = 2;
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
-    ret = schemaMeta2 != schemaMeta1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    EXPECT_EQ(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -898,31 +841,22 @@ HWTEST_F(CloudInfoTest, SchemaMeta003, TestSize.Level0)
 
     SchemaMeta schemaMeta2 = schemaMeta1;
     schemaMeta2.databases[0].autoSyncType = 1;
-    auto ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].deviceId = "111";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].user = "111";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].bundleName = "test_cloud_bundleName2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].version = 2;
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].name = "test_cloud_table_name2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].alias = "test_cloud_database_alias_2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].name = "test_cloud_store2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
-    ret = schemaMeta2 != schemaMeta1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    EXPECT_EQ(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -956,25 +890,18 @@ HWTEST_F(CloudInfoTest, SchemaMeta004, TestSize.Level0)
 
     SchemaMeta schemaMeta2 = schemaMeta1;
     schemaMeta2.databases[0].tables[0].sharedTableName = "share";
-    auto ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].cloudSyncFields.push_back("cloud");
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].deviceSyncFields.push_back("device");
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].fields[0].alias = "test_cloud_field_alias2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].alias = "test_cloud_table_alias2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].name = "test_cloud_table_name2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
-    ret = schemaMeta2 != schemaMeta1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    EXPECT_EQ(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -1008,22 +935,16 @@ HWTEST_F(CloudInfoTest, SchemaMeta005, TestSize.Level0)
 
     SchemaMeta schemaMeta2 = schemaMeta1;
     schemaMeta2.databases[0].tables[0].fields[0].nullable = false;
-    auto ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].fields[0].primary = true;
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].fields[0].type = 1;
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].fields[0].alias = "test_cloud_field_alias1";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].fields[0].colName = "test_cloud_field_name2";
-    ret = schemaMeta2 == schemaMeta1;
-    EXPECT_EQ(ret, false);
-    ret = schemaMeta2 != schemaMeta1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    EXPECT_EQ(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -1056,32 +977,22 @@ HWTEST_F(CloudInfoTest, CloudMarkTest, TestSize.Level0)
     cloudmark1.deviceId = "1111";
     cloudmark1.storeId = "test_db";
 
-
     CloudMark cloudmark2 = cloudmark1;
-    auto ret = cloudmark2 == cloudmark1;
-    EXPECT_EQ(ret, true);
-    ret = cloudmark2 != cloudmark1;
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(cloudmark2, cloudmark1);
+    EXPECT_NE(cloudmark2, cloudmark1);
 
     cloudmark2.userId = 1;
-    ret = cloudmark2 == cloudmark1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudmark2, cloudmark1);
     cloudmark2.storeId = "test_db2";
-    ret = cloudmark2 == cloudmark1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudmark2, cloudmark1);
     cloudmark2.isClearWaterMark = true;
-    ret = cloudmark2 == cloudmark1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudmark2, cloudmark1);
     cloudmark2.index = 1;
-    ret = cloudmark2 == cloudmark1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudmark2, cloudmark1);
     cloudmark2.deviceId = "222";
-    ret = cloudmark2 == cloudmark1;
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(cloudmark2, cloudmark1);
     cloudmark2.bundleName = "test_cloud_bundleName2";
-    ret = cloudmark2 == cloudmark1;
-    EXPECT_EQ(ret, false);
-    ret = cloudmark2 != cloudmark1;
-    EXPECT_EQ(ret, true);
+    EXPECT_NE(cloudmark2, cloudmark1);
+    EXPECT_EQ(cloudmark2, cloudmark1);
 }
 } // namespace OHOS::Test
