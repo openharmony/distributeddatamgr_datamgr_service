@@ -21,7 +21,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "proxy_data_manager.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -34,12 +34,13 @@ ProxyDataSubscriberManager &ProxyDataSubscriberManager::GetInstance()
 DataProxyErrorCode ProxyDataSubscriberManager::Add(const ProxyDataKey &key, const sptr<IProxyDataObserver> &observer,
     const std::string &bundleName, const std::string &callerAppIdentifier, const int32_t &userId)
 {
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     ProxyDataCache_.Compute(
-        key, [&observer, bundleName, callerAppIdentifier, userId](const ProxyDataKey &key,
+        key, [&observer, callerTokenId, bundleName, callerAppIdentifier, userId](const ProxyDataKey &key,
         std::vector<ObserverNode> &value) {
             ZLOGI("add proxy data subscriber, uri %{public}s",
-                DistributedData::Anonymous::Change(key.uri).c_str());
-            value.emplace_back(observer, IPCSkeleton::GetCallingTokenID(), bundleName, callerAppIdentifier, userId);
+                URIUtils::Anonymous(key.uri).c_str());
+            value.emplace_back(observer, callerTokenId, bundleName, callerAppIdentifier, userId);
             return true;
         });
     return SUCCESS;
@@ -47,14 +48,17 @@ DataProxyErrorCode ProxyDataSubscriberManager::Add(const ProxyDataKey &key, cons
 
 DataProxyErrorCode ProxyDataSubscriberManager::Delete(const ProxyDataKey &key, const int32_t &userId)
 {
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     auto result =
-        ProxyDataCache_.ComputeIfPresent(key, [&userId](const auto &key,
+        ProxyDataCache_.ComputeIfPresent(key, [&userId, callerTokenId](const auto &key,
             std::vector<ObserverNode> &value) {
             for (auto it = value.begin(); it != value.end();) {
-                if (it->callerTokenId == IPCSkeleton::GetCallingTokenID() && it->userId == userId) {
+                if (it->callerTokenId == callerTokenId && it->userId == userId) {
                     ZLOGI("delete proxy data subscriber, uri %{public}s",
-                        DistributedData::Anonymous::Change(key.uri).c_str());
+                        URIUtils::Anonymous(key.uri).c_str());
                     it = value.erase(it);
+                } else {
+                    it++;
                 }
             }
             return !value.empty();

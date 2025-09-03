@@ -93,7 +93,6 @@ ohos_shared_library("distributeddataservice") {
     ubsan = true
   }
   sources = [
-    "${data_service_path}/service/common/xcollie.cpp",
     "src/clone/clone_backup_info.cpp",
     "src/clone/secret_key_backup_data.cpp",
     "src/db_info_handle_impl.cpp",
@@ -122,8 +121,6 @@ ohos_shared_library("distributeddataservice") {
 
   configs = [ ":module_private_config" ]
   deps = [
-    "${data_service_path}/adapter/network:distributeddata_network",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -146,7 +143,7 @@ ohos_shared_library("distributeddataservice") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",

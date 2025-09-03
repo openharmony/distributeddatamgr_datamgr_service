@@ -104,15 +104,15 @@ void KVDBServiceImpl::Init()
         StoreMetaMapping meta(storeInfo);
         meta.deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str(), meta.user.c_str());
             if (meta.user == "0") {
-                ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
-                    meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
                 return;
             }
             meta.user = "0";
             StoreMetaDataLocal localMeta;
-            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true) || !localMeta.isPublic ||
-                !MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true) ||
+                !MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true) || !localMeta.isPublic) {
                 ZLOGE("meta empty, not public store. bundleName:%{public}s, storeId:%{public}s, user = %{public}s",
                     meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), meta.user.c_str());
                 return;
@@ -217,7 +217,7 @@ Status KVDBServiceImpl::Close(const AppId &appId, const StoreId &storeId, int32_
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }
-    AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir);
+    AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
     return SUCCESS;
@@ -245,6 +245,12 @@ void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, Progres
 
 Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo)
 {
+    auto instanceId = GetInstIndex(IPCSkeleton::GetCallingTokenID(), appId);
+    if (instanceId != 0) {
+        ZLOGE("twin application not allow sync, instanceId:%{public}d, appId:%{public}s, storeId:%{public}s",
+            instanceId, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        return Status::NOT_SUPPORT;
+    }
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
@@ -571,7 +577,7 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
     });
     if (isCreate) {
         AutoCache::GetInstance().SetObserver(metaData.tokenId,
-            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir);
+            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir, storeId);
     }
     return SUCCESS;
 }
@@ -603,7 +609,7 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
     });
     if (destroyed) {
         AutoCache::GetInstance().SetObserver(metaData.tokenId,
-            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir);
+            GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir, storeId);
     }
     return SUCCESS;
 }
@@ -689,7 +695,7 @@ Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, co
             return Status::ERROR;
         }
     }
-    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, meta.dataDir);
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, meta.dataDir, storeId);
     for (auto store : stores) {
         store->SetConfig({ storeConfig.cloudConfig.enableCloud });
     }
@@ -788,7 +794,7 @@ Status KVDBServiceImpl::AfterCreate(
     StoreMetaMapping oldMeta(metaData);
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetKey(), oldMeta, true);
     Status status = SUCCESS;
-    if (isCreated && oldMeta != metaData) {
+    if (isCreated && (oldMeta != metaData || oldMeta.schema != metaData.schema)) {
         auto dbStatus = Upgrade::GetInstance().UpdateStore(oldMeta, metaData, password);
         ZLOGI("update status:%{public}d appId:%{public}s storeId:%{public}s inst:%{public}d "
               "type:%{public}d->%{public}d dir:%{public}s dataType:%{public}d->%{public}d",
@@ -808,12 +814,12 @@ Status KVDBServiceImpl::AfterCreate(
         oldMeta = metaData;
         MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
     }
+
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = metaData.bundleName;
     appIdMeta.appId = metaData.appId;
-    MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
+    SaveAppIdMetaData(appIdMeta);
     SaveLocalMetaData(options, metaData);
-
     if (metaData.isEncrypt && !password.empty()) {
         SaveSecretKeyMeta(metaData, password);
     }
@@ -822,6 +828,16 @@ Status KVDBServiceImpl::AfterCreate(
         metaData.instanceId, metaData.storeType, Anonymous::Change(metaData.dataDir).c_str(), isCreated,
         metaData.dataType);
     return status;
+}
+
+void KVDBServiceImpl::SaveAppIdMetaData(const AppIDMetaData &appIdMeta)
+{
+    AppIDMetaData oldAppIdMeta;
+    if (MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), oldAppIdMeta, true) && appIdMeta == oldAppIdMeta) {
+        return;
+    }
+    bool isSaved = MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
+    ZLOGI("save app meta failed, bundleName: %{public}s isSaved: %{public}d", appIdMeta.bundleName.c_str(), isSaved);
 }
 
 int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId)
@@ -967,6 +983,12 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
         }
         localMetaData.policies.emplace_back(value);
     }
+    StoreMetaDataLocal oldLocalMetaData;
+    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), oldLocalMetaData, true)
+        && oldLocalMetaData == localMetaData && oldLocalMetaData.schema == localMetaData.schema
+        && oldLocalMetaData.policies == localMetaData.policies) {
+        return;
+    }
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMetaData, true);
 }
 
@@ -1040,7 +1062,8 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     if (instance == nullptr) {
         return Status::CLOUD_DISABLED;
     }
-    if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
+    auto network = NetworkDelegate::GetInstance();
+    if (network == nullptr || !network->IsNetworkAvailable()) {
         return Status::NETWORK_ERROR;
     }
     std::vector<int32_t> users;
@@ -1120,7 +1143,7 @@ Status KVDBServiceImpl::DoSyncInOrder(
             auto status = DoSyncBegin(ret.first, meta, info, complete, type);
             ZLOGD("data sync status:%{public}d appId:%{public}s, storeId:%{public}s",
                 static_cast<int32_t>(status), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
-        });
+        }, false, info.isRetry);
         if (!result) {
             RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_FAILED, ERROR_CODE, Status::ERROR,
                 BIZ_STATE, END, SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName,
@@ -1222,15 +1245,14 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     }
     SyncParam syncParam{};
     syncParam.mode = mode;
+    syncParam.isRetry = info.isRetry;
     RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_START, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
         SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
-    auto ret = store->Sync(
-        devices, query,
+    auto ret = store->Sync(devices, query,
         [this, complete](const GenDetails &result) mutable {
             auto deviceStatus = HandleGenBriefDetails(result);
             complete(deviceStatus);
-        },
-        syncParam);
+        }, syncParam);
     auto status = Status(ret.first);
     if (status != Status::SUCCESS) {
         RADAR_REPORT(STANDARD_DEVICE_SYNC, START_SYNC, RADAR_FAILED, ERROR_CODE, status, BIZ_STATE, END,

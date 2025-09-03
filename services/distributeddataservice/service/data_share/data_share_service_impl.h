@@ -39,7 +39,7 @@
 #include "rdb_notify_strategy.h"
 #include "subscribe_strategy.h"
 #include "template_strategy.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "visibility.h"
 
 namespace OHOS::DataShare {
@@ -101,6 +101,7 @@ public:
         const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer) override;
     std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris,
         const DataProxyConfig &proxyConfig) override;
+    static void UpdateLaunchInfo();
 private:
     class SystemAbilityStatusChangeListener;
     using StaticActs = DistributedData::StaticActs;
@@ -159,13 +160,12 @@ private:
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     static constexpr const char *EXT_URI_SCHEMA = "datashare://";
     static constexpr const char *NO_PERMISSION = "noPermission";
-    static constexpr const char *CONNECT_SUPPORT_CROSS_USER = "const.abilityms.connect_support_cross_user";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;
     TemplateStrategy templateStrategy_;
     RdbNotifyStrategy rdbNotifyStrategy_;
-    BindInfo binderInfo_;
+    static BindInfo binderInfo_;
     std::shared_ptr<TimerReceiver> timerReceiver_ = nullptr;
     DataShareSilentConfig dataShareSilentConfig_;
 };

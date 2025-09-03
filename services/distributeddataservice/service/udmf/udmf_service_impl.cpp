@@ -21,9 +21,11 @@
 #include "tokenid_kit.h"
 
 #include "accesstoken_kit.h"
+#include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
+#include "checker/checker_manager.h"
 #include "checker_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
@@ -35,13 +37,13 @@
 #include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
 #include "dfx/reporter.h"
-#include "store_account_observer.h"
 #include "system_ability_definition.h"
 #include "uri_permission_manager.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
 #include "unified_data_helper.h"
 #include "utils/anonymous.h"
+#include "permission_validator.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -65,6 +67,7 @@ constexpr const char *DEVICE_PHONE_TAG = "phone";
 constexpr const char *DEVICE_DEFAULT_TAG = "default";
 constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
 constexpr uint32_t FOUNDATION_UID = 5523;
+constexpr uint32_t WAIT_TIME = 800;
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -75,8 +78,6 @@ UdmfServiceImpl::Factory::Factory()
         }
         return product_;
     }, FeatureSystem::BIND_NOW);
-    auto observer = std::make_shared<RuntimeStoreAccountObserver>();
-    DistributedData::AccountDelegate::GetInstance()->Subscribe(observer);
 }
 
 UdmfServiceImpl::Factory::~Factory()
@@ -128,37 +129,34 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         ZLOGE("UnifiedData is invalid.");
         return E_INVALID_PARAMETERS;
     }
-
     if (!UnifiedDataUtils::IsValidIntention(option.intention)) {
         ZLOGE("Invalid parameters intention: %{public}d.", option.intention);
         return E_INVALID_PARAMETERS;
     }
-
     // imput runtime info before put it into store and save one privilege
     if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
-
     std::string intention = unifiedData.GetRuntime()->key.intention;
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
         if (ret != E_OK) {
-            ZLOGW("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
+            ZLOGE("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
                   unifiedData.GetRuntime()->createPackage.c_str());
             return ret;
         }
     }
     PreProcessUtils::SetRecordUid(unifiedData);
-
     auto store = StoreCache::GetInstance().GetStore(intention);
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
-
-    if (store->Put(unifiedData) != E_OK) {
-        ZLOGE("Put unified data failed:%{public}s", intention.c_str());
+    int32_t status = store->Put(unifiedData);
+    if (status != E_OK) {
+        ZLOGE("Put unified data failed:%{public}s, status:%{public}d", intention.c_str(), status);
+        HandleDbError(intention, status);
         return E_DB_ERROR;
     }
     key = unifiedData.GetRuntime()->key.GetUnifiedKey();
@@ -178,12 +176,16 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
         msg.appId = "unknown";
-        res = E_ERROR;
-    } else {
-        msg.appId = bundleName;
+        Reporter::GetInstance()->GetBehaviourReporter()->UDMFReport(msg);
+        ZLOGE("Failed to get bundle name by token, token:%{public}d", query.tokenId);
+        return E_ERROR;
+    }
+    msg.appId = bundleName;
+
+    bool handledByDelay = HandleDelayLoad(query, unifiedData, res);
+    if (!handledByDelay) {
         res = RetrieveData(query, unifiedData);
     }
-    TransferToEntriesIfNeed(query, unifiedData);
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
     for (const auto &record : unifiedData.GetRecords()) {
@@ -194,7 +196,34 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     msg.dataType = types;
     msg.dataSize = unifiedData.GetSize();
     Reporter::GetInstance()->GetBehaviourReporter()->UDMFReport(msg);
+    if (res != E_OK) {
+        ZLOGE("GetData failed, res:%{public}d, key:%{public}s", res, query.key.c_str());
+    }
     return res;
+}
+
+bool UdmfServiceImpl::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
+{
+    return dataLoadCallback_.ComputeIfPresent(query.key, [&](const auto &key, auto &callback) {
+        std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
+        auto [found, cache] = blockDelayDataCache_.Find(key);
+        if (!found) {
+            blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
+            blockDelayDataCache_.Insert(key, BlockDelayData{query.tokenId, blockData});
+            callback->HandleDelayObserver(key, DataLoadInfo());
+        } else {
+            blockData = cache.blockData;
+        }
+        ZLOGI("Start waiting for data, key:%{public}s", key.c_str());
+        auto dataOpt = blockData->GetValue();
+        if (dataOpt.has_value()) {
+            unifiedData = *dataOpt;
+            blockDelayDataCache_.Erase(key);
+            return false;
+        }
+        res = E_NOT_FOUND;
+        return true;
+    });
 }
 
 bool UdmfServiceImpl::CheckDragParams(UnifiedKey &key, const QueryOption &query)
@@ -224,6 +253,7 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
     int32_t res = store->Get(query.key, unifiedData);
     if (res != E_OK) {
         ZLOGE("Get data failed,res:%{public}d,key:%{public}s", res, query.key.c_str());
+        HandleDbError(key.intention, res);
         return res;
     }
 
@@ -231,17 +261,14 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         ZLOGE("Get data incomplete,key:%{public}s", query.key.c_str());
         return E_NOT_FOUND;
     }
-
-    CheckerManager::CheckInfo info;
-    info.tokenId = query.tokenId;
     std::shared_ptr<Runtime> runtime = unifiedData.GetRuntime();
     if (runtime == nullptr) {
         return E_DB_ERROR;
     }
-    if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info) && !IsPermissionInCache(query)) {
-        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-            BizScene::GET_DATA, GetDataStage::VERIFY_PRIVILEGE, StageRes::FAILED, E_NO_PERMISSION);
-        return E_NO_PERMISSION;
+
+    res = VerifyDataAccessPermission(runtime, query, unifiedData);
+    if (res != E_OK) {
+        return res;
     }
 
     if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
@@ -253,21 +280,39 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
             return E_NO_PERMISSION;
         }
     }
-    if (!IsReadAndKeep(runtime->privileges, query)) {
-        if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
-            ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
-            return E_DB_ERROR;
-        }
+    if (!IsReadAndKeep(runtime->privileges, query) && LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
+        ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
+        return E_DB_ERROR;
     }
 
-    privilegeCache_.erase(query.key);
-
+    {
+        std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
+        privilegeCache_.erase(query.key);
+    }
     PreProcessUtils::SetRemoteData(unifiedData);
+    TransferToEntriesIfNeed(query, unifiedData);
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::VerifyDataAccessPermission(std::shared_ptr<Runtime> runtime, const QueryOption &query,
+    const UnifiedData &unifiedData)
+{
+    CheckerManager::CheckInfo info;
+    info.tokenId = query.tokenId;
+
+    if (!CheckerManager::GetInstance().IsValid(runtime->privileges, info) && !IsPermissionInCache(query)) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::GET_DATA, GetDataStage::VERIFY_PRIVILEGE, StageRes::FAILED, E_NO_PERMISSION);
+        ZLOGE("Get data failed,key:%{public}s", query.key.c_str());
+        return E_NO_PERMISSION;
+    }
+
     return E_OK;
 }
 
 bool UdmfServiceImpl::IsPermissionInCache(const QueryOption &query)
 {
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
     auto iter = privilegeCache_.find(query.key);
     if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId) {
         return true;
@@ -283,6 +328,7 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
         }
     }
 
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
     auto iter = privilegeCache_.find(query.key);
     if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId &&
         iter->second.readPermission == PRIVILEGE_READ_AND_KEEP) {
@@ -400,15 +446,15 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
 {
     UnifiedKey key(query.key);
     if (!IsValidInput(query, unifiedData, key)) {
-        ZLOGE("Invalid input, key = %{public}s", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
     std::string bundleName;
-    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, bundleName)) {
+    std::string specificBundleName;
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, specificBundleName, bundleName)) {
         ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", query.tokenId);
         return E_ERROR;
     }
-    if (key.bundleName != bundleName && !HasDatahubPriviledge(bundleName)) {
+    if (key.bundleName != specificBundleName && !HasDatahubPriviledge(bundleName)) {
         ZLOGE("update data failed by %{public}s, key: %{public}s.", bundleName.c_str(), query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
@@ -421,26 +467,57 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     int32_t res = store->Get(query.key, data);
     if (res != E_OK) {
         ZLOGE("Get data failed:%{public}s", key.intention.c_str());
+        HandleDbError(key.intention, res);
         return res;
     }
+    auto verifyRes = VerifyUpdatePermission(query, data, bundleName);
+    if (verifyRes != E_OK) {
+        ZLOGE("VerifyUpdatePermission failed:%{public}d, key: %{public}s.", verifyRes, query.key.c_str());
+        return verifyRes;
+    }
+    std::shared_ptr<Runtime> runtime = data.GetRuntime();
+    runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
+    unifiedData.SetRuntime(*runtime);
+    PreProcessUtils::SetRecordUid(unifiedData);
+    if ((res = store->Update(unifiedData)) != E_OK) {
+        ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
+        HandleDbError(key.intention, res);
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::VerifyUpdatePermission(const QueryOption &query, UnifiedData &data, std::string &bundleName)
+{
     if (data.IsEmpty()) {
-        ZLOGE("Invalid parameter, unified data has no record; intention: %{public}s.", key.intention.c_str());
+        ZLOGE("Invalid parameter, unified data has no record");
         return E_INVALID_PARAMETERS;
     }
     std::shared_ptr<Runtime> runtime = data.GetRuntime();
     if (runtime == nullptr) {
+        ZLOGE("Invalid parameter, runtime is nullptr.");
         return E_DB_ERROR;
     }
-    if (runtime->tokenId != query.tokenId && !HasDatahubPriviledge(bundleName)) {
-        ZLOGE("Update failed: tokenId mismatch");
+    if (runtime->tokenId != query.tokenId && !HasDatahubPriviledge(bundleName) &&
+        CheckAppId(runtime, bundleName) != E_OK) {
+        ZLOGE("Update failed: tokenId or appId mismatch, bundleName: %{public}s", bundleName.c_str());
         return E_INVALID_PARAMETERS;
     }
-    runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
-    unifiedData.SetRuntime(*runtime);
-    PreProcessUtils::SetRecordUid(unifiedData);
-    if (store->Update(unifiedData) != E_OK) {
-        ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
-        return E_DB_ERROR;
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::CheckAppId(std::shared_ptr<Runtime> runtime, const std::string &bundleName)
+{
+    if (runtime->appId.empty()) {
+        ZLOGE("Update failed: Invalid parameter, runtime->appId is empty");
+        return E_INVALID_PARAMETERS;
+    }
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(
+        { IPCSkeleton::GetCallingUid(), runtime->tokenId, bundleName });
+    if (appId.empty() || appId != runtime->appId) {
+        ZLOGE("Update failed: runtime->appId %{public}s and bundleName appId %{public}s mismatch",
+            runtime->appId.c_str(), appId.c_str());
+        return E_INVALID_PARAMETERS;
     }
     return E_OK;
 }
@@ -460,7 +537,7 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
     }
     std::vector<UnifiedData> dataSet;
     std::shared_ptr<Store> store;
-    auto status = QueryDataCommon(query, dataSet, store);
+    int32_t status = QueryDataCommon(query, dataSet, store);
     if (status != E_OK) {
         ZLOGE("QueryDataCommon failed.");
         return status;
@@ -470,27 +547,51 @@ int32_t UdmfServiceImpl::DeleteData(const QueryOption &query, std::vector<Unifie
         return E_OK;
     }
     std::shared_ptr<Runtime> runtime;
+    std::string appId;
     std::vector<std::string> deleteKeys;
     for (const auto &data : dataSet) {
-        runtime = data.GetRuntime();
-        if (runtime == nullptr) {
-            return E_DB_ERROR;
+        auto runtime = data.GetRuntime();
+        if (!CheckDeleteDataPermission(appId, runtime, query)) {
+            continue;
         }
-        if (runtime->tokenId == query.tokenId) {
-            unifiedDataSet.push_back(data);
-            deleteKeys.push_back(UnifiedKey(runtime->key.key).GetKeyCommonPrefix());
-        }
+        unifiedDataSet.push_back(data);
+        deleteKeys.emplace_back(UnifiedKey(runtime->key.key).GetKeyCommonPrefix());
     }
     if (deleteKeys.empty()) {
         ZLOGE("No data to delete for this application");
         return E_OK;
     }
     ZLOGI("Delete data start. size: %{public}zu.", deleteKeys.size());
-    if (store->DeleteBatch(deleteKeys) != E_OK) {
+    status = store->DeleteBatch(deleteKeys);
+    if (status != E_OK) {
         ZLOGE("Remove data failed.");
+        HandleDbError(key.intention, status);
         return E_DB_ERROR;
     }
     return E_OK;
+}
+
+bool UdmfServiceImpl::CheckDeleteDataPermission(std::string &appId, const std::shared_ptr<Runtime> &runtime,
+    const QueryOption &query)
+{
+    if (runtime == nullptr) {
+        ZLOGE("Invalid runtime.");
+        return false;
+    }
+    if (runtime->tokenId == query.tokenId) {
+        return true;
+    }
+    std::string bundleName;
+    std::string specificBundleName;
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(query.tokenId, specificBundleName, bundleName)) {
+        ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", query.tokenId);
+        return false;
+    }
+    if (CheckAppId(runtime, bundleName) != E_OK) {
+        ZLOGE("Delete failed: tokenId or appId mismatch, bundleName: %{public}s", bundleName.c_str());
+        return false;
+    }
+    return true;
 }
 
 int32_t UdmfServiceImpl::GetSummary(const QueryOption &query, Summary &summary)
@@ -507,9 +608,10 @@ int32_t UdmfServiceImpl::GetSummary(const QueryOption &query, Summary &summary)
         ZLOGE("Get store failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
-
-    if (store->GetSummary(key, summary) != E_OK) {
+    int32_t status = store->GetSummary(key, summary);
+    if (status != E_OK) {
         ZLOGE("Store get summary failed:%{public}s", key.intention.c_str());
+        HandleDbError(key.intention, status);
         return E_DB_ERROR;
     }
     return E_OK;
@@ -546,26 +648,34 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
     }
 
     Runtime runtime;
-    auto res = store->GetRuntime(query.key, runtime);
+    int32_t res = store->GetRuntime(query.key, runtime);
     if (res == E_NOT_FOUND) {
+        std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
         privilegeCache_[query.key] = privilege;
         ZLOGW("Add privilege in cache, key: %{public}s.", query.key.c_str());
         return E_OK;
     }
     if (res != E_OK) {
         ZLOGE("Get runtime failed, res:%{public}d, key:%{public}s.", res, query.key.c_str());
+        HandleDbError(key.intention, res);
         return res;
     }
     runtime.privileges.emplace_back(privilege);
     res = store->PutRuntime(query.key, runtime);
     if (res != E_OK) {
         ZLOGE("Update runtime failed, res:%{public}d, key:%{public}s", res, query.key.c_str());
+        HandleDbError(key.intention, res);
     }
     return res;
 }
 
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
 {
+    if (!UTILS::IsTokenNative() ||
+        !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(query.tokenId)) {
+        ZLOGE("Tokenid permission verification failed!");
+        return E_NO_PERMISSION;
+    }
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::IDLE, BizState::DFX_BEGIN);
     UnifiedKey key(query.key);
@@ -596,25 +706,32 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
         syncInfo.businessUdKey = query.key;
         std::lock_guard<std::mutex> lock(mutex_);
         asyncProcessInfoMap_.insert_or_assign(syncInfo.businessUdKey, syncInfo);
-        ZLOGD("store.Sync: name=%{public}s, id=%{public}u, status=%{public}u, total=%{public}u, finish=%{public}u",
-            syncInfo.srcDevName.c_str(), syncInfo.syncId, syncInfo.syncStatus,
-            syncInfo.syncTotal, syncInfo.syncFinished);
     };
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SYNC_DATA, SyncDataStage::SYNC_BEGIN, StageRes::SUCCESS);
-    int32_t id = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
-    StoreMetaData meta = StoreMetaData(std::to_string(id), Bootstrap::GetInstance().GetProcessLabel(), key.intention);
+    int userId = 0;
+    if (!AccountDelegate::GetInstance()->QueryForegroundUserId(userId)) {
+        ZLOGE("QueryForegroundUserId failed");
+        return E_ERROR;
+    }
+    auto meta = BuildMeta(key.intention, userId);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
-    if (IsNeedMetaSync(meta, uuids) && !MetaDataManager::GetInstance().Sync(uuids,
-        [devices, callback, store] (auto &results) {
-            if (store->Sync(devices, callback) != E_OK) {
+    if (IsNeedMetaSync(meta, uuids)) {
+        bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
+            auto successRes = ProcessResult(results);
+            if (store->Sync(successRes, callback) != E_OK) {
                 ZLOGE("Store sync failed");
                 RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
                     BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
+            }
+        });
+        if (!res) {
+            ZLOGE("Meta sync failed");
+            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
+            return E_DB_ERROR;
         }
-    })) {
-        ZLOGE("bundleName:%{public}s, meta sync failed", key.bundleName.c_str());
-        return E_DB_ERROR;
+        return E_OK;
     }
     if (store->Sync(devices, callback) != E_OK) {
         ZLOGE("Store sync failed");
@@ -635,7 +752,7 @@ bool UdmfServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
         CapMetaData capMeta;
         auto capKey = CapMetaRow::GetKeyFor(uuid);
         if (!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
-            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData)) {
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData)) {
             isAfterMeta = true;
             break;
         }
@@ -668,9 +785,10 @@ int32_t UdmfServiceImpl::IsRemoteData(const QueryOption &query, bool &result)
     }
 
     Runtime runtime;
-    auto res = store->GetRuntime(query.key, runtime);
+    int32_t res = store->GetRuntime(query.key, runtime);
     if (res != E_OK) {
         ZLOGE("Get runtime failed, res:%{public}d, key:%{public}s.", res, query.key.c_str());
+        HandleDbError(key.intention, res);
         return E_DB_ERROR;
     }
 
@@ -707,9 +825,10 @@ int32_t UdmfServiceImpl::SetAppShareOption(const std::string &intention, int32_t
         ZLOGE("SetAppShareOption failed,shareOption already set:%{public}s", shareOptionTmp.c_str());
         return E_SETTINGS_EXISTED;
     }
-
-    if (store->PutLocal(std::to_string(accessTokenIDEx), ShareOptionsUtil::GetEnumStr(shareOption)) != E_OK) {
-        ZLOGE("Store get unifiedData failed:%{public}d", shareOption);
+    int32_t status = store->PutLocal(std::to_string(accessTokenIDEx), ShareOptionsUtil::GetEnumStr(shareOption));
+    if (status != E_OK) {
+        ZLOGE("Store get unifiedData failed:%{public}d", status);
+        HandleDbError(intention, status);
         return E_DB_ERROR;
     }
     return E_OK;
@@ -731,6 +850,7 @@ int32_t UdmfServiceImpl::GetAppShareOption(const std::string &intention, int32_t
     int32_t ret = store->GetLocal(std::to_string(accessTokenIDEx), appShareOption);
     if (ret != E_OK) {
         ZLOGW("GetLocal failed:%{public}s", intention.c_str());
+        HandleDbError(intention, ret);
         return ret;
     }
     ZLOGI("GetLocal ok intention:%{public}s,appShareOption:%{public}s", intention.c_str(), appShareOption.c_str());
@@ -758,8 +878,10 @@ int32_t UdmfServiceImpl::RemoveAppShareOption(const std::string &intention)
     }
 
     UnifiedData unifiedData;
-    if (store->DeleteLocal(std::to_string(accessTokenIDEx)) != E_OK) {
-        ZLOGE("Store DeleteLocal failed:%{public}s", intention.c_str());
+    int32_t status = store->DeleteLocal(std::to_string(accessTokenIDEx));
+    if (status != E_OK) {
+        ZLOGE("Store DeleteLocal failed:%{public}s, status:%{public}d", intention.c_str(), status);
+        HandleDbError(intention, status);
         return E_DB_ERROR;
     }
     return E_OK;
@@ -805,8 +927,10 @@ int32_t UdmfServiceImpl::QueryDataCommon(
         ZLOGE("Get store failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
-    if (store->GetBatchData(dataPrefix, dataSet) != E_OK) {
-        ZLOGE("Get dataSet failed, dataPrefix: %{public}s.", dataPrefix.c_str());
+    int32_t status = store->GetBatchData(dataPrefix, dataSet);
+    if (status != E_OK) {
+        ZLOGE("Get dataSet failed, dataPrefix: %{public}s, status:%{public}d.", dataPrefix.c_str(), status);
+        HandleDbError(intention, status);
         return E_DB_ERROR;
     }
     return E_OK;
@@ -893,7 +1017,8 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
 bool UdmfServiceImpl::VerifyPermission(const std::string &permission, uint32_t callerTokenId)
 {
     if (permission.empty()) {
-        return true;
+        ZLOGE("VerifyPermission failed, Permission is empty.");
+        return false;
     }
     int status = Security::AccessToken::AccessTokenKit::VerifyAccessToken(callerTokenId, permission);
     if (status != Security::AccessToken::PermissionState::PERMISSION_GRANTED) {
@@ -920,8 +1045,10 @@ void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
 
 int32_t UdmfServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
-    ZLOGI("user change, code:%{public}u, user:%{public}s, account:%{public}s", code, user.c_str(), account.c_str());
-    if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
+    ZLOGI("user change, code:%{public}u, user:%{public}s", code, user.c_str());
+    if (code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPING)
+        || code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPED)
+        || code == static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
         StoreCache::GetInstance().CloseStores();
     }
     return Feature::OnUserChange(code, user, account);
@@ -1071,15 +1198,17 @@ bool UdmfServiceImpl::IsValidOptionsNonDrag(UnifiedKey &key, const std::string &
     return false;
 }
 
-int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier, std::string &key)
+int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
+    std::string &key)
 {
     std::string bundleName;
+    std::string specificBundleName;
     auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(tokenId, bundleName)) {
+    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(tokenId, specificBundleName, bundleName)) {
         ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", tokenId);
         return E_ERROR;
     }
-    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, dataLoadInfo.sequenceKey);
+    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), specificBundleName, dataLoadInfo.sequenceKey);
     key = udkey.GetUnifiedKey();
     dataLoadCallback_.Insert(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
 
@@ -1091,8 +1220,10 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 
     Summary summary;
     UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
-    if (store->PutSummary(udkey, summary) != E_OK) {
-        ZLOGE("Put summary failed:%{public}s", key.c_str());
+    int32_t status = store->PutSummary(udkey, summary);
+    if (status != E_OK) {
+        ZLOGE("Put summary failed:%{public}s, status:%{public}d", key.c_str(), status);
+        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
         return E_DB_ERROR;
     }
     return E_OK;
@@ -1100,10 +1231,17 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 
 int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
 {
-    CustomOption option {
-        .intention = UD_INTENTION_DRAG,
-        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
-    };
+    auto delayIt = delayDataCallback_.Find(key);
+    auto blockIt = blockDelayDataCache_.Find(key);
+    bool isDataLoading = (delayIt.first);
+    if (!isDataLoading && !blockIt.first) {
+        ZLOGE("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+
+    CustomOption option;
+    option.intention = UD_INTENTION_DRAG;
+    option.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
@@ -1113,15 +1251,9 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGW("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
     }
 
-    auto it = delayDataCallback_.Find(key);
-    if (!it.first) {
-        ZLOGE("DelayData callback no exist, key:%{public}s", key.c_str());
-        return E_ERROR;
-    }
-    QueryOption query {
-        .tokenId = it.second.tokenId,
-        .key = key
-    };
+    QueryOption query;
+    query.tokenId = isDataLoading ? delayIt.second.tokenId : blockIt.second.tokenId;
+    query.key = key;
     if (option.tokenId != query.tokenId && !IsPermissionInCache(query)) {
         ZLOGE("No permission");
         return E_NO_PERMISSION;
@@ -1131,11 +1263,24 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGE("ProcessUri failed:%{public}d", ret);
         return E_NO_PERMISSION;
     }
-    privilegeCache_.erase(key);
+    {
+        std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
+        privilegeCache_.erase(key);
+    }
     PreProcessUtils::SetRemoteData(unifiedData);
-
     TransferToEntriesIfNeed(query, unifiedData);
-    auto callback = iface_cast<DelayDataCallbackProxy>(it.second.dataCallback);
+
+    if (!isDataLoading) {
+        blockIt.second.blockData->SetValue(unifiedData);
+        return E_OK;
+    }
+    return HandleDelayDataCallback(delayIt.second, unifiedData, key);
+}
+
+int32_t UdmfServiceImpl::HandleDelayDataCallback(DelayGetDataInfo &delayGetDataInfo, UnifiedData &unifiedData,
+    const std::string &key)
+{
+    auto callback = iface_cast<DelayDataCallbackProxy>(delayGetDataInfo.dataCallback);
     if (callback == nullptr) {
         ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
         return E_ERROR;
@@ -1149,10 +1294,9 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData)
 {
     ZLOGD("start");
-    QueryOption query {
-        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
-        .key = key
-    };
+    QueryOption query;
+    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    query.key = key;
     if (unifiedData == nullptr) {
         ZLOGE("Data is null, key:%{public}s", key.c_str());
         return E_ERROR;
@@ -1165,10 +1309,9 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
         ZLOGE("Retrieve data failed, key:%{public}s", key.c_str());
         return status;
     }
-    DelayGetDataInfo delayGetDataInfo = {
-        .dataCallback = iUdmfNotifier,
-        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID()),
-    };
+    DelayGetDataInfo delayGetDataInfo;
+    delayGetDataInfo.dataCallback = iUdmfNotifier;
+    delayGetDataInfo.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     delayDataCallback_.InsertOrAssign(key, std::move(delayGetDataInfo));
 
     auto it = dataLoadCallback_.Find(key);
@@ -1194,6 +1337,45 @@ bool UdmfServiceImpl::IsValidInput(const QueryOption &query, UnifiedData &unifie
         return false;
     }
     return true;
+}
+
+void UdmfServiceImpl::CloseStoreWhenCorrupted(const std::string &intention, int32_t status)
+{
+    if (status == E_DB_CORRUPTED) {
+        ZLOGE("Kv database corrupted, start to remove store");
+        StoreCache::GetInstance().RemoveStore(intention);
+    }
+}
+
+void UdmfServiceImpl::HandleDbError(const std::string &intention, int32_t &status)
+{
+    CloseStoreWhenCorrupted(intention, status);
+    if (status == E_DB_CORRUPTED) {
+        // reset status to E_DB_ERROR
+        status = E_DB_ERROR;
+    }
+}
+
+StoreMetaData UdmfServiceImpl::BuildMeta(const std::string &storeId, int userId)
+{
+    StoreMetaData meta;
+    meta.user = std::to_string(userId);
+    meta.storeId = storeId;
+    meta.bundleName = Bootstrap::GetInstance().GetProcessLabel();
+    return meta;
+}
+
+std::vector<std::string> UdmfServiceImpl::ProcessResult(const std::map<std::string, int32_t> &results)
+{
+    std::vector<std::string> devices;
+    for (const auto &[uuid, status] : results) {
+        if (static_cast<DistributedDB::DBStatus>(status) == DistributedDB::DBStatus::OK) {
+            DeviceMatrix::GetInstance().OnExchanged(uuid, DeviceMatrix::META_STORE_MASK);
+            devices.emplace_back(uuid);
+        }
+    }
+    ZLOGI("Meta sync finish, total size:%{public}zu, success size:%{public}zu", results.size(), devices.size());
+    return devices;
 }
 } // namespace UDMF
 } // namespace OHOS

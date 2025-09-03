@@ -121,7 +121,7 @@ ohos_unittest("ServiceUtilsTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
   ]
 
@@ -155,6 +155,7 @@ ohos_unittest("StoreTest") {
     "access_token:libnativetoken",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
+    "googletest:gmock",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
@@ -212,8 +213,8 @@ ohos_unittest("CloudInfoTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   external_deps = [
-    "cJSON:cjson",
     "c_utils:utils",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
   ]
 }
@@ -246,7 +247,7 @@ ohos_unittest("SubscriptionTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
   ]
 }
@@ -274,7 +275,7 @@ ohos_unittest("MetaDataManagerTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "kv_store:distributeddata_inner",
@@ -293,7 +294,7 @@ ohos_unittest("StoreMetaDataLocalTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   
   external_deps = [
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "kv_store:distributeddata_inner",
@@ -354,7 +355,7 @@ ohos_unittest("ServiceMetaDataTest") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -399,9 +400,9 @@ ohos_unittest("ConnectManagerTest") {
   external_deps = [ "kv_store:datamgr_common" ]
 }
 
-ohos_unittest("DeviceSyncAppManagerTest") {
+ohos_unittest("SyncManagerTest") {
   module_out_path = module_output_path
-  sources = [ "device_sync_app_manager_test.cpp" ]
+  sources = [ "sync_manager_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [ "kv_store:datamgr_common" ]
@@ -422,7 +423,6 @@ group("unittest") {
     ":ConnectManagerTest",
     ":ConstantTest",
     ":CryptoTest",
-    ":DeviceSyncAppManagerTest",
     ":EventCenterTest",
     ":EventTest",
     ":FeatureTest",
@@ -435,6 +435,7 @@ group("unittest") {
     ":StoreMetaDataLocalTest",
     ":StoreTest",
     ":SubscriptionTest",
+    ":SyncManagerTest",
   ]
 }
 ###############################################################################

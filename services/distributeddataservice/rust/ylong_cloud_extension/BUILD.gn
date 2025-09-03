@@ -44,7 +44,7 @@ if (use_clang_coverage) {
 } else {
   ohos_rust_unittest("rust_ylong_cloud_ext_unit_test") {
     module_out_path =
-        "distributeddatamgr/datamgr_service/services/rust/ylong_cloud_extension"
+        "datamgr_service/datamgr_service/services/rust/ylong_cloud_extension"
     sources = [ "src/lib.rs" ]
 
     external_deps = [

@@ -31,6 +31,7 @@
 #include "scheduler_manager.h"
 #include "string_wrapper.h"
 #include "utils/anonymous.h"
+#include "utils.h"
 #include "want_params.h"
 #include "db_delegate.h"
 #include "log_debug.h"
@@ -149,15 +150,17 @@ bool RdbDelegate::Init(const DistributedData::StoreMetaData &meta, int version,
 RdbDelegate::~RdbDelegate()
 {
     ZLOGI("Destruct. BundleName: %{public}s. StoreName: %{public}s. user: %{public}s", bundleName_.c_str(),
-        DistributedData::Anonymous::Change(storeName_).c_str(), user_.c_str());
+        StringUtils::GeneralAnonymous(storeName_).c_str(), user_.c_str());
 }
+
 void RdbDelegate::TryAndSend(int errCode)
 {
     if (errCode != E_SQLITE_CORRUPT || (haMode_ == HAMode::SINGLE && (backup_ != DUAL_WRITE && backup_ != PERIODIC))) {
         return;
     }
     ZLOGE("Database corruption. BundleName: %{public}s. StoreName: %{public}s. ExtUri: %{public}s",
-        bundleName_.c_str(), storeName_.c_str(), DistributedData::Anonymous::Change(extUri_).c_str());
+        bundleName_.c_str(), StringUtils::GeneralAnonymous(storeName_).c_str(),
+        URIUtils::Anonymous(extUri_).c_str());
     AAFwk::WantParams params;
     params.SetParam("BundleName", AAFwk::String::Box(bundleName_));
     params.SetParam("StoreName", AAFwk::String::Box(storeName_));
@@ -176,7 +179,7 @@ std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
     ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
     int ret = store_->Insert(rowId, tableName, bucket);
     if (ret != E_OK) {
-        ZLOGE("Insert failed %{public}s %{public}d", tableName.c_str(), ret);
+        ZLOGE("Insert failed %{public}s %{public}d", StringUtils::GeneralAnonymous(tableName).c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::INSERT_RDB_ERROR);
         if (ret == E_SQLITE_ERROR) {
@@ -200,7 +203,7 @@ std::pair<int64_t, int64_t> RdbDelegate::UpdateEx(
     RdbPredicates predicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicate, tableName);
     int ret = store_->Update(changeCount, bucket, predicates);
     if (ret != E_OK) {
-        ZLOGE("Update failed  %{public}s %{public}d", tableName.c_str(), ret);
+        ZLOGE("Update failed  %{public}s %{public}d", StringUtils::GeneralAnonymous(tableName).c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::UPDATE_RDB_ERROR);
         if (ret == E_SQLITE_ERROR) {
@@ -222,7 +225,7 @@ std::pair<int64_t, int64_t> RdbDelegate::DeleteEx(const std::string &tableName, 
     RdbPredicates predicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicate, tableName);
     int ret = store_->Delete(changeCount, predicates);
     if (ret != E_OK) {
-        ZLOGE("Delete failed  %{public}s %{public}d", tableName.c_str(), ret);
+        ZLOGE("Delete failed  %{public}s %{public}d", StringUtils::GeneralAnonymous(tableName).c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::DELETE_RDB_ERROR);
         if (ret == E_SQLITE_ERROR) {
@@ -252,7 +255,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     if (resultSet == nullptr) {
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::QUERY_RDB_ERROR);
-        ZLOGE("Query failed %{public}s, pid: %{public}d", tableName.c_str(), callingPid);
+        ZLOGE("Query failed %{public}s, pid: %{public}d", StringUtils::GeneralAnonymous(tableName).c_str(), callingPid);
         resultSetCount--;
         return std::make_pair(E_ERROR, nullptr);
     }
@@ -296,7 +299,7 @@ std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::st
     }
     auto resultSet = store_->QueryByStep(sql, selectionArgs);
     if (resultSet == nullptr) {
-        ZLOGE("Query failed %{private}s", sql.c_str());
+        ZLOGE("Query failed %{public}s", StringUtils::GeneralAnonymous(sql).c_str());
         return "";
     }
     int rowCount;
@@ -316,7 +319,7 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
     }
     auto resultSet = store_->QuerySql(sql);
     if (resultSet == nullptr) {
-        ZLOGE("Query failed %{private}s", sql.c_str());
+        ZLOGE("Query failed %{public}s", StringUtils::GeneralAnonymous(sql).c_str());
         return resultSet;
     }
     int rowCount;

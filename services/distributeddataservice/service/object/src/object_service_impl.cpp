@@ -43,6 +43,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
+using CheckerManager = OHOS::DistributedData::CheckerManager;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
 constexpr const char *METADATA_STORE_PATH = "/data/service/el1/public/database/distributeddata/kvdb";
 ObjectServiceImpl::Factory::Factory()
@@ -73,7 +74,7 @@ int32_t ObjectServiceImpl::ObjectStoreSave(const std::string &bundleName, const 
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    status = ObjectStoreManager::GetInstance()->Save(bundleName, sessionId, data, deviceId, callback);
+    status = ObjectStoreManager::GetInstance().Save(bundleName, sessionId, data, deviceId, callback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("save fail %{public}d", status);
     }
@@ -90,7 +91,7 @@ int32_t ObjectServiceImpl::OnAssetChanged(const std::string &bundleName, const s
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    status = ObjectStoreManager::GetInstance()->OnAssetChanged(tokenId, bundleName, sessionId, deviceId, assetValue);
+    status = ObjectStoreManager::GetInstance().OnAssetChanged(tokenId, bundleName, sessionId, deviceId, assetValue);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("file transfer failed fail %{public}d", status);
     }
@@ -105,10 +106,10 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    status = ObjectStoreManager::GetInstance()->BindAsset(tokenId, bundleName, sessionId, asset, bindInfo);
+    status = ObjectStoreManager::GetInstance().BindAsset(tokenId, bundleName, sessionId, asset, bindInfo);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("bind asset fail %{public}d, bundleName:%{public}s, sessionId:%{public}s, assetName:%{public}s", status,
-            bundleName.c_str(), sessionId.c_str(), asset.name.c_str());
+            bundleName.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(asset.name).c_str());
     }
     return status;
 }
@@ -116,6 +117,10 @@ int32_t ObjectServiceImpl::BindAssetStore(const std::string &bundleName, const s
 int32_t ObjectServiceImpl::IsContinue(bool &result)
 {
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    if (Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId) != Security::AccessToken::TOKEN_HAP) {
+        ZLOGE("TokenType is not TOKEN_HAP, tokenId: %{public}u", tokenId);
+        return OBJECT_INNER_ERROR;
+    }
     Security::AccessToken::HapTokenInfo tokenInfo;
     auto status = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (status != 0) {
@@ -142,8 +147,8 @@ int32_t ObjectServiceImpl::OnInitialize()
     executors_->Schedule(std::chrono::seconds(WAIT_ACCOUNT_SERVICE), [this]() {
         StoreMetaData saveMeta;
         SaveMetaData(saveMeta);
-        ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, saveMeta.user);
-        ObjectStoreManager::GetInstance()->InitUserMeta();
+        ObjectStoreManager::GetInstance().SetData(saveMeta.dataDir, saveMeta.user);
+        ObjectStoreManager::GetInstance().InitUserMeta();
         RegisterObjectServiceInfo();
         RegisterHandler();
         ObjectDmsHandler::GetInstance().RegisterDmsEvent();
@@ -204,13 +209,13 @@ int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta)
 int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
 {
     if (code == static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED)) {
-        int32_t status = ObjectStoreManager::GetInstance()->Clear();
+        int32_t status = ObjectStoreManager::GetInstance().Clear();
         if (status != OBJECT_SUCCESS) {
             ZLOGE("Clear fail user:%{public}s, status: %{public}d", user.c_str(), status);
         }
         StoreMetaData saveMeta;
         SaveMetaData(saveMeta);
-        ObjectStoreManager::GetInstance()->SetData(saveMeta.dataDir, saveMeta.user);
+        ObjectStoreManager::GetInstance().SetData(saveMeta.dataDir, saveMeta.user);
     }
     return Feature::OnUserChange(code, user, account);
 }
@@ -224,7 +229,7 @@ int32_t ObjectServiceImpl::ObjectStoreRevokeSave(
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    status = ObjectStoreManager::GetInstance()->RevokeSave(bundleName, sessionId, callback);
+    status = ObjectStoreManager::GetInstance().RevokeSave(bundleName, sessionId, callback);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("revoke save fail %{public}d", status);
         return status;
@@ -241,7 +246,7 @@ int32_t ObjectServiceImpl::ObjectStoreRetrieve(
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    status = ObjectStoreManager::GetInstance()->Retrieve(bundleName, sessionId, callback, tokenId);
+    status = ObjectStoreManager::GetInstance().Retrieve(bundleName, sessionId, callback, tokenId);
     if (status != OBJECT_SUCCESS) {
         ZLOGE("retrieve fail %{public}d", status);
         return status;
@@ -259,7 +264,7 @@ int32_t ObjectServiceImpl::RegisterDataObserver(
         return status;
     }
     auto pid = IPCSkeleton::GetCallingPid();
-    ObjectStoreManager::GetInstance()->RegisterRemoteCallback(bundleName, sessionId, pid, tokenId, callback);
+    ObjectStoreManager::GetInstance().RegisterRemoteCallback(bundleName, sessionId, pid, tokenId, callback);
     return OBJECT_SUCCESS;
 }
 
@@ -272,7 +277,7 @@ int32_t ObjectServiceImpl::UnregisterDataChangeObserver(const std::string &bundl
         return status;
     }
     auto pid = IPCSkeleton::GetCallingPid();
-    ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(bundleName, pid, tokenId, sessionId);
+    ObjectStoreManager::GetInstance().UnregisterRemoteCallback(bundleName, pid, tokenId, sessionId);
     return OBJECT_SUCCESS;
 }
 
@@ -285,7 +290,7 @@ int32_t ObjectServiceImpl::RegisterProgressObserver(
         return status;
     }
     auto pid = IPCSkeleton::GetCallingPid();
-    ObjectStoreManager::GetInstance()->RegisterProgressObserverCallback(bundleName, sessionId, pid, tokenId, callback);
+    ObjectStoreManager::GetInstance().RegisterProgressObserverCallback(bundleName, sessionId, pid, tokenId, callback);
     return OBJECT_SUCCESS;
 }
 
@@ -297,7 +302,7 @@ int32_t ObjectServiceImpl::UnregisterProgressObserver(const std::string &bundleN
         return status;
     }
     auto pid = IPCSkeleton::GetCallingPid();
-    ObjectStoreManager::GetInstance()->UnregisterProgressObserverCallback(bundleName, pid, tokenId, sessionId);
+    ObjectStoreManager::GetInstance().UnregisterProgressObserverCallback(bundleName, pid, tokenId, sessionId);
     return OBJECT_SUCCESS;
 }
 
@@ -308,7 +313,7 @@ int32_t ObjectServiceImpl::DeleteSnapshot(const std::string &bundleName, const s
     if (status != OBJECT_SUCCESS) {
         return status;
     }
-    ObjectStoreManager::GetInstance()->DeleteSnapshot(bundleName, sessionId);
+    ObjectStoreManager::GetInstance().DeleteSnapshot(bundleName, sessionId);
     return OBJECT_SUCCESS;
 }
 
@@ -320,8 +325,7 @@ int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
     storeInfo.tokenId = tokenId;
     storeInfo.bundleName = bundleName;
     storeInfo.storeId = sessionId;
-    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(storeInfo);
-    if (appId.empty()) {
+    if (!CheckerManager::GetInstance().IsValid(storeInfo)) {
         ZLOGE("object bundleName wrong, bundleName = %{public}s, uid = %{public}d, tokenId = %{public}s",
               bundleName.c_str(), storeInfo.uid, Anonymous::Change(std::to_string(storeInfo.tokenId)).c_str());
         return OBJECT_PERMISSION_DENIED;
@@ -331,7 +335,7 @@ int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
 
 int32_t ObjectServiceImpl::ObjectStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
-    int32_t result = ObjectStoreManager::GetInstance()->DeleteByAppId(bundleName, user);
+    int32_t result = ObjectStoreManager::GetInstance().DeleteByAppId(bundleName, user);
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Delete object data failed, result:%{public}d, bundleName:%{public}s, user:%{public}d, index:%{public}d",
             result, bundleName.c_str(), user, index);
@@ -365,7 +369,7 @@ int32_t ObjectServiceImpl::ResolveAutoLaunch(const std::string &identifier, Dist
             continue;
         }
         if (storeMeta.bundleName == DistributedData::Bootstrap::GetInstance().GetProcessLabel()) {
-            int32_t status = DistributedObject::ObjectStoreManager::GetInstance()->AutoLaunchStore();
+            int32_t status = DistributedObject::ObjectStoreManager::GetInstance().AutoLaunchStore();
             if (status != OBJECT_SUCCESS) {
                 continue;
             }
@@ -379,8 +383,8 @@ int32_t ObjectServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, con
 {
     ZLOGI("ObjectServiceImpl::OnAppExit uid=%{public}d, pid=%{public}d, tokenId=%{public}d, bundleName=%{public}s",
           uid, pid, tokenId, appId.c_str());
-    ObjectStoreManager::GetInstance()->UnregisterRemoteCallback(appId, pid, tokenId);
-    ObjectStoreManager::GetInstance()->UnregisterProgressObserverCallback(appId, pid, tokenId);
+    ObjectStoreManager::GetInstance().UnregisterRemoteCallback(appId, pid, tokenId);
+    ObjectStoreManager::GetInstance().UnregisterProgressObserverCallback(appId, pid, tokenId);
     return FeatureSystem::STUB_SUCCESS;
 }
 
@@ -404,7 +408,7 @@ ObjectServiceImpl::ObjectServiceImpl()
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
             return;
         }
-        auto bindAssets = ObjectStoreManager::GetInstance()->GetSnapShots(eventInfo.bundleName, eventInfo.storeName);
+        auto bindAssets = ObjectStoreManager::GetInstance().GetSnapShots(eventInfo.bundleName, eventInfo.storeName);
         store->BindSnapshots(bindAssets);
     };
     EventCenter::GetInstance().Subscribe(BindEvent::BIND_SNAPSHOT, process);
@@ -412,20 +416,24 @@ ObjectServiceImpl::ObjectServiceImpl()
 
 void ObjectServiceImpl::RegisterObjectServiceInfo()
 {
+    // LCOV_EXCL_START
     DumpManager::Config serviceInfoConfig;
     serviceInfoConfig.fullCmd = "--feature-info";
     serviceInfoConfig.abbrCmd = "-f";
     serviceInfoConfig.dumpName = "FEATURE_INFO";
     serviceInfoConfig.dumpCaption = { "| Display all the service statistics" };
     DumpManager::GetInstance().AddConfig("FEATURE_INFO", serviceInfoConfig);
+    // LCOV_EXCL_STOP
 }
 
 void ObjectServiceImpl::RegisterHandler()
 {
+    // LCOV_EXCL_START
     Handler handler = [this](int fd, std::map<std::string, std::vector<std::string>> &params) {
         DumpObjectServiceInfo(fd, params);
     };
     DumpManager::GetInstance().AddHandler("FEATURE_INFO", uintptr_t(this), handler);
+    // LCOV_EXCL_STOP
 }
 
 void ObjectServiceImpl::DumpObjectServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
@@ -438,13 +446,14 @@ void ObjectServiceImpl::DumpObjectServiceInfo(int fd, std::map<std::string, std:
 ObjectServiceImpl::~ObjectServiceImpl()
 {
     DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
+    ObjectStoreManager::GetInstance().UnRegisterAssetsLister();
 }
 
 int32_t ObjectServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
-    ObjectStoreManager::GetInstance()->SetThreadPool(executors_);
-    ObjectAssetLoader::GetInstance()->SetThreadPool(executors_);
+    ObjectStoreManager::GetInstance().SetThreadPool(executors_);
+    ObjectAssetLoader::GetInstance().SetThreadPool(executors_);
     return 0;
 }
 } // namespace OHOS::DistributedObject

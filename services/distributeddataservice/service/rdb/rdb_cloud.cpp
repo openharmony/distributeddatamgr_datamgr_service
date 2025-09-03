@@ -26,8 +26,8 @@
 namespace OHOS::DistributedRdb {
 using namespace DistributedDB;
 using namespace DistributedData;
-RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets* bindAssets)
-    : cloudDB_(std::move(cloudDB)), snapshots_(bindAssets)
+RdbCloud::RdbCloud(std::shared_ptr<DistributedData::CloudDB> cloudDB, BindAssets bindAssets)
+    : cloudDB_(std::move(cloudDB)), snapshots_(std::move(bindAssets))
 {
 }
 
@@ -306,11 +306,11 @@ void RdbCloud::PostEvent(DistributedData::Value& value, DataBucket& extend, std:
 void RdbCloud::PostEventAsset(DistributedData::Asset& asset, DataBucket& extend, std::set<std::string>& skipAssets,
     DistributedData::AssetEvent eventId)
 {
-    if (snapshots_->bindAssets == nullptr) {
+    if (snapshots_ == nullptr) {
         return;
     }
-    auto it = snapshots_->bindAssets->find(asset.uri);
-    if (it == snapshots_->bindAssets->end() || it->second == nullptr) {
+    auto it = snapshots_->find(asset.uri);
+    if (it == snapshots_->end() || it->second == nullptr) {
         return;
     }
 

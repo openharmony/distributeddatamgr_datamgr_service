@@ -21,6 +21,7 @@
 #include "log_print.h"
 #include "rdb_delegate.h"
 #include "log_debug.h"
+#include "store/general_store.h"
 
 namespace OHOS::DataShare {
 using Account = DistributedData::AccountDelegate;
@@ -32,9 +33,11 @@ std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData,
     const std::string &extUri, const std::string &backup)
 {
-    if (Account::GetInstance()->IsDeactivating(atoi(metaData.user.c_str()))) {
-        ZLOGW("user %{public}s is deactivating, storeName: %{public}s", metaData.user.c_str(),
-              metaData.GetStoreAlias().c_str());
+    if (metaData.area > DistributedData::GeneralStore::Area::EL1 &&
+       (Account::GetInstance()->IsDeactivating(atoi(metaData.user.c_str())) ||
+        !Account::GetInstance()->IsVerified(atoi(metaData.user.c_str())))) {
+        ZLOGW("user %{public}s is deactivating or unverified, storeName: %{public}s, area: %{public}d",
+              metaData.user.c_str(), StringUtils::GeneralAnonymous(metaData.GetStoreAlias()).c_str(), metaData.area);
         return nullptr;
     }
     std::shared_ptr<DBDelegate> store;
@@ -63,7 +66,7 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
     if (success) {
         return store;
     }
-    ZLOGE("creator failed, storeName: %{public}s", metaData.GetStoreAlias().c_str());
+    ZLOGE("creator failed, storeName: %{public}s", StringUtils::GeneralAnonymous(metaData.GetStoreAlias()).c_str());
     auto eraseFunc = [&metaData]
         (auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
         stores.erase(metaData.storeId);
@@ -167,13 +170,13 @@ void DBDelegate::EraseStoreCache(const int32_t tokenId)
     storesEncrypt_.Erase(tokenId);
 }
 
-std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(
-    bool reInit, const std::string &dir, const std::shared_ptr<ExecutorPool> &executors)
+std::shared_ptr<KvDBDelegate> KvDBDelegate::GetInstance(const std::string &dir,
+    const std::shared_ptr<ExecutorPool> &executors)
 {
     static std::shared_ptr<KvDBDelegate> delegate = nullptr;
     static std::mutex mutex;
     std::lock_guard<decltype(mutex)> lock(mutex);
-    if ((delegate == nullptr || reInit) && executors != nullptr) {
+    if (delegate == nullptr && executors != nullptr) {
         delegate = std::make_shared<KvDelegate>(dir, executors);
     }
     return delegate;

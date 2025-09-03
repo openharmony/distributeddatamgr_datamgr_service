@@ -50,6 +50,7 @@ ohos_fuzztest("DataShareServiceImplFuzzTest") {
   ]
 
   sources = [
+    "${data_service_path}/service/common/bundle_utils.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
@@ -64,7 +65,7 @@ ohos_fuzztest("DataShareServiceImplFuzzTest") {
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
     "${data_service_path}/service/data_share/common/seq_strategy.cpp",
-    "${data_service_path}/service/data_share/common/uri_utils.cpp",
+    "${data_service_path}/service/data_share/common/utils.cpp",
     "${data_service_path}/service/data_share/data/published_data.cpp",
     "${data_service_path}/service/data_share/data/resultset_json_formatter.cpp",
     "${data_service_path}/service/data_share/data/template_data.cpp",
@@ -98,6 +99,7 @@ ohos_fuzztest("DataShareServiceImplFuzzTest") {
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
     "datashareserviceimpl_fuzzer.cpp",
   ]
 

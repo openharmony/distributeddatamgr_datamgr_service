@@ -26,7 +26,7 @@
 #include "bundle_mgr_proxy.h"
 #include "datashare_errno.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 #include "log_debug.h"
 
@@ -36,6 +36,7 @@ constexpr const char *PROFILE_FILE_PREFIX = "$profile:";
 constexpr const char *SEPARATOR = "/";
 static constexpr int PATH_SIZE = 2;
 static constexpr int MAX_ALLOWLIST_COUNT = 256;
+static constexpr size_t MAX_FILE_SIZE = 10 * 1024 * 1024;
 const size_t PROFILE_PREFIX_LEN = strlen(PROFILE_FILE_PREFIX);
 bool Config::Marshal(json &node) const
 {
@@ -145,7 +146,13 @@ bool SerialDataShareProxyData::Marshal(json &node) const
 bool SerialDataShareProxyData::Unmarshal(const json &node)
 {
     bool ret = GetValue(node, GET_NAME(uri), uri);
-    GetValue(node, GET_NAME(value), value);
+    // the value in profile can only be string, but the type of value which is published is variant,
+    // use type variant to unmarshal a string will fail, so use a string to try unmarshal again
+    if (!GetValue(node, GET_NAME(value), value)) {
+        std::string valueStr;
+        GetValue(node, GET_NAME(value), valueStr);
+        value = valueStr;
+    }
     GetValue(node, GET_NAME(allowList), allowList);
     return ret;
 }
@@ -275,12 +282,13 @@ std::string DataShareProfileConfig::GetResFromResMgr(
     std::string resPath;
     RState ret = resMgr.GetProfileByName(profileName.c_str(), resPath);
     if (ret != RState::SUCCESS) {
-        ZLOGE("profileName not found, ret is %{public}d, profileName is %{public}s", ret, profileName.c_str());
+        ZLOGE("profileName not found, ret is %{public}d, profileName is %{public}s", ret,
+            StringUtils::GeneralAnonymous(profileName).c_str());
         return profileInfo;
     }
     std::string profile = ReadProfile(resPath);
     if (profile.empty()) {
-        ZLOGE("Read profile failed, resPath is %{public}s", resPath.c_str());
+        ZLOGE("Read profile failed, resPath is %{public}s", URIUtils::Anonymous(resPath).c_str());
         return profileInfo;
     }
     return profile;
@@ -292,7 +300,8 @@ bool DataShareProfileConfig::IsFileExisted(const std::string &filePath)
         return false;
     }
     if (access(filePath.c_str(), F_OK) != 0) {
-        ZLOGE("can not access file, errno is %{public}d, filePath is %{public}s", errno, filePath.c_str());
+        ZLOGE("can not access file, errno is %{public}d, filePath is %{public}s", errno,
+            URIUtils::Anonymous(filePath).c_str());
         return false;
     }
     return true;
@@ -313,7 +322,10 @@ std::string DataShareProfileConfig::ReadProfile(const std::string &resPath)
     tmp << in.rdbuf();
     std::string content = tmp.str();
     if (content.empty()) {
-        ZLOGE("the file is empty, resPath is %{public}s", resPath.c_str());
+        ZLOGE("the file is empty, resPath is %{public}s", URIUtils::Anonymous(resPath).c_str());
+        return "";
+    } else if (content.length() > MAX_FILE_SIZE) {
+        ZLOGE("the file is too large, resPath is %{public}s,", URIUtils::Anonymous(resPath).c_str());
         return "";
     }
     return content;

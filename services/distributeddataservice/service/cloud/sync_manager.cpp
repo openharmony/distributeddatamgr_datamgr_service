@@ -16,6 +16,7 @@
 #include "sync_manager.h"
 
 #include <chrono>
+#include <unordered_set>
 
 #include "account/account_delegate.h"
 #include "bootstrap.h"
@@ -47,6 +48,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 constexpr int32_t SYSTEM_USER_ID = 0;
+constexpr int32_t NETWORK_DISCONNECT_TIMEOUT_HOURS = 20;
 static constexpr const char *FT_GET_STORE = "GET_STORE";
 static constexpr const char *FT_CALLBACK = "CALLBACK";
 SyncManager::SyncInfo::SyncInfo(
@@ -364,6 +366,9 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         UpdateStartSyncInfo(cloudSyncInfos);
         auto code = IsValid(info, cloud);
         if (code != E_OK) {
+            if (code == E_NETWORK_ERROR) {
+                networkRecoveryManager_.RecordSyncApps(info.user_, info.bundleName_);
+            }
             BatchUpdateFinishState(cloudSyncInfos, code);
             BatchReport(info.user_, traceIds, SyncStage::END, code, "!IsValid");
             return;
@@ -476,6 +481,9 @@ void SyncManager::ReportSyncEvent(const SyncEvent &evt, BizState bizState, int32
 std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
 {
     return [this](const Event &event) {
+        if (executor_ == nullptr) {
+            return;
+        }
         auto &evt = static_cast<const SyncEvent &>(event);
         auto store = evt.GetStoreInfo();
         SyncInfo syncInfo(store.user, store.bundleName, store.storeName);
@@ -501,23 +509,32 @@ void SyncManager::Report(
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
+bool SyncManager::HandleRetryFinished(const SyncInfo &info, int32_t user, int32_t code, int32_t dbCode,
+    const std::string &prepareTraceId)
+{
+    if (code == E_OK || code == E_SYNC_TASK_MERGED) {
+        return true;
+    }
+    if (code == E_NETWORK_ERROR) {
+        networkRecoveryManager_.RecordSyncApps(user, info.bundleName_);
+    }
+    info.SetError(code);
+    RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
+                            dbCode },
+        "GetRetryer", BizState::END);
+    SyncManager::Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
+        dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "GetRetryer finish" });
+    Report(FT_CALLBACK, info.bundleName_, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
+        "code=" + std::to_string(code) + ",dbCode=" + std::to_string(static_cast<int32_t>(dbCode)));
+    return true;
+}
+
 SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user)
 {
     if (times >= RETRY_TIMES) {
         return [this, user, info = SyncInfo(syncInfo)](Duration, int32_t code, int32_t dbCode,
                    const std::string &prepareTraceId) mutable {
-            if (code == E_OK || code == E_SYNC_TASK_MERGED) {
-                return true;
-            }
-            info.SetError(code);
-            RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
-                                    dbCode },
-                "GetRetryer", BizState::END);
-            SyncManager::Report({ user, info.bundleName_, prepareTraceId, SyncStage::END,
-                dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "GetRetryer finish" });
-            Report(FT_CALLBACK, info.bundleName_, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
-                "code=" + std::to_string(code) + ",dbCode=" + std::to_string(static_cast<int32_t>(dbCode)));
-            return true;
+            return HandleRetryFinished(info, user, code, dbCode, prepareTraceId);
         };
     }
     return [this, times, user, info = SyncInfo(syncInfo)](Duration interval, int32_t code, int32_t dbCode,
@@ -537,6 +554,9 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
             return true;
         }
 
+        if (executor_ == nullptr) {
+            return false;
+        }
         activeInfos_.ComputeIfAbsent(info.syncId_, [this, times, interval, &info](uint64_t key) mutable {
             auto syncId = GenerateId(info.user_);
             auto ref = GenSyncRef(syncId);
@@ -751,10 +771,7 @@ bool SyncManager::NeedSaveSyncInfo(const QueryKey &queryKey)
     if (queryKey.accountId.empty()) {
         return false;
     }
-    if (std::find(kvApps_.begin(), kvApps_.end(), queryKey.bundleName) != kvApps_.end()) {
-        return false;
-    }
-    return true;
+    return kvApps_.find(queryKey.bundleName) == kvApps_.end();
 }
 
 std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(
@@ -807,8 +824,7 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
     if (!NeedSaveSyncInfo(queryKey)) {
         return;
     }
-    lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key,
-        std::map<SyncId, CloudLastSyncInfo> &val) {
+    lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key, std::map<SyncId, CloudLastSyncInfo> &val) {
         auto now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
         for (auto iter = val.begin(); iter != val.end();) {
             bool isExpired = ((now - iter->second.startTime) >= EXPIRATION_TIME) && iter->second.code == -1;
@@ -860,7 +876,7 @@ std::function<void(const GenDetails &result)> SyncManager::GetCallback(const Gen
             return;
         }
         int32_t code = result.begin()->second.code;
-        UpdateFinishSyncInfo({ user, id, storeInfo.bundleName, storeInfo.storeName}, storeInfo.syncId, code);
+        UpdateFinishSyncInfo({ user, id, storeInfo.bundleName, storeInfo.storeName }, storeInfo.syncId, code);
     };
 }
 
@@ -965,9 +981,6 @@ void SyncManager::BatchReport(int32_t userId, const TraceIds &traceIds, SyncStag
 
 std::string SyncManager::GetPath(const StoreMetaData &meta)
 {
-    if (!meta.dataDir.empty()) {
-        return meta.dataDir;
-    }
     StoreMetaMapping mapping(meta);
     MetaDataManager::GetInstance().LoadMeta(mapping.GetKey(), mapping, true);
     return mapping.cloudPath.empty() ? mapping.dataDir : mapping.cloudPath;
@@ -1075,5 +1088,95 @@ GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)
 int32_t SyncManager::ConvertValidGeneralCode(int32_t code)
 {
     return (code >= E_OK && code < E_BUSY) ? code : E_ERROR;
+}
+
+void SyncManager::OnNetworkDisconnected()
+{
+    networkRecoveryManager_.OnNetworkDisconnected();
+}
+
+void SyncManager::OnNetworkConnected()
+{
+    networkRecoveryManager_.OnNetworkConnected();
+}
+
+void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
+{
+    ZLOGI("network disconnected.");
+    std::lock_guard<std::mutex> lock(eventMutex_);
+    currentEvent_ = std::make_unique<NetWorkEvent>();
+    currentEvent_->disconnectTime = std::chrono::system_clock::now();
+}
+
+void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
+{
+    std::unique_ptr<NetWorkEvent> event;
+    {
+        std::lock_guard<std::mutex> lock(eventMutex_);
+        if (currentEvent_ == nullptr) {
+            ZLOGE("network connected, but currentEvent_ is not initialized.");
+            return;
+        }
+        event = std::move(currentEvent_);
+    }
+    auto now = std::chrono::system_clock::now();
+    auto duration = now - event->disconnectTime;
+    auto hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
+    bool timeout = (hours > NETWORK_DISCONNECT_TIMEOUT_HOURS);
+    std::vector<int32_t> users;
+    if (!Account::GetInstance()->QueryForegroundUsers(users) || users.empty()) {
+        ZLOGE("no foreground user, skip sync.");
+        return;
+    }
+    for (auto user : users) {
+        const auto &syncApps = timeout ? GetAppList(user) : event->syncApps[user];
+        for (const auto &bundleName : syncApps) {
+            ZLOGI("sync start bundleName:%{public}s, user:%{public}d", bundleName.c_str(), user);
+            syncManager_.DoCloudSync(SyncInfo(user, bundleName, "", {}, MODE_ONLINE));
+        }
+    }
+    ZLOGI("network connected success, network disconnect duration :%{public}ld hours", hours);
+}
+
+void SyncManager::NetworkRecoveryManager::RecordSyncApps(const int32_t user, const std::string &bundleName)
+{
+    std::lock_guard<std::mutex> lock(eventMutex_);
+    if (currentEvent_ != nullptr) {
+        auto &syncApps = currentEvent_->syncApps[user];
+        if (std::find(syncApps.begin(), syncApps.end(), bundleName) == syncApps.end()) {
+            syncApps.push_back(bundleName);
+            ZLOGI("record sync user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
+        }
+    }
+}
+
+std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const int32_t user)
+{
+    CloudInfo cloud;
+    cloud.user = user;
+    if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), cloud, true)) {
+        ZLOGE("load cloud info fail, user:%{public}d", user);
+        return {};
+    }
+    const size_t totalCount = cloud.apps.size();
+    std::vector<std::string> appList;
+    appList.reserve(totalCount);
+    std::unordered_set<std::string> uniqueSet;
+    uniqueSet.reserve(totalCount);
+    auto addApp = [&](std::string bundleName) {
+        if (uniqueSet.insert(bundleName).second) {
+            appList.push_back(std::move(bundleName));
+        }
+    };
+    auto stores = CheckerManager::GetInstance().GetDynamicStores();
+    auto staticStores = CheckerManager::GetInstance().GetStaticStores();
+    stores.insert(stores.end(), staticStores.begin(), staticStores.end());
+    for (const auto &store : stores) {
+        addApp(std::move(store.bundleName));
+    }
+    for (const auto &[_, app] : cloud.apps) {
+        addApp(std::move(app.bundleName));
+    }
+    return appList;
 }
 } // namespace OHOS::CloudData

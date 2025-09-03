@@ -143,9 +143,10 @@ DBStatus ProcessCommunicatorImpl::SendData(const DeviceInfos &dstDevInfo, const 
     uint32_t totalLength)
 {
     PipeInfo pi = {thisProcessLabel_, ""};
-    const DataInfo dataInfo = { const_cast<uint8_t *>(data), length};
-    DeviceId destination;
-    destination.deviceId = dstDevInfo.identifier;
+    ExtraDataInfo extraInfo = { .userId = dstDevInfo.callee.userId, .appId = dstDevInfo.callee.appId,
+        .storeId = dstDevInfo.callee.storeId };
+    DataInfo dataInfo = { .data = const_cast<uint8_t *>(data), .length = length, .extraInfo = extraInfo };
+    DeviceId destination = { .deviceId = dstDevInfo.identifier };
     auto [errCode, softBusErrCode] =
         CommunicationProvider::GetInstance().SendData(pi, destination, dataInfo, totalLength);
     if (errCode == Status::RATE_LIMIT) {
@@ -297,10 +298,10 @@ DBStatus ProcessCommunicatorImpl::GetDataUserInfo(DataUserInfo dataUserInfo, std
     return DBStatus::OK;
 }
 
-Status ProcessCommunicatorImpl::ReuseConnect(const DeviceId &deviceId)
+Status ProcessCommunicatorImpl::ReuseConnect(const DeviceId &deviceId, const ExtraDataInfo &extraInfo)
 {
     PipeInfo pi = {thisProcessLabel_, ""};
-    return CommunicationProvider::GetInstance().ReuseConnect(pi, deviceId);
+    return CommunicationProvider::GetInstance().ReuseConnect(pi, deviceId, extraInfo);
 }
 } // namespace AppDistributedKv
 } // namespace OHOS

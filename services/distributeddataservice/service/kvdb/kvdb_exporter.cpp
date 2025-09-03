@@ -62,7 +62,7 @@ void KVDBExporter::Exporter(const StoreMetaData &meta, const std::string &backup
         .append(std::to_string(result))
         .append("]");
     Reporter::GetInstance()->GetBehaviourReporter()->Report(
-        { meta.account, meta.appId, meta.storeId, BehaviourType::DATABASE_BACKUP, message });
+        { meta.account, meta.appId, Anonymous::Change(meta.storeId), BehaviourType::DATABASE_BACKUP, message });
 }
 
 KVDBExporter::KVDBExporter() noexcept

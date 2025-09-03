@@ -364,10 +364,6 @@ void KvStoreDataService::OnStart()
     Handler handlerStoreInfo = std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1,
         std::placeholders::_2);
     DumpManager::GetInstance().AddHandler("STORE_INFO", uintptr_t(this), handlerStoreInfo);
-    RegisterUserInfo();
-    Handler handlerUserInfo = std::bind(&KvStoreDataService::DumpUserInfo, this, std::placeholders::_1,
-        std::placeholders::_2);
-    DumpManager::GetInstance().AddHandler("USER_INFO", uintptr_t(this), handlerUserInfo);
     RegisterBundleInfo();
     Handler handlerBundleInfo = std::bind(&KvStoreDataService::DumpBundleInfo, this, std::placeholders::_1,
         std::placeholders::_2);
@@ -387,7 +383,7 @@ void KvStoreDataService::LoadConfigs()
     Bootstrap::GetInstance().LoadBackup(executors_);
     Bootstrap::GetInstance().LoadCloud();
     Bootstrap::GetInstance().LoadAppIdMappings();
-    Bootstrap::GetInstance().LoadDeviceSyncAppWhiteLists();
+    Bootstrap::GetInstance().LoadAutoSyncApps();
     Bootstrap::GetInstance().LoadSyncTrustedApp();
 }
 
@@ -524,11 +520,7 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
         return -1;
     }
 
-    std::string content;
-    if (!GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, iv, content)) {
-        DeleteCloneKey();
-        return -1;
-    };
+    auto content = GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, iv);
     DeleteCloneKey();
 
     std::string backupPath = DirectoryManager::GetInstance().GetClonePath(backupInfo.userId);
@@ -575,9 +567,8 @@ std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, Se
     return reEncryptedKey;
 }
 
-bool KvStoreDataService::GetSecretKeyBackup(
-    const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
-    const std::string &userId, const std::vector<uint8_t> &iv, std::string &content)
+std::string KvStoreDataService::GetSecretKeyBackup(const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
+    const std::string &userId, const std::vector<uint8_t> &iv)
 {
     SecretKeyBackupData backupInfos;
     std::string deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
@@ -609,8 +600,7 @@ bool KvStoreDataService::GetSecretKeyBackup(
             backupInfos.infos.push_back(std::move(item));
         }
     }
-    content = Serializable::Marshall(backupInfos);
-    return true;
+    return Serializable::Marshall(backupInfos);
 }
 
 int32_t KvStoreDataService::OnRestore(MessageParcel &data, MessageParcel &reply)
@@ -915,7 +905,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
             g_kvStoreAccountEventStatus = 1;
             // delete all kvstore meta belong to this user
             std::vector<StoreMetaData> metaData;
-            MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({""}), metaData, true);
+            MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({}), metaData, true);
             for (const auto &meta : metaData) {
                 if (meta.user != eventInfo.userId) {
                     continue;
@@ -936,6 +926,7 @@ void KvStoreDataService::AccountEventChanged(const AccountEventInfo &eventInfo)
                 MetaDataManager::GetInstance().DelMeta(StoreMetaMapping(meta).GetKey(), true);
                 PermitDelegate::GetInstance().DelCache(meta.GetKeyWithoutPath());
             }
+            CheckerManager::GetInstance().ClearCache();
             g_kvStoreAccountEventStatus = 0;
             break;
         }
@@ -1055,6 +1046,7 @@ void KvStoreDataService::OnSessionReady(const AppDistributedKv::DeviceInfo &info
 
 int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index)
 {
+    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppUninstall(bundleName, user, index);
@@ -1065,6 +1057,7 @@ int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t u
 
 int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
+    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppUpdate(bundleName, user, index);
@@ -1075,6 +1068,7 @@ int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user
 
 int32_t KvStoreDataService::OnInstall(const std::string &bundleName, int32_t user, int32_t index)
 {
+    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
         acts->OnAppInstall(bundleName, user, index);
@@ -1095,6 +1089,7 @@ int32_t KvStoreDataService::OnScreenUnlocked(int32_t user)
 int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
     int32_t tokenId)
 {
+    CheckerManager::GetInstance().DeleteCache(bundleName, userId, appIndex);
     auto callerToken = IPCSkeleton::GetCallingTokenID();
     NativeTokenInfo nativeTokenInfo;
     if (AccessTokenKit::GetNativeTokenInfo(callerToken, nativeTokenInfo) != RET_SUCCESS ||
@@ -1161,7 +1156,14 @@ void KvStoreDataService::DumpStoreInfo(int fd, std::map<std::string, std::vector
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
+    int user = 0;
+    auto ret = AccountDelegate::GetInstance()->QueryForegroundUserId(user);
+    if (!ret) {
+        ZLOGE("get foreground userid failed");
+        return;
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
+        metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }
@@ -1247,21 +1249,6 @@ std::string KvStoreDataService::GetIndentation(int size)
     return indentation;
 }
 
-void KvStoreDataService::RegisterUserInfo()
-{
-    DumpManager::Config userInfoConfig;
-    userInfoConfig.fullCmd = "--user-info";
-    userInfoConfig.abbrCmd = "-u";
-    userInfoConfig.dumpName = "USER_INFO";
-    userInfoConfig.countPrintf = PRINTF_COUNT_2;
-    userInfoConfig.infoName = " <UId>";
-    userInfoConfig.minParamsNum = 0;
-    userInfoConfig.maxParamsNum = MAXIMUM_PARAMETER_LIMIT; // User contains no more than three parameters
-    userInfoConfig.childNode = "BUNDLE_INFO";
-    userInfoConfig.dumpCaption = { "| Display all the user statistics", "| Display the user statistics by UserId" };
-    DumpManager::GetInstance().AddConfig(userInfoConfig.dumpName, userInfoConfig);
-}
-
 void KvStoreDataService::BuildData(std::map<std::string, UserInfo> &datas, const std::vector<StoreMetaData> &metas)
 {
     for (auto &meta : metas) {
@@ -1309,20 +1296,6 @@ void KvStoreDataService::PrintfInfo(int fd, const std::map<std::string, UserInfo
     }
     dprintf(fd, "--------------------------------------UserInfo--------------------------------------\n%s\n",
         info.c_str());
-}
-
-void KvStoreDataService::DumpUserInfo(int fd, std::map<std::string, std::vector<std::string>> &params)
-{
-    std::vector<StoreMetaData> metas;
-    std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
-        ZLOGE("get full meta failed");
-        return;
-    }
-    FilterData(metas, params);
-    std::map<std::string, UserInfo> datas;
-    BuildData(datas, metas);
-    PrintfInfo(fd, datas);
 }
 
 void KvStoreDataService::RegisterBundleInfo()
@@ -1415,7 +1388,14 @@ void KvStoreDataService::DumpBundleInfo(int fd, std::map<std::string, std::vecto
 {
     std::vector<StoreMetaData> metas;
     std::string localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId }), metas, true)) {
+    int user = 0;
+    auto ret = AccountDelegate::GetInstance()->QueryForegroundUserId(user);
+    if (!ret) {
+        ZLOGE("get foreground userid failed");
+        return;
+    }
+    if (!MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ localDeviceId, std::to_string(user) }),
+        metas, true)) {
         ZLOGE("get full meta failed");
         return;
     }

@@ -23,18 +23,19 @@
 #include "snapshot/snapshot.h"
 
 namespace OHOS::DistributedRdb {
+using Snapshot = DistributedData::Snapshot;
+using BindAssets = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
 class RdbAssetLoader : public DistributedDB::IAssetLoader {
 public:
     using Type = DistributedDB::Type;
     using Asset = DistributedDB::Asset;
     using DBStatus = DistributedDB::DBStatus;
-    using BindAssets = DistributedData::BindAssets;
     using AssetsRecord = DistributedData::AssetRecord;
     using AssetStatus = DistributedData::Asset::Status;
     using GeneralError = DistributedData::GeneralError;
     using VBucket = DistributedData::VBucket;
 
-    explicit RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader, BindAssets *bindAssets);
+    explicit RdbAssetLoader(std::shared_ptr<DistributedData::AssetLoader> cloudAssetLoader, BindAssets bindAssets);
 
     ~RdbAssetLoader() = default;
 
@@ -61,7 +62,7 @@ private:
         std::set<std::string> &skipAssets, std::set<std::string> &deleteAssets);
 
     std::shared_ptr<DistributedData::AssetLoader> assetLoader_;
-    BindAssets *snapshots_;
+    const BindAssets snapshots_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_ASSET_LOADER_H

@@ -380,7 +380,11 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     syncOption.lockAction = DistributedDB::LockAction::NONE;
     if (storeInfo_.user == 0) {
         std::vector<int32_t> users;
-        AccountDelegate::GetInstance()->QueryUsers(users);
+        auto ret = AccountDelegate::GetInstance()->QueryUsers(users);
+        if (!ret || users.empty()) {
+            ZLOGE("failed to query os accounts, ret:%{public}d", ret);
+            return DBStatus::DB_ERROR;
+        }
         syncOption.users.push_back(std::to_string(users[0]));
     } else {
         syncOption.users.push_back(std::to_string(storeInfo_.user));
@@ -439,11 +443,9 @@ std::pair<int32_t, int32_t> KVDBGeneralStore::Sync(const Devices &devices, GenQu
             dbStatus =
                 delegate_->UnSubscribeRemoteQuery(devices, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
         } else if (syncMode < NEARBY_END) {
-            if (kvQuery->IsEmpty()) {
-                dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), false);
-            } else {
-                dbStatus = delegate_->Sync(devices, dbMode, GetDBSyncCompleteCB(std::move(async)), dbQuery, false);
-            }
+            DeviceSyncOption syncOption = { .devices = devices, .mode = dbMode, .isQuery = !kvQuery->IsEmpty(),
+                .query = dbQuery, .isWait = false, .isRetry = syncParam.isRetry };
+            dbStatus = delegate_->Sync(syncOption, GetDBSyncCompleteCB(std::move(async)));
         } else {
             ZLOGE("Err sync mode! sync mode:%{public}d", syncMode);
             dbStatus = DistributedDB::INVALID_ARGS;
@@ -521,6 +523,7 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
         return GeneralError::E_ALREADY_CLOSED;
     }
     DBStatus status = OK;
+    ClearKvMetaDataOption option;
     switch (mode) {
         case CLOUD_INFO:
             status = delegate_->RemoveDeviceData(
@@ -530,7 +533,6 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
             status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
             break;
         case CLEAN_WATER:
-            ClearKvMetaDataOption option;
             option.type = ClearKvMetaOpType::CLEAN_CLOUD_WATERMARK;
             status = delegate_->ClearMetaData(option);
             break;

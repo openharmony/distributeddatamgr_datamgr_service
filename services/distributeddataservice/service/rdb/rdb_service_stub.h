@@ -65,6 +65,8 @@ private:
 
     int32_t OnAfterOpen(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnIsSupportSilent(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnReportStatistic(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnDisable(MessageParcel& data, MessageParcel& reply);
@@ -123,6 +125,7 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REPORT_STAT)] =
             &RdbServiceStub::OnReportStatistic,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DFX_INFO)] = &RdbServiceStub::OnGetDfxInfo,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_ISSILENT)] = &RdbServiceStub::OnIsSupportSilent,
     };
 RDB_UTILS_POP_WARNING
 };

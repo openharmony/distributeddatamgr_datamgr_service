@@ -34,6 +34,23 @@ std::vector<std::string> OHOS::DistributedData::DeviceManagerAdapter::ToUUID(std
     return BDeviceManagerAdapter::deviceManagerAdapter->ToUUID(devices);
 }
 
+std::vector<std::string> OHOS::DistributedData::DeviceManagerAdapter::ToUUID(const std::vector<std::string> &devices)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        std::vector<std::string> vec;
+        return vec;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->ToUUID(devices);
+}
+
+std::string OHOS::DistributedData::DeviceManagerAdapter::ToUUID(const std::string &id)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return id;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->ToUUID(id);
+}
+
 bool OHOS::DistributedData::DeviceManagerAdapter::IsOHOSType(const std::string &id)
 {
     if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
@@ -124,6 +141,15 @@ std::string OHOS::DistributedData::DeviceManagerAdapter::ToNetworkID(const std::
         return " ";
     }
     return BDeviceManagerAdapter::deviceManagerAdapter->ToNetworkID(id);
+}
+
+std::string OHOS::DistributedData::DeviceManagerAdapter::CalcClientUuid(
+    const std::string &appId, const std::string &uuid)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return " ";
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->CalcClientUuid(appId, uuid);
 }
 
 DeviceManagerAdapter::~DeviceManagerAdapter()

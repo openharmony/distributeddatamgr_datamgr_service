@@ -13,190 +13,336 @@
  * limitations under the License.
  */
 
-#include <cstdint>
-#include <gtest/gtest.h>
-#include <iostream>
-#include <unistd.h>
-#include <vector>
 #include "softbus_client.h"
-#include "types.h"
 
+#include <gtest/gtest.h>
+
+#include "app_device_change_listener.h"
+#include "communicator_context.h"
+#include "executor_pool.h"
 
 namespace OHOS::Test {
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
-using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
-constexpr int32_t SOFTBUS_OK = 0;
+using namespace OHOS::DistributedData;
 
-class SoftbusClientTest : public testing::Test {
+static constexpr size_t THREAD_MIN = 0;
+static constexpr size_t THREAD_MAX = 1;
+static constexpr const char* PIP_ID = "SoftBusClientTest";
+static constexpr const char* UUID = "uuid";
+static constexpr const char* NETWORK_ID = "network_id";
+static constexpr const char* INVALID_NETWORK_ID = "invalid_network_id";
+
+class DeviceChangeListenerTest : public AppDeviceChangeListener {
+public:
+    void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override {}
+    void OnSessionReady(const DeviceInfo &info, int32_t errCode) const override;
+    void ResetReadyFlag();
+
+    mutable int32_t bindResult_;
+    mutable bool isReady_ = false;
+};
+
+void DeviceChangeListenerTest::OnSessionReady(const DeviceInfo &info, int32_t errCode) const
+{
+    (void)info;
+    bindResult_ = errCode;
+    isReady_ = true;
+}
+
+void DeviceChangeListenerTest::ResetReadyFlag()
+{
+    isReady_ = false;
+}
+
+class SoftBusClientTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    void SetUp() {}
+    void SetUp();
     void TearDown() {}
 
-    static  std::shared_ptr<SoftBusClient> client;
+    static PipeInfo pipeInfo_;
+    static DeviceId deviceId_;
+    static SessionAccessInfo accessInfo_;
+    static DeviceChangeListenerTest deviceListener_;
+    static std::shared_ptr<ExecutorPool> executors_;
 };
 
-std::shared_ptr<SoftBusClient> SoftbusClientTest::client =  nullptr;
+PipeInfo SoftBusClientTest::pipeInfo_;
+DeviceId SoftBusClientTest::deviceId_;
+SessionAccessInfo SoftBusClientTest::accessInfo_;
+DeviceChangeListenerTest SoftBusClientTest::deviceListener_;
+std::shared_ptr<ExecutorPool> SoftBusClientTest::executors_;
 
-void SoftbusClientTest::SetUpTestCase(void)
+void SoftBusClientTest::SetUpTestCase(void)
 {
-    PipeInfo pipeInfo;
-    pipeInfo.pipeId = "pipeId";
-    pipeInfo.userId = "userId";
-    DeviceId id = {"DeviceId"};
-    client = std::make_shared<SoftBusClient>(pipeInfo, id, "");
+    pipeInfo_.pipeId = PIP_ID;
+    deviceId_.deviceId = UUID;
+    CommunicatorContext::GetInstance().RegSessionListener(&deviceListener_);
+    executors_ = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
 }
 
-void SoftbusClientTest::TearDownTestCase(void)
+void SoftBusClientTest::TearDownTestCase(void)
 {
-    client = nullptr;
+    CommunicatorContext::GetInstance().UnRegSessionListener(&deviceListener_);
 }
 
-/**
-* @tc.name: SendData
-* @tc.desc: SendData test
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
- */
-HWTEST_F(SoftbusClientTest, SendData, TestSize.Level0)
+void SoftBusClientTest::SetUp()
 {
-    ASSERT_NE(client, nullptr);
-    std::string content = "Helloworlds";
-    const uint8_t *data = reinterpret_cast<const uint8_t*>(content.c_str());
-    DataInfo info = { const_cast<uint8_t *>(data), static_cast<uint32_t>(content.length())};
-    ISocketListener *listener = nullptr;
-    auto status = client->SendData(info, listener);
-    EXPECT_EQ(status, Status::ERROR);
-    client->bindState_ = 0;
-    status = client->SendData(info, listener);
-    EXPECT_EQ(status, Status::ERROR);
+    CommunicatorContext::GetInstance().SetThreadPool(executors_);
 }
 
 /**
-* @tc.name: OpenConnect
-* @tc.desc: OpenConnect test
+* @tc.name: OperatorTest001
+* @tc.desc: operator test
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
- */
-HWTEST_F(SoftbusClientTest, OpenConnect, TestSize.Level0)
+*/
+HWTEST_F(SoftBusClientTest, OperatorTest001, TestSize.Level1)
 {
-    ASSERT_NE(client, nullptr);
-    ISocketListener *listener = nullptr;
-    client->bindState_ = 0;
-    auto status = client->OpenConnect(listener);
-    EXPECT_EQ(status, Status::SUCCESS);
-    client->bindState_ = 1;
-    client->isOpening_.store(true);
-    status = client->OpenConnect(listener);
-    EXPECT_EQ(status, Status::RATE_LIMIT);
-    client->isOpening_.store(false);
-    status = client->OpenConnect(listener);
-    EXPECT_EQ(status, Status::NETWORK_ERROR);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    ASSERT_TRUE(*connect == UUID);
+    ASSERT_TRUE(*connect == DEFAULT_SOCKET);
+    ASSERT_EQ(connect->GetSocket(), DEFAULT_SOCKET);
 }
 
 /**
-* @tc.name: CheckStatus
-* @tc.desc: CheckStatus test
+* @tc.name: NetworkIdTest001
+* @tc.desc: network id test
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
- */
-HWTEST_F(SoftbusClientTest, CheckStatus, TestSize.Level0)
+*/
+HWTEST_F(SoftBusClientTest, NetworkIdTest001, TestSize.Level1)
 {
-    ASSERT_NE(client, nullptr);
-    client->bindState_ = 0;
-    auto status = client->CheckStatus();
-    EXPECT_EQ(status, Status::SUCCESS);
-    client->bindState_ = -1;
-    client->isOpening_.store(true);
-    status = client->CheckStatus();
-    EXPECT_EQ(status, Status::RATE_LIMIT);
-    client->isOpening_.store(false);
-    status = client->CheckStatus();
-    EXPECT_EQ(status, Status::ERROR);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, INVALID_NETWORK_ID, SoftBusClient::QOS_HML);
+    auto networkId = connect->GetNetworkId();
+    ASSERT_EQ(networkId, INVALID_NETWORK_ID);
+    connect->UpdateNetworkId(NETWORK_ID);
+    networkId = connect->GetNetworkId();
+    ASSERT_EQ(networkId, NETWORK_ID);
 }
 
 /**
-* @tc.name: Open
-* @tc.desc: Open test
+* @tc.name: OpenConnectTest001
+* @tc.desc: open connect fail and socketId is invalid
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
- */
-HWTEST_F(SoftbusClientTest, Open, TestSize.Level0)
+*/
+HWTEST_F(SoftBusClientTest, OpenConnectTest001, TestSize.Level1)
 {
-    ASSERT_NE(client, nullptr);
-    ISocketListener *listener = nullptr;
-    auto status = client->Open(1, AppDistributedKv::SoftBusClient::QOS_BR, listener, false);
-    EXPECT_NE(status, SOFTBUS_OK);
+    ConfigSocketId(INVALID_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
 /**
-* @tc.name: UpdateExpireTime
-* @tc.desc: UpdateExpireTime test
+* @tc.name: OpenConnectTest002
+* @tc.desc: open connect fail and socket is valid but set access info fail
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
- */
-HWTEST_F(SoftbusClientTest, UpdateExpireTime, TestSize.Level0)
+*/
+HWTEST_F(SoftBusClientTest, OpenConnectTest002, TestSize.Level1)
 {
-    ASSERT_NE(client, nullptr);
-    client->type_ = AppDistributedKv::SoftBusClient::QOS_BR;
-    auto expireTime = client->CalcExpireTime();
-    EXPECT_NO_FATAL_FAILURE(client->UpdateExpireTime(true));
-    EXPECT_LT(expireTime, client->expireTime_);
-    EXPECT_NO_FATAL_FAILURE(client->UpdateExpireTime(false));
-    EXPECT_LT(expireTime, client->expireTime_);
+    ConfigSocketId(INVALID_SET_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
 /**
-* @tc.name: UpdateBindInfo
-* @tc.desc: UpdateBindInfo test
+* @tc.name: OpenConnectTest003
+* @tc.desc: open connect fail and executor pool is nullptr
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
- */
-HWTEST_F(SoftbusClientTest, UpdateBindInfo, TestSize.Level0)
+*/
+HWTEST_F(SoftBusClientTest, OpenConnectTest003, TestSize.Level1)
 {
-    ASSERT_NE(client, nullptr);
-    EXPECT_NO_FATAL_FAILURE(client->UpdateBindInfo(1, 1, AppDistributedKv::SoftBusClient::QOS_BR, false));
-    EXPECT_NO_FATAL_FAILURE(client->UpdateBindInfo(1, 1, AppDistributedKv::SoftBusClient::QOS_BR, true));
+    ConfigSocketId(INVALID_BIND_SOCKET);
+    CommunicatorContext::GetInstance().SetThreadPool(nullptr);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
 /**
-* @tc.name: ReuseConnect
-* @tc.desc: ReuseConnect test
+* @tc.name: OpenConnectTest004
+* @tc.desc: open connect fail and socket is valid but bind fail
 * @tc.type: FUNC
-* @tc.require:
-* @tc.author: wangbin
- */
-HWTEST_F(SoftbusClientTest, ReuseConnect, TestSize.Level0)
+*/
+HWTEST_F(SoftBusClientTest, OpenConnectTest004, TestSize.Level1)
 {
-    ASSERT_NE(client, nullptr);
-    ISocketListener *listener = nullptr;
-    client->bindState_ = 0;
-    auto status = client->ReuseConnect(listener);
-    EXPECT_EQ(status, Status::SUCCESS);
-    client->bindState_ = -1;
-    client->isOpening_.store(true);
-    status = client->ReuseConnect(listener);
-    EXPECT_EQ(status, Status::NETWORK_ERROR);
+    ConfigSocketId(INVALID_BIND_SOCKET);
+
+    accessInfo_.isOHType = false;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_BR);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::RATE_LIMIT);
+    while (!(deviceListener_.isReady_)) {
+        sleep(1);
+    }
+    deviceListener_.ResetReadyFlag();
+    auto result = deviceListener_.bindResult_;
+    ASSERT_NE(result, 0);
+
+    accessInfo_.isOHType = true;
+    auto ohConnect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    status = ohConnect->OpenConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::RATE_LIMIT);
+    while (!(deviceListener_.isReady_)) {
+        sleep(1);
+    }
+    deviceListener_.ResetReadyFlag();
+    result = deviceListener_.bindResult_;
+    ASSERT_NE(result, 0);
 }
 
 /**
-* @tc.name: UpdateNetworkId
-* @tc.desc: UpdateNetworkId test
+* @tc.name: OpenConnectTest005
+* @tc.desc: open connect fail and bind success but get mtu fail
 * @tc.type: FUNC
- */
-HWTEST_F(SoftbusClientTest, UpdateNetworkId, TestSize.Level1)
+*/
+HWTEST_F(SoftBusClientTest, OpenConnectTest005, TestSize.Level1)
 {
-    ASSERT_NE(client, nullptr);
-    const std::string newNetworkId = "newId";
-    client->UpdateNetworkId(newNetworkId);
-    EXPECT_EQ(client->GetNetworkId(), newNetworkId);
+    ConfigSocketId(INVALID_MTU_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::RATE_LIMIT);
+    while (!(deviceListener_.isReady_)) {
+        sleep(1);
+    }
+    deviceListener_.ResetReadyFlag();
+    auto result = deviceListener_.bindResult_;
+    ASSERT_NE(result, 0);
+}
+
+/**
+* @tc.name: OpenConnectTest006
+* @tc.desc: open connect success
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusClientTest, OpenConnectTest006, TestSize.Level1)
+{
+    ConfigSocketId(VALID_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::RATE_LIMIT);
+    while (!(deviceListener_.isReady_)) {
+        sleep(1);
+    }
+    deviceListener_.ResetReadyFlag();
+    auto result = deviceListener_.bindResult_;
+    ASSERT_EQ(result, 0);
+    status = connect->CheckStatus();
+    ASSERT_EQ(status, Status::SUCCESS);
+
+    status = connect->OpenConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: ReuseConnectTest001
+* @tc.desc: reuse connect fail and socketId is invalid
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusClientTest, ReuseConnectTest001, TestSize.Level1)
+{
+    ConfigSocketId(INVALID_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::NETWORK_ERROR);
+}
+
+/**
+* @tc.name: ReuseConnectTest002
+* @tc.desc: reuse connect fail and socket is valid but set access info fail
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusClientTest, ReuseConnectTest002, TestSize.Level1)
+{
+    ConfigSocketId(INVALID_SET_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::NETWORK_ERROR);
+}
+
+/**
+* @tc.name: ReuseConnectTest003
+* @tc.desc: reuse connect fail and socket is valid but bind fail
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusClientTest, ReuseConnectTest003, TestSize.Level1)
+{
+    ConfigSocketId(INVALID_BIND_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::NETWORK_ERROR);
+}
+
+/**
+* @tc.name: ReuseConnectTest004
+* @tc.desc: reuse connect fail and bind success but get mtu fail
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusClientTest, ReuseConnectTest004, TestSize.Level1)
+{
+    ConfigSocketId(INVALID_MTU_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::NETWORK_ERROR);
+}
+
+/**
+* @tc.name: ReuseConnectTest005
+* @tc.desc: reuse connect success
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusClientTest, ReuseConnectTest005, TestSize.Level1)
+{
+    ConfigSocketId(VALID_SOCKET);
+    accessInfo_.isOHType = true;
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: SendDataTest001
+* @tc.desc: send data fail
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusClientTest, SendDataTest001, TestSize.Level1)
+{
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    DataInfo dataInfo;
+    auto status = connect->SendData(dataInfo);
+    ASSERT_NE(status, Status::SUCCESS);
+
+    ConfigSocketId(INVALID_SEND_SOCKET);
+    status = connect->ReuseConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::SUCCESS);
+    status = connect->SendData(dataInfo);
+    ASSERT_NE(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: SendDataTest002
+* @tc.desc: send data success
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusClientTest, SendDataTest002, TestSize.Level1)
+{
+    ConfigSocketId(VALID_SOCKET);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    DataInfo dataInfo;
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
+    ASSERT_EQ(status, Status::SUCCESS);
+    status = connect->SendData(dataInfo);
+    ASSERT_EQ(status, Status::SUCCESS);
 }
 } // namespace OHOS::Test

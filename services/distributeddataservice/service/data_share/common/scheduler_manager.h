@@ -41,6 +41,7 @@ public:
 private:
     static constexpr const char *REMIND_TIMER_FUNC = "remindTimer(";
     static constexpr int REMIND_TIMER_FUNC_LEN = 12;
+    uint32_t lastStatusCacheSize_ = 0;
     SchedulerManager() = default;
     ~SchedulerManager() = default;
     static void GenRemindTimerFuncParams(const int32_t userId, DistributedData::StoreMetaData &metaData, const Key &key,

@@ -60,7 +60,7 @@ ohos_shared_library("opencloudextension") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "hilog:libhilog",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "c_utils:utils",
     "kv_store:datamgr_common",
   ]

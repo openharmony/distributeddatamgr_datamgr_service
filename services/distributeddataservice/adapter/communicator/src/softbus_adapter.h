@@ -15,6 +15,7 @@
 
 #ifndef DISTRIBUTEDDATAFWK_SRC_SOFTBUS_ADAPTER_H
 #define DISTRIBUTEDDATAFWK_SRC_SOFTBUS_ADAPTER_H
+
 #include <concurrent_map.h>
 #include <condition_variable>
 #include <functional>
@@ -28,22 +29,23 @@
 #include "app_data_change_listener.h"
 #include "app_device_change_listener.h"
 #include "block_data.h"
+#include "executor_pool.h"
 #include "socket.h"
-#include "softbus_bus_center.h"
 #include "softbus_client.h"
+
 namespace OHOS {
 namespace AppDistributedKv {
-class SoftBusAdapter : public AppDistributedKv::AppDeviceChangeListener {
+class SoftBusAdapter {
 public:
-    SoftBusAdapter();
-    ~SoftBusAdapter();
-    static std::shared_ptr<SoftBusAdapter> GetInstance();
-
     struct ServerSocketInfo {
         std::string name;      /**< Peer socket name */
         std::string networkId; /**< Peer network ID */
         std::string pkgName;   /**< Peer package name */
     };
+
+    SoftBusAdapter();
+    ~SoftBusAdapter();
+    static std::shared_ptr<SoftBusAdapter> GetInstance();
 
     // add DataChangeListener to watch data change;
     Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo);
@@ -81,26 +83,24 @@ public:
     uint32_t GetMtuSize(const DeviceId &deviceId);
     uint32_t GetTimeout(const DeviceId &deviceId);
 
-    void OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
-        const AppDistributedKv::DeviceChangeType &type) const override;
-
-    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId);
+    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
 private:
     using Time = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
     using Task = ExecutorPool::Task;
+
     std::string DelConnect(int32_t socket, bool isForce);
     void StartCloseSessionTask(const std::string &deviceId);
     Task GetCloseSessionTask();
     bool CloseSession(const std::string &networkId);
     void GetExpireTime(std::shared_ptr<SoftBusClient> &conn);
-    std::pair<Status, int32_t> OpenConnect(const std::shared_ptr<SoftBusClient> &conn, const DeviceId &deviceId);
-    std::shared_ptr<SoftBusClient> GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, uint32_t qosType);
-    static constexpr const char *PKG_NAME = "distributeddata-default";
+    std::pair<Status, int32_t> OpenConnect(const std::shared_ptr<SoftBusClient> &conn, const DeviceId &deviceId,
+        const ExtraDataInfo &extraInfo);
+    bool ConfigSessionAccessInfo(const ExtraDataInfo &extraInfo, SessionAccessInfo &sessionAccessInfo);
+    std::shared_ptr<SoftBusClient> GetConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId);
+
     static constexpr Time INVALID_NEXT = std::chrono::steady_clock::time_point::max();
-    static constexpr uint32_t QOS_COUNT = 3;
-    static constexpr QosTV Qos[QOS_COUNT] = { { .qos = QOS_TYPE_MIN_BW, .value = 64 * 1024 },
-        { .qos = QOS_TYPE_MAX_LATENCY, .value = 15000 }, { .qos = QOS_TYPE_MIN_LATENCY, .value = 1600 } };
+
     static std::shared_ptr<SoftBusAdapter> instance_;
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
     ConcurrentMap<std::string, std::vector<std::shared_ptr<SoftBusClient>>> connects_;

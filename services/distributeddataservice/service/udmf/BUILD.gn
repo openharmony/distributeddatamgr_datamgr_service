@@ -19,6 +19,7 @@ config("module_public_config") {
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/permission/include",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
@@ -50,7 +51,6 @@ ohos_source_set("udmf_server") {
     "preprocess/preprocess_utils.cpp",
     "preprocess/udmf_notifier_proxy.cpp",
     "store/runtime_store.cpp",
-    "store/store_account_observer.cpp",
     "store/store_cache.cpp",
     "udmf_service_impl.cpp",
     "udmf_service_stub.cpp",
@@ -64,7 +64,10 @@ ohos_source_set("udmf_server") {
     "-Oz",
   ]
 
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/permission:distributeddata_permit"
+  ]
 
   external_deps = [
     "ability_base:zuri",

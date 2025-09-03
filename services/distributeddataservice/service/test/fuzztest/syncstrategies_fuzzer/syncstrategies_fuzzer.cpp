@@ -14,6 +14,7 @@
  */
 
 #include <fuzzer/FuzzedDataProvider.h>
+#include "src/network_delegate_normal_impl.h"
 #include "syncstrategies_fuzzer.h"
 #include "sync_strategies/network_sync_strategy.h"
 
@@ -21,10 +22,14 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::CloudData;
 
 namespace OHOS {
+constexpr int NUM_MAX = 100;
+
 void SyncStrategiesFuzz001(FuzzedDataProvider &provider)
 {
     int32_t user = provider.ConsumeIntegral<int32_t>();
-    std::string bundleName = provider.ConsumeRandomLengthString();
+    std::string bundleName = provider.ConsumeRandomLengthString(NUM_MAX);
+    static NetworkDelegateNormalImpl delegate;
+    NetworkDelegate::RegisterNetworkInstance(&delegate);
     NetworkSyncStrategy strategy;
     StoreInfo storeInfo;
     storeInfo.user = user;
@@ -42,21 +47,22 @@ void SyncStrategiesFuzz002(FuzzedDataProvider &provider)
 void SyncStrategiesFuzz003(FuzzedDataProvider &provider)
 {
     int32_t user = provider.ConsumeIntegral<int32_t>();
-    std::string bundleName = provider.ConsumeRandomLengthString();
+    std::string bundleName = provider.ConsumeRandomLengthString(NUM_MAX);
     NetworkSyncStrategy strategyInstance;
     strategyInstance.GetStrategy(user, bundleName);
     strategyInstance.GetKey(user);
 
     NetworkSyncStrategy::StrategyInfo info;
-    info.user = 1;
-    info.bundleName = "StrategyInfo";
+    info.user = provider.ConsumeIntegral<int32_t>();
+    info.bundleName = provider.ConsumeRandomLengthString(NUM_MAX);
+    info.strategy = provider.ConsumeIntegral<uint32_t>();
     Serializable::json node;
-    std::string key = provider.ConsumeRandomLengthString();
-    std::string valueStr = provider.ConsumeRandomLengthString();
+    std::string key = provider.ConsumeRandomLengthString(NUM_MAX);
+    std::string valueStr = provider.ConsumeRandomLengthString(NUM_MAX);
     int valueInt = provider.ConsumeIntegral<int>();
     float valueFloat = provider.ConsumeFloatingPoint<float>();
     bool valueBool = provider.ConsumeBool();
-    int valueRange = provider.ConsumeIntegralInRange<int>(0, 100);
+    int valueRange = provider.ConsumeIntegralInRange<int>(0, NUM_MAX);
     node[key] = valueStr;
     node["integer"] = valueInt;
     node["float"] = valueFloat;

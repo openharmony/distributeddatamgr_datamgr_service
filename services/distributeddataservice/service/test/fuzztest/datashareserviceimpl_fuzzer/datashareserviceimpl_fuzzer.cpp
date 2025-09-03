@@ -172,9 +172,188 @@ void TimerReceiverOnReceiveEventFuzz(FuzzedDataProvider &provider)
 {
     DataShareServiceImpl::TimerReceiver tmerReceiver;
     EventFwk::Want want;
+    std::string action = provider.ConsumeRandomLengthString();
+    want.SetAction(action);
     EventFwk::CommonEventData commonEventData(want);
     commonEventData.SetWant(want);
     tmerReceiver.OnReceiveEvent(commonEventData);
+}
+
+void OnUserChangeFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(0, 10);
+    std::string user = provider.ConsumeRandomLengthString();
+    std::string account = provider.ConsumeRandomLengthString();
+    dataShareServiceImpl->OnUserChange(code, user, account);
+}
+
+void DataShareStaticOnAppUninstall(FuzzedDataProvider &provider)
+{
+    DataShareServiceImpl::DataShareStatic dataShareStatic;
+    std::string bundleName = provider.ConsumeRandomLengthString();
+    int32_t user = provider.ConsumeIntegral<int32_t>();
+    int32_t index = provider.ConsumeIntegral<int32_t>();
+    dataShareStatic.OnAppUninstall(bundleName, user, index);
+}
+
+void AllowCleanDataLaunchAppFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    int32_t evtId = provider.ConsumeIntegral<int32_t>();
+    DistributedData::RemoteChangeEvent::DataInfo dataInfo;
+    dataInfo.userId = provider.ConsumeRandomLengthString();
+    dataInfo.storeId = provider.ConsumeRandomLengthString();
+    dataInfo.deviceId = provider.ConsumeRandomLengthString();
+    dataInfo.bundleName = provider.ConsumeRandomLengthString();
+    DistributedData::RemoteChangeEvent event(evtId, std::move(dataInfo));
+    bool launchForCleanData = provider.ConsumeBool();
+    dataShareServiceImpl->AllowCleanDataLaunchApp(event, launchForCleanData);
+}
+
+void AutoLaunchFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    int32_t evtId = provider.ConsumeIntegral<int32_t>();
+    DistributedData::RemoteChangeEvent::DataInfo dataInfo;
+    dataInfo.userId = provider.ConsumeRandomLengthString();
+    dataInfo.storeId = provider.ConsumeRandomLengthString();
+    dataInfo.deviceId = provider.ConsumeRandomLengthString();
+    dataInfo.bundleName = provider.ConsumeRandomLengthString();
+    DistributedData::RemoteChangeEvent event(evtId, std::move(dataInfo));
+    dataShareServiceImpl->AutoLaunch(event);
+}
+
+void UpdateExFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::string uri = provider.ConsumeRandomLengthString();
+    std::string extUri = provider.ConsumeRandomLengthString();
+    DataSharePredicates predicates;
+    DataShareValuesBucket valuesBucket;
+    std::string key1 = provider.ConsumeRandomLengthString();
+    std::string key2 = provider.ConsumeRandomLengthString();
+    std::string key3 = provider.ConsumeRandomLengthString();
+    std::string key4 = provider.ConsumeRandomLengthString();
+    int valueInt = provider.ConsumeIntegral<int>();
+    float valueFloat = provider.ConsumeFloatingPoint<float>();
+    std::string valueStr = provider.ConsumeRandomLengthString();
+    bool valueBool = provider.ConsumeBool();
+    valuesBucket.valuesMap[key1] = valueInt;
+    valuesBucket.valuesMap[key2] = valueFloat;
+    valuesBucket.valuesMap[key3] = valueStr;
+    valuesBucket.valuesMap[key4] = valueBool;
+    dataShareServiceImpl->UpdateEx(uri, extUri, predicates, valuesBucket);
+}
+
+void DeleteExFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::string uri = provider.ConsumeRandomLengthString();
+    std::string extUri = provider.ConsumeRandomLengthString();
+    DataSharePredicates predicates;
+    dataShareServiceImpl->DeleteEx(uri, extUri, predicates);
+}
+
+void DelTemplateFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::string uri = provider.ConsumeRandomLengthString();
+    int64_t subscriberId = provider.ConsumeIntegral<int64_t>();
+    dataShareServiceImpl->DelTemplate(uri, subscriberId);
+}
+
+void PublishFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    Data data;
+    std::string bundleNameOfProvider = provider.ConsumeRandomLengthString();
+    dataShareServiceImpl->Publish(data, bundleNameOfProvider);
+}
+
+void SubscribeRdbDataFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    uint8_t len = provider.ConsumeIntegral<uint8_t>();
+    std::vector<std::string> uris(len);
+    for (int i = 0; i < len; i++) {
+        std::string uri = provider.ConsumeRandomLengthString();
+        uris[i] = uri;
+    }
+    TemplateId id;
+    id.subscriberId_ = provider.ConsumeIntegral<int64_t>();
+    id.bundleName_ = provider.ConsumeRandomLengthString();
+    sptr<IDataProxyRdbObserver> observer;
+    dataShareServiceImpl->SubscribeRdbData(uris, id, observer);
+}
+
+void EnableRdbSubsFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    uint8_t len = provider.ConsumeIntegral<uint8_t>();
+    std::vector<std::string> uris(len);
+    for (int i = 0; i < len; i++) {
+        std::string uri = provider.ConsumeRandomLengthString();
+        uris[i] = uri;
+    }
+    TemplateId id;
+    id.subscriberId_ = provider.ConsumeIntegral<int64_t>();
+    id.bundleName_ = provider.ConsumeRandomLengthString();
+    dataShareServiceImpl->EnableRdbSubs(uris, id);
+}
+
+void SubscribePublishedDataFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    uint8_t len = provider.ConsumeIntegral<uint8_t>();
+    std::vector<std::string> uris(len);
+    for (int i = 0; i < len; i++) {
+        std::string uri = provider.ConsumeRandomLengthString();
+        uris[i] = uri;
+    }
+    int64_t subscriberId = provider.ConsumeIntegral<int64_t>();
+    sptr<IDataProxyPublishedDataObserver> observer;
+    dataShareServiceImpl->SubscribePublishedData(uris, subscriberId, observer);
+}
+
+void DisablePubSubsFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    uint8_t len = provider.ConsumeIntegral<uint8_t>();
+    std::vector<std::string> uris(len);
+    for (int i = 0; i < len; i++) {
+        std::string uri = provider.ConsumeRandomLengthString();
+        uris[i] = uri;
+    }
+    int64_t subscriberId = provider.ConsumeIntegral<int64_t>();
+    dataShareServiceImpl->DisablePubSubs(uris, subscriberId);
+}
+
+void SaveLaunchInfoFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::string userId = provider.ConsumeRandomLengthString();
+    std::string deviceId = provider.ConsumeRandomLengthString();
+    std::string bundleName = provider.ConsumeRandomLengthString();
+    dataShareServiceImpl->SaveLaunchInfo(bundleName, userId, deviceId);
+}
+
+void DataShareStaticOnAppUpdate(FuzzedDataProvider &provider)
+{
+    DataShareServiceImpl::DataShareStatic dataShareStatic;
+    std::string bundleName = provider.ConsumeRandomLengthString();
+    int32_t user = provider.ConsumeIntegral<int32_t>();
+    int32_t index = provider.ConsumeIntegral<int32_t>();
+    dataShareStatic.OnAppUpdate(bundleName, user, index);
+}
+
+void EnableSilentProxyFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::string uri = provider.ConsumeRandomLengthString();
+    bool enable = provider.ConsumeBool();
+    dataShareServiceImpl->EnableSilentProxy(uri, enable);
+    dataShareServiceImpl->OnConnectDone();
 }
 } // namespace OHOS
 
@@ -197,5 +376,20 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::DumpDataShareServiceInfoFuzz(provider);
     OHOS::DataShareStaticOnClearAppStorageFuzz(provider);
     OHOS::TimerReceiverOnReceiveEventFuzz(provider);
+    OHOS::OnUserChangeFuzz(provider);
+    OHOS::DataShareStaticOnAppUninstall(provider);
+    OHOS::AllowCleanDataLaunchAppFuzz(provider);
+    OHOS::AutoLaunchFuzz(provider);
+    OHOS::UpdateExFuzz(provider);
+    OHOS::DeleteExFuzz(provider);
+    OHOS::DelTemplateFuzz(provider);
+    OHOS::PublishFuzz(provider);
+    OHOS::SubscribeRdbDataFuzz(provider);
+    OHOS::EnableRdbSubsFuzz(provider);
+    OHOS::SubscribePublishedDataFuzz(provider);
+    OHOS::DisablePubSubsFuzz(provider);
+    OHOS::SaveLaunchInfoFuzz(provider);
+    OHOS::DataShareStaticOnAppUpdate(provider);
+    OHOS::EnableSilentProxyFuzz(provider);
     return 0;
 }

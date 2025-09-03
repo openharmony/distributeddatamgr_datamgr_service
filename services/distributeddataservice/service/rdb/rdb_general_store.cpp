@@ -26,7 +26,7 @@
 #include "cloud/cloud_mark.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
-#include "device_sync_app/device_sync_app_manager.h"
+#include "sync_mgr/sync_mgr.h"
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
 #include "crypto/crypto_manager.h"
@@ -43,6 +43,7 @@
 #include "snapshot/bind_event.h"
 #include "utils/anonymous.h"
 #include "value_proxy.h"
+#include "snapshot/snapshot.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
 using namespace DistributedDB;
@@ -182,6 +183,7 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
     observer_.storeId_ = meta.storeId;
     observer_.meta_ = meta;
     RelationalStoreDelegate::Option option = GetOption(meta);
+    option.isNeedCompressOnSync = true;
     option.observer = &observer_;
     if (meta.isEncrypt) {
         option.passwd = GetDBPassword(meta);
@@ -235,10 +237,10 @@ RdbGeneralStore::~RdbGeneralStore()
     executor_ = nullptr;
 }
 
-int32_t RdbGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
+int32_t RdbGeneralStore::BindSnapshots(BindAssets bindAssets)
 {
-    if (snapshots_.bindAssets == nullptr) {
-        snapshots_.bindAssets = bindAssets;
+    if (snapshots_ == nullptr) {
+        snapshots_ = bindAssets;
     }
     return GenErr::E_OK;
 }
@@ -270,8 +272,8 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     bindInfo_ = std::move(bindInfo);
     {
         std::unique_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
-        rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, &snapshots_);
-        rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, &snapshots_);
+        rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, snapshots_);
+        rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, snapshots_);
     }
 
     DistributedDB::CloudSyncConfig dbConfig;
@@ -311,7 +313,8 @@ int32_t RdbGeneralStore::Close(bool isForce)
             return GeneralError::E_OK;
         }
         auto [dbStatus, downloadCount] = delegate_->GetDownloadingAssetsCount();
-        if (!isForce && (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0)) {
+        if (!isForce &&
+            (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0 || delegate_->GetDeviceSyncTaskCount() > 0)) {
             return GeneralError::E_BUSY;
         }
         auto status = manager_.CloseStore(delegate_);
@@ -943,20 +946,23 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
             ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d",
                 Anonymous::Change(table).c_str(), dBStatus);
             Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
-                "SetDistributedTables ret=" + std::to_string(static_cast<int32_t>(dBStatus)));
+                "SetDistributedTables: set table(" + Anonymous::Change(table) + ") =" +
+                std::to_string(static_cast<int32_t>(dBStatus)));
             return GeneralError::E_ERROR;
         }
     }
     if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
         auto status = SetReference(references);
         if (status != GeneralError::E_OK) {
+            Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
+                "SetDistributedTables: set reference=" + std::to_string(static_cast<int32_t>(status)));
             return GeneralError::E_ERROR;
         }
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
     if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        auto force = DeviceSyncAppManager::GetInstance().Check(
-            {observer_.meta_.appId, observer_.meta_.bundleName, database.version});
+        auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
+            {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
         delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
     }
     CloudMark metaData(storeInfo_);

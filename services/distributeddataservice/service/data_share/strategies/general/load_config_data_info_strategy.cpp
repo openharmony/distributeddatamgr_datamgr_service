@@ -22,7 +22,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_errno.h"
-#include "utils/anonymous.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 LoadConfigDataInfoStrategy::LoadConfigDataInfoStrategy()
@@ -61,7 +61,7 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
         ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName, wantParams);
         if (!QueryMetaData(
             context->calledBundleName, context->calledStoreName, metaData, context->visitedUserId, context->appIndex)) {
-            ZLOGE("QueryMetaData fail, %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+            ZLOGE("QueryMetaData fail, %{public}s", URIUtils::Anonymous(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;
             return false;
         }
@@ -85,7 +85,7 @@ bool LoadConfigSingleDataInfoStrategy::operator()(std::shared_ptr<Context> conte
         AAFwk::WantParams wantParams;
         ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName, wantParams);
         if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0, context->appIndex)) {
-            ZLOGE("QueryMetaData fail, %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+            ZLOGE("QueryMetaData fail, %{public}s", URIUtils::Anonymous(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;
             return false;
         }

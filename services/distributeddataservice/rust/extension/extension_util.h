@@ -58,6 +58,7 @@ public:
     static std::pair<OhCloudExtVector *, size_t> Convert(const DBAssets &dbAssets);
     static std::pair<OhCloudExtVector *, size_t> Convert(const DBTable &dbTable);
     static OhCloudExtAssetStatus ConvertAssetStatus(DBAssetStatus status);
+    static bool ContainNullChar(const std::string &path);
 
 private:
     static void ConvertAssetLeft(OhCloudExtCloudAsset *asset, DBAsset &dbAsset);

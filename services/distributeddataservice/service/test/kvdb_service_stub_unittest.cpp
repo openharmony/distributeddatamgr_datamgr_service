@@ -34,8 +34,13 @@ using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
 using Options = OHOS::DistributedKv::Options;
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.IKvStoreDataService";
-static OHOS::DistributedKv::StoreId storeId = { "kvdb_test_storeid" };
-static OHOS::DistributedKv::AppId appId = { "ohos.test.kvdb" };
+static const StoreId STOREID = { "kvdb_test_storeid" };
+static const AppId APPID = { "kvdb_test_appid" };
+static const std::string HAPNAME = "testHap";
+static const std::string INVALID_HAPNAME = "./testHap";
+static const StoreId INVALID_STOREID = { "./kvdb_test_storeid" };
+static const AppId INVALID_APPID = { "\\kvdb_test_appid" };
+
 namespace OHOS::Test {
 namespace DistributedDataTest {
 class KVDBServiceStubTest : public testing::Test {
@@ -149,35 +154,110 @@ HWTEST_F(KVDBServiceStubTest, CheckPermission001, TestSize.Level1)
 
 
 /**
- * @tc.name: OnBeforeCreate
+ * @tc.name: OnBeforeCreate001
  * @tc.desc: Test OnBeforeCreate
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(KVDBServiceStubTest, OnBeforeCreate, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    AppId appId = {"testApp"};
-    StoreId storeId = {"testStoreId"};
-    auto status = kvdbServiceStub->OnBeforeCreate(appId, storeId, data, reply);
-    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
-}
-
-/**
- * @tc.name: OnAfterCreate
- * @tc.desc: Test OnAfterCreate
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(KVDBServiceStubTest, OnAfterCreate, TestSize.Level1)
+HWTEST_F(KVDBServiceStubTest, OnBeforeCreate001, TestSize.Level1)
 {
     MessageParcel data;
     data.WriteInterfaceToken(INTERFACE_TOKEN);
     MessageParcel reply;
-    AppId appId = {"testApp"};
-    StoreId storeId = {"testStore"};
-    auto status = kvdbServiceStub->OnAfterCreate(appId, storeId, data, reply);
+    Options options;
+    options.hapName = HAPNAME;
+    ITypesUtil::Marshal(data, options);
+    auto status = kvdbServiceStub->OnBeforeCreate(APPID, STOREID, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnBeforeCreate002
+ * @tc.desc: Test OnBeforeCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnBeforeCreate002, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
+    MessageParcel reply;
+    Options options;
+    options.hapName = HAPNAME;
+    ITypesUtil::Marshal(data, options);
+    auto status = kvdbServiceStub->OnBeforeCreate(INVALID_APPID, INVALID_STOREID, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnBeforeCreate003
+ * @tc.desc: Test OnBeforeCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnBeforeCreate003, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
+    MessageParcel reply;
+    Options options;
+    options.hapName = INVALID_HAPNAME;
+    ITypesUtil::Marshal(data, options);
+    auto status = kvdbServiceStub->OnBeforeCreate(APPID, STOREID, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnAfterCreate001
+ * @tc.desc: Test OnAfterCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnAfterCreate001, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
+    MessageParcel reply;
+    Options options;
+    options.hapName = HAPNAME;
+    ITypesUtil::Marshal(data, options);
+    auto status = kvdbServiceStub->OnAfterCreate(APPID, STOREID, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnAfterCreate002
+ * @tc.desc: Test OnAfterCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnAfterCreate002, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
+    MessageParcel reply;
+    Options options;
+    options.hapName = HAPNAME;
+    ITypesUtil::Marshal(data, options);
+    auto status = kvdbServiceStub->OnAfterCreate(INVALID_APPID, INVALID_STOREID, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnAfterCreate003
+ * @tc.desc: Test OnAfterCreate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnAfterCreate003, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteInterfaceToken(INTERFACE_TOKEN);
+    MessageParcel reply;
+    Options options;
+    options.hapName = INVALID_HAPNAME;
+    ITypesUtil::Marshal(data, options);
+    auto status = kvdbServiceStub->OnAfterCreate(APPID, STOREID, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 
@@ -350,5 +430,37 @@ HWTEST_F(KVDBServiceStubTest, OnRemoveDeviceData, TestSize.Level1)
     auto status = kvdbServiceStub->OnRemoveDeviceData(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
+
+/**
+ * @tc.name: IsValidField001
+ * @tc.desc: IsValidField function test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(KVDBServiceStubTest, IsValidField001, TestSize.Level0)
+{
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("validpath"));
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("another_valid_path"));
+    EXPECT_TRUE(kvdbServiceStub->IsValidField("file123"));
+}
+
+/**
+ * @tc.name: IsValidField002
+ * @tc.desc: IsValidField function test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(KVDBServiceStubTest, IsValidField002, TestSize.Level0)
+{
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path/with/forward/slash"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("/starting/slash"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("ending/slash/"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path\\with\\backslash"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("\\starting\\ending"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("ending\\"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField(".."));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path/with\\mixed/slashes"));
+    EXPECT_FALSE(kvdbServiceStub->IsValidField("path\\with/mixed\\slashes"));
+}
+
+
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cinttypes>
 #define LOG_TAG "ObjectDataListener"
 
 #include "object_data_listener.h"
@@ -45,7 +46,7 @@ void ObjectDataListener::OnChange(const DistributedDB::KvStoreChangedData &data)
         std::string key(entry.key.begin(), entry.key.end());
         changedData.insert_or_assign(std::move(key), entry.value);
     }
-    DistributedObject::ObjectStoreManager::GetInstance()->NotifyChange(changedData);
+    DistributedObject::ObjectStoreManager::GetInstance().NotifyChange(changedData);
 }
 
 int32_t ObjectAssetsRecvListener::OnStart(const std::string &srcNetworkId, const std::string &dstNetworkId,
@@ -53,8 +54,8 @@ int32_t ObjectAssetsRecvListener::OnStart(const std::string &srcNetworkId, const
 {
     auto objectKey = dstBundleName + sessionId;
     ZLOGI("OnStart, objectKey:%{public}s", DistributedData::Anonymous::Change(objectKey).c_str());
-    ObjectStoreManager::GetInstance()->NotifyAssetsStart(objectKey, srcNetworkId);
-    ObjectStoreManager::GetInstance()->NotifyAssetsRecvProgress(objectKey, 0);
+    ObjectStoreManager::GetInstance().NotifyAssetsStart(objectKey, srcNetworkId);
+    ObjectStoreManager::GetInstance().NotifyAssetsRecvProgress(objectKey, 0);
     return OBJECT_SUCCESS;
 }
 
@@ -68,35 +69,35 @@ int32_t ObjectAssetsRecvListener::OnFinished(const std::string &srcNetworkId, co
             ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED, result);
         return result;
     }
-    auto objectKey = assetObj->dstBundleName_+assetObj->sessionId_;
+    auto objectKey = assetObj->dstBundleName_ + assetObj->sessionId_;
     ZLOGI("OnFinished, status:%{public}d objectKey:%{public}s, asset size:%{public}zu", result,
         DistributedData::Anonymous::Change(objectKey).c_str(), assetObj->uris_.size());
-    ObjectStoreManager::GetInstance()->NotifyAssetsReady(objectKey, assetObj->dstBundleName_, srcNetworkId);
+    ObjectStoreManager::GetInstance().NotifyAssetsReady(objectKey, assetObj->dstBundleName_, srcNetworkId);
     if (result != OBJECT_SUCCESS) {
-        ObjectStoreManager::GetInstance()->NotifyAssetsRecvProgress(objectKey, PROGRESS_INVALID);
+        ObjectStoreManager::GetInstance().NotifyAssetsRecvProgress(objectKey, PROGRESS_INVALID);
     } else {
-        ObjectStoreManager::GetInstance()->NotifyAssetsRecvProgress(objectKey, PROGRESS_MAX);
+        ObjectStoreManager::GetInstance().NotifyAssetsRecvProgress(objectKey, PROGRESS_MAX);
     }
     return OBJECT_SUCCESS;
 }
+
 
 int32_t ObjectAssetsRecvListener::OnRecvProgress(
     const std::string &srcNetworkId, const sptr<AssetObj> &assetObj, uint64_t totalBytes, uint64_t processBytes)
 {
     if (assetObj == nullptr || totalBytes == 0) {
-        ZLOGE("OnRecvProgress error! srcNetworkId:%{public}s, totalBytes: %{public}llu",
+        ZLOGE("OnRecvProgress error! srcNetworkId:%{public}s, totalBytes: %{public}" PRIu64,
             DistributedData::Anonymous::Change(srcNetworkId).c_str(), totalBytes);
         return OBJECT_INNER_ERROR;
     }
 
     auto objectKey = assetObj->dstBundleName_ + assetObj->sessionId_;
-    ZLOGI("srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}llu,"
-          "processBytes: %{public}llu.",
+    ZLOGI("srcNetworkId: %{public}s, objectKey:%{public}s, totalBytes: %{public}" PRIu64
+          ", processBytes: %{public}" PRIu64 ".",
         DistributedData::Anonymous::Change(srcNetworkId).c_str(),
         DistributedData::Anonymous::Change(objectKey).c_str(), totalBytes, processBytes);
-
     int32_t progress = static_cast<int32_t>((processBytes * 100.0 / totalBytes) * 0.9);
-    ObjectStoreManager::GetInstance()->NotifyAssetsRecvProgress(objectKey, progress);
+    ObjectStoreManager::GetInstance().NotifyAssetsRecvProgress(objectKey, progress);
     return OBJECT_SUCCESS;
 }
 }  // namespace DistributedObject

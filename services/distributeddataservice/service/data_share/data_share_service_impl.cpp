@@ -22,9 +22,12 @@
 
 #include "account/account_delegate.h"
 #include "app_connect_manager.h"
+#include "bundle_mgr_proxy.h"
+#include "bundle_utils.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "concurrent_task_client.h"
+#include "config_factory.h"
 #include "data_ability_observer_interface.h"
 #include "data_share_profile_config.h"
 #include "dataobs_mgr_client.h"
@@ -43,7 +46,7 @@
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
-#include "common/uri_utils.h"
+#include "common/utils.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "matching_skills.h"
@@ -54,11 +57,11 @@
 #include "sys_event_subscriber.h"
 #include "system_ability_definition.h"
 #include "system_ability_status_change_stub.h"
+#include "task_executor.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
 #include "xcollie.h"
 #include "log_debug.h"
-#include "parameters.h"
 #include "dataproxy_handle_common.h"
 #include "proxy_data_manager.h"
 #include "datashare_observer.h"
@@ -72,6 +75,7 @@ using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
 // decimal base
 static constexpr int DECIMAL_BASE = 10;
+DataShareServiceImpl::BindInfo DataShareServiceImpl::binderInfo_;
 class DataShareServiceImpl::SystemAbilityStatusChangeListener
     : public SystemAbilityStatusChangeStub {
 public:
@@ -256,12 +260,12 @@ int32_t DataShareServiceImpl::AddTemplate(const std::string &uri, const int64_t 
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
     if (!GetCallerBundleName(tpltId.bundleName_)) {
-        ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("get bundleName error, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    ZLOGI("Add template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s,"
+    ZLOGI("Add template, uri %{public}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s,"
           "predicates size %{public}zu.",
-        uri.c_str(), subscriberId, tpltId.bundleName_.c_str(), tplt.predicates_.size());
+        URIUtils::Anonymous(uri).c_str(), subscriberId, tpltId.bundleName_.c_str(), tplt.predicates_.size());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &tplt, &context]() -> int32_t {
         auto result = TemplateManager::GetInstance().Add(
             Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->visitedUserId, tplt);
@@ -276,11 +280,11 @@ int32_t DataShareServiceImpl::DelTemplate(const std::string &uri, const int64_t 
     TemplateId tpltId;
     tpltId.subscriberId_ = subscriberId;
     if (!GetCallerBundleName(tpltId.bundleName_)) {
-        ZLOGE("get bundleName error, %{public}s", DistributedData::Anonymous::Change(uri).c_str());
+        ZLOGE("get bundleName error, %{public}s", URIUtils::Anonymous(uri).c_str());
         return ERROR;
     }
-    ZLOGI("Delete template, uri %{private}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.",
-        DistributedData::Anonymous::Change(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
+    ZLOGI("Delete template, uri %{public}s, subscriberId %{public}" PRIi64 ", bundleName %{public}s.",
+        URIUtils::Anonymous(uri).c_str(), subscriberId, tpltId.bundleName_.c_str());
     return templateStrategy_.Execute(context, [&uri, &tpltId, &context]() -> int32_t {
         return TemplateManager::GetInstance().Delete(
             Key(uri, tpltId.subscriberId_, tpltId.bundleName_), context->visitedUserId);
@@ -348,7 +352,7 @@ std::vector<OperationResult> DataShareServiceImpl::Publish(const Data &data, con
         int32_t result = publishStrategy_.Execute(context, item);
         results.emplace_back(item.key_, result);
         if (result != E_OK) {
-            ZLOGE("publish error, key is %{public}s", DistributedData::Anonymous::Change(item.key_).c_str());
+            ZLOGE("publish error, key is %{public}s", URIUtils::Anonymous(item.key_).c_str());
             continue;
         }
         publishedData.emplace_back(context->uri, context->calledBundleName, item.subscriberId_);
@@ -597,8 +601,9 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.uid = IPCSkeleton::GetCallingUid();
     saveMeta.storeType = DATA_SHARE_SINGLE_VERSION;
     saveMeta.dataDir = DistributedData::DirectoryManager::GetInstance().GetStorePath(saveMeta);
-    KvDBDelegate::GetInstance(false, saveMeta.dataDir, binderInfo.executors);
+    KvDBDelegate::GetInstance(saveMeta.dataDir, binderInfo.executors);
     SchedulerManager::GetInstance().SetExecutorPool(binderInfo.executors);
+    NativeRdb::TaskExecutor::GetInstance().SetExecutor(binderInfo.executors);
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     DBDelegate::SetExecutorPool(binderInfo.executors);
     HiViewAdapter::GetInstance().SetThreadPool(binderInfo.executors);
@@ -606,6 +611,10 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     SubscribeConcurrentTask();
     SubscribeTimeChanged();
     SubscribeChange();
+    auto task = [](const std::string &bundleName, int32_t userId, const std::string &storeName) {
+        return BundleMgrProxy::GetInstance()->IsConfigSilentProxy(bundleName, userId, storeName);
+    };
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
     ZLOGI("end");
     return E_OK;
 }
@@ -807,6 +816,38 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUpdate(const std::string &bu
     return E_OK;
 }
 
+void DataShareServiceImpl::UpdateLaunchInfo()
+{
+    DataShareConfig *config = ConfigFactory::GetInstance().GetDataShareConfig();
+    if (config == nullptr) {
+        ZLOGE("DataShareConfig is nullptr");
+        return;
+    }
+
+    ZLOGI("UpdateLaunchInfo begin.");
+    for (auto &bundleName : config->updateLaunchNames) {
+        std::string prefix = StoreMetaData::GetPrefix(
+            { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid });
+        std::vector<StoreMetaData> storeMetaData;
+        MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true);
+        std::vector<StoreMetaData> updateMetaData;
+        for (auto &meta : storeMetaData) {
+            if (meta.bundleName != bundleName) {
+                continue;
+            }
+            updateMetaData.push_back(meta);
+        }
+        for (auto &meta : updateMetaData) {
+            MetaDataManager::GetInstance().DelMeta(meta.GetAutoLaunchKey(), true);
+        }
+        for (auto &meta : updateMetaData) {
+            BundleMgrProxy::GetInstance()->Delete(bundleName, atoi(meta.user.c_str()), 0);
+            SaveLaunchInfo(meta.bundleName, meta.user, DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid);
+        }
+        ZLOGI("update bundleName %{public}s, size:%{public}zu.", bundleName.c_str(), storeMetaData.size());
+    }
+}
+
 int32_t DataShareServiceImpl::DataShareStatic::OnClearAppStorage(const std::string &bundleName,
     int32_t user, int32_t index, int32_t tokenId)
 {
@@ -834,15 +875,16 @@ int32_t DataShareServiceImpl::OnAppUpdate(const std::string &bundleName, int32_t
 
 void DataShareServiceImpl::NotifyObserver(const std::string &uri)
 {
-    ZLOGD_MACRO("%{private}s try notified", uri.c_str());
+    auto anonymous = URIUtils::Anonymous(uri);
+    ZLOGD_MACRO("%{public}s try notified", anonymous.c_str());
     auto context = std::make_shared<Context>(uri);
     if (!GetCallerBundleName(context->callerBundleName)) {
-        ZLOGE("get bundleName error, %{private}s", uri.c_str());
+        ZLOGE("get bundleName error, %{public}s", anonymous.c_str());
         return;
     }
     auto ret = rdbNotifyStrategy_.Execute(context);
     if (ret) {
-        ZLOGI("%{private}s start notified", uri.c_str());
+        ZLOGI("%{public}s start notified", anonymous.c_str());
         RdbSubscriberManager::GetInstance().Emit(uri, context);
     }
 }
@@ -1055,8 +1097,8 @@ std::vector<DataProxyGetResult> DataShareServiceImpl::GetProxyData(const std::ve
         ZLOGE("get callerBundleInfo failed");
         return result;
     }
-    DataShareProxyData proxyData;
     for (const auto &uri : uris) {
+        DataShareProxyData proxyData;
         auto ret = PublishedProxyData::Query(uri, callerBundleInfo, proxyData);
         result.emplace_back(uri, static_cast<DataProxyErrorCode>(ret), proxyData.value_, proxyData.allowList_);
     }
@@ -1107,8 +1149,7 @@ bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId,
     if (currentUserId == 0 || currentUserId == visitedUserId) {
         return true;
     }
-    return system::GetBoolParameter(CONNECT_SUPPORT_CROSS_USER, false) &&
-        PermitDelegate::VerifyPermission(acrossAccountsPermission, callerTokenId);
+    return PermitDelegate::VerifyPermission(acrossAccountsPermission, callerTokenId);
 }
 
 std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &uri, const std::string &extUri,
@@ -1157,7 +1198,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
-            providerInfo.bundleName.c_str(), providerInfo.tableName.c_str(), tokenId,
+            providerInfo.bundleName.c_str(), StringUtils::GeneralAnonymous(providerInfo.tableName).c_str(), tokenId,
             URIUtils::Anonymous(providerInfo.uri).c_str());
         return std::make_pair(code, 0);
     }
@@ -1215,6 +1256,21 @@ int32_t DataShareServiceImpl::GetBMSAndMetaDataStatus(const std::string &uri, co
             errCode, URIUtils::Anonymous(calledInfo.uri).c_str());
         return errCode;
     }
+    DataShareDbConfig dbConfig;
+    DataShareDbConfig::DbConfig dbArg;
+    dbArg.uri = calledInfo.uri;
+    dbArg.bundleName = calledInfo.bundleName;
+    dbArg.storeName = calledInfo.storeName;
+    dbArg.userId = calledInfo.singleton ? 0 : calledInfo.visitedUserId;
+    dbArg.hasExtension = calledInfo.hasExtension;
+    dbArg.appIndex = calledInfo.appIndex;
+    auto [code, metaData] = dbConfig.GetMetaData(dbArg);
+    if (code != E_OK) {
+        ZLOGE("Get metaData fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",
+            calledInfo.bundleName.c_str(), StringUtils::GeneralAnonymous(calledInfo.tableName).c_str(), tokenId,
+            URIUtils::Anonymous(calledInfo.uri).c_str());
+        return E_METADATA_NOT_EXISTS;
+    }
     return E_OK;
 }
 
@@ -1228,10 +1284,11 @@ void DataShareServiceImpl::InitSubEvent()
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_BUNDLE_SCAN_FINISHED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED);
+    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED);
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
     subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
-    auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo);
+    auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo, binderInfo_.executors);
     if (!EventFwk::CommonEventManager::SubscribeCommonEvent(sysEventSubscriber)) {
         ZLOGE("Subscribe sys event failed.");
         alreadySubscribe = false;

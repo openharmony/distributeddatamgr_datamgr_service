@@ -23,7 +23,7 @@
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -59,7 +59,7 @@ bool DataShareSilentConfig::EnableSilentProxy(uint32_t callerTokenId, const std:
         uri = std::string(ALL_URI);
     }
     ZLOGI("Enable silent proxy, callerTokenId:%{public}u, enable:%{public}d, uri:%{public}s",
-          callerTokenId, enable, DistributedData::Anonymous::Change(uri).c_str());
+          callerTokenId, enable, URIUtils::Anonymous(uri).c_str());
     enableSilentUris_.Compute(callerTokenId, [&enable, &uri](const uint32_t &key,
         std::map<std::string, bool> &uris) {
         uris[uri] = enable;

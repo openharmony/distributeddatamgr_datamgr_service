@@ -87,13 +87,20 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_data_service_test.cpp",
+    "${data_service_path}/app/test/unittest/security_test.cpp",
+    "${data_service_path}/app/test/unittest/sensitive_test.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
   ]
 
   sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    integer_overflow = true
+    cfi_no_nvcall = true
     cfi = true
     cfi_cross_dso = true
     debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
 
   configs = [ ":module_private_config" ]
@@ -140,6 +147,12 @@ ohos_unittest("KvStoreDataServiceTest") {
 
 ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
   module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
   sources = [
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
@@ -163,6 +176,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_meta_manager_update_key_test.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -177,6 +191,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
     "file_api:securitylabel",
+    "googletest:gmock",
     "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -243,7 +258,7 @@ ohos_unittest("SessionManagerTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -318,7 +333,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -438,7 +453,7 @@ ohos_unittest("UpgradeManagerTest") {
     "c_utils:utils",
     "googletest:gtest_main",
     "hilog:libhilog",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
   ]
 
@@ -508,7 +523,7 @@ ohos_unittest("RouteHeadHandlerImplTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "cJSON:cjson",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -545,6 +560,100 @@ ohos_unittest("RouteHeadHandlerImplTest") {
   part_name = "datamgr_service"
 }
 
+ohos_unittest("BundleCheckerTest") {
+  module_out_path = module_output_path
+  sources = [ "unittest/bundle_checker_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "openssl:libcrypto_shared",
+  ]
+
+  deps = [
+    "${data_service_path}/app/src/checker:distributeddata_checker",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+}
+
+ohos_unittest("DDMSDumpTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/checker/bundle_checker.cpp",
+    "${data_service_path}/app/src/checker/system_checker.cpp",
+    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
+    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
+    "${data_service_path}/app/src/db_info_handle_impl.cpp",
+    "${data_service_path}/app/src/feature_stub_impl.cpp",
+    "${data_service_path}/app/src/installer/installer.cpp",
+    "${data_service_path}/app/src/installer/installer_impl.cpp",
+    "${data_service_path}/app/src/kvstore_account_observer.cpp",
+    "${data_service_path}/app/src/kvstore_data_service.cpp",
+    "${data_service_path}/app/src/kvstore_data_service_stub.cpp",
+    "${data_service_path}/app/src/kvstore_device_listener.cpp",
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/app/src/kvstore_screen_observer.cpp",
+    "${data_service_path}/app/src/security/security.cpp",
+    "${data_service_path}/app/src/security/sensitive.cpp",
+    "${data_service_path}/app/src/session_manager/route_head_handler_impl.cpp",
+    "${data_service_path}/app/src/session_manager/session_manager.cpp",
+    "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
+    "${data_service_path}/app/src/task_manager.cpp",
+    "${data_service_path}/app/test/unittest/ddms_dump_test.cpp",
+    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
+    "${data_service_path}/service/test/mock/db_store_mock.cpp",
+    "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
+    "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
+]
+  sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    integer_overflow = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "dataclassification:data_transit_mgr",
+    "device_auth:deviceauth_sdk",
+    "device_manager:devicemanagersdk",
+    "file_api:securitylabel",
+    "googletest:gmock",
+    "googletest:gtest_main",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "memmgr:memmgrclient",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+  part_name = "datamgr_service"
+}
 ###############################################################################
 
 group("unittest") {
@@ -552,9 +661,11 @@ group("unittest") {
   deps = []
 
   deps += [
+    ":BundleCheckerTest",
     ":FeatureStubImplTest",
     ":KvStoreDataServiceClearTest",
     ":KvStoreDataServiceTest",
+    ":DDMSDumpTest",
     ":KvStoreMetaManagerUpdateKeyTest",
     ":SessionManagerTest",
     ":UpgradeManagerTest",

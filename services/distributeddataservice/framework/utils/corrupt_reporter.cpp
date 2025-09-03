@@ -27,7 +27,7 @@ constexpr const char *DB_CORRUPTED_POSTFIX = ".corruptedflg";
 bool CorruptReporter::CreateCorruptedFlag(const std::string &path, const std::string &dbName)
 {
     if (path.empty() || dbName.empty()) {
-        ZLOGW("The path or dbName is empty, path:%{public}s, dbName:%{public}s", path.c_str(),
+        ZLOGW("The path or dbName is empty, path:%{public}s, dbName:%{public}s", Anonymous::Change(path).c_str(),
             Anonymous::Change(dbName).c_str());
         return false;
     }
@@ -35,7 +35,7 @@ bool CorruptReporter::CreateCorruptedFlag(const std::string &path, const std::st
     if (access(flagFileName.c_str(), F_OK) == 0) {
         return true;
     }
-    int fd = creat(flagFileName.c_str(), S_IRWXU | S_IRWXG);
+    int fd = creat(flagFileName.c_str(), S_IRUSR | S_IWUSR);
     if (fd == -1) {
         ZLOGW("Create corrupted flag fail, flagFileName:%{public}s, errno:%{public}d",
             Anonymous::Change(flagFileName).c_str(), errno);
@@ -48,7 +48,7 @@ bool CorruptReporter::CreateCorruptedFlag(const std::string &path, const std::st
 bool CorruptReporter::HasCorruptedFlag(const std::string &path, const std::string &dbName)
 {
     if (path.empty() || dbName.empty()) {
-        ZLOGW("The path or dbName is empty, path:%{public}s, dbName:%{public}s", path.c_str(),
+        ZLOGW("The path or dbName is empty, path:%{public}s, dbName:%{public}s", Anonymous::Change(path).c_str(),
             Anonymous::Change(dbName).c_str());
         return false;
     }
@@ -59,7 +59,7 @@ bool CorruptReporter::HasCorruptedFlag(const std::string &path, const std::strin
 bool CorruptReporter::DeleteCorruptedFlag(const std::string &path, const std::string &dbName)
 {
     if (path.empty() || dbName.empty()) {
-        ZLOGW("The path or dbName is empty, path:%{public}s, dbName:%{public}s", path.c_str(),
+        ZLOGW("The path or dbName is empty, path:%{public}s, dbName:%{public}s", Anonymous::Change(path).c_str(),
             Anonymous::Change(dbName).c_str());
         return false;
     }

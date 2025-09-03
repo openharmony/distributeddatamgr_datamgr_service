@@ -16,12 +16,13 @@
 #ifndef UDMF_SERVICE_IMPL_H
 #define UDMF_SERVICE_IMPL_H
 
-#include "store_cache.h"
-#include "udmf_service_stub.h"
+#include "block_data.h"
+#include "checker_manager.h"
 #include "kv_store_delegate_manager.h"
 #include "metadata/store_meta_data.h"
-#include "checker_manager.h"
+#include "store_cache.h"
 #include "udmf_notifier_proxy.h"
+#include "udmf_service_stub.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -80,6 +81,20 @@ private:
     std::string FindIntentionMap(const Intention &queryintention);
     bool IsValidOptionsNonDrag(UnifiedKey &key, const std::string &intention);
     bool IsValidInput(const QueryOption &query, UnifiedData &unifiedData, UnifiedKey &key);
+    bool CheckDeleteDataPermission(std::string &appId, const std::shared_ptr<Runtime> &runtime,
+        const QueryOption &query);
+    int32_t CheckAppId(std::shared_ptr<Runtime> runtime, const std::string &bundleName);
+    void CloseStoreWhenCorrupted(const std::string &intention, int32_t status);
+    void HandleDbError(const std::string &intention, int32_t &status);
+    int32_t HandleDelayDataCallback(DelayGetDataInfo &delayGetDataInfo, UnifiedData &unifiedData,
+        const std::string &key);
+    int32_t VerifyDataAccessPermission(std::shared_ptr<Runtime> runtime, const QueryOption &query,
+        const UnifiedData &unifiedData);
+    std::vector<std::string> ProcessResult(const std::map<std::string, int32_t> &results);
+    DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
+    int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
+    bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res);
+
     class Factory {
     public:
         Factory();
@@ -89,13 +104,20 @@ private:
         std::shared_ptr<UdmfServiceImpl> product_;
     };
     static Factory factory_;
-    std::map<std::string, Privilege> privilegeCache_;
+    mutable std::recursive_mutex cacheMutex_;
+    std::map<std::string, Privilege> privilegeCache_ {};
     std::shared_ptr<ExecutorPool> executors_;
 
     std::mutex mutex_;
-    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_;
-    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_;
-    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_;
+    std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_ {};
+    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
+    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_ {};
+
+    struct BlockDelayData {
+        uint32_t tokenId {0};
+        std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
+    };
+    ConcurrentMap<std::string, BlockDelayData> blockDelayDataCache_ {};
 };
 } // namespace UDMF
 } // namespace OHOS

@@ -25,9 +25,9 @@
 namespace OHOS::DistributedObject {
 using namespace OHOS::FileManagement::CloudSync;
 using namespace OHOS::DistributedData;
-ObjectAssetLoader *ObjectAssetLoader::GetInstance()
+ObjectAssetLoader &ObjectAssetLoader::GetInstance()
 {
-    static ObjectAssetLoader *loader = new ObjectAssetLoader();
+    static ObjectAssetLoader loader;
     return loader;
 }
 
@@ -168,10 +168,15 @@ bool ObjectAssetLoader::IsDownloaded(const DistributedData::Asset& asset)
 int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &assetObj,
     const sptr<ObjectAssetsSendListener> &sendCallback)
 {
+    if (assetObj == nullptr) {
+        ZLOGE("PushAsset err, assetObj is null");
+        return OBJECT_INNER_ERROR;
+    }
     ObjectStore::RadarReporter::ReportStage(std::string(__FUNCTION__), ObjectStore::SAVE,
         ObjectStore::PUSH_ASSETS, ObjectStore::IDLE);
-    ZLOGI("PushAsset start, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
-        assetObj->uris_.size(), assetObj->dstBundleName_.c_str(), Anonymous::Change(assetObj->sessionId_).c_str());
+    ZLOGI("PushAsset start, userId:%{public}d, asset size:%{public}zu, bundleName:%{public}s, sessionId:%{public}s",
+        userId, assetObj->uris_.size(), assetObj->dstBundleName_.c_str(),
+        Anonymous::Change(assetObj->sessionId_).c_str());
     auto status = Storage::DistributedFile::DistributedFileDaemonManager::GetInstance().PushAsset(userId, assetObj,
         sendCallback);
     if (status != OBJECT_SUCCESS) {

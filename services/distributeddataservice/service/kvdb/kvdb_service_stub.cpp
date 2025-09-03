@@ -22,6 +22,10 @@
 #include "utils/constant.h"
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
+static constexpr const char *SLASH = "/";
+static constexpr const char *BACK_SLASH  = "\\";
+static constexpr const char *POINT = "..";
+
 const KVDBServiceStub::Handler
     KVDBServiceStub::HANDLERS[static_cast<uint32_t>(KVDBServiceInterfaceCode::TRANS_BUTT)] = {
     &KVDBServiceStub::OnGetStoreIds,
@@ -141,6 +145,9 @@ int32_t KVDBServiceStub::OnBeforeCreate(
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    if (!IsValidField(appId.appId) || !IsValidField(storeId.storeId) || !IsValidField(options.hapName)) {
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     int32_t status = BeforeCreate(appId, storeId, options);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
@@ -158,6 +165,9 @@ int32_t KVDBServiceStub::OnAfterCreate(
     if (!ITypesUtil::Unmarshal(data, options, password)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    if (!IsValidField(appId.appId) || !IsValidField(storeId.storeId) || !IsValidField(options.hapName)) {
         return IPC_STUB_INVALID_DATA_ERR;
     }
     int32_t status = AfterCreate(appId, storeId, options, password);
@@ -209,7 +219,7 @@ int32_t KVDBServiceStub::OnSync(const AppId &appId, const StoreId &storeId, Mess
     SyncInfo syncInfo;
     int32_t subUser;
     if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.mode, syncInfo.devices, syncInfo.delay, syncInfo.query,
-        subUser)) {
+        subUser, syncInfo.isRetry)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
@@ -578,5 +588,14 @@ int32_t KVDBServiceStub::OnRemoveDeviceData(const AppId &appId, const StoreId &s
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;
+}
+
+bool KVDBServiceStub::IsValidField(const std::string &param)
+{
+    if ((param.find(SLASH) != std::string::npos) || (param.find(BACK_SLASH) != std::string::npos) || (param == POINT)) {
+        ZLOGE("check failed, param is: %{public}s", Anonymous::Change(param).c_str());
+        return false;
+    }
+    return true;
 }
 } // namespace OHOS::DistributedKv

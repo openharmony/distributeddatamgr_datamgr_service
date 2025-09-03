@@ -27,6 +27,17 @@ SecretKeyMetaData::~SecretKeyMetaData()
     nonce.assign(nonce.size(), 0);
 }
 
+bool SecretKeyMetaData::operator==(const SecretKeyMetaData &secretKey) const
+{
+    return sKey == secretKey.sKey && nonce == secretKey.nonce && storeType == secretKey.storeType &&
+           area == secretKey.area;
+}
+
+bool SecretKeyMetaData::operator!=(const SecretKeyMetaData &secretKey) const
+{
+    return !(*this == secretKey);
+}
+
 bool SecretKeyMetaData::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(time)], time);

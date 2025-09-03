@@ -15,6 +15,7 @@
 #define LOG_TAG "KvAdaptor"
 
 #include <cstddef>
+#include <cinttypes>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -23,14 +24,16 @@
 
 #include "datashare_errno.h"
 #include "directory/directory_manager.h"
+#include "hiview_fault_adapter.h"
 #include "grd_base/grd_error.h"
 #include "grd_document/grd_document_api.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "log_debug.h"
+#include "time_service_client.h"
 
 namespace OHOS::DataShare {
-constexpr int WAIT_TIME = 30;
+constexpr int64_t TIME_LIMIT_BY_MILLISECONDS = 18 * 3600 * 1000; // 18 hours
 
 // If using multi-process access, back up dataShare.db.map as well. Check config file to see whether
 // using multi-process maccess
@@ -126,6 +129,8 @@ bool KvDelegate::RestoreIfNeed(int32_t dbStatus)
             db_ = nullptr;
             isInitDone_ = false;
         }
+        DataShareFaultInfo faultInfo{HiViewFaultAdapter::kvDBCorrupt, "", "", "", __FUNCTION__, dbStatus, ""};
+        HiViewFaultAdapter::ReportDataFault(faultInfo);
         // If db is NULL, it has been closed.
         Restore();
         return true;
@@ -185,11 +190,39 @@ std::pair<int32_t, int32_t> KvDelegate::Delete(const std::string &collectionName
     return std::make_pair(E_OK, deleteCount);
 }
 
+void KvDelegate::ScheduleBackup()
+{
+    auto currTime = MiscServices::TimeServiceClient::GetInstance()->GetBootTimeMs();
+    if (currTime < 0) {
+	    // Only do an error log print since schedule time does not rely on the time gets by GetBootTimeMs().
+        ZLOGE("GetBootTimeMs failed, status %{public}" PRId64 "", currTime);
+    } else {
+        absoluteWaitTime_ = currTime + TIME_LIMIT_BY_MILLISECONDS;
+    }
+
+    taskId_ = executors_->Schedule(std::chrono::seconds(waitTime_), [this]() {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        GRD_DBClose(db_, GRD_DB_CLOSE);
+        db_ = nullptr;
+        isInitDone_ = false;
+        taskId_ = ExecutorPool::INVALID_TASK_ID;
+        Backup();
+    });
+}
+
 bool KvDelegate::Init()
 {
     if (isInitDone_) {
         if (executors_ != nullptr) {
-            executors_->Reset(taskId_, std::chrono::seconds(WAIT_TIME));
+            auto currTime = MiscServices::TimeServiceClient::GetInstance()->GetBootTimeMs();
+            if (currTime < 0) {
+                ZLOGE("GetBootTimeMs failed, status %{public}" PRId64 "", currTime);
+                // still return true since kv can work normally
+                return true;
+            }
+            if (currTime < absoluteWaitTime_) {
+                executors_->Reset(taskId_, std::chrono::seconds(waitTime_));
+            }
         }
         return true;
     }
@@ -201,14 +234,8 @@ bool KvDelegate::Init()
         return false;
     }
     if (executors_ != nullptr) {
-        taskId_ = executors_->Schedule(std::chrono::seconds(WAIT_TIME), [this]() {
-            std::lock_guard<decltype(mutex_)> lock(mutex_);
-            GRD_DBClose(db_, GRD_DB_CLOSE);
-            db_ = nullptr;
-            isInitDone_ = false;
-            taskId_ = ExecutorPool::INVALID_TASK_ID;
-            Backup();
-        });
+        // schedule first backup task
+        ScheduleBackup();
     }
     status = GRD_CreateCollection(db_, TEMPLATE_TABLE, nullptr, 0);
     if (status != GRD_OK) {
@@ -233,7 +260,6 @@ bool KvDelegate::Init()
         RestoreIfNeed(status);
         return false;
     }
-
     isInitDone_ = true;
     return true;
 }
@@ -256,7 +282,7 @@ std::pair<int32_t, int32_t> KvDelegate::Upsert(const std::string &collectionName
         int version = -1;
         if (GetVersion(collectionName, id, version)) {
             if (value.GetVersion() <= version) {
-                ZLOGE("GetVersion failed,%{public}s id %{private}s %{public}d %{public}d", collectionName.c_str(),
+                ZLOGE("GetVersion failed,%{public}s id %{public}s %{public}d %{public}d", collectionName.c_str(),
                       id.c_str(), value.GetVersion(), version);
                 return std::make_pair(E_VERSION_NOT_NEWER, 0);
             }

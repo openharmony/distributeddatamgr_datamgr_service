@@ -68,6 +68,7 @@ static constexpr const char *FT_ENABLE_CLOUD = "ENABLE_CLOUD";
 static constexpr const char *FT_DISABLE_CLOUD = "DISABLE_CLOUD";
 static constexpr const char *FT_SWITCH_ON = "SWITCH_ON";
 static constexpr const char *FT_SWITCH_OFF = "SWITCH_OFF";
+static constexpr const char *FT_CLOUD_CLEAN = "CLOUD_CLEAN";
 static constexpr const char *FT_QUERY_INFO = "QUERY_SYNC_INFO";
 static constexpr const char *FT_USER_CHANGE = "USER_CHANGE";
 static constexpr const char *FT_USER_UNLOCK = "USER_UNLOCK";
@@ -249,6 +250,7 @@ int32_t CloudServiceImpl::DoClean(const CloudInfo &cloudInfo, const std::map<std
         SchemaMeta schemaMeta;
         if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(bundle), schemaMeta, true)) {
             ZLOGE("failed, no schema meta:bundleName:%{public}s", bundle.c_str());
+            Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, bundle, "get schema failed");
             continue;
         }
         DoClean(cloudInfo.user, schemaMeta, action);
@@ -287,6 +289,8 @@ void CloudServiceImpl::DoClean(int32_t user, const SchemaMeta &schemaMeta, int32
             ZLOGW("remove device data status:%{public}d, user:%{public}d, bundleName:%{public}s, "
                   "storeId:%{public}s",
                 status, static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+            Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, meta.bundleName, "Clean:" + std::to_string(status) +
+                ", storeId=" + meta.GetStoreAlias() + ", action=" + std::to_string(action));
         } else {
             ZLOGD("clean success, user:%{public}d, bundleName:%{public}s, storeId:%{public}s",
                 static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
@@ -311,7 +315,7 @@ bool CloudServiceImpl::GetStoreMetaData(StoreMetaData &meta)
     }
     StoreMetaDataLocal localMetaData;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMetaData, true) || !localMetaData.isPublic) {
-        ZLOGE("failed, no store LocalMeta. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+        ZLOGE("meta empty, not public store. bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
             meta.GetStoreAlias().c_str());
         return false;
     }
@@ -325,16 +329,21 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
     auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
     if (status != SUCCESS) {
         ZLOGE("get cloud meta failed user:%{public}d", static_cast<int>(cloudInfo.user));
+        Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, "",
+            "get cloud info from meta failed=" + std::to_string(status));
         return ERROR;
     }
     if (id != cloudInfo.id) {
         ZLOGE("different id, [server] id:%{public}s, [meta] id:%{public}s", Anonymous::Change(cloudInfo.id).c_str(),
             Anonymous::Change(id).c_str());
+        Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, "",
+            "different id, new:" + Anonymous::Change(id) + ", old:" + Anonymous::Change(cloudInfo.id));
         return ERROR;
     }
     auto dbActions = ConvertAction(actions);
     if (dbActions.empty()) {
         ZLOGE("invalid actions. id:%{public}s", Anonymous::Change(cloudInfo.id).c_str());
+        Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, "", "convert action failed");
         return ERROR;
     }
     return DoClean(cloudInfo, dbActions);
@@ -783,6 +792,10 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
     if (device != DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         return SUCCESS;
     }
+    if (!Account::GetInstance()->IsLoginAccount()) {
+        ZLOGW("current user is not logged in.");
+        return E_NOT_LOGIN;
+    }
     std::vector<int32_t> users;
     Account::GetInstance()->QueryForegroundUsers(users);
     if (users.empty()) {
@@ -792,10 +805,10 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
         return NETWORK_ERROR;
     }
     for (auto user : users) {
-        DoKvCloudSync(user, "", MODE_ONLINE);
         Execute(GenTask(0, user, CloudSyncScene::NETWORK_RECOVERY,
-            { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_DO_CLOUD_SYNC, WORK_SUB }));
+            { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     }
+    syncManager_.OnNetworkConnected();
     return SUCCESS;
 }
 
@@ -812,6 +825,7 @@ int32_t CloudServiceImpl::Offline(const std::string &device)
     }
     auto it = users.begin();
     syncManager_.StopCloudSync(*it);
+    syncManager_.OnNetworkDisconnected();
     return SUCCESS;
 }
 
@@ -881,6 +895,8 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user, CloudSyncScene scene)
             actions[bundle] = GeneralStore::CleanMode::CLOUD_INFO;
         }
         DoClean(oldInfo, actions);
+        Report(GetDfxFaultType(scene), Fault::CSF_CLOUD_INFO, "",
+            "Clean: different id, new:" + Anonymous::Change(cloudInfo.id) + ", old:" + Anonymous::Change(oldInfo.id));
     }
     return true;
 }
@@ -1245,7 +1261,11 @@ void CloudServiceImpl::GetSchema(const Event &event)
         storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.instanceId);
     if (storeInfo.user == 0) {
         std::vector<int32_t> users;
-        AccountDelegate::GetInstance()->QueryUsers(users);
+        auto ret = AccountDelegate::GetInstance()->QueryUsers(users);
+        if (!ret || users.empty()) {
+            ZLOGE("failed to query os accounts, ret:%{public}d", ret);
+            return;
+        }
         GetSchemaMeta(users[0], storeInfo.bundleName, storeInfo.instanceId);
     } else {
         GetSchemaMeta(storeInfo.user, storeInfo.bundleName, storeInfo.instanceId);
@@ -1581,6 +1601,10 @@ std::vector<NativeRdb::ValuesBucket> CloudServiceImpl::ConvertCursor(std::shared
 
 CloudServiceImpl::HapInfo CloudServiceImpl::GetHapInfo(uint32_t tokenId)
 {
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        ZLOGE("TokenType is not TOKEN_HAP, tokenId:0x%{public}x", tokenId);
+        return { INVALID_USER_ID, -1, "" };
+    }
     HapTokenInfo tokenInfo;
     int errCode = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (errCode != RET_SUCCESS) {

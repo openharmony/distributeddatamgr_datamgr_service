@@ -289,44 +289,4 @@ bool DirectoryManager::CreateDirectory(const std::string &path) const
 
     return access(path.c_str(), F_OK) == 0;
 }
-
-bool DirectoryManager::DeleteDirectory(const char* path)
-{
-    if (path == nullptr) {
-        return false;
-    }
-    DIR* dir;
-    struct dirent* dirEntry;
-    struct stat buf;
-    char* curWorkDir = getcwd(nullptr, 0);
-    if ((dir = opendir(path)) == nullptr) {
-        return true;
-    }
-    if (chdir(path) == -1) {
-        closedir(dir);
-        return false;
-    }
-    while ((dirEntry = readdir(dir))) {
-        if ((strcmp(dirEntry->d_name, ".") == 0) || (strcmp(dirEntry->d_name, "..") == 0)) {
-            continue;
-        }
-        if (stat(dirEntry->d_name, &buf) == -1) {
-            closedir(dir);
-            return false;
-        }
-        if (S_ISDIR(buf.st_mode)) {
-            DeleteDirectory(dirEntry->d_name);
-            continue;
-        }
-        if (remove(dirEntry->d_name) == -1) {
-            closedir(dir);
-            return false;
-        }
-    }
-    closedir(dir);
-    if (chdir(curWorkDir) == -1 || rmdir(path) == -1) {
-        return false;
-    }
-    return true;
-}
 } // namespace OHOS::DistributedData

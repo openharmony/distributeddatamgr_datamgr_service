@@ -43,6 +43,11 @@ AppIDMetaData::~AppIDMetaData()
 {
 }
 
+bool AppIDMetaData::operator==(const AppIDMetaData &appIdMetaData) const
+{
+    return (appId == appIdMetaData.appId && bundleName == appIdMetaData.bundleName);
+}
+
 std::string AppIDMetaData::GetKey() const
 {
     return appId;

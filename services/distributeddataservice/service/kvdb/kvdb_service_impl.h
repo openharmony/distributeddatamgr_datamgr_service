@@ -27,6 +27,7 @@
 #include "kvdb_service_stub.h"
 #include "kvdb_watcher.h"
 #include "kvstore_sync_manager.h"
+#include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
@@ -166,6 +167,7 @@ private:
     std::string GenerateKey(const std::string &userId, const std::string &storeId) const;
     std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
     void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password);
+    void SaveAppIdMetaData(const DistributedData::AppIDMetaData &appIdMeta);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

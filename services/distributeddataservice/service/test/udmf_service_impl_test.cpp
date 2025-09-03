@@ -16,6 +16,7 @@
 #define LOG_TAG "UdmfServiceImplTest"
 #include "udmf_service_impl.h"
 #include "accesstoken_kit.h"
+#include "account_delegate.h"
 #include "bootstrap.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
@@ -27,16 +28,16 @@
 #include "preprocess_utils.h"
 #include "runtime_store.h"
 #include "text.h"
+#include "plain_text.h"
 #include "token_setproc.h"
 
 using namespace testing::ext;
-using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using namespace OHOS::UDMF;
-using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Entry = DistributedDB::Entry;
 using Key = DistributedDB::Key;
 using Value = DistributedDB::Value;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using UnifiedData = OHOS::UDMF::UnifiedData;
 using Summary =  OHOS::UDMF::Summary;
 namespace OHOS::Test {
@@ -84,7 +85,9 @@ public:
     void SetUp(){};
     void TearDown(){};
 
-    const std::string STORE_ID = "drag";
+    static constexpr const char *STORE_ID = "drag";
+    static constexpr uint32_t TOKEN_ID = 5;
+    static constexpr const char *APP_ID = "appId";
 };
 
 /**
@@ -176,7 +179,22 @@ HWTEST_F(UdmfServiceImplTest, Sync001, TestSize.Level1)
     std::vector<std::string> devices = {"device1"};
     UdmfServiceImpl udmfServiceImpl;
     int32_t ret = udmfServiceImpl.Sync(query, devices);
-    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+    EXPECT_EQ(ret, E_NO_PERMISSION);
+}
+
+/**
+* @tc.name: VerifyPermission001
+* @tc.desc: Abnormal test of VerifyPermission, permission is empty
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, VerifyPermission001, TestSize.Level1)
+{
+    std::string permission;
+    uint32_t callerTokenId = 0;
+    UdmfServiceImpl udmfServiceImpl;
+    bool ret = udmfServiceImpl.VerifyPermission(permission, callerTokenId);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -263,14 +281,104 @@ HWTEST_F(UdmfServiceImplTest, SetAppShareOption004, TestSize.Level1)
 */
 HWTEST_F(UdmfServiceImplTest, OnUserChangeTest001, TestSize.Level1)
 {
-    uint32_t code = 4;
+    // Clear store
+    StoreCache::GetInstance().CloseStores();
+    auto stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+    // Init store
+    StoreCache::GetInstance().GetStore("SystemShare");
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
+
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPING);
     std::string user = "OH_USER_test";
     std::string account = "OH_ACCOUNT_test";
     UdmfServiceImpl udmfServiceImpl;
     auto status = udmfServiceImpl.OnUserChange(code, user, account);
     ASSERT_EQ(status, UDMF::E_OK);
-    auto sizeAfter = StoreCache::GetInstance().stores_.Size();
-    ASSERT_EQ(sizeAfter, 0);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+}
+
+/**
+* @tc.name: OnUserChangeTest002
+* @tc.desc: OnUserChange test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, OnUserChangeTest002, TestSize.Level1)
+{
+    // Clear store
+    StoreCache::GetInstance().CloseStores();
+    auto stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+    // Init store
+    StoreCache::GetInstance().GetStore(STORE_ID);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
+
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_STOPPED);
+    std::string user = "OH_USER_test";
+    std::string account = "OH_ACCOUNT_test";
+    UdmfServiceImpl udmfServiceImpl;
+    auto status = udmfServiceImpl.OnUserChange(code, user, account);
+    ASSERT_EQ(status, UDMF::E_OK);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+}
+
+/**
+* @tc.name: OnUserChangeTest003
+* @tc.desc: OnUserChange test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, OnUserChangeTest003, TestSize.Level1)
+{
+    // Clear store
+    StoreCache::GetInstance().CloseStores();
+    auto stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+    // Init store
+    StoreCache::GetInstance().GetStore(STORE_ID);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
+
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED);
+    std::string user = "OH_USER_test";
+    std::string account = "OH_ACCOUNT_test";
+    UdmfServiceImpl udmfServiceImpl;
+    auto status = udmfServiceImpl.OnUserChange(code, user, account);
+    ASSERT_EQ(status, UDMF::E_OK);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+}
+
+/**
+* @tc.name: OnUserChangeTest004
+* @tc.desc: OnUserChange test
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceImplTest, OnUserChangeTest004, TestSize.Level1)
+{
+    // Clear store
+    StoreCache::GetInstance().CloseStores();
+    auto stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 0);
+    // Init store
+    StoreCache::GetInstance().GetStore(STORE_ID);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
+
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_UNLOCKED);
+    std::string user = "OH_USER_test";
+    std::string account = "OH_ACCOUNT_test";
+    UdmfServiceImpl udmfServiceImpl;
+    auto status = udmfServiceImpl.OnUserChange(code, user, account);
+    ASSERT_EQ(status, UDMF::E_OK);
+    stores = StoreCache::GetInstance().stores_.Size();
+    ASSERT_EQ(stores, 1);
 }
 
 /**
@@ -302,11 +410,11 @@ HWTEST_F(UdmfServiceImplTest, SyncTest001, TestSize.Level0)
     query.tokenId = 1;
     query.intention  = UD_INTENTION_DRAG;
     UdmfServiceImpl udmfServiceImpl;
-    StoreMetaData meta = StoreMetaData("100", "distributeddata", "drag");
+    DistributedData::StoreMetaData meta = DistributedData::StoreMetaData("100", "distributeddata", "drag");
     std::vector<std::string> devices = {"remote_device"};
 
     auto ret = udmfServiceImpl.Sync(query, devices);
-    EXPECT_EQ(ret, UDMF::E_DB_ERROR);
+    EXPECT_EQ(ret, UDMF::E_NO_PERMISSION);
 }
 
 /**
@@ -430,6 +538,453 @@ HWTEST_F(UdmfServiceImplTest, IsValidInput004, TestSize.Level1)
     UdmfServiceImpl impl;
     bool result = impl.IsValidInput(query, unifiedData, key);
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: UpdateData002
+ * @tc.desc: invalid parameter
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UpdateData002, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.key = "udmf://DataHub/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7";
+    query.tokenId = 99999;
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+
+    UdmfServiceImpl impl;
+    EXPECT_NE(impl.UpdateData(query, unifiedData), E_OK);
+}
+
+/**
+ * @tc.name: UpdateData003
+ * @tc.desc: invalid parameter
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UpdateData003, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.key = "udmf://DataHub/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7";
+    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+
+    UdmfServiceImpl impl;
+    EXPECT_NE(impl.UpdateData(query, unifiedData), E_OK);
+}
+
+/**
+ * @tc.name: UpdateData004
+ * @tc.desc: invalid parameter
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UpdateData004, TestSize.Level1)
+{
+    QueryOption query;
+    UnifiedData unifiedData;
+
+    query.key = "invalid_key";
+    UdmfServiceImpl impl;
+    EXPECT_EQ(impl.UpdateData(query, unifiedData), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: SaveData002
+* @tc.desc: invalid parameter
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, SaveData002, TestSize.Level1)
+{
+    CustomOption option;
+    QueryOption query;
+    UnifiedData unifiedData;
+    std::string key = "";
+
+    UdmfServiceImpl impl;
+    EXPECT_EQ(impl.SaveData(option, unifiedData, key), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: SaveData003
+* @tc.desc: invalid parameter
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, SaveData003, TestSize.Level1)
+{
+    CustomOption option;
+    QueryOption query;
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    std::string key = "";
+    option.intention = Intention::UD_INTENTION_BASE;
+
+    UdmfServiceImpl impl;
+    EXPECT_EQ(impl.SaveData(option, unifiedData, key), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: SaveData004
+* @tc.desc: invalid parameter
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, SaveData004, TestSize.Level1)
+{
+    CustomOption option;
+    QueryOption query;
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    std::string key = "";
+    option.intention = Intention::UD_INTENTION_DATA_HUB;
+    option.tokenId = 99999;
+
+    UdmfServiceImpl impl;
+    EXPECT_NE(impl.SaveData(option, unifiedData, key), E_OK);
+}
+
+/**
+ * @tc.name: IsValidInput005
+ * @tc.desc: valid input
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsValidInput005, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.key = "udmf://drag/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7";
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    UnifiedKey key("udmf://drag/aaa/N]2fIEMbrJj@<hH7zpXzzQ>wp:jMuPa7");
+    EXPECT_TRUE(key.IsValid());
+
+    UdmfServiceImpl impl;
+    bool result = impl.IsValidInput(query, unifiedData, key);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: PushDelayData001
+ * @tc.desc: valid input
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData001, TestSize.Level1)
+{
+    UnifiedData unifiedData;
+    auto record1 = std::make_shared<UnifiedRecord>();
+    auto record2 = std::make_shared<UnifiedRecord>();
+    unifiedData.AddRecord(record1);
+    unifiedData.AddRecord(record2);
+    std::string key = "invalid key";
+
+    UdmfServiceImpl impl;
+    auto result = impl.PushDelayData(key, unifiedData);
+    EXPECT_NE(result, E_OK);
+}
+
+/**
+ * @tc.name: CheckAppId001
+ * @tc.desc: invalid bundleName
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, CheckAppId001, TestSize.Level1)
+{
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->appId = "appId";
+    std::string bundleName = "ohos.test.demo1";
+
+    UdmfServiceImpl impl;
+    int32_t result = impl.CheckAppId(runtime, bundleName);
+    EXPECT_EQ(result, E_INVALID_PARAMETERS);
+}
+
+/**
+ * @tc.name: CheckAppId002
+ * @tc.desc: invalid runtime
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, CheckAppId002, TestSize.Level1)
+{
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    std::string bundleName = "ohos.test.demo1";
+
+    UdmfServiceImpl impl;
+    int32_t result = impl.CheckAppId(runtime, bundleName);
+    EXPECT_EQ(result, E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: CheckDeleteDataPermission001
+* @tc.desc: runtime is null
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission001, TestSize.Level1)
+{
+    std::string appId;
+    std::shared_ptr<Runtime> runtime;
+    QueryOption query;
+    UdmfServiceImpl impl;
+    bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name: CheckDeleteDataPermission002
+* @tc.desc: query.tokenId is invalid
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission002, TestSize.Level1)
+{
+    std::string appId;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = TOKEN_ID;
+    QueryOption query;
+    UdmfServiceImpl impl;
+    bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name: CheckDeleteDataPermission003
+* @tc.desc: Normal test
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission003, TestSize.Level1)
+{
+    std::string appId;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = TOKEN_ID;
+    QueryOption query;
+    query.tokenId = TOKEN_ID;
+    UdmfServiceImpl impl;
+    bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: CheckDeleteDataPermission004
+* @tc.desc: bundleName is empty
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, CheckDeleteDataPermission004, TestSize.Level1)
+{
+    std::string appId;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->appId = APP_ID;
+    QueryOption query;
+    query.tokenId = TOKEN_ID;
+    UdmfServiceImpl impl;
+    bool ret = impl.CheckDeleteDataPermission(appId, runtime, query);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: VerifyDataAccessPermission001
+ * @tc.desc: no permission
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, VerifyDataAccessPermission001, TestSize.Level1)
+{
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    const QueryOption query;
+    UnifiedData unifiedData;
+
+    UdmfServiceImpl impl;
+    auto result = impl.VerifyDataAccessPermission(runtime, query, unifiedData);
+    EXPECT_EQ(result, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: VerifyDataAccessPermission002
+ * @tc.desc: runtime is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, VerifyDataAccessPermission002, TestSize.Level1)
+{
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    Privilege privilege {
+        .tokenId = TOKEN_ID,
+        .readPermission = STORE_ID,
+        .writePermission = STORE_ID,
+    };
+    runtime->privileges = { privilege };
+    QueryOption query;
+    query.tokenId = TOKEN_ID;
+    UnifiedData unifiedData;
+
+    UdmfServiceImpl impl;
+    auto result = impl.VerifyDataAccessPermission(runtime, query, unifiedData);
+    EXPECT_EQ(runtime->privileges[0].tokenId, query.tokenId);
+    EXPECT_EQ(result, OHOS::UDMF::E_OK);
+}
+
+/**
+ * @tc.name: HandleDelayLoad001
+ * @tc.desc: Returns true when data not arrives
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleDelayLoad001, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+
+    UnifiedData result;
+    int32_t res = UDMF::E_OK;
+
+    UdmfServiceImpl service;
+    service.dataLoadCallback_.Insert(query.key, nullptr);
+
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    UdmfServiceImpl::BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    service.blockDelayDataCache_.Insert(query.key, data);
+
+    bool handled = service.HandleDelayLoad(query, result, res);
+
+    service.dataLoadCallback_.Erase(query.key);
+    service.blockDelayDataCache_.Erase(query.key);
+
+    EXPECT_TRUE(handled);
+    EXPECT_EQ(res, UDMF::E_NOT_FOUND);
+}
+
+/**
+ * @tc.name: HandleDelayLoad002
+ * @tc.desc: Returns false when not exist
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleDelayLoad002, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+
+    UnifiedData result;
+    int32_t res = UDMF::E_OK;
+
+    UdmfServiceImpl service;
+    bool handled = service.HandleDelayLoad(query, result, res);
+
+    EXPECT_FALSE(handled);
+}
+
+/**
+ * @tc.name: HandleDelayLoad003
+ * @tc.desc: Returns true when data arrives
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleDelayLoad003, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+
+    UnifiedData result;
+    int32_t res = UDMF::E_OK;
+
+    UnifiedData insertedData;
+    insertedData.AddRecord(std::make_shared<UnifiedRecord>());
+
+    UdmfServiceImpl service;
+    service.dataLoadCallback_.Insert(query.key, nullptr);
+
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    UdmfServiceImpl::BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    service.blockDelayDataCache_.Insert(query.key, data);
+
+    data.blockData->SetValue(insertedData);
+    bool handled = service.HandleDelayLoad(query, result, res);
+
+    EXPECT_TRUE(handled);
+    EXPECT_EQ(res, UDMF::E_OK);
+}
+
+/**
+ * @tc.name: PushDelayData002
+ * @tc.desc: DelayData callback and block cache not exist
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData002, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+    UnifiedData insertedData;
+    insertedData.AddRecord(std::make_shared<UnifiedRecord>());
+
+    UdmfServiceImpl service;
+    auto status = service.PushDelayData(query.key, insertedData);
+    EXPECT_EQ(status, UDMF::E_ERROR);
+}
+
+/**
+ * @tc.name: PushDelayData003
+ * @tc.desc: No permission
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData003, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 123;
+    
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    UdmfServiceImpl::BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    UdmfServiceImpl service;
+    service.blockDelayDataCache_.Insert(query.key, data);
+    
+    UnifiedData insertedData;
+    auto status = service.PushDelayData(query.key, insertedData);
+    EXPECT_EQ(status, UDMF::E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: PushDelayData004
+ * @tc.desc: PushDelayData success
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData004, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = IPCSkeleton::GetSelfTokenID();
+    
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    UdmfServiceImpl::BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    UdmfServiceImpl service;
+    service.blockDelayDataCache_.Insert(query.key, data);
+
+    Privilege privilege;
+    privilege.tokenId = query.tokenId;
+    service.privilegeCache_[query.key] = privilege;
+
+    UnifiedData insertedData;
+    auto status = service.PushDelayData(query.key, insertedData);
+    EXPECT_EQ(status, UDMF::E_OK);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

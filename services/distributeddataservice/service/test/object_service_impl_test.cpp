@@ -20,11 +20,14 @@
 #include <gtest/gtest.h>
 
 #include "accesstoken_kit.h"
+#include "device_manager_adapter_mock.h"
 #include "ipc_skeleton.h"
 #include "token_setproc.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
+using namespace std;
+using namespace testing;
 namespace OHOS::Test {
 class ObjectServiceImplTest : public testing::Test {
 public:
@@ -45,11 +48,12 @@ protected:
     ObjectStore::AssetBindInfo assetBindInfo_;
     pid_t pid_ = 10;
     uint32_t tokenId_ = 100;
+    static inline std::shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
 };
 
 void ObjectServiceImplTest::SetUp()
 {
-    uri_ = "file:://com.examples.hmos.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
+    uri_ = "file:://com.examples.notepad/data/storage/el2/distributedfiles/dir/asset1.jpg";
     ObjectStore::Asset asset{
         .id = "test_name",
         .name = uri_,
@@ -73,9 +77,14 @@ void ObjectServiceImplTest::SetUp()
         .assetName = "asset1.jpg",
     };
     assetBindInfo_ = AssetBindInfo;
+    devMgrAdapterMock = make_shared<DeviceManagerAdapterMock>();
+    BDeviceManagerAdapter::deviceManagerAdapter = devMgrAdapterMock;
 }
 
-void ObjectServiceImplTest::TearDown() {}
+void ObjectServiceImplTest::TearDown()
+{
+    devMgrAdapterMock = nullptr;
+}
 
 /**
  * @tc.name: OnAssetChanged001
@@ -84,7 +93,7 @@ void ObjectServiceImplTest::TearDown() {}
  */
 HWTEST_F(ObjectServiceImplTest, OnAssetChanged001, TestSize.Level1)
 {
-    std::string bundleName = "com.examples.hmos.notepad";
+    std::string bundleName = "com.examples.notepad";
     OHOS::Security::AccessToken::AccessTokenID tokenId =
         OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, bundleName, 0);
         SetSelfTokenID(tokenId);
@@ -103,7 +112,7 @@ HWTEST_F(ObjectServiceImplTest, OnAssetChanged001, TestSize.Level1)
  */
 HWTEST_F(ObjectServiceImplTest, BindAssetStore001, TestSize.Level1)
 {
-    std::string bundleName = "com.examples.hmos.notepad";
+    std::string bundleName = "com.examples.notepad";
     OHOS::Security::AccessToken::AccessTokenID tokenId =
         OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, bundleName, 0);
         SetSelfTokenID(tokenId);
@@ -122,7 +131,7 @@ HWTEST_F(ObjectServiceImplTest, BindAssetStore001, TestSize.Level1)
  */
 HWTEST_F(ObjectServiceImplTest, DeleteSnapshot001, TestSize.Level1)
 {
-    std::string bundleName = "com.examples.hmos.notepad";
+    std::string bundleName = "com.examples.notepad";
     OHOS::Security::AccessToken::AccessTokenID tokenId =
         OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, bundleName, 0);
         SetSelfTokenID(tokenId);
@@ -150,6 +159,22 @@ HWTEST_F(ObjectServiceImplTest, ResolveAutoLaunch001, TestSize.Level1)
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
     int32_t ret = objectServiceImpl->ResolveAutoLaunch(identifier, param);
     EXPECT_EQ(ret, OBJECT_SUCCESS);
+}
+
+/**
+ * @tc.name: OnInitialize001
+ * @tc.desc: OnInitialize test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, OnInitialize001, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    objectServiceImpl->executors_ = nullptr;
+    DeviceInfo devInfo = { .uuid = "123" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice())
+        .WillOnce(Return(devInfo));
+    int32_t ret = objectServiceImpl->OnInitialize();
+    EXPECT_EQ(ret, OBJECT_INNER_ERROR);
 }
 
 /**

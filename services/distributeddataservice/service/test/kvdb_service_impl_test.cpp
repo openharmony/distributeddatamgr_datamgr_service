@@ -326,6 +326,31 @@ HWTEST_F(KvdbServiceImplTest, OnInitialize001, TestSize.Level0)
 }
 
 /**
+* @tc.name: OnInitialize002
+* @tc.desc: OnInitialize function test.
+* @tc.type: FUNC
+* @tc.author: my
+*/
+HWTEST_F(KvdbServiceImplTest, OnInitialize002, TestSize.Level0)
+{
+    auto result = kvdbServiceImpl_->OnInitialize();
+    EXPECT_EQ(result, Status::SUCCESS);
+    DistributedData::StoreInfo storeInfo;
+    storeInfo.bundleName = "bundleName";
+    storeInfo.storeName = "storeName";
+    storeInfo.user = 100;
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+    .WillOnce(testing::Return(false))
+    .WillRepeatedly(testing::Return(true));
+
+    auto event = std::make_unique<CloudEvent>(CloudEvent::CLOUD_SYNC, storeInfo);
+    EXPECT_NE(event, nullptr);
+    result = EventCenter::GetInstance().PostEvent(move(event));
+    EXPECT_EQ(result, 1); // CODE_SYNC
+}
+
+/**
 * @tc.name: GetStoreIdsTest001
 * @tc.desc: GetStoreIds
 * @tc.type: FUNC
@@ -1505,6 +1530,24 @@ HWTEST_F(KvdbServiceImplTest, syncTest003, TestSize.Level0)
         .WillRepeatedly(testing::Return(false));
     status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
     EXPECT_EQ(localMeta.HasPolicy(DistributedKv::IMMEDIATE_SYNC_ON_ONLINE), true);
+}
+
+/**
+* @tc.name: SyncTest004
+* @tc.desc: twin application sync test
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, SyncTest004, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
+        .WillOnce(testing::Return(0))
+        .WillRepeatedly(testing::Return(0));
+    SyncInfo syncInfo;
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
+    ASSERT_EQ(status, Status::NOT_SUPPORT);
 }
 
 /**

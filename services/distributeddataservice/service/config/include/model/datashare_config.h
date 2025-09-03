@@ -23,7 +23,8 @@ public:
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     std::vector<std::string> dataShareExtNames;
+    std::vector<std::string> updateLaunchNames;
 };
 } // namespace DistributedData
 } // namespace OHOS
-#endif //OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_DATASHARE_CONFIG_H
+#endif //OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_DATASHARE_CONFIG_H

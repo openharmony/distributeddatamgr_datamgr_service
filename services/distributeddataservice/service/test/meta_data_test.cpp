@@ -164,5 +164,34 @@ HWTEST_F(MetaDataTest, MateDataChanged, TestSize.Level0)
     ASSERT_FALSE(metaData.isNeedCompress);
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()));
 }
+
+/**
+* @tc.name: SchemaChanged
+* @tc.desc: schema data changed
+* @tc.type: FUNC
+*/
+HWTEST_F(MetaDataTest, SchemaChanged, TestSize.Level0)
+{
+    ZLOGI("SchemaChanged start");
+    options_.schema = "";
+    StoreMetaData metaData;
+    std::vector<uint8_t> password {};
+    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+    StoreMetaMapping meta(metaData_);
+    ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true));
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    options_.schema = "schema_data";
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+    meta = metaData_;
+    ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true));
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, options_, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), metaData, true));
+    ASSERT_EQ(metaData.schema, "schema_data");
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

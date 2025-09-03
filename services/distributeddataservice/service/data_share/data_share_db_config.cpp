@@ -26,7 +26,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 #include "ipc_skeleton.h"
 
@@ -74,8 +74,8 @@ std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> Dat
     auto [errCode, metaData] = GetMetaData(dbConfig);
     if (errCode != E_OK) {
         ZLOGE("DB not exist,bundleName:%{public}s,storeName:%{public}s,user:%{public}d,err:%{public}d,uri:%{public}s",
-            dbConfig.bundleName.c_str(), dbConfig.storeName.c_str(), dbConfig.userId, errCode,
-            URIUtils::Anonymous(dbConfig.uri).c_str());
+            dbConfig.bundleName.c_str(), StringUtils::GeneralAnonymous(dbConfig.storeName).c_str(), dbConfig.userId,
+            errCode, URIUtils::Anonymous(dbConfig.uri).c_str());
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_MATEDATA_EXISTS,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::META_DATA_NOT_EXISTS);
         return std::make_tuple(errCode, metaData, nullptr);

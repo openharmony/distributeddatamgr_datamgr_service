@@ -42,44 +42,68 @@ AppPipeHandler::AppPipeHandler(const PipeInfo &pipeInfo)
 std::pair<Status, int32_t> AppPipeHandler::SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
     const DataInfo &dataInfo, uint32_t totalLength, const MessageInfo &info)
 {
+    if (softbusAdapter_ == nullptr) {
+        return std::make_pair(Status::ERROR, 0);
+    }
     return softbusAdapter_->SendData(pipeInfo, deviceId, dataInfo, totalLength, info);
 }
 
 Status AppPipeHandler::StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo)
 {
+    if (softbusAdapter_ == nullptr) {
+        return Status::ERROR;
+    }
     return softbusAdapter_->StartWatchDataChange(observer, pipeInfo);
 }
 
 Status AppPipeHandler::StopWatchDataChange(__attribute__((unused))const AppDataChangeListener *observer,
-                                           const PipeInfo &pipeInfo)
+    const PipeInfo &pipeInfo)
 {
+    if (softbusAdapter_ == nullptr) {
+        return Status::ERROR;
+    }
     return softbusAdapter_->StopWatchDataChange(observer, pipeInfo);
 }
 
 bool AppPipeHandler::IsSameStartedOnPeer(const struct PipeInfo &pipeInfo,
-                                         __attribute__((unused))const struct DeviceId &peer)
+    __attribute__((unused))const struct DeviceId &peer)
 {
+    if (softbusAdapter_ == nullptr) {
+        return false;
+    }
     return softbusAdapter_->IsSameStartedOnPeer(pipeInfo, peer);
 }
 
 void AppPipeHandler::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)
 {
+    if (softbusAdapter_ == nullptr) {
+        return;
+    }
     return softbusAdapter_->SetMessageTransFlag(pipeInfo, flag);
 }
 
 int AppPipeHandler::CreateSessionServer(const std::string &sessionName) const
 {
+    if (softbusAdapter_ == nullptr) {
+        return -1;
+    }
     return softbusAdapter_->CreateSessionServerAdapter(sessionName);
 }
 
 int AppPipeHandler::RemoveSessionServer(const std::string &sessionName) const
 {
+    if (softbusAdapter_ == nullptr) {
+        return -1;
+    }
     return softbusAdapter_->RemoveSessionServerAdapter(sessionName);
 }
 
-Status AppPipeHandler::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId)
+Status AppPipeHandler::ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo)
 {
-    return softbusAdapter_->ReuseConnect(pipeInfo, deviceId);
+    if (softbusAdapter_ == nullptr) {
+        return Status::ERROR;
+    }
+    return softbusAdapter_->ReuseConnect(pipeInfo, deviceId, extraInfo);
 }
 }  // namespace AppDistributedKv
 }  // namespace OHOS

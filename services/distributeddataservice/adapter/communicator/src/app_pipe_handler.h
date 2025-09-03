@@ -16,18 +16,8 @@
 #ifndef DISTRIBUTEDDATAFWK_SRC_PIPE_HANDLER_H
 #define DISTRIBUTEDDATAFWK_SRC_PIPE_HANDLER_H
 
-#include <set>
-#include <mutex>
-#include <string>
-#include <map>
-#include "log_print.h"
 #include "app_data_change_listener.h"
 #include "softbus_adapter.h"
-
-#ifdef LOG_TAG
-    #undef LOG_TAG
-#endif
-#define LOG_TAG "AppPipeHandler"
 
 namespace OHOS {
 namespace AppDistributedKv {
@@ -51,12 +41,11 @@ public:
 
     int RemoveSessionServer(const std::string &sessionName) const;
 
-    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId);
+    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
 private:
     PipeInfo pipeInfo_;
-    std::shared_ptr<SoftBusAdapter> softbusAdapter_ {};
+    std::shared_ptr<SoftBusAdapter> softbusAdapter_;
 };
 }  // namespace AppDistributedKv
 }  // namespace OHOS
-#undef LOG_TAG
-#endif /* DISTRIBUTEDDATAFWK_SRC_PIPE_HANDLER_H */
+#endif // DISTRIBUTEDDATAFWK_SRC_PIPE_HANDLER_H

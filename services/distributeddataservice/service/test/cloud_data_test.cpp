@@ -506,7 +506,9 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level1)
 {
     auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    cloudServiceImpl_->OnUserChange(
+        static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED), std::to_string(user), "accountId");
 
     sleep(1);
 
@@ -534,7 +536,9 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level1)
     MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
     info.apps[TEST_CLOUD_BUNDLE].cloudSwitch = false;
     MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true);
-    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    cloudServiceImpl_->OnUserChange(
+        static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED), std::to_string(user), "accountId");
     sleep(1);
 
     auto [status, result] =
@@ -1151,6 +1155,10 @@ HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level0)
     uint32_t seqNum = 10;
     auto ret = cloudServiceImpl_->CloudSync("bundleName", "storeId", { syncMode, seqNum }, nullptr);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+
+    CloudData::Details details{};
+    uint32_t tokenId = 0;
+    cloudServiceImpl_->OnAsyncComplete(tokenId, seqNum, std::move(details));
 }
 
 /**
@@ -1288,21 +1296,6 @@ HWTEST_F(CloudDataTest, NotifyDataChange003, TestSize.Level1)
                 "\\\"[\\\\\\\"private\\\\\\\", "
                 "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
     ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
-    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-}
-
-/**
-* @tc.name: OnReady
-* @tc.desc:
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, OnReady001, TestSize.Level0)
-{
-    std::string device = "test";
-    auto ret = cloudServiceImpl_->OnReady(device);
-    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-    ret = cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
@@ -2006,12 +1999,12 @@ HWTEST_F(CloudDataTest, GetPostEventTask, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetRetryer
+* @tc.name: GetRetryer001
 * @tc.desc: Test the input parameters of different interfaces
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
+HWTEST_F(CloudDataTest, GetRetryer001, TestSize.Level0)
 {
     int32_t user = 100;
     CloudData::SyncManager::SyncInfo info(user);
@@ -2027,6 +2020,28 @@ HWTEST_F(CloudDataTest, GetRetryer, TestSize.Level0)
     EXPECT_TRUE(ret);
     ret = sync.GetRetryer(0, info, user)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
     EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: GetRetryer002
+* @tc.desc: Test the executor_ is nullptr scenarios.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, GetRetryer002, TestSize.Level0)
+{
+    int32_t user = 100;
+    std::string prepareTraceId;
+    CloudData::SyncManager sync;
+    sync.executor_ = nullptr;
+    int32_t evtId = 100;
+    auto event = std::make_unique<CloudData::SyncManager::Event>(evtId);
+    auto handler = sync.GetClientChangeHandler();
+    handler(*event);
+    CloudData::SyncManager::Duration duration;
+    CloudData::SyncManager::SyncInfo info(user);
+    auto ret = sync.GetRetryer(0, info, user)(duration, E_CLOUD_DISABLED, E_CLOUD_DISABLED, prepareTraceId);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -2790,6 +2805,7 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level1)
 */
 HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level1)
 {
+    ZLOGI("CloudServiceImplTest UpdateSchemaFromHap004 start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudInfo::AppInfo exampleAppInfo;
     exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;

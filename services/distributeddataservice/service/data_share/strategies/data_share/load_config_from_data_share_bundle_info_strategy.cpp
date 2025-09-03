@@ -20,7 +20,7 @@
 #include "data_share_profile_config.h"
 #include "datashare_errno.h"
 #include "log_print.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -107,7 +107,7 @@ bool LoadConfigFromDataShareBundleInfoStrategy::LoadConfigFromUri(std::shared_pt
 {
     UriInfo uriInfo;
     if (!URIUtils::GetInfoFromURI(context->uri, uriInfo)) {
-        ZLOGE("Invalid uri: %{public}s", DistributedData::Anonymous::Change(context->uri).c_str());
+        ZLOGE("Invalid uri: %{public}s", URIUtils::Anonymous(context->uri).c_str());
         return false;
     }
     context->calledBundleName = std::move(uriInfo.bundleName);

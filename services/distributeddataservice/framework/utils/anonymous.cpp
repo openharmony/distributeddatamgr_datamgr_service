@@ -14,6 +14,7 @@
  */
 
 #include "utils/anonymous.h"
+#include <vector>
 namespace OHOS {
 namespace DistributedData {
 
@@ -66,7 +67,7 @@ std::string Anonymous::Change(const std::string &name)
         noAlnum.push_back("");
     }
     if (!noAlnumStr.empty()) {
-        noAlnum.push_back(alnumStr);
+        noAlnum.push_back(noAlnumStr);
         alnum.push_back("");
     }
     std::string res = "";

@@ -19,6 +19,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <variant>
 
 #include "cloud/cloud_event.h"
 #include "commonevent/data_change_event.h"
@@ -28,6 +29,7 @@
 #include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
+#include "process_communicator_impl.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
 #include "rdb_service_stub.h"
@@ -38,7 +40,6 @@
 #include "store/general_value.h"
 #include "store_observer.h"
 #include "visibility.h"
-#include "process_communicator_impl.h"
 
 namespace OHOS::DistributedRdb {
 using namespace OHOS::AppDistributedKv;
@@ -105,6 +106,8 @@ public:
     int32_t Enable(const RdbSyncerParam& param) override;
 
     int32_t BeforeOpen(RdbSyncerParam &param) override;
+
+    std::pair<int32_t, bool> IsSupportSilent(const RdbSyncerParam &param) override;
 
     int32_t AfterOpen(const RdbSyncerParam &param) override;
 
@@ -178,15 +181,17 @@ private:
         const AsyncDetail &async);
 
     void DoCompensateSync(const DistributedData::BindEvent& event);
+    
+    void SaveAutoSyncDeviceId(const StoreMetaData &meta, const std::vector<std::string> &devices);
 
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
 
-    int DoAutoSync(
-        const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tableNames);
+    int DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &storeMetaData,
+        const std::vector<std::string> &tables);
 
-    std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices);
-    int DoOnlineSync(const std::vector<std::string> &devices, const Database &dataBase);
+    std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices, const StoreMetaData &metaData);
+    int DoOnlineSync(const std::string &device, const Database &dataBase);
 
     int DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData);
 
@@ -211,15 +216,17 @@ private:
 
     void SaveLaunchInfo(StoreMetaData &meta);
 
-    static bool CheckAccess(const std::string& bundleName, const std::string& storeName);
+    static bool IsValidAccess(const std::string& bundleName, const std::string& storeName);
 
-    static bool CheckInvalidPath(const std::string& param);
+    static bool IsValidPath(const std::string& param);
 
-    static bool CheckCustomDir(const std::string &customDir, int32_t upLimit);
+    static bool IsValidCustomDir(const std::string &customDir, int32_t upLimit);
 
-    static bool CheckParam(const RdbSyncerParam &param);
+    static bool IsValidParam(const RdbSyncerParam &param);
 
     static StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
+
+    static std::pair<bool, StoreMetaData> LoadStoreMetaData(const RdbSyncerParam &param);
 
     static std::string GetPath(const RdbSyncerParam &param);
 

@@ -18,6 +18,7 @@
 
 using namespace testing::ext;
 using OHOS::DistributedData::StoreMetaDataLocal;
+using OHOS::DistributedData::PolicyValue;
 namespace OHOS::Test {
 class StoreMetaDataLocalTest : public testing::Test {
 public:
@@ -121,5 +122,36 @@ HWTEST_F(StoreMetaDataLocalTest, GetPolicy, TestSize.Level1)
     type = UINT32_MAX;
     policy = metaData.GetPolicy(type);
     EXPECT_EQ(policy.type, type);
+}
+
+/**
+* @tc.name: GetPolicy
+* @tc.desc: test GetPolicy function
+* @tc.type: FUNC
+*/
+HWTEST_F(StoreMetaDataLocalTest, PolicyValue, TestSize.Level1)
+{
+    PolicyValue pValue;
+    pValue.type = UINT32_MAX;
+    pValue.index = 0;
+    pValue.valueUint = 1;
+    
+    PolicyValue pValue1;
+    pValue1.type = UINT32_MAX;
+    pValue1.index = 1;
+    pValue1.valueUint = 1;
+    
+    PolicyValue pValue2;
+    pValue2.type = UINT32_MAX;
+    pValue2.index = 0;
+    pValue2.valueUint = 1;
+    EXPECT_NE(pValue, pValue1);
+    EXPECT_EQ(pValue, pValue2);
+    
+    std::vector pValues = { pValue, pValue1, pValue2 };
+    std::vector pValues1 = { pValue, pValue1, pValue1 };
+    std::vector pValues2 = { pValue, pValue1, pValue2 };;
+    EXPECT_NE(pValues, pValues1);
+    EXPECT_EQ(pValues, pValues2);
 }
 } // namespace OHOS::Test

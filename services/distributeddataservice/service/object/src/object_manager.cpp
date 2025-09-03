@@ -26,6 +26,9 @@
 #include "common/string_utils.h"
 #include "datetime_ex.h"
 #include "distributed_file_daemon_manager.h"
+#include "device_matrix.h"
+#include "ipc_skeleton.h"
+#include "metadata/capability_meta_data.h"
 #include "kvstore_utils.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
@@ -44,9 +47,12 @@ using Account = OHOS::DistributedData::AccountDelegate;
 using AccessTokenKit = Security::AccessToken::AccessTokenKit;
 using ValueProxy = OHOS::DistributedData::ValueProxy;
 using DistributedFileDaemonManager = Storage::DistributedFile::DistributedFileDaemonManager;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+
 constexpr const char *SAVE_INFO = "p_###SAVEINFO###";
 constexpr int32_t PROGRESS_MAX = 100;
 constexpr int32_t PROGRESS_INVALID = -1;
+constexpr uint32_t LOCK_TIMEOUT = 3600; // second
 ObjectStoreManager::ObjectStoreManager()
 {
     ZLOGI("ObjectStoreManager construct");
@@ -55,13 +61,6 @@ ObjectStoreManager::ObjectStoreManager()
 
 ObjectStoreManager::~ObjectStoreManager()
 {
-    ZLOGI("ObjectStoreManager destroy");
-    if (objectAssetsRecvListener_ != nullptr) {
-        auto status = DistributedFileDaemonManager::GetInstance().UnRegisterAssetCallback(objectAssetsRecvListener_);
-        if (status != DistributedDB::DBStatus::OK) {
-            ZLOGE("UnRegister assetsRecvListener err %{public}d", status);
-        }
-    }
 }
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
@@ -71,9 +70,6 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
     option.createDirByStoreIdOnly = true;
     option.syncDualTupleMode = true;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
-    if (objectDataListener_ == nullptr) {
-        objectDataListener_ = new ObjectDataListener();
-    }
     ZLOGD("start GetKvStore");
     kvStoreDelegateManager_->GetKvStore(ObjectCommon::OBJECTSTORE_DB_STOREID, option,
         [&store, this](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
@@ -81,12 +77,16 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
                 ZLOGE("GetKvStore fail %{public}d", dbStatus);
                 return;
             }
+            if (kvStoreNbDelegate == nullptr) {
+                ZLOGE("GetKvStore kvStoreNbDelegate is nullptr");
+                return;
+            }
             ZLOGI("GetKvStore successsfully");
             store = kvStoreNbDelegate;
             std::vector<uint8_t> tmpKey;
             DistributedDB::DBStatus status = store->RegisterObserver(tmpKey,
                 DistributedDB::ObserverMode::OBSERVER_CHANGES_FOREIGN,
-                objectDataListener_);
+                &objectDataListener_);
             if (status != DistributedDB::DBStatus::OK) {
                 ZLOGE("RegisterObserver err %{public}d", status);
             }
@@ -106,6 +106,19 @@ bool ObjectStoreManager::RegisterAssetsLister()
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("Register assetsRecvListener err %{public}d", status);
         return false;
+    }
+    return true;
+}
+
+bool ObjectStoreManager::UnRegisterAssetsLister()
+{
+    ZLOGI("ObjectStoreManager UnRegisterAssetsLister");
+    if (objectAssetsRecvListener_ != nullptr) {
+        auto status = DistributedFileDaemonManager::GetInstance().UnRegisterAssetCallback(objectAssetsRecvListener_);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("UnRegister assetsRecvListener err %{public}d", status);
+            return false;
+        }
     }
     return true;
 }
@@ -134,6 +147,10 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
     const ObjectRecord &data, const std::string &deviceId, sptr<IRemoteObject> callback)
 {
     auto proxy = iface_cast<ObjectSaveCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
+        return INVALID_ARGUMENT;
+    }
     if (deviceId.size() == 0) {
         ZLOGE("DeviceId empty, appId: %{public}s, sessionId: %{public}s", appId.c_str(),
             Anonymous::Change(sessionId).c_str());
@@ -166,7 +183,7 @@ int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &se
             ProcessSyncCallback(results, dstBundleName, sessionId, deviceId);
             proxy->Completed(results);
         };
-    result = SyncOnStore(GetPropertyPrefix(dstBundleName, sessionId, deviceId), {deviceId}, syncCallback);
+    result = SyncOnStore(GetPropertyPrefix(dstBundleName, sessionId, deviceId), { deviceId }, syncCallback);
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Sync data failed, result: %{public}d", result);
         ObjectStore::RadarReporter::ReportStateError(std::string(__FUNCTION__), ObjectStore::SAVE,
@@ -186,7 +203,11 @@ int32_t ObjectStoreManager::PushAssets(const std::string &srcBundleName, const s
     if (assets.empty() || data.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == data.end()) {
         return OBJECT_SUCCESS;
     }
-    sptr<AssetObj> assetObj = new AssetObj();
+    sptr<AssetObj> assetObj = new (std::nothrow) AssetObj();
+    if (assetObj == nullptr) {
+        ZLOGE("New AssetObj failed");
+        return OBJECT_INNER_ERROR;
+    }
     assetObj->dstBundleName_ = dstBundleName;
     assetObj->srcBundleName_ = srcBundleName;
     assetObj->dstNetworkId_ = deviceId;
@@ -198,7 +219,7 @@ int32_t ObjectStoreManager::PushAssets(const std::string &srcBundleName, const s
         objectAssetsSendListener_ = new ObjectAssetsSendListener();
     }
     int userId = std::atoi(GetCurrentUser().c_str());
-    auto status =  ObjectAssetLoader::GetInstance()->PushAsset(userId, assetObj, objectAssetsSendListener_);
+    auto status = ObjectAssetLoader::GetInstance().PushAsset(userId, assetObj, objectAssetsSendListener_);
     return status;
 }
 
@@ -206,6 +227,11 @@ int32_t ObjectStoreManager::RevokeSave(
     const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
     auto proxy = iface_cast<ObjectRevokeSaveCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s, appId: %{public}s, sessionId: %{public}s.",
+            (callback == nullptr) ? "nullptr" : "not null", appId.c_str(), Anonymous::Change(sessionId).c_str());
+        return INVALID_ARGUMENT;
+    }
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open failed, errCode = %{public}d", result);
@@ -245,6 +271,10 @@ int32_t ObjectStoreManager::Retrieve(
     const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId)
 {
     auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
+        return INVALID_ARGUMENT;
+    }
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open object kvstore failed, result: %{public}d", result);
@@ -254,7 +284,7 @@ int32_t ObjectStoreManager::Retrieve(
     ObjectRecord results{};
     int32_t status = RetrieveFromStore(bundleName, sessionId, results);
     if (status != OBJECT_SUCCESS) {
-        ZLOGI("Retrieve from store failed, status: %{public}d, close after one minute.", status);
+        ZLOGE("Retrieve from store failed, status: %{public}d, close after one minute.", status);
         CloseAfterMinute();
         proxy->Completed(ObjectRecord(), false);
         return status;
@@ -264,8 +294,7 @@ int32_t ObjectStoreManager::Retrieve(
     if (assets.empty() || results.find(ObjectStore::FIELDS_PREFIX + ObjectStore::DEVICEID_KEY) == results.end()) {
         allReady = true;
     } else {
-        auto objectKey = bundleName + sessionId;
-        restoreStatus_.ComputeIfPresent(objectKey, [&allReady](const auto &key, auto &value) {
+        restoreStatus_.ComputeIfPresent(bundleName + sessionId, [&allReady](const auto &key, auto &value) {
             if (value == RestoreStatus::ALL_READY) {
                 allReady = true;
                 return false;
@@ -277,13 +306,12 @@ int32_t ObjectStoreManager::Retrieve(
         });
     }
     status = RevokeSaveToStore(GetPrefixWithoutDeviceId(bundleName, sessionId));
+    Close();
     if (status != OBJECT_SUCCESS) {
         ZLOGE("Revoke save failed, status: %{public}d", status);
-        Close();
         proxy->Completed(ObjectRecord(), false);
         return status;
     }
-    Close();
     proxy->Completed(results, allReady);
     if (allReady) {
         ObjectStore::RadarReporter::ReportStateFinished(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
@@ -322,7 +350,7 @@ int32_t ObjectStoreManager::Clear()
     result = RevokeSaveToStore("");
     callbacks_.Clear();
     processCallbacks_.Clear();
-    Close();
+    ForceClose();
     return result;
 }
 
@@ -380,6 +408,13 @@ void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, c
     }
     ZLOGD("ObjectStoreManager::RegisterRemoteCallback start");
     auto proxy = iface_cast<ObjectChangeCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s, bundleName: %{public}s, sessionId: %{public}s, pid: "
+              "%{public}d, tokenId: %{public}u.",
+            (callback == nullptr) ? "nullptr" : "not null", bundleName.c_str(), Anonymous::Change(sessionId).c_str(),
+            pid, tokenId);
+        return;
+    }
     std::string prefix = bundleName + sessionId;
     callbacks_.Compute(tokenId, ([pid, &proxy, &prefix](const uint32_t key, CallbackInfo &value) {
         if (value.pid != pid) {
@@ -426,6 +461,13 @@ void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bun
         return;
     }
     auto proxy = iface_cast<ObjectProgressCallbackProxy>(callback);
+    if (proxy == nullptr) {
+        ZLOGE("proxy is nullptr, callback is %{public}s, bundleName: %{public}s, sessionId: %{public}s, pid: "
+              "%{public}d, tokenId: %{public}u.",
+            (callback == nullptr) ? "nullptr" : "not null", bundleName.c_str(), Anonymous::Change(sessionId).c_str(),
+            pid, tokenId);
+        return;
+    }
     std::string objectKey = bundleName + sessionId;
     sptr<ObjectProgressCallbackProxy> observer;
     processCallbacks_.Compute(
@@ -574,6 +616,34 @@ void ObjectStoreManager::ComputeStatus(const std::string& objectKey, const SaveI
     });
 }
 
+bool ObjectStoreManager::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
+{
+    bool isAfterMeta = false;
+    for (const auto &uuid : uuids) {
+        auto metaData = meta;
+        metaData.deviceId = uuid;
+        CapMetaData capMeta;
+        auto capKey = CapMetaRow::GetKeyFor(uuid);
+        bool flag = !MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) ||
+            !MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
+        if (flag) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [exist, mask] = DeviceMatrix::GetInstance().GetRemoteMask(uuid);
+        if ((mask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+        auto [existLocal, localMask] = DeviceMatrix::GetInstance().GetMask(uuid);
+        if ((localMask & DeviceMatrix::META_STORE_MASK) == DeviceMatrix::META_STORE_MASK) {
+            isAfterMeta = true;
+            break;
+        }
+    }
+    return isAfterMeta;
+}
+
 void ObjectStoreManager::NotifyDataChanged(const std::map<std::string, ObjectRecord>& data, const SaveInfo& saveInfo)
 {
     for (auto const& [objectKey, results] : data) {
@@ -588,6 +658,10 @@ void ObjectStoreManager::NotifyDataChanged(const std::map<std::string, ObjectRec
 int32_t ObjectStoreManager::WaitAssets(const std::string& objectKey, const SaveInfo& saveInfo,
     const std::map<std::string, ObjectRecord>& data)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is null");
+        return OBJECT_INNER_ERROR;
+    }
     auto taskId = executors_->Schedule(std::chrono::seconds(WAIT_TIME), [this, objectKey, data, saveInfo]() {
         ZLOGE("wait assets finisehd timeout, try pull assets, objectKey:%{public}s", objectKey.c_str());
         PullAssets(data, saveInfo);
@@ -610,7 +684,7 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, ObjectRecord>& d
     for (const auto& [objectId, assets] : changedAssets) {
         std::string networkId = DmAdaper::GetInstance().ToNetworkID(saveInfo.sourceDeviceId);
         auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
-        ObjectAssetLoader::GetInstance()->TransferAssetsAsync(std::atoi(GetCurrentUser().c_str()),
+        ObjectAssetLoader::GetInstance().TransferAssetsAsync(std::atoi(GetCurrentUser().c_str()),
             saveInfo.bundleName, networkId, assets, [this, block](bool success) {
                 block->SetValue({ false, success });
         });
@@ -657,6 +731,10 @@ void ObjectStoreManager::NotifyAssetsRecvProgress(const std::string &objectKey, 
 void ObjectStoreManager::NotifyAssetsReady(
     const std::string &objectKey, const std::string &bundleName, const std::string &srcNetworkId)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return;
+    }
     restoreStatus_.ComputeIfAbsent(
         objectKey, [](const std::string& key) -> auto {
         return RestoreStatus::NONE;
@@ -722,7 +800,9 @@ Assets ObjectStoreManager::GetAssetsFromDBRecords(const ObjectRecord& result)
         std::string assetPrefix = key.substr(0, key.find(ObjectStore::ASSET_DOT));
         if (!IsAssetKey(key) || assetKey.find(assetPrefix) != assetKey.end() ||
             result.find(assetPrefix + ObjectStore::NAME_SUFFIX) == result.end() ||
-            result.find(assetPrefix + ObjectStore::URI_SUFFIX) == result.end()) {
+            result.find(assetPrefix + ObjectStore::URI_SUFFIX) == result.end() ||
+            result.find(assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX) == result.end() ||
+            result.find(assetPrefix + ObjectStore::SIZE_SUFFIX) == result.end()) {
             continue;
         }
         Asset asset;
@@ -778,6 +858,10 @@ void ObjectStoreManager::DoNotify(uint32_t tokenId, const CallbackInfo& value,
 void ObjectStoreManager::DoNotifyAssetsReady(uint32_t tokenId, const CallbackInfo& value,
     const std::string& objectKey, bool allReady)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return;
+    }
     for (const auto& observer : value.observers_) {
         if (objectKey != observer.first) {
             continue;
@@ -798,6 +882,10 @@ void ObjectStoreManager::DoNotifyAssetsReady(uint32_t tokenId, const CallbackInf
 
 void ObjectStoreManager::DoNotifyWaitAssetTimeout(const std::string &objectKey)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return;
+    }
     ObjectStore::RadarReporter::ReportStageError(std::string(__FUNCTION__), ObjectStore::DATA_RESTORE,
         ObjectStore::ASSETS_RECV, ObjectStore::RADAR_FAILED, ObjectStore::TIMEOUT);
     callbacks_.ForEach([this, &objectKey](uint32_t tokenId, const CallbackInfo &value) {
@@ -839,7 +927,7 @@ int32_t ObjectStoreManager::Open()
         ZLOGE("Kvstore delegate manager not init");
         return OBJECT_INNER_ERROR;
     }
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         delegate_ = OpenObjectKvStore();
         if (delegate_ == nullptr) {
@@ -850,25 +938,44 @@ int32_t ObjectStoreManager::Open()
         ZLOGI("Open object kvstore success");
     } else {
         syncCount_++;
-        ZLOGI("Object kvstore syncCount: %{public}d", syncCount_);
+        ZLOGI("Object kvstore syncCount: %{public}d", syncCount_.load());
     }
     return OBJECT_SUCCESS;
 }
 
-void ObjectStoreManager::Close()
+void ObjectStoreManager::ForceClose()
 {
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_, std::chrono::seconds(LOCK_TIMEOUT));
     if (delegate_ == nullptr) {
         return;
     }
-    int32_t taskCount = delegate_->GetTaskCount();
+    auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("CloseKvStore fail %{public}d", status);
+        return;
+    }
+    delegate_ = nullptr;
+    isSyncing_ = false;
+    syncCount_ = 0;
+}
+
+void ObjectStoreManager::Close()
+{
+    int32_t taskCount = 0;
+    {
+        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            return;
+        }
+        taskCount = delegate_->GetTaskCount();
+    }
     if (taskCount > 0 && syncCount_ == 1) {
         CloseAfterMinute();
         ZLOGW("Store is busy, close after a minute, task count: %{public}d", taskCount);
         return;
     }
     syncCount_--;
-    ZLOGI("closed a store, syncCount = %{public}d", syncCount_);
+    ZLOGI("closed a store, syncCount = %{public}d", syncCount_.load());
     FlushClosedStore();
 }
 
@@ -878,7 +985,6 @@ void ObjectStoreManager::SyncCompleted(
     std::string userId;
     SequenceSyncManager::Result result = SequenceSyncManager::GetInstance()->Process(sequenceId, results, userId);
     if (result == SequenceSyncManager::SUCCESS_USER_HAS_FINISHED && userId == userId_) {
-        std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
         SetSyncStatus(false);
         FlushClosedStore();
     }
@@ -894,10 +1000,14 @@ void ObjectStoreManager::SyncCompleted(
         }
     }
 }
-        
+
 void ObjectStoreManager::FlushClosedStore()
 {
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr");
+        return;
+    }
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (!isSyncing_ && syncCount_ == 0 && delegate_ != nullptr) {
         ZLOGD("close store");
         auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
@@ -910,24 +1020,23 @@ void ObjectStoreManager::FlushClosedStore()
             return;
         }
         delegate_ = nullptr;
-        if (objectDataListener_ != nullptr) {
-            delete objectDataListener_;
-            objectDataListener_ = nullptr;
-        }
     }
 }
 
 void ObjectStoreManager::ProcessOldEntry(const std::string &appId)
 {
     std::vector<DistributedDB::Entry> entries;
-    auto status = delegate_->GetEntries(std::vector<uint8_t>(appId.begin(), appId.end()), entries);
-    if (status == DistributedDB::DBStatus::NOT_FOUND) {
-        ZLOGI("Get old entries empty, bundleName: %{public}s", appId.c_str());
-        return;
-    }
-    if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("Get old entries failed, bundleName: %{public}s, status %{public}d", appId.c_str(), status);
-        return;
+    {
+        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            ZLOGE("delegate is nullptr.");
+            return;
+        }
+        auto status = delegate_->GetEntries(std::vector<uint8_t>(appId.begin(), appId.end()), entries);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("Get old entries failed, bundleName: %{public}s, status %{public}d", appId.c_str(), status);
+            return;
+        }
     }
     std::map<std::string, int64_t> sessionIds;
     int64_t oldestTime = 0;
@@ -982,12 +1091,19 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
         entry.value = item.second;
         entries.emplace_back(entry);
     }
-    auto status = delegate_->PutBatch(entries);
-    if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("PutBatch failed, bundleName: %{public}s, sessionId: %{public}s, dstNetworkId: %{public}s, "
-              "status: %{public}d",
-            appId.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(toDeviceId).c_str(), status);
-        return status;
+    {
+        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        if (delegate_ == nullptr) {
+            ZLOGE("delegate is nullptr.");
+            return E_DB_ERROR;
+        }
+        auto status = delegate_->PutBatch(entries);
+        if (status != DistributedDB::DBStatus::OK) {
+            ZLOGE("PutBatch failed, bundleName: %{public}s, sessionId: %{public}s, dstNetworkId: %{public}s, "
+                  "status: %{public}d",
+                appId.c_str(), Anonymous::Change(sessionId).c_str(), Anonymous::Change(toDeviceId).c_str(), status);
+            return status;
+        }
     }
     ZLOGI("PutBatch success, bundleName: %{public}s, sessionId: %{public}s, dstNetworkId: %{public}s, "
           "count: %{public}zu",
@@ -1013,10 +1129,35 @@ int32_t ObjectStoreManager::SyncOnStore(
         return OBJECT_SUCCESS;
     }
     uint64_t sequenceId = SequenceSyncManager::GetInstance()->AddNotifier(userId_, callback);
+
+    int32_t id = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingFullTokenID());
+    StoreMetaData meta = StoreMetaData(std::to_string(id), Bootstrap::GetInstance().GetProcessLabel(),
+        DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID);
+    auto uuids = DmAdapter::GetInstance().ToUUID(syncDevices);
+    bool isNeedMetaSync = IsNeedMetaSync(meta, uuids);
+    if (!isNeedMetaSync) {
+        return DoSync(prefix, syncDevices, sequenceId);
+    }
+    bool result = MetaDataManager::GetInstance().Sync(uuids, [this, prefix, syncDevices, sequenceId](auto &results) {
+        auto status = DoSync(prefix, syncDevices, sequenceId);
+        ZLOGI("Store sync after meta sync end, status:%{public}d", status);
+    });
+    ZLOGI("prefix:%{public}s, meta sync end, result:%{public}d", Anonymous::Change(prefix).c_str(), result);
+    return result ? OBJECT_SUCCESS : DoSync(prefix, syncDevices, sequenceId);
+}
+
+int32_t ObjectStoreManager::DoSync(const std::string &prefix, const std::vector<std::string> &deviceList,
+    uint64_t sequenceId)
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("db store was closed.");
+        return E_DB_ERROR;
+    }
     DistributedDB::Query dbQuery = DistributedDB::Query::Select();
     dbQuery.PrefixKey(std::vector<uint8_t>(prefix.begin(), prefix.end()));
     ZLOGI("Start sync data, sequenceId: 0x%{public}" PRIx64 "", sequenceId);
-    auto status = delegate_->Sync(syncDevices, DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY,
+    auto status = delegate_->Sync(deviceList, DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY,
         [this, sequenceId](const std::map<std::string, DistributedDB::DBStatus> &devicesMap) {
             ZLOGI("Sync data finished, sequenceId: 0x%{public}" PRIx64 "", sequenceId);
             std::map<std::string, DistributedDB::DBStatus> result;
@@ -1038,7 +1179,6 @@ int32_t ObjectStoreManager::SyncOnStore(
 
 int32_t ObjectStoreManager::SetSyncStatus(bool status)
 {
-    std::lock_guard<std::recursive_mutex> lock(kvStoreMutex_);
     isSyncing_ = status;
     return OBJECT_SUCCESS;
 }
@@ -1046,6 +1186,11 @@ int32_t ObjectStoreManager::SetSyncStatus(bool status)
 int32_t ObjectStoreManager::RevokeSaveToStore(const std::string &prefix)
 {
     std::vector<DistributedDB::Entry> entries;
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("db store was closed.");
+        return E_DB_ERROR;
+    }
     auto status = delegate_->GetEntries(std::vector<uint8_t>(prefix.begin(), prefix.end()), entries);
     if (status == DistributedDB::DBStatus::NOT_FOUND) {
         ZLOGI("Get entries empty, prefix: %{public}s", Anonymous::Change(prefix).c_str());
@@ -1078,6 +1223,11 @@ int32_t ObjectStoreManager::RetrieveFromStore(const std::string &appId, const st
 {
     std::vector<DistributedDB::Entry> entries;
     std::string prefix = GetPrefixWithoutDeviceId(appId, sessionId);
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("db store was closed.");
+        return E_DB_ERROR;
+    }
     auto status = delegate_->GetEntries(std::vector<uint8_t>(prefix.begin(), prefix.end()), entries);
     if (status == DistributedDB::DBStatus::NOT_FOUND) {
         ZLOGI("Get entries empty, prefix: %{public}s, status: %{public}d", Anonymous::Change(prefix).c_str(), status);
@@ -1186,8 +1336,9 @@ std::vector<std::string> ObjectStoreManager::SplitEntryKey(const std::string &ke
 std::string ObjectStoreManager::GetCurrentUser()
 {
     std::vector<int> users;
-    if (!AccountDelegate::GetInstance()->QueryUsers(users)) {
-        ZLOGE("QueryUsers failed.");
+    auto ret = AccountDelegate::GetInstance()->QueryUsers(users);
+    if (!ret || users.empty()) {
+        ZLOGE("failed to query os accounts, ret:%{public}d", ret);
         return "";
     }
     return std::to_string(users[0]);
@@ -1212,6 +1363,10 @@ void ObjectStoreManager::SaveUserToMeta()
 
 void ObjectStoreManager::CloseAfterMinute()
 {
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is nullptr.");
+        return;
+    }
     executors_->Schedule(std::chrono::minutes(INTERVAL), [this]() {
         Close();
     });
@@ -1300,6 +1455,10 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
         return true;
     });
 
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        ZLOGE("TokenType is not TOKEN_HAP, token:0x%{public}x, bundleName:%{public}s", tokenId, appId.c_str());
+        return GeneralError::E_ERROR;
+    }
     HapTokenInfo tokenInfo;
     auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (status != RET_SUCCESS) {
@@ -1351,7 +1510,7 @@ int32_t ObjectStoreManager::OnAssetChanged(const uint32_t tokenId, const std::st
     }
 
     auto block = std::make_shared<BlockData<std::tuple<bool, bool>>>(WAIT_TIME, std::tuple{ true, true });
-    ObjectAssetLoader::GetInstance()->TransferAssetsAsync(userId, appId, deviceId, { dataAsset }, [block](bool ret) {
+    ObjectAssetLoader::GetInstance().TransferAssetsAsync(userId, appId, deviceId, { dataAsset }, [block](bool ret) {
         block->SetValue({ false, ret });
     });
     auto [timeout, success] = block->GetValue();

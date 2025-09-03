@@ -264,9 +264,9 @@ void DumpHelper::DumpHelpInfo(int fd, std::map<std::string, std::vector<std::str
         return false;
     });
     dprintf(fd,
-        "Usage: hidumper -s 1301 -a <option(s)>\nwhere possible options include:\n%s\nWhen -u/-u <UserId>, -b/-b "
-        "<BundleName> or -s/-s <StoreID> is simultaneously selected,\nwe display the lowest level statistics where -u "
-        "> -b > -s\nand the statistics is filterd by the upper level options\n",
+        "Usage: hidumper -s 1301 -a <option(s)>\nwhere possible options include:\n%s\nWhen -b/-b "
+        "<BundleName> or -s/-s <StoreID> is simultaneously selected,\nwe display the lowest level statistics where "
+        "-b > -s\nand the statistics is filterd by the upper level options\n",
         info.c_str());
 }
 

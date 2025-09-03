@@ -18,6 +18,7 @@ config("object_public_config") {
 
   include_dirs = [
     "${data_service_path}/service/common",
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/utils",
   ]
@@ -76,6 +77,7 @@ ohos_source_set("distributeddata_object") {
     "dfs_service:distributed_file_daemon_kit_inner",
     "dmsfwk:distributed_sdk",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "hisysevent:libhisysevent",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",

@@ -24,7 +24,7 @@
 #include "log_print.h"
 #include "scheduler_manager.h"
 #include "template_data.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -116,7 +116,8 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
 {
     int result = E_OK;
     rdbCache_.Compute(key, [&observer, &context, executorPool, this](const auto &key, auto &value) {
-        ZLOGI("add subscriber, uri %{private}s tokenId 0x%{public}x", key.uri.c_str(), context->callerTokenId);
+        ZLOGI("add subscriber, uri %{public}s tokenId 0x%{public}x",
+            URIUtils::Anonymous(key.uri).c_str(), context->callerTokenId);
         auto callerTokenId = IPCSkeleton::GetCallingTokenID();
         auto callerPid = IPCSkeleton::GetCallingPid();
         value.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);
@@ -126,7 +127,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
                 ZLOGE("loadDataInfo failed, uri %{public}s tokenId 0x%{public}x",
-                    DistributedData::Anonymous::Change(key.uri).c_str(), context->callerTokenId);
+                    URIUtils::Anonymous(key.uri).c_str(), context->callerTokenId);
                 return;
             }
             DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
@@ -147,7 +148,7 @@ int RdbSubscriberManager::Delete(const Key &key, uint32_t firstCallerTokenId)
         rdbCache_.ComputeIfPresent(key, [&firstCallerTokenId, this](const auto &key,
             std::vector<ObserverNode> &value) {
             ZLOGI("delete subscriber, uri %{public}s tokenId 0x%{public}x",
-                DistributedData::Anonymous::Change(key.uri).c_str(), firstCallerTokenId);
+                URIUtils::Anonymous(key.uri).c_str(), firstCallerTokenId);
             for (auto it = value.begin(); it != value.end();) {
                 if (it->firstCallerTokenId == firstCallerTokenId) {
                     ZLOGI("erase start");
@@ -177,7 +178,7 @@ void RdbSubscriberManager::Delete(uint32_t callerTokenId, uint32_t callerPid)
         if (value.empty()) {
             ZLOGI("delete timer, subId %{public}" PRId64 ", bundleName %{public}s, tokenId %{public}x, uri %{public}s.",
                 key.subscriberId, key.bundleName.c_str(), callerTokenId,
-                DistributedData::Anonymous::Change(key.uri).c_str());
+                URIUtils::Anonymous(key.uri).c_str());
             SchedulerManager::GetInstance().Stop(key);
         }
         return value.empty();
@@ -346,14 +347,14 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
     Template tpl;
     if (!TemplateManager::GetInstance().Get(key, userId, tpl)) {
         ZLOGE("template undefined, %{public}s, %{public}" PRId64 ", %{public}s",
-            DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         return E_TEMPLATE_NOT_EXIST;
     }
     DistributedData::StoreMetaData meta = metaData;
     meta.user = std::to_string(userId);
     auto delegate = DBDelegate::Create(meta, key.uri);
     if (delegate == nullptr) {
-        ZLOGE("Create fail %{public}s %{public}s", DistributedData::Anonymous::Change(key.uri).c_str(),
+        ZLOGE("Create fail %{public}s %{public}s", URIUtils::Anonymous(key.uri).c_str(),
             key.bundleName.c_str());
         return E_ERROR;
     }
@@ -372,17 +373,17 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
         auto [errCode, rowCount] = delegate->UpdateSql(tpl.update_);
         if (errCode != E_OK) {
             ZLOGE("Update failed, err:%{public}d, %{public}s, %{public}" PRId64 ", %{public}s",
-            errCode, DistributedData::Anonymous::Change(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
+            errCode, URIUtils::Anonymous(key.uri).c_str(), key.subscriberId, key.bundleName.c_str());
         }
     }
 
     ZLOGI("emit, valSize: %{public}zu, dataSize:%{public}zu, uri:%{public}s,",
-        val.size(), changeNode.data_.size(), DistributedData::Anonymous::Change(changeNode.uri_).c_str());
+        val.size(), changeNode.data_.size(), URIUtils::Anonymous(changeNode.uri_).c_str());
     for (const auto &callback : val) {
         // not notify across user
         if (callback.userId != userId && userId != 0 && callback.userId != 0) {
             ZLOGI("Not allow across notify, uri:%{public}s, from %{public}d to %{public}d.",
-                DistributedData::Anonymous::Change(changeNode.uri_).c_str(), userId, callback.userId);
+                URIUtils::Anonymous(changeNode.uri_).c_str(), userId, callback.userId);
             continue;
         }
         if (callback.enabled && callback.observer != nullptr) {

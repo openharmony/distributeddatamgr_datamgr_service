@@ -27,7 +27,7 @@
 #include "log_print.h"
 #include "strategies/general/load_config_common_strategy.h"
 #include "tokenid_kit.h"
-#include "uri_utils.h"
+#include "utils.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
@@ -243,7 +243,7 @@ std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProvider
     if (!Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)
         || (result == Security::AccessToken::RET_SUCCESS && !IsInExtList(tokenInfo.bundleName))) {
         ZLOGE("The URI in the extension, is not allowed for silent access.! ret: %{public}d, bundleName: %{public}s,"
-            "uri: %{public}s", ret, tokenInfo.bundleName.c_str(), providerInfo_.uri.c_str());
+            "uri: %{public}s", ret, tokenInfo.bundleName.c_str(), URIUtils::Anonymous(providerInfo_.uri).c_str());
     }
     ret = GetFromExtension();
     if (ret != E_OK) {
