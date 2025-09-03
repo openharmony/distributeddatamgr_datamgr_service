@@ -794,7 +794,7 @@ Status KVDBServiceImpl::AfterCreate(
     StoreMetaMapping oldMeta(metaData);
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetKey(), oldMeta, true);
     Status status = SUCCESS;
-    if (isCreated && oldMeta != metaData) {
+    if (isCreated && (oldMeta != metaData || oldMeta.schema != metaData.schema)) {
         auto dbStatus = Upgrade::GetInstance().UpdateStore(oldMeta, metaData, password);
         ZLOGI("update status:%{public}d appId:%{public}s storeId:%{public}s inst:%{public}d "
               "type:%{public}d->%{public}d dir:%{public}s dataType:%{public}d->%{public}d",
@@ -814,12 +814,12 @@ Status KVDBServiceImpl::AfterCreate(
         oldMeta = metaData;
         MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
     }
+
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = metaData.bundleName;
     appIdMeta.appId = metaData.appId;
-    MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
+    SaveAppIdMetaData(appIdMeta);
     SaveLocalMetaData(options, metaData);
-
     if (metaData.isEncrypt && !password.empty()) {
         SaveSecretKeyMeta(metaData, password);
     }
@@ -828,6 +828,16 @@ Status KVDBServiceImpl::AfterCreate(
         metaData.instanceId, metaData.storeType, Anonymous::Change(metaData.dataDir).c_str(), isCreated,
         metaData.dataType);
     return status;
+}
+
+void KVDBServiceImpl::SaveAppIdMetaData(const AppIDMetaData &appIdMeta)
+{
+    AppIDMetaData oldAppIdMeta;
+    if (MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), oldAppIdMeta, true) && appIdMeta == oldAppIdMeta) {
+        return;
+    }
+    bool isSaved = MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
+    ZLOGI("save app meta failed, bundleName: %{public}s isSaved: %{public}d", appIdMeta.bundleName.c_str(), isSaved);
 }
 
 int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId)
@@ -972,6 +982,12 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
             value.valueUint = *pval;
         }
         localMetaData.policies.emplace_back(value);
+    }
+    StoreMetaDataLocal oldLocalMetaData;
+    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyLocal(), oldLocalMetaData, true)
+        && oldLocalMetaData == localMetaData && oldLocalMetaData.schema == localMetaData.schema
+        && oldLocalMetaData.policies == localMetaData.policies) {
+        return;
     }
     MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMetaData, true);
 }
