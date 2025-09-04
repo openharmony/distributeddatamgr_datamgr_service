@@ -62,7 +62,6 @@ bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> co
         }
     }
     if (context->callerBundleName == context->calledBundleName) {
-        ZLOGI("access private data, caller and called is same, go");
         return true;
     }
     // cross permission can only cross uri like weather,can not cross like datashareproxy://weather
