@@ -284,7 +284,6 @@ HWTEST_F(CloudInfoTest, CloudInfoTest002, TestSize.Level0)
 
     CloudInfo cloudInfo2 = cloudInfo1;
     EXPECT_EQ(cloudInfo2, cloudInfo1);
-    EXPECT_NE(cloudInfo2, cloudInfo1);
 
     cloudInfo2.maxSize = 1;
     EXPECT_NE(cloudInfo2, cloudInfo1);
@@ -302,7 +301,6 @@ HWTEST_F(CloudInfoTest, CloudInfoTest002, TestSize.Level0)
     EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].cloudSwitch = true;
     EXPECT_NE(cloudInfo2, cloudInfo1);
-    EXPECT_EQ(cloudInfo2, cloudInfo1);
 }
 
 /**
@@ -341,7 +339,6 @@ HWTEST_F(CloudInfoTest, CloudInfoTest003, TestSize.Level0)
     EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].bundleName = "ohos.test.demo2";
     EXPECT_NE(cloudInfo2, cloudInfo1);
-    EXPECT_EQ(cloudInfo2, cloudInfo1);
 }
 
 /**
@@ -387,7 +384,6 @@ HWTEST_F(CloudInfoTest, AppInfoTest002, TestSize.Level0)
 
     CloudInfo::AppInfo cloudInfoAppInfo2 = cloudInfoAppInfo1;
     EXPECT_EQ(cloudInfoAppInfo2, cloudInfoAppInfo1);
-    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
 
     cloudInfoAppInfo2.cloudSwitch = true;
     EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
@@ -399,7 +395,6 @@ HWTEST_F(CloudInfoTest, AppInfoTest002, TestSize.Level0)
     EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
     cloudInfoAppInfo2.bundleName = "ohos.test.demo2";
     EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
-    EXPECT_EQ(cloudInfoAppInfo2, cloudInfoAppInfo1);
 }
 
 /**
@@ -456,7 +451,6 @@ HWTEST_F(CloudInfoTest, TableTest002, TestSize.Level0)
 
     Table table2 = table1;
     EXPECT_EQ(table2, table1);
-    EXPECT_NE(table2, table1);
 
     table2.sharedTableName = "share";
     EXPECT_NE(table2, table1);
@@ -470,7 +464,6 @@ HWTEST_F(CloudInfoTest, TableTest002, TestSize.Level0)
     EXPECT_NE(table2, table1);
     table2.name = "test2_name";
     EXPECT_NE(table2, table1);
-    EXPECT_EQ(table2, table1);
 }
 
 /**
@@ -506,7 +499,6 @@ HWTEST_F(CloudInfoTest, TableTest003, TestSize.Level0)
     EXPECT_NE(table2, table1);
     table2.fields[0].colName = "test1_colName";
     EXPECT_NE(table2, table1);
-    EXPECT_EQ(table2, table1);
 }
 
 /**
@@ -528,7 +520,6 @@ HWTEST_F(CloudInfoTest, FieldTest, TestSize.Level0)
 
     Field field2 = field1;
     EXPECT_EQ(field2, field1);
-    EXPECT_NE(field2, field1);
 
     field2.nullable = true;
     EXPECT_NE(field2, field1);
@@ -540,7 +531,6 @@ HWTEST_F(CloudInfoTest, FieldTest, TestSize.Level0)
     EXPECT_NE(field2, field1);
     field2.colName = "test2_colName";
     EXPECT_NE(field2, field1);
-    EXPECT_EQ(field2, field1);
 }
 
 /**
@@ -795,7 +785,6 @@ HWTEST_F(CloudInfoTest, SchemaMeta002, TestSize.Level0)
 
     SchemaMeta schemaMeta2 = schemaMeta1;
     EXPECT_EQ(schemaMeta2, schemaMeta1);
-    EXPECT_NE(schemaMeta2, schemaMeta1);
 
     schemaMeta2.e2eeEnable = true;
     EXPECT_NE(schemaMeta2, schemaMeta1);
@@ -807,7 +796,6 @@ HWTEST_F(CloudInfoTest, SchemaMeta002, TestSize.Level0)
     EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.metaVersion = 2;
     EXPECT_NE(schemaMeta2, schemaMeta1);
-    EXPECT_EQ(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -856,7 +844,6 @@ HWTEST_F(CloudInfoTest, SchemaMeta003, TestSize.Level0)
     EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].name = "test_cloud_store2";
     EXPECT_NE(schemaMeta2, schemaMeta1);
-    EXPECT_EQ(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -901,7 +888,6 @@ HWTEST_F(CloudInfoTest, SchemaMeta004, TestSize.Level0)
     EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].name = "test_cloud_table_name2";
     EXPECT_NE(schemaMeta2, schemaMeta1);
-    EXPECT_EQ(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -944,7 +930,6 @@ HWTEST_F(CloudInfoTest, SchemaMeta005, TestSize.Level0)
     EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].fields[0].colName = "test_cloud_field_name2";
     EXPECT_NE(schemaMeta2, schemaMeta1);
-    EXPECT_EQ(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -979,7 +964,6 @@ HWTEST_F(CloudInfoTest, CloudMarkTest, TestSize.Level0)
 
     CloudMark cloudmark2 = cloudmark1;
     EXPECT_EQ(cloudmark2, cloudmark1);
-    EXPECT_NE(cloudmark2, cloudmark1);
 
     cloudmark2.userId = 1;
     EXPECT_NE(cloudmark2, cloudmark1);
@@ -993,6 +977,5 @@ HWTEST_F(CloudInfoTest, CloudMarkTest, TestSize.Level0)
     EXPECT_NE(cloudmark2, cloudmark1);
     cloudmark2.bundleName = "test_cloud_bundleName2";
     EXPECT_NE(cloudmark2, cloudmark1);
-    EXPECT_EQ(cloudmark2, cloudmark1);
 }
 } // namespace OHOS::Test
