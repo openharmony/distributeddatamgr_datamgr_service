@@ -458,7 +458,6 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
 int32_t UdmfServiceImpl::VerifyUpdatePermission(const QueryOption &query, UnifiedData &data, std::string &bundleName)
 {
     if (data.IsEmpty()) {
-        ZLOGE("Invalid parameter, unified data has no record");
         return E_INVALID_PARAMETERS;
     }
     std::shared_ptr<Runtime> runtime = data.GetRuntime();
