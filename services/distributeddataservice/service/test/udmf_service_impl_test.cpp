@@ -12,23 +12,21 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
 #define LOG_TAG "UdmfServiceImplTest"
 #include "udmf_service_impl.h"
+
+#include <gtest/gtest.h>
+
 #include "accesstoken_kit.h"
-#include "account_delegate.h"
+#include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
-#include "gtest/gtest.h"
 #include "ipc_skeleton.h"
 #include "kvstore_meta_manager.h"
-#include "metadata/meta_data_manager.h"
 #include "nativetoken_kit.h"
 #include "preprocess_utils.h"
 #include "runtime_store.h"
-#include "text.h"
-#include "plain_text.h"
 #include "token_setproc.h"
 
 using namespace testing::ext;

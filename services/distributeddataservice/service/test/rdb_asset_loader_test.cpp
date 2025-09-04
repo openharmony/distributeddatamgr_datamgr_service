@@ -237,16 +237,17 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent001, TestSize.Level0)
 HWTEST_F(RdbAssetLoaderTest, PostEvent002, TestSize.Level0)
 {
     DistributedData::Asset asset = {
-        .name = "",
+        .status = DistributedData::Asset::STATUS_DELETE,
         .id = "",
-        .path = "",
+        .name = "",
         .uri = "",
-        .modifyTime = "",
         .createTime = "",
+        .modifyTime = "",
         .size = "",
         .hash = "",
-        .status = DistributedData::Asset::STATUS_DELETE,
+        .path = "",
     };
+
     DistributedData::Assets assets;
     assets.push_back(asset);
     BindAssets bindAssets = nullptr;
@@ -267,15 +268,15 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent002, TestSize.Level0)
 */
 HWTEST_F(RdbAssetLoaderTest, PostEvent003, TestSize.Level0) {
     DistributedData::Asset asset = {
-      .name = "",
-      .id = "",
-      .path = "",
-      .uri = "",
-      .modifyTime = "",
-      .createTime = "",
-      .size = "",
-      .hash = "",
-      .status = DistributedData::Asset::STATUS_NORMAL,
+        .status = DistributedData::Asset::STATUS_NORMAL,
+        .id = "",
+        .name = "",
+        .uri = "",
+        .createTime = "",
+        .modifyTime = "",
+        .size = "",
+        .hash = "",
+        .path = "",
     };
     DistributedData::Assets assets;
     assets.push_back(asset);
@@ -298,15 +299,15 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent003, TestSize.Level0) {
 */
 HWTEST_F(RdbAssetLoaderTest, PostEvent004, TestSize.Level0) {
     DistributedData::Asset asset = {
-        .name = "",
+        .status = DistributedData::Asset::STATUS_NORMAL,
         .id = "",
-        .path = "",
+        .name = "",
         .uri = "PostEvent004",
-        .modifyTime = "",
         .createTime = "",
+        .modifyTime = "",
         .size = "",
         .hash = "",
-        .status = DistributedData::Asset::STATUS_NORMAL,
+        .path = "",
     };
     DistributedData::Assets assets;
     assets.push_back(asset);
@@ -338,15 +339,15 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent005, TestSize.Level0) {
         bool hasDownload = false;
     };
     DistributedData::Asset asset = {
-        .name = "",
+        .status = DistributedData::Asset::STATUS_NORMAL,
         .id = "",
-        .path = "",
+        .name = "",
         .uri = "PostEvent005",
-        .modifyTime = "",
         .createTime = "",
+        .modifyTime = "",
         .size = "",
         .hash = "",
-        .status = DistributedData::Asset::STATUS_NORMAL,
+        .path = "",
     };
     DistributedData::Assets assets;
     assets.push_back(asset);
@@ -371,15 +372,15 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent005, TestSize.Level0) {
 */
 HWTEST_F(RdbAssetLoaderTest, PostEvent006, TestSize.Level0) {
     DistributedData::Asset asset = {
-        .name = "",
+        .status = DistributedData::Asset::STATUS_NORMAL,
         .id = "",
-        .path = "",
+        .name = "",
         .uri = "",
-        .modifyTime = "",
         .createTime = "",
+        .modifyTime = "",
         .size = "",
         .hash = "",
-        .status = DistributedData::Asset::STATUS_NORMAL,
+        .path = "",
     };
     DistributedData::Assets assets;
     assets.push_back(asset);
@@ -411,15 +412,15 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent007, TestSize.Level0) {
         bool hasDownloaded = false;
     };
     DistributedData::Asset asset = {
-        .name = "",
+        .status = DistributedData::Asset::STATUS_NORMAL,
         .id = "",
-        .path = "",
+        .name = "",
         .uri = "PostEvent007",
-        .modifyTime = "",
         .createTime = "",
+        .modifyTime = "",
         .size = "",
         .hash = "",
-        .status = DistributedData::Asset::STATUS_NORMAL,
+        .path = "",
     };
     DistributedData::Assets assets;
     assets.push_back(asset);
@@ -453,15 +454,15 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent008, TestSize.Level0) {
         bool hasDownloaded = false;
     };
     DistributedData::Asset asset = {
-        .name = "",
+        .status = DistributedData::Asset::STATUS_NORMAL,
         .id = "",
-        .path = "",
+        .name = "",
         .uri = "PostEvent008",
-        .modifyTime = "",
         .createTime = "",
+        .modifyTime = "",
         .size = "",
         .hash = "",
-        .status = DistributedData::Asset::STATUS_NORMAL,
+        .path = "",
     };
     DistributedData::Assets assets;
     assets.push_back(asset);
@@ -493,15 +494,15 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent009, TestSize.Level0) {
         bool hasDownloaded = false;
     };
     DistributedData::Asset asset = {
-        .name = "",
+        .status = DistributedData::Asset::STATUS_NORMAL,
         .id = "",
-        .path = "",
+        .name = "",
         .uri = "PostEvent009",
-        .modifyTime = "",
         .createTime = "",
+        .modifyTime = "",
         .size = "",
         .hash = "",
-        .status = DistributedData::Asset::STATUS_NORMAL,
+        .path = "",
     };
     DistributedData::Assets assets;
     assets.push_back(asset);
@@ -534,15 +535,15 @@ HWTEST_F(RdbAssetLoaderTest, PostEvent0010, TestSize.Level0) {
         bool hasDownloaded = false;
     };
     DistributedData::Asset asset = {
-        .name = "",
+        .status = DistributedData::Asset::STATUS_NORMAL,
         .id = "",
-        .path = "",
+        .name = "",
         .uri = "PostEvent0010",
-        .modifyTime = "",
         .createTime = "",
+        .modifyTime = "",
         .size = "",
         .hash = "",
-        .status = DistributedData::Asset::STATUS_NORMAL,
+        .path = "",
     };
     DistributedData::Assets assets;
     assets.push_back(asset);

@@ -25,28 +25,11 @@ std::vector<std::string> MockQuery::GetTables()
     return tables_;
 }
 
-const std::string GetStatement()
+const std::string MockQuery::GetStatement()
 {
     return "AS distributed_log";
 }
 
-void MockQuery::MakeRemoteQuery(const std::string &devices, const std::string &sql, Values &&args)
-{
-    isRemote_ = true;
-    devices_ = { devices };
-    sql_ = sql;
-    args_ = std::move(args);
-}
-
-void MockQuery::MakeQuery(const DistributedRdb::PredicatesMemo &predicates)
-{
-    if (!predicates.tables_.empty()) {
-        predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
-        predicates_->SetWhereClause("id = 1");
-    }
-    devices_ = predicates.devices_;
-    tables_ = predicates.tables_;
-}
 int32_t MockGeneralWatcher::OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values)
 {
     origin_ = origin;

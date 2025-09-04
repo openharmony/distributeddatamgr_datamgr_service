@@ -26,7 +26,6 @@
 #include "rdb_store.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
-#include "snapshot/snapshot.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
 namespace OHOS::DistributedRdb {

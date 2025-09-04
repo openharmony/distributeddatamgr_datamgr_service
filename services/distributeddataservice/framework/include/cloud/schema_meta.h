@@ -42,7 +42,6 @@ struct API_EXPORT Database final : public Serializable {
     std::string name = "";
     std::string alias;
     std::vector<Table> tables;
-    std::vector<std::string> GetTableNames() const;
     uint32_t autoSyncType = 0;
     std::string user = "";
     std::string deviceId = "";
@@ -51,6 +50,9 @@ struct API_EXPORT Database final : public Serializable {
     API_EXPORT std::string GetKey() const;
     API_EXPORT static std::string GetKey(const std::initializer_list<std::string> &fields);
     API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
+    std::vector<std::string> GetTableNames() const;
+    std::vector<std::string> GetSyncTables() const;
+    std::vector<std::string> GetCloudTables() const;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

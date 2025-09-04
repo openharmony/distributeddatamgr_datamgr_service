@@ -25,7 +25,7 @@
 #include "cloud/cloud_server.h"
 #include "device_manager_adapter.h"
 #include "distributed_kv_data_manager.h"
-#include "event_center.h"
+#include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
 #include "kvdb_query.h"
 #include "kvdb_service_impl.h"

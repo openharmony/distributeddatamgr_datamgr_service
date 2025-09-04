@@ -30,7 +30,7 @@
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
 #include "ipc_skeleton.h"
-#include "bundle_mgr_interface.h"
+#include "bundlemgr/bundle_mgr_interface.h"
 namespace OHOS {
 namespace UDMF {
 using namespace OHOS::DistributedDataDfx;

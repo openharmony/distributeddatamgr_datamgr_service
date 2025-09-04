@@ -141,11 +141,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::s
     return {GeneralError::E_OK, cursor_};
 }
 
-void GeneralStoreMock::MakeCursor(const std::map<std::string, Value> &entry)
-{
-    auto resultSet = std::make_shared<CursorMock::ResultSet>(1, entry);
-    cursor_ = std::make_shared<CursorMock>(resultSet);
-}
+void GeneralStoreMock::SetExecutor(std::shared_ptr<Executor> executor) {}
 
 std::pair<int32_t, uint32_t> GeneralStoreMock::LockCloudDB()
 {
@@ -157,6 +153,20 @@ int32_t GeneralStoreMock::UnLockCloudDB()
     return E_OK;
 }
 
-void GeneralStoreMock::SetExecutor(std::shared_ptr<Executor> executor) {}
+int32_t GeneralStoreMock::UpdateDBStatus()
+{
+    return dbStatus_;
+}
+
+void GeneralStoreMock::SetMockCursor(const std::map<std::string, Value> &entry)
+{
+    auto resultSet = std::make_shared<CursorMock::ResultSet>(1, entry);
+    cursor_ = std::make_shared<CursorMock>(resultSet);
+}
+
+void GeneralStoreMock::SetMockDBStatus(int32_t dbStatus)
+{
+    dbStatus_ = dbStatus;
+}
 } // namespace DistributedData
 } // namespace OHOS

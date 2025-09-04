@@ -53,6 +53,35 @@ std::vector<std::string> Database::GetTableNames() const
     return tableNames;
 }
 
+std::vector<std::string> Database::GetSyncTables() const
+{
+    std::vector<std::string> tableNames;
+    tableNames.reserve(tables.size());
+    for (auto &table : tables) {
+        if (table.deviceSyncFields.empty()) {
+            continue;
+        }
+        tableNames.push_back(table.name);
+    }
+    return tableNames;
+}
+
+std::vector<std::string> Database::GetCloudTables() const
+{
+    std::vector<std::string> tableNames;
+    tableNames.reserve(tables.size());
+    for (auto &table : tables) {
+        if (table.cloudSyncFields.empty()) {
+            continue;
+        }
+        tableNames.push_back(table.name);
+        if (!table.sharedTableName.empty()) {
+            tableNames.push_back(table.sharedTableName);
+        }
+    }
+    return tableNames;
+}
+
 std::string Database::GetKey() const
 {
     return GetKey({user, "default", bundleName, name});

@@ -22,8 +22,8 @@ namespace OHOS::DistributedData {
 class API_EXPORT SetSearchableEvent : public CloudEvent {
 public:
     struct EventInfo {
-        bool isSearchable;
-        bool isRebuild;
+        bool isSearchable = false;
+        bool isRebuild = false;
     };
 
     SetSearchableEvent(StoreInfo storeInfo, EventInfo evtInfo, int32_t evtId = SET_SEARCHABLE)

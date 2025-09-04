@@ -15,6 +15,7 @@
 #ifndef DATASHARESERVICE_COMMON_UTILS_H
 #define DATASHARESERVICE_COMMON_UTILS_H
 
+#include <chrono>
 #include <cinttypes>
 #include <string>
 

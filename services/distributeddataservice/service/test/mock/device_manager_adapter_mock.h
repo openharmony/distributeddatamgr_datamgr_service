@@ -37,9 +37,9 @@ public:
     virtual Status StopWatchDeviceChange(const AppDeviceChangeListener *, const PipeInfo &) = 0;
     virtual bool IsSameAccount(const AccessCaller &, const AccessCallee &) = 0;
     virtual bool IsSameAccount(const std::string &) = 0;
-    virtual std::string GetUuidByNetworkId(const std::string &);
-    virtual DeviceInfo GetDeviceInfo(const std::string &);
-    virtual std::string ToNetworkID(const std::string &);
+    virtual std::string GetUuidByNetworkId(const std::string &) = 0;
+    virtual DeviceInfo GetDeviceInfo(const std::string &) = 0;
+    virtual std::string ToNetworkID(const std::string &) = 0;
     virtual bool CheckAccessControl(const AccessCaller &, const AccessCallee &) = 0;
     virtual DeviceInfo GetLocalDevice() = 0;
     virtual std::string CalcClientUuid(const std::string &appId, const std::string &uuid) = 0;

@@ -375,27 +375,27 @@ HWTEST_F(ValueProxyServiceTest, AssetsOperator001, TestSize.Level0)
     ValueProxy::Assets proxy3;
     proxy1.assets_.push_back(ValueProxy::Asset(DistributedDB::Asset {
         .version = 1,
-        .status = DistributedData::Asset::Status::STATUS_INSERT,
         .name = "Asset1",
         .uri = "uri1",
         .size = "1",
         .hash = "hash1",
+        .status = DistributedData::Asset::Status::STATUS_INSERT,
     }));
     proxy2.assets_.push_back(ValueProxy::Asset(DistributedDB::Asset {
         .version = 2,
-        .status = DistributedData::Asset::Status::STATUS_NORMAL,
         .name = "Asset2",
         .uri = "uri2",
         .size = "2",
         .hash = "hash2",
+        .status = DistributedData::Asset::Status::STATUS_NORMAL,
     }));
     proxy2.assets_.push_back(ValueProxy::Asset(DistributedDB::Asset {
         .version = 3,
-        .status = DistributedData::Asset::Status::STATUS_NORMAL,
         .name = "Asset3",
         .uri = "uri3",
         .size = "3",
         .hash = "hash3",
+        .status = DistributedData::Asset::Status::STATUS_NORMAL,
     }));
     // operator "=" same asset case
     proxy3 = proxy1;
@@ -427,19 +427,19 @@ HWTEST_F(ValueProxyServiceTest, AssetOperator001, TestSize.Level0)
 {
     ValueProxy::Asset asset1 = DistributedDB::Asset {
         .version = 1,
-        .status = DistributedData::Asset::Status::STATUS_INSERT,
         .name = "Asset1",
         .uri = "uri1",
         .size = "1",
         .hash = "hash1",
+        .status = DistributedData::Asset::Status::STATUS_INSERT,
     };
     ValueProxy::Asset asset2 = DistributedDB::Asset {
         .version = 2,
-        .status = DistributedData::Asset::Status::STATUS_NORMAL,
         .name = "Asset2",
         .uri = "uri2",
         .size = "2",
         .hash = "hash2",
+        .status = DistributedData::Asset::Status::STATUS_NORMAL,
     };
     ValueProxy::Asset asset3 = asset1;
     DistributedData::Asset asset = asset3;

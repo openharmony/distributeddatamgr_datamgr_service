@@ -12,24 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "account/account_delegate.h"
-#include "rdb_service_impl.h"
-#include "ipc_skeleton.h"
-#include "gmock/gmock.h"
-#include "mock/access_token_mock.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
 #include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
+#include "directory/directory_manager.h"
+#include "ipc_skeleton.h"
 #include "metadata/meta_data_manager.h"
-#include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
+#include "mock/access_token_mock.h"
 #include "mock/db_store_mock.h"
+#include "rdb_service_impl.h"
 #include "rdb_types.h"
 #include "relational_store_manager.h"
-#include "gtest/gtest.h"
-#include "directory/directory_manager.h"
 using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
 using namespace DistributedDB;

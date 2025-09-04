@@ -48,7 +48,6 @@ RdbGeneralStore::Values g_RdbValues = { { "0000000" }, { true }, { int64_t(100) 
     { Bytes({ 1, 2, 3, 4 }) } };
 RdbGeneralStore::VBucket g_RdbVBucket = { { "#gid", { "0000000" } }, { "#flag", { true } },
     { "#value", { int64_t(100) } }, { "#float", { double(100) } } };
-bool MockRelationalStoreDelegate::gTestResult = false;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
@@ -58,7 +57,10 @@ static constexpr const char *BUNDLE_NAME = "test_rdb_general_store";
 static constexpr const char *STORE_NAME = "test_service_rdb";
 class RdbGeneralStoreTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
+    static void SetUpTestCase(void)
+    {
+        MockRelationalStoreDelegate::gTestResult = false;
+    };
     static void TearDownTestCase(void){};
     void SetUp()
     {
@@ -571,11 +573,7 @@ HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
     store = std::make_shared<RdbGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
 
-    MockQuery query;
-    const std::string devices = "device1";
-    const std::string sql;
-    Values args;
-    query.lastResult = true;
+    RdbQuery query;
     std::string table = "test_table";
     auto [err, cursor] = store->Query(table, query);
     EXPECT_EQ(err, GeneralError::E_ERROR);
@@ -588,13 +586,10 @@ HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
  */
 HWTEST_F(RdbGeneralStoreTest, Query004, TestSize.Level1)
 {
-    MockQuery query;
     const std::string devices = "device1";
     const std::string sql;
     Values args;
-    query.MakeRemoteQuery(devices, sql, std::move(args));
-    query.lastResult = true;
-
+    RdbQuery query(devices, sql, std::move(args));
     metaData_.storeId = "mock";
     store = std::make_shared<RdbGeneralStore>(metaData_);
 
@@ -721,12 +716,11 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing001, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, PreSharing002, TestSize.Level1)
 {
-    MockQuery query;
     DistributedRdb::PredicatesMemo predicates;
     predicates.devices_ = { "device1" };
     predicates.tables_ = { "tables1" };
-    query.lastResult = true;
-    query.MakeQuery(predicates);
+    predicates.AddOperation(EQUAL_TO, "id", "1");
+    RdbQuery query(predicates);
     auto [errCode, result] = store->PreSharing(query);
     EXPECT_EQ(errCode, GeneralError::E_ALREADY_CLOSED);
     EXPECT_EQ(result, nullptr);
@@ -742,12 +736,12 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing003, TestSize.Level1)
     metaData_.storeId = "mock";
     store = std::make_shared<RdbGeneralStore>(metaData_);
     ASSERT_NE(store, nullptr);
-    MockQuery query;
+
     DistributedRdb::PredicatesMemo predicates;
     predicates.devices_ = { "device1" };
     predicates.tables_ = { "tables1" };
-    query.lastResult = true;
-    query.MakeQuery(predicates);
+    predicates.AddOperation(EQUAL_TO, "id", "1");
+    RdbQuery query(predicates);
     auto [errCode, result] = store->PreSharing(query);
     EXPECT_EQ(errCode, GeneralError::E_CLOUD_DISABLED);
     ASSERT_EQ(result, nullptr);

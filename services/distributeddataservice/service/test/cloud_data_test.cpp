@@ -20,15 +20,13 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
-#include "cloud/cloud_mark.h"
 #include "cloud/change_event.h"
-#include "cloud/cloud_event.h"
 #include "cloud/cloud_last_sync_info.h"
+#include "cloud/cloud_mark.h"
 #include "cloud/cloud_report.h"
 #include "cloud/cloud_server.h"
 #include "cloud/cloud_share_event.h"
 #include "cloud/make_query_event.h"
-#include "cloud/schema_meta.h"
 #include "cloud_data_translate.h"
 #include "cloud_service_impl.h"
 #include "cloud_types.h"
@@ -37,23 +35,18 @@
 #include "communicator/device_manager_adapter.h"
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
-#include "feature/feature_system.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "metadata/store_meta_data.h"
-#include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_store_mock.h"
 #include "network/network_delegate.h"
 #include "network_delegate_mock.h"
+#include "rdb_general_store.h"
 #include "rdb_query.h"
 #include "rdb_service.h"
 #include "rdb_service_impl.h"
 #include "rdb_types.h"
-#include "store/auto_cache.h"
-#include "store/general_value.h"
-#include "store/store_info.h"
 #include "sync_manager.h"
 #include "token_setproc.h"
 
@@ -62,7 +55,6 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Querykey = OHOS::CloudData::QueryKey;
-using QueryLastResults = OHOS::CloudData::QueryLastResults;
 using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
 using SharingCfm = OHOS::CloudData::SharingUtil::SharingCfm;
 using Confirmation = OHOS::CloudData::Confirmation;
@@ -70,6 +62,7 @@ using CenterCode = OHOS::DistributedData::SharingCenter::SharingCode;
 using Status = OHOS::CloudData::CloudService::Status;
 using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
 using GenErr = OHOS::DistributedData::GeneralError;
+using RdbGeneralStore = OHOS::DistributedRdb::RdbGeneralStore;
 uint64_t g_selfTokenID = 0;
 
 void AllocHapToken(const HapPolicyParams &policy)
@@ -140,6 +133,16 @@ public:
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
 
 protected:
+    class CloudServerMock : public CloudServer {
+    public:
+        std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo) override;
+        std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundle) override;
+        virtual ~CloudServerMock() = default;
+        static constexpr uint64_t REMAINSPACE = 1000;
+        static constexpr uint64_t TATALSPACE = 2000;
+        static constexpr int32_t INVALID_USER_ID = -1;
+    };
+
     static void InitMetaData();
     static void InitSchemaMeta();
     static void InitCloudInfo();
@@ -148,19 +151,10 @@ protected:
     static CloudInfo cloudInfo_;
     static DistributedData::CheckerMock checker_;
     static NetworkDelegateMock delegate_;
+    static int32_t dbStatus_;
 };
 
-class CloudServerMock : public CloudServer {
-public:
-    std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo) override;
-    std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundleName) override;
-    virtual ~CloudServerMock() = default;
-    static constexpr uint64_t REMAINSPACE = 1000;
-    static constexpr uint64_t TATALSPACE = 2000;
-    static constexpr int32_t INVALID_USER_ID = -1;
-};
-
-std::pair<int32_t, CloudInfo> CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
+std::pair<int32_t, CloudInfo> CloudDataTest::CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
@@ -179,13 +173,13 @@ std::pair<int32_t, CloudInfo> CloudServerMock::GetServerInfo(int32_t userId, boo
     return { E_OK, cloudInfo };
 }
 
-std::pair<int32_t, SchemaMeta> CloudServerMock::GetAppSchema(int32_t userId, const std::string &bundleName)
+std::pair<int32_t, SchemaMeta> CloudDataTest::CloudServerMock::GetAppSchema(int32_t userId, const std::string &bundle)
 {
     if (userId == INVALID_USER_ID) {
         return { E_ERROR, CloudDataTest::schemaMeta_ };
     }
 
-    if (bundleName.empty()) {
+    if (bundle.empty()) {
         SchemaMeta schemaMeta;
         return { E_OK, schemaMeta };
     }
@@ -200,7 +194,7 @@ std::shared_ptr<CloudData::CloudServiceImpl> CloudDataTest::cloudServiceImpl_ =
     std::make_shared<CloudData::CloudServiceImpl>();
 DistributedData::CheckerMock CloudDataTest::checker_;
 NetworkDelegateMock CloudDataTest::delegate_;
-
+int32_t CloudDataTest::dbStatus_ = E_OK;
 void CloudDataTest::InitMetaData()
 {
     metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
@@ -296,11 +290,32 @@ void CloudDataTest::SetUpTestCase(void)
     InitCloudInfo();
     InitMetaData();
     InitSchemaMeta();
+    // Construct the statisticInfo data
+    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION,
+        [](const StoreMetaData &metaData) -> GeneralStore* {
+            auto store = new (std::nothrow) GeneralStoreMock();
+            if (store != nullptr) {
+                std::map<std::string, Value> entry = { { "inserted", 1 }, { "updated", 2 }, { "normal", 3 } };
+                store->SetMockCursor(entry);
+                store->SetEqualIdentifier("", "");
+                store->SetMockDBStatus(dbStatus_);
+            }
+            return store;
+        });
 }
 
 void CloudDataTest::TearDownTestCase()
 {
     SetSelfTokenID(g_selfTokenID);
+    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION,
+        [](const StoreMetaData &metaData) -> GeneralStore* {
+            auto store = new (std::nothrow) RdbGeneralStore(metaData);
+            if (store != nullptr && !store->IsValid()) {
+                delete store;
+                store = nullptr;
+            }
+            return store;
+        });
 }
 
 void CloudDataTest::SetUp()
@@ -394,18 +409,6 @@ HWTEST_F(CloudDataTest, QueryStatistics002, TestSize.Level0)
 */
 HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level1)
 {
-    // Construct the statisticInfo data
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
-        auto store = new (std::nothrow) GeneralStoreMock();
-        if (store != nullptr) {
-            std::map<std::string, Value> entry = { { "inserted", 1 }, { "updated", 2 }, { "normal", 3 } };
-            store->MakeCursor(entry);
-            store->SetEqualIdentifier("", "");
-        }
-        return store;
-    };
-    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
-
     auto [status, result] =
         cloudServiceImpl_->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     ASSERT_EQ(status, CloudData::CloudService::SUCCESS);
@@ -430,17 +433,6 @@ HWTEST_F(CloudDataTest, QueryStatistics003, TestSize.Level1)
 */
 HWTEST_F(CloudDataTest, QueryStatistics004, TestSize.Level1)
 {
-    // Construct the statisticInfo data
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
-        auto store = new (std::nothrow) GeneralStoreMock();
-        if (store != nullptr) {
-            std::map<std::string, Value> entry = { { "inserted", 1 }, { "updated", 2 }, { "normal", 3 } };
-            store->MakeCursor(entry);
-        }
-        return store;
-    };
-    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
-
     auto [status, result] = cloudServiceImpl_->QueryStatistics(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, "");
     ASSERT_EQ(status, CloudData::CloudService::SUCCESS);
     ASSERT_EQ(result.size(), 2);
@@ -1012,8 +1004,7 @@ HWTEST_F(CloudDataTest, AllocResourceAndShare001, TestSize.Level0)
             return;
         }
         auto predicate = evt.GetPredicates();
-        auto rdbQuery = std::make_shared<DistributedRdb::RdbQuery>();
-        rdbQuery->MakeQuery(*predicate);
+        auto rdbQuery = std::make_shared<DistributedRdb::RdbQuery>(*predicate);
         rdbQuery->SetColumns(evt.GetColumns());
         callback(rdbQuery);
     });
@@ -2335,13 +2326,13 @@ HWTEST_F(CloudDataTest, QueryTableStatistic, TestSize.Level0)
     auto store = std::make_shared<GeneralStoreMock>();
     if (store != nullptr) {
         std::map<std::string, Value> entry = { { "inserted", "TEST" }, { "updated", "TEST" }, { "normal", "TEST" } };
-        store->MakeCursor(entry);
+        store->SetMockCursor(entry);
     }
     auto [ret, result] = cloudServiceImpl_->QueryTableStatistic("test", store);
     EXPECT_TRUE(ret);
     if (store != nullptr) {
         std::map<std::string, Value> entry = { { "Test", 1 } };
-        store->MakeCursor(entry);
+        store->SetMockCursor(entry);
     }
     std::tie(ret, result) = cloudServiceImpl_->QueryTableStatistic("test", store);
     EXPECT_TRUE(ret);
@@ -2679,7 +2670,8 @@ HWTEST_F(CloudDataTest, GetPriorityLevel001, TestSize.Level1)
     DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_CLOUD_FIRST, .isAsync = true };
     DistributedRdb::PredicatesMemo memo;
     memo.tables_ = { TEST_CLOUD_TABLE };
-    rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
+    auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
+    rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
 }
 
 /**
@@ -2701,7 +2693,8 @@ HWTEST_F(CloudDataTest, GetPriorityLevel002, TestSize.Level1)
     DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_TIME_FIRST, .isAsync = true };
     DistributedRdb::PredicatesMemo memo;
     memo.tables_ = { TEST_CLOUD_TABLE };
-    rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
+    auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
+    rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
 }
 
 /**
@@ -2722,7 +2715,8 @@ HWTEST_F(CloudDataTest, GetPriorityLevel003, TestSize.Level1)
     DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
     DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_CLOUD_FIRST, .isAsync = true };
     DistributedRdb::PredicatesMemo memo;
-    rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
+    auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
+    rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
 }
 
 /**
@@ -2746,7 +2740,8 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
         .isAsync = true,
         .isAutoSync = true };
     DistributedRdb::PredicatesMemo memo;
-    rdbServiceImpl.DoCloudSync(param, option, memo, nullptr);
+    auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
+    rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
 }
 
 /**
@@ -2758,7 +2753,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
 HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level1)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = -1 };
+    CloudData::CloudServiceImpl::HapInfo info = {  .user = -1, .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE };
     auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
     EXPECT_EQ(ret, Status::ERROR);
 }
@@ -2772,7 +2767,7 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level1)
 HWTEST_F(CloudDataTest, UpdateSchemaFromHap002, TestSize.Level1)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo info = { .instIndex = 0, .bundleName = "", .user = cloudInfo_.user };
+    CloudData::CloudServiceImpl::HapInfo info = { .user = cloudInfo_.user, .instIndex = 0, .bundleName = "" };
     auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
     EXPECT_EQ(ret, Status::ERROR);
 }
@@ -2787,7 +2782,7 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level1)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo info = {
-        .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
+        .user = cloudInfo_.user, .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE
     };
     auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
     EXPECT_EQ(ret, Status::SUCCESS);
@@ -2817,7 +2812,7 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level1)
     cloudInfo.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
     CloudData::CloudServiceImpl::HapInfo info = {
-        .instIndex = 0, .bundleName = COM_EXAMPLE_TEST_CLOUD, .user = cloudInfo_.user
+        .user = cloudInfo_.user, .instIndex = 0, .bundleName = COM_EXAMPLE_TEST_CLOUD
     };
     auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
     EXPECT_EQ(ret, Status::SUCCESS);
@@ -2837,7 +2832,7 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark001, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo hapInfo = {
-       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
+        .user = cloudInfo_.user, .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE
     };
     SchemaMeta::Database database;
     database.name = TEST_CLOUD_STORE;
@@ -2873,7 +2868,7 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark002, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo hapInfo = {
-       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
+        .user = cloudInfo_.user, .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE
     };
     SchemaMeta::Database database;
     database.name = TEST_CLOUD_STORE;
@@ -2909,7 +2904,7 @@ HWTEST_F(CloudDataTest, UpdateClearWaterMark003, TestSize.Level0)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
     CloudData::CloudServiceImpl::HapInfo hapInfo = {
-       .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE, .user = cloudInfo_.user
+        .user = cloudInfo_.user, .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE
     };
     SchemaMeta::Database database;
     database.name = TEST_CLOUD_STORE;
@@ -2966,7 +2961,6 @@ HWTEST_F(CloudDataTest, GetPrepareTraceId, TestSize.Level0)
 HWTEST_F(CloudDataTest, TryUpdateDeviceId001, TestSize.Level1)
 {
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
-    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
     StoreMetaData oldMeta;
     oldMeta.deviceId = "oldUuidtest";
     oldMeta.user = "100";
@@ -2977,7 +2971,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId001, TestSize.Level1)
     bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
-    auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
+    auto ret = rdbServiceImpl.TryUpdateDeviceId(oldMeta, meta1);
     EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
@@ -2992,7 +2986,6 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId001, TestSize.Level1)
 HWTEST_F(CloudDataTest, TryUpdateDeviceId002, TestSize.Level1)
 {
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
-    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
     StoreMetaData oldMeta;
     oldMeta.deviceId = "oldUuidtest";
     oldMeta.user = "100";
@@ -3003,7 +2996,7 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId002, TestSize.Level1)
     bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
-    auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
+    auto ret = rdbServiceImpl.TryUpdateDeviceId(oldMeta, meta1);
     EXPECT_EQ(ret, true);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
@@ -3018,45 +3011,20 @@ HWTEST_F(CloudDataTest, TryUpdateDeviceId002, TestSize.Level1)
 HWTEST_F(CloudDataTest, TryUpdateDeviceId003, TestSize.Level1)
 {
     DistributedRdb::RdbServiceImpl rdbServiceImpl;
-    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
     StoreMetaData oldMeta;
     oldMeta.deviceId = "oldUuidtest";
     oldMeta.user = "100";
     oldMeta.bundleName = "test_appid_001";
-    oldMeta.storeId = "test_storeid_001";
+    oldMeta.storeId = "test_storeid_002";
     oldMeta.isNeedUpdateDeviceId = true;
-    oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_END;
+    oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
     bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
     EXPECT_EQ(isSuccess, true);
     StoreMetaData meta1 = oldMeta;
-    auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
-    EXPECT_EQ(ret, true);
-    MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
-}
-
-/**
-* @tc.name: TryUpdateDeviceId004
-* @tc.desc: TryUpdateDeviceId test
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(CloudDataTest, TryUpdateDeviceId004, TestSize.Level1)
-{
-    DistributedRdb::RdbServiceImpl rdbServiceImpl;
-    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
-    StoreMetaData oldMeta;
-    oldMeta.deviceId = "oldUuidtest";
-    oldMeta.user = "100";
-    oldMeta.bundleName = "test_appid_001";
-    oldMeta.storeId = "test_storeid_001";
-    oldMeta.isNeedUpdateDeviceId = false;
-    oldMeta.storeType = StoreMetaData::StoreType::STORE_RELATIONAL_END;
-    bool isSuccess = MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKeyWithoutPath(), oldMeta);
-    EXPECT_EQ(isSuccess, true);
-    StoreMetaData meta1 = oldMeta;
-    auto ret = rdbServiceImpl.TryUpdateDeviceId(param, oldMeta, meta1);
-    EXPECT_EQ(ret, true);
+    dbStatus_ = E_ERROR;
+    auto ret = rdbServiceImpl.TryUpdateDeviceId(oldMeta, meta1);
+    dbStatus_ = E_OK;
+    EXPECT_EQ(ret, false);
     MetaDataManager::GetInstance().DelMeta(oldMeta.GetKeyWithoutPath());
 }
 
