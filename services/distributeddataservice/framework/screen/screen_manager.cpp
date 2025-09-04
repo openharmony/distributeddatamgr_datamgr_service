@@ -39,7 +39,6 @@ bool ScreenManager::RegisterInstance(std::shared_ptr<ScreenManager> instance)
     return true;
 }
 
-// LCOV_EXCL_START
 void ScreenManager::Subscribe(std::shared_ptr<Observer> observer)
 {
     return;
@@ -64,7 +63,6 @@ void ScreenManager::UnsubscribeScreenEvent()
 {
     return;
 }
-// LCOV_EXCL_STOP
 bool ScreenManager::IsLocked()
 {
     return false;
