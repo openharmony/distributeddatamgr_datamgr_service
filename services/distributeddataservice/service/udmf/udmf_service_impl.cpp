@@ -1208,7 +1208,8 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     }
     int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
     if (ret != E_OK) {
-        ZLOGW("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+        ZLOGE("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+        return ret;
     }
 
     auto it = delayDataCallback_.Find(key);
