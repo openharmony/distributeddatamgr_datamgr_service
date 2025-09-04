@@ -839,7 +839,7 @@ HWTEST_F(CloudInfoTest, SchemaMeta003, TestSize.Level0)
     schemaMeta2.databases[0].version = 2;
     EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].tables[0].name = "test_cloud_table_name2";
-    EXPECT_EQ(schemaMeta2, schemaMeta1);
+    EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].alias = "test_cloud_database_alias_2";
     EXPECT_NE(schemaMeta2, schemaMeta1);
     schemaMeta2.databases[0].name = "test_cloud_store2";
