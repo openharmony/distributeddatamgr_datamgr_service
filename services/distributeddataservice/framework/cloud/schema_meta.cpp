@@ -80,7 +80,8 @@ std::vector<std::string> Database::GetSyncTables() const
 std::vector<std::string> Database::GetCloudTables() const
 {
     std::vector<std::string> tableNames;
-    tableNames.reserve(tables.size());
+    // reserve * 2 for the shared table names
+    tableNames.reserve(tables.size() * 2);
     for (auto &table : tables) {
         if (table.cloudSyncFields.empty()) {
             continue;
