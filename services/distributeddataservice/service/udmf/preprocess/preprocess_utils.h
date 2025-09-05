@@ -30,7 +30,7 @@ public:
     static bool GetNativeProcessNameByToken(uint32_t tokenId, std::string &processName);
     static std::string GetLocalDeviceId();
     static void SetRemoteData(UnifiedData &data);
-    static int32_t ValidateAndProcessUris(uint32_t tokenId, UnifiedData &data);
+    static int32_t HandleFileUris(uint32_t tokenId, UnifiedData &data);
     static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);
     static bool IsNetworkingEnabled();
     static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
