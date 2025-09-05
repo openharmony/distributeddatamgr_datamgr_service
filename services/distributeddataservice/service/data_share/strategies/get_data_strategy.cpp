@@ -75,7 +75,6 @@ SeqStrategy &GetDataStrategy::GetStrategy()
 bool GetDataStrategy::CheckPermission(std::shared_ptr<Context> context, const std::string &key)
 {
     if (context->callerBundleName == context->calledBundleName) {
-        ZLOGI("access private data, caller and called is same, go");
         return true;
     }
     for (const auto &moduleInfo : context->bundleInfo.hapModuleInfos) {

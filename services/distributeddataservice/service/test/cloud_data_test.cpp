@@ -48,6 +48,7 @@
 #include "rdb_service_impl.h"
 #include "rdb_types.h"
 #include "sync_manager.h"
+#include "sync_strategies/network_sync_strategy.h"
 #include "token_setproc.h"
 
 using namespace testing::ext;
@@ -1387,17 +1388,31 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
 }
 
 /**
-* @tc.name: EnableCloud
-* @tc.desc:
+* @tc.name: EnableCloud01
+* @tc.desc: Test the EnableCloud function to ensure that the id in cloudinfo matches the passed id.
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, EnableCloud, TestSize.Level0)
+HWTEST_F(CloudDataTest, EnableCloud01, TestSize.Level0)
 {
     std::string bundleName = "testName";
     std::map<std::string, int32_t> switches;
     switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_ON);
     switches.insert_or_assign(bundleName, CloudData::CloudService::SWITCH_ON);
+    auto ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: EnableCloud02
+* @tc.desc: Test the EnableCloud function to SWITCH_OFF.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, EnableCloud02, TestSize.Level0)
+{
+    std::map<std::string, int32_t> switches;
+    switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF);
     auto ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
@@ -3134,6 +3149,38 @@ HWTEST_F(CloudDataTest, GetValidGeneralCode, TestSize.Level0)
     EXPECT_TRUE(ret == E_ERROR);
     ret = CloudData::SyncManager::ConvertValidGeneralCode(E_SYNC_TASK_MERGED);
     EXPECT_TRUE(ret == E_ERROR);
+}
+
+/**
+* @tc.name: StrategyInfo
+* @tc.desc: StrategyInfo Overload function test.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, StrategyInfo, TestSize.Level0)
+{
+    CloudData::NetworkSyncStrategy::StrategyInfo info1;
+    info1.bundleName = "test_cloud_bundleName";
+
+    CloudData::NetworkSyncStrategy::StrategyInfo info2 = info1;
+    auto ret = info2 == info1;
+    EXPECT_TRUE(ret);
+
+    info2.strategy = CloudData::NetworkSyncStrategy::Strategy::WIFI;
+    ret = info2 == info1;
+    EXPECT_FALSE(ret);
+    info2.strategy = CloudData::NetworkSyncStrategy::Strategy::CELLULAR;
+    ret = info2 == info1;
+    EXPECT_FALSE(ret);
+    info2.strategy = CloudData::NetworkSyncStrategy::Strategy::BUTT;
+    ret = info2 == info1;
+    EXPECT_TRUE(ret);
+    info2.bundleName = "test_cloud_bundleName2";
+    ret = info2 == info1;
+    EXPECT_FALSE(ret);
+    info2.user = 1;
+    ret = info2 == info1;
+    EXPECT_FALSE(ret);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
