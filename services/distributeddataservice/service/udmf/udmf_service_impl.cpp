@@ -139,9 +139,9 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     }
     std::string intention = unifiedData.GetRuntime()->key.intention;
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
+        int32_t ret = PreProcessUtils::ValidateAndProcessUris(option.tokenId, unifiedData);
         if (ret != E_OK) {
-            ZLOGW("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
+            ZLOGE("ValidateAndProcessUris failed, ret: %{public}d, bundleName:%{public}s.", ret,
                   unifiedData.GetRuntime()->createPackage.c_str());
             return ret;
         }
@@ -1206,9 +1206,9 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
-    int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
+    int32_t ret = PreProcessUtils::ValidateAndProcessUris(option.tokenId, unifiedData);
     if (ret != E_OK) {
-        ZLOGE("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+        ZLOGE("ValidateAndProcessUris failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
         return ret;
     }
 
