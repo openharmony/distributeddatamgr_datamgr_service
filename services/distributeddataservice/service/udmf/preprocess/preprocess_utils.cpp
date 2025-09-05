@@ -190,7 +190,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
     });
 }
 
-int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
+int32_t PreProcessUtils::ValidateAndProcessUris(uint32_t tokenId, UnifiedData &data)
 {
     std::vector<std::string> uris;
     ProcessFileType(data.GetRecords(), [&uris](std::shared_ptr<Object> obj) {

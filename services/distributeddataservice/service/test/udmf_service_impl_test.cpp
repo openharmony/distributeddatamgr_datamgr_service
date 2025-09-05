@@ -80,15 +80,64 @@ public:
         DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
         DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
         DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+        AllocTestHapToken();
     }
-    static void TearDownTestCase(void){};
+    static void TearDownTestCase(void)
+    {
+        DeleteTestHapToken();
+    }
     void SetUp(){};
     void TearDown(){};
+    static void AllocTestHapToken();
+    static void DeleteTestHapToken();
 
     static constexpr const char *STORE_ID = "drag";
     static constexpr uint32_t TOKEN_ID = 5;
     static constexpr const char *APP_ID = "appId";
+    static constexpr const char *BUNDLE_NAME = "ohos.mytest.demo";
 };
+
+void UdmfServiceImplTest::AllocTestHapToken()
+{
+    HapInfoParams info = {
+        .userID = 100,
+        .bundleName = BUNDLE_NAME,
+        .instIndex = 0,
+        .appIDDesc = "ohos.mytest.demo_09AEF01D"
+    };
+    HapPolicyParams policy = {
+        .apl = APL_NORMAL,
+        .domain = "test.domain",
+        .permList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .bundleName = BUNDLE_NAME,
+                .grantMode = 1,
+                .availableLevel = APL_NORMAL,
+                .label = "label",
+                .labelId = 1,
+                .description = "open the door",
+                .descriptionId = 1
+            }
+        },
+        .permStateList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .isGeneral = true,
+                .resDeviceID = { "local" },
+                .grantStatus = { PermissionState::PERMISSION_GRANTED },
+                .grantFlags = { 1 }
+            }
+        }
+    };
+    AccessTokenKit::AllocHapToken(info, policy);
+}
+
+void UdmfServiceImplTest::DeleteTestHapToken()
+{
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, BUNDLE_NAME, 0);
+    AccessTokenKit::DeleteToken(tokenId);
+}
 
 /**
 * @tc.name: SaveData001
@@ -985,6 +1034,30 @@ HWTEST_F(UdmfServiceImplTest, PushDelayData004, TestSize.Level1)
     UnifiedData insertedData;
     auto status = service.PushDelayData(query.key, insertedData);
     EXPECT_EQ(status, UDMF::E_OK);
+}
+
+/**
+ * @tc.name: SaveData005
+ * @tc.desc: Check permission failed
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, SaveData005, TestSize.Level1)
+{
+    CustomOption option;
+    option.intention = Intention::UD_INTENTION_DATA_DRAG;
+    option.tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(100, BUNDLE_NAME, 0);
+    
+    std::string key = "";
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = "file://error_bundle_name/a.jpeg";
+    obj->value_[FILE_TYPE] = "general.image";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    unifiedData.AddRecord(record);
+
+    UdmfServiceImpl impl;
+    EXPECT_EQ(impl.SaveData(option, unifiedData, key), E_NO_PERMISSION);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

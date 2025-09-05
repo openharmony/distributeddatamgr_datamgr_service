@@ -104,7 +104,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
     return;
 }
 
-int32_t PreProcessUtils::SetRemoteUri(uint32_t tokenId, UnifiedData &data)
+int32_t PreProcessUtils::ValidateAndProcessUris(uint32_t tokenId, UnifiedData &data)
 {
     return E_OK;
 }
