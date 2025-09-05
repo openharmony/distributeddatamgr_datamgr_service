@@ -42,6 +42,7 @@ using UnifiedData = OHOS::UDMF::UnifiedData;
 using Summary =  OHOS::UDMF::Summary;
 namespace OHOS::Test {
 namespace DistributedDataTest {
+static constexpr const char *HAP_BUNDLE_NAME = "ohos.mytest.demo";
 
 static void GrantPermissionNative()
 {
@@ -94,14 +95,13 @@ public:
     static constexpr const char *STORE_ID = "drag";
     static constexpr uint32_t TOKEN_ID = 5;
     static constexpr const char *APP_ID = "appId";
-    static constexpr const char *BUNDLE_NAME = "ohos.mytest.demo";
 };
 
 void UdmfServiceImplTest::AllocTestHapToken()
 {
     HapInfoParams info = {
         .userID = 100,
-        .bundleName = BUNDLE_NAME,
+        .bundleName = HAP_BUNDLE_NAME,
         .instIndex = 0,
         .appIDDesc = "ohos.mytest.demo_09AEF01D"
     };
@@ -111,7 +111,7 @@ void UdmfServiceImplTest::AllocTestHapToken()
         .permList = {
             {
                 .permissionName = "ohos.permission.test",
-                .bundleName = BUNDLE_NAME,
+                .bundleName = HAP_BUNDLE_NAME,
                 .grantMode = 1,
                 .availableLevel = APL_NORMAL,
                 .label = "label",
@@ -135,7 +135,7 @@ void UdmfServiceImplTest::AllocTestHapToken()
 
 void UdmfServiceImplTest::DeleteTestHapToken()
 {
-    auto tokenId = AccessTokenKit::GetHapTokenID(100, BUNDLE_NAME, 0);
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
     AccessTokenKit::DeleteToken(tokenId);
 }
 
@@ -1045,7 +1045,7 @@ HWTEST_F(UdmfServiceImplTest, SaveData005, TestSize.Level1)
 {
     CustomOption option;
     option.intention = UD_INTENTION_DRAG;
-    option.tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(100, BUNDLE_NAME, 0);
+    option.tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
     
     std::string key = "";
     UnifiedData unifiedData;
