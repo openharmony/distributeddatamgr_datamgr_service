@@ -469,6 +469,31 @@ HWTEST_F(RdbServiceImplTest, DoSync002, TestSize.Level0)
 }
 
 /**
+ * @tc.name: DoSync003
+ * @tc.desc: Test DoSync when meta sync with device.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: Sven Wang
+ */
+HWTEST_F(RdbServiceImplTest, DoSync003, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    option.seqNum = 1;
+
+    PredicatesMemo predicates;
+    AsyncDetail async;
+    predicates.devices_ = { TEST_SYNC_DEVICE };
+    auto result = service.DoSync(metaData_, option, predicates, async);
+    EXPECT_EQ(result, RDB_OK);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
  * @tc.name: IsNeedMetaSync001
  * @tc.desc: Test IsNeedMetaSync when LoadMeta fails for CapMetaData.
  * @tc.type: FUNC
@@ -1448,6 +1473,41 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables004, TestSize.Level0)
         service.SetDistributedTables(param, tables, references, false, DistributedTableType::DISTRIBUTED_DEVICE);
     EXPECT_EQ(result, RDB_OK);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables005
+ * @tc.desc: Test SetDistributedTables when type is device.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: Sven Wang
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
+    EXPECT_EQ(result, RDB_OK);
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
+
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
 }
 
 /**

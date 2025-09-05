@@ -1599,7 +1599,6 @@ int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam &param, bool isSearch
     if (!exists) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
-        return RDB_NO_META;
     }
 
     SetSearchableEvent::EventInfo eventInfo {};

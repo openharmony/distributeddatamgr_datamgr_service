@@ -72,6 +72,14 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::s
 std::pair<int32_t, int32_t> GeneralStoreMock::Sync(const Devices &devices, GenQuery &query,
     DetailAsync async, const SyncParam &syncParm)
 {
+    if (!async) {
+        return { GeneralError::E_OK, 0 };
+    }
+    std::map<std::string, GenProgressDetail> details;
+    for (auto &device : devices) {
+        details[device] = { .progress = SYNC_FINISH, .code = 0, .dbCode = 0 };
+    }
+    async(details);
     return { GeneralError::E_OK, 0 };
 }
 
