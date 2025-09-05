@@ -48,6 +48,31 @@ bool CloudInfo::Unmarshal(const Serializable::json &node)
     return true;
 }
 
+bool CloudInfo::IsAppsEqual(const std::map<std::string, AppInfo> &appInfos) const
+{
+    if (apps.size() != appInfos.size()) {
+        return false;
+    }
+    for (auto it = apps.begin(), rIt = appInfos.begin(); it != apps.end(); ++it, ++rIt) {
+        if (it->second != rIt->second) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CloudInfo::operator==(const CloudInfo &info) const
+{
+    return std::tie(user, id, totalSpace, remainSpace, enableCloud, maxNumber, maxSize) ==
+        std::tie(info.user, info.id, info.totalSpace, info.remainSpace, info.enableCloud, info.maxNumber,
+        info.maxSize) && IsAppsEqual(info.apps);
+}
+
+bool CloudInfo::operator!=(const CloudInfo &info) const
+{
+    return !operator==(info);
+}
+
 bool CloudInfo::AppInfo::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(bundleName)], bundleName);
@@ -66,6 +91,17 @@ bool CloudInfo::AppInfo::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(instanceId), instanceId);
     GetValue(node, GET_NAME(cloudSwitch), cloudSwitch);
     return true;
+}
+
+bool CloudInfo::AppInfo::operator==(const AppInfo &info) const
+{
+    return std::tie(bundleName, appId, version, instanceId, cloudSwitch) == std::tie(info.bundleName, info.appId,
+        info.version, info.instanceId, info.cloudSwitch);
+}
+
+bool CloudInfo::AppInfo::operator!=(const AppInfo &info) const
+{
+    return !operator==(info);
 }
 
 std::string CloudInfo::GetKey() const

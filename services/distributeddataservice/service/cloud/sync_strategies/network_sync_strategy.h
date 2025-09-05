@@ -34,6 +34,7 @@ public:
         uint32_t strategy = DEFAULT_STRATEGY;
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
+        bool operator==(const StrategyInfo &info) const;
         std::string GetKey();
         static constexpr int32_t INVALID_USER = -1;
         static constexpr const char *PREFIX = "NETWORK_SYNC_STRATEGY";

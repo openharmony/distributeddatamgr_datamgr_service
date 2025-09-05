@@ -89,6 +89,11 @@ bool NetworkSyncStrategy::StrategyInfo::Unmarshal(const Serializable::json &node
     return false;
 }
 
+bool NetworkSyncStrategy::StrategyInfo::operator==(const StrategyInfo &info) const
+{
+    return user == info.user && bundleName == info.bundleName && strategy == info.strategy;
+}
+
 std::string NetworkSyncStrategy::StrategyInfo::GetKey()
 {
     return Constant::Join(StrategyInfo::PREFIX, Constant::KEY_SEPARATOR, { std::to_string(user), bundleName });

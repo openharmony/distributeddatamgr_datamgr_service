@@ -739,8 +739,9 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
             ZLOGE("cloud is empty, user: %{public}d", cloud.user);
             return cloudSyncInfos;
         }
-        if (!MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true)) {
-            ZLOGW("save cloud info fail, user: %{public}d", cloud.user);
+        CloudInfo oldInfo;
+        if (!MetaDataManager::GetInstance().LoadMeta(cloud.GetKey(), oldInfo, true) || oldInfo != cloud) {
+            MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
         }
     }
     auto schemaKey = CloudInfo::GetSchemaKey(cloud.user, info.bundleName_);

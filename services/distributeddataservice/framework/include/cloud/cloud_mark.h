@@ -34,6 +34,8 @@ public:
     }
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
+    bool operator==(const CloudMark &cloudMark) const;
+    bool operator!=(const CloudMark &cloudMark) const;
     std::string GetKey();
     std::string GetKey(const std::initializer_list<std::string> &fields);
 };

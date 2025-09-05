@@ -20,6 +20,7 @@
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
+#include "cloud/cloud_mark.h"
 #include "cloud/cloud_server.h"
 #include "cloud/schema_meta.h"
 #include "utils/crypto.h"
@@ -256,13 +257,98 @@ HWTEST_F(CloudInfoTest, CloudInfoTest001, TestSize.Level0)
 }
 
 /**
-* @tc.name: AppInfoTest
+* @tc.name: CloudInfoTest002
+* @tc.desc: CloudInfo Overload function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, CloudInfoTest002, TestSize.Level0)
+{
+    CloudInfo cloudInfo1;
+    cloudInfo1.user = 111;
+    cloudInfo1.id = "test1_id";
+    cloudInfo1.totalSpace = 0;
+    cloudInfo1.remainSpace = 0;
+    cloudInfo1.enableCloud = false;
+    cloudInfo1.maxNumber = CloudInfo::DEFAULT_BATCH_NUMBER;
+    cloudInfo1.maxSize = CloudInfo::DEFAULT_BATCH_SIZE;
+
+    CloudInfo::AppInfo cloudInfoAppInfo1;
+    cloudInfoAppInfo1.bundleName = "ohos.test.demo";
+    cloudInfoAppInfo1.appId = "test1_id";
+    cloudInfoAppInfo1.version = 0;
+    cloudInfoAppInfo1.instanceId = 0;
+    cloudInfoAppInfo1.cloudSwitch = false;
+    cloudInfo1.apps["ohos.test.demo"] = cloudInfoAppInfo1;
+
+    CloudInfo cloudInfo2 = cloudInfo1;
+    EXPECT_EQ(cloudInfo2, cloudInfo1);
+
+    cloudInfo2.maxSize = 1;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.maxNumber = 1;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.enableCloud = true;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.remainSpace = 1;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.totalSpace = 1;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.id = "test2_id";
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.user = 222;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.apps["ohos.test.demo"].cloudSwitch = true;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+}
+
+/**
+* @tc.name: CloudInfoTest003
+* @tc.desc: CloudInfo Overload function apps test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, CloudInfoTest003, TestSize.Level0)
+{
+    CloudInfo cloudInfo1;
+    cloudInfo1.user = 111;
+    cloudInfo1.id = "test1_id";
+    cloudInfo1.totalSpace = 0;
+    cloudInfo1.remainSpace = 0;
+    cloudInfo1.enableCloud = false;
+    cloudInfo1.maxNumber = CloudInfo::DEFAULT_BATCH_NUMBER;
+    cloudInfo1.maxSize = CloudInfo::DEFAULT_BATCH_SIZE;
+
+    CloudInfo::AppInfo cloudInfoAppInfo1;
+    cloudInfoAppInfo1.bundleName = "ohos.test.demo";
+    cloudInfoAppInfo1.appId = "test1_id";
+    cloudInfoAppInfo1.version = 0;
+    cloudInfoAppInfo1.instanceId = 0;
+    cloudInfoAppInfo1.cloudSwitch = false;
+    cloudInfo1.apps["ohos.test.demo"] = cloudInfoAppInfo1;
+
+    CloudInfo cloudInfo2 = cloudInfo1;
+    cloudInfo2.apps["ohos.test.demo"].cloudSwitch = true;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.apps["ohos.test.demo"].instanceId = 1;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.apps["ohos.test.demo"].version = 1;EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.apps["ohos.test.demo"].appId = "test2_id";
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.apps["ohos.test.demo"].bundleName = "ohos.test.demo2";
+    EXPECT_NE(cloudInfo2, cloudInfo1);
+}
+
+/**
+* @tc.name: AppInfoTest001
 * @tc.desc: Marshal and Unmarshal of AppInfo.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: Anvette
 */
-HWTEST_F(CloudInfoTest, AppInfoTest, TestSize.Level0)
+HWTEST_F(CloudInfoTest, AppInfoTest001, TestSize.Level0)
 {
     CloudInfo::AppInfo cloudInfoAppInfo1;
     cloudInfoAppInfo1.bundleName = "ohos.test.demo";
@@ -281,13 +367,44 @@ HWTEST_F(CloudInfoTest, AppInfoTest, TestSize.Level0)
 }
 
 /**
-* @tc.name: TableTest
+* @tc.name: AppInfoTest002
+* @tc.desc: AppInfoTest Overload function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, AppInfoTest002, TestSize.Level0)
+{
+    CloudInfo::AppInfo cloudInfoAppInfo1;
+    cloudInfoAppInfo1.bundleName = "ohos.test.demo";
+    cloudInfoAppInfo1.appId = "test1_id";
+    cloudInfoAppInfo1.version = 0;
+    cloudInfoAppInfo1.instanceId = 0;
+    cloudInfoAppInfo1.cloudSwitch = false;
+
+    CloudInfo::AppInfo cloudInfoAppInfo2 = cloudInfoAppInfo1;
+    EXPECT_EQ(cloudInfoAppInfo2, cloudInfoAppInfo1);
+
+    cloudInfoAppInfo2.cloudSwitch = true;
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
+    cloudInfoAppInfo2.instanceId = 1;
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
+    cloudInfoAppInfo2.version = 1;
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
+    cloudInfoAppInfo2.appId = "test2_id";
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
+    cloudInfoAppInfo2.bundleName = "ohos.test.demo2";
+    EXPECT_NE(cloudInfoAppInfo2, cloudInfoAppInfo1);
+}
+
+/**
+* @tc.name: TableTest001
 * @tc.desc: Marshal and Unmarshal of Table.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: Anvette
 */
-HWTEST_F(CloudInfoTest, TableTest, TestSize.Level0)
+HWTEST_F(CloudInfoTest, TableTest001, TestSize.Level0)
 {
     Field field1;
     field1.colName = "test1_colName";
@@ -308,6 +425,112 @@ HWTEST_F(CloudInfoTest, TableTest, TestSize.Level0)
     Table table2;
     table2.Unmarshal(node1);
     EXPECT_EQ(Serializable::Marshall(table1), Serializable::Marshall(table2));
+}
+
+/**
+* @tc.name: TableTest002
+* @tc.desc: Table Overload function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, TableTest002, TestSize.Level0)
+{
+    Field field1;
+    field1.colName = "test1_colName";
+    field1.alias = "test1_alias";
+    field1.type = 1;
+    field1.primary = true;
+    field1.nullable = false;
+
+    Table table1;
+    table1.name = "test1_name";
+    table1.sharedTableName = "test1_sharedTableName";
+    table1.alias = "test1_alias";
+    table1.fields.push_back(field1);
+
+    Table table2 = table1;
+    EXPECT_EQ(table2, table1);
+
+    table2.sharedTableName = "share";
+    EXPECT_NE(table2, table1);
+    table2.cloudSyncFields.push_back("cloud");
+    EXPECT_NE(table2, table1);
+    table2.deviceSyncFields.push_back("device");
+    EXPECT_NE(table2, table1);
+    table2.fields[0].primary = true;
+    EXPECT_NE(table2, table1);
+    table2.alias = "test2_alias";
+    EXPECT_NE(table2, table1);
+    table2.name = "test2_name";
+    EXPECT_NE(table2, table1);
+}
+
+/**
+* @tc.name: TableTest003
+* @tc.desc: Table Overload function Field test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, TableTest003, TestSize.Level0)
+{
+    Field field1;
+    field1.colName = "test1_colName";
+    field1.alias = "test1_alias";
+    field1.type = 1;
+    field1.primary = true;
+    field1.nullable = false;
+
+    Table table1;
+    table1.name = "test1_name";
+    table1.sharedTableName = "test1_sharedTableName";
+    table1.alias = "test1_alias";
+    table1.fields.push_back(field1);
+
+    Table table2 = table1;
+    table2.fields[0].nullable = true;
+    EXPECT_NE(table2, table1);
+    table2.fields[0].primary = false;
+    EXPECT_NE(table2, table1);
+    table2.fields[0].type = 2;
+    EXPECT_NE(table2, table1);
+    table2.fields[0].alias = "test2_alias";
+    EXPECT_NE(table2, table1);
+    table2.fields[0].colName = "test1_colName";
+    EXPECT_NE(table2, table1);
+}
+
+/**
+* @tc.name: FieldTest
+* @tc.desc: Field Overload function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, FieldTest, TestSize.Level0)
+{
+    Field field1;
+    field1.colName = "test1_colName";
+    field1.alias = "test1_alias";
+    field1.type = 1;
+    field1.primary = true;
+    field1.nullable = false;
+
+
+    Field field2 = field1;
+    EXPECT_EQ(field2, field1);
+
+    field2.nullable = true;
+    EXPECT_NE(field2, field1);
+    field2.primary = false;
+    EXPECT_NE(field2, field1);
+    field2.type = 2;
+    EXPECT_NE(field2, field1);
+    field2.alias = "test2_alias";
+    EXPECT_NE(field2, field1);
+    field2.colName = "test2_colName";
+    EXPECT_NE(field2, field1);
 }
 
 /**
@@ -514,13 +737,13 @@ HWTEST_F(ServicesCloudDBTest, CloudDB, TestSize.Level0)
 }
 
 /**
-* @tc.name: SchemaMeta
+* @tc.name: SchemaMeta001
 * @tc.desc: test SchemaMeta GetLowVersion and GetHighVersion function.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author: SQL
 */
-HWTEST_F(CloudInfoTest, SchemaMeta, TestSize.Level0)
+HWTEST_F(CloudInfoTest, SchemaMeta001, TestSize.Level0)
 {
     SchemaMeta schemaMeta;
     auto metaVersion = SchemaMeta::CURRENT_VERSION & 0xFFFF;
@@ -529,6 +752,184 @@ HWTEST_F(CloudInfoTest, SchemaMeta, TestSize.Level0)
     metaVersion = SchemaMeta::CURRENT_VERSION & ~0xFFFF;
     auto result2 = schemaMeta.GetHighVersion();
     EXPECT_EQ(result2, metaVersion);
+}
+
+/**
+* @tc.name: SchemaMeta002
+* @tc.desc: SchemaMeta Overload function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, SchemaMeta002, TestSize.Level0)
+{
+    SchemaMeta::Field field1;
+    field1.colName = "test_cloud_field_name1";
+    field1.alias = "test_cloud_field_alias1";
+
+    SchemaMeta::Table table;
+    table.name = "test_cloud_table_name";
+    table.alias = "test_cloud_table_alias";
+    table.fields.emplace_back(field1);
+
+    SchemaMeta::Database database;
+    database.name = "test_cloud_store";
+    database.alias = "test_cloud_database_alias_1";
+    database.tables.emplace_back(table);
+
+    SchemaMeta schemaMeta1;
+    schemaMeta1.version = 1;
+    schemaMeta1.bundleName = "test_cloud_bundleName";
+    schemaMeta1.databases.emplace_back(database);
+    schemaMeta1.e2eeEnable = false;
+
+    SchemaMeta schemaMeta2 = schemaMeta1;
+    EXPECT_EQ(schemaMeta2, schemaMeta1);
+
+    schemaMeta2.e2eeEnable = true;
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].alias = "test_cloud_database_alias_2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.bundleName = "test_cloud_bundleName2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.version = 2;
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.metaVersion = 2;
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+}
+
+/**
+* @tc.name: SchemaMeta003
+* @tc.desc: SchemaMeta Overload function database test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, SchemaMeta003, TestSize.Level0)
+{
+    SchemaMeta::Field field1;
+    field1.colName = "test_cloud_field_name1";
+    field1.alias = "test_cloud_field_alias1";
+
+    SchemaMeta::Table table;
+    table.name = "test_cloud_table_name";
+    table.alias = "test_cloud_table_alias";
+    table.fields.emplace_back(field1);
+
+    SchemaMeta::Database database;
+    database.name = "test_cloud_store";
+    database.alias = "test_cloud_database_alias_1";
+    database.tables.emplace_back(table);
+
+    SchemaMeta schemaMeta1;
+    schemaMeta1.version = 1;
+    schemaMeta1.bundleName = "test_cloud_bundleName";
+    schemaMeta1.databases.emplace_back(database);
+    schemaMeta1.e2eeEnable = false;
+
+    SchemaMeta schemaMeta2 = schemaMeta1;
+    schemaMeta2.databases[0].autoSyncType = 1;
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].deviceId = "111";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].user = "111";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].bundleName = "test_cloud_bundleName2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].version = 2;
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].name = "test_cloud_table_name2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].alias = "test_cloud_database_alias_2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].name = "test_cloud_store2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+}
+
+/**
+* @tc.name: SchemaMeta004
+* @tc.desc: SchemaMeta Overload function Table test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, SchemaMeta004, TestSize.Level0)
+{
+    SchemaMeta::Field field1;
+    field1.colName = "test_cloud_field_name1";
+    field1.alias = "test_cloud_field_alias1";
+
+    SchemaMeta::Table table;
+    table.name = "test_cloud_table_name";
+    table.alias = "test_cloud_table_alias";
+    table.fields.emplace_back(field1);
+
+    SchemaMeta::Database database;
+    database.name = "test_cloud_store";
+    database.alias = "test_cloud_database_alias_1";
+    database.tables.emplace_back(table);
+
+    SchemaMeta schemaMeta1;
+    schemaMeta1.version = 1;
+    schemaMeta1.bundleName = "test_cloud_bundleName";
+    schemaMeta1.databases.emplace_back(database);
+    schemaMeta1.e2eeEnable = false;
+
+    SchemaMeta schemaMeta2 = schemaMeta1;
+    schemaMeta2.databases[0].tables[0].sharedTableName = "share";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].cloudSyncFields.push_back("cloud");
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].deviceSyncFields.push_back("device");
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].fields[0].alias = "test_cloud_field_alias2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].alias = "test_cloud_table_alias2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].name = "test_cloud_table_name2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+}
+
+/**
+* @tc.name: SchemaMeta005
+* @tc.desc: SchemaMeta Overload function Field test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, SchemaMeta005, TestSize.Level0)
+{
+    SchemaMeta::Field field1;
+    field1.colName = "test_cloud_field_name1";
+    field1.alias = "test_cloud_field_alias1";
+
+    SchemaMeta::Table table;
+    table.name = "test_cloud_table_name";
+    table.alias = "test_cloud_table_alias";
+    table.fields.emplace_back(field1);
+
+    SchemaMeta::Database database;
+    database.name = "test_cloud_store";
+    database.alias = "test_cloud_database_alias_1";
+    database.tables.emplace_back(table);
+
+    SchemaMeta schemaMeta1;
+    schemaMeta1.version = 1;
+    schemaMeta1.bundleName = "test_cloud_bundleName";
+    schemaMeta1.databases.emplace_back(database);
+    schemaMeta1.e2eeEnable = false;
+
+    SchemaMeta schemaMeta2 = schemaMeta1;
+    schemaMeta2.databases[0].tables[0].fields[0].nullable = false;
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].fields[0].primary = true;
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].fields[0].type = 1;
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].fields[0].alias = "test_cloud_field_alias1";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
+    schemaMeta2.databases[0].tables[0].fields[0].colName = "test_cloud_field_name2";
+    EXPECT_NE(schemaMeta2, schemaMeta1);
 }
 
 /**
@@ -545,5 +946,36 @@ HWTEST_F(CloudEventTest, GetEventId, TestSize.Level0)
     CloudEvent event(evtId, info);
     auto ret = event.GetEventId();
     EXPECT_EQ(ret, evtId);
+}
+
+/**
+* @tc.name: CloudMarkTest
+* @tc.desc: CloudMark Overload function test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, CloudMarkTest, TestSize.Level0)
+{
+    CloudMark cloudmark1;
+    cloudmark1.bundleName = "test_cloud_bundleName";
+    cloudmark1.deviceId = "1111";
+    cloudmark1.storeId = "test_db";
+
+    CloudMark cloudmark2 = cloudmark1;
+    EXPECT_EQ(cloudmark2, cloudmark1);
+
+    cloudmark2.userId = 1;
+    EXPECT_NE(cloudmark2, cloudmark1);
+    cloudmark2.storeId = "test_db2";
+    EXPECT_NE(cloudmark2, cloudmark1);
+    cloudmark2.isClearWaterMark = true;
+    EXPECT_NE(cloudmark2, cloudmark1);
+    cloudmark2.index = 1;
+    EXPECT_NE(cloudmark2, cloudmark1);
+    cloudmark2.deviceId = "222";
+    EXPECT_NE(cloudmark2, cloudmark1);
+    cloudmark2.bundleName = "test_cloud_bundleName2";
+    EXPECT_NE(cloudmark2, cloudmark1);
 }
 } // namespace OHOS::Test
