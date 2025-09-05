@@ -1038,13 +1038,13 @@ HWTEST_F(UdmfServiceImplTest, PushDelayData004, TestSize.Level1)
 
 /**
  * @tc.name: SaveData005
- * @tc.desc: Check permission failed
+ * @tc.desc: test no permission
  * @tc.type: FUNC
  */
 HWTEST_F(UdmfServiceImplTest, SaveData005, TestSize.Level1)
 {
     CustomOption option;
-    option.intention = Intention::UD_INTENTION_DATA_DRAG;
+    option.intention = UD_INTENTION_DRAG;
     option.tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(100, BUNDLE_NAME, 0);
     
     std::string key = "";
@@ -1057,7 +1057,35 @@ HWTEST_F(UdmfServiceImplTest, SaveData005, TestSize.Level1)
     unifiedData.AddRecord(record);
 
     UdmfServiceImpl impl;
-    EXPECT_EQ(impl.SaveData(option, unifiedData, key), E_NO_PERMISSION);
+    auto status = impl.SaveData(option, unifiedData, key);
+    EXPECT_EQ(status, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: PushDelayData007
+ * @tc.desc: test no permission
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData007, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+
+    UdmfServiceImpl service;
+    DelayGetDataInfo delayGetDataInfo;
+    service.delayDataCallback_.Insert(query.key, delayGetDataInfo);
+    
+    UnifiedData insertedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = "file://error_bundle_name/a.jpeg";
+    obj->value_[FILE_TYPE] = "general.image";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    insertedData.AddRecord(record);
+
+    auto status = service.PushDelayData(query.key, insertedData);
+    EXPECT_EQ(status, E_NO_PERMISSION);
+    service.delayDataCallback_.Clear();
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

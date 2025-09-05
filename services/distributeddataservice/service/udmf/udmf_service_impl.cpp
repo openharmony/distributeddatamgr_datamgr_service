@@ -238,6 +238,10 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
     if (res != E_OK) {
         return res;
     }
+    if (!IsReadAndKeep(runtime->privileges, query) && LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
+        ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
+        return E_DB_ERROR;
+    }
 
     if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = ProcessUri(query, unifiedData);
@@ -246,12 +250,6 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
                 BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, ret);
             ZLOGE("ProcessUri failed:%{public}d", ret);
             return E_NO_PERMISSION;
-        }
-    }
-    if (!IsReadAndKeep(runtime->privileges, query)) {
-        if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
-            ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
-            return E_DB_ERROR;
         }
     }
 
