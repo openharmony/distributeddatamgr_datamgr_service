@@ -654,6 +654,7 @@ ohos_unittest("RdbServiceImplTest") {
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
     "rdb_service_impl_test.cpp",
+    "rdb_types_utils_test.cpp",
   ]
 
   include_dirs = [

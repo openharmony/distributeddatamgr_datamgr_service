@@ -546,4 +546,136 @@ HWTEST_F(CloudEventTest, GetEventId, TestSize.Level0)
     auto ret = event.GetEventId();
     EXPECT_EQ(ret, evtId);
 }
+
+/**
+* @tc.name: GetTableNames_001
+* @tc.desc: get table names no shared tables
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudEventTest, GetTableNames_001, TestSize.Level0)
+{
+    Database database;
+    for (int i = 0; i < 5; ++i) {
+        Table table;
+        table.name = "table" + std::to_string(i);
+        database.tables.push_back(std::move(table));
+    }
+    auto tables = database.GetTableNames();
+    std::vector<std::string> tagTable = { "table0", "table1", "table2", "table3", "table4" };
+    EXPECT_EQ(tables, tagTable);
+}
+
+/**
+* @tc.name: GetTableNames_002
+* @tc.desc: get table names with shared tables
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudEventTest, GetTableNames_002, TestSize.Level0)
+{
+    Database database;
+    for (int i = 0; i < 5; ++i) {
+        Table table;
+        table.name = "table" + std::to_string(i);
+        table.sharedTableName = "shared" + std::to_string(i);
+        database.tables.push_back(std::move(table));
+    }
+    auto tables = database.GetTableNames();
+    std::vector<std::string> tagTable = { "table0", "shared0", "table1", "shared1", "table2", "shared2", "table3",
+        "shared3", "table4", "shared4" };
+    EXPECT_EQ(tables, tagTable);
+}
+
+/**
+* @tc.name: GetSyncTables_001
+* @tc.desc: get p2p sync table names
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudEventTest, GetSyncTables_001, TestSize.Level0)
+{
+    Database database;
+    for (int i = 0; i < 5; ++i) {
+        Table table;
+        table.name = "table" + std::to_string(i);
+        table.sharedTableName = "shared" + std::to_string(i);
+        auto &fields = (i % 2 == 0) ? table.deviceSyncFields : table.cloudSyncFields;
+        fields.push_back("field" + std::to_string(i));
+        database.tables.push_back(std::move(table));
+    }
+    auto tables = database.GetSyncTables();
+    std::vector<std::string> tagTable = { "table0", "table2", "table4" };
+    EXPECT_EQ(tables, tagTable);
+}
+
+/**
+* @tc.name: GetSyncTables_002
+* @tc.desc: get p2p sync table names w
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudEventTest, GetSyncTables_002, TestSize.Level0)
+{
+    Database database;
+    auto tables = database.GetSyncTables();
+    std::vector<std::string> tagTable;
+    EXPECT_EQ(tables, tagTable);
+    for (int i = 0; i < 5; ++i) {
+        Table table;
+        table.name = "table" + std::to_string(i);
+        table.sharedTableName = "shared" + std::to_string(i);
+        database.tables.push_back(std::move(table));
+    }
+    tables = database.GetSyncTables();
+    EXPECT_EQ(tables, tagTable);
+}
+
+/**
+* @tc.name: GetSyncTables_001
+* @tc.desc: get p2p sync table names w
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudEventTest, GetCloudTables_001, TestSize.Level0)
+{
+    Database database;
+    for (int i = 0; i < 5; ++i) {
+        Table table;
+        table.name = "table" + std::to_string(i);
+        table.sharedTableName = "shared" + std::to_string(i);
+        auto &fields = (i % 2 == 0) ? table.deviceSyncFields : table.cloudSyncFields;
+        fields.push_back("field" + std::to_string(i));
+        database.tables.push_back(std::move(table));
+    }
+    auto tables = database.GetCloudTables();
+    std::vector<std::string> tagTable = { "table1", "shared1", "table3", "shared3" };
+    EXPECT_EQ(tables, tagTable);
+}
+
+/**
+* @tc.name: GetSyncTables_002
+* @tc.desc: get p2p sync table names w
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudEventTest, GetCloudTables_002, TestSize.Level0)
+{
+    Database database;
+    for (int i = 0; i < 5; ++i) {
+        Table table;
+        table.name = "table" + std::to_string(i);
+        table.sharedTableName = "shared" + std::to_string(i);
+        database.tables.push_back(std::move(table));
+    }
+    auto tables = database.GetCloudTables();
+    std::vector<std::string> tagTable;
+    EXPECT_EQ(tables, tagTable);
+}
 } // namespace OHOS::Test

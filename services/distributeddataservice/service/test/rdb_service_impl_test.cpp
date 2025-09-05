@@ -478,7 +478,7 @@ HWTEST_F(RdbServiceImplTest, DoSync002, TestSize.Level0)
 HWTEST_F(RdbServiceImplTest, IsNeedMetaSync001, TestSize.Level0)
 {
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
-    std::vector<std::string> devices = {DmAdapter::GetInstance().ToUUID(metaData_.deviceId)};
+    std::vector<std::string> devices = { DmAdapter::GetInstance().ToUUID(metaData_.deviceId) };
     RdbServiceImpl service;
     bool result = service.IsNeedMetaSync(metaData_, devices);
 
@@ -500,7 +500,7 @@ HWTEST_F(RdbServiceImplTest, IsNeedMetaSync002, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(std::string(capKey.begin(), capKey.end()), capMetaData), true);
 
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
-    std::vector<std::string> devices = {DmAdapter::GetInstance().ToUUID(metaData_.deviceId)};
+    std::vector<std::string> devices = { DmAdapter::GetInstance().ToUUID(metaData_.deviceId) };
     RdbServiceImpl service;
     bool result = service.IsNeedMetaSync(metaData_, devices);
 
@@ -518,8 +518,8 @@ HWTEST_F(RdbServiceImplTest, IsNeedMetaSync002, TestSize.Level0)
 HWTEST_F(RdbServiceImplTest, ProcessResult001, TestSize.Level0)
 {
     RdbServiceImpl service;
-    std::map<std::string, int32_t> results = {{"device1", static_cast<int32_t>(DBStatus::OK)},
-                                              {"device2", static_cast<int32_t>(DBStatus::OK)}};
+    std::map<std::string, int32_t> results = { { "device1", static_cast<int32_t>(DBStatus::OK) },
+        { "device2", static_cast<int32_t>(DBStatus::OK) } };
 
     auto result = service.ProcessResult(results);
 
@@ -537,9 +537,8 @@ HWTEST_F(RdbServiceImplTest, ProcessResult001, TestSize.Level0)
 HWTEST_F(RdbServiceImplTest, ProcessResult002, TestSize.Level0)
 {
     RdbServiceImpl service;
-    std::map<std::string, int32_t> results = {{"device1", static_cast<int32_t>(DBStatus::OK)},
-                                              {"device2", static_cast<int32_t>(DBStatus::DB_ERROR)},
-                                              {"device3", static_cast<int32_t>(DBStatus::OK)}};
+    std::map<std::string, int32_t> results = { { "device1", static_cast<int32_t>(DBStatus::OK) },
+        { "device2", static_cast<int32_t>(DBStatus::DB_ERROR) }, { "device3", static_cast<int32_t>(DBStatus::OK) } };
 
     auto result = service.ProcessResult(results);
 
@@ -584,10 +583,10 @@ HWTEST_F(RdbServiceImplTest, DoCompensateSync001, TestSize.Level0)
     bindInfo.user = metaData_.uid;
     bindInfo.storeName = TEST_STORE;
     bindInfo.tableName = "test_table";
-    bindInfo.primaryKey = {{"key1", "value1"}, {"key2", "value2"}};
+    bindInfo.primaryKey = { { "key1", "value1" }, { "key2", "value2" } };
 
     BindEvent event(eventId, std::move(bindInfo));
-    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [this] (const Event &event) {
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [this](const Event &event) {
         auto &evt = static_cast<const SyncEvent &>(event);
         auto mode = evt.GetMode();
         EXPECT_EQ(GeneralStore::GetPriorityLevel(GeneralStore::GetHighMode(static_cast<uint32_t>(mode))), 1);
@@ -644,7 +643,7 @@ HWTEST_F(RdbServiceImplTest, ReportStatistic002, TestSize.Level0)
 HWTEST_F(RdbServiceImplTest, GetReuseDevice001, TestSize.Level0)
 {
     RdbServiceImpl service;
-    std::vector<std::string> devices = {"device1"};
+    std::vector<std::string> devices = { "device1" };
     StoreMetaData metaData;
     auto result = service.GetReuseDevice(devices, metaData);
     EXPECT_EQ(result.size(), 0);
@@ -660,9 +659,9 @@ HWTEST_F(RdbServiceImplTest, GetReuseDevice001, TestSize.Level0)
 HWTEST_F(RdbServiceImplTest, DoAutoSync001, TestSize.Level0)
 {
     RdbServiceImpl service;
-    std::vector<std::string> devices = {"device1"};
+    std::vector<std::string> devices = { "device1" };
     StoreMetaData metaData;
-    std::vector<std::string> tables = {"table1"};
+    std::vector<std::string> tables = { "table1" };
 
     auto result = service.DoAutoSync(devices, metaData, tables);
     EXPECT_EQ(result, RDB_ERROR);
@@ -686,9 +685,9 @@ HWTEST_F(RdbServiceImplTest, DoAutoSync002, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
 
     RdbServiceImpl service;
-    std::vector<std::string> devices = {"device1"};
+    std::vector<std::string> devices = { "device1" };
     DistributedData::Database database;
-    std::vector<std::string> tables = {"table1"};
+    std::vector<std::string> tables = { "table1" };
     database.bundleName = "bundleName";
     database.name = "storeName";
     database.user = "100";
@@ -708,18 +707,18 @@ HWTEST_F(RdbServiceImplTest, DoAutoSync002, TestSize.Level0)
 HWTEST_F(RdbServiceImplTest, OnReady_DoAutoSync001, TestSize.Level0)
 {
     RdbServiceImpl service;
-    std::vector<std::string> devices = {"device1"};
+    std::vector<std::string> devices = { "device1" };
     DistributedData::Database database;
     database.name = TEST_STORE;
 
     DistributedData::Table table1;
     table1.name = "table1";
-    table1.deviceSyncFields = {"field1", "field2"};
+    table1.deviceSyncFields = { "field1", "field2" };
     DistributedData::Table table2;
     table2.name = "table2";
     table2.deviceSyncFields = {};
 
-    database.tables = {table1, table2};
+    database.tables = { table1, table2 };
     auto [exists, metaData] = RdbServiceImpl::LoadSyncMeta(database);
     EXPECT_EQ(exists, false);
     auto result = service.DoAutoSync(devices, metaData, database.GetSyncTables());
@@ -902,11 +901,11 @@ HWTEST_F(RdbServiceImplTest, SpecialChannel003, TestSize.Level0)
     EXPECT_NE(executors, nullptr);
     RdbServiceImpl service;
     service.OnInitialize();
-    service.OnBind({.executors = executors});
+    service.OnBind({ .executors = executors });
     auto result = service.IsSpecialChannel(TEST_SYNC_DEVICE);
     EXPECT_EQ(result, true);
     executors->Remove(service.saveChannelsTask_);
-    service.OnBind({.executors = nullptr});
+    service.OnBind({ .executors = nullptr });
     executors = nullptr;
 }
 
@@ -987,8 +986,8 @@ HWTEST_F(RdbServiceImplTest, AfterOpen003, TestSize.Level0)
     RdbSyncerParam param;
     param.bundleName_ = metaData_.bundleName;
     param.storeName_ = metaData_.storeId;
-    param.tokenIds_ = {123};
-    param.uids_ = {123};
+    param.tokenIds_ = { 123 };
+    param.uids_ = { 123 };
     param.permissionNames_ = {};
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = metaData_.bundleName;
@@ -999,11 +998,11 @@ HWTEST_F(RdbServiceImplTest, AfterOpen003, TestSize.Level0)
     int32_t result = service.AfterOpen(param);
     EXPECT_EQ(result, RDB_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
-    param.tokenIds_ = {123};
-    param.uids_ = {456};
+    param.tokenIds_ = { 123 };
+    param.uids_ = { 456 };
     result = service.AfterOpen(param);
     EXPECT_EQ(result, RDB_OK);
-    param.permissionNames_ = {"com.example.myapplication"};
+    param.permissionNames_ = { "com.example.myapplication" };
     result = service.AfterOpen(param);
     EXPECT_EQ(result, RDB_OK);
 
@@ -1028,7 +1027,7 @@ HWTEST_F(RdbServiceImplTest, AfterOpen004, TestSize.Level0)
     param.bundleName_ = metaData_.bundleName;
     param.storeName_ = metaData_.storeId;
     int32_t result = service.AfterOpen(param);
- 
+
     EXPECT_EQ(result, RDB_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
 }
@@ -1097,6 +1096,41 @@ HWTEST_F(RdbServiceImplTest, NotifyDataChange003, TestSize.Level0)
     result = service.NotifyDataChange(param, rdbChangedData, rdbNotifyConfig);
     EXPECT_EQ(result, RDB_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: NotifyDataChange004
+ * @tc.desc: Test NotifyDataChange when Check pass.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbServiceImplTest, NotifyDataChange004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.storeName_ = metaData_.storeId;
+    param.bundleName_ = metaData_.bundleName;
+    param.user_ = metaData_.user;
+    param.hapName_ = metaData_.hapName;
+    param.customDir_ = metaData_.customDir;
+    param.area_ = metaData_.area;
+    RdbChangedData rdbChangedData;
+    RdbNotifyConfig rdbNotifyConfig;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    database.deviceId = metaData_.deviceId;
+    database.autoSyncType = AutoSyncType::SYNC_ON_CHANGE_READY;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    rdbNotifyConfig.delay_ = 0;
+    int32_t result = service.NotifyDataChange(param, rdbChangedData, rdbNotifyConfig);
+    EXPECT_EQ(result, RDB_OK);
+    rdbNotifyConfig.delay_ = DELY_TIME;
+    result = service.NotifyDataChange(param, rdbChangedData, rdbNotifyConfig);
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
 }
 
 /**
@@ -1363,8 +1397,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables002, TestSize.Level0)
     std::vector<OHOS::DistributedRdb::Reference> references;
 
     int32_t result =
-        service.SetDistributedTables(param, tables, references, false,
-                                     DistributedTableType::DISTRIBUTED_SEARCH);
+        service.SetDistributedTables(param, tables, references, false, DistributedTableType::DISTRIBUTED_SEARCH);
     EXPECT_EQ(result, RDB_OK);
 }
 
@@ -1387,8 +1420,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables003, TestSize.Level0)
     std::vector<OHOS::DistributedRdb::Reference> references;
 
     int32_t result =
-        service.SetDistributedTables(param, tables, references, false,
-                                     DistributedTableType::DISTRIBUTED_SEARCH);
+        service.SetDistributedTables(param, tables, references, false, DistributedTableType::DISTRIBUTED_SEARCH);
     EXPECT_EQ(result, RDB_ERROR);
 }
 
@@ -1413,8 +1445,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables004, TestSize.Level0)
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
     int32_t result =
-        service.SetDistributedTables(param, tables, references, false,
-                                     DistributedTableType::DISTRIBUTED_DEVICE);
+        service.SetDistributedTables(param, tables, references, false, DistributedTableType::DISTRIBUTED_DEVICE);
     EXPECT_EQ(result, RDB_OK);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
@@ -1430,7 +1461,7 @@ HWTEST_F(RdbServiceImplTest, Sync001, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
-    RdbService::Option option {};
+    RdbService::Option option{};
     PredicatesMemo predicates;
 
     int32_t result = service.Sync(param, option, predicates, nullptr);
@@ -1451,7 +1482,7 @@ HWTEST_F(RdbServiceImplTest, Sync002, TestSize.Level0)
     param.bundleName_ = TEST_BUNDLE;
     param.storeName_ = TEST_STORE;
     param.hapName_ = "test/test";
-    RdbService::Option option {};
+    RdbService::Option option{};
     PredicatesMemo predicates;
 
     int32_t result = service.Sync(param, option, predicates, nullptr);
@@ -1471,7 +1502,7 @@ HWTEST_F(RdbServiceImplTest, Sync003, TestSize.Level0)
     RdbSyncerParam param;
     param.bundleName_ = TEST_BUNDLE;
     param.storeName_ = "Sync003";
-    RdbService::Option option { DistributedData::GeneralStore::NEARBY_BEGIN };
+    RdbService::Option option{ DistributedData::GeneralStore::NEARBY_BEGIN };
     PredicatesMemo predicates;
     auto [exists, meta] = RdbServiceImpl::LoadStoreMetaData(param);
     (void)exists;
@@ -1494,13 +1525,12 @@ HWTEST_F(RdbServiceImplTest, Sync004, TestSize.Level0)
     RdbSyncerParam param;
     param.bundleName_ = TEST_BUNDLE;
     param.storeName_ = "Sync004";
-    RdbService::Option option { DistributedData::GeneralStore::CLOUD_BEGIN };
+    RdbService::Option option{ DistributedData::GeneralStore::CLOUD_BEGIN };
     PredicatesMemo predicates;
 
     int32_t result = service.Sync(param, option, predicates, nullptr);
     EXPECT_EQ(result, RDB_OK);
 }
-
 
 /**
  * @tc.name: QuerySharingResource001
@@ -1599,7 +1629,7 @@ HWTEST_F(RdbServiceImplTest, Subscribe001, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
-    SubscribeOption option {};
+    SubscribeOption option{};
     option.mode = SubscribeMode::SUBSCRIBE_MODE_MAX;
 
     int32_t result = service.Subscribe(param, option, nullptr);
@@ -1617,7 +1647,7 @@ HWTEST_F(RdbServiceImplTest, UnSubscribe001, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
-    SubscribeOption option {};
+    SubscribeOption option{};
     option.mode = SubscribeMode::SUBSCRIBE_MODE_MAX;
 
     int32_t result = service.UnSubscribe(param, option, nullptr);
@@ -1853,7 +1883,7 @@ HWTEST_F(RdbServiceImplTest, VerifyPromiseInfo002, TestSize.Level0)
     StoreMetaDataLocal localMeta;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     localMeta.isAutoSync = true;
-    localMeta.promiseInfo.tokenIds = {tokenId};
+    localMeta.promiseInfo.tokenIds = { tokenId };
     localMeta.promiseInfo.uids = {};
     localMeta.promiseInfo.permissionNames = {};
 
@@ -1892,7 +1922,7 @@ HWTEST_F(RdbServiceImplTest, VerifyPromiseInfo003, TestSize.Level0)
     StoreMetaDataLocal localMeta;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     localMeta.isAutoSync = true;
-    localMeta.promiseInfo.tokenIds = {tokenId};
+    localMeta.promiseInfo.tokenIds = { tokenId };
     localMeta.promiseInfo.uids = {};
     localMeta.promiseInfo.permissionNames = {};
     metaData_.dataDir = "path";
@@ -1977,7 +2007,7 @@ HWTEST_F(RdbServiceImplTest, CheckParam002, TestSize.Level0)
     result = service.IsValidParam(param);
 
     EXPECT_EQ(result, false);
-    
+
     param.hapName_ = "test\\..test";
 
     result = service.IsValidParam(param);
@@ -2220,7 +2250,7 @@ HWTEST_F(RdbServiceImplTest, Delete_001, TestSize.Level1)
     EXPECT_EQ(errCode, RDB_ERROR);
     param.bundleName_ = "bundleName";
     param.storeName_ = "storeName";
-    param.user_ =  "0";
+    param.user_ = "0";
     errCode = service.Delete(param);
     EXPECT_EQ(errCode, RDB_OK);
 }
@@ -2259,7 +2289,7 @@ HWTEST_F(RdbServiceImplTest, Delete_002, TestSize.Level1)
     meta2.user = "0";
     meta2.bundleName = "bundleName";
     meta2.storeId = "storeName";
-    meta2.dataDir ="path2";
+    meta2.dataDir = "path2";
     meta2.instanceId = 1;
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta2.GetKey(), meta2, true), true);
 
@@ -2311,7 +2341,7 @@ HWTEST_F(RdbServiceImplTest, Delete_003, TestSize.Level1)
     meta2.user = "0";
     meta2.bundleName = "bundleName";
     meta2.storeId = "storeName";
-    meta2.dataDir ="path2";
+    meta2.dataDir = "path2";
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta2.GetKey(), meta2, true), true);
 
     RdbServiceImpl service;
@@ -2414,7 +2444,6 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_002, TestSize.Level1)
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
 }
 
-
 /**
  * @tc.name: RegisterEvent_003
  * @tc.desc: Test RegisterEvent_003.
@@ -2424,8 +2453,8 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_003, TestSize.Level1)
 {
     StoreMetaMapping metaMapping;
     InitMapping(metaMapping);
-    metaMapping.cloudPath ="path1";
-    metaMapping.dataDir ="path";
+    metaMapping.cloudPath = "path1";
+    metaMapping.dataDir = "path";
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
 
     StoreMetaData meta;
@@ -2433,7 +2462,7 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_003, TestSize.Level1)
     meta.user = "100";
     meta.bundleName = "bundleName";
     meta.storeId = "storeName";
-    meta.dataDir ="path1";
+    meta.dataDir = "path1";
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     RdbServiceImpl service;
     DistributedData::StoreInfo storeInfo;
@@ -2459,8 +2488,8 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_004, TestSize.Level1)
 {
     StoreMetaMapping metaMapping;
     InitMapping(metaMapping);
-    metaMapping.cloudPath ="path";
-    metaMapping.dataDir ="path";
+    metaMapping.cloudPath = "path";
+    metaMapping.dataDir = "path";
     metaMapping.storeType = StoreMetaData::STORE_KV_BEGIN;
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
 
@@ -2487,8 +2516,8 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_005, TestSize.Level1)
 {
     StoreMetaMapping metaMapping;
     InitMapping(metaMapping);
-    metaMapping.cloudPath ="path";
-    metaMapping.dataDir ="path";
+    metaMapping.cloudPath = "path";
+    metaMapping.dataDir = "path";
     metaMapping.storeType = StoreMetaData::STORE_OBJECT_BEGIN;
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
 
@@ -2515,8 +2544,8 @@ HWTEST_F(RdbServiceImplTest, RegisterEvent_006, TestSize.Level1)
 {
     StoreMetaMapping metaMapping;
     InitMapping(metaMapping);
-    metaMapping.cloudPath ="path1";
-    metaMapping.dataDir ="path";
+    metaMapping.cloudPath = "path1";
+    metaMapping.dataDir = "path";
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
 
     RdbServiceImpl service;
@@ -2546,8 +2575,8 @@ HWTEST_F(RdbServiceImplTest, QuerySharingResource_PermissionDenied_001, TestSize
     RdbSyncerParam param;
     // param.bundleName_ and param.storeName_ left empty to trigger CheckAccess failure
     PredicatesMemo predicates;
-    predicates.tables_ = {"table1"};
-    std::vector<std::string> columns = {"col1", "col2"};
+    predicates.tables_ = { "table1" };
+    std::vector<std::string> columns = { "col1", "col2" };
 
     auto result = service.QuerySharingResource(param, predicates, columns);
     EXPECT_EQ(result.first, RDB_ERROR);
@@ -2568,8 +2597,8 @@ HWTEST_F(RdbServiceImplTest, QuerySharingResource_PermissionDenied_002, TestSize
     param.bundleName_ = TEST_BUNDLE;
     param.storeName_ = TEST_STORE;
     PredicatesMemo predicates;
-    predicates.tables_ = {"table1"};
-    std::vector<std::string> columns = {"col1", "col2"};
+    predicates.tables_ = { "table1" };
+    std::vector<std::string> columns = { "col1", "col2" };
 
     auto result = service.QuerySharingResource(param, predicates, columns);
     EXPECT_EQ(result.first, RDB_ERROR);
