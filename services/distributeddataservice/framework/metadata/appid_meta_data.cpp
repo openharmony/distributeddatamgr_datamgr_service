@@ -52,6 +52,11 @@ std::string AppIDMetaData::GetKey() const
 {
     return appId;
 }
+
+bool AppIDMetaData::operator!=(const AppIDMetaData &appIdMetaData) const
+{
+    return !(*this == appIdMetaData);
+}
 } // namespace DistributedData
 } // namespace OHOS
 

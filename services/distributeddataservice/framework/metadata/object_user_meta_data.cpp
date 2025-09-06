@@ -32,4 +32,14 @@ std::string ObjectUserMetaData::GetKey()
 {
     return KEY_PREFIX;
 }
+
+bool ObjectUserMetaData::operator==(const ObjectUserMetaData &meta) const
+{
+    return (userId == meta.userId);
+}
+
+bool ObjectUserMetaData::operator!=(const ObjectUserMetaData &meta) const
+{
+    return !(*this == meta);
+}
 }

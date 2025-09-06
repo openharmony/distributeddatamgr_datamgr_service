@@ -1474,4 +1474,23 @@ HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
     EXPECT_EQ(ptr1, ptr2);
     EXPECT_EQ((*ptr2)["snap1"], snapshot);
 }
+
+/**
+* @tc.name: SaveUserToMeta001
+* @tc.desc: SaveUserToMeta test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, SaveUserToMeta001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    ObjectUserMetaData testUserMeta;
+    MetaDataManager::GetInstance().LoadMeta(ObjectUserMetaData::GetKey(), testUserMeta, true);
+    manager.SaveUserToMeta();
+    testUserMeta.userId = "1000";
+    MetaDataManager::GetInstance().SaveMeta(ObjectUserMetaData::GetKey(), testUserMeta, true);
+    manager.SaveUserToMeta();
+    auto ret = MetaDataManager::GetInstance().DelMeta(ObjectUserMetaData::GetKey(), true);
+    manager.SaveUserToMeta();
+    EXPECT_EQ(ret, true);
+}
 } // namespace OHOS::Test

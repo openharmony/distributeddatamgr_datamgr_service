@@ -26,6 +26,8 @@ public:
     API_EXPORT bool Unmarshal(const json &node) override;
     API_EXPORT ObjectUserMetaData();
 
+    API_EXPORT bool operator==(const ObjectUserMetaData &meta) const;
+    API_EXPORT bool operator!=(const ObjectUserMetaData &meta) const;
     API_EXPORT static std::string GetKey();
 
 private:

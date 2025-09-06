@@ -19,10 +19,15 @@
 
 #include <gtest/gtest.h>
 
+#include "account/account_delegate.h"
 #include "accesstoken_kit.h"
 #include "device_manager_adapter_mock.h"
 #include "ipc_skeleton.h"
 #include "token_setproc.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/object_user_meta_data.h"
+#include "metadata/appid_meta_data.h"
+#include "bootstrap.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
@@ -200,5 +205,90 @@ HWTEST_F(ObjectServiceImplTest, UnregisterProgressObserver001, TestSize.Level1)
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
     int32_t ret = objectServiceImpl->UnregisterProgressObserver(bundleName_, sessionId_);
     EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name: SaveMeta001
+ * @tc.desc: Save StoreMetaData test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, SaveMeta001, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    DeviceInfo devInfo = { .uuid = "123" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
+    int foregroundUserId = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    std::string userId = std::to_string(foregroundUserId);
+    auto ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    StoreMetaData testUserMeta;
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKey(), testUserMeta, true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    StoreMetaData testUserMeta1;
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKey(), testUserMeta1, true);
+    testUserMeta1.appType = "test_appType";
+    MetaDataManager::GetInstance().SaveMeta(testUserMeta.GetKey(), testUserMeta1, true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    MetaDataManager::GetInstance().DelMeta(testUserMeta.GetKey(), true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+}
+
+/**
+ * @tc.name: SaveMeta002
+ * @tc.desc: Save key StoreMetaData test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, SaveMeta002, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    DeviceInfo devInfo = { .uuid = "123" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
+    int foregroundUserId = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    std::string userId = std::to_string(foregroundUserId);
+    auto ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    StoreMetaData testUserMeta;
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta, true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    StoreMetaData testUserMeta1;
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1, true);
+    testUserMeta1.appType = "test_appType";
+    MetaDataManager::GetInstance().SaveMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1, true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    MetaDataManager::GetInstance().DelMeta(testUserMeta.GetKeyWithoutPath(), true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+}
+
+/**
+ * @tc.name: SaveMeta003
+ * @tc.desc: Save AppIDMetaData test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, SaveMeta003, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    DeviceInfo devInfo = { .uuid = "123" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
+    int foregroundUserId = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    std::string userId = std::to_string(foregroundUserId);
+    AppIDMetaData testAppIdMeta;
+    std::string appId = Bootstrap::GetInstance().GetProcessLabel();
+    MetaDataManager::GetInstance().DelMeta(appId, true);
+    auto ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    MetaDataManager::GetInstance().LoadMeta(appId, testAppIdMeta, true);
+    testAppIdMeta.bundleName = "test_app";
+    MetaDataManager::GetInstance().SaveMeta(appId, testAppIdMeta, true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
 }
 }
