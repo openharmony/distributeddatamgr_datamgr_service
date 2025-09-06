@@ -141,7 +141,17 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
     udmfServiceImpl->OnBind(
         { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    QueryOption query = GenerateFuzzQueryOption(provider);
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("DataHub", "com.test.demo", groupIdStr);
+    udKey.intention = Intention::UD_INTENTION_DATA_HUB;
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();\
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
     std::string svalue = provider.ConsumeRandomLengthString();
     UnifiedData data1;
     std::shared_ptr<Object> obj = std::make_shared<Object>();
@@ -436,9 +446,11 @@ void IsReadAndKeepFuzz(FuzzedDataProvider &provider)
     privilege2.tokenId = provider.ConsumeIntegral<uint32_t>();
     privilege2.readPermission = "readAndKeep";
     privilege2.writePermission = "write";
-    std::vector<Privilege> privileges = { privilege, privilege2 };
+    std::vector<Privilege> privileges1 = { privilege, privilege2 };
     QueryOption query = GenerateFuzzQueryOption(provider);
-    udmfServiceImpl->IsReadAndKeep(privileges, query);
+    udmfServiceImpl->IsReadAndKeep(privileges1, query);
+    std::vector<Privilege> privileges2 = { privilege };
+    udmfServiceImpl->IsReadAndKeep(privileges2, query);
 }
 
 void ProcessUriFuzz(FuzzedDataProvider &provider)
@@ -452,6 +464,8 @@ void ProcessUriFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data.AddRecord(record);
+    Runtime runtime;
+    data.SetRuntime(runtime);
     udmfServiceImpl->ProcessUri(query, data);
 }
 
@@ -466,6 +480,8 @@ void ProcessCrossDeviceDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data.AddRecord(record);
+    Runtime runtime;
+    data.SetRuntime(runtime);
     std::vector<Uri> uris;
     udmfServiceImpl->ProcessCrossDeviceData(tokenId, data, uris);
 }
@@ -560,7 +576,6 @@ void VerifyIntentionPermissionFuzz(FuzzedDataProvider &provider)
     UnifiedKey udKey(intention, bundleName, groupIdStr);
     CheckerManager::CheckInfo info;
     info.tokenId = provider.ConsumeIntegral<uint32_t>();
-    udmfServiceImpl->VerifyIntentionPermission(query, data, udKey, info);
     Runtime runtime;
     data.SetRuntime(runtime);
     udmfServiceImpl->VerifyIntentionPermission(query, data, udKey, info);
@@ -581,11 +596,9 @@ void CheckAppIdFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::string intention = provider.ConsumeRandomLengthString();
     std::string bundleName = provider.ConsumeRandomLengthString();
-    std::string appId = provider.ConsumeRandomLengthString();
     std::string groupId = provider.ConsumeRandomLengthString();
-    uint32_t tokenid = provider.ConsumeIntegral<uint32_t>();
     Privilege privilege;
-    privilege.tokenId = tokenid;
+    privilege.tokenId = provider.ConsumeIntegral<uint32_t>();
     UnifiedData data;
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
@@ -600,8 +613,8 @@ void CheckAppIdFuzz(FuzzedDataProvider &provider)
     runtime->sourcePackage = bundleName;
     runtime->createPackage = bundleName;
     runtime->recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
-    runtime->tokenId = tokenid;
-    runtime->appId = appId;
+    runtime->tokenId = provider.ConsumeIntegral<uint32_t>();
+    runtime->appId = provider.ConsumeRandomLengthString();
     udmfServiceImpl->CheckAppId(runtime, bundleName);
 }
 
@@ -610,9 +623,8 @@ void CheckDeleteDataPermissionFuzz(FuzzedDataProvider &provider)
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::string bundleName = provider.ConsumeRandomLengthString();
     std::string appId = provider.ConsumeRandomLengthString();
-    uint32_t tokenid = provider.ConsumeIntegral<uint32_t>();
     Privilege privilege;
-    privilege.tokenId = tokenid;
+    privilege.tokenId = provider.ConsumeIntegral<uint32_t>();
     UnifiedData data;
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
@@ -632,7 +644,7 @@ void CheckDeleteDataPermissionFuzz(FuzzedDataProvider &provider)
     runtime->sourcePackage = bundleName;
     runtime->createPackage = bundleName;
     runtime->recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
-    runtime->tokenId = tokenid;
+    runtime->tokenId = provider.ConsumeIntegral<uint32_t>();
     runtime->appId = appId;
     QueryOption query;
     query.key = udKey.GetUnifiedKey();
@@ -672,7 +684,8 @@ void SetAppShareOptionFuzz(FuzzedDataProvider &provider)
     requestUpdate.RewindRead(0);
     CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
     std::string intention = UD_INTENTION_MAP.at(option.intention);
-    ITypesUtil::Marshal(requestUpdate, intention);
+    int32_t shareOption = provider.ConsumeIntegral<int32_t>();
+    ITypesUtil::Marshal(requestUpdate, intention, shareOption);
 
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_APP_SHARE_OPTION),
@@ -901,6 +914,63 @@ void HandleDelayDataCallbackFuzz(FuzzedDataProvider &provider)
     std::string key = provider.ConsumeRandomLengthString();
     udmfServiceImpl->HandleDelayDataCallback(delayGetDataInfo, unifiedData, key);
 }
+
+void RetrieveDataFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    unifiedData.AddRecord(record);
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    udmfServiceImpl->RetrieveData(query, unifiedData);
+}
+
+void VerifyUpdatePermissionFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    unifiedData.AddRecord(record);
+    Runtime runtime;
+    unifiedData.SetRuntime(runtime);
+    std::string bundleName = provider.ConsumeRandomLengthString();
+    udmfServiceImpl->VerifyUpdatePermission(query, unifiedData, bundleName);
+}
+
+void VerifyPermissionFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::string permission = provider.ConsumeRandomLengthString();
+    uint32_t callerTokenId = provider.ConsumeIntegral<uint32_t>();
+    udmfServiceImpl->VerifyPermission(permission, callerTokenId);
+}
 }
 
 /* Fuzzer entry point */
@@ -966,5 +1036,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::IsNeedMetaSyncFuzz(provider);
     OHOS::VerifyDataAccessPermissionFuzz(provider);
     OHOS::HandleDelayDataCallbackFuzz(provider);
+    OHOS::RetrieveDataFuzz(provider);
+    OHOS::VerifyUpdatePermissionFuzz(provider);
+    OHOS::VerifyPermissionFuzz(provider);
     return 0;
 }
