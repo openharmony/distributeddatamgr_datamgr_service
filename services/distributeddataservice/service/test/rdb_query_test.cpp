@@ -54,13 +54,13 @@ HWTEST_F(RdbQueryTest, RdbQueryTest001, TestSize.Level1)
     std::string devices = "devices1";
     std::string sql = "SELECT * FROM table";
     Values args;
-    rdbQuery.MakeRemoteQuery(devices, sql, std::move(args));
-    EXPECT_TRUE(rdbQuery.IsRemoteQuery());
-    EXPECT_EQ(rdbQuery.GetDevices().size(), 1);
-    EXPECT_EQ(rdbQuery.GetDevices()[0], devices);
+    RdbQuery remoteQuery(devices, sql, std::move(args));
+    EXPECT_TRUE(remoteQuery.IsRemoteQuery());
+    EXPECT_EQ(remoteQuery.GetDevices().size(), 1);
+    EXPECT_EQ(remoteQuery.GetDevices()[0], devices);
     DistributedRdb::PredicatesMemo predicates;
-    rdbQuery.MakeQuery(predicates);
-    rdbQuery.MakeCloudQuery(predicates);
+    RdbQuery normalQuery(predicates);
+    RdbQuery cloudQuery(predicates, true);
     EXPECT_EQ(predicates.tables_.size(), 0);
     EXPECT_TRUE(predicates.tables_.empty());
     EXPECT_EQ(predicates.operations_.size(), 0);
@@ -75,11 +75,10 @@ HWTEST_F(RdbQueryTest, RdbQueryTest001, TestSize.Level1)
 */
 HWTEST_F(RdbQueryTest, RdbQueryTest002, TestSize.Level1)
 {
-    RdbQuery rdbQuery;
     std::string devices = "devices1";
     std::string sql = "SELECT * FROM table";
     Values args;
-    rdbQuery.MakeRemoteQuery(devices, sql, std::move(args));
+    RdbQuery remoteQuery(devices, sql, std::move(args));
     DistributedRdb::PredicatesMemo predicates;
     predicates.tables_.push_back("table1");
     predicates.tables_.push_back("table2");
@@ -87,8 +86,8 @@ HWTEST_F(RdbQueryTest, RdbQueryTest002, TestSize.Level1)
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "name", "John Doe");
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::GREATER_THAN, "age", "30");
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::OPERATOR_MAX, "too", "99");
-    rdbQuery.MakeQuery(predicates);
-    rdbQuery.MakeCloudQuery(predicates);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery(predicates, true);
     EXPECT_EQ(predicates.tables_.size(), 2);
     EXPECT_TRUE(!predicates.tables_.empty());
     EXPECT_EQ(predicates.operations_.size(), 3);
@@ -103,11 +102,10 @@ HWTEST_F(RdbQueryTest, RdbQueryTest002, TestSize.Level1)
 */
 HWTEST_F(RdbQueryTest, RdbQueryTest003, TestSize.Level1)
 {
-    RdbQuery rdbQuery;
     std::string devices = "devices1";
     std::string sql = "SELECT * FROM table";
     Values args;
-    rdbQuery.MakeRemoteQuery(devices, sql, std::move(args));
+    RdbQuery remoteQuery(devices, sql, std::move(args));
     DistributedRdb::PredicatesMemo predicates;
     predicates.tables_.push_back("table1");
     predicates.tables_.push_back("table2");
@@ -127,7 +125,7 @@ HWTEST_F(RdbQueryTest, RdbQueryTest003, TestSize.Level1)
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::GREATER_THAN_OR_EQUAL, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LESS_THAN, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LESS_THAN_OR_EQUAL, "test", values);
-    rdbQuery.MakeQuery(predicates);
+    RdbQuery rdbQuery(predicates);
     EXPECT_TRUE(values.empty());
     EXPECT_TRUE(values.size() != 2);
 }
@@ -141,11 +139,10 @@ HWTEST_F(RdbQueryTest, RdbQueryTest003, TestSize.Level1)
 */
 HWTEST_F(RdbQueryTest, RdbQueryTest004, TestSize.Level1)
 {
-    RdbQuery rdbQuery;
     std::string devices = "devices1";
     std::string sql = "SELECT * FROM table";
     Values args;
-    rdbQuery.MakeRemoteQuery(devices, sql, std::move(args));
+    RdbQuery remoteQuery(devices, sql, std::move(args));
     DistributedRdb::PredicatesMemo predicates;
     predicates.tables_.push_back("table1");
     predicates.tables_.push_back("table2");
@@ -176,7 +173,7 @@ HWTEST_F(RdbQueryTest, RdbQueryTest004, TestSize.Level1)
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LESS_THAN_OR_EQUAL, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::DISTINCT, "test", values);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::INDEXED_BY, "test", values);
-    rdbQuery.MakeQuery(predicates);
+    RdbQuery rdbQuery(predicates);
     EXPECT_TRUE(!values.empty());
     EXPECT_FALSE(values.size() != 2);
 }
@@ -190,7 +187,6 @@ HWTEST_F(RdbQueryTest, RdbQueryTest004, TestSize.Level1)
 */
 HWTEST_F(RdbQueryTest, RdbQueryTest005, TestSize.Level1)
 {
-    RdbQuery rdbQuery;
     DistributedRdb::PredicatesMemo predicates;
     predicates.tables_.push_back("table");
     std::vector<NativeRdb::AssetValue> assets;
@@ -198,7 +194,7 @@ HWTEST_F(RdbQueryTest, RdbQueryTest005, TestSize.Level1)
     assets.push_back(asset);
     NativeRdb::ValueObject object(assets);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", object);
-    rdbQuery.MakeCloudQuery(predicates);
+    RdbQuery rdbQuery(predicates);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
 
@@ -211,14 +207,13 @@ HWTEST_F(RdbQueryTest, RdbQueryTest005, TestSize.Level1)
 */
 HWTEST_F(RdbQueryTest, RdbQueryTest006, TestSize.Level1)
 {
-    RdbQuery rdbQuery;
     DistributedRdb::PredicatesMemo predicates;
     predicates.tables_.push_back("table");
     std::vector<NativeRdb::AssetValue> assets;
     NativeRdb::AssetValue asset{ .name = "name1" };
     NativeRdb::ValueObject object(asset);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", object);
-    rdbQuery.MakeCloudQuery(predicates);
+    RdbQuery rdbQuery(predicates);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
 
@@ -231,7 +226,6 @@ HWTEST_F(RdbQueryTest, RdbQueryTest006, TestSize.Level1)
 */
 HWTEST_F(RdbQueryTest, RdbQueryTest007, TestSize.Level1)
 {
-    RdbQuery rdbQuery;
     DistributedRdb::PredicatesMemo predicates;
     predicates.tables_.push_back("table");
     std::vector<NativeRdb::AssetValue> assets;
@@ -239,7 +233,7 @@ HWTEST_F(RdbQueryTest, RdbQueryTest007, TestSize.Level1)
     assets.push_back(asset);
     NativeRdb::ValueObject object(assets);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
-    rdbQuery.MakeCloudQuery(predicates);
+    RdbQuery rdbQuery(predicates);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
 } // namespace DistributedRDBTest

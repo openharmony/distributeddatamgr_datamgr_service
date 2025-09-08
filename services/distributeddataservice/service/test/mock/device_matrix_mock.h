@@ -22,8 +22,8 @@
 namespace OHOS::DistributedData {
 class BDeviceMatrix {
 public:
-    virtual std::pair<bool, uint16_t> GetMask(const std::string &, DeviceMatrix::LevelType);
-    virtual std::pair<bool, uint16_t> GetRemoteMask(const std::string &, DeviceMatrix::LevelType);
+    virtual std::pair<bool, uint16_t> GetMask(const std::string &, DeviceMatrix::LevelType) = 0;
+    virtual std::pair<bool, uint16_t> GetRemoteMask(const std::string &, DeviceMatrix::LevelType) = 0;
     BDeviceMatrix() = default;
     virtual ~BDeviceMatrix() = default;
     static inline std::shared_ptr<BDeviceMatrix> deviceMatrix = nullptr;

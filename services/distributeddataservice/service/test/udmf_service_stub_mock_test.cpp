@@ -14,10 +14,11 @@
 */
 
 #define LOG_TAG "UdmfServiceStubMockTest"
-#include "udmf_service_stub.h"
+#include <gtest/gtest.h>
+
 #include "udmf_service_impl.h"
+#include "udmf_service_stub.h"
 #include "udmf_types_util.h"
-#include "gtest/gtest.h"
 
 using namespace OHOS::DistributedData;
 namespace OHOS::UDMF {

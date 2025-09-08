@@ -21,7 +21,6 @@ config("module_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "include",
-    "include/utils",
     "${data_service_path}/adapter/include",
   ]
 }

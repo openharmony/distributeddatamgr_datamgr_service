@@ -21,6 +21,46 @@
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
+RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
+    : isPriority_(isPriority), devices_(predicates.devices_), tables_(predicates.tables_)
+{
+    ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
+        predicates.devices_.size(), predicates.operations_.size());
+    if (predicates.tables_.size() == 1) {
+        if (!isPriority) {
+            query_ = DistributedDB::Query::Select(*predicates.tables_.begin());
+        } else {
+            query_.From(*predicates.tables_.begin());
+        }
+    }
+
+    if (predicates.tables_.size() > 1) {
+        query_.FromTable(predicates.tables_);
+    }
+
+    if (predicates.operations_.empty() || predicates.tables_.empty()) {
+        return;
+    }
+
+    predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
+    for (const auto& operation : predicates.operations_) {
+        if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
+            (this->*HANDLES[operation.operator_])(operation);
+        }
+    }
+}
+
+RdbQuery::RdbQuery(const std::vector<std::string> &tables)
+    : query_(DistributedDB::Query::Select())
+{
+    query_.FromTable(tables);
+}
+
+RdbQuery::RdbQuery(const std::string &device, const std::string &sql, Values &&args)
+    : isRemote_(true), sql_(sql), args_(std::move(args)), devices_({device})
+{
+}
+
 bool RdbQuery::IsEqual(uint64_t tid)
 {
     return tid == TYPE_ID;
@@ -31,14 +71,6 @@ std::vector<std::string> RdbQuery::GetTables()
     return tables_;
 }
 
-void RdbQuery::MakeRemoteQuery(const std::string &devices, const std::string &sql, Values &&args)
-{
-    isRemote_ = true;
-    devices_ = { devices };
-    sql_ = sql;
-    args_ = std::move(args);
-}
-
 DistributedDB::Query RdbQuery::GetQuery() const
 {
     return query_;
@@ -47,55 +79,6 @@ DistributedDB::Query RdbQuery::GetQuery() const
 std::vector<std::string> RdbQuery::GetDevices() const
 {
     return devices_;
-}
-
-void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
-{
-    ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
-        predicates.devices_.size(), predicates.operations_.size());
-    query_ = predicates.tables_.size() == 1 ? DistributedDB::Query::Select(*predicates.tables_.begin())
-                                            : DistributedDB::Query::Select();
-    if (predicates.tables_.size() > 1) {
-        query_.FromTable(predicates.tables_);
-    }
-    if (!predicates.tables_.empty()) {
-        predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
-    }
-    for (const auto &operation : predicates.operations_) {
-        if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
-            (this->*HANDLES[operation.operator_])(operation);
-        }
-    }
-    devices_ = predicates.devices_;
-    tables_ = predicates.tables_;
-}
-
-void RdbQuery::MakeDeviceQuery(const std::vector<std::string> &tables)
-{
-    query_ = DistributedDB::Query::Select().FromTable(tables);
-}
-
-void RdbQuery::MakeCloudQuery(const PredicatesMemo& predicates)
-{
-    ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
-        predicates.devices_.size(), predicates.operations_.size());
-    devices_ = predicates.devices_;
-    tables_ = predicates.tables_;
-    if (predicates.operations_.empty() || predicates.tables_.size() != 1) {
-        query_ = DistributedDB::Query::Select();
-        if (!predicates.tables_.empty()) {
-            query_.FromTable(predicates.tables_);
-        }
-        return;
-    }
-    predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
-    query_ = DistributedDB::Query::Select().From(*predicates.tables_.begin());
-    isPriority_ = true;
-    for (const auto& operation : predicates.operations_) {
-        if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
-            (this->*HANDLES[operation.operator_])(operation);
-        }
-    }
 }
 
 bool RdbQuery::IsRemoteQuery()

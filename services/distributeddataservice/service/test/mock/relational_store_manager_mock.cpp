@@ -18,6 +18,7 @@
 #include "relational_store_delegate_mock.h"
 #include "relational_store_manager.h"
 namespace DistributedDB {
+bool MockRelationalStoreDelegate::gTestResult = false;
 DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::string &storeId,
     const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate)
 {

@@ -27,8 +27,15 @@ public:
     };
     using TableProperties = std::map<std::string, TableChangeProperties>;
     struct EventInfo {
+        EventInfo() = default;
+        EventInfo(const std::vector<std::string> &tables)
+        {
+            for (auto &table : tables) {
+                tableProperties[table].isTrackedDataChange = true;
+            }
+        }
         TableProperties tableProperties;
-        bool isFull;
+        bool isFull = false;
     };
 
     DataChangeEvent(StoreInfo storeInfo, EventInfo evtInfo)

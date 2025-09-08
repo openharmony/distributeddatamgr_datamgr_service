@@ -16,11 +16,13 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_BACKUP_BACKUP_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_BACKUP_BACKUP_MANAGER_H
 
-#include "executor_pool.h"
+#include <functional>
+
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
-#include "types.h"
-
+namespace OHOS {
+class ExecutorPool;
+}
 namespace OHOS::DistributedData {
 class BackupManager {
 public:

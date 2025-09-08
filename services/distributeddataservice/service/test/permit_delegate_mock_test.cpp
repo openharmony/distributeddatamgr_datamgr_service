@@ -166,8 +166,8 @@ HWTEST_F(PermitDelegateMockTest, VerifyPermission001, testing::ext::TestSize.Lev
     AppIDMetaData appMeta("permitdelegatemocktestId", "com.permitdelegatetest.app");
     EXPECT_CALL(*metaDataMgrMock, LoadMeta(_, _, _)).WillOnce(DoAll(SetArgReferee<1>(appMeta), Return(true)));
     CheckParam checkParam = {
-        .appId = "permitdelegatemocktestId",
         .userId = "userid",
+        .appId = "permitdelegatemocktestId",
         .storeId = "storeid",
         .deviceId = "deviceid",
         .instanceId = 1
@@ -193,8 +193,8 @@ HWTEST_F(PermitDelegateMockTest, VerifyPermission002, testing::ext::TestSize.Lev
     auto ret = PermitDelegate::GetInstance().appId2BundleNameMap_.Find(key);
     ASSERT_TRUE(ret.second == value);
     CheckParam checkParam = {
-        .appId = "permitdelegatemocktestId2",
         .userId = "userid2",
+        .appId = "permitdelegatemocktestId2",
         .storeId = "storeid2",
         .deviceId = "deviceid2",
         .instanceId = 0

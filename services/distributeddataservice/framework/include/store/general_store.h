@@ -18,10 +18,10 @@
 #include <errors.h>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <set>
 
 #include "executor_pool.h"
-#include "snapshot/snapshot.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
@@ -30,6 +30,7 @@ namespace OHOS::DistributedData {
 class CloudDB;
 class AssetLoader;
 struct Database;
+class Snapshot;
 class GeneralStore {
 public:
     using Watcher = GeneralWatcher;
