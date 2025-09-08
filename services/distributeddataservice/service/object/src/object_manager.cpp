@@ -71,7 +71,12 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
     option.syncDualTupleMode = true;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
     ZLOGD("start GetKvStore");
-    kvStoreDelegateManager_->GetKvStore(ObjectCommon::OBJECTSTORE_DB_STOREID, option,
+    auto kvStoreDelegateManager = GetKvStoreDelegateManager();
+    if (kvStoreDelegateManager == nullptr) {
+        ZLOGE("Kvstore delegate manager is nullptr.");
+        return store;
+    }
+    kvStoreDelegateManager->GetKvStore(ObjectCommon::OBJECTSTORE_DB_STOREID, option,
         [&store, this](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
             if (dbStatus != DistributedDB::DBStatus::OK) {
                 ZLOGE("GetKvStore fail %{public}d", dbStatus);
@@ -910,10 +915,14 @@ void ObjectStoreManager::DoNotifyWaitAssetTimeout(const std::string &objectKey)
 void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &userId)
 {
     ZLOGI("enter, user: %{public}s", userId.c_str());
-    kvStoreDelegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>
-        (DistributedData::Bootstrap::GetInstance().GetProcessLabel(), userId);
+    InitKvStoreDelegateManager(userId);
     DistributedDB::KvStoreConfig kvStoreConfig { dataDir };
-    auto status = kvStoreDelegateManager_->SetKvStoreConfig(kvStoreConfig);
+    auto kvStoreDelegateManager = GetKvStoreDelegateManager();
+    if (kvStoreDelegateManager == nullptr) {
+        ZLOGE("Kvstore delegate manager is nullptr.");
+        return;
+    }
+    auto status = kvStoreDelegateManager->SetKvStoreConfig(kvStoreConfig);
     if (status != DistributedDB::OK) {
         ZLOGE("Set kvstore config failed, status: %{public}d", status);
         return;
@@ -923,8 +932,9 @@ void ObjectStoreManager::SetData(const std::string &dataDir, const std::string &
 
 int32_t ObjectStoreManager::Open()
 {
-    if (kvStoreDelegateManager_ == nullptr) {
-        ZLOGE("Kvstore delegate manager not init");
+    auto kvStoreDelegateManager = GetKvStoreDelegateManager();
+    if (kvStoreDelegateManager == nullptr) {
+        ZLOGE("Kvstore delegate manager is not init");
         return OBJECT_INNER_ERROR;
     }
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
@@ -945,11 +955,16 @@ int32_t ObjectStoreManager::Open()
 
 void ObjectStoreManager::ForceClose()
 {
+    auto kvStoreDelegateManager = GetKvStoreDelegateManager();
+    if (kvStoreDelegateManager == nullptr) {
+        ZLOGE("Kvstore delegate manager is nullptr.");
+        return;
+    }
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_, std::chrono::seconds(LOCK_TIMEOUT));
     if (delegate_ == nullptr) {
         return;
     }
-    auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
+    auto status = kvStoreDelegateManager->CloseKvStore(delegate_);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("CloseKvStore fail %{public}d", status);
         return;
@@ -1007,10 +1022,15 @@ void ObjectStoreManager::FlushClosedStore()
         ZLOGE("executors_ is nullptr");
         return;
     }
+    auto kvStoreDelegateManager = GetKvStoreDelegateManager();
+    if (kvStoreDelegateManager == nullptr) {
+        ZLOGE("Kvstore delegate manager nullptr");
+        return;
+    }
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (!isSyncing_ && syncCount_ == 0 && delegate_ != nullptr) {
         ZLOGD("close store");
-        auto status = kvStoreDelegateManager_->CloseKvStore(delegate_);
+        auto status = kvStoreDelegateManager->CloseKvStore(delegate_);
         if (status != DistributedDB::DBStatus::OK) {
             int timeOut = 1000;
             executors_->Schedule(std::chrono::milliseconds(timeOut), [this]() {
@@ -1564,6 +1584,19 @@ int32_t ObjectStoreManager::AutoLaunchStore()
     CloseAfterMinute();
     ZLOGI("Auto launch, close after a minute");
     return OBJECT_SUCCESS;
+}
+
+std::shared_ptr<DistributedDB::KvStoreDelegateManager> ObjectStoreManager::GetKvStoreDelegateManager()
+{
+    std::shared_lock<decltype(rwKvStoreMutex_)> lock(rwKvStoreMutex_);
+    return kvStoreDelegateManager_;
+}
+
+void ObjectStoreManager::InitKvStoreDelegateManager(const std::string &userId)
+{
+    std::unique_lock<decltype(rwKvStoreMutex_)> lock(rwKvStoreMutex_);
+    kvStoreDelegateManager_ = std::make_shared<DistributedDB::KvStoreDelegateManager>(
+        DistributedData::Bootstrap::GetInstance().GetProcessLabel(), userId);
 }
 } // namespace DistributedObject
 } // namespace OHOS

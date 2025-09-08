@@ -686,6 +686,10 @@ HWTEST_F(ObjectManagerTest, FlushClosedStore001, TestSize.Level0)
     manager.FlushClosedStore();
     manager.delegate_ = manager.OpenObjectKvStore();
     ASSERT_NE(manager.delegate_, nullptr);
+    manager.kvStoreDelegateManager_ = nullptr;
+    manager.FlushClosedStore();
+    ASSERT_NE(manager.delegate_, nullptr);
+    manager.InitKvStoreDelegateManager(userId_);
     manager.FlushClosedStore();
     ASSERT_EQ(manager.delegate_, nullptr);
 }
@@ -703,6 +707,8 @@ HWTEST_F(ObjectManagerTest, Close001, TestSize.Level0)
     manager.syncCount_ = 1; // test syncCount_
     manager.Close();
     ASSERT_EQ(manager.syncCount_, 1); // 1 is for testing
+    std::string dataDir = "/data/app/el2/100/database";
+    manager.SetData(dataDir, userId_);
     manager.delegate_ = manager.OpenObjectKvStore();
     manager.Close();
     ASSERT_EQ(manager.syncCount_, 0); // 0 is for testing
@@ -822,6 +828,8 @@ HWTEST_F(ObjectManagerTest, SplitEntryKey002, TestSize.Level0)
 HWTEST_F(ObjectManagerTest, ProcessOldEntry001, TestSize.Level0)
 {
     auto &manager = ObjectStoreManager::GetInstance();
+    std::string dataDir = "/data/app/el2/100/database";
+    manager.SetData(dataDir, userId_);
     manager.delegate_ = manager.OpenObjectKvStore();
     std::vector<DistributedDB::Entry> entries;
     auto status = manager.delegate_->GetEntries(std::vector<uint8_t>(appId_.begin(), appId_.end()), entries);
@@ -1473,5 +1481,19 @@ HWTEST_F(ObjectManagerTest, GetSnapShots001, TestSize.Level1)
     auto ptr2 = manager.GetSnapShots(bundleName, storeName);
     EXPECT_EQ(ptr1, ptr2);
     EXPECT_EQ((*ptr2)["snap1"], snapshot);
+}
+
+/**
+* @tc.name: SetData001
+* @tc.desc: SetData test.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, SetData001, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string dataDir = "/data/app/el2/100/database";
+    manager.userId_ = "1000";
+    manager.SetData(dataDir, userId_);
+    EXPECT_EQ(manager.userId_, userId_);
 }
 } // namespace OHOS::Test
