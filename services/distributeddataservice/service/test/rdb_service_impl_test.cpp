@@ -2759,5 +2759,94 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_NoUpdate_003, Test
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
+
+/**
+ * @tc.name: PostHeartbeatTask001
+ * @tc.desc: Test that tasks does not contain path and delay == 0.
+ * @tc.type: FUNC
+ * @tc.expect: The taskId is invalid in PostHeartbeatTask
+ */
+HWTEST_F(RdbServiceImplTest, PostHeartbeatTask001, TestSize.Level0)
+{
+    int32_t callingPid = 123;
+    uint32_t delay = 0;
+    DistributedData::StoreInfo storeInfo;
+    DataChangeEvent::EventInfo eventInfo;
+    storeInfo.path = "/test/path";
+    RdbServiceImpl service;
+    service.PostHeartbeatTask(callingPid, delay, storeInfo, eventInfo);
+    auto it = service.heartbeatTaskIds_.Find(callingPid);
+    auto taskId = it.second[storeInfo.path];
+    EXPECT_EQ(taskId, ExecutorPool::INVALID_TASK_ID);
+}
+
+/**
+ * @tc.name: PostHeartbeatTask002
+ * @tc.desc: Test that tasks does not contain path and delay != 0.
+ * @tc.type: FUNC
+ * @tc.expect: The taskId is invalid in PostHeartbeatTask
+ */
+HWTEST_F(RdbServiceImplTest, PostHeartbeatTask002, TestSize.Level0)
+{
+    int32_t callingPid = 123;
+    uint32_t delay = 1000;
+    DistributedData::StoreInfo storeInfo;
+    DataChangeEvent::EventInfo eventInfo;
+    storeInfo.path = "/test/path";
+    RdbServiceImpl service;
+    service.executors_ = std::make_shared<ExecutorPool>(2, 0);
+    service.PostHeartbeatTask(callingPid, delay, storeInfo, eventInfo);
+    auto it = service.heartbeatTaskIds_.Find(callingPid);
+    auto taskId = it.second[storeInfo.path];
+    EXPECT_NE(taskId, ExecutorPool::INVALID_TASK_ID);
+    service.executors_->Remove(taskId);
+}
+
+/**
+ * @tc.name: PostHeartbeatTask003
+ * @tc.desc: Test if the task already exists, delay is not 0.
+ * @tc.type: FUNC
+ * @tc.expect: The tableProperties value in the global variable changes
+ */
+HWTEST_F(RdbServiceImplTest, PostHeartbeatTask003, TestSize.Level0)
+{
+    int32_t callingPid = 456;
+    uint32_t delay = 1000;
+    DistributedData::StoreInfo storeInfo;
+    DataChangeEvent::EventInfo eventInfo;
+    eventInfo.isFull = true;
+    eventInfo.tableProperties["table1"] = {1, 0};
+    storeInfo.path = "/test/path";
+    RdbServiceImpl service;
+    service.executors_ = std::make_shared<ExecutorPool>(2, 0);
+    service.PostHeartbeatTask(callingPid, delay, storeInfo, eventInfo);
+    DataChangeEvent::EventInfo eventInfo_again;
+    eventInfo_again.isFull = false;
+    eventInfo_again.tableProperties["table1"] = {0, 0};
+    eventInfo_again.tableProperties["table2"] = {1, 0};
+
+    service.PostHeartbeatTask(callingPid, delay, storeInfo, eventInfo);
+    auto globalEvents = service.eventContainer_->events_[storeInfo.path];
+    EXPECT_EQ(globalEvents.tableProperties["table1"].isTrackedDataChange, 1);
+    EXPECT_EQ(globalEvents.tableProperties["table1"].isP2pSyncDataChange, 0);
+    auto it = service.heartbeatTaskIds_.Find(callingPid);
+    auto taskId = it.second[storeInfo.path];
+    service.executors_->Remove(taskId);
+}
+
+/**
+ * @tc.name: StealEvent001
+ * @tc.desc: Test path is not in events_.
+ * @tc.type: FUNC
+ * @tc.expect: StealEvent returns nullopt
+ */
+HWTEST_F(RdbServiceImplTest, StealEvent001, TestSize.Level0)
+{
+    const std::string testPath = "/test/path";
+    DataChangeEvent::EventInfo testEventInfo;
+    RdbServiceImpl service;
+    auto result = service.eventContainer_->StealEvent(testPath);
+    EXPECT_EQ(result, std::nullopt);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
