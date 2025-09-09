@@ -153,7 +153,7 @@ private:
         int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId) override;
     private:
-        static constexpr inline int32_t INVALID_TOKENID = 0;
+        static constexpr int32_t INVALID_TOKENID = 0;
         int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index,
             int32_t tokenId = INVALID_TOKENID) const;
     };
@@ -167,9 +167,9 @@ private:
         std::shared_ptr<RdbStatic> staticActs_;
     };
 
-    static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
-    static constexpr inline uint32_t SHARE_WAIT_TIME = 60; // seconds
-    static constexpr inline uint32_t SAVE_CHANNEL_INTERVAL = 5; // minutes
+    static constexpr uint32_t WAIT_TIME = 30 * 1000;
+    static constexpr uint32_t SHARE_WAIT_TIME = 60; // seconds
+    static constexpr uint32_t SAVE_CHANNEL_INTERVAL = 5; // minutes
 
     void RegisterRdbServiceInfo();
 

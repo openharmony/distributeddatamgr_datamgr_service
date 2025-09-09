@@ -20,7 +20,6 @@
 #include "dfx_types.h"
 #include "executor_pool.h"
 #include "fault_reporter.h"
-#include "statistic_reporter.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
@@ -29,15 +28,7 @@ public:
     API_EXPORT virtual ~Reporter() = default;
     API_EXPORT static bool RegisterReporterInstance(Reporter *reporter);
     API_EXPORT static Reporter* GetInstance();
-    API_EXPORT virtual FaultReporter* ServiceFault() = 0;
-    API_EXPORT virtual FaultReporter* RuntimeFault() = 0;
-    API_EXPORT virtual FaultReporter* DatabaseFault() = 0;
-    API_EXPORT virtual FaultReporter* CommunicationFault() = 0;
     API_EXPORT virtual FaultReporter* CloudSyncFault() = 0;
-    API_EXPORT virtual StatisticReporter<DbStat>* DatabaseStatistic() = 0;
-    API_EXPORT virtual StatisticReporter<VisitStat>* VisitStatistic() = 0;
-    API_EXPORT virtual StatisticReporter<TrafficStat>* TrafficStatistic() = 0;
-    API_EXPORT virtual StatisticReporter<ApiPerformanceStat>* ApiPerformanceStatistic() = 0;
     API_EXPORT virtual BehaviourReporter* GetBehaviourReporter() = 0;
     API_EXPORT virtual void SetThreadPool(std::shared_ptr<ExecutorPool> executors) = 0;
 

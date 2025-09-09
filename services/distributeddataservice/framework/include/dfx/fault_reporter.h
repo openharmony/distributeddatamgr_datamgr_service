@@ -17,14 +17,12 @@
 #define DISTRIBUTEDDATAMGR_FAULT_REPORTER_H
 
 #include "dfx_types.h"
+#include "visibility.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
 class FaultReporter {
 public:
-    API_EXPORT virtual ReportStatus Report(const FaultMsg &msg) = 0;
-    API_EXPORT virtual ReportStatus Report(const CommFaultMsg &msg) = 0;
-    API_EXPORT virtual ReportStatus Report(const DBFaultMsg &ms) = 0;
     API_EXPORT virtual ReportStatus Report(const ArkDataFaultMsg &msg){ return ReportStatus::SUCCESS; };
     API_EXPORT virtual ~FaultReporter() {}
 };

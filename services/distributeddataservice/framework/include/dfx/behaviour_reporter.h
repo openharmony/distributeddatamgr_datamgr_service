@@ -17,6 +17,7 @@
 #define DISTRIBUTEDDATAMGR_BEHAVIOUR_REPORTER_H
 
 #include "dfx_types.h"
+#include "visibility.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {

@@ -81,7 +81,6 @@ ohos_source_set("distributeddata_rdb") {
     "c_utils:utils",
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
-    "dmsfwk:distributed_sdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
