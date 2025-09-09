@@ -145,9 +145,9 @@ void DBDelegate::StartTimer(bool encrypt)
                 dstTaskIdTemp = Executor::INVALID_TASK_ID;
             };
             if (encrypt) {
-                stores_.DoActionIfEmpty(task);
-            } else {
                 storesEncrypt_.DoActionIfEmpty(task);
+            } else {
+                stores_.DoActionIfEmpty(task);
             }
         },
         std::chrono::seconds(INTERVAL), std::chrono::seconds(INTERVAL));
