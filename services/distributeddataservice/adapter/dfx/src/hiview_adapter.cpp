@@ -29,8 +29,6 @@ using namespace DistributedKv;
 using Anonymous = DistributedData::Anonymous;
 namespace {
 constexpr const char *DATAMGR_DOMAIN = "DISTDATAMGR";
-// fault key
-constexpr const char *SYNC_ERROR_INFO = "SYNC_ERROR_INFO";
 // Database statistic
 constexpr const char *USER_ID = "ANONYMOUS_UID";
 constexpr const char *APP_ID = "APP_ID";

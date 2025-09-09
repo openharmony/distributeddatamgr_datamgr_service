@@ -20,8 +20,6 @@
 #include <memory>
 #include <string>
 
-#include "db_meta_callback_delegate.h"
-
 namespace OHOS {
 namespace DistributedDataDfx {
 struct ModuleName {
