@@ -75,7 +75,7 @@ public:
         void SetPrepareTraceId(const std::string &prepareTraceId);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         bool Contains(const std::string &storeName);
-        inline static constexpr const char *DEFAULT_ID = "default";
+        static constexpr const char *DEFAULT_ID = "default";
 
     private:
         friend SyncManager;

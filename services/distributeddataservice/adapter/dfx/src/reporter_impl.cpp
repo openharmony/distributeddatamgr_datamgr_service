@@ -17,14 +17,6 @@
 
 #include "behaviour/behaviour_reporter_impl.h"
 #include "fault/cloud_sync_fault_impl.h"
-#include "fault/communication_fault_impl.h"
-#include "fault/database_fault_impl.h"
-#include "fault/runtime_fault_impl.h"
-#include "fault/service_fault_impl.h"
-#include "statistic/api_performance_statistic_impl.h"
-#include "statistic/database_statistic_impl.h"
-#include "statistic/traffic_statistic_impl.h"
-#include "statistic/visit_statistic_impl.h"
 
 namespace OHOS {
 namespace DistributedDataDfx {
@@ -39,67 +31,11 @@ bool ReporterImpl::Init()
     return true;
 }
 
-FaultReporter* ReporterImpl::CommunicationFault()
-{
-    static CommunicationFaultImpl communicationFault;
-    communicationFault.SetThreadPool(executors_);
-    return &communicationFault;
-}
-
-FaultReporter* ReporterImpl::DatabaseFault()
-{
-    static DatabaseFaultImpl databaseFault;
-    databaseFault.SetThreadPool(executors_);
-    return &databaseFault;
-}
-
-FaultReporter* ReporterImpl::RuntimeFault()
-{
-    static RuntimeFaultImpl runtimeFault;
-    runtimeFault.SetThreadPool(executors_);
-    return &runtimeFault;
-}
-
 FaultReporter* ReporterImpl::CloudSyncFault()
 {
     static CloudSyncFaultImpl cloudSyncFault;
     cloudSyncFault.SetThreadPool(executors_);
     return &cloudSyncFault;
-}
-
-FaultReporter* ReporterImpl::ServiceFault()
-{
-    static ServiceFaultImpl serviceFault;
-    serviceFault.SetThreadPool(executors_);
-    return &serviceFault;
-}
-
-StatisticReporter<TrafficStat>* ReporterImpl::TrafficStatistic()
-{
-    static TrafficStatisticImpl trafficStatistic;
-    trafficStatistic.SetThreadPool(executors_);
-    return &trafficStatistic;
-}
-
-StatisticReporter<struct VisitStat>* ReporterImpl::VisitStatistic()
-{
-    static VisitStatisticImpl visitStatistic;
-    visitStatistic.SetThreadPool(executors_);
-    return &visitStatistic;
-}
-
-StatisticReporter<struct DbStat>* ReporterImpl::DatabaseStatistic()
-{
-    static DatabaseStatisticImpl databaseStatistic;
-    databaseStatistic.SetThreadPool(executors_);
-    return &databaseStatistic;
-}
-
-StatisticReporter<ApiPerformanceStat>* ReporterImpl::ApiPerformanceStatistic()
-{
-    static ApiPerformanceStatisticImpl apiPerformanceStat;
-    apiPerformanceStat.SetThreadPool(executors_);
-    return &apiPerformanceStat;
 }
 
 BehaviourReporter* ReporterImpl::GetBehaviourReporter()
@@ -113,15 +49,7 @@ void ReporterImpl::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;
     if (executors != nullptr) {
-        ServiceFault();
-        RuntimeFault();
-        DatabaseFault();
         CloudSyncFault();
-        CommunicationFault();
-        DatabaseStatistic();
-        VisitStatistic();
-        TrafficStatistic();
-        ApiPerformanceStatistic();
         GetBehaviourReporter();
     }
 }
