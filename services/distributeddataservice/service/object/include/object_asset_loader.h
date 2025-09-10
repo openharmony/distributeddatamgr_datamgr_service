@@ -16,12 +16,14 @@
 #define DISTRIBUTEDDATAMGR_OBJECT_ASSET_LOADER_H
 
 #include <string>
+#include <unordered_set>
+
+#include "asset/asset_send_callback_stub.h"
+#include "concurrent_map.h"
 #include "executor_pool.h"
+#include "i_asset_sync_manager.h"
 #include "object_types.h"
 #include "store/general_value.h"
-#include "concurrent_map.h"
-#include <unordered_set>
-#include "asset/asset_send_callback_stub.h"
 namespace OHOS {
 namespace DistributedObject {
 using AssetObj = Storage::DistributedFile::AssetObj;
@@ -58,7 +60,7 @@ private:
     bool IsDownloading(const DistributedData::Asset& asset);
     bool IsDownloaded(const DistributedData::Asset& asset);
     void UpdateDownloaded(const DistributedData::Asset& asset);
-    static constexpr int WAIT_TIME = 60;
+    std::shared_ptr<IAssetSyncManager> GetAssetSyncManager();
     static constexpr int LAST_DOWNLOAD_ASSET_SIZE = 200;
     std::shared_ptr<ExecutorPool> executors_;
     std::mutex mutex_;
@@ -67,6 +69,8 @@ private:
     ConcurrentMap<uint32_t, TransferTask> tasks_;
     ConcurrentMap<std::string, std::string> downloaded_;
     ConcurrentMap<std::string, std::string> downloading_;
+    std::mutex assetSyncMutex_;
+    std::shared_ptr<IAssetSyncManager> assetSyncManager_ = nullptr;
 };
 } // namespace DistributedObject
 } // namespace OHOS

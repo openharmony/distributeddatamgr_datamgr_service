@@ -16,15 +16,14 @@
 
 #include "object_asset_loader.h"
 #include "block_data.h"
-#include "cloud_sync_asset_manager.h"
 #include "log_print.h"
 #include "object_common.h"
 #include "utils/anonymous.h"
 #include "object_radar_reporter.h"
 #include "distributed_file_daemon_manager.h"
 namespace OHOS::DistributedObject {
-using namespace OHOS::FileManagement::CloudSync;
 using namespace OHOS::DistributedData;
+using Creater = std::shared_ptr<OHOS::DistributedObject::IAssetSyncManager> (*)();
 ObjectAssetLoader &ObjectAssetLoader::GetInstance()
 {
     static ObjectAssetLoader loader;
@@ -39,30 +38,12 @@ void ObjectAssetLoader::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 bool ObjectAssetLoader::Transfer(const int32_t userId, const std::string& bundleName, const std::string& deviceId,
     const DistributedData::Asset& asset)
 {
-    AssetInfo assetInfo;
-    assetInfo.uri = asset.uri;
-    assetInfo.assetName = asset.name;
-    ZLOGI("Start transfer, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
-        Anonymous::Change(deviceId).c_str(), Anonymous::Change(assetInfo.assetName).c_str());
-    auto block = std::make_shared<BlockData<std::tuple<bool, int32_t>>>(WAIT_TIME, std::tuple{ true, OBJECT_SUCCESS });
-    auto res = CloudSyncAssetManager::GetInstance().DownloadFile(userId, bundleName, deviceId, assetInfo,
-        [block](const std::string& uri, int32_t status) {
-            block->SetValue({ false, status });
-        });
-    if (res != OBJECT_SUCCESS) {
-        ZLOGE("fail, res: %{public}d, name: %{public}s, deviceId: %{public}s, bundleName: %{public}s", res,
-            Anonymous::Change(asset.name).c_str(), Anonymous::Change(deviceId).c_str(), bundleName.c_str());
+    auto syncManager = GetAssetSyncManager();
+    if (syncManager == nullptr) {
+        ZLOGW("syncManager is nullptr");
         return false;
     }
-    auto [timeout, status] = block->GetValue();
-    if (timeout || status != OBJECT_SUCCESS) {
-        ZLOGE("fail, timeout: %{public}d, status: %{public}d, name: %{public}s, deviceId: %{public}s ", timeout,
-            status, Anonymous::Change(asset.name).c_str(), Anonymous::Change(deviceId).c_str());
-        return false;
-    }
-    ZLOGD("Transfer end, bundleName: %{public}s, deviceId: %{public}s, assetName: %{public}s", bundleName.c_str(),
-        Anonymous::Change(deviceId).c_str(), Anonymous::Change(assetInfo.assetName).c_str());
-    return true;
+    return syncManager->Transfer(userId, bundleName, deviceId, asset);
 }
 
 void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::string& bundleName,
@@ -187,6 +168,26 @@ int32_t ObjectAssetLoader::PushAsset(int32_t userId, const sptr<AssetObj> &asset
             ObjectStore::PUSH_ASSETS, ObjectStore::RADAR_FAILED, status, ObjectStore::FINISHED);
     }
     return status;
+}
+
+std::shared_ptr<IAssetSyncManager> ObjectAssetLoader::GetAssetSyncManager()
+{
+    std::lock_guard<std::mutex> lock(assetSyncMutex_);
+    if (assetSyncManager_ != nullptr) {
+        return assetSyncManager_;
+    }
+    void *handler = dlopen("libasset_sync_manager.z.so", RTLD_LAZY);
+    if (handler == nullptr) {
+        ZLOGW("dlopen failed");
+        return nullptr;
+    }
+    auto creator = reinterpret_cast<Creater>(dlsym(handler, "CreateAssetSyncManager"));
+    if (creator == nullptr) {
+        ZLOGE("dlsym failed, %{public}s", dlerror());
+        return nullptr;
+    }
+    assetSyncManager_ = creator();
+    return assetSyncManager_;
 }
 
 int32_t ObjectAssetsSendListener::OnSendResult(const sptr<AssetObj> &assetObj, int32_t result)

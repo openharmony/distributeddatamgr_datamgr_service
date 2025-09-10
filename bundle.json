@@ -109,7 +109,8 @@
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/rust/extension:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/conf:build_module",
-                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module"
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/object/asset_loader:asset_sync_manager"
             ],
             "inner_kits": [
                 {
