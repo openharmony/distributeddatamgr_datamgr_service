@@ -71,7 +71,7 @@ private:
     };
     void RegisterObjectServiceInfo();
     void RegisterHandler();
-    int32_t SaveMetaData(const std::string &userId)
+    int32_t SaveMetaData(const std::string &userId);
     StoreMetaData GetMetaData(const std::string &deviceId, const std::string &userId);
     void UpdateMetaData();
 
