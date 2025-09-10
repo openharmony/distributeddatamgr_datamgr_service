@@ -63,10 +63,10 @@ AutoCache::~AutoCache()
 
 std::string AutoCache::GenerateKey(const std::string &path, const std::string &storeId) const
 {
-    std::string key = "";
-    if (path.empty() || storeId.empty()) {
-        return key;
+    if (path.empty()) {
+        return storeId;
     }
+    std::string key = "";
     return key.append(path).append(KEY_SEPARATOR).append(storeId);
 }
 

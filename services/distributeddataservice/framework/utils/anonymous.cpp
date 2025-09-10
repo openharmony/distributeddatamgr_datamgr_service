@@ -14,6 +14,7 @@
  */
 
 #include "utils/anonymous.h"
+#include <vector>
 namespace OHOS {
 namespace DistributedData {
 

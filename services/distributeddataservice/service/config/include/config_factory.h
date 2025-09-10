@@ -34,7 +34,7 @@ public:
     API_EXPORT std::vector<AppIdMappingConfig> *GetAppIdMappingConfig();
     API_EXPORT ThreadConfig *GetThreadConfig();
     API_EXPORT DataShareConfig *GetDataShareConfig();
-    API_EXPORT DeviceSyncAppWhiteListConfig *GetDeviceSyncAppWhiteListConfig();
+    API_EXPORT std::vector<AutoSyncAppConfig> *GetAutoSyncAppConfig();
     API_EXPORT AppAccessCheckConfig *GetSyncAppsConfig();
 private:
     static constexpr const char *CONF_PATH = "/system/etc/distributeddata/conf";

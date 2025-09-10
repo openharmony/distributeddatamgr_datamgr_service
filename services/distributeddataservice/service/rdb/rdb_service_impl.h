@@ -19,6 +19,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <variant>
 
 #include "cloud/cloud_event.h"
 #include "commonevent/data_change_event.h"
@@ -28,6 +29,7 @@
 #include "feature/static_acts.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
+#include "process_communicator_impl.h"
 #include "rdb_notifier_proxy.h"
 #include "rdb_query.h"
 #include "rdb_service_stub.h"
@@ -38,7 +40,6 @@
 #include "store/general_value.h"
 #include "store_observer.h"
 #include "visibility.h"
-#include "process_communicator_impl.h"
 
 namespace OHOS::DistributedRdb {
 using namespace OHOS::AppDistributedKv;
@@ -178,15 +179,15 @@ private:
         const AsyncDetail &async);
 
     void DoCompensateSync(const DistributedData::BindEvent& event);
-
+    void SaveAutoSyncDeviceId(const StoreMetaData &meta, const std::vector<std::string> &devices);
     int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
 
-    int DoAutoSync(
-        const std::vector<std::string> &devices, const Database &dataBase, std::vector<std::string> tableNames);
+    int DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &storeMetaData,
+        const std::vector<std::string> &tables);
 
     std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices, const StoreMetaData &metaData);
-    int DoOnlineSync(const std::vector<std::string> &devices, const Database &dataBase);
+    int DoOnlineSync(const std::string &device, const Database &dataBase);
 
     int DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData);
 
