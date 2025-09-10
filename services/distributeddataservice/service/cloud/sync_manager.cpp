@@ -1095,9 +1095,9 @@ void SyncManager::OnNetworkDisconnected()
     networkRecoveryManager_.OnNetworkDisconnected();
 }
 
-void SyncManager::OnNetworkConnected(const std::vector<int32_t> &users)
+void SyncManager::OnNetworkConnected()
 {
-    networkRecoveryManager_.OnNetworkConnected(users);
+    networkRecoveryManager_.OnNetworkConnected();
 }
 
 void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
@@ -1108,7 +1108,7 @@ void SyncManager::NetworkRecoveryManager::OnNetworkDisconnected()
     currentEvent_->disconnectTime = std::chrono::system_clock::now();
 }
 
-void SyncManager::NetworkRecoveryManager::OnNetworkConnected(const std::vector<int32_t> &users)
+void SyncManager::NetworkRecoveryManager::OnNetworkConnected()
 {
     std::unique_ptr<NetWorkEvent> event;
     {
@@ -1123,6 +1123,11 @@ void SyncManager::NetworkRecoveryManager::OnNetworkConnected(const std::vector<i
     auto duration = now - event->disconnectTime;
     auto hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
     bool timeout = (hours > NETWORK_DISCONNECT_TIMEOUT_HOURS);
+    std::vector<int32_t> users;
+    if (!Account::GetInstance()->QueryForegroundUsers(users) || users.empty()) {
+        ZLOGE("no foreground user, skip sync.");
+        return;
+    }
     for (auto user : users) {
         const auto &syncApps = timeout ? GetAppList(user) : event->syncApps[user];
         for (const auto &bundleName : syncApps) {

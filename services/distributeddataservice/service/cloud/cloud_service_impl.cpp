@@ -808,7 +808,7 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
         Execute(GenTask(0, user, CloudSyncScene::NETWORK_RECOVERY,
             { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     }
-    syncManager_.OnNetworkConnected(users);
+    syncManager_.OnNetworkConnected();
     return SUCCESS;
 }
 

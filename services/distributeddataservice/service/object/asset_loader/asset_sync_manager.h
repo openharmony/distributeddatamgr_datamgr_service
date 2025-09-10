@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef DISTRIBUTEDDATAMGR_ASSET_SYNC_MANAGER_H
-#define DISTRIBUTEDDATAMGR_ASSET_SYNC_MANAGER_H
+#ifndef DISTRIBUTEDDATAMGR_SERVICE_OBJECT_ASSET_LOADER_ASSET_SYNC_MANAGER_H
+#define DISTRIBUTEDDATAMGR_SERVICE_OBJECT_ASSET_LOADER_ASSET_SYNC_MANAGER_H
 
 #include "i_asset_sync_manager.h"
 
@@ -26,4 +26,4 @@ public:
 };
 } // namespace DistributedObject
 } // namespace OHOS
-#endif // DISTRIBUTEDDATAMGR_ASSET_SYNC_MANAGER_H
+#endif // DISTRIBUTEDDATAMGR_SERVICE_OBJECT_ASSET_LOADER_ASSET_SYNC_MANAGER_H

@@ -105,7 +105,7 @@ public:
     void CleanCompensateSync(int32_t userId);
     static std::string GetPath(const StoreMetaData &meta);
     void OnNetworkDisconnected();
-    void OnNetworkConnected(const std::vector<int32_t> &users);
+    void OnNetworkConnected();
 
 private:
     class NetworkRecoveryManager {
@@ -114,7 +114,7 @@ private:
         {
         }
         void OnNetworkDisconnected();
-        void OnNetworkConnected(const std::vector<int32_t> &users);
+        void OnNetworkConnected();
         void RecordSyncApps(const int32_t user, const std::string &bundleName);
 
     private:
