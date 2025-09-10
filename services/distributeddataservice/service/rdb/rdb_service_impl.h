@@ -27,6 +27,7 @@
 #include "concurrent_map.h"
 #include "crypto/crypto_manager.h"
 #include "feature/static_acts.h"
+#include "lru_bucket.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "process_communicator_impl.h"
@@ -152,7 +153,7 @@ private:
         int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId) override;
     private:
-        static constexpr inline int32_t INVALID_TOKENID = 0;
+        static constexpr int32_t INVALID_TOKENID = 0;
         int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index,
             int32_t tokenId = INVALID_TOKENID) const;
     };
@@ -166,8 +167,9 @@ private:
         std::shared_ptr<RdbStatic> staticActs_;
     };
 
-    static constexpr inline uint32_t WAIT_TIME = 30 * 1000;
-    static constexpr inline uint32_t SHARE_WAIT_TIME = 60; // seconds
+    static constexpr uint32_t WAIT_TIME = 30 * 1000;
+    static constexpr uint32_t SHARE_WAIT_TIME = 60; // seconds
+    static constexpr uint32_t SAVE_CHANNEL_INTERVAL = 5; // minutes
 
     void RegisterRdbServiceInfo();
 
@@ -177,44 +179,50 @@ private:
 
     void DumpRdbServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
 
-    void DoCloudSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
+    void DoCloudSync(const StoreMetaData &metaData, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
 
     void DoCompensateSync(const DistributedData::BindEvent& event);
-    
-    void SaveAutoSyncDeviceId(const StoreMetaData &meta, const std::vector<std::string> &devices);
 
-    int DoSync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
+    int DoSync(const StoreMetaData &meta, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
 
-    int DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &storeMetaData,
+    int DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &metaData,
         const std::vector<std::string> &tables);
 
     std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices, const StoreMetaData &metaData);
-    int DoOnlineSync(const std::string &device, const Database &dataBase);
 
-    int DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData);
+    void OnCollaborationChange(const StoreMetaData &metaData, const RdbChangedData &changedData);
+
+    void OnSearchableChange(const StoreMetaData &metaData, const RdbNotifyConfig &config,
+        const RdbChangedData &changedData);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 
     DetailAsync GetCallbacks(uint32_t tokenId, const std::string &storeName);
 
-    std::shared_ptr<DistributedData::GeneralStore> GetStore(const RdbSyncerParam& param);
-
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const StoreMetaData &storeMetaData);
 
     void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
 
-    int32_t Upgrade(const RdbSyncerParam &param, const StoreMetaData &old);
+    int32_t Upgrade(const StoreMetaData &metaData, const StoreMetaData &old);
 
-    void GetSchema(const RdbSyncerParam &param);
+    void GetCloudSchema(const StoreMetaData &metaData);
 
-    bool IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig, StoreInfo &storeInfo,
-        DistributedData::DataChangeEvent::EventInfo &eventInfo, const std::string &storeName);
+    void PostHeartbeatTask(int32_t pid, uint32_t delay, StoreInfo &storeInfo,
+        DistributedData::DataChangeEvent::EventInfo &eventInfo);
 
-    bool TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta);
+    void RemoveHeartbeatTask(int32_t pid, const std::string &path);
+
+    bool TryUpdateDeviceId(const StoreMetaData &oldMeta, StoreMetaData &meta);
 
     void SaveLaunchInfo(StoreMetaData &meta);
+
+    void SaveAutoSyncInfo(const StoreMetaData &meta, const std::vector<std::string> &devices);
+
+    void DoChannelsMemento(bool immediately = false);
+
+    bool IsSpecialChannel(const std::string &device);
 
     static bool IsValidAccess(const std::string& bundleName, const std::string& storeName);
 
@@ -228,9 +236,9 @@ private:
 
     static std::pair<bool, StoreMetaData> LoadStoreMetaData(const RdbSyncerParam &param);
 
-    static std::string GetPath(const RdbSyncerParam &param);
+    static void SaveSyncMeta(const StoreMetaData &meta);
 
-    static StoreMetaData GetStoreMetaData(const Database &dataBase);
+    static std::pair<bool, StoreMetaData> LoadSyncMeta(const Database &database);
 
     static std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> AllocResource(
         StoreInfo& storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
@@ -243,9 +251,7 @@ private:
 
     static std::pair<int32_t, int32_t> GetInstIndexAndUser(uint32_t tokenId, const std::string &bundleName);
 
-    static std::string GetSubUser(const int32_t subUser);
-    
-    static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old);
+    static std::string GetSubUser(int32_t subUser);
 
     static void SetReturnParam(const StoreMetaData &metadata, RdbSyncerParam &param);
 
@@ -253,7 +259,7 @@ private:
 
     static SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
 
-    static StoreInfo GetStoreInfo(const RdbSyncerParam &param);
+    static StoreInfo GetStoreInfoEx(const StoreMetaData &metaData);
 
     static int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
@@ -261,10 +267,12 @@ private:
 
     static int32_t SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
 
-    static int32_t PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
+    static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old);
+
+    static int32_t PostSearchEvent(int32_t evtId, const StoreMetaData &param,
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);
 
-    static void UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store);
+    static bool IsCollaboration(const StoreMetaData &metaData);
 
     std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
 
@@ -274,6 +282,9 @@ private:
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
     ConcurrentMap<int32_t, std::map<std::string, ExecutorPool::TaskId>> heartbeatTaskIds_;
+
+    LRUBucket<std::string, std::monostate> specialChannels_ { 10 };
+    ExecutorPool::TaskId saveChannelsTask_ = ExecutorPool::INVALID_TASK_ID;
 };
 } // namespace OHOS::DistributedRdb
 #endif

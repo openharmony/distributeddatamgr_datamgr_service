@@ -43,54 +43,6 @@ public:
 };
 
 /**
-* @tc.name: ReportFault001
-* @tc.desc: ReportFault function error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(HiViewAdapterDfxTest, ReportFault001, TestSize.Level0)
-{
-    int dfxCode = 0;
-    DistributedDataDfx::FaultMsg msg;
-    std::shared_ptr<ExecutorPool> executors = nullptr;
-    EXPECT_NO_FATAL_FAILURE(
-        DistributedDataDfx::HiViewAdapter::ReportFault(dfxCode, msg, executors));
-}
-
-/**
-* @tc.name: ReportDBFault001
-* @tc.desc: ReportDBFault function error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(HiViewAdapterDfxTest, ReportDBFault001, TestSize.Level0)
-{
-    int dfxCode = 0;
-    DistributedDataDfx::DBFaultMsg msg;
-    std::shared_ptr<ExecutorPool> executors = nullptr;
-    EXPECT_NO_FATAL_FAILURE(
-        DistributedDataDfx::HiViewAdapter::ReportDBFault(dfxCode, msg, executors));
-}
-
-/**
-* @tc.name: ReportCommFault001
-* @tc.desc: ReportCommFault function error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(HiViewAdapterDfxTest, ReportCommFault001, TestSize.Level0)
-{
-    int dfxCode = 0;
-    DistributedDataDfx::CommFaultMsg msg;
-    std::shared_ptr<ExecutorPool> executors = nullptr;
-    EXPECT_NO_FATAL_FAILURE(
-        DistributedDataDfx::HiViewAdapter::ReportCommFault(dfxCode, msg, executors));
-}
-
-/**
 * @tc.name: ReportArkDataFault001
 * @tc.desc: ReportArkDataFault function error test.
 * @tc.type: FUNC
@@ -120,70 +72,6 @@ HWTEST_F(HiViewAdapterDfxTest, ReportBehaviour001, TestSize.Level0)
     std::shared_ptr<ExecutorPool> executors = nullptr;
     EXPECT_NO_FATAL_FAILURE(
         DistributedDataDfx::HiViewAdapter::ReportBehaviour(dfxCode, msg, executors));
-}
-
-/**
-* @tc.name: ReportDatabaseStatistic001
-* @tc.desc: ReportDatabaseStatistic function error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(HiViewAdapterDfxTest, ReportDatabaseStatistic001, TestSize.Level0)
-{
-    int dfxCode = 0;
-    DistributedDataDfx::DbStat stat;
-    std::shared_ptr<ExecutorPool> executors = nullptr;
-    EXPECT_NO_FATAL_FAILURE(
-        DistributedDataDfx::HiViewAdapter::ReportDatabaseStatistic(dfxCode, stat, executors));
-}
-
-/**
-* @tc.name: ReportTrafficStatistic001
-* @tc.desc: ReportTrafficStatistic function error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(HiViewAdapterDfxTest, ReportTrafficStatistic001, TestSize.Level0)
-{
-    int dfxCode = 0;
-    DistributedDataDfx::TrafficStat stat;
-    std::shared_ptr<ExecutorPool> executors = nullptr;
-    EXPECT_NO_FATAL_FAILURE(
-        DistributedDataDfx::HiViewAdapter::ReportTrafficStatistic(dfxCode, stat, executors));
-}
-
-/**
-* @tc.name: ReportVisitStatistic001
-* @tc.desc: ReportVisitStatistic function error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(HiViewAdapterDfxTest, ReportVisitStatistic001, TestSize.Level0)
-{
-    int dfxCode = 0;
-    DistributedDataDfx::VisitStat stat;
-    std::shared_ptr<ExecutorPool> executors = nullptr;
-    EXPECT_NO_FATAL_FAILURE(
-        DistributedDataDfx::HiViewAdapter::ReportVisitStatistic(dfxCode, stat, executors));
-}
-
-/**
-* @tc.name: ReportApiPerformanceStatistic001
-* @tc.desc: ReportApiPerformanceStatistic function error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(HiViewAdapterDfxTest, ReportApiPerformanceStatistic001, TestSize.Level0)
-{
-    int dfxCode = 0;
-    DistributedDataDfx::ApiPerformanceStat stat;
-    std::shared_ptr<ExecutorPool> executors = nullptr;
-    EXPECT_NO_FATAL_FAILURE(
-        DistributedDataDfx::HiViewAdapter::ReportApiPerformanceStatistic(dfxCode, stat, executors));
 }
 
 /**

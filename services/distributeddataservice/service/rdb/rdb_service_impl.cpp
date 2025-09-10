@@ -49,6 +49,7 @@
 #include "rdb_query.h"
 #include "rdb_result_set_impl.h"
 #include "rdb_schema_config.h"
+#include "rdb_types_utils.h"
 #include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "sync_mgr/sync_mgr.h"
@@ -74,7 +75,6 @@ using system_clock = std::chrono::system_clock;
 
 constexpr uint32_t ITERATE_TIMES = 10000;
 constexpr uint32_t ALLOW_ONLINE_AUTO_SYNC = 8;
-constexpr uint32_t ALLOW_AUTO_SYNC_DEVICE = 10;
 constexpr int32_t VALID_PARAM_LENGTH = 2;
 const size_t KEY_COUNT = 2;
 namespace OHOS::DistributedRdb {
@@ -272,36 +272,27 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
     return RDB_OK;
 }
 
-std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const RdbSyncerParam &param)
+bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
 {
-    StoreMetaData storeMetaData = GetStoreMetaData(param);
-    MetaDataManager::GetInstance().LoadMeta(storeMetaData.GetKey(), storeMetaData, true);
-    auto watchers = GetWatchers(storeMetaData.tokenId, storeMetaData.storeId);
-    auto store = AutoCache::GetInstance().GetStore(storeMetaData, watchers);
-    if (store == nullptr) {
-        ZLOGE("store null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
+    Database database;
+    database.bundleName = metaData.bundleName;
+    database.name = metaData.storeId;
+    database.user = metaData.user;
+    if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
+        return true;
     }
-    return store;
-}
 
-void RdbServiceImpl::UpdateMeta(const StoreMetaData &meta, const StoreMetaData &localMeta, AutoCache::Store store)
-{
-    StoreMetaData syncMeta;
-    bool isCreatedSync = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), syncMeta);
-    if (!isCreatedSync || localMeta != syncMeta) {
-        ZLOGI("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
-              "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), syncMeta.storeType, meta.storeType,
-            syncMeta.isEncrypt, meta.isEncrypt, syncMeta.area, meta.area);
-        MetaDataManager::GetInstance().SaveMeta(meta.GetKeyWithoutPath(), localMeta);
+    auto isAutoSyncApp = SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId);
+    if (!isAutoSyncApp) {
+        return false;
     }
-    bool isAutoSync = SyncManager::GetInstance().IsAutoSyncApp(meta.bundleName, meta.appId);
-    Database dataBase;
-    if (isAutoSync && RdbSchemaConfig::GetDistributedSchema(localMeta, dataBase) && !dataBase.name.empty() &&
-        !dataBase.bundleName.empty()) {
-        MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true);
-        store->SetConfig({ false, GeneralStore::DistributedTableMode::COLLABORATION });
+
+    auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
+    if (success && !database.name.empty() && !database.bundleName.empty()) {
+        MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true);
+        return true;
     }
+    return false;
 }
 
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
@@ -312,49 +303,47 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
+
+    auto [exists, metaData] = LoadStoreMetaData(param);
+    if (!exists || metaData.instanceId != 0) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), metaData.instanceId);
+    }
+
     if (type == DistributedTableType::DISTRIBUTED_SEARCH) {
-        DistributedData::SetSearchableEvent::EventInfo eventInfo;
-        eventInfo.isRebuild = isRebuild;
-        return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, param, eventInfo);
+        DistributedData::SetSearchableEvent::EventInfo eventInfo{ .isRebuild = isRebuild };
+        return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, metaData, eventInfo);
     }
-    auto meta = GetStoreMetaData(param);
-    StoreMetaData localMeta;
-    bool isCreatedLocal = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), localMeta, true);
-    if (!isCreatedLocal) {
-        ZLOGE("no meta. bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
-            Anonymous::Change(param.storeName_).c_str());
-        return RDB_ERROR;
-    }
-    auto store = GetStore(meta);
+
+    auto store = GetStore(metaData);
     if (store == nullptr) {
         ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    StoreMetaMapping metaMapping(localMeta);
+
+    StoreMetaMapping metaMapping(metaData);
     MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        UpdateMeta(meta, localMeta, store);
-        metaMapping.devicePath = meta.dataDir;
-    } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
-        if (localMeta.asyncDownloadAsset != param.asyncDownloadAsset_ || localMeta.enableCloud != param.enableCloud_) {
-            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
-                  "%{public}d],enableCloud? [%{public}d -> %{public}d]",
-                param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), localMeta.asyncDownloadAsset,
-                param.asyncDownloadAsset_, localMeta.enableCloud, param.enableCloud_);
-            localMeta.asyncDownloadAsset = param.asyncDownloadAsset_;
-            localMeta.enableCloud = param.enableCloud_;
-            MetaDataManager::GetInstance().SaveMeta(localMeta.GetKey(), localMeta, true);
+        SaveSyncMeta(metaData);
+        if (IsCollaboration(metaData)) {
+            store->SetConfig({false, GeneralStore::DistributedTableMode::COLLABORATION});
         }
-        metaMapping.cloudPath = meta.dataDir;
+        metaMapping.devicePath = metaData.dataDir;
+    } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
+        if (metaData.asyncDownloadAsset != param.asyncDownloadAsset_ || metaData.enableCloud != param.enableCloud_) {
+            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
+                "%{public}d],enableCloud? [%{public}d -> %{public}d]", param.bundleName_.c_str(),
+                Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset, param.asyncDownloadAsset_,
+                metaData.enableCloud, param.enableCloud_);
+            metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
+            metaData.enableCloud = param.enableCloud_;
+            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+        }
+        metaMapping.cloudPath = metaData.dataDir;
     }
-    metaMapping = localMeta;
+    metaMapping = metaData;
     MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
-    std::vector<DistributedData::Reference> relationships;
-    for (const auto &reference : references) {
-        DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
-        relationships.emplace_back(relationship);
-    }
-    return store->SetDistributedTables(tables, type, relationships);
+    return store->SetDistributedTables(tables, type, RdbTypesUtils::Convert(references));
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
@@ -433,7 +422,14 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
             Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, nullptr };
     }
-    StoreMetaData meta = GetStoreMetaData(param);
+
+    auto [exists, meta] = LoadStoreMetaData(param);
+    if (!exists || meta.instanceId != 0) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        return { RDB_ERROR, nullptr };
+    }
+
     auto store = GetStore(meta);
     if (store == nullptr) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. GetStore failed", param.bundleName_.c_str(),
@@ -445,8 +441,7 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
         ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
     }
-    RdbQuery rdbQuery;
-    rdbQuery.MakeRemoteQuery(DmAdapter::GetInstance().ToUUID(device), sql, ValueProxy::Convert(selectionArgs));
+    RdbQuery rdbQuery(DmAdapter::GetInstance().ToUUID(device), sql, ValueProxy::Convert(selectionArgs));
     auto [errCode, cursor] = store->Query("", rdbQuery);
     if (errCode != GeneralError::E_OK) {
         return { RDB_ERROR, nullptr };
@@ -462,88 +457,63 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
-        option.mode >= DistributedData::GeneralStore::CLOUD_BEGIN) {
-        DoCloudSync(param, option, predicates, async);
-        return RDB_OK;
-    }
-    return DoSync(param, option, predicates, async);
-}
 
-void RdbServiceImpl::SaveAutoSyncDeviceId(const StoreMetaData &meta, const std::vector<std::string> &devices)
-{
-    DistributedData::SpecialChannelData specialDevices;
-    if (devices.empty()) {
-        ZLOGE("There is no deviceId in predicates");
-        return;
-    }
-
-    MetaDataManager::GetInstance().LoadMeta(specialDevices.GetKey(), specialDevices, true);
-    auto &specialUUIDs = specialDevices.devices;
-    for (auto &device : devices) {
-        auto sha256UUID = Crypto::Sha256(device);
-        auto iter = std::find(specialUUIDs.begin(), specialUUIDs.end(), sha256UUID);
-        if (iter != specialUUIDs.end() && specialUUIDs.size() == 1) {
-            continue;
-        }
-        if (iter != specialUUIDs.end()) {
-            std::swap(*iter, specialUUIDs.back());
-        } else {
-            specialUUIDs.push_back(sha256UUID);
-        }
-    }
-    if (specialUUIDs.size() > ALLOW_AUTO_SYNC_DEVICE) {
-        auto index = specialUUIDs.size() - ALLOW_AUTO_SYNC_DEVICE;
-        specialUUIDs.erase(specialUUIDs.begin(), specialUUIDs.begin() + index - 1);
-    }
-    MetaDataManager::GetInstance().SaveMeta(specialDevices.GetKey(), specialDevices, true);
-}
-
-int RdbServiceImpl::DoSync(const RdbSyncerParam &param, const RdbService::Option &option,
-    const PredicatesMemo &predicates, const AsyncDetail &async)
-{
-    StoreMetaData meta = GetStoreMetaData(param);
-    if (meta.instanceId != 0) {
+    auto [exists, meta] = LoadStoreMetaData(param);
+    if (meta.instanceId != 0) { // the exists flag should
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
         return RDB_ERROR;
     }
 
-    RdbQuery rdbQuery;
-    rdbQuery.MakeQuery(predicates);
-    auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
-                                                 : DmAdapter::ToUUID(rdbQuery.GetDevices());
-    bool isAutoSync = SyncManager::GetInstance().IsAutoSyncApp(meta.bundleName, meta.appId);
-    if (isAutoSync && !rdbQuery.GetDevices().empty()) {
-        SaveAutoSyncDeviceId(meta, devices);
+    if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
+        option.mode >= DistributedData::GeneralStore::CLOUD_BEGIN) {
+        DoCloudSync(meta, option, predicates, async);
+        return RDB_OK;
     }
+
+    StoreMetaData syncMeta;
+    exists = MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), syncMeta);
+    if (!exists || syncMeta.dataDir != meta.dataDir) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s No sync meta(%{public}d) or dataDir invalid",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), exists);
+        return RDB_ERROR;
+    }
+
+    return DoSync(syncMeta, option, predicates, async);
+}
+
+int RdbServiceImpl::DoSync(const StoreMetaData &meta, const RdbService::Option &option,
+    const PredicatesMemo &predicates, const AsyncDetail &async)
+{
     auto store = GetStore(meta);
     if (store == nullptr) {
         return RDB_ERROR;
     }
 
+    RdbQuery rdbQuery(predicates);
+    auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
+                                                 : DmAdapter::ToUUID(rdbQuery.GetDevices());
+    if (!rdbQuery.GetDevices().empty() && !devices.empty()) {
+        SaveAutoSyncInfo(meta, devices);
+    }
+
     auto pid = IPCSkeleton::GetCallingPid();
     SyncParam syncParam = { option.mode, 0, option.isCompensation };
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenId = meta.tokenId;
     ZLOGD("seqNum=%{public}u", option.seqNum);
-    auto complete = [this, rdbQuery, store, pid, syncParam, tokenId, seq = option.seqNum](
-                        const auto &results) mutable {
+    auto notify = [this, tokenId, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
+        OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
+    };
+    auto complete = [rdbQuery, store, syncParam, notify](const auto &results) mutable {
         auto ret = ProcessResult(results);
-        store->Sync(
-            ret.first, rdbQuery,
-            [this, tokenId, seq, pid](const GenDetails &result) mutable {
-                OnAsyncComplete(tokenId, pid, seq, HandleGenDetails(result));
-            },
-            syncParam);
+        store->Sync(ret.first, rdbQuery, notify, syncParam);
     };
     if (IsNeedMetaSync(meta, devices)) {
         auto result = MetaDataManager::GetInstance().Sync(devices, complete);
         return result ? GeneralError::E_OK : GeneralError::E_ERROR;
     }
-    return store->Sync(
-        devices, rdbQuery,
-        [this, tokenId, pid, seqNum = option.seqNum](const GenDetails &result) mutable {
-            OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
-        },
-        syncParam).first;
+    auto [ret, _] = store->Sync(devices, rdbQuery, notify, syncParam);
+    return ret;
 }
 
 bool RdbServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
@@ -604,8 +574,7 @@ void RdbServiceImpl::DoCompensateSync(const BindEvent &event)
     auto memo = predicates.GetDistributedPredicates();
     std::shared_ptr<RdbQuery> query = nullptr;
     if (!memo.tables_.empty()) {
-        query = std::make_shared<RdbQuery>();
-        query->MakeCloudQuery(memo);
+        query = std::make_shared<RdbQuery>(memo, true);
     }
     auto mixMode = event.GetEventId() == BindEvent::COMPENSATE_SYNC
                        ? GeneralStore::MixMode(TIME_FIRST, GeneralStore::AUTO_SYNC_MODE)
@@ -615,27 +584,23 @@ void RdbServiceImpl::DoCompensateSync(const BindEvent &event)
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
-void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::Option &option,
+void RdbServiceImpl::DoCloudSync(const StoreMetaData &metaData, const RdbService::Option &option,
     const PredicatesMemo &predicates, const AsyncDetail &async)
 {
-    StoreInfo storeInfo;
-    storeInfo.bundleName = param.bundleName_;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
-    storeInfo.storeName = RemoveSuffix(param.storeName_);
+    StoreInfo storeInfo = GetStoreInfoEx(metaData);
     std::shared_ptr<RdbQuery> query = nullptr;
     if (!predicates.tables_.empty()) {
-        query = std::make_shared<RdbQuery>();
-        query->MakeCloudQuery(predicates);
+        query = std::make_shared<RdbQuery>(predicates, true);
     }
     auto pid = IPCSkeleton::GetCallingPid();
     GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum, pid](
                                  const GenDetails &result) mutable {
         OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
     };
-    GenAsync syncCallback = [async, &param](const GenDetails &details) {
-        ZLOGD("Cloud Sync complete, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
-            Anonymous::Change(param.storeName_).c_str());
+    GenAsync syncCallback = [async, bundleName = storeInfo.bundleName, storeName = storeInfo.storeName](
+                                const GenDetails &details) {
+        ZLOGD("Cloud Sync complete, bundleName:%{public}s, storeName:%{public}s", bundleName.c_str(),
+            Anonymous::Change(storeName).c_str());
         if (async != nullptr) {
             async(HandleGenDetails(details));
         }
@@ -645,7 +610,7 @@ void RdbServiceImpl::DoCloudSync(const RdbSyncerParam &param, const RdbService::
                         : (option.isAutoSync ? GeneralStore::AUTO_SYNC_MODE : GeneralStore::MANUAL_SYNC_MODE);
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode, highMode));
     SyncParam syncParam = { mixMode, (option.isAsync ? 0 : static_cast<int32_t>(WAIT_TIME)), option.isCompensation };
-    syncParam.asyncDownloadAsset = param.asyncDownloadAsset_;
+    syncParam.asyncDownloadAsset = metaData.asyncDownloadAsset;
     auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
         option.isAutoSync ? nullptr
         : option.isAsync  ? asyncCallback
@@ -677,8 +642,8 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
         return true;
     });
     if (isCreate) {
-        AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_), GetPath(param),
-            RemoveSuffix(param.storeName_));
+        AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_),
+            GetStoreMetaData(param).dataDir, RemoveSuffix(param.storeName_));
     }
     return RDB_OK;
 }
@@ -706,8 +671,8 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
         return true;
     });
     if (destroyed) {
-        AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_), GetPath(param),
-            RemoveSuffix(param.storeName_));
+        AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_),
+            GetStoreMetaData(param).dataDir, RemoveSuffix(param.storeName_));
     }
     return RDB_OK;
 }
@@ -815,14 +780,17 @@ std::pair<int32_t, std::shared_ptr<RdbService::ResultSet>> RdbServiceImpl::Query
             Anonymous::Change(param.storeName_).c_str());
         return { RDB_ERROR, {} };
     }
-    auto rdbQuery = std::make_shared<RdbQuery>();
-    rdbQuery->MakeQuery(predicates);
+
+    auto [exists, meta] = LoadStoreMetaData(param);
+    if (!exists || meta.instanceId != 0) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        return { RDB_ERROR, {} };
+    }
+
+    auto rdbQuery = std::make_shared<RdbQuery>(predicates);
     rdbQuery->SetColumns(columns);
-    StoreInfo storeInfo;
-    storeInfo.bundleName = param.bundleName_;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
-    storeInfo.storeName = RemoveSuffix(param.storeName_);
+    StoreInfo storeInfo = GetStoreInfoEx(meta);
     auto [status, cursor] = AllocResource(storeInfo, rdbQuery);
     if (cursor == nullptr) {
         ZLOGE("cursor is null, bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
@@ -914,8 +882,8 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
     }
     auto [exist, meta] = LoadStoreMetaData(param);
     if (!exist) {
-        ZLOGW("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
-            Anonymous::Change(param.storeName_).c_str());
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
         return RDB_NO_META;
     }
     SetReturnParam(meta, param);
@@ -1010,11 +978,11 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
     if (!isCreated || meta != old) {
-        Upgrade(param, old);
+        Upgrade(meta, old);
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
             "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
             meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId(param, old, meta);
+        meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId(old, meta);
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
@@ -1041,7 +1009,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     if (param.isEncrypt_ && !param.password_.empty()) {
         SaveSecretKeyMeta(meta, param.password_);
     }
-    GetSchema(param);
+    GetCloudSchema(meta);
     return RDB_OK;
 }
 
@@ -1063,7 +1031,61 @@ bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaDat
     return true;
 }
 
-int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam &param, const RdbStatEvent &statEvent)
+void RdbServiceImpl::SaveAutoSyncInfo(const StoreMetaData &metaData, const std::vector<std::string> &devices)
+{
+    if (!SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
+        return;
+    }
+
+    bool changed = false;
+    bool immediately = false;
+    for (auto &device : devices) {
+        auto sha256UUID = Crypto::Sha256(device);
+        auto [exists, notHeader] = specialChannels_.Contains(sha256UUID);
+        if (!exists) {
+            immediately = true;
+            specialChannels_.Set(sha256UUID, {});
+        }
+        changed = changed || notHeader;
+    }
+    if (!changed && !immediately) {
+        return;
+    }
+
+    DoChannelsMemento(immediately);
+}
+
+void RdbServiceImpl::DoChannelsMemento(bool immediately)
+{
+    SpecialChannelData specialChannels;
+    auto [memento, values] = specialChannels_.DumpMemento();
+    specialChannels.devices = memento;
+    if (executors_ == nullptr || immediately) {
+        MetaDataManager::GetInstance().SaveMeta(SpecialChannelData::GetKey(), specialChannels, true);
+        return;
+    }
+
+    if (saveChannelsTask_ != ExecutorPool::INVALID_TASK_ID) {
+        executors_->Remove(saveChannelsTask_);
+        saveChannelsTask_ = ExecutorPool::INVALID_TASK_ID;
+    }
+
+    saveChannelsTask_ = executors_->Schedule(std::chrono::minutes(SAVE_CHANNEL_INTERVAL), [specialChannels] {
+        MetaDataManager::GetInstance().SaveMeta(SpecialChannelData::GetKey(), specialChannels, true);
+    });
+}
+
+bool RdbServiceImpl::IsSpecialChannel(const std::string &device)
+{
+    auto sha256UUID = Crypto::Sha256(device);
+    auto [exists, changed] = specialChannels_.Contains(sha256UUID);
+    if (changed) {
+        DoChannelsMemento();
+    }
+    return exists;
+}
+
+int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam& param, const RdbStatEvent &statEvent)
 {
     if (!IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
@@ -1074,52 +1096,16 @@ int32_t RdbServiceImpl::ReportStatistic(const RdbSyncerParam &param, const RdbSt
     return RDB_OK;
 }
 
-void RdbServiceImpl::GetSchema(const RdbSyncerParam &param)
+void RdbServiceImpl::GetCloudSchema(const StoreMetaData &metaData)
 {
-    if (executors_ != nullptr) {
-        StoreInfo storeInfo;
-        storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-        storeInfo.bundleName = param.bundleName_;
-        storeInfo.storeName = RemoveSuffix(param.storeName_);
-        auto [instanceId, user] = GetInstIndexAndUser(storeInfo.tokenId, param.bundleName_);
-        storeInfo.instanceId = instanceId;
-        storeInfo.user = user;
-        storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        auto meta = GetStoreMetaData(param);
-        storeInfo.path = meta.dataDir;
-        executors_->Execute([storeInfo]() {
-            auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo));
-            EventCenter::GetInstance().PostEvent(move(event));
-            return;
-        });
+    if (executors_ == nullptr) {
+        return;
     }
-}
-
-std::pair<bool, StoreMetaData> RdbServiceImpl::LoadStoreMetaData(const RdbSyncerParam &param)
-{
-    StoreMetaData metaData;
-    metaData.uid = IPCSkeleton::GetCallingUid();
-    metaData.tokenId = IPCSkeleton::GetCallingTokenID();
-    auto [instanceId, user] = GetInstIndexAndUser(metaData.tokenId, param.bundleName_);
-    metaData.instanceId = instanceId;
-    metaData.bundleName = param.bundleName_;
-    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    metaData.storeId = RemoveSuffix(param.storeName_);
-    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) != TOKEN_HAP && param.subUser_ != 0) {
-        metaData.user = std::to_string(param.subUser_);
-    } else {
-        metaData.user = std::to_string(user);
-    }
-    metaData.storeType = param.type_;
-    metaData.securityLevel = param.level_;
-    metaData.area = param.area_;
-    metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
-    metaData.appType = "harmony";
-    metaData.hapName = param.hapName_;
-    metaData.customDir = param.customDir_;
-    metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
-    auto exist = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
-    return { exist, metaData };
+    StoreInfo storeInfo = GetStoreInfoEx(metaData);
+    executors_->Execute([storeInfo]() {
+        auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo));
+        EventCenter::GetInstance().PostEvent(move(event));
+    });
 }
 
 StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
@@ -1154,13 +1140,46 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     return metaData;
 }
 
-int32_t RdbServiceImpl::Upgrade(const RdbSyncerParam &param, const StoreMetaData &old)
+std::pair<bool, StoreMetaData> RdbServiceImpl::LoadStoreMetaData(const RdbSyncerParam &param)
+{
+    StoreMetaData metaData = GetStoreMetaData(param);
+    auto exist = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
+    return {exist, metaData};
+}
+
+void RdbServiceImpl::SaveSyncMeta(const StoreMetaData &metaData)
+{
+    StoreMetaData syncMeta;
+    bool isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), syncMeta);
+    if (!isCreated || metaData != syncMeta) {
+        ZLOGI("save sync meta. bundle:%{public}s store:%{public}s type:%{public}d->%{public}d "
+              "encrypt:%{public}d->%{public}d , area:%{public}d->%{public}d",
+            metaData.bundleName.c_str(), metaData.GetStoreAlias().c_str(), syncMeta.storeType, metaData.storeType,
+            syncMeta.isEncrypt, metaData.isEncrypt, syncMeta.area, metaData.area);
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
+    }
+}
+
+std::pair<bool, StoreMetaData> RdbServiceImpl::LoadSyncMeta(const Database &database)
+{
+    std::pair<bool, StoreMetaData> result;
+    auto &[isCreated, metaData] = result;
+    metaData.storeId = database.name;
+    metaData.bundleName = database.bundleName;
+    metaData.user = database.user;
+    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData.instanceId = 0;
+    isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
+    return result;
+}
+
+int32_t RdbServiceImpl::Upgrade(const StoreMetaData &metaData, const StoreMetaData &old)
 {
     if (old.storeType == RDB_DEVICE_COLLABORATION && old.version < StoreMetaData::UUID_CHANGED_TAG) {
-        auto store = GetStore(param);
+        auto store = GetStore(metaData);
         if (store == nullptr) {
-            ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", param.bundleName_.c_str(),
-                Anonymous::Change(param.storeName_).c_str());
+            ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", metaData.bundleName.c_str(),
+                Anonymous::Change(metaData.storeId).c_str());
             return RDB_ERROR;
         }
         return store->Clean({}, GeneralStore::CleanMode::NEARBY_DATA, "") == GeneralError::E_OK ? RDB_OK : RDB_ERROR;
@@ -1217,25 +1236,6 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
     return 0;
 }
 
-StoreMetaData RdbServiceImpl::GetStoreMetaData(const Database &dataBase)
-{
-    StoreMetaMapping storeMetaMapping;
-    storeMetaMapping.storeId = dataBase.name;
-    storeMetaMapping.bundleName = dataBase.bundleName;
-    storeMetaMapping.user = dataBase.user;
-    storeMetaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    storeMetaMapping.tokenId = tokenId;
-    auto [instanceId, user] = GetInstIndexAndUser(storeMetaMapping.tokenId, storeMetaMapping.bundleName);
-    storeMetaMapping.instanceId = instanceId;
-    MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
-    StoreMetaData storeMetaData = storeMetaMapping;
-    if (storeMetaMapping.dataDir != storeMetaMapping.devicePath) {
-        MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetDeviceStoreMetaKey(), storeMetaData, true);
-    }
-    return storeMetaData;
-}
-
 std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const StoreMetaData &storeMetaData)
 {
     auto watchers = GetWatchers(storeMetaData.tokenId, storeMetaData.storeId);
@@ -1259,65 +1259,36 @@ std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::s
     return onDevices;
 }
 
-int RdbServiceImpl::DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &storeMetaData,
+int RdbServiceImpl::DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &metaData,
     const std::vector<std::string> &tables)
 {
-    if (storeMetaData.instanceId != 0) {
+    if (executors_ == nullptr || tables.empty()) {
+        ZLOGE("executors_ null or no tables, storeId:%{public}s", metaData.GetStoreAlias().c_str());
         return RDB_ERROR;
     }
-    DistributedData::SpecialChannelData specialDevices;
-    if (!MetaDataManager::GetInstance().LoadMeta(specialDevices.GetKey(), specialDevices, true) ||
-        specialDevices.devices.empty()) {
-        ZLOGE("There is no auto sync devices, store:%{public}s.", Anonymous::Change(storeMetaData.storeId).c_str());
-        return RDB_ERROR;
-    }
-    auto &specialUUIDs = specialDevices.devices;
-    std::vector<std::string> syncDevices;
-    for (auto &device : devices) {
-        auto sha256UUID = Crypto::Sha256(device);
-        if (std::find(specialUUIDs.begin(), specialUUIDs.end(), sha256UUID) != specialUUIDs.end()) {
-            syncDevices.push_back(device);
-        }
-    }
-    auto store = GetStore(storeMetaData);
-    if (syncDevices.empty() || executors_ == nullptr || store == nullptr) {
-        ZLOGE("Designated sync device not in cache storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
-        return RDB_ERROR;
-    }
-    SyncParam syncParam = { 0, 0 };
-    DetailAsync async;
-    executors_->Execute([this, tables, store, syncParam, async, syncDevices, storeMetaData]() {
-        RdbQuery rdbQuery;
-        rdbQuery.MakeDeviceQuery(tables);
-        std::vector<std::string> onDevices = GetReuseDevice(syncDevices, storeMetaData);
+    executors_->Execute([this, tables, devices, metaData]() {
+        RdbQuery rdbQuery(tables);
+        std::vector<std::string> onDevices = GetReuseDevice(devices, metaData);
         if (onDevices.empty()) {
-            ZLOGE("autosync device null, storeId:%{public}s", storeMetaData.GetStoreAlias().c_str());
+            ZLOGE("autosync ondevices null, storeId:%{public}s", metaData.GetStoreAlias().c_str());
             return;
         }
-        auto complete = [rdbQuery, store, syncParam, async](const auto &results) mutable {
+        auto store = GetStore(metaData);
+        if (store == nullptr) {
+            ZLOGE("autosync store null, storeId:%{public}s", metaData.GetStoreAlias().c_str());
+            return;
+        }
+        auto complete = [rdbQuery, store](const auto &results) mutable {
             auto ret = ProcessResult(results);
-            store->Sync(ret.first, rdbQuery, async, syncParam);
+            store->Sync(ret.first, rdbQuery, DetailAsync(), { 0, 0 });
         };
-        if (IsNeedMetaSync(storeMetaData, onDevices)) {
+        if (IsNeedMetaSync(metaData, onDevices)) {
             MetaDataManager::GetInstance().Sync(onDevices, complete);
             return;
         }
-        (void)store->Sync(onDevices, rdbQuery, async, syncParam).first;
-        return;
+        store->Sync(onDevices, rdbQuery, DetailAsync(), { 0, 0 });
     });
     return RDB_OK;
-}
-
-int RdbServiceImpl::DoOnlineSync(const std::string &device, const Database &dataBase)
-{
-    std::vector<std::string> tableNames;
-    for (auto &table : dataBase.tables) {
-        if (!table.deviceSyncFields.empty()) {
-            tableNames.push_back(table.name);
-        }
-    }
-    StoreMetaData storeMetaData = GetStoreMetaData(dataBase);
-    return DoAutoSync({ device }, storeMetaData, tableNames);
 }
 
 int32_t RdbServiceImpl::OnReady(const std::string &device)
@@ -1326,23 +1297,37 @@ int32_t RdbServiceImpl::OnReady(const std::string &device)
         return 0;
     }
     int index = ALLOW_ONLINE_AUTO_SYNC;
-    Database dataBase;
-    std::string prefix = dataBase.GetPrefix({});
-    std::vector<Database> dataBases;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, dataBases, true)) {
-        return 0;
+    std::string prefix = Database::GetPrefix({});
+    std::vector<Database> databases;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, databases, true)) {
+        return -E_OK;
     }
-    for (auto &dataBase : dataBases) {
-        if ((dataBase.autoSyncType == AutoSyncType::SYNC_ON_READY ||
-                dataBase.autoSyncType == AutoSyncType::SYNC_ON_CHANGE_READY) &&
-            index > 0) {
-            if (DoOnlineSync(device, dataBase) != RDB_OK) {
-                ZLOGE("store online sync fail, storeId:%{public}s", Anonymous::Change(dataBase.name).c_str());
-            }
-            index--;
+    int32_t synced = 0;
+    auto isSpecialDevice = IsSpecialChannel(device);
+    for (auto &database : databases) {
+        if (database.autoSyncType != AutoSyncType::SYNC_ON_READY &&
+            database.autoSyncType != AutoSyncType::SYNC_ON_CHANGE_READY) {
+            continue;
         }
+
+        if (index <= 0) {
+            return -E_OVER_MAX_LIMITS;
+        }
+        index--;
+
+        auto [isCreated, metaData] = LoadSyncMeta(database);
+        if (!isCreated || metaData.instanceId != 0) {
+            continue;
+        }
+
+        if (SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId) && !isSpecialDevice) {
+            continue;
+        }
+
+        synced++;
+        DoAutoSync({ device }, metaData, database.GetSyncTables());
     }
-    return 0;
+    return synced;
 }
 
 void RdbServiceImpl::SyncAgent::SetNotifier(sptr<RdbNotifierProxy> notifier)
@@ -1467,6 +1452,9 @@ void RdbServiceImpl::DumpRdbServiceInfo(int fd, std::map<std::string, std::vecto
 }
 int32_t RdbServiceImpl::OnInitialize()
 {
+    SpecialChannelData specialChannels;
+    MetaDataManager::GetInstance().LoadMeta(SpecialChannelData::GetKey(), specialChannels, true);
+    specialChannels_.Initialize({ std::move(specialChannels.devices), std::vector<std::monostate>{} });
     RegisterRdbServiceInfo();
     RegisterHandler();
     return RDB_OK;
@@ -1477,28 +1465,53 @@ RdbServiceImpl::~RdbServiceImpl()
     DumpManager::GetInstance().RemoveHandler("FEATURE_INFO", uintptr_t(this));
 }
 
-int RdbServiceImpl::DoDataChangeSync(const StoreInfo &storeInfo, const RdbChangedData &rdbChangedData)
+void RdbServiceImpl::OnCollaborationChange(const StoreMetaData &metaData, const RdbChangedData &changedData)
 {
-    std::vector<std::string> tableNames;
-    Database dataBase;
-    dataBase.bundleName = storeInfo.bundleName;
-    dataBase.name = storeInfo.storeName;
-    dataBase.user = std::to_string(storeInfo.user);
-    dataBase.deviceId = storeInfo.deviceId;
-    for (const auto &[key, value] : rdbChangedData.tableData) {
-        if (value.isP2pSyncDataChange) {
-            tableNames.push_back(key);
-        }
+    Database database;
+    database.bundleName = metaData.bundleName;
+    database.name = metaData.storeId;
+    database.user = metaData.user;
+    database.deviceId = metaData.deviceId;
+    if (!MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
+        return;
     }
-    if (!MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true)) {
-        return RDB_OK;
+
+    if (database.autoSyncType != AutoSyncType::SYNC_ON_CHANGE &&
+        database.autoSyncType != AutoSyncType::SYNC_ON_CHANGE_READY) {
+        return;
     }
-    StoreMetaData storeMetaData = GetStoreMetaData(dataBase);
-    if ((dataBase.autoSyncType == AutoSyncType::SYNC_ON_CHANGE ||
-            dataBase.autoSyncType == AutoSyncType::SYNC_ON_CHANGE_READY)) {
-        return DoAutoSync(DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices()), storeMetaData, tableNames);
+
+    auto devices = DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices());
+    if (SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
+        auto begin = std::remove_if(devices.begin(), devices.end(), [this](const std::string &device) {
+            return !IsSpecialChannel(device);
+        });
+        devices.erase(begin, devices.end());
     }
-    return RDB_OK;
+
+    if (devices.empty()) {
+        return;
+    }
+
+    auto tables = RdbTypesUtils::GetP2PTables(changedData);
+    DoAutoSync(devices, metaData, tables);
+}
+
+void RdbServiceImpl::OnSearchableChange(const StoreMetaData &metaData, const RdbNotifyConfig &config,
+    const RdbChangedData &changedData)
+{
+    auto changedTables = RdbTypesUtils::GetSearchableTables(changedData);
+    DataChangeEvent::EventInfo eventInfo(changedTables);
+    eventInfo.isFull = config.isFull_;
+    StoreInfo storeInfo = GetStoreInfoEx(metaData);
+    auto pid = IPCSkeleton::GetCallingPid();
+    if (executors_ == nullptr || config.delay_ == 0) {
+        RemoveHeartbeatTask(pid, storeInfo.path);
+        auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+        return;
+    }
+    PostHeartbeatTask(pid, config.delay_, storeInfo, eventInfo);
 }
 
 int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData,
@@ -1510,68 +1523,68 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    StoreInfo storeInfo;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.bundleName = param.bundleName_;
-    storeInfo.storeName = RemoveSuffix(param.storeName_);
-    storeInfo.path = GetPath(param);
-    auto [instanceId, user] = GetInstIndexAndUser(storeInfo.tokenId, param.bundleName_);
-    storeInfo.instanceId = instanceId;
-    storeInfo.user = user;
-    storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    DataChangeEvent::EventInfo eventInfo;
-    eventInfo.isFull = rdbNotifyConfig.isFull_;
-    if (DoDataChangeSync(storeInfo, rdbChangedData) != RDB_OK) {
-        ZLOGE("store datachange sync fail, storeId:%{public}s", Anonymous::Change(storeInfo.storeName).c_str());
+
+    auto [exists, meta] = LoadStoreMetaData(param);
+    if (!exists || meta.instanceId != 0) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        return RDB_ERROR;
     }
-    for (const auto &[key, value] : rdbChangedData.tableData) {
-        if (value.isTrackedDataChange) {
-            DataChangeEvent::TableChangeProperties tableChangeProperties = { value.isTrackedDataChange };
-            eventInfo.tableProperties.insert_or_assign(key, std::move(tableChangeProperties));
-        }
-    }
-    if (IsPostImmediately(IPCSkeleton::GetCallingPid(), rdbNotifyConfig, storeInfo, eventInfo, storeInfo.path)) {
-        auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfo), std::move(eventInfo));
-        EventCenter::GetInstance().PostEvent(std::move(evt));
-    }
+
+    OnCollaborationChange(meta, rdbChangedData);
+
+    OnSearchableChange(meta, rdbNotifyConfig, rdbChangedData);
     return RDB_OK;
 }
 
-bool RdbServiceImpl::IsPostImmediately(const int32_t callingPid, const RdbNotifyConfig &rdbNotifyConfig,
-    StoreInfo &storeInfo, DataChangeEvent::EventInfo &eventInfo, const std::string &path)
+void RdbServiceImpl::PostHeartbeatTask(int32_t pid, uint32_t delay, StoreInfo &storeInfo,
+    DataChangeEvent::EventInfo &eventInfo)
 {
-    bool postImmediately = false;
-    heartbeatTaskIds_.Compute(callingPid, [this, &postImmediately, &rdbNotifyConfig, &storeInfo, &eventInfo,
-        &path](const int32_t &key, std::map<std::string, ExecutorPool::TaskId> &tasks) {
-        auto iter = tasks.find(path);
+    heartbeatTaskIds_.Compute(pid, [this, delay, &storeInfo, &eventInfo]
+        (const int32_t &key, std::map<std::string, ExecutorPool::TaskId> &tasks) {
+        auto iter = tasks.find(storeInfo.path);
         ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
         if (iter != tasks.end()) {
             taskId = iter->second;
         }
-        if (rdbNotifyConfig.delay_ == 0) {
-            if (taskId != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
+        if (delay == 0) {
+            if (taskId != ExecutorPool::INVALID_TASK_ID) {
                 executors_->Remove(taskId);
             }
-            postImmediately = true;
-            tasks.erase(path);
+            tasks.erase(storeInfo.path);
             return !tasks.empty();
         }
 
-        if (executors_ != nullptr) {
-            auto task = [storeInfoInner = storeInfo, eventInfoInner = eventInfo]() {
-                auto evt = std::make_unique<DataChangeEvent>(std::move(storeInfoInner), std::move(eventInfoInner));
+        if (taskId == ExecutorPool::INVALID_TASK_ID) {
+            auto task = [storeInfo, eventInfo]() mutable {
+                auto evt = std::make_unique<DataChangeEvent>(storeInfo, eventInfo);
                 EventCenter::GetInstance().PostEvent(std::move(evt));
             };
-            if (taskId == ExecutorPool::INVALID_TASK_ID) {
-                taskId = executors_->Schedule(std::chrono::milliseconds(rdbNotifyConfig.delay_), task);
-            } else {
-                taskId = executors_->Reset(taskId, std::chrono::milliseconds(rdbNotifyConfig.delay_));
-            }
+            taskId = executors_->Schedule(std::chrono::milliseconds(delay), task);
+        } else {
+            taskId = executors_->Reset(taskId, std::chrono::milliseconds(delay));
         }
-        tasks.insert_or_assign(path, taskId);
+        tasks.insert_or_assign(storeInfo.path, taskId);
         return true;
     });
-    return postImmediately;
+}
+
+void RdbServiceImpl::RemoveHeartbeatTask(int32_t pid, const std::string &path)
+{
+    heartbeatTaskIds_.Compute(pid,
+        [this, &path](const int32_t &key, std::map<std::string, ExecutorPool::TaskId> &tasks) {
+            auto iter = tasks.find(path);
+            if (iter == tasks.end()) {
+                return !tasks.empty();
+            }
+
+            if (iter->second != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
+                executors_->Remove(iter->second);
+            }
+
+            tasks.erase(path);
+            return !tasks.empty();
+        });
 }
 
 int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam &param, bool isSearchable)
@@ -1582,24 +1595,21 @@ int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam &param, bool isSearch
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    SetSearchableEvent::EventInfo eventInfo;
+    auto [exists, meta] = LoadStoreMetaData(param);
+    if (!exists) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+    }
+
+    SetSearchableEvent::EventInfo eventInfo {};
     eventInfo.isSearchable = isSearchable;
-    return PostSearchEvent(CloudEvent::SET_SEARCHABLE, param, eventInfo);
+    return PostSearchEvent(CloudEvent::SET_SEARCHABLE, meta, eventInfo);
 }
 
-int32_t RdbServiceImpl::PostSearchEvent(int32_t evtId, const RdbSyncerParam& param,
+int32_t RdbServiceImpl::PostSearchEvent(int32_t evtId, const StoreMetaData &meta,
     SetSearchableEvent::EventInfo &eventInfo)
 {
-    StoreInfo storeInfo;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.bundleName = param.bundleName_;
-    storeInfo.storeName = RemoveSuffix(param.storeName_);
-    auto [instanceId,  user]= GetInstIndexAndUser(storeInfo.tokenId, param.bundleName_);
-    storeInfo.instanceId = instanceId;
-    storeInfo.user = user;
-    storeInfo.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    storeInfo.path = GetPath(param);
-
+    StoreInfo storeInfo = GetStoreInfoEx(meta);
     auto evt = std::make_unique<SetSearchableEvent>(std::move(storeInfo), std::move(eventInfo), evtId);
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return RDB_OK;
@@ -1609,7 +1619,7 @@ int32_t RdbServiceImpl::Disable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    AutoCache::GetInstance().Disable(tokenId, GetPath(param), storeId);
+    AutoCache::GetInstance().Disable(tokenId, GetStoreMetaData(param).dataDir, storeId);
     return RDB_OK;
 }
 
@@ -1617,7 +1627,7 @@ int32_t RdbServiceImpl::Enable(const RdbSyncerParam &param)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeId = RemoveSuffix(param.storeName_);
-    AutoCache::GetInstance().Enable(tokenId, GetPath(param), storeId);
+    AutoCache::GetInstance().Enable(tokenId, GetStoreMetaData(param).dataDir, storeId);
     return RDB_OK;
 }
 
@@ -1665,15 +1675,16 @@ int32_t RdbServiceImpl::GetPassword(const RdbSyncerParam &param, std::vector<std
     return password.size() > 0 ? RDB_OK : RDB_ERROR;
 }
 
-StoreInfo RdbServiceImpl::GetStoreInfo(const RdbSyncerParam &param)
+StoreInfo RdbServiceImpl::GetStoreInfoEx(const StoreMetaData &metaData)
 {
     StoreInfo storeInfo;
-    storeInfo.bundleName = param.bundleName_;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
-    storeInfo.storeName = RemoveSuffix(param.storeName_);
-    auto meta = GetStoreMetaData(param);
-    storeInfo.path = meta.dataDir;
+    storeInfo.tokenId = metaData.tokenId;
+    storeInfo.bundleName = metaData.bundleName;
+    storeInfo.storeName = metaData.storeId;
+    storeInfo.instanceId = metaData.instanceId;
+    storeInfo.user = atoi(metaData.user.c_str());
+    storeInfo.deviceId = metaData.deviceId;
+    storeInfo.path = metaData.dataDir;
     return storeInfo;
 }
 
@@ -1688,7 +1699,7 @@ std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerP
     ZLOGI("start to lock cloud db: bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
         Anonymous::Change(param.storeName_).c_str());
 
-    auto storeInfo = GetStoreInfo(param);
+    auto storeInfo = GetStoreInfoEx(GetStoreMetaData(param));
 
     CloudLockEvent::Callback callback = [&result](int32_t status, uint32_t expiredTime) {
         result.first = status;
@@ -1710,7 +1721,7 @@ int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
     ZLOGI("start to unlock cloud db: bundleName:%{public}s, storeName:%{public}s", param.bundleName_.c_str(),
         Anonymous::Change(param.storeName_).c_str());
 
-    auto storeInfo = GetStoreInfo(param);
+    auto storeInfo = GetStoreInfoEx(GetStoreMetaData(param));
 
     CloudLockEvent::Callback callback = [&result](int32_t status, uint32_t expiredTime) {
         (void)expiredTime;
@@ -1728,16 +1739,15 @@ int32_t RdbServiceImpl::GetDebugInfo(const RdbSyncerParam &param, std::map<std::
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    auto metaData = GetStoreMetaData(param);
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
-    if (!isCreated) {
+    auto [exists, metaData] = LoadStoreMetaData(param);
+    if (!exists) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. no meta data", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
-        return RDB_OK;
+        return RDB_NO_META;
     }
     DistributedData::StoreDebugInfo debugMeta;
-    isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetDebugInfoKey(), debugMeta, true);
-    if (!isCreated) {
+    exists = MetaDataManager::GetInstance().LoadMeta(metaData.GetDebugInfoKey(), debugMeta, true);
+    if (!exists) {
         return RDB_OK;
     }
 
@@ -1781,16 +1791,15 @@ int32_t RdbServiceImpl::GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-    auto metaData = GetStoreMetaData(param);
-    auto isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true);
-    if (!isCreated) {
-        ZLOGI("bundleName:%{public}s, storeName:%{public}s. no meta data", param.bundleName_.c_str(),
+    auto [exists, metaData] = LoadStoreMetaData(param);
+    if (!exists) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s. no meta data", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
-        return RDB_OK;
+        return RDB_NO_META;
     }
     DistributedData::StoreDfxInfo dfxMeta;
-    isCreated = MetaDataManager::GetInstance().LoadMeta(metaData.GetDfxInfoKey(), dfxMeta, true);
-    if (!isCreated) {
+    exists = MetaDataManager::GetInstance().LoadMeta(metaData.GetDfxInfoKey(), dfxMeta, true);
+    if (!exists) {
         ZLOGI("bundleName:%{public}s, storeName:%{public}s. no dfx meta data", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return RDB_OK;
@@ -1877,7 +1886,7 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-std::string RdbServiceImpl::GetSubUser(const int32_t subUser)
+std::string RdbServiceImpl::GetSubUser(int32_t subUser)
 {
     std::string userId = "";
     if (AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID()) != TOKEN_HAP && subUser != 0) {
@@ -1886,16 +1895,16 @@ std::string RdbServiceImpl::GetSubUser(const int32_t subUser)
     return userId;
 }
 
-bool RdbServiceImpl::TryUpdateDeviceId(const RdbSyncerParam &param, const StoreMetaData &oldMeta, StoreMetaData &meta)
+bool RdbServiceImpl::TryUpdateDeviceId(const StoreMetaData &oldMeta, StoreMetaData &meta)
 {
     StoreMetaData syncMeta;
     if (oldMeta.isNeedUpdateDeviceId && oldMeta.storeType >= StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN &&
         oldMeta.storeType <= StoreMetaData::StoreType::STORE_RELATIONAL_END &&
         MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), syncMeta)) {
-        auto store = GetStore(param);
+        auto store = GetStore(meta);
         if (store == nullptr) {
-            ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", param.bundleName_.c_str(),
-                Anonymous::Change(param.storeName_).c_str());
+            ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", meta.bundleName.c_str(),
+                Anonymous::Change(meta.storeId).c_str());
             return false;
         }
         auto errCode = store->UpdateDBStatus();
@@ -1947,8 +1956,7 @@ void RdbServiceImpl::RegisterEvent()
             return;
         }
         auto predicate = evt.GetPredicates();
-        auto rdbQuery = std::make_shared<RdbQuery>();
-        rdbQuery->MakeQuery(*predicate);
+        auto rdbQuery = std::make_shared<RdbQuery>(*predicate);
         rdbQuery->SetColumns(evt.GetColumns());
         callback(rdbQuery);
     });
@@ -1959,28 +1967,4 @@ void RdbServiceImpl::RegisterEvent()
     EventCenter::GetInstance().Subscribe(BindEvent::COMPENSATE_SYNC, compensateSyncProcess);
     EventCenter::GetInstance().Subscribe(BindEvent::RECOVER_SYNC, compensateSyncProcess);
 }
-
-std::string RdbServiceImpl::GetPath(const RdbSyncerParam &param)
-{
-    StoreMetaData metaData;
-    metaData.uid = IPCSkeleton::GetCallingUid();
-    metaData.tokenId = IPCSkeleton::GetCallingTokenID();
-    auto [instanceId, user] = GetInstIndexAndUser(metaData.tokenId, param.bundleName_);
-    metaData.instanceId = instanceId;
-    metaData.bundleName = param.bundleName_;
-    metaData.storeId = RemoveSuffix(param.storeName_);
-    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) != TOKEN_HAP && param.subUser_ != 0) {
-        metaData.user = std::to_string(param.subUser_);
-    } else {
-        metaData.user = std::to_string(user);
-    }
-    metaData.storeType = param.type_;
-    metaData.securityLevel = param.level_;
-    metaData.area = param.area_;
-    metaData.appType = "harmony";
-    metaData.hapName = param.hapName_;
-    metaData.customDir = param.customDir_;
-    return DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
-}
-
 } // namespace OHOS::DistributedRdb

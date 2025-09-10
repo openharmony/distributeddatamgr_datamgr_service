@@ -25,23 +25,14 @@ ohos_source_set("distributeddata_dfx") {
   sources = [
     "src/behaviour/behaviour_reporter_impl.cpp",
     "src/fault/cloud_sync_fault_impl.cpp",
-    "src/fault/communication_fault_impl.cpp",
-    "src/fault/database_fault_impl.cpp",
-    "src/fault/runtime_fault_impl.cpp",
-    "src/fault/service_fault_impl.cpp",
     "src/hiview_adapter.cpp",
     "src/radar_reporter.cpp",
     "src/reporter_impl.cpp",
-    "src/statistic/api_performance_statistic_impl.cpp",
-    "src/statistic/database_statistic_impl.cpp",
-    "src/statistic/traffic_statistic_impl.cpp",
-    "src/statistic/visit_statistic_impl.cpp",
   ]
 
   include_dirs = [
     "./src",
     "./src/fault",
-    "./src/statistic",
     "../include/dfx",
   ]
 

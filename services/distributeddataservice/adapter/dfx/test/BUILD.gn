@@ -16,39 +16,6 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
 
 ###############################################################################
-config("module_dfx_mst_config") {
-  visibility = [ ":*" ]
-
-  include_dirs = [
-    "../src",
-    "../src/fault",
-    "../src/statistic",
-  ]
-}
-
-ohos_unittest("DistributeddataDfxMSTTest") {
-  module_out_path = module_output_path
-
-  sources = [ "./unittest/distributeddata_dfx_mst_test.cpp" ]
-
-  configs = [ ":module_dfx_mst_config" ]
-
-  external_deps = [
-    "c_utils:utils",
-    "datamgr_service:distributeddatasvcfwk",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "hitrace:hitrace_meter",
-    "kv_store:distributeddata_inner",
-    "openssl:libcrypto_shared",
-  ]
-  ldflags = [ "-Wl,--exclude-libs,ALL" ]
-  deps = [ "${data_service_path}/adapter/dfx:distributeddata_dfx" ]
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
-}
-
-###############################################################################
 config("module_dfx_config") {
   visibility = [ ":*" ]
 
@@ -126,7 +93,6 @@ group("unittest") {
   deps = []
 
   deps += [
-    ":DistributeddataDfxMSTTest",
     ":DistributeddataDfxUTTest",
     ":HiViewAdapterDfxTest",
   ]

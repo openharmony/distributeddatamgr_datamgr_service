@@ -60,6 +60,16 @@ public:
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
 
 protected:
+    class CloudServerMock : public CloudServer {
+    public:
+        std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo) override;
+        std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundleName) override;
+        virtual ~CloudServerMock() = default;
+        static constexpr uint64_t REMAINSPACE = 1000;
+        static constexpr uint64_t TATALSPACE = 2000;
+        static constexpr int32_t INVALID_USER_ID = -1;
+    };
+
     static void InitMetaData();
     static void InitSchemaMeta();
     static void InitCloudInfo();
@@ -70,17 +80,8 @@ protected:
     static inline AccountDelegateMock *accountDelegateMock = nullptr;
 };
 
-class CloudServerMock : public CloudServer {
-public:
-    std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo) override;
-    std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundleName) override;
-    virtual ~CloudServerMock() = default;
-    static constexpr uint64_t REMAINSPACE = 1000;
-    static constexpr uint64_t TATALSPACE = 2000;
-    static constexpr int32_t INVALID_USER_ID = -1;
-};
 
-std::pair<int32_t, CloudInfo> CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
+std::pair<int32_t, CloudInfo> CloudDataMockTest::CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
@@ -99,7 +100,8 @@ std::pair<int32_t, CloudInfo> CloudServerMock::GetServerInfo(int32_t userId, boo
     return { E_OK, cloudInfo };
 }
 
-std::pair<int32_t, SchemaMeta> CloudServerMock::GetAppSchema(int32_t userId, const std::string &bundleName)
+std::pair<int32_t, SchemaMeta> CloudDataMockTest::CloudServerMock::GetAppSchema(int32_t userId,
+    const std::string &bundleName)
 {
     if (userId == INVALID_USER_ID) {
         return { E_ERROR, CloudDataMockTest::schemaMeta_ };

@@ -72,6 +72,14 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::s
 std::pair<int32_t, int32_t> GeneralStoreMock::Sync(const Devices &devices, GenQuery &query,
     DetailAsync async, const SyncParam &syncParm)
 {
+    if (!async) {
+        return { GeneralError::E_OK, 0 };
+    }
+    std::map<std::string, GenProgressDetail> details;
+    for (auto &device : devices) {
+        details[device] = { .progress = SYNC_FINISH, .code = 0, .dbCode = 0 };
+    }
+    async(details);
     return { GeneralError::E_OK, 0 };
 }
 
@@ -141,11 +149,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::s
     return {GeneralError::E_OK, cursor_};
 }
 
-void GeneralStoreMock::MakeCursor(const std::map<std::string, Value> &entry)
-{
-    auto resultSet = std::make_shared<CursorMock::ResultSet>(1, entry);
-    cursor_ = std::make_shared<CursorMock>(resultSet);
-}
+void GeneralStoreMock::SetExecutor(std::shared_ptr<Executor> executor) {}
 
 std::pair<int32_t, uint32_t> GeneralStoreMock::LockCloudDB()
 {
@@ -157,6 +161,20 @@ int32_t GeneralStoreMock::UnLockCloudDB()
     return E_OK;
 }
 
-void GeneralStoreMock::SetExecutor(std::shared_ptr<Executor> executor) {}
+int32_t GeneralStoreMock::UpdateDBStatus()
+{
+    return dbStatus_;
+}
+
+void GeneralStoreMock::SetMockCursor(const std::map<std::string, Value> &entry)
+{
+    auto resultSet = std::make_shared<CursorMock::ResultSet>(1, entry);
+    cursor_ = std::make_shared<CursorMock>(resultSet);
+}
+
+void GeneralStoreMock::SetMockDBStatus(int32_t dbStatus)
+{
+    dbStatus_ = dbStatus;
+}
 } // namespace DistributedData
 } // namespace OHOS

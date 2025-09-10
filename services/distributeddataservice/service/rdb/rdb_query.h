@@ -25,6 +25,9 @@ public:
     using Predicates = NativeRdb::RdbPredicates;
     static constexpr uint64_t TYPE_ID = 0x20000001;
     RdbQuery() = default;
+    explicit RdbQuery(const PredicatesMemo &predicates, bool isPriority = false);
+    explicit RdbQuery(const std::vector<std::string> &tables);
+    RdbQuery(const std::string &device, const std::string &sql, DistributedData::Values &&args);
     ~RdbQuery() override = default;
     bool IsEqual(uint64_t tid) override;
     std::vector<std::string> GetTables() override;
@@ -40,10 +43,6 @@ public:
     DistributedDB::RemoteCondition GetRemoteCondition() const;
     bool IsRemoteQuery();
     bool IsPriority();
-    void MakeQuery(const PredicatesMemo &predicates);
-    void MakeDeviceQuery(const std::vector<std::string> &tables);
-    void MakeRemoteQuery(const std::string &devices, const std::string &sql, DistributedData::Values &&args);
-    void MakeCloudQuery(const PredicatesMemo &predicates);
 
 private:
     void EqualTo(const RdbPredicateOperation& operation);

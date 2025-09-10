@@ -14,22 +14,20 @@
 */
 
 #define LOG_TAG "UdmfRunTimeStoreTest"
+#include <gtest/gtest.h>
 #include <openssl/rand.h>
 
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
 #include "device_manager_adapter.h"
+#include "directory/directory_manager.h"
 #include "executor_pool.h"
-#include "gtest/gtest.h"
-#include "ipc_skeleton.h"
 #include "kvstore_meta_manager.h"
-#include "metadata/meta_data_manager.h"
 #include "nativetoken_kit.h"
 #include "preprocess_utils.h"
 #include "runtime_store.h"
 #include "text.h"
 #include "token_setproc.h"
-#include "directory_manager.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;

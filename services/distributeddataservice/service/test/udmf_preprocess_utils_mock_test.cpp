@@ -12,11 +12,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#include <gtest/gtest.h>
 
-#include "preprocess_utils.h"
-#include "gtest/gtest.h"
 #include "access_token_mock.h"
 #include "ipc_skeleton.h"
+#include "preprocess_utils.h"
 
 namespace OHOS::UDMF {
 using namespace testing;

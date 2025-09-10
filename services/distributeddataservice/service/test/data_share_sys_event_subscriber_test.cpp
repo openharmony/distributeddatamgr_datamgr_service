@@ -53,7 +53,7 @@ HWTEST_F(DataShareSysEventSubscriberTest, OnBMSReady001, TestSize.Level1)
     // executors not null
     auto executors = std::make_shared<ExecutorPool>(1, 0);
     // make sysEventSubscriber not null
-    auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo, executors);\
+    auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo, executors);
     ASSERT_NE(sysEventSubscriber, nullptr);
     sysEventSubscriber->OnBMSReady();
     ASSERT_NE(sysEventSubscriber->executors_, nullptr);

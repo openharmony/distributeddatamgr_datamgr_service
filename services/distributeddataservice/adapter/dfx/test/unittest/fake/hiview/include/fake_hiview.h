@@ -53,7 +53,7 @@ public:
 
 private:
     static std::map<std::string, std::any> fakeCache_;
-    static const inline int INTERNAL = 1000;
+    static const int INTERNAL = 1000;
 };
 
 #endif // DISTRIBUTEDDATAMGR_HIVIEW_MGR_H

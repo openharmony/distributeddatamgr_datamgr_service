@@ -28,8 +28,6 @@ public:
 
     std::vector<std::string> GetTables() override;
     const std::string GetStatement();
-    void MakeRemoteQuery(const std::string &devices, const std::string &sql, DistributedData::Values &&args);
-    void MakeQuery(const DistributedRdb::PredicatesMemo &predicates);
 };
 
 class MockGeneralWatcher : public DistributedData::GeneralWatcher {

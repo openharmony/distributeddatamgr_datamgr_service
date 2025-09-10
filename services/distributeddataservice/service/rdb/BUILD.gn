@@ -54,6 +54,7 @@ ohos_source_set("distributeddata_rdb") {
     "rdb_schema_config.cpp",
     "rdb_service_impl.cpp",
     "rdb_service_stub.cpp",
+    "rdb_types_utils.cpp",
     "rdb_watcher.cpp",
   ]
 
@@ -80,7 +81,6 @@ ohos_source_set("distributeddata_rdb") {
     "c_utils:utils",
     "device_auth:deviceauth_sdk",
     "device_manager:devicemanagersdk",
-    "dmsfwk:distributed_sdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",

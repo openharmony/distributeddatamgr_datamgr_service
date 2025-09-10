@@ -52,12 +52,16 @@ public:
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
     int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     void SetExecutor(std::shared_ptr<Executor> executor) override;
-    void MakeCursor(const std::map<std::string, Value> &entry);
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
+    int32_t UpdateDBStatus() override;
+
+    void SetMockCursor(const std::map<std::string, Value> &entry);
+    void SetMockDBStatus(int32_t dbStatus);
 
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;
+    int32_t dbStatus_ = 0;
 };
 } // namespace DistributedData
 } // namespace OHOS

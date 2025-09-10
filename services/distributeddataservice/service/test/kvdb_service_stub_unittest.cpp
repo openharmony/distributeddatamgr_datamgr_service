@@ -14,16 +14,17 @@
  */
 #define LOG_TAG "KVDBServiceStubTest "
 
-#include "kvdb_service_stub.h"
-#include "kvdb_service_impl.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
+#include "bootstrap.h"
+#include "device_matrix.h"
 #include "ipc_skeleton.h"
+#include "itypes_util.h"
 #include "kv_types_util.h"
+#include "kvdb_service_impl.h"
+#include "kvdb_service_stub.h"
 #include "log_print.h"
 #include "types.h"
-#include "device_matrix.h"
-#include "bootstrap.h"
-#include "itypes_util.h"
 
 using namespace OHOS;
 using namespace testing;

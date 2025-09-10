@@ -29,8 +29,6 @@ config("module_private_config") {
     "${data_service_path}/service/cloud/",
     "${data_service_path}/service/config/include/",
     "${data_service_path}/service/common/",
-    "${data_service_path}/service/crypto/include",
-    "${data_service_path}/service/directory/include/",
     "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/data_share/data",
     "${data_service_path}/service/data_share/dfx",
@@ -473,8 +471,6 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "${data_service_path}/service/backup/include/",
     "${data_service_path}/service/cloud/",
     "${data_service_path}/service/config/include/",
-    "${data_service_path}/service/crypto/include",
-    "${data_service_path}/service/directory/include/",
     "${data_service_path}/service/data_share/common",
     "${data_service_path}/service/data_share/data",
     "${data_service_path}/service/data_share/strategies",
@@ -658,11 +654,12 @@ ohos_unittest("RdbServiceImplTest") {
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
     "rdb_service_impl_test.cpp",
+    "rdb_types_utils_test.cpp",
   ]
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/framework/include/eventcenter",
+    "${data_service_path}/framework/include",
     "${data_service_path}/service/test/mock",
   ]
 
@@ -732,7 +729,6 @@ ohos_unittest("RdbServiceImplTokenTest") {
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/framework/include/eventcenter",
     "${data_service_path}/service/test/mock",
   ]
 
@@ -1127,7 +1123,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/preprocess",
-    "${data_service_path}/framework/include/directory",
+    "${data_service_path}/framework/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1187,7 +1183,6 @@ ohos_unittest("DataShareServiceImplTest") {
 
   include_dirs = [
     "${data_service_path}/service/config/include",
-    "${data_service_path}/framework/include/metadata",
     "${data_service_path}/service/data_share/common",
   ]
 
@@ -1464,8 +1459,6 @@ ohos_unittest("KvdbServicePasswordTest") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/framework/include",
-    "${data_service_path}/framework/include/cloud",
-    "${data_service_path}/framework/include/eventcenter",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/adapter/include/communicator",
   ]
@@ -1531,8 +1524,6 @@ ohos_unittest("KvdbServiceImplTest") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/framework/include",
-    "${data_service_path}/framework/include/cloud",
-    "${data_service_path}/framework/include/eventcenter",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/adapter/include/communicator",
   ]
@@ -1625,7 +1616,6 @@ ohos_unittest("UdmfServiceImplTest") {
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/app/src",
-    "${data_service_path}/framework/include/account",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf",
@@ -1822,10 +1812,8 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/framework/include",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/service/udmf/permission",
-    "${data_service_path}/framework/include/dfx",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/framework/include/account",
     "${data_service_path}/service/udmf/store",
   ]
 
@@ -1914,7 +1902,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/service/udmf/store",
-    "${data_service_path}/framework/include/account",
+    "${data_service_path}/framework/include",
     "${data_service_path}/adapter/include/communicator",
   ]
 

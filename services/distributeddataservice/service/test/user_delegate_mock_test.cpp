@@ -21,7 +21,6 @@
 #include "metadata/meta_data_manager.h"
 #include "user_delegate.h"
 
-
 using namespace OHOS::DistributedData;
 using namespace testing::ext;
 using namespace testing;

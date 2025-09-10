@@ -25,18 +25,6 @@ namespace DistributedDataDfx {
 class CloudSyncFaultImpl : public FaultReporter {
 public:
     virtual ~CloudSyncFaultImpl() {}
-    ReportStatus Report(const FaultMsg &msg) override
-    {
-        return ReportStatus::SUCCESS;
-    };
-    ReportStatus Report(const DBFaultMsg &ms) override
-    {
-        return ReportStatus::SUCCESS;
-    };
-    ReportStatus Report(const struct CommFaultMsg &msg) override
-    {
-        return ReportStatus::SUCCESS;
-    };
     ReportStatus Report(const ArkDataFaultMsg &msg) override;
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 

@@ -31,17 +31,7 @@ namespace DistributedDataDfx {
 class ReporterImpl : public Reporter {
 public:
     static bool Init();
-    FaultReporter* ServiceFault() override;
-    FaultReporter* RuntimeFault() override;
-    FaultReporter* DatabaseFault() override;
-    FaultReporter* CommunicationFault() override;
     FaultReporter* CloudSyncFault() override;
-
-    StatisticReporter<DbStat>* DatabaseStatistic() override;
-    StatisticReporter<VisitStat>* VisitStatistic() override;
-    StatisticReporter<TrafficStat>* TrafficStatistic() override;
-    StatisticReporter<ApiPerformanceStat>* ApiPerformanceStatistic() override;
-
     BehaviourReporter* GetBehaviourReporter() override;
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors) override;
 

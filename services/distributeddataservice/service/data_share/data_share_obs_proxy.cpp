@@ -228,7 +228,7 @@ void ProxyDataObserverProxy::OnChangeFromProxyData(std::vector<DataProxyChangeIn
         ZLOGE("SendRequest error, result=%{public}d", result);
         return;
     }
-    ZLOGI("SendRequest ok, retval is %{public}d", reply.ReadInt32());
+    ZLOGI("SendRequest ok, reply is %{public}d", reply.ReadInt32());
 }
 } // namespace DataShare
 } // namespace OHOS
