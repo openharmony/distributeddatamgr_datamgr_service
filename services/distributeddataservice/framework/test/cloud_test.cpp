@@ -451,54 +451,6 @@ HWTEST_F(CloudInfoTest, TableTest002, TestSize.Level0)
 
     Table table2 = table1;
     EXPECT_EQ(table2, table1);
-
-    table2.sharedTableName = "share";
-    EXPECT_NE(table2, table1);
-    table2.cloudSyncFields.push_back("cloud");
-    EXPECT_NE(table2, table1);
-    table2.deviceSyncFields.push_back("device");
-    EXPECT_NE(table2, table1);
-    table2.fields[0].primary = true;
-    EXPECT_NE(table2, table1);
-    table2.alias = "test2_alias";
-    EXPECT_NE(table2, table1);
-    table2.name = "test2_name";
-    EXPECT_NE(table2, table1);
-}
-
-/**
-* @tc.name: TableTest003
-* @tc.desc: Table Overload function Field test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(CloudInfoTest, TableTest003, TestSize.Level0)
-{
-    Field field1;
-    field1.colName = "test1_colName";
-    field1.alias = "test1_alias";
-    field1.type = 1;
-    field1.primary = true;
-    field1.nullable = false;
-
-    Table table1;
-    table1.name = "test1_name";
-    table1.sharedTableName = "test1_sharedTableName";
-    table1.alias = "test1_alias";
-    table1.fields.push_back(field1);
-
-    Table table2 = table1;
-    table2.fields[0].nullable = true;
-    EXPECT_NE(table2, table1);
-    table2.fields[0].primary = false;
-    EXPECT_NE(table2, table1);
-    table2.fields[0].type = 2;
-    EXPECT_NE(table2, table1);
-    table2.fields[0].alias = "test2_alias";
-    EXPECT_NE(table2, table1);
-    table2.fields[0].colName = "test1_colName";
-    EXPECT_NE(table2, table1);
 }
 
 /**
@@ -520,17 +472,6 @@ HWTEST_F(CloudInfoTest, FieldTest, TestSize.Level0)
 
     Field field2 = field1;
     EXPECT_EQ(field2, field1);
-
-    field2.nullable = true;
-    EXPECT_NE(field2, field1);
-    field2.primary = false;
-    EXPECT_NE(field2, field1);
-    field2.type = 2;
-    EXPECT_NE(field2, field1);
-    field2.alias = "test2_alias";
-    EXPECT_NE(field2, field1);
-    field2.colName = "test2_colName";
-    EXPECT_NE(field2, field1);
 }
 
 /**

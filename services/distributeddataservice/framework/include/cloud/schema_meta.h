@@ -26,7 +26,6 @@ struct API_EXPORT Field final : public Serializable {
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     bool operator==(const Field &field) const;
-    bool operator!=(const Field &field) const;
 };
 
 struct API_EXPORT Table final : public Serializable {
@@ -39,7 +38,6 @@ struct API_EXPORT Table final : public Serializable {
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     bool operator==(const Table &table) const;
-    bool operator!=(const Table &table) const;
 };
 
 struct API_EXPORT Database final : public Serializable {
@@ -58,7 +56,6 @@ struct API_EXPORT Database final : public Serializable {
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     bool operator==(const Database &database) const;
-    bool operator!=(const Database &database) const;
 };
 
 class API_EXPORT SchemaMeta final : public Serializable {
