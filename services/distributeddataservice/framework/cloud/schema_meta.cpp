@@ -147,11 +147,6 @@ bool Database::operator==(const Database &database) const
         database.deviceId, database.autoSyncType);
 }
 
-bool Database::operator!=(const Database &database) const
-{
-    return !operator==(database);
-}
-
 bool Table::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(name)], name);
@@ -182,11 +177,6 @@ bool Table::operator==(const Table &table) const
         table.sharedTableName);
 }
 
-bool Table::operator!=(const Table &table) const
-{
-    return !operator==(table);
-}
-
 bool Field::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(colName)], colName);
@@ -213,11 +203,6 @@ bool Field::operator==(const Field &field) const
 {
     return std::tie(colName, alias, type, primary, nullable) ==
         std::tie(field.colName, field.alias, field.type, field.primary, field.nullable);
-}
-
-bool Field::operator!=(const Field &field) const
-{
-    return !operator==(field);
 }
 
 Database SchemaMeta::GetDataBase(const std::string &storeId)
