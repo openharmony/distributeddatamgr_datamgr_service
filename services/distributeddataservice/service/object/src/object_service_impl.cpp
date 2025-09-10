@@ -456,24 +456,24 @@ int32_t ObjectServiceImpl::OnBind(const BindInfo &bindInfo)
 StoreMetaData ObjectServiceImpl::GetMetaData(const std::string &deviceId, const std::string &userId)
 {
     StoreMetaData storeMetaData;
-    saveMeta.appType = "default";
-    saveMeta.deviceId = deviceId;
-    saveMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
-    saveMeta.isAutoSync = false;
-    saveMeta.isBackup = false;
-    saveMeta.isEncrypt = false;
-    saveMeta.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    saveMeta.tokenId = IPCSkeleton::GetCallingTokenID();
-    saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
-    saveMeta.area = DistributedKv::Area::EL1;
-    saveMeta.uid = IPCSkeleton::GetCallingUid();
-    saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
-    saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
-    saveMeta.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
-    saveMeta.user = userId;
-    saveMeta.dataDir = METADATA_STORE_PATH;
+    storeMetaData.appType = "default";
+    storeMetaData.deviceId = deviceId;
+    storeMetaData.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
+    storeMetaData.isAutoSync = false;
+    storeMetaData.isBackup = false;
+    storeMetaData.isEncrypt = false;
+    storeMetaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    storeMetaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    storeMetaData.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
+    storeMetaData.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeMetaData.securityLevel = DistributedKv::SecurityLevel::S1;
+    storeMetaData.area = DistributedKv::Area::EL1;
+    storeMetaData.uid = IPCSkeleton::GetCallingUid();
+    storeMetaData.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
+    storeMetaData.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
+    storeMetaData.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
+    storeMetaData.user = userId;
+    storeMetaData.dataDir = METADATA_STORE_PATH;
     return storeMetaData;
 }
 } // namespace OHOS::DistributedObject
