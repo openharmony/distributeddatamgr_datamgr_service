@@ -70,9 +70,9 @@ void RdbQuery::MakeQuery(const PredicatesMemo &predicates)
     tables_ = predicates.tables_;
 }
 
-void RdbQuery::MakeQuery(const std::string &table)
+void RdbQuery::MakeDeviceQuery(const std::vector<std::string> &tables)
 {
-    query_ = DistributedDB::Query::Select(table);
+    query_ = DistributedDB::Query::Select().FromTable(tables);
 }
 
 void RdbQuery::MakeCloudQuery(const PredicatesMemo& predicates)

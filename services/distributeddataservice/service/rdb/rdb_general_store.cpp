@@ -26,7 +26,7 @@
 #include "cloud/cloud_mark.h"
 #include "cloud/cloud_store_types.h"
 #include "cloud/schema_meta.h"
-#include "device_sync_app/device_sync_app_manager.h"
+#include "sync_mgr/sync_mgr.h"
 #include "cloud_service.h"
 #include "commonevent/data_sync_event.h"
 #include "crypto/crypto_manager.h"
@@ -961,8 +961,8 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
     if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        auto force = DeviceSyncAppManager::GetInstance().Check(
-            {observer_.meta_.appId, observer_.meta_.bundleName, database.version});
+        auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
+            {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
         delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
     }
     CloudMark metaData(storeInfo_);

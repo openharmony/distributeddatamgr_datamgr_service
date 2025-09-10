@@ -31,7 +31,7 @@ bool GlobalConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(appIdMapping)], appIdMapping);
     SetValue(node[GET_NAME(thread)], thread);
     SetValue(node[GET_NAME(dataShare)], dataShare);
-    SetValue(node[GET_NAME(deviceSyncAppWhiteList)], deviceSyncAppWhiteList);
+    SetValue(node[GET_NAME(autoSyncApps)], autoSyncApps);
     SetValue(node[GET_NAME(syncAppList)], syncAppList);
     return true;
 }
@@ -51,7 +51,7 @@ bool GlobalConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(appIdMapping), appIdMapping);
     GetValue(node, GET_NAME(thread), thread);
     GetValue(node, GET_NAME(dataShare), dataShare);
-    GetValue(node, GET_NAME(deviceSyncAppWhiteList), deviceSyncAppWhiteList);
+    GetValue(node, GET_NAME(autoSyncApps), autoSyncApps);
     GetValue(node, GET_NAME(syncAppList), syncAppList);
     return true;
 }
@@ -67,7 +67,7 @@ GlobalConfig::~GlobalConfig()
     delete appIdMapping;
     delete thread;
     delete dataShare;
-    delete deviceSyncAppWhiteList;
+    delete autoSyncApps;
     delete syncAppList;
 }
 } // namespace DistributedData
