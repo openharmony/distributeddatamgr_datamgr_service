@@ -70,7 +70,7 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, 
         std::string occurTime = DistributedData::TimeUtils::GetCurSysTimeWithMs();
         std::string bundleName = msg.bundleName;
         std::string moduleName = msg.moduleName;
-        std::string storeName = msg.storeName;
+        std::string storeId = msg.storeId;
         std::string businessType = msg.businessType;
         std::string appendix = msg.appendixMsg;
         std::string faultType = msg.faultType;
@@ -79,7 +79,7 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, 
             { .name = { "FAULT_TYPE" }, .t = HISYSEVENT_STRING, .v = { .s = faultType.data() }, .arraySize = 0 },
             { .name = { "BUNDLE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = bundleName.data() }, .arraySize = 0 },
             { .name = { "MODULE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = moduleName.data() }, .arraySize = 0 },
-            { .name = { "STORE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = storeName.data() }, .arraySize = 0 },
+            { .name = { "STORE_NAME" }, .t = HISYSEVENT_STRING, .v = { .s = storeId.data() }, .arraySize = 0 },
             { .name = { "BUSINESS_TYPE" }, .t = HISYSEVENT_STRING, .v = { .s = businessType.data() }, .arraySize = 0 },
             { .name = { "ERROR_CODE" }, .t = HISYSEVENT_INT32, .v = { .i32 = msg.errorType }, .arraySize = 0 },
             { .name = { "APPENDIX" }, .t = HISYSEVENT_STRING, .v = { .s = appendix.data() }, .arraySize = 0 },

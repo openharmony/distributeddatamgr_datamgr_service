@@ -309,7 +309,7 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
     }
     DeviceExtraInfo deviceExtraInfo;
     if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
-        ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", dmInfo.extraData.c_str());
+        ZLOGE("Unmarshall extraData failed. uuid:%{public}s", Anonymous::Change(uuid).c_str());
         return false;
     }
     dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE,
@@ -380,7 +380,7 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
         auto udid = GetUdidByNetworkId(networkId);
         DeviceExtraInfo deviceExtraInfo;
         if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
-            ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", dmInfo.extraData.c_str());
+            ZLOGE("Unmarshall extraData failed. uuid:%{public}s", Anonymous::Change(uuid).c_str());
             continue;
         }
         DeviceInfo dvInfo = { std::move(uuid), std::move(udid), std::move(networkId),
@@ -495,7 +495,7 @@ DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
     }
     DeviceExtraInfo deviceExtraInfo;
     if (!DistributedData::Serializable::Unmarshall(info.extraData, deviceExtraInfo)) {
-        ZLOGE("Unmarshall failed, deviceExtraInfo:%{public}s", info.extraData.c_str());
+        ZLOGE("Unmarshall extraData failed. uuid:%{public}s", Anonymous::Change(uuid).c_str());
         return {};
     }
     ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d, osType:%{public}d",
