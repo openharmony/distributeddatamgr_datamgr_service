@@ -74,7 +74,7 @@ struct ArkDataFaultMsg {
     std::string faultType;
     std::string bundleName;
     std::string moduleName;
-    std::string storeId;
+    std::string storeName;
     std::string businessType;
     int32_t errorType;
     std::string appendixMsg;

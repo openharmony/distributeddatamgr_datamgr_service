@@ -397,7 +397,7 @@ void KVDBGeneralStore::Report(const std::string &faultType, int32_t errCode, con
     ArkDataFaultMsg msg = { .faultType = faultType,
         .bundleName = storeInfo_.bundleName,
         .moduleName = ModuleName::KV_STORE,
-        .storeId = storeInfo_.storeName,
+        .storeName = storeInfo_.storeName,
         .errorType = errCode + GeneralStore::CLOUD_ERR_OFFSET,
         .appendixMsg = appendix };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
