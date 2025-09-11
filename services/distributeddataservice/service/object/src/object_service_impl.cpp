@@ -44,6 +44,7 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using CheckerManager = OHOS::DistributedData::CheckerManager;
+using AppIDMetaData = OHOS::DistributedData::AppIDMetaData;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
 constexpr const char *METADATA_STORE_PATH = "/data/service/el1/public/database/distributeddata/kvdb";
 ObjectServiceImpl::Factory::Factory()
@@ -171,32 +172,33 @@ int32_t ObjectServiceImpl::SaveMetaData(const std::string &userId)
         ZLOGE("Create directory error, dataDir: %{public}s.", Anonymous::Change(saveMeta.dataDir).c_str());
         return OBJECT_INNER_ERROR;
     }
-    DistributedData::StoreMetaData oldStoreMetaData;
-    DistributedData::StoreMetaData oldKeyStoreMetaData;
-    if ((!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), oldStoreMetaData, true)
-            || saveMeta != oldStoreMetaData)
-        || (!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKeyWithoutPath(), oldKeyStoreMetaData)
-            || saveMeta != oldKeyStoreMetaData)) {
-        bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta)
-                       && DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
-        if (!isSaved) {
-            ZLOGE("SaveMeta failed");
+    StoreMetaData oldStoreMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), oldStoreMetaData, true)
+        || saveMeta != oldStoreMetaData) {
+        if (!MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true)) {
+            ZLOGE("SaveMeta getKey failed");
             return OBJECT_INNER_ERROR;
         }
     }
-    DistributedData::AppIDMetaData appIdMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKeyWithoutPath(), oldStoreMetaData)
+        || saveMeta != oldStoreMetaData) {
+        if (MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta)) {
+            ZLOGE("SaveMeta getKeyWithoutPath failed");
+            return OBJECT_INNER_ERROR;
+        }
+    }
+    AppIDMetaData appIdMeta;
     appIdMeta.bundleName = saveMeta.bundleName;
     appIdMeta.appId = saveMeta.appId;
-    DistributedData::AppIDMetaData oldAppIdMeta;
-    if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), oldAppIdMeta, true)
-        || appIdMeta != oldAppIdMeta) {
-        bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
-        if (!isSaved) {
+    AppIDMetaData oldAppIdMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), oldAppIdMeta, true) || appIdMeta != oldAppIdMeta) {
+        if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
             ZLOGE("Save appIdMeta failed");
+            return OBJECT_INNER_ERROR;
         }
-        ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s", saveMeta.appId.c_str(),
-            saveMeta.GetStoreAlias().c_str());
     }
+    ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s", saveMeta.appId.c_str(),
+        saveMeta.GetStoreAlias().c_str());
     return OBJECT_SUCCESS;
 }
 
