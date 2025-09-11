@@ -1376,7 +1376,7 @@ void ObjectStoreManager::SaveUserToMeta()
     userMeta.userId = userId;
     DistributedData::ObjectUserMetaData oldUserMetaData;
     if (!MetaDataManager::GetInstance().LoadMeta(userMeta.GetKey(), oldUserMetaData, true)
-        || userMeta != oldUserMetaData) {
+        || userMeta.userId != oldUserMetaData.userId) {
         auto saved = DistributedData::MetaDataManager::GetInstance().SaveMeta(
             DistributedData::ObjectUserMetaData::GetKey(), userMeta, true);
         if (!saved) {
