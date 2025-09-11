@@ -175,7 +175,7 @@ int32_t ObjectServiceImpl::SaveMetaData(const std::string &userId)
     DistributedData::StoreMetaData oldKeyStoreMetaData;
     if ((!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), oldStoreMetaData, true)
             || saveMeta != oldStoreMetaData)
-        || (!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKeyWithoutPath(), oldKeyStoreMetaData, true)
+        || (!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKeyWithoutPath(), oldKeyStoreMetaData)
             || saveMeta != oldKeyStoreMetaData)) {
         bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta)
                        && DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
