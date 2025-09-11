@@ -146,6 +146,14 @@ private:
     };
     using SyncAgents = std::map<int32_t, SyncAgent>;
 
+    struct GlobalEvent {
+        void AddEvent(const std::string& path, const DistributedData::DataChangeEvent::EventInfo& eventInfo);
+        std::optional<DistributedData::DataChangeEvent::EventInfo> StealEvent(const std::string& path);
+    private:
+        std::mutex mutex;
+        std::map<std::string, DistributedData::DataChangeEvent::EventInfo> events_;
+    };
+
     class RdbStatic : public StaticActs {
     public:
         ~RdbStatic() override {};
@@ -281,6 +289,7 @@ private:
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;
+    std::shared_ptr<GlobalEvent> eventContainer_;
     ConcurrentMap<int32_t, std::map<std::string, ExecutorPool::TaskId>> heartbeatTaskIds_;
 
     LRUBucket<std::string, std::monostate> specialChannels_ { 10 };

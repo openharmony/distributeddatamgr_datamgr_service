@@ -103,7 +103,7 @@ RdbServiceImpl::Factory::~Factory()
 {
 }
 
-RdbServiceImpl::RdbServiceImpl()
+RdbServiceImpl::RdbServiceImpl() : eventContainer_(std::make_shared<GlobalEvent>())
 {
     ZLOGI("construct");
     DistributedDB::RelationalStoreManager::SetAutoLaunchRequestCallback(
@@ -1537,6 +1537,35 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
     return RDB_OK;
 }
 
+void RdbServiceImpl::GlobalEvent::AddEvent(const std::string& path,
+    const DistributedData::DataChangeEvent::EventInfo& newEvent)
+{
+    std::lock_guard lock(mutex);
+    auto& storedEvent = events_[path];
+    for (const auto& [tableName, properties] : newEvent.tableProperties) {
+        auto& globalProps = storedEvent.tableProperties[tableName];
+        globalProps.isTrackedDataChange |= properties.isTrackedDataChange;
+        globalProps.isP2pSyncDataChange |= properties.isP2pSyncDataChange;
+        ZLOGD("table:%{public}s, the isTrackedDataChange is %{public}d",
+            Anonymous::Change(tableName).c_str(), globalProps.isTrackedDataChange);
+    }
+    storedEvent.isFull |= newEvent.isFull;
+}
+
+std::optional<DistributedData::DataChangeEvent::EventInfo> RdbServiceImpl::GlobalEvent::StealEvent(
+    const std::string& path)
+{
+    std::lock_guard lock(mutex);
+    auto it = events_.find(path);
+    if (it == events_.end()) {
+        ZLOGE("The events to the path:%{public}s does not exist", Anonymous::Change(path).c_str());
+        return std::nullopt;
+    }
+    auto eventInfo = std::move(it->second);
+    events_.erase(it);
+    return eventInfo;
+}
+
 void RdbServiceImpl::PostHeartbeatTask(int32_t pid, uint32_t delay, StoreInfo &storeInfo,
     DataChangeEvent::EventInfo &eventInfo)
 {
@@ -1555,14 +1584,25 @@ void RdbServiceImpl::PostHeartbeatTask(int32_t pid, uint32_t delay, StoreInfo &s
             return !tasks.empty();
         }
 
-        if (taskId == ExecutorPool::INVALID_TASK_ID) {
-            auto task = [storeInfo, eventInfo]() mutable {
-                auto evt = std::make_unique<DataChangeEvent>(storeInfo, eventInfo);
+        eventContainer_->AddEvent(storeInfo.path, eventInfo);
+        auto weakContainer = std::weak_ptr<GlobalEvent>(eventContainer_);
+        auto path = storeInfo.path;
+        auto task = [info = storeInfo, path, weakContainer]() mutable {
+            auto container = weakContainer.lock();
+            if (container == nullptr) {
+                ZLOGW("GlobalEvent container has been destroyed");
+                return;
+            }
+            if (auto eventOpt = container->StealEvent(path)) {
+                auto evt = std::make_unique<DataChangeEvent>(std::move(info), std::move(*eventOpt));
                 EventCenter::GetInstance().PostEvent(std::move(evt));
-            };
+            }
+        };
+        if (taskId == ExecutorPool::INVALID_TASK_ID) {
             taskId = executors_->Schedule(std::chrono::milliseconds(delay), task);
         } else {
-            taskId = executors_->Reset(taskId, std::chrono::milliseconds(delay));
+            executors_->Remove(taskId);
+            taskId = executors_->Schedule(std::chrono::milliseconds(delay), task);
         }
         tasks.insert_or_assign(storeInfo.path, taskId);
         return true;
