@@ -253,16 +253,16 @@ HWTEST_F(ObjectServiceImplTest, SaveMeta002, TestSize.Level1)
     auto ret = objectServiceImpl->SaveMetaData(userId);
     EXPECT_EQ(ret, OBJECT_SUCCESS);
     StoreMetaData testUserMeta;
-    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta, true);
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta);
     ret = objectServiceImpl->SaveMetaData(userId);
     EXPECT_EQ(ret, OBJECT_SUCCESS);
     StoreMetaData testUserMeta1;
-    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1, true);
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1);
     testUserMeta1.appType = "test_appType";
-    MetaDataManager::GetInstance().SaveMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1, true);
+    MetaDataManager::GetInstance().SaveMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1);
     ret = objectServiceImpl->SaveMetaData(userId);
     EXPECT_EQ(ret, OBJECT_SUCCESS);
-    MetaDataManager::GetInstance().DelMeta(testUserMeta.GetKeyWithoutPath(), true);
+    MetaDataManager::GetInstance().DelMeta(testUserMeta.GetKeyWithoutPath());
     ret = objectServiceImpl->SaveMetaData(userId);
     EXPECT_EQ(ret, OBJECT_SUCCESS);
 }
