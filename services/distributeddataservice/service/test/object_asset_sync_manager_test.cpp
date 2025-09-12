@@ -164,7 +164,7 @@ HWTEST_F(ObjectAssetSyncManagerTest, UploadTest001, TestSize.Level0)
 HWTEST_F(ObjectAssetSyncManagerTest, UploadTest002, TestSize.Level0)
 {
     auto &assetLoader = ObjectAssetLoader::GetInstance();
-    void *handle = (void *)0x123456;
+    void *handle = reinterpret_cast<void *>(0x123456);
     EXPECT_CALL(*mockDlsym, dlopen(::testing::_, ::testing::_)).WillOnce(Return(handle));
     auto result = assetLoader.Transfer(userId_, bundleName_, deviceId_, asset_);
     EXPECT_EQ(result, false);
@@ -174,7 +174,7 @@ HWTEST_F(ObjectAssetSyncManagerTest, UploadTest002, TestSize.Level0)
  * @tc.name: TransferAsset_Success
  * @tc.desc: Should succeed when download returns success immediately.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(ObjectAssetSyncManagerTest, TransferAsset_Success, TestSize.Level0)
 {
@@ -188,7 +188,7 @@ HWTEST_F(ObjectAssetSyncManagerTest, TransferAsset_Success, TestSize.Level0)
  * @tc.name: TransferAsset_DirectFailure
  * @tc.desc: Should fail when DownloadFile returns error directly.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(ObjectAssetSyncManagerTest, TransferAsset_DirectFailure, TestSize.Level0)
 {
@@ -202,7 +202,7 @@ HWTEST_F(ObjectAssetSyncManagerTest, TransferAsset_DirectFailure, TestSize.Level
  * @tc.name: TransferAsset_CallbackFailure
  * @tc.desc: Should fail when download succeeds but callback returns error.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(ObjectAssetSyncManagerTest, TransferAsset_CallbackFailure, TestSize.Level0)
 {
@@ -216,7 +216,7 @@ HWTEST_F(ObjectAssetSyncManagerTest, TransferAsset_CallbackFailure, TestSize.Lev
  * @tc.name: TransferAsset_Timeout
  * @tc.desc: Should timeout when callback never called.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(ObjectAssetSyncManagerTest, TransferAsset_Timeout, TestSize.Level1)
 {
