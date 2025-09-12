@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,16 +15,9 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 config("object_public_config") {
   visibility = [ ":*" ]
-
-  include_dirs = [
-    "${data_service_path}/service/common",
-    "${data_service_path}/service/matrix/include",
-    "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/adapter/include/utils",
-  ]
 }
 
-ohos_source_set("distributeddata_object") {
+ohos_shared_library("asset_sync_manager") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -34,18 +27,7 @@ ohos_source_set("distributeddata_object") {
     ubsan = true
   }
 
-  sources = [
-    "src/object_asset_loader.cpp",
-    "src/object_asset_machine.cpp",
-    "src/object_callback_proxy.cpp",
-    "src/object_data_listener.cpp",
-    "src/object_dms_handler.cpp",
-    "src/object_manager.cpp",
-    "src/object_service_impl.cpp",
-    "src/object_service_stub.cpp",
-    "src/object_snapshot.cpp",
-    "src/object_types_utils.cpp",
-  ]
+  sources = [ "asset_sync_manager.cpp" ]
 
   cflags_cc = [
     "-fvisibility=hidden",
@@ -53,8 +35,8 @@ ohos_source_set("distributeddata_object") {
   ]
 
   include_dirs = [
-    "include",
-    "asset_loader",
+    "../include",
+    "${data_service_path}/adapter/include/utils",
   ]
 
   configs = [ ":object_public_config" ]
@@ -67,23 +49,12 @@ ohos_source_set("distributeddata_object") {
     "-Oz",
   ]
 
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
-    "${data_service_path}/service/common:distributeddata_common",
-  ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   external_deps = [
-    "access_token:libtokenid_sdk",
-    "data_object:data_object_inner",
-    "device_manager:devicemanagersdk",
-    "dfs_service:distributed_file_daemon_kit_inner",
-    "dmsfwk:distributed_sdk",
+    "dfs_service:cloudsync_asset_kit_inner",
     "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
     "kv_store:datamgr_common",
-    "kv_store:distributeddb",
   ]
 
   subsystem_name = "distributeddatamgr"

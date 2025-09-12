@@ -21,6 +21,7 @@ ohos_fuzztest("ObjectServiceImp2FuzzTest") {
 
   include_dirs = [
     "${data_service_path}/service/object/include",
+    "${data_service_path}/service/object/asset_loader",
   ]
 
   fuzz_config_file =
