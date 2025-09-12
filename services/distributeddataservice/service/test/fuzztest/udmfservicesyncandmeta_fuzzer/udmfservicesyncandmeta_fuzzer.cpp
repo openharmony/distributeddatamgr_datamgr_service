@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "udmfserviceprivilege_fuzzer.h"
+#include "udmfservicesyncandmeta_fuzzer.h"
 
 #include "accesstoken_kit.h"
 #include "distributeddata_udmf_ipc_interface_code.h"
@@ -52,54 +52,63 @@ QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
     return query;
 }
 
-void AddPrivilegeDataFuzz(FuzzedDataProvider &provider)
+void SyncDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServicePrivilegeFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceSyncAndMetaFuzzTest",
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     QueryOption query = GenerateFuzzQueryOption(provider);
-
-    Privilege privilege;
-    privilege.tokenId = 1;
-    privilege.readPermission = "read";
-    privilege.writePermission = "write";
-
-    MessageParcel request;
-    request.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(request, query, privilege);
+    std::vector<std::string> devices = { "11", "22" };
+    MessageParcel requestUpdate;
+    requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
+    ITypesUtil::Marshal(requestUpdate, query, devices);
     MessageParcel replyUpdate;
-    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::ADD_PRIVILEGE),
-        request, replyUpdate);
+    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SYNC),
+        requestUpdate, replyUpdate);
     udmfServiceImpl->OnBind(
-        { "UdmfServicePrivilegeFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceSyncAndMetaFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 
-void IsReadAndKeepFuzz(FuzzedDataProvider &provider)
+void StoreSyncFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    Privilege privilege;
-    privilege.tokenId = provider.ConsumeIntegral<uint32_t>();
-    privilege.readPermission = "read";
-    privilege.writePermission = "write";
-    Privilege privilege2;
-    privilege2.tokenId = provider.ConsumeIntegral<uint32_t>();
-    privilege2.readPermission = "readAndKeep";
-    privilege2.writePermission = "write";
-    std::vector<Privilege> privileges1 = { privilege, privilege2 };
-    QueryOption query = GenerateFuzzQueryOption(provider);
-    udmfServiceImpl->IsReadAndKeep(privileges1, query);
-    std::vector<Privilege> privileges2 = { privilege };
-    udmfServiceImpl->IsReadAndKeep(privileges2, query);
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey key = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    QueryOption query;
+    query.key = key.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DRAG;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    std::vector<std::string> devices = { "11", "22" };
+    udmfServiceImpl->StoreSync(key, query, devices);
 }
 
-void HasDatahubPriviledgeFuzz(FuzzedDataProvider &provider)
+void BuildMetaFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    auto bundleName = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->HasDatahubPriviledge(bundleName);
+    std::string storeId = provider.ConsumeRandomLengthString();
+    int userId = provider.ConsumeIntegral<int>();
+    udmfServiceImpl->BuildMeta(storeId, userId);
 }
+
+void IsNeedMetaSyncFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    DistributedData::StoreMetaData meta;
+    uint8_t len = provider.ConsumeIntegral<uint8_t>();
+    std::vector<std::string> uuids(len);
+    for (int i = 0; i < len; i++) {
+        std::string uuid = provider.ConsumeRandomLengthString();
+        uuids[i] = uuid;
+    }
+    udmfServiceImpl->IsNeedMetaSync(meta, uuids);
+}
+
 }
 
 /* Fuzzer entry point */
@@ -115,8 +124,9 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
-    OHOS::AddPrivilegeDataFuzz(provider);
-    OHOS::IsReadAndKeepFuzz(provider);
-    OHOS::HasDatahubPriviledgeFuzz(provider);
+    OHOS::SyncDataFuzz(provider);
+    OHOS::StoreSyncFuzz(provider);
+    OHOS::BuildMetaFuzz(provider);
+    OHOS::IsNeedMetaSyncFuzz(provider);
     return 0;
 }

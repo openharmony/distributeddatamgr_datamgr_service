@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "udmfservice_checkkeyandintention_fuzzer.h"
+#include "udmfservicedatamanager_fuzzer.h"
 
 #include "accesstoken_kit.h"
 #include "distributeddata_udmf_ipc_interface_code.h"
@@ -56,8 +56,8 @@ void SetDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceDataManagerFuzzTest",
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     CustomOption option1 = {.intention = Intention::UD_INTENTION_DRAG};
 
     std::string svalue = provider.ConsumeRandomLengthString();
@@ -74,7 +74,7 @@ void SetDataFuzz(FuzzedDataProvider &provider)
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DATA), request, reply);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceDataManagerFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 
@@ -82,8 +82,8 @@ void GetDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceDataManagerFuzzTest",
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
@@ -91,7 +91,7 @@ void GetDataFuzz(FuzzedDataProvider &provider)
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_DATA), request, reply);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceDataManagerFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 
@@ -99,8 +99,8 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceDataManagerFuzzTest",
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     std::vector<uint8_t> groupId(ID_LEN, '0');
     for (size_t i = 0; i < groupId.size(); ++i) {
         groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
@@ -126,7 +126,7 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::UPDATE_DATA), request, reply);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceDataManagerFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 
@@ -134,8 +134,8 @@ void DeleteDataFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceDataManagerFuzzTest",
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
@@ -143,7 +143,7 @@ void DeleteDataFuzz(FuzzedDataProvider &provider)
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::DELETE_DATA), request, reply);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceDataManagerFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 }

@@ -35,14 +35,13 @@ constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
-static constexpr int MAXIMUM = 121;
 
 void ObtainAsynProcessFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceAsynProcessFuzzTest",
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     std::vector<uint8_t> groupId(ID_LEN, '0');
     for (size_t i = 0; i < groupId.size(); ++i) {
         groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MINIMUM);
@@ -57,7 +56,7 @@ void ObtainAsynProcessFuzz(FuzzedDataProvider &provider)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::OBTAIN_ASYN_PROCESS),
         requestUpdate, replyUpdate);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceAsynProcessFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 
@@ -65,8 +64,8 @@ void ClearAsynProcessFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceAsynProcessFuzzTest",
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     std::vector<uint8_t> groupId(ID_LEN, '0');
     for (size_t i = 0; i < groupId.size(); ++i) {
         groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MINIMUM);
@@ -79,7 +78,7 @@ void ClearAsynProcessFuzz(FuzzedDataProvider &provider)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::CLEAR_ASYN_PROCESS_BY_KEY),
         requestUpdate, replyUpdate);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceAsynProcessFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 
@@ -87,8 +86,8 @@ void ClearAsynProcessByKeyFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceAsynProcessFuzzTest",
+        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
     MessageParcel requestUpdate;
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
@@ -102,7 +101,7 @@ void ClearAsynProcessByKeyFuzz(FuzzedDataProvider &provider)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::CLEAR_ASYN_PROCESS_BY_KEY),
         requestUpdate, replyUpdate);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceAsynProcessFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 

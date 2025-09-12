@@ -38,8 +38,8 @@ void OnGetAppShareOptionFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceHandleAppShareOptionFuzzTest",
+            static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
     MessageParcel requestUpdate;
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
@@ -54,7 +54,7 @@ void OnGetAppShareOptionFuzz(FuzzedDataProvider &provider)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_APP_SHARE_OPTION),
         requestUpdate, replyUpdate);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceHandleAppShareOptionFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 
@@ -62,8 +62,8 @@ void SetAppShareOptionFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceHandleAppShareOptionFuzzTest",
+            static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
     MessageParcel requestUpdate;
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
@@ -79,7 +79,7 @@ void SetAppShareOptionFuzz(FuzzedDataProvider &provider)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_APP_SHARE_OPTION),
         requestUpdate, replyUpdate);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceHandleAppShareOptionFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 
@@ -87,8 +87,8 @@ void RemoveAppShareOptionFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    udmfServiceImpl->OnBind({ "UdmfServiceHandleAppShareOptionFuzzTest",
+            static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
     MessageParcel requestUpdate;
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
@@ -103,7 +103,7 @@ void RemoveAppShareOptionFuzz(FuzzedDataProvider &provider)
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::REMOVE_APP_SHARE_OPTION),
         requestUpdate, replyUpdate);
     udmfServiceImpl->OnBind(
-        { "UdmfServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+        { "UdmfServiceHandleAppShareOptionFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
 }
