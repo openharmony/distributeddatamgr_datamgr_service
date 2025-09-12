@@ -48,9 +48,13 @@ group("fuzztest") {
     deps += [ "kvdbservicestub_fuzzer:fuzztest" ]
   }
 
+
   if (datamgr_service_data_share) {
-    deps += [ 
+    deps += [
+      #Due to timeout risks from excessive fuzz cases, datashareservicestub_fuzzer split into three files.
       "datashareservicestub_fuzzer:fuzztest",
+      "datashareservicestub2_fuzzer:fuzztest",
+      "datashareservicestub3_fuzzer:fuzztest",
       "datashareserviceimpl_fuzzer:fuzztest",
       "datasharesubscriber_fuzzer:fuzztest",
     ]
