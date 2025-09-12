@@ -1,0 +1,80 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################hydra-fuzz########################################
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+##############################fuzztest##########################################
+ohos_fuzztest("UdmfServicePrivilegeFuzzTest") {
+  module_out_path = "datamgr_service/datamgr_service"
+
+  include_dirs = [
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf/lifecycle",
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/service/udmf/preprocess",
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/service/udmf",
+  ]
+
+  fuzz_config_file =
+      "${data_service_path}/service/test/fuzztest/udmfserviceprivilege_fuzzer"
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-fno-access-control"
+  ]
+
+  sources = [ "udmfserviceprivilege_fuzzer.cpp" ]
+
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
+
+  external_deps = [
+    "ability_base:zuri",
+    "ability_runtime:uri_permission_mgr",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "samgr:samgr_proxy",
+    "udmf:udmf_client",
+  ]
+}
+
+###############################################################################
+group("fuzztest") {
+  testonly = true
+
+  deps = [ ":UdmfServicePrivilegeFuzzTest" ]
+}
+###############################################################################
