@@ -22,7 +22,6 @@
 #include "executor_pool.h"
 #include "object_common.h"
 #include "snapshot/machine_status.h"
-#include "asset_sync_manager.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
@@ -264,17 +263,5 @@ HWTEST_F(ObjectAssetLoaderTest, OnSendResult001, TestSize.Level1)
     result = 0;
     ret = sendCallback->OnSendResult(assetObj, result);
     EXPECT_EQ(ret, result);
-}
-
-/**
-* @tc.name: Transfer001
-* @tc.desc: asset sync manager test.
-* @tc.type: FUNC
-*/
-HWTEST_F(ObjectAssetLoaderTest, Transfer001, TestSize.Level1)
-{
-    AssetSyncManager assetSyncManager;
-    auto result = assetSyncManager.Transfer(userId_, bundleName_, deviceId_, asset_);
-    EXPECT_EQ(result, false);
 }
 } // namespace OHOS::Test

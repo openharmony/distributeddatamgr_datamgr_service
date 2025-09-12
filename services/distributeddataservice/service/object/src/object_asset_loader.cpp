@@ -178,12 +178,15 @@ std::shared_ptr<IAssetSyncManager> ObjectAssetLoader::GetAssetSyncManager()
     }
     void *handler = dlopen("libasset_sync_manager.z.so", RTLD_LAZY);
     if (handler == nullptr) {
-        ZLOGW("dlopen failed");
+        const char* dlopenError = dlerror();
+        ZLOGE("dlopen failed: %{public}s", dlopenError ? dlopenError : "unknown error");
         return nullptr;
     }
-    auto creator = reinterpret_cast<Creater>(dlsym(handler, "CreateAssetSyncManager"));
+    (void)dlerror();
+    auto creator = reinterpret_cast<Creater>(dlsym(handler, "CreateObjectAssetSyncManager"));
     if (creator == nullptr) {
         ZLOGE("dlsym failed, %{public}s", dlerror());
+        dlclose(handler);
         return nullptr;
     }
     assetSyncManager_ = creator();

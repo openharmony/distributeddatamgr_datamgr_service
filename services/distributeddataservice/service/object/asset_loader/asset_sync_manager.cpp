@@ -56,7 +56,7 @@ bool AssetSyncManager::Transfer(const int32_t userId, const std::string &bundleN
 }
 } // namespace OHOS::DistributedObject
 
-API_EXPORT std::shared_ptr<OHOS::DistributedObject::IAssetSyncManager> Create() asm("CreateAssetSyncManager");
+API_EXPORT std::shared_ptr<OHOS::DistributedObject::IAssetSyncManager> Create() asm("CreateObjectAssetSyncManager");
 std::shared_ptr<OHOS::DistributedObject::IAssetSyncManager> Create()
 {
     return std::make_shared<OHOS::DistributedObject::AssetSyncManager>();
