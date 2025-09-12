@@ -182,7 +182,7 @@ int32_t ObjectServiceImpl::SaveMetaData(const std::string &userId)
     }
     if (!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKeyWithoutPath(), oldStoreMetaData)
         || saveMeta != oldStoreMetaData) {
-        if (MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta)) {
+        if (!MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta)) {
             ZLOGE("SaveMeta getKeyWithoutPath failed");
             return OBJECT_INNER_ERROR;
         }
