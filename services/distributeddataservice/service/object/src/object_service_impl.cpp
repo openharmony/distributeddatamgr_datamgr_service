@@ -44,6 +44,7 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using FeatureSystem = OHOS::DistributedData::FeatureSystem;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using CheckerManager = OHOS::DistributedData::CheckerManager;
+using AppIDMetaData = OHOS::DistributedData::AppIDMetaData;
 __attribute__((used)) ObjectServiceImpl::Factory ObjectServiceImpl::factory_;
 constexpr const char *METADATA_STORE_PATH = "/data/service/el1/public/database/distributeddata/kvdb";
 ObjectServiceImpl::Factory::Factory()
@@ -145,9 +146,11 @@ int32_t ObjectServiceImpl::OnInitialize()
         return OBJECT_INNER_ERROR;
     }
     executors_->Schedule(std::chrono::seconds(WAIT_ACCOUNT_SERVICE), [this]() {
-        StoreMetaData saveMeta;
-        SaveMetaData(saveMeta);
-        ObjectStoreManager::GetInstance().SetData(saveMeta.dataDir, saveMeta.user);
+        int foregroundUserId = 0;
+        DistributedData::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+        std::string userId = std::to_string(foregroundUserId);
+        SaveMetaData(userId);
+        ObjectStoreManager::GetInstance().SetData(METADATA_STORE_PATH, userId);
         ObjectStoreManager::GetInstance().InitUserMeta();
         RegisterObjectServiceInfo();
         RegisterHandler();
@@ -157,49 +160,42 @@ int32_t ObjectServiceImpl::OnInitialize()
     return OBJECT_SUCCESS;
 }
 
-int32_t ObjectServiceImpl::SaveMetaData(StoreMetaData &saveMeta)
+int32_t ObjectServiceImpl::SaveMetaData(const std::string &userId)
 {
     auto localDeviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (localDeviceId.empty()) {
         ZLOGE("failed to get local device id");
         return OBJECT_INNER_ERROR;
     }
-    saveMeta.appType = "default";
-    saveMeta.deviceId = localDeviceId;
-    saveMeta.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
-    saveMeta.isAutoSync = false;
-    saveMeta.isBackup = false;
-    saveMeta.isEncrypt = false;
-    saveMeta.bundleName =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.appId =  DistributedData::Bootstrap::GetInstance().GetProcessLabel();
-    saveMeta.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
-    saveMeta.tokenId = IPCSkeleton::GetCallingTokenID();
-    saveMeta.securityLevel = DistributedKv::SecurityLevel::S1;
-    saveMeta.area = DistributedKv::Area::EL1;
-    saveMeta.uid = IPCSkeleton::GetCallingUid();
-    saveMeta.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
-    saveMeta.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
-    saveMeta.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
-    int foregroundUserId = 0;
-    DistributedData::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
-    saveMeta.user = std::to_string(foregroundUserId);
-    saveMeta.dataDir = METADATA_STORE_PATH;
+    auto saveMeta = GetMetaData(localDeviceId, userId);
     if (!DistributedData::DirectoryManager::GetInstance().CreateDirectory(saveMeta.dataDir)) {
         ZLOGE("Create directory error, dataDir: %{public}s.", Anonymous::Change(saveMeta.dataDir).c_str());
         return OBJECT_INNER_ERROR;
     }
-    bool isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta) &&
-                   DistributedData::MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true);
-    if (!isSaved) {
-        ZLOGE("SaveMeta failed");
-        return OBJECT_INNER_ERROR;
+    StoreMetaData oldStoreMetaData;
+    if (!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKey(), oldStoreMetaData, true)
+        || saveMeta != oldStoreMetaData) {
+        if (!MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKey(), saveMeta, true)) {
+            ZLOGE("SaveMeta getKey failed");
+            return OBJECT_INNER_ERROR;
+        }
     }
-    DistributedData::AppIDMetaData appIdMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(saveMeta.GetKeyWithoutPath(), oldStoreMetaData)
+        || saveMeta != oldStoreMetaData) {
+        if (!MetaDataManager::GetInstance().SaveMeta(saveMeta.GetKeyWithoutPath(), saveMeta)) {
+            ZLOGE("SaveMeta getKeyWithoutPath failed");
+            return OBJECT_INNER_ERROR;
+        }
+    }
+    AppIDMetaData appIdMeta;
     appIdMeta.bundleName = saveMeta.bundleName;
     appIdMeta.appId = saveMeta.appId;
-    isSaved = DistributedData::MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true);
-    if (!isSaved) {
-        ZLOGE("Save appIdMeta failed");
+    AppIDMetaData oldAppIdMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), oldAppIdMeta, true) || appIdMeta != oldAppIdMeta) {
+        if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
+            ZLOGE("Save appIdMeta failed");
+            return OBJECT_INNER_ERROR;
+        }
     }
     ZLOGI("SaveMeta success appId %{public}s, storeId %{public}s", saveMeta.appId.c_str(),
         saveMeta.GetStoreAlias().c_str());
@@ -213,9 +209,11 @@ int32_t ObjectServiceImpl::OnUserChange(uint32_t code, const std::string &user, 
         if (status != OBJECT_SUCCESS) {
             ZLOGE("Clear fail user:%{public}s, status: %{public}d", user.c_str(), status);
         }
-        StoreMetaData saveMeta;
-        SaveMetaData(saveMeta);
-        ObjectStoreManager::GetInstance().SetData(saveMeta.dataDir, saveMeta.user);
+        int foregroundUserId = 0;
+        DistributedData::AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+        std::string userId = std::to_string(foregroundUserId);
+        SaveMetaData(userId);
+        ObjectStoreManager::GetInstance().SetData(METADATA_STORE_PATH, userId);
     }
     return Feature::OnUserChange(code, user, account);
 }
@@ -455,5 +453,29 @@ int32_t ObjectServiceImpl::OnBind(const BindInfo &bindInfo)
     ObjectStoreManager::GetInstance().SetThreadPool(executors_);
     ObjectAssetLoader::GetInstance().SetThreadPool(executors_);
     return 0;
+}
+
+StoreMetaData ObjectServiceImpl::GetMetaData(const std::string &deviceId, const std::string &userId)
+{
+    StoreMetaData storeMetaData;
+    storeMetaData.appType = "default";
+    storeMetaData.deviceId = deviceId;
+    storeMetaData.storeId = DistributedObject::ObjectCommon::OBJECTSTORE_DB_STOREID;
+    storeMetaData.isAutoSync = false;
+    storeMetaData.isBackup = false;
+    storeMetaData.isEncrypt = false;
+    storeMetaData.bundleName = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    storeMetaData.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    storeMetaData.account = DistributedData::AccountDelegate::GetInstance()->GetCurrentAccountId();
+    storeMetaData.tokenId = IPCSkeleton::GetCallingTokenID();
+    storeMetaData.securityLevel = DistributedKv::SecurityLevel::S1;
+    storeMetaData.area = DistributedKv::Area::EL1;
+    storeMetaData.uid = IPCSkeleton::GetCallingUid();
+    storeMetaData.storeType = ObjectDistributedType::OBJECT_SINGLE_VERSION;
+    storeMetaData.dataType = DistributedKv::DataType::TYPE_DYNAMICAL;
+    storeMetaData.authType = DistributedKv::AuthType::IDENTICAL_ACCOUNT;
+    storeMetaData.user = userId;
+    storeMetaData.dataDir = METADATA_STORE_PATH;
+    return storeMetaData;
 }
 } // namespace OHOS::DistributedObject

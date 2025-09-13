@@ -19,10 +19,16 @@
 
 #include <gtest/gtest.h>
 
+#include "account/account_delegate.h"
 #include "accesstoken_kit.h"
 #include "device_manager_adapter_mock.h"
 #include "ipc_skeleton.h"
 #include "token_setproc.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/object_user_meta_data.h"
+#include "metadata/appid_meta_data.h"
+#include "bootstrap.h"
+#include "device_manager_adapter.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
@@ -200,5 +206,138 @@ HWTEST_F(ObjectServiceImplTest, UnregisterProgressObserver001, TestSize.Level1)
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
     int32_t ret = objectServiceImpl->UnregisterProgressObserver(bundleName_, sessionId_);
     EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name: SaveMeta001
+ * @tc.desc: Save StoreMetaData test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, SaveMeta001, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    DeviceInfo devInfo = { .uuid = "123" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
+    int foregroundUserId = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    std::string userId = std::to_string(foregroundUserId);
+
+    StoreMetaData testUserMeta;
+    std::string deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    testUserMeta = objectServiceImpl->GetMetaData(deviceId, userId);
+    auto ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    auto exist = MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKey(), testUserMeta, true);
+    EXPECT_EQ(exist, true);
+
+    StoreMetaData testUserMeta1;
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKey(), testUserMeta1, true);
+    testUserMeta1.appType = "test_appType";
+    EXPECT_NE(testUserMeta, testUserMeta1);
+    MetaDataManager::GetInstance().SaveMeta(testUserMeta.GetKey(), testUserMeta1, true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKey(), testUserMeta1, true);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    EXPECT_EQ(testUserMeta, testUserMeta1);
+
+    StoreMetaData testUserMeta2;
+    MetaDataManager::GetInstance().DelMeta(testUserMeta.GetKey(), true);
+    exist = MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKey(), testUserMeta2, true);
+    EXPECT_EQ(exist, false);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    exist = MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKey(), testUserMeta2, true);
+    EXPECT_EQ(exist, true);
+    EXPECT_EQ(testUserMeta, testUserMeta2);
+}
+
+/**
+ * @tc.name: SaveMeta002
+ * @tc.desc: Save key StoreMetaData test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, SaveMeta002, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    DeviceInfo devInfo = { .uuid = "123" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
+    int foregroundUserId = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    std::string userId = std::to_string(foregroundUserId);
+
+    StoreMetaData testUserMeta;
+    std::string deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    testUserMeta = objectServiceImpl->GetMetaData(deviceId, userId);
+    auto ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    auto exist = MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta);
+    EXPECT_EQ(exist, true);
+
+    StoreMetaData testUserMeta1;
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1);
+    testUserMeta1.appType = "test_appType";
+    EXPECT_NE(testUserMeta, testUserMeta1);
+    MetaDataManager::GetInstance().SaveMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta1);
+    EXPECT_EQ(testUserMeta, testUserMeta1);
+
+    StoreMetaData testUserMeta2;
+    MetaDataManager::GetInstance().DelMeta(testUserMeta.GetKeyWithoutPath());
+    exist = MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta2);
+    EXPECT_EQ(exist, false);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    exist = MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta2);
+    EXPECT_EQ(exist, true);
+    EXPECT_EQ(testUserMeta, testUserMeta2);
+}
+
+/**
+ * @tc.name: SaveMeta003
+ * @tc.desc: Save AppIDMetaData test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, SaveMeta003, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    DeviceInfo devInfo = { .uuid = "123" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillRepeatedly(Return(devInfo));
+    int foregroundUserId = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUserId);
+    std::string userId = std::to_string(foregroundUserId);
+    StoreMetaData testUserMeta;
+    std::string deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    testUserMeta = objectServiceImpl->GetMetaData(deviceId, userId);
+    AppIDMetaData testAppIdMeta;
+    testAppIdMeta.appId = testUserMeta.appId;
+    testAppIdMeta.bundleName = testUserMeta.bundleName;
+    auto ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    auto exist = MetaDataManager::GetInstance().LoadMeta(testAppIdMeta.GetKey(), testAppIdMeta, true);
+    EXPECT_EQ(exist, true);
+
+    AppIDMetaData testAppIdMeta1;
+    MetaDataManager::GetInstance().LoadMeta(testAppIdMeta.GetKey(), testAppIdMeta1, true);
+    testAppIdMeta.bundleName = "test_app";
+    EXPECT_NE(testAppIdMeta, testAppIdMeta1);
+    MetaDataManager::GetInstance().SaveMeta(testAppIdMeta.GetKey(), testAppIdMeta1, true);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    MetaDataManager::GetInstance().LoadMeta(testAppIdMeta.GetKey(), testAppIdMeta1, true);
+    EXPECT_NE(testAppIdMeta, testAppIdMeta1);
+
+    AppIDMetaData testAppIdMeta3;
+    MetaDataManager::GetInstance().LoadMeta(testAppIdMeta.GetKey(), testAppIdMeta3, true);
+    MetaDataManager::GetInstance().DelMeta(testAppIdMeta.GetKey(), true);
+    AppIDMetaData testAppIdMeta2;
+    exist = MetaDataManager::GetInstance().LoadMeta(testAppIdMeta.GetKey(), testAppIdMeta2, true);
+    EXPECT_EQ(exist, false);
+    ret = objectServiceImpl->SaveMetaData(userId);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+    exist = MetaDataManager::GetInstance().LoadMeta(testAppIdMeta.GetKey(), testAppIdMeta2, true);
+    EXPECT_EQ(exist, true);
+    EXPECT_EQ(testAppIdMeta3, testAppIdMeta2);
 }
 }

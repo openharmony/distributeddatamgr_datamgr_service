@@ -38,8 +38,8 @@ void DumpObjectServiceInfoFuzzTest(FuzzedDataProvider &provider)
 void SaveMetaDataFuzzTest(FuzzedDataProvider &provider)
 {
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
-    StoreMetaData saveMeta;
-    objectServiceImpl->SaveMetaData(saveMeta);
+    std::string userId = provider.ConsumeRandomLengthString(100);
+    objectServiceImpl->SaveMetaData(userId);
     auto &dmAdapter = DeviceManagerAdapter::GetInstance();
     std::string uuid = provider.ConsumeRandomLengthString(100);
     std::string udid = provider.ConsumeRandomLengthString(100);
@@ -51,7 +51,7 @@ void SaveMetaDataFuzzTest(FuzzedDataProvider &provider)
     }
     dmAdapter.localInfo_.uuid = uuid;
     dmAdapter.localInfo_.udid = udid;
-    objectServiceImpl->SaveMetaData(saveMeta);
+    objectServiceImpl->SaveMetaData(userId);
 }
 
 void BindAssetStoreFuzzTest(FuzzedDataProvider &provider)
