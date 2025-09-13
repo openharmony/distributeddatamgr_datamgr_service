@@ -267,7 +267,7 @@ HWTEST_F(ObjectServiceImplTest, SaveMeta002, TestSize.Level1)
 
     StoreMetaData testUserMeta;
     std::string deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    testUserMeta = objectServiceImpl->GetMetaData(deviceId,userId);
+    testUserMeta = objectServiceImpl->GetMetaData(deviceId, userId);
     auto ret = objectServiceImpl->SaveMetaData(userId);
     EXPECT_EQ(ret, OBJECT_SUCCESS);
     auto exist = MetaDataManager::GetInstance().LoadMeta(testUserMeta.GetKeyWithoutPath(), testUserMeta);
