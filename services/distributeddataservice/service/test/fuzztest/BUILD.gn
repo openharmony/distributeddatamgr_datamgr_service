@@ -61,6 +61,19 @@ group("fuzztest") {
   }
 
   if (datamgr_service_udmf) {
-    deps += [ "udmfservice_fuzzer:fuzztest" ]
+    deps += [ "udmfserviceasynprocess_fuzzer:fuzztest" ]
+    deps += [ "udmfservicecheckkeyandintention_fuzzer:fuzztest" ]
+    deps += [ "udmfservicecheckpermission_fuzzer:fuzztest" ]
+    deps += [ "udmfservicechecktransferparams_fuzzer:fuzztest" ]
+    deps += [ "udmfservicedata_fuzzer:fuzztest" ]
+    deps += [ "udmfservicedatamanager_fuzzer:fuzztest" ]
+    deps += [ "udmfservicedelaydata_fuzzer:fuzztest" ]
+    deps += [ "udmfservicehandleappshareoption_fuzzer:fuzztest" ]
+    deps += [ "udmfservicehandledbstatus_fuzzer:fuzztest" ]
+    deps += [ "udmfserviceprivilege_fuzzer:fuzztest" ]
+    deps += [ "udmfserviceprocessdata_fuzzer:fuzztest" ]
+    deps += [ "udmfserviceremoteinteraction_fuzzer:fuzztest" ]
+    deps += [ "udmfservicesyncandmeta_fuzzer:fuzztest" ]
+    deps += [ "udmfserviceverifypermission_fuzzer:fuzztest" ]
   }
 }
