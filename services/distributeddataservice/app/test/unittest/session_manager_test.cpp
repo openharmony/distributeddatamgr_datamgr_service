@@ -115,11 +115,9 @@ public:
     static void SetUpTestCase()
     {
         MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
-        auto executors = std::make_shared<ExecutorPool>(12, 5);
         Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
         Bootstrap::GetInstance().LoadCheckers();
-        DeviceManagerAdapter::GetInstance().Init(executors);
 
         // init peer device
         UserMetaData userMetaData;

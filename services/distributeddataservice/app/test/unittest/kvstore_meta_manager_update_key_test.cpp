@@ -50,7 +50,6 @@ public:
         auto executors = std::make_shared<OHOS::ExecutorPool>(1, 0);
         Bootstrap::GetInstance().LoadComponents();
         Bootstrap::GetInstance().LoadDirectory();
-        DeviceManagerAdapter::GetInstance().Init(executors);
         KvStoreMetaManager::GetInstance().BindExecutor(executors);
         KvStoreMetaManager::GetInstance().InitMetaParameter();
     }

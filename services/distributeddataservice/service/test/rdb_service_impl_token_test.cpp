@@ -93,10 +93,6 @@ void RdbServiceImplTokenTest::SetUpTestCase()
 {
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
-    size_t max = 12;
-    size_t min = 5;
-    auto dmExecutor = std::make_shared<ExecutorPool>(max, min);
-    DeviceManagerAdapter::GetInstance().Init(dmExecutor);
     InitMetaData();
     Bootstrap::GetInstance().LoadCheckers();
     CryptoManager::GetInstance().GenerateRootKey();
