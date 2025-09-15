@@ -404,24 +404,26 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &u
         Uri uri(oriUri);
         std::string scheme = uri.GetScheme();
         std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+            ZLOGW("Empty authority or scheme not file");
+            return false;
+        }
         if (!isLocal) {
             std::string remoteUri;
             obj->GetValue(REMOTE_URI, remoteUri);
-            if (remoteUri.empty() && scheme == FILE_SCHEME) {
+            if (remoteUri.empty()) {
                 ZLOGE("Remote URI required for cross-device");
                 hasError = true;
                 return false;
             }
-            if (!remoteUri.empty()) {
-                obj->value_.insert_or_assign(ORI_URI, remoteUri); // cross dev, need dis path.
-                uri = Uri(remoteUri);
-                scheme = uri.GetScheme();
-                std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+            uri = Uri(remoteUri);
+            obj->value_.insert_or_assign(ORI_URI, std::move(remoteUri)); // cross dev, need dis path.
+            scheme = uri.GetScheme();
+            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
+                ZLOGW("Empty authority or scheme not file");
+                return false;
             }
-        }
-        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-            ZLOGW("Empty authority or scheme not file");
-            return false;
         }
         uris.push_back(uri);
         return true;
