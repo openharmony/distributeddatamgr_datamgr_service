@@ -40,7 +40,6 @@ ohos_source_set("udmf_server") {
     debug = false
   }
   sources = [
-    "lifecycle/clean_on_startup.cpp",
     "lifecycle/clean_on_timeout.cpp",
     "lifecycle/lifecycle_manager.cpp",
     "lifecycle/lifecycle_policy.cpp",
