@@ -274,17 +274,13 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
-
-    if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        int32_t ret = ProcessUri(query, unifiedData);
-        if (ret != E_OK) {
-            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-                BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, ret);
-            ZLOGE("ProcessUri failed:%{public}d", ret);
-            return E_NO_PERMISSION;
-        }
+    int32_t ret = ProcessUri(query, unifiedData);
+    if (ret != E_OK) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, ret);
+        ZLOGE("ProcessUri failed:%{public}d", ret);
+        return E_NO_PERMISSION;
     }
-
     {
         std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
         privilegeCache_.erase(query.key);
@@ -877,7 +873,6 @@ int32_t UdmfServiceImpl::RemoveAppShareOption(const std::string &intention)
         return E_DB_ERROR;
     }
 
-    UnifiedData unifiedData;
     int32_t status = store->DeleteLocal(std::to_string(accessTokenIDEx));
     if (status != E_OK) {
         ZLOGE("Store DeleteLocal failed:%{public}s, status:%{public}d", intention.c_str(), status);
