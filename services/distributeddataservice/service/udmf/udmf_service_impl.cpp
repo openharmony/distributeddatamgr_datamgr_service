@@ -356,12 +356,29 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGW("No uri permissions needed,queryKey=%{public}s", query.key.c_str());
         return E_OK;
     }
+    if (!VerifySavedTokenId(unifiedData.GetRuntime())) {
+        return E_ERROR;
+    }
     if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
             bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
     }
     return E_OK;
+}
+
+bool UdmfServiceImpl::VerifySavedTokenId(std::shared_ptr<Runtime> runtime)
+{
+    uint32_t tokenId = runtime->tokenId;
+    std::string bundleName;
+    if (!PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName)) {
+        ZLOGE("Get bundleName fail");
+        return false;
+    }
+    if (bundleName != runtime->sourcePackage) {
+        return false;
+    }
+    return true;
 }
 
 int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData, std::vector<Uri> &uris)

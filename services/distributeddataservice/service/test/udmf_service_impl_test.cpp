@@ -1085,5 +1085,50 @@ HWTEST_F(UdmfServiceImplTest, PushDelayData007, TestSize.Level1)
     EXPECT_EQ(status, E_NO_PERMISSION);
     service.delayDataCallback_.Clear();
 }
+
+/**
+ * @tc.name: VerifySavedTokenId001
+ * @tc.desc: test process uri verify fail
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, VerifySavedTokenId001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = 100000;
+    runtime->sourcePackage = "ohos.test.demo";
+    auto status = service.VerifySavedTokenId(runtime);
+    EXPECT_FALSE(status);
+}
+
+/**
+ * @tc.name: VerifySavedTokenId002
+ * @tc.desc: test process uri verify success
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, VerifySavedTokenId002, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    runtime->sourcePackage = HAP_BUNDLE_NAME;
+    auto status = service.VerifySavedTokenId(runtime);
+    EXPECT_TRUE(status);
+}
+
+/**
+ * @tc.name: VerifySavedTokenId003
+ * @tc.desc: test process uri verify fail with different bundleName
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, VerifySavedTokenId003, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    runtime->sourcePackage = "com.test.demo111";
+    auto status = service.VerifySavedTokenId(runtime);
+    EXPECT_FALSE(status);
+}
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
