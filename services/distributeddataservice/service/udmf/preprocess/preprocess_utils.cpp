@@ -30,6 +30,7 @@
 #include "system_ability_definition.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
+#include "unified_html_record_process.h"
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
 #include "ipc_skeleton.h"
@@ -194,6 +195,7 @@ int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
 {
     std::vector<std::string> uris;
     ProcessFileType(data.GetRecords(), [&uris](std::shared_ptr<Object> obj) {
+        obj->value_[REMOTE_URI] = ""; // To ensure remoteUri is empty when save data!
         std::string oriUri;
         obj->GetValue(ORI_URI, oriUri);
         if (oriUri.empty()) {
@@ -392,6 +394,9 @@ void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint3
 void PreProcessUtils::GetHtmlFileUris(uint32_t tokenId, UnifiedData &data,
     bool isLocal, std::vector<std::string> &uris)
 {
+    if (data.HasType(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML))) {
+        UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(data);
+    }
     for (auto &record : data.GetRecords()) {
         if (record == nullptr) {
             continue;
