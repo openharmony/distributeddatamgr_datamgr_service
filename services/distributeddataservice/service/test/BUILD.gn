@@ -2451,7 +2451,6 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
   }
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "${data_service_path}/service/udmf/lifecycle/clean_on_startup.cpp",
     "${data_service_path}/service/udmf/lifecycle/clean_on_timeout.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
