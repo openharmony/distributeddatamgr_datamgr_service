@@ -94,6 +94,7 @@ private:
     DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
     int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
     bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res);
+    bool VerifySavedTokenId(std::shared_ptr<Runtime> runtime);
 
     class Factory {
     public:
