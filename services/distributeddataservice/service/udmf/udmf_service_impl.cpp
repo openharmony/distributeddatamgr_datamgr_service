@@ -357,6 +357,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         return E_OK;
     }
     if (!VerifySavedTokenId(unifiedData.GetRuntime())) {
+        ZLOGE("VerifySavedTokenId fail");
         return E_ERROR;
     }
     if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
