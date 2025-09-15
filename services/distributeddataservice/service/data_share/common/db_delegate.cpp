@@ -80,6 +80,20 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
     return nullptr;
 }
 
+bool DBDelegate::Delete(const DistributedData::StoreMetaData &metaData)
+{
+    // delete function.
+    auto eraseFunc = [&metaData](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
+        stores.erase(metaData.storeId);
+        return !stores.empty();
+    };
+
+    bool result = false;
+    auto &stores = metaData.isEncrypt ? storesEncrypt_ : stores_;
+    result = stores.ComputeIfPresent(metaData.tokenId, eraseFunc);
+    return result;
+}
+
 void DBDelegate::SetExecutorPool(std::shared_ptr<ExecutorPool> executor)
 {
     executor_ = std::move(executor);

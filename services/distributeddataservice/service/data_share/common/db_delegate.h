@@ -37,6 +37,7 @@ public:
     using Filter = std::function<bool(const std::string &user)>;
     static std::shared_ptr<DBDelegate> Create(DistributedData::StoreMetaData &metaData,
         const std::string &extUri = "", const std::string &backup = "");
+    static bool Delete(const DistributedData::StoreMetaData &metaData);
     virtual bool Init(const DistributedData::StoreMetaData &meta, int version,
         bool registerFunction, const std::string &extUri, const std::string &backup) = 0;
     static void Close(const Filter &filter);
