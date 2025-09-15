@@ -127,13 +127,14 @@ int32_t PreProcessUtils::GetHapUidByToken(uint32_t tokenId, int &userId)
 
 bool PreProcessUtils::GetHapBundleNameByToken(uint32_t tokenId, std::string &bundleName)
 {
-    if (UTILS::IsTokenNative()) {
+    if (UTILS::IsTokenNative(tokenId)) {
         ZLOGD("TypeATokenTypeEnum is TOKEN_HAP");
         std::string processName;
         if (GetNativeProcessNameByToken(tokenId, processName)) {
             bundleName = processName;
             return true;
         }
+        return false;
     }
     Security::AccessToken::HapTokenInfo hapInfo;
     if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
@@ -507,7 +508,7 @@ std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
 bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
     std::string &bundleName)
 {
-    if (UTILS::IsTokenNative()) {
+    if (UTILS::IsTokenNative(tokenId)) {
         ZLOGI("TypeATokenTypeEnum is TOKEN_NATIVE");
         std::string processName;
         if (GetNativeProcessNameByToken(tokenId, processName)) {
