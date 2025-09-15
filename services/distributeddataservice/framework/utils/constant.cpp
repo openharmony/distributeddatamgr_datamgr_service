@@ -98,17 +98,17 @@ bool Constant::DCopy(uint8_t *tag, size_t tagLen, const uint8_t *src, size_t src
     return ret == EOK;
 }
 
-bool Constant::IsValidPath(const std::string &param)
+bool Constant::IsValidPath(const std::string &path)
 {
-    size_t pos = param.find(PATH_INVALID_FLAG_LEADING);
+    size_t pos = path.find(PATH_INVALID_FLAG_LEADING);
     while (pos != std::string::npos) {
-        if (pos == 0 || param[pos - 1] == FILE_SEPARATOR_CHAR) {
+        if (pos == 0 || path[pos - 1] == FILE_SEPARATOR_CHAR) {
             return false;
         }
-        pos = param.find(PATH_INVALID_FLAG_LEADING, pos + PATH_INVALID_FLAG_LEN);
+        pos = path.find(PATH_INVALID_FLAG_LEADING, pos + PATH_INVALID_FLAG_LEN);
     }
-    pos = param.rfind(PATH_INVALID_FLAG_TRAILING);
-    if ((pos != std::string::npos) && (param.size() - pos == PATH_INVALID_FLAG_LEN)) {
+    pos = path.rfind(PATH_INVALID_FLAG_TRAILING);
+    if ((pos != std::string::npos) && (path.size() - pos == PATH_INVALID_FLAG_LEN)) {
         return false;
     }
     return true;
