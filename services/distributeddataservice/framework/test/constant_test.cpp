@@ -170,3 +170,29 @@ HWTEST_F(ConstantTest, SplitStringLongDelimTest, TestSize.Level1)
     EXPECT_EQ(tokens[0], "abc");
     EXPECT_EQ(tokens[1], "&123");
 }
+
+/**
+ * @tc.name: IsValidPath001
+ * @tc.desc: IsValidPath function test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ConstantTest, IsValidPath001, TestSize.Level0)
+{
+    EXPECT_TRUE(Constant::IsValidPath("validpath"));
+    EXPECT_TRUE(Constant::IsValidPath("another_valid_path"));
+    EXPECT_TRUE(Constant::IsValidPath("/file123"));
+    EXPECT_TRUE(Constant::IsValidPath("/file123../aaa"));
+}
+
+/**
+ * @tc.name: IsValidPath002
+ * @tc.desc: IsValidPath function test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ConstantTest, IsValidPath002, TestSize.Level0)
+{
+    EXPECT_FALSE(Constant::IsValidPath("../starting/slash"));
+    EXPECT_FALSE(Constant::IsValidPath("ending/../slash/"));
+    EXPECT_FALSE(Constant::IsValidPath("../../"));
+    EXPECT_FALSE(Constant::IsValidPath("path/with\\mixed/slashes/.."));
+}

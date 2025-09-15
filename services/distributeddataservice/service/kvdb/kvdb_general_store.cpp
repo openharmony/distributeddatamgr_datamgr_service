@@ -40,6 +40,7 @@
 #include "types.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -176,6 +177,10 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
     isPublic_ = local.isPublic;
     DBStatus status = DBStatus::NOT_FOUND;
+    if (!Constant::IsValidPath(meta.dataDir)) {
+        ZLOGE("path is invalid. dataDir is %{public}s", Anonymous::Change(meta.dataDir).c_str());
+        return;
+    }
     manager_.SetKvStoreConfig({ meta.dataDir });
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     manager_.GetKvStore(

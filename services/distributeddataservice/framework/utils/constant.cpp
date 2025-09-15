@@ -20,6 +20,11 @@
 namespace OHOS {
 namespace DistributedData {
 constexpr const char *Constant::KEY_SEPARATOR;
+static const std::string PATH_INVALID_FLAG_LEADING = "../";
+static const std::string PATH_INVALID_FLAG_TRAILING = "/..";
+static const uint32_t PATH_INVALID_FLAG_LEN = 3;
+static const char FILE_SEPARATOR_CHAR = '/';
+
 std::string Constant::Concatenate(std::initializer_list<std::string> stringList)
 {
     std::string result;
@@ -91,6 +96,22 @@ bool Constant::DCopy(uint8_t *tag, size_t tagLen, const uint8_t *src, size_t src
     }
     auto ret = memcpy_s(tag, tagLen, src, srcLen);
     return ret == EOK;
+}
+
+bool Constant::IsValidPath(const std::string &param)
+{
+    size_t pos = param.find(PATH_INVALID_FLAG_LEADING);
+    while (pos != std::string::npos) {
+        if (pos == 0 || param[pos - 1] == FILE_SEPARATOR_CHAR) {
+            return false;
+        }
+        pos = param.find(PATH_INVALID_FLAG_LEADING, pos + PATH_INVALID_FLAG_LEN);
+    }
+    pos = param.rfind(PATH_INVALID_FLAG_TRAILING);
+    if ((pos != std::string::npos) && (param.size() - pos == PATH_INVALID_FLAG_LEN)) {
+        return false;
+    }
+    return true;
 }
 } // namespace DistributedData
 } // namespace OHOS

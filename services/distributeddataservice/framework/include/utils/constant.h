@@ -83,6 +83,7 @@ public:
     template<typename T>
     static T TrimCopy(T s);
 
+    API_EXPORT static bool IsValidPath(const std::string &param);
     API_EXPORT static constexpr const char *KEY_SEPARATOR = "###";
 
 private:
