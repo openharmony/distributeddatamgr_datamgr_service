@@ -1130,5 +1130,99 @@ HWTEST_F(UdmfServiceImplTest, VerifySavedTokenId003, TestSize.Level1)
     auto status = service.VerifySavedTokenId(runtime);
     EXPECT_FALSE(status);
 }
+
+/**
+ * @tc.name: ProcessCrossDeviceData001
+ * @tc.desc: test ProcessCrossDeviceData with local
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    Runtime runtime;
+    runtime.deviceId = PreProcessUtils::GetLocalDeviceId();
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
+    obj->value_[FILE_TYPE] = "general.image";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    unifiedData.AddRecord(record);
+
+    std::shared_ptr<Object> obj1 = std::make_shared<Object>();
+    obj1->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj1->value_[ORI_URI] = "https://error_bundle_name/a.jpeg";
+    obj1->value_[FILE_TYPE] = "general.image";
+    auto record1 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj1);
+    unifiedData.AddRecord(record1);
+
+    std::shared_ptr<Object> obj2 = std::make_shared<Object>();
+    obj2->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj2->value_[FILE_TYPE] = "general.image";
+    auto record2 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj2);
+    unifiedData.AddRecord(record2);
+
+    std::shared_ptr<Object> obj3 = std::make_shared<Object>();
+    obj3->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj3->value_[ORI_URI] = "/error_bundle_name/a.jpeg";
+    obj3->value_[FILE_TYPE] = "general.image";
+    auto record3 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj3);
+    unifiedData.AddRecord(record3);
+
+    unifiedData.SetRuntime(runtime);
+    uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    std::vector<Uri> allUri;
+    service.ProcessCrossDeviceData(tokenId, unifiedData, allUri);
+    EXPECT_EQ(allUri.size(), 1);
+}
+
+/**
+ * @tc.name: ProcessCrossDeviceData001
+ * @tc.desc: test ProcessCrossDeviceData with remote
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData002, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    Runtime runtime;
+    runtime.deviceId = "111111";
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
+    obj->value_[REMOTE_URI] = "file://error_bundle_name/a.jpeg";
+    obj->value_[FILE_TYPE] = "general.image";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    unifiedData.AddRecord(record);
+
+    std::shared_ptr<Object> obj1 = std::make_shared<Object>();
+    obj1->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj1->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
+    obj1->value_[REMOTE_URI] = "https://error_bundle_name/a.jpeg";
+    obj1->value_[FILE_TYPE] = "general.image";
+    auto record1 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj1);
+    unifiedData.AddRecord(record1);
+
+    std::shared_ptr<Object> obj2 = std::make_shared<Object>();
+    obj2->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj2->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
+    obj2->value_[FILE_TYPE] = "general.image";
+    auto record2 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj2);
+    unifiedData.AddRecord(record2);
+
+    std::shared_ptr<Object> obj3 = std::make_shared<Object>();
+    obj3->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj3->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
+    obj3->value_[REMOTE_URI] = "/error_bundle_name/a.jpeg";
+    obj3->value_[FILE_TYPE] = "general.image";
+    auto record3 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj3);
+    unifiedData.AddRecord(record3);
+
+    unifiedData.SetRuntime(runtime);
+    uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    std::vector<Uri> allUri;
+    service.ProcessCrossDeviceData(tokenId, unifiedData, allUri);
+    EXPECT_EQ(allUri.size(), 1);
+}
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
