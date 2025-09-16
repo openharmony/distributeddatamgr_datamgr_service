@@ -33,7 +33,7 @@ std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
 std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData,
     const std::string &extUri, const std::string &backup)
 {
-    if (metaData.area > DistributedData::GeneralStore::Area::EL1 &&
+    if (atoi(metaData.user.c_str()) != 0 && metaData.area > DistributedData::GeneralStore::Area::EL1 &&
        (Account::GetInstance()->IsDeactivating(atoi(metaData.user.c_str())) ||
         !Account::GetInstance()->IsVerified(atoi(metaData.user.c_str())))) {
         ZLOGW("user %{public}s is deactivating or unverified, storeName: %{public}s, area: %{public}d",
