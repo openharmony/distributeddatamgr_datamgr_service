@@ -1240,19 +1240,19 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest002, TestSize.Level0)
 {
     metaData_.dataDir = "../data/service/el1/public/database";
     auto store1 = new (std::nothrow) KVDBGeneralStore(metaData_);
-    EXPECT_EQ(store1, nullptr);
+    ASSERT_NE(store1, nullptr);
     EXPECT_EQ(store1->delegate_, nullptr);
     delete store1;
 
     metaData_.dataDir = "/data/../service/el1/public/database";
     auto store2 = new (std::nothrow) KVDBGeneralStore(metaData_);
-    EXPECT_EQ(store2, nullptr);
+    ASSERT_NE(store2, nullptr);
     EXPECT_EQ(store2->delegate_, nullptr);
     delete store2;
 
     metaData_.dataDir = "/data/service/el1/public/database/..";
     auto store3 = new (std::nothrow) KVDBGeneralStore(metaData_);
-    EXPECT_EQ(store3, nullptr);
+    ASSERT_NE(store3, nullptr);
     EXPECT_EQ(store3->delegate_, nullptr);
     delete store3;
 }
