@@ -128,6 +128,7 @@ private:
     };
     void RegisterDataShareServiceInfo();
     void RegisterHandler();
+    void SubscribeListen();
     bool SubscribeTimeChanged();
     bool NotifyChange(const std::string &uri, int32_t userId);
     bool GetCallerBundleName(std::string &bundleName);

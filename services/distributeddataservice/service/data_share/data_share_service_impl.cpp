@@ -611,12 +611,33 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     SubscribeConcurrentTask();
     SubscribeTimeChanged();
     SubscribeChange();
+    SubscribeListen();
     auto task = [](const std::string &bundleName, int32_t userId, const std::string &storeName) {
         return BundleMgrProxy::GetInstance()->IsConfigSilentProxy(bundleName, userId, storeName);
     };
     BundleUtils::GetInstance().SetBundleInfoCallback(task);
     ZLOGI("end");
     return E_OK;
+}
+
+void DataShareServiceImpl::SubscribeListen()
+{
+    MetaDataManager::GetInstance().Subscribe(
+        StoreMetaData::GetPrefix({}), [](const std::string &key, const std::string &value, int32_t flag) -> auto {
+            if (flag != MetaDataManager::DELETE || value.empty()) {
+                return false;
+            }
+            StoreMetaData meta;
+            if (!(StoreMetaData::Unmarshall(value, meta))) {
+                ZLOGE("SubscribeListen Unmarshall failed!");
+                return false;
+            }
+            if (!DBDelegate::Delete(meta)) {
+                return false;
+            }
+            ZLOGI("Delete store:%{public}s success!", StringUtils::GeneralAnonymous(meta.storeId).c_str());
+            return true;
+        }, true);
 }
 
 void DataShareServiceImpl::SubscribeCommonEvent()
