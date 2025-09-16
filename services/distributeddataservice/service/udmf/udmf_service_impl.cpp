@@ -274,17 +274,13 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
-
-    if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        int32_t ret = ProcessUri(query, unifiedData);
-        if (ret != E_OK) {
-            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-                BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, ret);
-            ZLOGE("ProcessUri failed:%{public}d", ret);
-            return E_NO_PERMISSION;
-        }
+    int32_t ret = ProcessUri(query, unifiedData);
+    if (ret != E_OK) {
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, ret);
+        ZLOGE("ProcessUri failed:%{public}d", ret);
+        return E_NO_PERMISSION;
     }
-
     {
         std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
         privilegeCache_.erase(query.key);
@@ -691,7 +687,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 
 int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::string> &devices)
 {
-    if (!UTILS::IsTokenNative() ||
+    if (!UTILS::IsTokenNative(query.tokenId) ||
         !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(query.tokenId)) {
         ZLOGE("Tokenid permission verification failed!");
         return E_NO_PERMISSION;
@@ -897,7 +893,6 @@ int32_t UdmfServiceImpl::RemoveAppShareOption(const std::string &intention)
         return E_DB_ERROR;
     }
 
-    UnifiedData unifiedData;
     int32_t status = store->DeleteLocal(std::to_string(accessTokenIDEx));
     if (status != E_OK) {
         ZLOGE("Store DeleteLocal failed:%{public}s, status:%{public}d", intention.c_str(), status);
@@ -1000,14 +995,14 @@ int32_t UdmfServiceImpl::ClearAsynProcessByKey(const std::string & businessUdKey
 
 int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaunchParam &param)
 {
-    ZLOGI("user:%{public}s appId:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
-        param.appId.c_str(), DistributedData::Anonymous::Change(param.storeId).c_str(),
+    ZLOGI("user:%{public}s storeId:%{public}s identifier:%{public}s", param.userId.c_str(),
+        DistributedData::Anonymous::Change(param.storeId).c_str(),
         DistributedData::Anonymous::Change(identifier).c_str());
 
     std::vector<StoreMetaData> metaData;
     auto prefix = StoreMetaData::GetPrefix({ DmAdapter::GetInstance().GetLocalDevice().uuid });
     if (!DistributedData::MetaDataManager::GetInstance().LoadMeta(prefix, metaData)) {
-        ZLOGE("no meta data appId:%{public}s", param.appId.c_str());
+        ZLOGE("no meta data");
         return E_NOT_FOUND;
     }
 
@@ -1027,8 +1022,8 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
             ZLOGE("GetStore fail, storeId:%{public}s", Anonymous::Change(storeMeta.storeId).c_str());
             continue;
         }
-        ZLOGI("storeId:%{public}s,appId:%{public}s,user:%{public}s", Anonymous::Change(storeMeta.storeId).c_str(),
-            storeMeta.appId.c_str(), storeMeta.user.c_str());
+        ZLOGI("storeId:%{public}s,user:%{public}s", Anonymous::Change(storeMeta.storeId).c_str(),
+            storeMeta.user.c_str());
         return E_OK;
     }
     return E_OK;
