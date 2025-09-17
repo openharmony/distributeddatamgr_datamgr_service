@@ -137,9 +137,9 @@ void UdmfServiceImplTest::AllocTestHapToken()
 void UdmfServiceImplTest::AllocTestHapToken1()
 {
     HapInfoParams info = {
-        .userID = USER_ID,
+        .userID = 100,
         .bundleName = HAP_BUNDLE_NAME1,
-        .instIndex = INST_INDEX,
+        .instIndex = 0,
         .appIDDesc = "ohos.test.demo1"
     };
 
