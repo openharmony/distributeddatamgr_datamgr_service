@@ -96,14 +96,16 @@ public:
     static constexpr const char *STORE_ID = "drag";
     static constexpr uint32_t TOKEN_ID = 5;
     static constexpr const char *APP_ID = "appId";
+    static constexpr uint32_t userId = 100;
+    static constexpr int instIndex = 0;
 };
 
 void UdmfServiceImplTest::AllocTestHapToken()
 {
     HapInfoParams info = {
-        .userID = 100,
+        .userID = userId,
         .bundleName = HAP_BUNDLE_NAME,
-        .instIndex = 0,
+        .instIndex = instIndex,
         .appIDDesc = "ohos.mytest.demo_09AEF01D"
     };
     HapPolicyParams policy = {
@@ -137,9 +139,9 @@ void UdmfServiceImplTest::AllocTestHapToken()
 void UdmfServiceImplTest::AllocTestHapToken1()
 {
     HapInfoParams info = {
-        .userID = 100,
+        .userID = userId,
         .bundleName = HAP_BUNDLE_NAME1,
-        .instIndex = 0,
+        .instIndex = instIndex,
         .appIDDesc = "ohos.test.demo1"
     };
 
@@ -174,9 +176,9 @@ void UdmfServiceImplTest::AllocTestHapToken1()
 
 void UdmfServiceImplTest::DeleteTestHapToken()
 {
-    auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    auto tokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME, instIndex);
     AccessTokenKit::DeleteToken(tokenId);
-    tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME1, 0);
+    tokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME1, instIndex);
     AccessTokenKit::DeleteToken(tokenId);
 }
 
