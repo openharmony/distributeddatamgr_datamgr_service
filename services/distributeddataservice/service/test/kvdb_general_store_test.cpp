@@ -1239,22 +1239,22 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest001, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, ConstructorTest002, TestSize.Level0)
 {
     metaData_.dataDir = "../data/service/el1/public/database";
-    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr);
-    EXPECT_EQ(store->delegate_, nullptr);
-    delete store;
+    auto invalidStore = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(invalidStore, nullptr);
+    EXPECT_EQ(invalidStore->delegate_, nullptr);
+    delete invalidStore;
 
     metaData_.dataDir = "/data/../service/el1/public/database";
-    store = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr);
-    EXPECT_EQ(store->delegate_, nullptr);
-    delete store;
+    invalidStore = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(invalidStore, nullptr);
+    EXPECT_EQ(invalidStore->delegate_, nullptr);
+    delete invalidStore;
 
     metaData_.dataDir = "/data/service/el1/public/database/..";
-    store = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store, nullptr);
-    EXPECT_EQ(store->delegate_, nullptr);
-    delete store;
+    invalidStore = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(invalidStore, nullptr);
+    EXPECT_EQ(invalidStore->delegate_, nullptr);
+    delete invalidStore;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
