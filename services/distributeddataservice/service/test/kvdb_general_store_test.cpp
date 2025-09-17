@@ -1239,22 +1239,22 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest001, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, ConstructorTest002, TestSize.Level0)
 {
     metaData_.dataDir = "../data/service/el1/public/database";
-    auto storeWithInvalidDir = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(storeWithInvalidDir, nullptr);
-    EXPECT_EQ(storeWithInvalidDir->delegate_, nullptr);
-    delete storeWithInvalidDir;
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store->delegate_, nullptr);
+    delete store;
 
     metaData_.dataDir = "/data/../service/el1/public/database";
-    storeWithInvalidDir = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(storeWithInvalidDir, nullptr);
-    EXPECT_EQ(storeWithInvalidDir->delegate_, nullptr);
-    delete storeWithInvalidDir;
+    store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store->delegate_, nullptr);
+    delete store;
 
     metaData_.dataDir = "/data/service/el1/public/database/..";
-    storeWithInvalidDir = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(storeWithInvalidDir, nullptr);
-    EXPECT_EQ(storeWithInvalidDir->delegate_, nullptr);
-    delete storeWithInvalidDir;
+    store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store->delegate_, nullptr);
+    delete store;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
