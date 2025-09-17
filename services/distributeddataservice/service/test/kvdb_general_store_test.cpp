@@ -1183,12 +1183,12 @@ HWTEST_F(KVDBGeneralStoreTest, CloseTest001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ConstructorTest
+* @tc.name: ConstructorTest001
 * @tc.desc: Test KVDBGeneralStore constructor with different scenarios
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(KVDBGeneralStoreTest, ConstructorTest, TestSize.Level0)
+HWTEST_F(KVDBGeneralStoreTest, ConstructorTest001, TestSize.Level0)
 {
     // Test manager initialization with same appId
     metaData_.appId = Bootstrap::GetInstance().GetProcessLabel();
@@ -1228,6 +1228,33 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest, TestSize.Level0)
     ASSERT_NE(store6, nullptr);
     EXPECT_EQ(store6->delegate_, nullptr);
     delete store6;
+}
+
+/**
+* @tc.name: ConstructorTest002
+* @tc.desc: Test KVDBGeneralStore constructor with invalid dir
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(KVDBGeneralStoreTest, ConstructorTest002, TestSize.Level0)
+{
+    metaData_.dataDir = "../data/service/el1/public/database";
+    auto invalidStore = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(invalidStore, nullptr);
+    EXPECT_EQ(invalidStore->delegate_, nullptr);
+    delete invalidStore;
+
+    metaData_.dataDir = "/data/../service/el1/public/database";
+    invalidStore = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(invalidStore, nullptr);
+    EXPECT_EQ(invalidStore->delegate_, nullptr);
+    delete invalidStore;
+
+    metaData_.dataDir = "/data/service/el1/public/database/..";
+    invalidStore = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(invalidStore, nullptr);
+    EXPECT_EQ(invalidStore->delegate_, nullptr);
+    delete invalidStore;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
