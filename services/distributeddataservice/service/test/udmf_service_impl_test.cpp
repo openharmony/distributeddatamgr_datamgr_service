@@ -1323,7 +1323,7 @@ HWTEST_F(UdmfServiceImplTest, ProcessUri003, TestSize.Level1)
     std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
     runtime->tokenId = 1111111;
     runtime->sourcePackage = HAP_BUNDLE_NAME;
-    runtime->deviceId = "11111";
+    runtime->deviceId = PreProcessUtils::GetLocalDeviceId();
     UnifiedData data;
     data.SetRuntime(*runtime);
     QueryOption option;
@@ -1331,7 +1331,7 @@ HWTEST_F(UdmfServiceImplTest, ProcessUri003, TestSize.Level1)
     option.tokenId = 111111;
     option.intention = Intention::UD_INTENTION_DRAG;
     auto status = service.ProcessUri(option, data);
-    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(status, E_ERROR);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
