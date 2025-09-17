@@ -352,7 +352,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGW("No uri permissions needed,queryKey=%{public}s", query.key.c_str());
         return E_OK;
     }
-    if (!VerifySavedTokenId(unifiedData.GetRuntime())) {
+    if (localDeviceId == sourceDeviceId && !VerifySavedTokenId(unifiedData.GetRuntime())) {
         ZLOGE("VerifySavedTokenId fail");
         return E_ERROR;
     }

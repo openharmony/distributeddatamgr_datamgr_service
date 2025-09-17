@@ -41,6 +41,7 @@ using Summary =  OHOS::UDMF::Summary;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const char *HAP_BUNDLE_NAME = "ohos.mytest.demo";
+static constexpr const char *HAP_BUNDLE_NAME1 = "ohos.test.demo1";
 
 static void GrantPermissionNative()
 {
@@ -80,6 +81,7 @@ public:
         DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
         DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
         AllocTestHapToken();
+        AllocTestHapToken1();
     }
     static void TearDownTestCase(void)
     {
@@ -88,6 +90,7 @@ public:
     void SetUp(){};
     void TearDown(){};
     static void AllocTestHapToken();
+    static void AllocTestHapToken1();
     static void DeleteTestHapToken();
 
     static constexpr const char *STORE_ID = "drag";
@@ -131,9 +134,49 @@ void UdmfServiceImplTest::AllocTestHapToken()
     AccessTokenKit::AllocHapToken(info, policy);
 }
 
+void UdmfServiceImplTest::AllocTestHapToken1()
+{
+    HapInfoParams info = {
+        .userID = USER_ID,
+        .bundleName = HAP_BUNDLE_NAME1,
+        .instIndex = INST_INDEX,
+        .appIDDesc = "ohos.test.demo1"
+    };
+
+    HapPolicyParams policy = {
+        .apl = APL_NORMAL,
+        .domain = "test.domain",
+        .permList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .bundleName = HAP_BUNDLE_NAME1,
+                .grantMode = 1,
+                .availableLevel = APL_NORMAL,
+                .label = "label",
+                .labelId = 1,
+                .description = "test1",
+                .descriptionId = 1
+            }
+        },
+        .permStateList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .isGeneral = true,
+                .resDeviceID = { "local" },
+                .grantStatus = { PermissionState::PERMISSION_GRANTED },
+                .grantFlags = { 1 }
+            }
+        }
+    };
+    auto tokenID = AccessTokenKit::AllocHapToken(info, policy);
+    SetSelfTokenID(tokenID.tokenIDEx);
+}
+
 void UdmfServiceImplTest::DeleteTestHapToken()
 {
     auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME1, 0);
     AccessTokenKit::DeleteToken(tokenId);
 }
 
@@ -1223,6 +1266,72 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData002, TestSize.Level1)
     std::vector<Uri> allUri;
     service.ProcessCrossDeviceData(tokenId, unifiedData, allUri);
     EXPECT_EQ(allUri.size(), 1);
+}
+
+/**
+ * @tc.name: ProcessUri001
+ * @tc.desc: test process uri verify fail
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ProcessUri001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    runtime->sourcePackage = HAP_BUNDLE_NAME;
+    runtime->deviceId = PreProcessUtils::GetLocalDeviceId();
+    UnifiedData data;
+    data.SetRuntime(*runtime);
+    QueryOption option;
+    option.key = "udmf://drag/com.test.demo/ascdca";
+    option.tokenId = 111111;
+    option.intention = Intention::UD_INTENTION_DRAG;
+    auto status = service.ProcessUri(option, data);
+    EXPECT_EQ(status, E_OK);
+}
+
+/**
+ * @tc.name: ProcessUri002
+ * @tc.desc: test process uri verify fail
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ProcessUri002, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    runtime->sourcePackage = HAP_BUNDLE_NAME;
+    runtime->deviceId = "11111";
+    UnifiedData data;
+    data.SetRuntime(*runtime);
+    QueryOption option;
+    option.key = "udmf://drag/com.test.demo/ascdca";
+    option.tokenId = 111111;
+    option.intention = Intention::UD_INTENTION_DRAG;
+    auto status = service.ProcessUri(option, data);
+    EXPECT_EQ(status, E_OK);
+}
+
+/**
+ * @tc.name: ProcessUri003
+ * @tc.desc: test process uri verify fail
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ProcessUri003, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = 1111111;
+    runtime->sourcePackage = HAP_BUNDLE_NAME;
+    runtime->deviceId = "11111";
+    UnifiedData data;
+    data.SetRuntime(*runtime);
+    QueryOption option;
+    option.key = "udmf://drag/com.test.demo/ascdca";
+    option.tokenId = 111111;
+    option.intention = Intention::UD_INTENTION_DRAG;
+    auto status = service.ProcessUri(option, data);
+    EXPECT_EQ(status, E_OK);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
