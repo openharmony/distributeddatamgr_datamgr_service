@@ -24,7 +24,7 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
-
+std::mutex PublishedProxyData::mutex_;
 ProxyDataManager &ProxyDataManager::GetInstance()
 {
     static ProxyDataManager instance;
@@ -283,6 +283,7 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
     }
     std::string filter = Id(data.uri_, callerBundleInfo.userId);
     std::string queryResult;
+    std::lock_guard<std::mutex> lock(mutex_);
     delegate->Get(KvDBDelegate::PROXYDATA_TABLE, filter, "{}", queryResult);
     if (queryResult.empty()) {
         type = DataShareObserver::ChangeType::INSERT;
@@ -330,6 +331,7 @@ int32_t PublishedProxyData::Delete(const std::string &uri, const BundleInfo &cal
         return NO_PERMISSION;
     }
     std::string queryResult;
+    std::lock_guard<std::mutex> lock(mutex_);
     delegate->Get(KvDBDelegate::PROXYDATA_TABLE, Id(uri, callerBundleInfo.userId), "{}", queryResult);
     if (queryResult.empty()) {
         return URI_NOT_EXIST;
@@ -349,8 +351,7 @@ int32_t PublishedProxyData::Delete(const std::string &uri, const BundleInfo &cal
         return INNER_ERROR;
     }
     std::vector<std::string> uris;
-    auto count = ProxyDataList::Query(callerBundleInfo.tokenId, callerBundleInfo.userId, uris);
-    if (count <= 0) {
+    if (ProxyDataList::Query(callerBundleInfo.tokenId, callerBundleInfo.userId, uris) <= 0) {
         ZLOGI("get bundle %{public}s's proxyData failed", callerBundleInfo.bundleName.c_str());
         return INNER_ERROR;
     }

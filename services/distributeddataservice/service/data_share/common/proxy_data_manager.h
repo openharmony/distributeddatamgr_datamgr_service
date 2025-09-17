@@ -84,6 +84,7 @@ private:
         uint32_t tokenId, const std::vector<std::string> &proxyDataList, const DataShareProxyData &proxyData);
     static bool CheckAndCorrectProxyData(DataShareProxyData &proxyData);
     ProxyDataNode value;
+    static std::mutex mutex_;
 };
 
 class ProxyDataManager {
