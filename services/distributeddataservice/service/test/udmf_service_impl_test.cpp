@@ -1286,7 +1286,7 @@ HWTEST_F(UdmfServiceImplTest, ProcessUri001, TestSize.Level1)
     data.SetRuntime(*runtime);
     QueryOption option;
     option.key = "udmf://drag/com.test.demo/ascdca";
-    option.tokenId = 111111;
+    option.tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME1, 0);
     option.intention = Intention::UD_INTENTION_DRAG;
     auto status = service.ProcessUri(option, data);
     EXPECT_EQ(status, E_OK);
@@ -1308,7 +1308,7 @@ HWTEST_F(UdmfServiceImplTest, ProcessUri002, TestSize.Level1)
     data.SetRuntime(*runtime);
     QueryOption option;
     option.key = "udmf://drag/com.test.demo/ascdca";
-    option.tokenId = 111111;
+    option.tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME1, 0);
     option.intention = Intention::UD_INTENTION_DRAG;
     auto status = service.ProcessUri(option, data);
     EXPECT_EQ(status, E_OK);
