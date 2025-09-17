@@ -1183,7 +1183,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloseTest001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ConstructorTest
+* @tc.name: ConstructorTest001
 * @tc.desc: Test KVDBGeneralStore constructor with different scenarios
 * @tc.type: FUNC
 * @tc.require:
@@ -1231,7 +1231,7 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ConstructorTest
+* @tc.name: ConstructorTest002
 * @tc.desc: Test KVDBGeneralStore constructor with invalid dir
 * @tc.type: FUNC
 * @tc.require:
@@ -1239,22 +1239,22 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest001, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, ConstructorTest002, TestSize.Level0)
 {
     metaData_.dataDir = "../data/service/el1/public/database";
-    auto store1 = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store1, nullptr);
-    EXPECT_EQ(store1->delegate_, nullptr);
-    delete store1;
+    auto storeWithInvalidDir = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(storeWithInvalidDir, nullptr);
+    EXPECT_EQ(storeWithInvalidDir->delegate_, nullptr);
+    delete storeWithInvalidDir;
 
     metaData_.dataDir = "/data/../service/el1/public/database";
-    auto store2 = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store2, nullptr);
-    EXPECT_EQ(store2->delegate_, nullptr);
-    delete store2;
+    storeWithInvalidDir = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(storeWithInvalidDir, nullptr);
+    EXPECT_EQ(storeWithInvalidDir->delegate_, nullptr);
+    delete storeWithInvalidDir;
 
     metaData_.dataDir = "/data/service/el1/public/database/..";
-    auto store3 = new (std::nothrow) KVDBGeneralStore(metaData_);
-    ASSERT_NE(store3, nullptr);
-    EXPECT_EQ(store3->delegate_, nullptr);
-    delete store3;
+    storeWithInvalidDir = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(storeWithInvalidDir, nullptr);
+    EXPECT_EQ(storeWithInvalidDir->delegate_, nullptr);
+    delete storeWithInvalidDir;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
