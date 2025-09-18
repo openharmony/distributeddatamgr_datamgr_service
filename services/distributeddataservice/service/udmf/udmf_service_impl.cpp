@@ -139,10 +139,11 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
     }
     std::string intention = unifiedData.GetRuntime()->key.intention;
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
+        int32_t ret = PreProcessUtils::HandleFileUris(option.tokenId, unifiedData);
         if (ret != E_OK) {
-            ZLOGW("SetRemoteUri failed, ret: %{public}d, bundleName:%{public}s.", ret,
+            ZLOGE("HandleFileUris failed, ret: %{public}d, bundleName:%{public}s.", ret,
                   unifiedData.GetRuntime()->createPackage.c_str());
+            return ret;
         }
     }
     PreProcessUtils::SetRecordUid(unifiedData);
@@ -237,6 +238,10 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
     if (res != E_OK) {
         return res;
     }
+    if (!IsReadAndKeep(runtime->privileges, query) && LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
+        ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
+        return E_DB_ERROR;
+    }
 
     if (key.intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
         int32_t ret = ProcessUri(query, unifiedData);
@@ -245,12 +250,6 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
                 BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, ret);
             ZLOGE("ProcessUri failed:%{public}d", ret);
             return E_NO_PERMISSION;
-        }
-    }
-    if (!IsReadAndKeep(runtime->privileges, query)) {
-        if (LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
-            ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
-            return E_DB_ERROR;
         }
     }
 
@@ -1205,9 +1204,10 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
-    int32_t ret = PreProcessUtils::SetRemoteUri(option.tokenId, unifiedData);
+    int32_t ret = PreProcessUtils::HandleFileUris(option.tokenId, unifiedData);
     if (ret != E_OK) {
-        ZLOGW("SetRemoteUri failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+        ZLOGE("HandleFileUris failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+        return ret;
     }
 
     auto it = delayDataCallback_.Find(key);

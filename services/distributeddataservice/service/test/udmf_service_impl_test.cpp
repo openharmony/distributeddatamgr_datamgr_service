@@ -42,6 +42,7 @@ using UnifiedData = OHOS::UDMF::UnifiedData;
 using Summary =  OHOS::UDMF::Summary;
 namespace OHOS::Test {
 namespace DistributedDataTest {
+static constexpr const char *HAP_BUNDLE_NAME = "ohos.mytest.demo";
 
 static void GrantPermissionNative()
 {
@@ -80,15 +81,63 @@ public:
         DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
         DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
         DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+        AllocTestHapToken();
     }
-    static void TearDownTestCase(void){};
+    static void TearDownTestCase(void)
+    {
+        DeleteTestHapToken();
+    }
     void SetUp(){};
     void TearDown(){};
+    static void AllocTestHapToken();
+    static void DeleteTestHapToken();
 
     static constexpr const char *STORE_ID = "drag";
     static constexpr uint32_t TOKEN_ID = 5;
     static constexpr const char *APP_ID = "appId";
 };
+
+void UdmfServiceImplTest::AllocTestHapToken()
+{
+    HapInfoParams info = {
+        .userID = 100,
+        .bundleName = HAP_BUNDLE_NAME,
+        .instIndex = 0,
+        .appIDDesc = "ohos.mytest.demo_09AEF01D"
+    };
+    HapPolicyParams policy = {
+        .apl = APL_NORMAL,
+        .domain = "test.domain",
+        .permList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .bundleName = HAP_BUNDLE_NAME,
+                .grantMode = 1,
+                .availableLevel = APL_NORMAL,
+                .label = "label",
+                .labelId = 1,
+                .description = "open the door",
+                .descriptionId = 1
+            }
+        },
+        .permStateList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .isGeneral = true,
+                .resDeviceID = { "local" },
+                .grantStatus = { PermissionState::PERMISSION_GRANTED },
+                .grantFlags = { 1 }
+            }
+        }
+    };
+    AccessTokenKit::AllocHapToken(info, policy);
+}
+
+void UdmfServiceImplTest::DeleteTestHapToken()
+{
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    AccessTokenKit::DeleteToken(tokenId);
+}
 
 /**
 * @tc.name: SaveData001
@@ -832,6 +881,58 @@ HWTEST_F(UdmfServiceImplTest, VerifyDataAccessPermission002, TestSize.Level1)
     auto result = impl.VerifyDataAccessPermission(runtime, query, unifiedData);
     EXPECT_EQ(runtime->privileges[0].tokenId, query.tokenId);
     EXPECT_EQ(result, OHOS::UDMF::E_OK);
+}
+
+/**
+ * @tc.name: SaveData005
+ * @tc.desc: test no permission
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, SaveData005, TestSize.Level1)
+{
+    CustomOption option;
+    option.intention = UD_INTENTION_DRAG;
+    option.tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    
+    std::string key = "";
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = "file://error_bundle_name/a.jpeg";
+    obj->value_[FILE_TYPE] = "general.image";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    unifiedData.AddRecord(record);
+ 
+    UdmfServiceImpl impl;
+    auto status = impl.SaveData(option, unifiedData, key);
+    EXPECT_EQ(status, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: PushDelayData007
+ * @tc.desc: test no permission
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData007, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+ 
+    UdmfServiceImpl service;
+    DelayGetDataInfo delayGetDataInfo;
+    service.delayDataCallback_.Insert(query.key, delayGetDataInfo);
+    
+    UnifiedData insertedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = "file://error_bundle_name/a.jpeg";
+    obj->value_[FILE_TYPE] = "general.image";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    insertedData.AddRecord(record);
+ 
+    auto status = service.PushDelayData(query.key, insertedData);
+    EXPECT_EQ(status, E_NO_PERMISSION);
+    service.delayDataCallback_.Clear();
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
