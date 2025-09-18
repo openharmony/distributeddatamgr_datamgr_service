@@ -26,23 +26,31 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
 {
     ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
         predicates.devices_.size(), predicates.operations_.size());
-    if (predicates.tables_.size() == 1) {
-        if (!isPriority) {
-            query_ = DistributedDB::Query::Select(*predicates.tables_.begin());
-        } else {
-            query_.From(*predicates.tables_.begin());
+    if (isPriority) {
+        if (predicates.operations_.empty() || predicates.tables_.size() != 1) {
+            query_ = DistributedDB::Query::Select();
+            if (!predicates.tables_.empty()) {
+                query_.FromTable(predicates.tables_);
+            }
+            return;
         }
-    }
-
-    if (predicates.tables_.size() > 1) {
-        query_.FromTable(predicates.tables_);
+        predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
+        query_ = DistributedDB::Query::Select().From(*predicates.tables_.begin());
+    } else {
+        query_ = predicates.tables_.size() == 1 ? DistributedDB::Query::Select(*predicates.tables_.begin())
+                                                : DistributedDB::Query::Select();
+        if (predicates.tables_.size() > 1) {
+            query_.FromTable(predicates.tables_);
+        }
+        if (!predicates.tables_.empty()) {
+            predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
+        }
     }
 
     if (predicates.operations_.empty() || predicates.tables_.empty()) {
         return;
     }
 
-    predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
     for (const auto& operation : predicates.operations_) {
         if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
             (this->*HANDLES[operation.operator_])(operation);
