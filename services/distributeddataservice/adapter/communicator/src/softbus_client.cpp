@@ -29,8 +29,7 @@ using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedData;
 
 SoftBusClient::SoftBusClient(const PipeInfo& pipeInfo, const DeviceId& deviceId, const std::string& networkId,
-    uint32_t type, const SessionAccessInfo &accessInfo) : type_(type), pipe_(pipeInfo), device_(deviceId),
-    networkId_(networkId), accessInfo_(accessInfo)
+    uint32_t type) : type_(type), pipe_(pipeInfo), device_(deviceId), networkId_(networkId)
 {
     mtu_ = DEFAULT_MTU_SIZE;
 }
@@ -90,7 +89,7 @@ int32_t SoftBusClient::GetSoftBusError()
     return softBusError_;
 }
 
-Status SoftBusClient::OpenConnect(const ISocketListener *listener)
+Status SoftBusClient::OpenConnect(const ISocketListener *listener, const SessionAccessInfo &accessInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto status = CheckStatus();
@@ -100,7 +99,7 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     if (isOpening_.exchange(true)) {
         return Status::RATE_LIMIT;
     }
-    int32_t clientSocket = CreateSocket();
+    int32_t clientSocket = CreateSocket(accessInfo);
     if (clientSocket <= 0) {
         isOpening_.store(false);
         return Status::NETWORK_ERROR;
@@ -124,7 +123,7 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener)
     return Status::RATE_LIMIT;
 }
 
-int32_t SoftBusClient::CreateSocket() const
+int32_t SoftBusClient::CreateSocket(const SessionAccessInfo &accessInfo) const
 {
     SocketInfo socketInfo;
     std::string peerName = pipe_.pipeId;
@@ -141,14 +140,14 @@ int32_t SoftBusClient::CreateSocket() const
         ZLOGE("Create the client Socket:%{public}d failed, peerName:%{public}s", socket, socketInfo.peerName);
         return socket;
     }
-    if (accessInfo_.isOHType) {
+    if (accessInfo.isOHType) {
         SocketAccessInfo info;
-        info.userId = accessInfo_.userId;
-        info.localTokenId = accessInfo_.tokenId;
+        info.userId = accessInfo.userId;
+        info.localTokenId = accessInfo.tokenId;
         AccessExtraInfo extraInfo;
-        extraInfo.bundleName = accessInfo_.bundleName;
-        extraInfo.accountId = accessInfo_.accountId;
-        extraInfo.storeId = accessInfo_.storeId;
+        extraInfo.bundleName = accessInfo.bundleName;
+        extraInfo.accountId = accessInfo.accountId;
+        extraInfo.storeId = accessInfo.storeId;
         std::string extraInfoStr = Serializable::Marshall(extraInfo);
         if (extraInfoStr.empty()) {
             ZLOGE("Marshall access info fail");
@@ -253,7 +252,7 @@ SoftBusClient::Time SoftBusClient::CalcExpireTime() const
     return std::chrono::steady_clock::now() + delay;
 }
 
-Status SoftBusClient::ReuseConnect(const ISocketListener *listener)
+Status SoftBusClient::ReuseConnect(const ISocketListener *listener, const SessionAccessInfo &accessInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto checkStatus = CheckStatus();
@@ -261,7 +260,7 @@ Status SoftBusClient::ReuseConnect(const ISocketListener *listener)
         expireTime_ = CalcExpireTime();
         return Status::SUCCESS;
     }
-    int32_t socket = CreateSocket();
+    int32_t socket = CreateSocket(accessInfo);
     if (socket <= 0) {
         return Status::NETWORK_ERROR;
     }

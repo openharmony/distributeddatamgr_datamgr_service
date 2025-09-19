@@ -100,8 +100,7 @@ void SoftBusClientTest::SetUp()
 */
 HWTEST_F(SoftBusClientTest, OperatorTest001, TestSize.Level1)
 {
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML,
-        accessInfo_);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
     ASSERT_TRUE(*connect == UUID);
     ASSERT_TRUE(*connect == DEFAULT_SOCKET);
     ASSERT_EQ(connect->GetSocket(), DEFAULT_SOCKET);
@@ -114,8 +113,7 @@ HWTEST_F(SoftBusClientTest, OperatorTest001, TestSize.Level1)
 */
 HWTEST_F(SoftBusClientTest, NetworkIdTest001, TestSize.Level1)
 {
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, INVALID_NETWORK_ID, SoftBusClient::QOS_HML,
-        accessInfo_);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, INVALID_NETWORK_ID, SoftBusClient::QOS_HML);
     auto networkId = connect->GetNetworkId();
     ASSERT_EQ(networkId, INVALID_NETWORK_ID);
     connect->UpdateNetworkId(NETWORK_ID);
@@ -132,9 +130,8 @@ HWTEST_F(SoftBusClientTest, OpenConnectTest001, TestSize.Level1)
 {
     ConfigSocketId(INVALID_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML,
-        accessInfo_);
-    auto status = connect->OpenConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
@@ -147,9 +144,8 @@ HWTEST_F(SoftBusClientTest, OpenConnectTest002, TestSize.Level1)
 {
     ConfigSocketId(INVALID_SET_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML,
-        accessInfo_);
-    auto status = connect->OpenConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
@@ -163,9 +159,8 @@ HWTEST_F(SoftBusClientTest, OpenConnectTest003, TestSize.Level1)
     ConfigSocketId(INVALID_BIND_SOCKET);
     CommunicatorContext::GetInstance().SetThreadPool(nullptr);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML,
-        accessInfo_);
-    auto status = connect->OpenConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
@@ -179,9 +174,8 @@ HWTEST_F(SoftBusClientTest, OpenConnectTest004, TestSize.Level1)
     ConfigSocketId(INVALID_BIND_SOCKET);
 
     accessInfo_.isOHType = false;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_BR,
-        accessInfo_);
-    auto status = connect->OpenConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_BR);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::RATE_LIMIT);
     while (!(deviceListener_.isReady_)) {
         sleep(1);
@@ -191,9 +185,8 @@ HWTEST_F(SoftBusClientTest, OpenConnectTest004, TestSize.Level1)
     ASSERT_NE(result, 0);
 
     accessInfo_.isOHType = true;
-    auto ohConnect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML,
-        accessInfo_);
-    status = ohConnect->OpenConnect(nullptr);
+    auto ohConnect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    status = ohConnect->OpenConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::RATE_LIMIT);
     while (!(deviceListener_.isReady_)) {
         sleep(1);
@@ -212,9 +205,8 @@ HWTEST_F(SoftBusClientTest, OpenConnectTest005, TestSize.Level1)
 {
     ConfigSocketId(INVALID_MTU_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML,
-        accessInfo_);
-    auto status = connect->OpenConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::RATE_LIMIT);
     while (!(deviceListener_.isReady_)) {
         sleep(1);
@@ -233,9 +225,8 @@ HWTEST_F(SoftBusClientTest, OpenConnectTest006, TestSize.Level1)
 {
     ConfigSocketId(VALID_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML,
-        accessInfo_);
-    auto status = connect->OpenConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_HML);
+    auto status = connect->OpenConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::RATE_LIMIT);
     while (!(deviceListener_.isReady_)) {
         sleep(1);
@@ -246,7 +237,7 @@ HWTEST_F(SoftBusClientTest, OpenConnectTest006, TestSize.Level1)
     status = connect->CheckStatus();
     ASSERT_EQ(status, Status::SUCCESS);
 
-    status = connect->OpenConnect(nullptr);
+    status = connect->OpenConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::SUCCESS);
 }
 
@@ -259,9 +250,8 @@ HWTEST_F(SoftBusClientTest, ReuseConnectTest001, TestSize.Level1)
 {
     ConfigSocketId(INVALID_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE,
-        accessInfo_);
-    auto status = connect->ReuseConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
@@ -274,9 +264,8 @@ HWTEST_F(SoftBusClientTest, ReuseConnectTest002, TestSize.Level1)
 {
     ConfigSocketId(INVALID_SET_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE,
-        accessInfo_);
-    auto status = connect->ReuseConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
@@ -289,9 +278,8 @@ HWTEST_F(SoftBusClientTest, ReuseConnectTest003, TestSize.Level1)
 {
     ConfigSocketId(INVALID_BIND_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE,
-        accessInfo_);
-    auto status = connect->ReuseConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
@@ -304,9 +292,8 @@ HWTEST_F(SoftBusClientTest, ReuseConnectTest004, TestSize.Level1)
 {
     ConfigSocketId(INVALID_MTU_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE,
-        accessInfo_);
-    auto status = connect->ReuseConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::NETWORK_ERROR);
 }
 
@@ -319,9 +306,8 @@ HWTEST_F(SoftBusClientTest, ReuseConnectTest005, TestSize.Level1)
 {
     ConfigSocketId(VALID_SOCKET);
     accessInfo_.isOHType = true;
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE,
-        accessInfo_);
-    auto status = connect->ReuseConnect(nullptr);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::SUCCESS);
 }
 
@@ -332,14 +318,13 @@ HWTEST_F(SoftBusClientTest, ReuseConnectTest005, TestSize.Level1)
 */
 HWTEST_F(SoftBusClientTest, SendDataTest001, TestSize.Level1)
 {
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE,
-        accessInfo_);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
     DataInfo dataInfo;
     auto status = connect->SendData(dataInfo);
     ASSERT_NE(status, Status::SUCCESS);
 
     ConfigSocketId(INVALID_SEND_SOCKET);
-    status = connect->ReuseConnect(nullptr);
+    status = connect->ReuseConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::SUCCESS);
     status = connect->SendData(dataInfo);
     ASSERT_NE(status, Status::SUCCESS);
@@ -353,10 +338,9 @@ HWTEST_F(SoftBusClientTest, SendDataTest001, TestSize.Level1)
 HWTEST_F(SoftBusClientTest, SendDataTest002, TestSize.Level1)
 {
     ConfigSocketId(VALID_SOCKET);
-    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE,
-        accessInfo_);
+    auto connect = std::make_shared<SoftBusClient>(pipeInfo_, deviceId_, NETWORK_ID, SoftBusClient::QOS_REUSE);
     DataInfo dataInfo;
-    auto status = connect->ReuseConnect(nullptr);
+    auto status = connect->ReuseConnect(nullptr, accessInfo_);
     ASSERT_EQ(status, Status::SUCCESS);
     status = connect->SendData(dataInfo);
     ASSERT_EQ(status, Status::SUCCESS);
