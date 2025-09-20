@@ -25,7 +25,7 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
     : isPriority_(isPriority), devices_(predicates.devices_), tables_(predicates.tables_)
 {
     ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
-          predicates.devices_.size(), predicates.operations_.size());
+        predicates.devices_.size(), predicates.operations_.size());
     if (predicates.tables_.size() == 1) {
         if (!isPriority) {
             query_ = DistributedDB::Query::Select(*predicates.tables_.begin());
