@@ -28,6 +28,7 @@
 #include "preprocess_utils.h"
 #include "runtime_store.h"
 #include "token_setproc.h"
+#include "uri_permission_manager.h"
 
 using namespace testing::ext;
 using namespace OHOS::Security::AccessToken;
@@ -1191,6 +1192,7 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData001, TestSize.Level1)
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
     obj->value_[FILE_TYPE] = "general.image";
+    obj->value_[PERMISSION_POLICY] = static_cast<int32_t>(ONLY_READ);
     auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
     unifiedData.AddRecord(record);
 
@@ -1216,13 +1218,15 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData001, TestSize.Level1)
 
     unifiedData.SetRuntime(runtime);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
-    std::vector<Uri> allUri;
-    service.ProcessCrossDeviceData(tokenId, unifiedData, allUri);
-    EXPECT_EQ(allUri.size(), 1);
+    std::vector<Uri> readUris;
+    std::vector<Uri> writeUris;
+    service.ProcessCrossDeviceData(tokenId, unifiedData, readUris, writeUris);
+    EXPECT_EQ(readUris.size(), 1);
+    EXPECT_EQ(writeUris.size(), 0);
 }
 
 /**
- * @tc.name: ProcessCrossDeviceData001
+ * @tc.name: ProcessCrossDeviceData002
  * @tc.desc: test ProcessCrossDeviceData with remote
  * @tc.type: FUNC
  */
@@ -1237,6 +1241,7 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData002, TestSize.Level1)
     obj->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
     obj->value_[REMOTE_URI] = "file://error_bundle_name/a.jpeg";
     obj->value_[FILE_TYPE] = "general.image";
+    obj->value_[PERMISSION_POLICY] = static_cast<int32_t>(READ_WRITE);
     auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
     unifiedData.AddRecord(record);
 
@@ -1265,9 +1270,37 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData002, TestSize.Level1)
 
     unifiedData.SetRuntime(runtime);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
-    std::vector<Uri> allUri;
-    service.ProcessCrossDeviceData(tokenId, unifiedData, allUri);
-    EXPECT_EQ(allUri.size(), 1);
+    std::vector<Uri> readUris;
+    std::vector<Uri> writeUris;
+    service.ProcessCrossDeviceData(tokenId, unifiedData, readUris, writeUris);
+    EXPECT_EQ(readUris.size(), 0);
+    EXPECT_EQ(writeUris.size(), 1);
+}
+
+/**
+ * @tc.name: ProcessCrossDeviceData003
+ * @tc.desc: test ProcessCrossDeviceData with remote
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData003, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    Runtime runtime;
+    runtime.deviceId = PreProcessUtils::GetLocalDeviceId();
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
+    obj->value_[FILE_TYPE] = "general.image";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    unifiedData.AddRecord(record);
+
+    unifiedData.SetRuntime(runtime);
+    uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    std::vector<Uri> readUris;
+    std::vector<Uri> writeUris;
+    auto result = service.ProcessCrossDeviceData(tokenId, unifiedData, readUris, writeUris);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -1334,6 +1367,65 @@ HWTEST_F(UdmfServiceImplTest, ProcessUri003, TestSize.Level1)
     option.intention = Intention::UD_INTENTION_DRAG;
     auto status = service.ProcessUri(option, data);
     EXPECT_EQ(status, E_ERROR);
+}
+
+/**
+ * @tc.name: GrantUriPermission001
+ * @tc.desc: GrantUriPermission function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, GrantUriPermission001, TestSize.Level1)
+{
+    std::vector<Uri> readUris;
+    std::string strUri = "picture.png";
+    readUris.emplace_back(Uri(strUri));
+    std::vector<Uri> writeUris;
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    const std::string queryKey = "udmf://drag/com.test.demo/ascdca";
+    auto result = UriPermissionManager::GetInstance().GrantUriPermission(readUris, writeUris, tokenId, tokenId, false);
+    EXPECT_EQ(result, E_NO_PERMISSION);
+    result = UriPermissionManager::GetInstance().GrantUriPermission(readUris, writeUris, tokenId, tokenId, true);
+    EXPECT_EQ(result, E_NO_PERMISSION);
+    readUris.clear();
+    writeUris.emplace_back(Uri(strUri));
+    result = UriPermissionManager::GetInstance().GrantUriPermission(readUris, writeUris, tokenId, tokenId, false);
+    EXPECT_EQ(result, E_NO_PERMISSION);
+    result = UriPermissionManager::GetInstance().GrantUriPermission(readUris, writeUris, tokenId, tokenId, true);
+    EXPECT_EQ(result, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: HandleFileUris001
+ * @tc.desc: HandleFileUris function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleFileUris001, TestSize.Level1)
+{
+    UnifiedData unifiedData;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    runtime->tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    runtime->sourcePackage = HAP_BUNDLE_NAME;
+    runtime->deviceId = "11111";
+    runtime->createPackage = "test";
+    unifiedData.SetRuntime(*runtime);
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[ORI_URI] = "file://ohos.mytest.demo/data/storage/el2/base/haps/103.png";
+    obj->value_[FILE_TYPE] = "general.image";
+    obj->value_[PERMISSION_POLICY] = static_cast<int32_t>(ONLY_READ);
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    unifiedData.AddRecord(record);
+    std::string html = "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/102.png'>"
+                        "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/103.png'>";
+    std::shared_ptr<Object> obj1 = std::make_shared<Object>();
+    obj1->value_["uniformDataType"] = "general.html";
+    obj1->value_["htmlContent"] = html;
+    obj1->value_["plainContent"] = "htmlPlainContent";
+    auto record1 = std::make_shared<UnifiedRecord>(UDType::HTML, obj1);
+    unifiedData.AddRecord(record1);
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    auto result = PreProcessUtils::HandleFileUris(tokenId, unifiedData);
+    EXPECT_EQ(result, E_NO_PERMISSION);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

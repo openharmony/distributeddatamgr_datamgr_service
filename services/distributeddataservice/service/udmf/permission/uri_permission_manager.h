@@ -24,13 +24,23 @@ namespace UDMF {
 class UriPermissionManager {
 public:
     static UriPermissionManager &GetInstance();
-    Status GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId, const std::string &queryKey);
+    Status GrantUriPermission(const std::vector<Uri> &readUris, const std::vector<Uri> &writeUris,
+        uint32_t dstTokenId, uint32_t srcTokenId, bool isLocal);
 
 private:
     UriPermissionManager() {}
     ~UriPermissionManager() {}
     UriPermissionManager(const UriPermissionManager &mgr) = delete;
     UriPermissionManager &operator=(const UriPermissionManager &mgr) = delete;
+
+    struct GrantUriOptions {
+        const std::vector<Uri> uris;
+        const std::string bundleName;
+        int32_t index {0};
+        uint32_t tokenId {0};
+        unsigned int permission {0};
+    };
+    Status ProcessUriPermission(const GrantUriOptions &options, bool isLocal);
 };
 } // namespace UDMF
 } // namespace OHOS
