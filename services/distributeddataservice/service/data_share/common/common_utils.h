@@ -19,6 +19,8 @@
 #include <cinttypes>
 #include <string>
 
+#include "data_provider_config.h"
+
 namespace OHOS::DataShare {
 struct DataShareThreadLocal {
     static bool& GetFromSystemApp();
@@ -30,6 +32,9 @@ struct DataShareThreadLocal {
 bool CheckSystemAbility(uint32_t tokenId);
 
 bool CheckSystemCallingPermission(uint32_t tokenId, uint64_t fullTokenId);
+
+bool ProviderInAllowList(const std::string &appIdentifier);
+void VerifyProvider(const DataProviderConfig::ProviderInfo providerInfo, const pid_t calllingPid);
 
 inline int64_t GetSystemTime()
 {

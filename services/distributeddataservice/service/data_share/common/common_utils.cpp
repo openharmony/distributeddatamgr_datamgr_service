@@ -19,6 +19,7 @@
 #include "config_factory.h"
 #include "log_print.h"
 #include "tokenid_kit.h"
+#include "hiview_fault_adapter.h"
 
 namespace OHOS::DataShare {
 
@@ -61,4 +62,32 @@ bool CheckSystemCallingPermission(uint32_t tokenId, uint64_t fullTokenId)
     return Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
 }
 
+// Check if given provider appIdentifier is in providerAllowList
+bool ProviderInAllowList(const std::string &appIdentifier)
+{
+    DistributedData::DataShareConfig *config = DistributedData::ConfigFactory::GetInstance().GetDataShareConfig();
+    if (config == nullptr) {
+        ZLOGE("allowlist is null");
+        return true;
+    }
+    std::vector<std::string>& identifiersList = config->providerIdentifiers;
+    return std::find(identifiersList.begin(), identifiersList.end(), appIdentifier) != identifiersList.end();
+}
+
+// Check if caller is system app. If not, check if given provider appIdentifier is in providerAllowList
+void VerifyProvider(const DataProviderConfig::ProviderInfo providerInfo, const pid_t calllingPid)
+{
+    // In data_share_service_stub, when OnRemoteRequest receive IPC call, caller has already been
+    // checked if it is system app. If it is system app then no need to check if provider is in allowList
+    if (DataShareThreadLocal::IsFromSystemApp()) {
+        return;
+    }
+    if (!ProviderInAllowList(providerInfo.appIdentifier)) {
+        ZLOGE("Provider: %{public}s not in allow list visited by pid: %{public}d",
+            providerInfo.bundleName.c_str(), calllingPid);
+        DataShareFaultInfo faultInfo{HiViewFaultAdapter::unauthorizedProvider, providerInfo.bundleName.c_str(),
+            providerInfo.moduleName.c_str(), providerInfo.storeName.c_str(), __FUNCTION__, -1, ""};
+        HiViewFaultAdapter::ReportDataFault(faultInfo);
+    }
+}
 } // namespace OHOS::DataShare

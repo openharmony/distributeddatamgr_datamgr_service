@@ -66,6 +66,7 @@
 #include "proxy_data_manager.h"
 #include "datashare_observer.h"
 #include "subscriber_managers/proxy_data_subscriber_manager.h"
+#include "common_utils.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -1181,18 +1182,16 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     if (errCode != E_OK) {
         ZLOGE("Provider failed! token:0x%{public}x,ret:%{public}d,uri:%{public}s,visitedUserId:%{public}d", tokenId,
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str(), providerInfo.visitedUserId);
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_GET_SUPPLIER,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::SUPPLIER_ERROR);
         return std::make_pair(errCode, 0);
     }
+    // check if Provider is in allowList when caller is not system App
+    VerifyProvider(providerInfo, IPCSkeleton::GetCallingPid());
     // when HAP interacts across users, it needs to check across users permission
     if (!VerifyAcrossAccountsPermission(providerInfo.currentUserId, providerInfo.visitedUserId,
         providerInfo.acrossAccountsPermission, tokenId)) {
         ZLOGE("Across accounts permission denied! token:0x%{public}x, uri:%{public}s, current user:%{public}d,"
             "visited user:%{public}d", tokenId, URIUtils::Anonymous(providerInfo.uri).c_str(),
             providerInfo.currentUserId, providerInfo.visitedUserId);
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
     if (!CheckAllowList(providerInfo.currentUserId, tokenId, providerInfo.allowLists)) {
@@ -1204,8 +1203,6 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     if (!VerifyPermission(providerInfo.bundleName, permission, providerInfo.isFromExtension, tokenId)) {
         ZLOGE("Permission denied! token:0x%{public}x, permission:%{public}s,isFromExtension:%{public}d,uri:%{public}s",
             tokenId, permission.c_str(), providerInfo.isFromExtension, URIUtils::Anonymous(providerInfo.uri).c_str());
-        RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_PERMISSION,
-            RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::PERMISSION_DENIED_ERROR);
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
     DataShareDbConfig dbConfig;
