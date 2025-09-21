@@ -85,6 +85,7 @@ int DataProviderConfig::GetFromProxyData()
         return errCode;
     }
     providerInfo_.singleton = bundleInfo.singleton;
+    providerInfo_.appIdentifier = bundleInfo.appIdentifier;
     for (auto &item : bundleInfo.extensionInfos) {
         if (item.type != AppExecFwk::ExtensionAbilityType::DATASHARE) {
             continue;

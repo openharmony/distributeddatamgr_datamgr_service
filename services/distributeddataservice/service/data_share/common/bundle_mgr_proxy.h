@@ -63,6 +63,7 @@ struct ExtensionAbilityInfo {
 };
 
 struct BundleConfig {
+    std::string appIdentifier;
     std::string name;
     bool singleton = false;
     bool isSystemApp = false;
