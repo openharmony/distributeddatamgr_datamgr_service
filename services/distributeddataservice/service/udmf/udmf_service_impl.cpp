@@ -356,7 +356,9 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGE("VerifySavedTokenId fail");
         return E_ERROR;
     }
-    if (UriPermissionManager::GetInstance().GrantUriPermission(allUri, query.tokenId, query.key) != E_OK) {
+    uint32_t sourceTokenId = unifiedData.GetRuntime()->tokenId;
+    if (UriPermissionManager::GetInstance().GrantUriPermission(
+        allUri, query.tokenId, query.key, sourceTokenId) != E_OK) {
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
             bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
