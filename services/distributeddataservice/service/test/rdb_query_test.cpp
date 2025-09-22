@@ -249,13 +249,11 @@ HWTEST_F(RdbQueryTest, RdbQueryTest008, TestSize.Level1)
     DistributedRdb::PredicatesMemo predicates;
     predicates.tables_.push_back("table");
     RdbQuery cloudQuery(predicates, true);
-    RdbQuery rdbQuery(predicates);
     std::vector<NativeRdb::AssetValue> assets;
     NativeRdb::AssetValue asset{ .name = "name1" };
     assets.push_back(asset);
     NativeRdb::ValueObject object(assets);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
-    RdbQuery rdbQuery1(predicates);
     RdbQuery cloudQuery1(predicates, true);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
@@ -273,7 +271,6 @@ HWTEST_F(RdbQueryTest, RdbQueryTest009, TestSize.Level1)
     predicates.tables_.push_back("table");
     predicates.tables_.push_back("table1");
     RdbQuery cloudQuery(predicates, true);
-    RdbQuery rdbQuery(predicates);
     EXPECT_EQ(predicates.operations_.size(), 0);
 }
 
@@ -294,7 +291,6 @@ HWTEST_F(RdbQueryTest, RdbQueryTest010, TestSize.Level1)
     assets.push_back(asset);
     NativeRdb::ValueObject object(assets);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
-    RdbQuery rdbQuery(predicates);
     RdbQuery cloudQuery(predicates, true);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
@@ -310,13 +306,11 @@ HWTEST_F(RdbQueryTest, RdbQueryTest011, TestSize.Level1)
 {
     DistributedRdb::PredicatesMemo predicates;
     RdbQuery cloudQuery(predicates, true);
-    RdbQuery rdbQuery(predicates);
     std::vector<NativeRdb::AssetValue> assets;
     NativeRdb::AssetValue asset{ .name = "name1" };
     assets.push_back(asset);
     NativeRdb::ValueObject object(assets);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
-    RdbQuery rdbQuery1(predicates);
     RdbQuery cloudQuery1(predicates, true);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
