@@ -31,7 +31,7 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
             query_ = DistributedDB::Query::Select(*predicates.tables_.begin());
         } else if (!predicates.operations_.empty()) {
             query_.From(*predicates.tables_.begin());
-        } else if (predicates.operations_.empty()) {
+        } else {
             query_.FromTable(predicates.tables_);
         }
     }
@@ -41,6 +41,7 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
     }
 
     if (predicates.operations_.empty() || predicates.tables_.empty()) {
+        isPriority_ = false;
         return;
     }
 

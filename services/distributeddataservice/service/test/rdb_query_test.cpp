@@ -228,12 +228,14 @@ HWTEST_F(RdbQueryTest, RdbQueryTest007, TestSize.Level1)
 {
     DistributedRdb::PredicatesMemo predicates;
     predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
     std::vector<NativeRdb::AssetValue> assets;
     NativeRdb::AssetValue asset{ .name = "name1" };
     assets.push_back(asset);
     NativeRdb::ValueObject object(assets);
     predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
     RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
 } // namespace DistributedRDBTest
