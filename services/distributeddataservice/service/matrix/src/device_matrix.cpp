@@ -85,7 +85,7 @@ bool DeviceMatrix::Initialize(uint32_t token, std::string storeId)
     auto stores = CheckerManager::GetInstance().GetDynamicStores();
     dynamicApps_.clear();
     auto metaName = Bootstrap::GetInstance().GetProcessLabel();
-    dynamicApps_.push_back(std::move(metaName));
+    dynamicApps_.push_back(metaName);
     for (auto &store : stores) {
         dynamicApps_.push_back(std::move(store.bundleName));
     }
