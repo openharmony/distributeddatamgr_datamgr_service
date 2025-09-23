@@ -1125,5 +1125,30 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
         accountDelegateMock = nullptr;
     }
 }
+
+
+/**
+ * @tc.name: GetDBStoreTest001
+ * @tc.desc: The test GetDBStore Test
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudServiceImplTest, GetDBStoreTest001, TestSize.Level0)
+{
+    AutoCache::Watchers watchers;
+    StoreMetaData meta;
+    meta.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
+    meta.user = "0";
+    EXPECT_EQ(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_OK);
+    meta.user = "";
+
+    EXPECT_CALL(*accountDelegateMock, IsDeactivating(_)).WillRepeatedly(Return(true));
+    EXPECT_EQ(AutoCache::GetInstance().GetDBStore(meta, watchers).first, E_USER_DEACTIVATING);
+
+    EXPECT_CALL(*accountDelegateMock, IsDeactivating(_)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_EQ(AutoCache::GetInstance().GetDBStore(meta, watchers).first, E_USER_LOCKED);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

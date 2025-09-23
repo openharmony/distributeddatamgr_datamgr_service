@@ -237,6 +237,9 @@ HWTEST_F(AutoCacheTest, GetDBStore, TestSize.Level2)
     StoreMetaData meta;
     meta.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
     mock_->isLocked_ = true;
+    meta.user = "0";
+    EXPECT_EQ(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_OK);
+    meta.user = "";
     meta.area = GeneralStore::EL4;
     EXPECT_EQ(AutoCache::GetInstance().GetDBStore(meta, watchers).first, GeneralError::E_SCREEN_LOCKED);
     meta.area = GeneralStore::EL1;

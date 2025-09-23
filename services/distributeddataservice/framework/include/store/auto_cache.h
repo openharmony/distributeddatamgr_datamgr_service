@@ -72,6 +72,7 @@ private:
     std::string GenerateKey(const std::string &path, const std::string &storeId) const;
     void GarbageCollect(bool isForce);
     void StartTimer();
+    int32_t GetStatus(const StoreMetaData &meta);
     struct Delegate : public GeneralWatcher {
         Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user, const StoreMetaData &meta);
         Delegate(const Delegate& delegate);
