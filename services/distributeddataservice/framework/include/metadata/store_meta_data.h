@@ -116,7 +116,6 @@ struct API_EXPORT StoreMetaMapping final : public StoreMetaData {
     API_EXPORT bool Unmarshal(const json &node) override;
     API_EXPORT std::string GetKey() const override;
     API_EXPORT std::string GetCloudStoreMetaKey() const;
-    API_EXPORT std::string GetDeviceStoreMetaKey() const;
     API_EXPORT static std::string GetPrefix(const std::initializer_list<std::string> &fields);
     API_EXPORT StoreMetaMapping& operator=(const StoreMetaData &meta);
 
