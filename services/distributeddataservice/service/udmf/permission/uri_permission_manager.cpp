@@ -29,17 +29,17 @@ UriPermissionManager &UriPermissionManager::GetInstance()
     return instance;
 }
 
-Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &allUri, uint32_t tokenId,
-    const std::string &queryKey)
+Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &allUri, uint32_t dstTokenId,
+    const std::string &queryKey, uint32_t srcTokenId)
 {
     std::string bundleName;
-    if (!PreProcessUtils::GetHapBundleNameByToken(tokenId, bundleName)) {
-        ZLOGE("BundleName get failed:%{public}s,tokenId:%{public}u", queryKey.c_str(), tokenId);
+    if (!PreProcessUtils::GetHapBundleNameByToken(dstTokenId, bundleName)) {
+        ZLOGE("BundleName get failed:%{public}s,dstTokenId:%{public}u", queryKey.c_str(), dstTokenId);
         return E_ERROR;
     }
     int32_t instIndex = -1;
-    if (!PreProcessUtils::GetInstIndex(tokenId, instIndex)) {
-        ZLOGE("InstIndex get failed:%{public}s,tokenId:%{public}u", queryKey.c_str(), tokenId);
+    if (!PreProcessUtils::GetInstIndex(dstTokenId, instIndex)) {
+        ZLOGE("InstIndex get failed:%{public}s,dstTokenId:%{public}u", queryKey.c_str(), dstTokenId);
         return E_ERROR;
     }
 
@@ -49,11 +49,11 @@ Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &allUri, 
     for (size_t index = 0; index < allUri.size(); index += GRANT_URI_PERMISSION_MAX_SIZE) {
         std::vector<Uri> uriLst(
             allUri.begin() + index, allUri.begin() + std::min(index + GRANT_URI_PERMISSION_MAX_SIZE, allUri.size()));
-        auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermissionPrivileged(uriLst,
+        auto status = AAFwk::UriPermissionManagerClient::GetInstance().GrantUriPermission(uriLst,
             AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
             AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION |
             AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION,
-            bundleName, instIndex);
+            bundleName, instIndex, srcTokenId);
         if (status != ERR_OK) {
             ZLOGE("GrantUriPermission failed, status:%{public}d, queryKey:%{public}s, instIndex:%{public}d.",
                 status, queryKey.c_str(), instIndex);
