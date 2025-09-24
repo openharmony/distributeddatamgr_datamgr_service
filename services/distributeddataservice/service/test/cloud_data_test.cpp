@@ -64,6 +64,7 @@ using Status = OHOS::CloudData::CloudService::Status;
 using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
 using GenErr = OHOS::DistributedData::GeneralError;
 using RdbGeneralStore = OHOS::DistributedRdb::RdbGeneralStore;
+using RdbQuery = OHOS::CloudData::RdbQuery;
 uint64_t g_selfTokenID = 0;
 
 void AllocHapToken(const HapPolicyParams &policy)
@@ -3181,6 +3182,57 @@ HWTEST_F(CloudDataTest, StrategyInfo, TestSize.Level0)
     info2.user = 1;
     ret = info2 == info1;
     EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name: IsPriority001
+* @tc.desc: test when isPriority_ is false
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, IsPriority001, TestSize.Level1)
+{
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [](const Event &event) {
+        auto &evt = static_cast<const SyncEvent &>(event);
+        auto query = static_cast<RdbQuery*>(evt.GetQuery().get());
+        EXPECT_FALSE(query->IsPriority());
+    });
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_TIME_FIRST, .isAsync = true };
+    DistributedRdb::PredicatesMemo memo;
+    memo.tables_ = { "teat_cloud_table", "teat_cloud_table1" };
+    auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
+    rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
+}
+
+/**
+* @tc.name: IsPriority002
+* @tc.desc: test when isPriority_ is true
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, IsPriority002, TestSize.Level1)
+{
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [](const Event &event) {
+        auto &evt = static_cast<const SyncEvent &>(event);
+        auto query = static_cast<RdbQuery*>(evt.GetQuery().get());
+        EXPECT_TRUE(query->IsPriority());
+    });
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_TIME_FIRST, .isAsync = true };
+    DistributedRdb::PredicatesMemo memo;
+    memo.tables_ = { TEST_CLOUD_TABLE };
+    std::vector<NativeRdb::AssetValue> assets;
+    NativeRdb::AssetValue asset{ .name = "name1" };
+    assets.push_back(asset);
+    NativeRdb::ValueObject object(assets);
+    memo.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
+    auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
+    rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
