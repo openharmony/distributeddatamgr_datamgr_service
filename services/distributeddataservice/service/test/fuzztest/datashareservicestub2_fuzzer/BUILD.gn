@@ -112,6 +112,7 @@ ohos_fuzztest("DataShareServiceStub2FuzzTest") {
     "ability_base:base",
     "ability_base:want",
     "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",
