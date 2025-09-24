@@ -39,7 +39,6 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
     }
 
     if (predicates.operations_.empty() || predicates.tables_.empty()) {
-        isPriority_ = false;
         return;
     }
 
