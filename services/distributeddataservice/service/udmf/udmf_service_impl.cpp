@@ -335,9 +335,9 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
 
 int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifiedData)
 {
-    std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
-    std::vector<Uri> allUri;
-    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, allUri);
+    std::vector<Uri> readUris;
+    std::vector<Uri> writeUris;
+    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, readUris, writeUris);
     if (verifyRes != E_OK) {
         ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
         return verifyRes;
@@ -347,18 +347,18 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGE("Get bundleName fail,key=%{public}s,tokenId=%d", query.key.c_str(), query.tokenId);
         return E_ERROR;
     }
-    std::string sourceDeviceId = unifiedData.GetRuntime()->deviceId;
-    if (localDeviceId == sourceDeviceId && query.tokenId == unifiedData.GetRuntime()->tokenId) {
+    bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
+    if (isLocal && query.tokenId == unifiedData.GetRuntime()->tokenId) {
         ZLOGW("No uri permissions needed,queryKey=%{public}s", query.key.c_str());
         return E_OK;
     }
-    if (localDeviceId == sourceDeviceId && !VerifySavedTokenId(unifiedData.GetRuntime())) {
+    if (isLocal && !VerifySavedTokenId(unifiedData.GetRuntime())) {
         ZLOGE("VerifySavedTokenId fail");
         return E_ERROR;
     }
     uint32_t sourceTokenId = unifiedData.GetRuntime()->tokenId;
     if (UriPermissionManager::GetInstance().GrantUriPermission(
-        allUri, query.tokenId, query.key, sourceTokenId) != E_OK) {
+        readUris, writeUris, query.tokenId, sourceTokenId, isLocal) != E_OK) {
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
             bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
@@ -380,16 +380,16 @@ bool UdmfServiceImpl::VerifySavedTokenId(std::shared_ptr<Runtime> runtime)
     return true;
 }
 
-int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData, std::vector<Uri> &uris)
+int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
+    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
 {
     if (unifiedData.GetRuntime() == nullptr) {
         ZLOGE("Get runtime empty!");
         return E_DB_ERROR;
     }
     bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
-    auto records = unifiedData.GetRecords();
     bool hasError = false;
-    PreProcessUtils::ProcessFileType(records, [&] (std::shared_ptr<Object> obj) {
+    PreProcessUtils::ProcessFileType(unifiedData.GetRecords(), [&] (std::shared_ptr<Object> obj) {
         if (hasError) {
             return false;
         }
@@ -423,10 +423,13 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &u
                 return false;
             }
         }
-        uris.push_back(uri);
+        int32_t permission;
+        if (obj->GetValue(PERMISSION_POLICY, permission)) {
+            permission == PermissionPolicy::READ_WRITE ? writeUris.emplace_back(uri) : readUris.emplace_back(uri);
+        }
         return true;
     });
-    PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal, uris);
+    PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal, readUris, writeUris);
     return hasError ? E_ERROR : E_OK;
 }
 

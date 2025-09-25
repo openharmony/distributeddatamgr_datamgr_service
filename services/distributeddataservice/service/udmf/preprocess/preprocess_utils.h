@@ -16,6 +16,7 @@
 #define UDMF_PREPROCESS_UTILS_H
 
 #include "bundlemgr/bundle_mgr_proxy.h"
+#include "remote_file_share.h"
 #include "unified_data.h"
 
 namespace OHOS {
@@ -35,11 +36,13 @@ public:
     static bool IsNetworkingEnabled();
     static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
         std::function<bool(std::shared_ptr<Object>)> callback);
-    static void GetHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<std::string> &uris);
+    static void GetHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
+        std::map<std::string, int32_t> &htmlUris);
     static void ClearHtmlDfsUris(UnifiedData &data);
-    static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<Uri> &uris);
+    static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
+        std::vector<Uri> &readUris, std::vector<Uri> &writeUris);
     static void ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-        bool isLocal, std::vector<std::string> &uris);
+        bool isLocal, std::map<std::string, int32_t> &uris);
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
@@ -47,10 +50,15 @@ public:
         std::string &bundleName);
     static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();
 private:
-    static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId);
-    static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data);
+    static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId,
+        std::map<std::string, int32_t> &permissionUris);
+    static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId,
+        std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris);
     static std::string GetSdkVersionByToken(uint32_t tokenId);
     static bool GetSpecificBundleName(const std::string &bundleName, int32_t appIndex, std::string &specificBundleName);
+    static void FillUris(UnifiedData &data,
+        std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
+        std::map<std::string, int32_t> &permissionUris);
 };
 } // namespace UDMF
 } // namespace OHOS

@@ -213,34 +213,44 @@ int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
         uris.push_back(oriUri);
         return true;
     });
-    GetHtmlFileUris(tokenId, data, true, uris);
+    std::map<std::string, int32_t> htmlUris;
+    GetHtmlFileUris(tokenId, data, true, htmlUris);
+    for (const auto &item : htmlUris) {
+        if (std::find(uris.begin(), uris.end(), item.first) == uris.end()) {
+            uris.emplace_back(item.first);
+        }
+    }
     if (!uris.empty()) {
         ZLOGI("Read to check uri authorization");
-        if (!CheckUriAuthorization(uris, tokenId)) {
+        std::map<std::string, int32_t> permissionUris;
+        if (!CheckUriAuthorization(uris, tokenId, permissionUris)) {
             ZLOGE("UriAuth check failed:bundleName:%{public}s,tokenId:%{public}d,uris size:%{public}zu",
                   data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
             RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
                 BizScene::SET_DATA, SetDataStage::VERIFY_SHARE_PERMISSIONS, StageRes::FAILED, E_NO_PERMISSION);
             return E_NO_PERMISSION;
         }
+        std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
         if (!IsNetworkingEnabled()) {
+            FillUris(data, dfsUris, permissionUris);
             return E_OK;
         }
         int32_t userId;
         if (GetHapUidByToken(tokenId, userId) == E_OK) {
-            GetDfsUrisFromLocal(uris, userId, data);
+            GetDfsUrisFromLocal(uris, userId, dfsUris);
         }
+        FillUris(data, dfsUris, permissionUris);
     }
     return E_OK;
 }
 
-int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId, UnifiedData &data)
+int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId,
+    std::unordered_map<std::string, HmdfsUriInfo> &dfsUris)
 {
     DdsTrace trace(
         std::string(TAG) + std::string(__FUNCTION__), TraceSwitch::BYTRACE_ON | TraceSwitch::TRACE_CHAIN_ON);
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::IDLE);
-    std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
     int32_t ret = Storage::DistributedFile::FileMountManager::GetDfsUrisDirFromLocal(uris, userId, dfsUris);
     if (ret != 0 || dfsUris.empty()) {
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
@@ -251,9 +261,28 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
     }
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
         BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::SUCCESS);
-    ProcessFileType(data.GetRecords(), [&dfsUris] (std::shared_ptr<Object> obj) {
+    return E_OK;
+}
+
+void PreProcessUtils::FillUris(UnifiedData &data, std::unordered_map<std::string, HmdfsUriInfo> &dfsUris,
+    std::map<std::string, int32_t> &permissionUris)
+{
+    if (permissionUris.empty()) {
+        return;
+    }
+    ProcessFileType(data.GetRecords(), [&dfsUris, &permissionUris] (std::shared_ptr<Object> obj) {
         std::string oriUri;
-        obj->GetValue(ORI_URI, oriUri);
+        if (!obj->GetValue(ORI_URI, oriUri)) {
+            return false;
+        }
+        if (permissionUris.find(oriUri) != permissionUris.end()) {
+            obj->value_[PERMISSION_POLICY] = permissionUris[oriUri];
+        } else {
+            return true;
+        }
+        if (dfsUris.empty()) {
+            return true;
+        }
         auto iter = dfsUris.find(oriUri);
         if (iter != dfsUris.end()) {
             obj->value_[REMOTE_URI] = (iter->second).uriStr;
@@ -264,7 +293,15 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
         if (record == nullptr) {
             continue;
         }
-        record->ComputeUris([&dfsUris] (UriInfo &uriInfo) {
+        record->ComputeUris([&dfsUris, &permissionUris] (UriInfo &uriInfo) {
+            if (permissionUris.find(uriInfo.authUri) != permissionUris.end()) {
+                uriInfo.permission = permissionUris[uriInfo.authUri];
+            } else {
+                return true;
+            }
+            if (dfsUris.empty()) {
+                return true;
+            }
             auto iter = dfsUris.find(uriInfo.authUri);
             if (iter != dfsUris.end()) {
                 uriInfo.dfsUri = (iter->second).uriStr;
@@ -272,22 +309,36 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
             return true;
         });
     }
-    RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
-        BizScene::SET_DATA, SetDataStage::GERERATE_DFS_URI, StageRes::SUCCESS);
-    return E_OK;
 }
 
-bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId)
+bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId,
+    std::map<std::string, int32_t> &permissionUris)
 {
     for (size_t index = 0; index < uris.size(); index += VERIFY_URI_PERMISSION_MAX_SIZE) {
         std::vector<std::string> urisToBeChecked(
             uris.begin() + index, uris.begin() + std::min(index + VERIFY_URI_PERMISSION_MAX_SIZE, uris.size()));
         auto checkResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
-            urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
-        auto iter = find(checkResults.begin(), checkResults.end(), false);
-        if (iter != checkResults.end()) {
-            return false;
+            urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
+            AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION, tokenId);
+        std::vector<std::string> noWritePermissionUris;
+        for (size_t i = 0; i < checkResults.size(); ++i) {
+            if (!checkResults[i]) {
+                noWritePermissionUris.push_back(urisToBeChecked[i]);
+                permissionUris[urisToBeChecked[i]] = static_cast<int32_t>(ONLY_READ);
+            } else {
+                permissionUris[urisToBeChecked[i]] = static_cast<int32_t>(READ_WRITE);
+            }
         }
+        if (!noWritePermissionUris.empty()) {
+            auto results = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
+                noWritePermissionUris, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
+            auto item = find(results.begin(), results.end(), false);
+            if (item != results.end()) {
+                permissionUris.clear();
+                return false;
+            }
+        }
+        noWritePermissionUris.clear();
     }
     return true;
 }
@@ -353,7 +404,7 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
 }
 
 void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-    bool isLocal, std::vector<std::string> &uris)
+    bool isLocal, std::map<std::string, int32_t> &uris)
 {
     record->ComputeUris([&uris, &isLocal, &tokenId] (UriInfo &uriInfo) {
         std::string newUriStr = "";
@@ -384,16 +435,16 @@ void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint3
         if (scheme != FILE_SCHEME) {
             return true;
         }
-        auto iter = std::find(uris.begin(), uris.end(), newUriStr);
-        if (iter == uris.end()) {
-            uris.push_back(std::move(newUriStr));
+        auto item = uris.find(newUriStr);
+        if (item == uris.end()) {
+            uris.emplace(newUriStr, uriInfo.permission);
         }
         return true;
     });
 }
 
 void PreProcessUtils::GetHtmlFileUris(uint32_t tokenId, UnifiedData &data,
-    bool isLocal, std::vector<std::string> &uris)
+    bool isLocal, std::map<std::string, int32_t> &htmlUris)
 {
     if (data.HasType(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML))) {
         UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(data);
@@ -402,7 +453,7 @@ void PreProcessUtils::GetHtmlFileUris(uint32_t tokenId, UnifiedData &data,
         if (record == nullptr) {
             continue;
         }
-        PreProcessUtils::ProcessRecord(record, tokenId, isLocal, uris);
+        PreProcessUtils::ProcessRecord(record, tokenId, isLocal, htmlUris);
     }
 }
 
@@ -419,12 +470,14 @@ void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
     }
 }
 
-void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<Uri> &uris)
+void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
+    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
 {
-    std::vector<std::string> strUris;
+    std::map<std::string, int32_t> strUris;
     PreProcessUtils::GetHtmlFileUris(tokenId, data, isLocal, strUris);
-    for (auto &uri : strUris) {
-        uris.emplace_back(Uri(uri));
+    for (const auto &item : strUris) {
+        item.second == PermissionPolicy::READ_WRITE ?
+            writeUris.emplace_back(item.first) : readUris.emplace_back(item.first);
     }
     if (isLocal) {
         PreProcessUtils::ClearHtmlDfsUris(data);

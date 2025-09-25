@@ -79,7 +79,8 @@ void ProcessCrossDeviceDataFuzz(FuzzedDataProvider &provider)
     Runtime runtime;
     data.SetRuntime(runtime);
     std::vector<Uri> uris;
-    udmfServiceImpl->ProcessCrossDeviceData(tokenId, data, uris);
+    std::vector<Uri> uris1;
+    udmfServiceImpl->ProcessCrossDeviceData(tokenId, data, uris, uris1);
 }
 
 void ProcessDataFuzz(FuzzedDataProvider &provider)
