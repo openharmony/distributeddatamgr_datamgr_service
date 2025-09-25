@@ -28,11 +28,11 @@
 #include "hiview_fault_adapter.h"
 
 namespace OHOS::DataShare {
-sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
+sptr<AppExecFwk::IBundleMgr> BundleMgrProxy::GetBundleMgrProxy()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (proxy_ != nullptr) {
-        return iface_cast<AppExecFwk::BundleMgrProxy>(proxy_);
+        return iface_cast<AppExecFwk::IBundleMgr>(proxy_);
     }
     proxy_ = CheckBMS();
     if (proxy_ == nullptr) {
@@ -50,7 +50,7 @@ sptr<AppExecFwk::BundleMgrProxy> BundleMgrProxy::GetBundleMgrProxy()
         deathRecipient_ = nullptr;
         return nullptr;
     }
-    return iface_cast<AppExecFwk::BundleMgrProxy>(proxy_);
+    return iface_cast<AppExecFwk::IBundleMgr>(proxy_);
 }
 
 sptr<IRemoteObject> BundleMgrProxy::CheckBMS()

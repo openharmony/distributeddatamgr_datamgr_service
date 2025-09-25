@@ -121,7 +121,7 @@ private:
     private:
         std::weak_ptr<BundleMgrProxy> owner_;
     };
-    sptr<AppExecFwk::BundleMgrProxy> GetBundleMgrProxy();
+    sptr<AppExecFwk::IBundleMgr> GetBundleMgrProxy();
     void OnProxyDied();
     std::pair<int, BundleConfig> ConvertToDataShareBundle(AppExecFwk::BundleInfo &bundleInfo);
     std::pair<int, std::vector<ExtensionAbilityInfo>> ConvertExtensionAbility(AppExecFwk::BundleInfo &bundleInfo);
