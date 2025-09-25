@@ -29,8 +29,10 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
     if (predicates.tables_.size() == 1) {
         if (!isPriority) {
             query_ = DistributedDB::Query::Select(*predicates.tables_.begin());
-        } else {
+        } else if (!predicates.operations_.empty()) {
             query_.From(*predicates.tables_.begin());
+        } else if (predicates.operations_.empty()) {
+            query_.FromTable(predicates.tables_);
         }
     }
 

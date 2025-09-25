@@ -35,6 +35,7 @@ public:
         int32_t currentUserId = -1;
         int32_t visitedUserId = -1;
         int32_t appIndex = 0;   // appIndex is in [1, 1000], and original app's index is 0
+        std::string appIdentifier;
         std::string bundleName;
         std::string moduleName;
         std::string storeName;

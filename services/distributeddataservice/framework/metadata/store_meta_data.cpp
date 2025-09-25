@@ -318,11 +318,6 @@ std::string StoreMetaMapping::GetCloudStoreMetaKey() const
     return GetStoreMetaKeyWithPath(cloudPath);
 }
 
-std::string StoreMetaMapping::GetDeviceStoreMetaKey() const
-{
-    return GetStoreMetaKeyWithPath(devicePath);
-}
-
 std::string StoreMetaMapping::GetPrefix(const std::initializer_list<std::string> &fields)
 {
     return GetKey(fields).append(Constant::KEY_SEPARATOR);

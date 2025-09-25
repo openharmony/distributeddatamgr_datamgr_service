@@ -65,7 +65,7 @@ bool RdbSchemaConfig::InitBundleInfo(
         return false;
     }
 
-    auto bundleMgrProxy = iface_cast<OHOS::AppExecFwk::BundleMgrProxy>(remoteObject);
+    auto bundleMgrProxy = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     if (bundleMgrProxy == nullptr) {
         ZLOGE("Fail to cast proxy, bundleName: %{public}s.", bundleName.c_str());
         return false;

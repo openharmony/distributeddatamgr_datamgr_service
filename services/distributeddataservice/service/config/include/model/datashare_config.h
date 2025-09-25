@@ -24,6 +24,7 @@ public:
     bool Unmarshal(const json &node) override;
     std::vector<std::string> dataShareExtNames;
     std::vector<std::string> updateLaunchNames;
+    std::vector<std::string> providerIdentifiers;
 };
 } // namespace DistributedData
 } // namespace OHOS

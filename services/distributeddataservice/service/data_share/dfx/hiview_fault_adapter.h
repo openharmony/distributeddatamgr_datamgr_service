@@ -42,6 +42,7 @@ public:
     static constexpr const char* resultsetFull = "RESULTSET_FULL";
     static constexpr const char* curdFailed = "CURD_FAILED";
     static constexpr const char* kvDBCorrupt = "KVDB_CORRUPT";
+    static constexpr const char* unauthorizedProvider = "UNAUTHORIZED_PROVIDER";
     static void ReportDataFault(const DataShareFaultInfo &faultInfo);
     static std::pair<std::string, int> GetCallingName(uint32_t callingTokenid);
 };

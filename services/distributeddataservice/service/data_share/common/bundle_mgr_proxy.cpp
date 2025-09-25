@@ -219,6 +219,7 @@ std::pair<int, BundleConfig> BundleMgrProxy::ConvertToDataShareBundle(AppExecFwk
     }
     bundleConfig.extensionInfos = extensionInfos;
     bundleConfig.isSystemApp = bundleInfo.applicationInfo.isSystemApp;
+    bundleConfig.appIdentifier = std::move(bundleInfo.signatureInfo.appIdentifier);
     return std::make_pair(E_OK, bundleConfig);
 }
 
