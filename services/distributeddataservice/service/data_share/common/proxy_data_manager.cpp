@@ -337,7 +337,7 @@ int32_t PublishedProxyData::Delete(const std::string &uri, const BundleInfo &cal
 
     ProxyDataNode oldData;
     if (!ProxyDataNode::Unmarshall(queryResult, oldData)) {
-        ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
+        ZLOGE("Unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
         return INNER_ERROR;
     }
     if (callerBundleInfo.tokenId != oldData.tokenId) {

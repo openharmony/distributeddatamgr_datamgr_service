@@ -15,6 +15,8 @@
 #define LOG_TAG "TemplateData"
 #include "template_data.h"
 #include "log_print.h"
+#include "utils.h"
+
 namespace OHOS::DataShare {
 bool TemplateNode::Marshal(DistributedData::Serializable::json &node) const
 {
@@ -121,7 +123,7 @@ int32_t TemplateData::Query(const std::string &filter, Template &aTemplate)
     }
     TemplateRootNode data;
     if (!DistributedData::Serializable::Unmarshall(queryResult, data)) {
-        ZLOGE("Unmarshall failed, %{private}s", queryResult.c_str());
+        ZLOGE("Unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
         return E_ERROR;
     }
     aTemplate = data.ToTemplate();

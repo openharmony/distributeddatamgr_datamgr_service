@@ -172,6 +172,8 @@ void TimerReceiverOnReceiveEventFuzz(FuzzedDataProvider &provider)
 {
     DataShareServiceImpl::TimerReceiver tmerReceiver;
     EventFwk::Want want;
+    std::string action = provider.ConsumeRandomLengthString();
+    want.SetAction(action);
     EventFwk::CommonEventData commonEventData(want);
     commonEventData.SetWant(want);
     tmerReceiver.OnReceiveEvent(commonEventData);
@@ -336,12 +338,6 @@ void SaveLaunchInfoFuzz(FuzzedDataProvider &provider)
     dataShareServiceImpl->SaveLaunchInfo(bundleName, userId, deviceId);
 }
 
-void OnConnectDoneFuzz(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
-    dataShareServiceImpl->OnConnectDone();
-}
-
 void DataShareStaticOnAppUpdate(FuzzedDataProvider &provider)
 {
     DataShareServiceImpl::DataShareStatic dataShareStatic;
@@ -357,6 +353,7 @@ void EnableSilentProxyFuzz(FuzzedDataProvider &provider)
     std::string uri = provider.ConsumeRandomLengthString();
     bool enable = provider.ConsumeBool();
     dataShareServiceImpl->EnableSilentProxy(uri, enable);
+    dataShareServiceImpl->OnConnectDone();
 }
 } // namespace OHOS
 
@@ -392,7 +389,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::SubscribePublishedDataFuzz(provider);
     OHOS::DisablePubSubsFuzz(provider);
     OHOS::SaveLaunchInfoFuzz(provider);
-    OHOS::OnConnectDoneFuzz(provider);
     OHOS::DataShareStaticOnAppUpdate(provider);
     OHOS::EnableSilentProxyFuzz(provider);
     return 0;
