@@ -57,7 +57,7 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using namespace RadarReporter;
 using namespace DistributedKv;
-constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp_sa", "collaboration_service"};
+constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
 constexpr const char *FILE_SCHEME = "file";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
