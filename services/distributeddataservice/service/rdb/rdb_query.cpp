@@ -34,7 +34,7 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
         }
     }
 
-    if (predicates.tables_.size() > 1 || predicates.operations_.size() == 0) {
+    if (predicates.tables_.size() > 1 || predicates.operations_.empty()) {
         query_.FromTable(predicates.tables_);
     }
 
