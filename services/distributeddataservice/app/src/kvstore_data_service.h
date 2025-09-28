@@ -101,6 +101,8 @@ public:
 
     int32_t Exit(const std::string &featureName) override;
 
+    std::pair<int32_t, std::string> GetSelfBundleName() override;
+
     void OnDump() override;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;

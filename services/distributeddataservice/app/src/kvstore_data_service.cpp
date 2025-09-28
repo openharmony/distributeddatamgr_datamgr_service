@@ -270,6 +270,20 @@ int32_t KvStoreDataService::Exit(const std::string &featureName)
     }
     return Status::SUCCESS;
 }
+
+std::pair<int32_t, std::string> KvStoreDataService::GetSelfBundleName()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    HapTokenInfo tokenInfo;
+    auto result = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (result != RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, result);
+        return {Status::ERROR, ""};
+    }
+
+    return {Status::SUCCESS, tokenInfo.bundleName};
+}
+
 Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
 {
     // memory of parameter appId locates in a member of clientDeathObserverMap_ and will be freed after
