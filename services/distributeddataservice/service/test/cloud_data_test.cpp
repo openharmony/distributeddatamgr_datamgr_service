@@ -3208,7 +3208,7 @@ HWTEST_F(CloudDataTest, IsPriority001, TestSize.Level1)
     memo.tables_ = { "teat_cloud_table", "teat_cloud_table1" };
     auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
     rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
-    EXPECT_FALSE(query->IsPriority());
+    EXPECT_FALSE(priority_);
 }
 
 /**
@@ -3232,7 +3232,7 @@ HWTEST_F(CloudDataTest, IsPriority002, TestSize.Level1)
     memo.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
     auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
     rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
-    EXPECT_FALSE(query->IsPriority());
+    EXPECT_FALSE(priority_);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
