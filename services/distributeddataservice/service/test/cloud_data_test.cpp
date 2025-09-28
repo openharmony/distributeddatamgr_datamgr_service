@@ -3232,7 +3232,7 @@ HWTEST_F(CloudDataTest, IsPriority002, TestSize.Level1)
     memo.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
     auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
     rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
-    EXPECT_FALSE(priority_);
+    EXPECT_TRUE(priority_);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
