@@ -589,10 +589,9 @@ void RdbServiceImpl::DoCloudSync(const StoreMetaData &metaData, const RdbService
 {
     StoreInfo storeInfo = GetStoreInfoEx(metaData);
     std::shared_ptr<RdbQuery> query = nullptr;
-    if ((predicates.tables_.size() > 1) || (predicates.tables_.size() == 1 && predicates.operations_.empty())) {
-        query = std::make_shared<RdbQuery>(predicates);
-    } else if (predicates.tables_.size() == 1 && !predicates.operations_.empty()) {
-        query = std::make_shared<RdbQuery>(predicates, true);
+    if (!predicates.tables_.empty()) {
+        query = std::make_shared<RdbQuery>(predicates,
+                                           predicates.tables_.size() == 1 && !predicates.operations_.empty());
     }
     auto pid = IPCSkeleton::GetCallingPid();
     GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum, pid](
