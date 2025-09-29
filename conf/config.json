@@ -110,7 +110,14 @@
   ],
   "dataShare": {
     "uriTrusts":[
-      "datashare:///com.ohos.settingsdata/entry/settingsdata"
+      "datashare:///com.ohos.settingsdata/entry/settingsdata",
+      "datashare://com.ohos.calllogability",
+      "datashare:///com.ohos.contactsdataability",
+      "datashare://com.ohos.contactsdataability",
+      "datashare:///com.ohos.opkeyability",
+      "datashare:///com.ohos.pdpprofileability",
+      "datashare:///com.ohos.simability",
+      "datashare:///com.ohos.smsmmsability"
     ],
     "providerIdentifiers":[
       "5765880207853551549",
