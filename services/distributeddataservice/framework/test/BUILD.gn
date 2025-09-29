@@ -140,6 +140,7 @@ ohos_unittest("StoreTest") {
     "${data_service_path}/framework/metadata/store_meta_data.cpp",
     "${data_service_path}/framework/store/auto_cache.cpp",
     "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
     "store_test.cpp",
   ]
 
@@ -165,7 +166,6 @@ ohos_unittest("StoreTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/common:distributeddata_common",
