@@ -27,6 +27,7 @@ private:
    int32_t RegisterClientDeathObserverOnRemote(MessageParcel &data, MessageParcel &reply);
    int32_t ClearAppStorageOnRemote(MessageParcel &data, MessageParcel &reply);
    int32_t ExitOnRemote(MessageParcel &data, MessageParcel &reply);
+   int32_t GetSelfBundleNameOnRemote(MessageParcel &data, MessageParcel &reply);
 
    using RequestHandler = int32_t (KvStoreDataServiceStub::*)(MessageParcel &, MessageParcel &);
    using code = KvStoreDataServiceInterfaceCode;
@@ -35,6 +36,7 @@ private:
        &KvStoreDataServiceStub::RegisterClientDeathObserverOnRemote,
        &KvStoreDataServiceStub::ClearAppStorageOnRemote,
        &KvStoreDataServiceStub::ExitOnRemote,
+       &KvStoreDataServiceStub::GetSelfBundleNameOnRemote,
    };
 };
 } // namespace OHOS::DistributedKv
