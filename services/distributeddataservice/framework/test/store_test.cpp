@@ -15,7 +15,10 @@
 #define LOG_TAG "StoreTest"
 
 #include "access_token.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "account/account_delegate.h"
+#include "account_delegate_mock.h"
 #include "general_store_mock.h"
 #include "log_print.h"
 #include "metadata/store_meta_data.h"
@@ -49,17 +52,29 @@ public:
 class AutoCacheTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
-    static void TearDownTestCase(void){};
+    static void TearDownTestCase(void);
     void SetUp(){};
     void TearDown(){};
+private:
+    static AccountDelegateMock *accountDelegateMock_;
 protected:
     static std::shared_ptr<ScreenLockMock> mock_;
 };
 
+AccountDelegateMock *AutoCacheTest::accountDelegateMock_ = nullptr;
 
 void AutoCacheTest::SetUpTestCase(void)
 {
     ScreenManager::RegisterInstance(mock_);
+    accountDelegateMock_ = new (std::nothrow) AccountDelegateMock();
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock_);
+    EXPECT_CALL(*accountDelegateMock_, IsDeactivating(testing::_)).WillRepeatedly(testing::Return(false));
+}
+
+void AutoCacheTest::TearDownTestCase(void)
+{
+    delete accountDelegateMock_;
+    accountDelegateMock_ = nullptr;
 }
 
 std::shared_ptr<ScreenLockMock> AutoCacheTest::mock_ = std::make_shared<ScreenLockMock>();
