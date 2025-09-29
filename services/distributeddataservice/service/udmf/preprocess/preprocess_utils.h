@@ -41,6 +41,8 @@ public:
     static void ClearHtmlDfsUris(UnifiedData &data);
     static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
         std::vector<Uri> &readUris, std::vector<Uri> &writeUris);
+    static void ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal,
+        std::vector<Uri> &readUris, std::vector<Uri> &writeUris);
     static void ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
         bool isLocal, std::map<std::string, int32_t> &uris);
     static void SetRecordUid(UnifiedData &data);
@@ -59,6 +61,7 @@ private:
     static void FillUris(UnifiedData &data,
         std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
         std::map<std::string, int32_t> &permissionUris);
+    static int32_t ReadCheckUri(uint32_t tokenId, UnifiedData &data, std::vector<std::string> &uris);
 };
 } // namespace UDMF
 } // namespace OHOS

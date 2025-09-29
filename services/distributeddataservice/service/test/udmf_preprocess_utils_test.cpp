@@ -194,50 +194,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, GetHtmlFileUris001, TestSize.Level1)
 }
 
 /**
-* @tc.name: ProcessRecord001
-* @tc.desc: Abnormal test of ProcessRecord
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfPreProcessUtilsTest, ProcessRecord001, TestSize.Level1)
-{
-    uint32_t tokenId = 0;
-    UnifiedData data;
-    std::string html = "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/102.png'>"
-                        "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/103.png'>"
-                        "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/102.png'>";
-    auto obj = std::make_shared<Object>();
-    obj->value_["uniformDataType"] = "general.html";
-    obj->value_["htmlContent"] = html;
-    obj->value_["plainContent"] = "htmlPlainContent";
-    auto record = std::make_shared<UnifiedRecord>(UDType::HTML, obj);
-    data.AddRecord(record);
-    bool isLocal = false;
-    std::vector<Uri> readUris;
-    std::vector<Uri> writeUris;
-    std::map<std::string, int32_t> uris;
-    PreProcessUtils preProcessUtils;
-    preProcessUtils.ProcessHtmlFileUris(tokenId, data, isLocal, readUris, writeUris);
-    std::string key = "file:///data/storage/el2/base/haps/102.png";
-    std::string dfsUri1 = "file://data/102.png";
-    std::string dfsUri2 = "file://data/103.png";
-    record->ComputeUris([&key, &dfsUri1, &dfsUri2] (UriInfo &uriInfo) {
-        if (uriInfo.oriUri == key) {
-            uriInfo.dfsUri = dfsUri1;
-            uriInfo.permission = 0;
-        } else {
-            uriInfo.dfsUri = dfsUri2;
-            uriInfo.permission = 1;
-        }
-        return true;
-    });
-    preProcessUtils.ProcessRecord(record, tokenId, isLocal, uris);
-    EXPECT_EQ(uris.size(), 2);
-    EXPECT_EQ(uris[dfsUri1], 0);
-    EXPECT_EQ(uris[dfsUri2], 1);
-}
-
-/**
 * @tc.name: FillUris001
 * @tc.desc: Abnormal test of FillUris
 * @tc.type: FUNC

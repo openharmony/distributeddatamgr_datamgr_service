@@ -142,6 +142,13 @@ void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
     return;
 }
 
+void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal,
+    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
+{
+    return;
+}
+
+
 void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
     std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
 {
