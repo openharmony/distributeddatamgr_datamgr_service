@@ -91,7 +91,7 @@ int32_t KvStoreDataServiceStub::ExitOnRemote(MessageParcel &data, MessageParcel 
 int32_t KvStoreDataServiceStub::GetSelfBundleNameOnRemote(MessageParcel &data, MessageParcel &reply)
 {
     auto [code, bundleName] = GetSelfBundleName();
-    if (!ITypesUtil::Marshal(reply, result.second, result.first)) {
+    if (!ITypesUtil::Marshal(reply, bundleName, code)) {
         return -1;
     }
     return 0;
