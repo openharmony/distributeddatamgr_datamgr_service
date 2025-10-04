@@ -59,7 +59,6 @@ using namespace RadarReporter;
 using namespace DistributedKv;
 constexpr const char *DRAG_AUTHORIZED_PROCESSES[] = {"msdp", "collaboration_service"};
 constexpr const char *DATA_PREFIX = "udmf://";
-constexpr const char *FILE_SCHEME = "file";
 constexpr const char *PRIVILEGE_READ_AND_KEEP = "readAndKeep";
 constexpr const char *MANAGE_UDMF_APP_SHARE_OPTION = "ohos.permission.MANAGE_UDMF_APP_SHARE_OPTION";
 constexpr const char *DEVICE_2IN1_TAG = "2in1";
@@ -389,46 +388,7 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &u
     }
     bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
     bool hasError = false;
-    PreProcessUtils::ProcessFileType(unifiedData.GetRecords(), [&] (std::shared_ptr<Object> obj) {
-        if (hasError) {
-            return false;
-        }
-        std::string oriUri;
-        obj->GetValue(ORI_URI, oriUri);
-        if (oriUri.empty()) {
-            ZLOGW("Get uri is empty.");
-            return false;
-        }
-        Uri uri(oriUri);
-        std::string scheme = uri.GetScheme();
-        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-            ZLOGW("Empty authority or scheme not file");
-            return false;
-        }
-        if (!isLocal) {
-            std::string remoteUri;
-            obj->GetValue(REMOTE_URI, remoteUri);
-            if (remoteUri.empty()) {
-                ZLOGE("Remote URI required for cross-device");
-                hasError = true;
-                return false;
-            }
-            uri = Uri(remoteUri);
-            obj->value_.insert_or_assign(ORI_URI, std::move(remoteUri)); // cross dev, need dis path.
-            scheme = uri.GetScheme();
-            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-                ZLOGW("Empty authority or scheme not file");
-                return false;
-            }
-        }
-        int32_t permission;
-        if (obj->GetValue(PERMISSION_POLICY, permission)) {
-            permission == PermissionPolicy::READ_WRITE ? writeUris.emplace_back(uri) : readUris.emplace_back(uri);
-        }
-        return true;
-    });
+    PreProcessUtils::ProcessFiles(hasError, unifiedData, isLocal, readUris, writeUris);
     PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal, readUris, writeUris);
     return hasError ? E_ERROR : E_OK;
 }
