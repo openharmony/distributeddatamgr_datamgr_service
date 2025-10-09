@@ -132,9 +132,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
             }
             DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
             Notify(key, context->visitedUserId, node, metaData);
-            if (GetEnableObserverCount(key) == 1) {
-                SchedulerManager::GetInstance().Start(key, context->visitedUserId, metaData);
-            }
+            SchedulerManager::GetInstance().Start(key, context->visitedUserId, metaData);
         };
         executorPool->Execute(task);
         return true;

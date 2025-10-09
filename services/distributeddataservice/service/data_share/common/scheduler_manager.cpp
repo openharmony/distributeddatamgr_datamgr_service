@@ -65,14 +65,18 @@ void SchedulerManager::Execute(const Key &key, const int32_t userId, const Distr
 
 void SchedulerManager::Start(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData)
 {
+    bool isFirstSubscribe = false;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = schedulerStatusCache_.find(key);
         if (it == schedulerStatusCache_.end()) {
             schedulerStatusCache_.emplace(key, true);
+            isFirstSubscribe = true;
         }
     }
-    Execute(key, userId, metaData);
+    if (isFirstSubscribe) {
+        Execute(key, userId, metaData);
+    }
 }
 
 void SchedulerManager::Stop(const Key &key)
