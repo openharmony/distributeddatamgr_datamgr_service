@@ -417,7 +417,7 @@ ohos_unittest("FeatureStubImplTest") {
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
   ]
   part_name = "datamgr_service"
 }
@@ -434,7 +434,7 @@ ohos_unittest("UpgradeManagerTest") {
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/app/test/mock/capability",
     "${data_service_path}/framework/include",
-   ]
+  ]
 
   sources = [
     "${data_service_path}/app/test/mock/capability/metadata/meta_data_manager.cpp",
@@ -609,7 +609,7 @@ ohos_unittest("DDMSDumpTest") {
     "${data_service_path}/service/test/mock/db_store_mock.cpp",
     "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
     "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
-]
+  ]
   sanitize = {
     ubsan = true
     boundary_sanitize = true

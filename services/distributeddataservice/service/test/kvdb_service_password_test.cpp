@@ -16,11 +16,14 @@
 #include "kvdb_service_impl.h"
 
 #include <gtest/gtest.h>
+#include "gmock/gmock.h"
 #include <random>
 
 #include "device_manager_adapter.h"
 #include "ipc_skeleton.h"
 #include "mock/db_store_mock.h"
+#include "account/account_delegate.h"
+#include "account_delegate_mock.h"
 
 namespace OHOS::Test {
 using namespace testing::ext;
@@ -36,7 +39,7 @@ static constexpr const char *TEST_STORE_ID = "StoreTest";
 class KvdbServicePasswordTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
-    static void TearDownTestCase(void) {}
+    static void TearDownTestCase(void);
     void SetUp() {}
     void TearDown() {}
 
@@ -46,12 +49,15 @@ public:
     static StoreId storeId_;
     static StoreMetaData metaData_;
     static std::shared_ptr<KVDBServiceImpl> kvdbServiceImpl_;
+private:
+    static AccountDelegateMock *accountDelegateMock_;
 };
 
 AppId KvdbServicePasswordTest::appId_;
 StoreId KvdbServicePasswordTest::storeId_;
 StoreMetaData KvdbServicePasswordTest::metaData_;
 std::shared_ptr<KVDBServiceImpl> KvdbServicePasswordTest::kvdbServiceImpl_;
+AccountDelegateMock *KvdbServicePasswordTest::accountDelegateMock_ = nullptr;
 
 void KvdbServicePasswordTest::SetUpTestCase(void)
 {
@@ -66,6 +72,16 @@ void KvdbServicePasswordTest::SetUpTestCase(void)
     metaData_.area = Area::EL1;
     metaData_.tokenId = IPCSkeleton::GetSelfTokenID();
     (void)CryptoManager::GetInstance().GenerateRootKey();
+    accountDelegateMock_ = new (std::nothrow) AccountDelegateMock();
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock_);
+    EXPECT_CALL(*accountDelegateMock_, IsDeactivating(testing::_)).WillRepeatedly(testing::Return(false));
+    EXPECT_CALL(*accountDelegateMock_, GetUserByToken(testing::_)).WillRepeatedly(testing::Return(0));
+}
+
+void KvdbServicePasswordTest::TearDownTestCase(void)
+{
+    delete accountDelegateMock_;
+    accountDelegateMock_ = nullptr;
 }
 
 std::vector<uint8_t> KvdbServicePasswordTest::Random(int32_t len)
