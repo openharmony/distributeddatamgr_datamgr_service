@@ -141,7 +141,6 @@ ohos_unittest("CloudDataMockTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
@@ -310,7 +309,24 @@ ohos_unittest("ConfigFactoryTest") {
 
 ohos_unittest("DirectoryManagerTest") {
   module_out_path = module_output_path
-  sources = [ "directory_manager_test.cpp" ]
+  sources = [
+    "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/config/src/config_factory.cpp",
+    "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
+    "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
+    "${data_service_path}/service/config/src/model/auto_sync_app_config.cpp",
+    "${data_service_path}/service/config/src/model/backup_config.cpp",
+    "${data_service_path}/service/config/src/model/checker_config.cpp",
+    "${data_service_path}/service/config/src/model/cloud_config.cpp",
+    "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/datashare_config.cpp",
+    "${data_service_path}/service/config/src/model/directory_config.cpp",
+    "${data_service_path}/service/config/src/model/global_config.cpp",
+    "${data_service_path}/service/config/src/model/network_config.cpp",
+    "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/config/src/model/thread_config.cpp",
+    "directory_manager_test.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
@@ -326,10 +342,7 @@ ohos_unittest("DirectoryManagerTest") {
     "kv_store:distributeddata_inner",
   ]
 
-  deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-  ]
+  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk" ]
 }
 
 ohos_unittest("CryptoManagerTest") {
@@ -1492,6 +1505,7 @@ ohos_unittest("KvdbServicePasswordTest") {
     blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   sources = [
+    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
     "kvdb_service_password_test.cpp",
   ]
 
@@ -1534,7 +1548,6 @@ ohos_unittest("KvdbServicePasswordTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
