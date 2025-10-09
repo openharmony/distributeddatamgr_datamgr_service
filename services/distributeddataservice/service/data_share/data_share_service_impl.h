@@ -155,6 +155,7 @@ private:
     bool VerifyPermission(const std::string &bundleName, const std::string &permission,
         bool isFromExtension, const int32_t tokenId);
     bool GetCallerBundleInfo(BundleInfo &callerBundleInfo);
+    void SetCriticalTask();
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;

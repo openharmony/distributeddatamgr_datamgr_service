@@ -131,6 +131,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "memmgr:memmgrclient",
     "qos_manager:concurrent_task_client",
     "qos_manager:qos",
     "relational_store:native_rdb",
