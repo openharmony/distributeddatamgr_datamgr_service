@@ -173,6 +173,51 @@ ohos_unittest("StoreTest") {
   ]
 }
 
+ohos_unittest("StoreMockTest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${data_service_path}/service/test/mock",
+    "${data_service_path}/framework/include/screen",
+  ]
+
+  sources = [
+    "${data_service_path}/framework/metadata/store_meta_data.cpp",
+    "${data_service_path}/framework/store/auto_cache.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
+    "store_mock_test.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "googletest:gmock",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
+  ]
+}
+
 ohos_unittest("AssetLoaderTest") {
   module_out_path = module_output_path
   sources = [ "asset_loader_test.cpp" ]
@@ -433,6 +478,7 @@ group("unittest") {
     ":ServiceMetaDataTest",
     ":ServiceUtilsTest",
     ":StoreMetaDataLocalTest",
+    ":StoreMockTest",
     ":StoreTest",
     ":SubscriptionTest",
     ":SyncManagerTest",

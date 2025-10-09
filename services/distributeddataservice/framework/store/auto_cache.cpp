@@ -70,6 +70,29 @@ std::string AutoCache::GenerateKey(const std::string &path, const std::string &s
     return key.append(path).append(KEY_SEPARATOR).append(storeId);
 }
 
+int32_t AutoCache::GetStatus(const StoreMetaData &meta)
+{
+    if (meta.area == GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
+        ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s",
+            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return E_SCREEN_LOCKED;
+    }
+    if (atoi(meta.user.c_str()) == 0 || meta.area == GeneralStore::Area::EL1) {
+        return E_OK;
+    }
+    if (Account::GetInstance()->IsDeactivating(atoi(meta.user.c_str()))) {
+        ZLOGW("user %{public}s is deactivating, bundleName:%{public}s, storeName: %{public}s",
+            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return E_USER_DEACTIVATING;
+    }
+    if (!Account::GetInstance()->IsVerified(atoi(meta.user.c_str()))) {
+        ZLOGW("user %{public}s is locked, bundleName:%{public}s, storeName: %{public}s",
+            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return E_USER_LOCKED;
+    }
+    return E_OK;
+}
+
 std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &meta, const Watchers &watchers)
 {
     Store store;
@@ -82,15 +105,9 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
               meta.GetStoreAlias().c_str());
         return { E_ERROR, store };
     }
-    if (meta.area == GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
-        ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s", meta.user.c_str(),
-              meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-        return { E_SCREEN_LOCKED, store };
-    }
-    if (Account::GetInstance()->IsDeactivating(atoi(meta.user.c_str()))) {
-        ZLOGW("user %{public}s is deactivating, bundleName:%{public}s, storeName: %{public}s", meta.user.c_str(),
-              meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-        return { E_USER_DEACTIVATING, store };
+    int32_t errCode = GetStatus(meta);
+    if (errCode != E_OK) {
+        return { errCode, store };
     }
     stores_.Compute(meta.tokenId,
         [this, &meta, &watchers, &store, &storeKey](auto &, std::map<std::string, Delegate> &stores) -> bool {
