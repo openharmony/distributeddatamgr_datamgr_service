@@ -83,8 +83,7 @@ void VerifyProvider(const DataProviderConfig::ProviderInfo providerInfo, const p
         return;
     }
     if (!ProviderInAllowList(providerInfo.appIdentifier)) {
-        ZLOGE("Provider: %{public}s not in allow list visited by pid: %{public}d",
-            providerInfo.bundleName.c_str(), calllingPid);
+        // No need to print since app not in AppGallery do not have appIdentifier.
         DataShareFaultInfo faultInfo{HiViewFaultAdapter::unauthorizedProvider, providerInfo.bundleName.c_str(),
             providerInfo.moduleName.c_str(), providerInfo.storeName.c_str(), __FUNCTION__, -1, ""};
         HiViewFaultAdapter::ReportDataFault(faultInfo);
