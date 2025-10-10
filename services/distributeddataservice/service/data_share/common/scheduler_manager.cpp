@@ -63,7 +63,7 @@ void SchedulerManager::Execute(const Key &key, const int32_t userId, const Distr
     ExecuteSchedulerSQL(userId, meta, key, delegate);
 }
 
-void SchedulerManager::Start(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData)
+bool SchedulerManager::Add(const Key &key)
 {
     bool isFirstSubscribe = false;
     {
@@ -74,6 +74,12 @@ void SchedulerManager::Start(const Key &key, int32_t userId, const DistributedDa
             isFirstSubscribe = true;
         }
     }
+    return isFirstSubscribe;
+}
+
+void SchedulerManager::Start(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData)
+{
+    bool isFirstSubscribe = Add(key);
     if (isFirstSubscribe) {
         Execute(key, userId, metaData);
     }

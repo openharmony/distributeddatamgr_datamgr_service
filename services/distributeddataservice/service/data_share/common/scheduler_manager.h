@@ -33,6 +33,7 @@ public:
     void RemoveTimer(const Key &key);
     void ClearTimer();
     void SetExecutorPool(std::shared_ptr<ExecutorPool> executor);
+    bool Add(const Key &key);
     void Start(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData);
     void Stop(const Key &key);
     void Enable(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData);

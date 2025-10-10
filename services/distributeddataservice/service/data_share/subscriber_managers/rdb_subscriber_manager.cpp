@@ -123,7 +123,8 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
         value.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);
-        ExecutorPool::Task task = [key, node, context, this]() {
+        bool isFirstSubscribe = SchedulerManager::GetInstance().Add(key);
+        ExecutorPool::Task task = [key, node, context, isFirstSubscribe, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
                 ZLOGE("loadDataInfo failed, uri %{public}s tokenId 0x%{public}x",
@@ -132,7 +133,9 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
             }
             DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
             Notify(key, context->visitedUserId, node, metaData);
-            SchedulerManager::GetInstance().Start(key, context->visitedUserId, metaData);
+            if (isFirstSubscribe) {
+                SchedulerManager::GetInstance().Execute(key, context->visitedUserId, metaData);
+            }
         };
         executorPool->Execute(task);
         return true;
