@@ -124,7 +124,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
         std::vector<ObserverNode> node;
         node.emplace_back(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);
         bool isFirstSubscribe = SchedulerManager::GetInstance().Add(key);
-        ExecutorPool::Task task = [key, node, context, isFirstSubscribe, this]() {
+        ExecutorPool::Task task = [key, node, context = std::move(context), isFirstSubscribe, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
             if (!loadDataInfo(context)) {
                 ZLOGE("loadDataInfo failed, uri %{public}s tokenId 0x%{public}x",

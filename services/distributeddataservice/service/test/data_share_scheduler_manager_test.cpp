@@ -157,4 +157,52 @@ HWTEST_F(DataShareSchedulerManagerTest, ChangeStatusCacheSize001, TestSize.Level
     EXPECT_GT(ret.second, 0);
     ZLOGI("ChangeStatusCacheSize001 end");
 }
+
+/**
+* @tc.name: AddStatus001
+* @tc.desc: test add status to schedulerStatusCache
+* @tc.type: FUNC
+* @tc.require:
+* @tc.precon: None
+* @tc.step:
+    1.Call Scheduler Add function
+    2.Call Scheduler Add function again
+* @tc.expect: the result of first add is true, second add is false
+*/
+HWTEST_F(DataShareSchedulerManagerTest, AddStatus001, TestSize.Level1)
+{
+    ZLOGI("AddStatus001 start");
+    Key key("uri1", 12345, "name1");
+    bool isFirstSubscribe = SchedulerManager::GetInstance().Add(key);
+    EXPECT_TRUE(isFirstSubscribe);
+
+    isFirstSubscribe = SchedulerManager::GetInstance().Add(key);
+    EXPECT_FALSE(isFirstSubscribe);
+    ZLOGI("AddStatus001 end");
+}
+
+/**
+* @tc.name: StartScheduler001
+* @tc.desc: test start scheduler
+* @tc.type: FUNC
+* @tc.require:
+* @tc.precon: None
+* @tc.step:
+    1.Call Scheduler Start function
+    2.Call Scheduler Add function
+    3.Call Scheduler Start function again
+* @tc.expect: the result of add is false
+*/
+HWTEST_F(DataShareSchedulerManagerTest, StartScheduler001, TestSize.Level1)
+{
+    ZLOGI("StartScheduler001 start");
+    Key key("uri1", 12345, "name1");
+    DistributedData::StoreMetaData metaData;
+    SchedulerManager::GetInstance().Start(key, USER_TEST, metaData);
+
+    auto isFirstSubscribe = SchedulerManager::GetInstance().Add(key);
+    EXPECT_FALSE(isFirstSubscribe);
+    SchedulerManager::GetInstance().Start(key, USER_TEST, metaData);
+    ZLOGI("StartScheduler001 end");
+}
 } // namespace OHOS::Test

@@ -20,6 +20,8 @@
 #include "accesstoken_kit.h"
 #include "data_share_service_impl.h"
 #include "datashare_errno.h"
+#include "data_proxy_observer.h"
+#include "data_share_obs_proxy.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -232,5 +234,33 @@ HWTEST_F(DataShareSubscriberManagersTest, PublishedDataKey, TestSize.Level1)
 
     EXPECT_FALSE(key1 < key2);
     EXPECT_TRUE(key2 < key1);
+}
+
+/**
+* @tc.name: NotFirstSubscribe
+* @tc.desc: test not first subscribe case
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareSubscriberManagersTest, NotFirstSubscribe, TestSize.Level1)
+{
+    auto context = std::make_shared<Context>(DATA_SHARE_URI_TEST);
+    TemplateId tpltId;
+    tpltId.subscriberId_ = TEST_SUB_ID;
+    tpltId.bundleName_ = BUNDLE_NAME_TEST;
+    DataShare::Key key(context->uri, tpltId.subscriberId_, tpltId.bundleName_);
+
+    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(saManager, nullptr);
+    auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
+    ASSERT_NE(remoteObj, nullptr);
+    sptr<IDataProxyRdbObserver> observer = new (std::nothrow)RdbObserverProxy(remoteObj);
+    std::shared_ptr<ExecutorPool> executorPool = std::make_shared<ExecutorPool>(1, 1);
+    ASSERT_NE(executorPool, nullptr);
+    auto result = RdbSubscriberManager::GetInstance().Add(key, observer, context, executorPool);
+    EXPECT_EQ(result, DataShare::E_OK);
+
+    result = RdbSubscriberManager::GetInstance().Add(key, observer, context, executorPool);
+    EXPECT_EQ(result, DataShare::E_OK);
 }
 } // namespace OHOS::Test
