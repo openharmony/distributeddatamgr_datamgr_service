@@ -870,12 +870,12 @@ HWTEST_F(KVDBGeneralStoreTest, OnChange, TestSize.Level0)
     DistributedDataTest::MockGeneralWatcher watcher;
     DistributedDataTest::MockKvStoreChangedData data;
     DistributedDB::ChangedData changedData;
-    store->observer_.OnChange(data);
-    store->observer_.OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
+    store->observer_->OnChange(data);
+    store->observer_->OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
     auto result = store->Watch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(result, GeneralError::E_OK);
-    store->observer_.OnChange(data);
-    store->observer_.OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
+    store->observer_->OnChange(data);
+    store->observer_->OnChange(DistributedDB::Origin::ORIGIN_CLOUD, "originalId", std::move(changedData));
     result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
