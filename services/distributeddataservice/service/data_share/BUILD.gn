@@ -133,6 +133,7 @@ ohos_source_set("data_share_service") {
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
+    "memmgr:memmgrclient",
     "qos_manager:concurrent_task_client",
     "qos_manager:qos",
     "relational_store:native_rdb",

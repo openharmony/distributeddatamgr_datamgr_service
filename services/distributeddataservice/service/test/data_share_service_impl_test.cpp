@@ -655,4 +655,28 @@ HWTEST_F(DataShareServiceImplTest, BundleUtilsTest001, TestSize.Level1)
     EXPECT_EQ(ret2, true);
     ZLOGI("DataShareServiceImplTest BundleUtilsTest001 end");
 }
+
+/**
+* @tc.name: SetCriticalTask001
+* @tc.desc: Test the SetCriticalTask methods of DataShareServiceImpl
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, SetCriticalTask001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest SetCriticalTask001 start");
+    size_t max = 12;
+    size_t min = 5;
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    ASSERT_NE(executor, nullptr);
+    // test binderInfo_.executors is not nullptr
+    DataShareServiceImpl dataShareServiceImpl;
+    dataShareServiceImpl.binderInfo_.executors = executor;
+    dataShareServiceImpl.SetCriticalTask();
+
+    // test binderInfo_.executors is nullptr
+    dataShareServiceImpl.binderInfo_.executors = nullptr;
+    dataShareServiceImpl.SetCriticalTask();
+    ZLOGI("DataShareServiceImplTest SetCriticalTask001 end");
+}
 } // namespace OHOS::Test

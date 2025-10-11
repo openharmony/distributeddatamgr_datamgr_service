@@ -17,6 +17,7 @@
 
 #include "data_share_service_impl.h"
 
+#include <chrono>
 #include <cstdint>
 #include <utility>
 
@@ -47,6 +48,7 @@
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "common/utils.h"
+#include "mem_mgr_client.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "matching_skills.h"
@@ -76,6 +78,7 @@ using namespace OHOS::DistributedData;
 __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factory_;
 // decimal base
 static constexpr int DECIMAL_BASE = 10;
+static constexpr std::chrono::milliseconds SET_CRITICAL_WAIT_TIME(10000); // 10s
 DataShareServiceImpl::BindInfo DataShareServiceImpl::binderInfo_;
 class DataShareServiceImpl::SystemAbilityStatusChangeListener
     : public SystemAbilityStatusChangeStub {
@@ -617,8 +620,20 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
         return BundleMgrProxy::GetInstance()->IsConfigSilentProxy(bundleName, userId, storeName);
     };
     BundleUtils::GetInstance().SetBundleInfoCallback(task);
+    SetCriticalTask();
     ZLOGI("end");
     return E_OK;
+}
+
+void DataShareServiceImpl::SetCriticalTask()
+{
+    if (binderInfo_.executors != nullptr) {
+        // process set critical false after 10s
+        binderInfo_.executors->Schedule(SET_CRITICAL_WAIT_TIME, []() {
+            Memory::MemMgrClient::GetInstance().SetCritical(getpid(), false, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
+            ZLOGI("SetCritical false");
+        });
+    }
 }
 
 void DataShareServiceImpl::SubscribeListen()
