@@ -63,16 +63,18 @@ void SchedulerManager::Execute(const Key &key, const int32_t userId, const Distr
     ExecuteSchedulerSQL(userId, meta, key, delegate);
 }
 
+bool SchedulerManager::Add(const Key &key)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto ret = schedulerStatusCache_.insert(std::make_pair(key, true));
+    return ret.second;
+}
+
 void SchedulerManager::Start(const Key &key, int32_t userId, const DistributedData::StoreMetaData &metaData)
 {
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto it = schedulerStatusCache_.find(key);
-        if (it == schedulerStatusCache_.end()) {
-            schedulerStatusCache_.emplace(key, true);
-        }
+    if (Add(key)) {
+        Execute(key, userId, metaData);
     }
-    Execute(key, userId, metaData);
 }
 
 void SchedulerManager::Stop(const Key &key)
