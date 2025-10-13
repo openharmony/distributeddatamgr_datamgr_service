@@ -295,7 +295,7 @@ HWTEST_F(AccountDelegateTest, QueryForegroundUsers, TestSize.Level0)
     std::vector<OHOS::AccountSA::ForegroundOsAccount> accounts;
     OHOS::AccountSA::OsAccountManager::GetForegroundOsAccounts(accounts);
     EXPECT_EQ(accounts.size(), users.size());
-    for (int i = 0; i < users.size(); i++) {
+    for (size_t i = 0; i < users.size(); i++) {
         EXPECT_EQ(users[i], accounts[i].localId);
     }
 }

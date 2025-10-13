@@ -57,7 +57,7 @@ HWTEST_F(AppIdMappingConfigManagerTest, Convert02, TestSize.Level1)
     };
     AppIdMappingConfigManager::GetInstance().Initialize(mapper);
     auto result = AppIdMappingConfigManager::GetInstance().Convert("321");
-    EXPECT_EQ(result, "321");;
+    EXPECT_EQ(result, "321");
     result = AppIdMappingConfigManager::GetInstance().Convert("src1");
     EXPECT_EQ(result, "dst1");
 }
