@@ -21,31 +21,29 @@
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
 using namespace DistributedDB;
-RdbCursor::RdbCursor(std::shared_ptr<DistributedDB::ResultSet> resultSet) : resultSet_(std::move(resultSet)) {}
+RdbCursor::RdbCursor(DistributedDB::ResultSet &resultSet, std::shared_ptr<DistributedDB::ResultSet> hold)
+    : resultSet_(resultSet), hold_(std::move(hold)) {}
 
 RdbCursor::~RdbCursor()
 {
-    if (resultSet_) {
-        resultSet_->Close();
-    }
-    resultSet_ = nullptr;
+    resultSet_.Close();
 }
 
 int32_t RdbCursor::GetColumnNames(std::vector<std::string> &names) const
 {
-    resultSet_->GetColumnNames(names);
+    resultSet_.GetColumnNames(names);
     return GeneralError::E_OK;
 }
 
 int32_t RdbCursor::GetColumnName(int32_t col, std::string &name) const
 {
-    return resultSet_->GetColumnName(col, name) == DBStatus::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+    return resultSet_.GetColumnName(col, name) == DBStatus::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 int32_t RdbCursor::GetColumnType(int32_t col) const
 {
     ResultSet::ColumnType dbColumnType = ResultSet::ColumnType::INVALID_TYPE;
-    auto status = resultSet_->GetColumnType(col, dbColumnType);
+    auto status = resultSet_.GetColumnType(col, dbColumnType);
     if (status != DBStatus::OK) {
         dbColumnType = ResultSet::ColumnType::INVALID_TYPE;
     }
@@ -54,22 +52,22 @@ int32_t RdbCursor::GetColumnType(int32_t col) const
 
 int32_t RdbCursor::GetCount() const
 {
-    return resultSet_->GetCount();
+    return resultSet_.GetCount();
 }
 
 int32_t RdbCursor::MoveToFirst()
 {
-    return resultSet_->MoveToFirst() ? GeneralError::E_OK : GeneralError::E_ERROR;
+    return resultSet_.MoveToFirst() ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 int32_t RdbCursor::MoveToNext()
 {
-    return resultSet_->MoveToNext() ? GeneralError::E_OK : GeneralError::E_ERROR;
+    return resultSet_.MoveToNext() ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 int32_t RdbCursor::MoveToPrev()
 {
-    return resultSet_->MoveToPrevious() ? GeneralError::E_OK : GeneralError::E_ERROR;
+    return resultSet_.MoveToPrevious() ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
 int32_t RdbCursor::GetEntry(VBucket &entry)
@@ -80,7 +78,7 @@ int32_t RdbCursor::GetEntry(VBucket &entry)
 int32_t RdbCursor::GetRow(VBucket &data)
 {
     std::map<std::string, VariantData> bucket;
-    auto ret = resultSet_->GetRow(bucket);
+    auto ret = resultSet_.GetRow(bucket);
     data = ValueProxy::Convert(std::move(bucket));
     return ret == DBStatus::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
@@ -88,7 +86,7 @@ int32_t RdbCursor::GetRow(VBucket &data)
 int32_t RdbCursor::Get(int32_t col, DistributedData::Value &value)
 {
     std::string name;
-    auto status = resultSet_->GetColumnName(col, name);
+    auto status = resultSet_.GetColumnName(col, name);
     if (status != DBStatus::OK) {
         return GeneralError::E_ERROR;
     }
@@ -103,7 +101,7 @@ int32_t RdbCursor::Get(int32_t col, DistributedData::Value &value)
 int32_t RdbCursor::Get(const std::string &col, DistributedData::Value &value)
 {
     int32_t index = -1;
-    auto ret = resultSet_->GetColumnIndex(col, index);
+    auto ret = resultSet_.GetColumnIndex(col, index);
     if (ret != DBStatus::OK) {
         return GeneralError::E_ERROR;
     }
@@ -112,13 +110,13 @@ int32_t RdbCursor::Get(const std::string &col, DistributedData::Value &value)
 
 int32_t RdbCursor::Close()
 {
-    resultSet_->Close();
+    resultSet_.Close();
     return GeneralError::E_OK;
 }
 
 bool RdbCursor::IsEnd()
 {
-    return resultSet_->IsAfterLast();
+    return resultSet_.IsAfterLast();
 }
 
 int32_t RdbCursor::Convert(ResultSet::ColumnType columnType)
