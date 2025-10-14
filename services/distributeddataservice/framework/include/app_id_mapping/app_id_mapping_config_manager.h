@@ -25,6 +25,7 @@ public:
     struct AppMappingInfo {
         std::string srcAppId;
         std::string dstAppId;
+        bool isSystemApp = false;
     };
     API_EXPORT static AppIdMappingConfigManager &GetInstance();
     API_EXPORT void Initialize(const std::vector<AppMappingInfo> &mapper);
@@ -32,7 +33,7 @@ public:
         const std::string &accountId);
     API_EXPORT std::string Convert(const std::string &appId);
 private:
-    std::map<std::string, std::string> toDstMapper_;
+    std::map<std::string, AppMappingInfo> toDstMapper_;
 };
 
 } // namespace DistributedData

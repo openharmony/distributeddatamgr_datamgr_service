@@ -26,7 +26,7 @@ AppIdMappingConfigManager &AppIdMappingConfigManager::GetInstance()
 void AppIdMappingConfigManager::Initialize(const std::vector<AppMappingInfo> &mapper)
 {
     for (const auto &info : mapper) {
-        toDstMapper_.insert_or_assign(info.srcAppId, info.dstAppId);
+        toDstMapper_.insert_or_assign(info.srcAppId, info);
     }
 }
 
@@ -37,9 +37,11 @@ std::pair<std::string, std::string> AppIdMappingConfigManager::Convert(const std
     if (it == toDstMapper_.end()) {
         return std::make_pair(appId, accountId);
     }
-    return std::make_pair(it->second, "default");
+    if (!it->second.isSystemApp) {
+        return std::make_pair(it->second.dstAppId, "default");
+    }
+    return std::make_pair(it->second.dstAppId, accountId);
 }
-
 
 std::string AppIdMappingConfigManager::Convert(const std::string &appId)
 {
@@ -47,6 +49,6 @@ std::string AppIdMappingConfigManager::Convert(const std::string &appId)
     if (it == toDstMapper_.end()) {
         return appId;
     }
-    return it->second;
+    return it->second.dstAppId;
 }
 } // namespace OHOS::DistributedData

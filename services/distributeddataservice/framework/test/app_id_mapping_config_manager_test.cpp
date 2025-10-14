@@ -31,8 +31,8 @@ HWTEST_F(AppIdMappingConfigManagerTest, Convert01, TestSize.Level1)
 {
     std::vector<AppIdMappingConfigManager::AppMappingInfo> mapper = {
         {"src1", "dst1"},
-        {"src2", "dst2"},
-        {"src3", "dst3"}
+        {"src2", "dst2", false},
+        {"src3", "dst3", true}
     };
     AppIdMappingConfigManager::GetInstance().Initialize(mapper);
     auto result = AppIdMappingConfigManager::GetInstance().Convert("123", "123456789");
@@ -41,6 +41,13 @@ HWTEST_F(AppIdMappingConfigManagerTest, Convert01, TestSize.Level1)
     result = AppIdMappingConfigManager::GetInstance().Convert("src1", "987654321");
     EXPECT_EQ(result.first, "dst1");
     EXPECT_EQ(result.second, "default");
+
+    result = AppIdMappingConfigManager::GetInstance().Convert("src2", "987654321");
+    EXPECT_EQ(result.first, "dst2");
+    EXPECT_EQ(result.second, "default");
+    result = AppIdMappingConfigManager::GetInstance().Convert("src3", "123123");
+    EXPECT_EQ(result.first, "dst3");
+    EXPECT_EQ(result.second, "123123");
 }
 
 /**

@@ -22,6 +22,7 @@ class AppIdMappingConfig final : public Serializable {
 public:
     std::string srcAppId = "";
     std::string dstAppId = "";
+    bool isSystemApp = false;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
