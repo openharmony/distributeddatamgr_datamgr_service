@@ -112,6 +112,9 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
 
     for (const auto &record : unifiedData.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
         for (const auto &type : record->GetUtdIds()) {
             types.append("-").append(type);
         }
@@ -188,6 +191,9 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
     for (const auto &record : unifiedData.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
         for (const auto &type : record->GetUtdIds()) {
             types.append("-").append(type);
         }
@@ -204,6 +210,9 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
 bool UdmfServiceImpl::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
 {
     return dataLoadCallback_.ComputeIfPresent(query.key, [&](const auto &key, auto &callback) {
+        if (callback == nullptr) {
+            return false;
+        }
         std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
         auto [found, cache] = blockDelayDataCache_.Find(key);
         if (!found) {

@@ -42,6 +42,10 @@ Status LifeCycleManager::OnGot(const UnifiedKey &key)
         ZLOGE("Invalid intention:%{public}s", key.intention.c_str());
         return E_INVALID_PARAMETERS;
     }
+    if (executors_ == nullptr) {
+        ZLOGE("Executors_ is nullptr.");
+        return E_ERROR;
+    }
     auto policy = findPolicy->second;
     ExecutorPool::TaskId taskId = executors_->Execute([=] {
         policy->OnGot(key);
