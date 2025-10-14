@@ -290,6 +290,10 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
     } else {
         fout.open(newPath, std::ios_base::out | std::ios_base::trunc);
     }
+    if (!fout.is_open()) {
+        ZLOGE("The file failed to be opened, erron is %{public}d", errno);
+        return;
+    }
     char buf[COPY_SIZE] = { 0 };
     while (fin.good()) {
         fin.read(buf, COPY_SIZE);
