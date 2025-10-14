@@ -48,7 +48,7 @@ public:
     void UnsubscribeScreenEvent();
 
 private:
-    static constexpr int32_t MAX_RETRY_TIME_S = 300;
+    static constexpr int32_t MAX_RETRY_TIMES = 300;
     static constexpr int32_t RETRY_WAIT_TIME_S = 1;
     void NotifyScreenUnlocked(int32_t user);
     ExecutorPool::Task GetTask(uint32_t retry);
