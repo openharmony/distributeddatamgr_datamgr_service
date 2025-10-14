@@ -20,12 +20,14 @@ bool AppIdMappingConfig::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(srcAppId)], srcAppId);
     SetValue(node[GET_NAME(dstAppId)], dstAppId);
+    SetValue(node[GET_NAME(isSystemApp)], isSystemApp);
     return true;
 }
 bool AppIdMappingConfig::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(srcAppId), srcAppId);
     GetValue(node, GET_NAME(dstAppId), dstAppId);
+    GetValue(node, GET_NAME(isSystemApp), isSystemApp);
     return true;
 }
 } // namespace DistributedData

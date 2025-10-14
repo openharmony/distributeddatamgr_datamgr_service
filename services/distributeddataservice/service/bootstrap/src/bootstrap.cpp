@@ -185,7 +185,7 @@ void Bootstrap::LoadAppIdMappings()
     }
     std::vector<AppIdMappingConfigManager::AppMappingInfo> infos;
     for (auto &info : *appIdMapping) {
-        infos.push_back({ info.srcAppId, info.dstAppId });
+        infos.push_back({ info.srcAppId, info.dstAppId, info.isSystemApp });
     }
     AppIdMappingConfigManager::GetInstance().Initialize(infos);
 }
