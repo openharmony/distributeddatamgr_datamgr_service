@@ -15,6 +15,8 @@
 #ifndef RELATIONAL_STORE_DELEGATE_MOCK_H
 #define RELATIONAL_STORE_DELEGATE_MOCK_H
 #include "rdb_general_store.h"
+#include "resultset_mock.h"
+#include <memory>
 namespace DistributedDB {
 class MockRelationalStoreDelegate : public DistributedDB::RelationalStoreDelegate {
 public:
@@ -64,7 +66,12 @@ public:
         std::shared_ptr<ResultSet> &result) override
     {
         if (device == "test") {
+            result = nullptr;
             return DBStatus::DB_ERROR;
+        }
+        if (device == "device001") {
+            result = std::make_shared<MockResultSet>();
+            return DBStatus::OK;
         }
         return DBStatus::OK;
     }

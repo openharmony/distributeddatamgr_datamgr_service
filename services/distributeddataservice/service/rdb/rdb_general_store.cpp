@@ -1025,12 +1025,12 @@ std::shared_ptr<Cursor> RdbGeneralStore::RemoteQuery(const std::string &device,
     std::shared_ptr<DistributedDB::ResultSet> dbResultSet;
     DistributedDB::DBStatus status =
         delegate_->RemoteQuery(device, remoteCondition, REMOTE_QUERY_TIME_OUT, dbResultSet);
-    if (status != DistributedDB::DBStatus::OK) {
+    if (status != DistributedDB::DBStatus::OK || dbResultSet == nullptr) {
         ZLOGE("DistributedDB remote query failed, device:%{public}s, status is  %{public}d.",
             Anonymous::Change(device).c_str(), status);
         return nullptr;
     }
-    return std::make_shared<RdbCursor>(dbResultSet);
+    return std::make_shared<RdbCursor>(*dbResultSet, dbResultSet);
 }
 
 RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus status)

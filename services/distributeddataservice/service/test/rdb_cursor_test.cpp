@@ -194,7 +194,7 @@ protected:
     static std::shared_ptr<RdbCursor> rdbCursor;
 };
 std::shared_ptr<MockResultSet> RdbCursorTest::resultSet = std::make_shared<MockResultSet>();
-std::shared_ptr<RdbCursor> RdbCursorTest::rdbCursor = std::make_shared<RdbCursor>(std::move(resultSet));
+std::shared_ptr<RdbCursor> RdbCursorTest::rdbCursor = std::make_shared<RdbCursor>(*resultSet, std::move(resultSet));
 
 /**
 * @tc.name: RdbCursorTest001

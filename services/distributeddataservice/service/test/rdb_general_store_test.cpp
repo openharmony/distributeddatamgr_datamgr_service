@@ -586,7 +586,7 @@ HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
  */
 HWTEST_F(RdbGeneralStoreTest, Query004, TestSize.Level1)
 {
-    const std::string devices = "device1";
+    const std::string devices = "device001";
     const std::string sql;
     Values args;
     RdbQuery query(devices, sql, std::move(args));
@@ -975,14 +975,15 @@ HWTEST_F(RdbGeneralStoreTest, SetTrackerTable, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, RemoteQuery, TestSize.Level1)
 {
-    std::string device = "device";
     DistributedDB::RemoteCondition remoteCondition;
     metaData_.storeId = "mock";
     store = std::make_shared<RdbGeneralStore>(metaData_);
     auto result = store->RemoteQuery("test", remoteCondition);
     EXPECT_EQ(result, nullptr);
-    result = store->RemoteQuery(device, remoteCondition);
+    result = store->RemoteQuery("device001", remoteCondition);
     EXPECT_NE(result, nullptr);
+    result = store->RemoteQuery("device", remoteCondition);
+    EXPECT_EQ(result, nullptr);
 }
 
 /**

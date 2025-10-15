@@ -20,7 +20,7 @@
 namespace OHOS::DistributedRdb {
 class RdbCursor : public DistributedData::Cursor {
 public:
-    explicit RdbCursor(std::shared_ptr<DistributedDB::ResultSet> resultSet);
+    explicit RdbCursor(DistributedDB::ResultSet &resultSet, std::shared_ptr<DistributedDB::ResultSet> hold);
     ~RdbCursor();
     int32_t GetColumnNames(std::vector<std::string> &names) const override;
     int32_t GetColumnName(int32_t col, std::string &name) const override;
@@ -37,7 +37,8 @@ public:
     bool IsEnd() override;
 
 private:
-    std::shared_ptr<DistributedDB::ResultSet> resultSet_;
+    DistributedDB::ResultSet &resultSet_;
+    std::shared_ptr<DistributedDB::ResultSet> hold_;
     static int32_t Convert(DistributedDB::ResultSet::ColumnType columnType);
 };
 } // namespace OHOS::DistributedRdb
