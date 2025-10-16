@@ -73,7 +73,8 @@ void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
     if (kvStoreDataService_ == nullptr) {
-        ZLOGW("kvStoreDataService is null.");
+        ZLOGW("kvStoreDataService is null. bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d",
+            bundleName.c_str(), userId, appIndex);
         return;
     }
     kvStoreDataService_->OnUninstall(bundleName, userId, appIndex);
@@ -109,7 +110,8 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
 void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
     if (kvStoreDataService_ == nullptr) {
-        ZLOGW("kvStoreDataService is null.");
+        ZLOGW("kvStoreDataService is null. bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d",
+            bundleName.c_str(), userId, appIndex);
         return;
     }
     kvStoreDataService_->OnUpdate(bundleName, userId, appIndex);
@@ -118,7 +120,8 @@ void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t use
 void InstallEventSubscriber::OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
     if (kvStoreDataService_ == nullptr) {
-        ZLOGW("kvStoreDataService is null.");
+        ZLOGW("kvStoreDataService is null. bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d",
+            bundleName.c_str(), userId, appIndex);
         return;
     }
     kvStoreDataService_->OnInstall(bundleName, userId, appIndex);
