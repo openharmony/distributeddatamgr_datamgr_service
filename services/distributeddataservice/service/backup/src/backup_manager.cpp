@@ -282,7 +282,7 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
     }
     fin.open(oldPath, std::ios_base::in);
     if (!fin.is_open()) {
-        ZLOGE("The file failed to be opened, erron is %{public}d", errno);
+        ZLOGE("The file failed to be opened for fin, erron is %{public}d", errno);
         return;
     }
     if (isCreate) {
@@ -292,7 +292,7 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
     }
     if (!fout.is_open()) {
         fin.close();
-        ZLOGE("The file failed to be opened, erron is %{public}d", errno);
+        ZLOGE("The file failed to be opened for fout, erron is %{public}d", errno);
         return;
     }
     char buf[COPY_SIZE] = { 0 };
