@@ -66,7 +66,7 @@ HWTEST_F(CryptoTest, Sha256_ValidInput_ReturnsCorrectHash, TestSize.Level1)
     // Test case 1: Basic string
     std::string testData = "hello world";
     std::string result = Crypto::Sha256(testData.data(), testData.size());
-    
+
     // SHA256 of "hello world" is known value
     std::string expected = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
     EXPECT_EQ(result, expected) << "SHA256 hash mismatch for 'hello world'";
@@ -82,36 +82,34 @@ HWTEST_F(CryptoTest, Sha256_ValidInput_ReturnsCorrectHash, TestSize.Level1)
 HWTEST_F(CryptoTest, Sha256_CaseSensitivity_WorksCorrectly, TestSize.Level1)
 {
     std::string testData = "test";
-    
+
     // Test case 1: Lowercase output
     std::string lowerResult = Crypto::Sha256(testData.data(), testData.size(), false);
     EXPECT_FALSE(lowerResult.empty());
-    
+
     // Verify all characters are lowercase hex
     for (char c : lowerResult) {
-        EXPECT_TRUE(std::islower(static_cast<unsigned char>(c)) || std::isdigit(static_cast<unsigned char>(c))) 
+        EXPECT_TRUE(std::islower(static_cast<unsigned char>(c)) || std::isdigit(static_cast<unsigned char>(c)))
             << "Lowercase output should contain only lowercase hex digits";
     }
-    
+
     // Test case 2: Uppercase output
     std::string upperResult = Crypto::Sha256(testData.data(), testData.size(), true);
     EXPECT_FALSE(upperResult.empty());
-    
+
     // Verify all characters are uppercase hex
     for (char c : upperResult) {
-        EXPECT_TRUE(std::isupper(static_cast<unsigned char>(c)) || std::isdigit(static_cast<unsigned char>(c))) 
+        EXPECT_TRUE(std::isupper(static_cast<unsigned char>(c)) || std::isdigit(static_cast<unsigned char>(c)))
             << "Uppercase output should contain only uppercase hex digits";
     }
-    
+
     // Test case 3: Case difference
     // The hash values should be the same except for case
     for (size_t i = 0; i < lowerResult.size(); ++i) {
         if (std::isalpha(static_cast<unsigned char>(lowerResult[i]))) {
-            EXPECT_EQ(std::toupper(lowerResult[i]), upperResult[i]) 
-                << "Characters should differ only in case";
+            EXPECT_EQ(std::toupper(lowerResult[i]), upperResult[i]) << "Characters should differ only in case";
         } else {
-            EXPECT_EQ(lowerResult[i], upperResult[i]) 
-                << "Digit characters should be identical";
+            EXPECT_EQ(lowerResult[i], upperResult[i]) << "Digit characters should be identical";
         }
     }
 }
@@ -126,12 +124,12 @@ HWTEST_F(CryptoTest, Sha256_CaseSensitivity_WorksCorrectly, TestSize.Level1)
 HWTEST_F(CryptoTest, Sha256_BinaryData_WorksCorrectly, TestSize.Level1)
 {
     // Test case 1: Binary data with null bytes
-    std::vector<uint8_t> binaryData = {0x00, 0x01, 0x02, 0x03, 0x00, 0xFF};
+    std::vector<uint8_t> binaryData = { 0x00, 0x01, 0x02, 0x03, 0x00, 0xFF };
     std::string result = Crypto::Sha256(binaryData.data(), binaryData.size());
-    
+
     EXPECT_FALSE(result.empty()) << "SHA256 of binary data should not be empty";
     EXPECT_EQ(result.length(), 64) << "SHA256 hash should be 64 characters (256 bits in hex)";
-    
+
     // Test case 2: Single byte
     uint8_t singleByte = 0x42;
     result = Crypto::Sha256(&singleByte, sizeof(singleByte));
@@ -149,12 +147,12 @@ HWTEST_F(CryptoTest, Sha256_BinaryData_WorksCorrectly, TestSize.Level1)
 HWTEST_F(CryptoTest, Sha256_Consistency_ReturnsSameHash, TestSize.Level1)
 {
     std::string testData = "consistent test data";
-    
+
     // Multiple calls with same input should produce same output
     std::string firstResult = Crypto::Sha256(testData.data(), testData.size());
     std::string secondResult = Crypto::Sha256(testData.data(), testData.size());
     std::string thirdResult = Crypto::Sha256(testData.data(), testData.size());
-    
+
     EXPECT_EQ(firstResult, secondResult) << "Multiple calls should return identical hash";
     EXPECT_EQ(secondResult, thirdResult) << "Multiple calls should return identical hash";
     EXPECT_EQ(firstResult, thirdResult) << "Multiple calls should return identical hash";
@@ -172,16 +170,16 @@ HWTEST_F(CryptoTest, Sha256_DifferentInput_ReturnsDifferentHash, TestSize.Level1
     // Test case 1: Slightly different inputs
     std::string data1 = "hello world";
     std::string data2 = "hello world!"; // One character difference
-    
+
     std::string hash1 = Crypto::Sha256(data1.data(), data1.size());
     std::string hash2 = Crypto::Sha256(data2.data(), data2.size());
-    
+
     EXPECT_NE(hash1, hash2) << "Different inputs should produce different hashes";
-    
+
     // Test case 2: Completely different inputs
     std::string data3 = "completely different";
     std::string hash3 = Crypto::Sha256(data3.data(), data3.size());
-    
+
     EXPECT_NE(hash1, hash3) << "Completely different inputs should produce different hashes";
     EXPECT_NE(hash2, hash3) << "Completely different inputs should produce different hashes";
 }
@@ -198,7 +196,7 @@ HWTEST_F(CryptoTest, Sha256_LargeInput_WorksCorrectly, TestSize.Level1)
     // Test case 1: 1KB data
     std::vector<uint8_t> largeData(1024, 0x41); // 1KB of 'A'
     std::string result = Crypto::Sha256(largeData.data(), largeData.size());
-    
+
     EXPECT_FALSE(result.empty()) << "SHA256 of large data should not be empty";
     EXPECT_EQ(result.length(), 64) << "SHA256 hash should always be 64 characters";
 }
@@ -217,16 +215,13 @@ HWTEST_F(CryptoTest, Sha256_EdgeCases_HandlesCorrectly, TestSize.Level1)
     std::string result = Crypto::Sha256(&minData, 1);
     EXPECT_FALSE(result.empty());
     EXPECT_EQ(result.length(), 64);
-    
+
     // Test case 2: Verify hash length is always 64 characters
-    std::vector<std::string> testInputs = {
-        "a", "ab", "abc", "abcd", "abcde", 
-        "This is a longer test string to verify consistent output length"
-    };
-    
-    for (const auto& input : testInputs) {
+    std::vector<std::string> testInputs = { "a", "ab", "abc", "abcd", "abcde",
+        "This is a longer test string to verify consistent output length" };
+
+    for (const auto &input : testInputs) {
         result = Crypto::Sha256(input.data(), input.size());
-        EXPECT_EQ(result.length(), 64) 
-            << "SHA256 hash should always be 64 characters for input: " << input;
+        EXPECT_EQ(result.length(), 64) << "SHA256 hash should always be 64 characters for input: " << input;
     }
 }
