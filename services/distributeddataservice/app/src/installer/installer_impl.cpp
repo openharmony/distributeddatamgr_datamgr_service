@@ -72,6 +72,10 @@ void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
 
 void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
+    if (kvStoreDataService_ == nullptr) {
+        ZLOGW("kvStoreDataService is null.");
+        return;
+    }
     kvStoreDataService_->OnUninstall(bundleName, userId, appIndex);
     std::string prefix = StoreMetaData::GetPrefix(
         { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
@@ -104,11 +108,19 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
 
 void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
+    if (kvStoreDataService_ == nullptr) {
+        ZLOGW("kvStoreDataService is null.");
+        return;
+    }
     kvStoreDataService_->OnUpdate(bundleName, userId, appIndex);
 }
 
 void InstallEventSubscriber::OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
 {
+    if (kvStoreDataService_ == nullptr) {
+        ZLOGW("kvStoreDataService is null.");
+        return;
+    }
     kvStoreDataService_->OnInstall(bundleName, userId, appIndex);
 }
 
@@ -146,6 +158,10 @@ Status InstallerImpl::Init(KvStoreDataService *kvStoreDataService, std::shared_p
     auto subscriber = std::make_shared<InstallEventSubscriber>(info, kvStoreDataService);
     subscriber_ = subscriber;
     executors_ = executors;
+    if (executors_ == nullptr) {
+        ZLOGW("executors_ is null.");
+        return Status::ERROR;
+    }
     executors_->Execute(GetTask());
     return Status::SUCCESS;
 }
@@ -160,6 +176,10 @@ ExecutorPool::Task InstallerImpl::GetTask()
         }
         ZLOGE("subscribe common event fail, try times:%{public}d", retryTime_);
         if (retryTime_++ >= RETRY_TIME) {
+            return;
+        }
+        if (executors_ == nullptr) {
+            ZLOGW("executors_ is null.");
             return;
         }
         executors_->Schedule(std::chrono::milliseconds(RETRY_INTERVAL), GetTask());
