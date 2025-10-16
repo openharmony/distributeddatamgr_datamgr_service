@@ -106,5 +106,10 @@ AppAccessCheckConfig *ConfigFactory::GetSyncAppsConfig()
 {
     return config_.syncAppList;
 }
+
+std::vector<DoubleSyncSAConfig> *GetDoubleSyncSAConfig()
+{
+    return config_.doubleSyncSAs;
+}
 } // namespace DistributedData
 } // namespace OHOS

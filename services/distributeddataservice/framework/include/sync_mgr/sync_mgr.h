@@ -29,6 +29,10 @@ public:
         std::string bundleName;
         std::vector<std::string> storeIds;
     };
+    struct DoubleSyncSAInfo {
+        std::string appId;
+        std::string bundleName;
+    };
     API_EXPORT static SyncManager &GetInstance();
     API_EXPORT void Initialize(const std::vector<AutoSyncInfo> &autoSyncApps);
     API_EXPORT void SetAutoSyncAppInfo(const AutoSyncInfo &autoSyncApp);
@@ -36,10 +40,13 @@ public:
     API_EXPORT bool IsAutoSyncStore(const std::string &bundleName, const std::string &appId,
         const std::string &store);
     API_EXPORT bool NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp);
+    API_EXPORT void SetDoubleSyncSAInfo(const DoubleSyncSAInfo &doubleSyncSAInfo);
+    API_EXPORT bool isConstraintSA(const uint32_t &tokenId);
 
 private:
     SyncManager();
     std::map<std::string, AutoSyncInfo> autoSyncApps_;
+    std::map<std::string, DoubleSyncInfo> doubleSyncSAs_;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_DEVICE_SYNC_APP_MANAGER_H
