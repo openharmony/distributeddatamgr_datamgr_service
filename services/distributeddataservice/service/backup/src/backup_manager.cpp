@@ -291,6 +291,7 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
         fout.open(newPath, std::ios_base::out | std::ios_base::trunc);
     }
     if (!fout.is_open()) {
+        fin.close();
         ZLOGE("The file failed to be opened, erron is %{public}d", errno);
         return;
     }
