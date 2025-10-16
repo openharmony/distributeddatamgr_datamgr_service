@@ -208,7 +208,7 @@ int32_t Security::GetCurrentUserStatus() const
 DBStatus Security::SetFileSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
     if (!IsExits(filePath)) {
-        ZLOGE("option:%{public}d file:%{public}s not exits", option.securityLabel, filePath.c_str());
+        ZLOGE("option:%{public}d not exits", option.securityLabel);
         return INVALID_ARGS;
     }
     if (option.securityLabel == NOT_SET) {
@@ -216,7 +216,7 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
     }
     auto dataLevel = Convert2Name(option);
     if (dataLevel.empty()) {
-        ZLOGE("Invalid args! label:%{public}d path:%{public}s", option.securityLabel, filePath.c_str());
+        ZLOGE("Invalid args! label:%{public}d", option.securityLabel);
         return INVALID_ARGS;
     }
 
@@ -227,8 +227,7 @@ DBStatus Security::SetFileSecurityOption(const std::string &filePath, const Secu
 
     auto error = errno;
     std::string current = OHOS::FileManagement::ModuleSecurityLabel::SecurityLabel::GetSecurityLabel(filePath);
-    ZLOGE("failed! error:%{public}d current:%{public}s label:%{public}s file:%{public}s", error, current.c_str(),
-        dataLevel.c_str(), filePath.c_str());
+    ZLOGE("failed! error:%{public}d current:%{public}s label:%{public}s", error, current.c_str(), dataLevel.c_str());
     if (current == dataLevel) {
         return OK;
     }
