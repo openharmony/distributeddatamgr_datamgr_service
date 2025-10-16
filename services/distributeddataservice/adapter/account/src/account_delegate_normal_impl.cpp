@@ -60,7 +60,9 @@ void AccountSubscriber::OnStateChanged(const OsAccountStateData &data)
     accountEventInfo.userId = std::to_string(data.toId);
     accountEventInfo.status = it->second;
     int32_t timeout = accountEventInfo.status == AccountStatus::DEVICE_ACCOUNT_STOPPING ? STOPPING_TIMEOUT : 0;
-    eventCallback_(accountEventInfo, timeout);
+    if (eventCallback_) {
+        eventCallback_(accountEventInfo, timeout);
+    }
     if (data.callback == nullptr) {
         return;
     }

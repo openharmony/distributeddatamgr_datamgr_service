@@ -1578,7 +1578,7 @@ void RdbServiceImpl::PostHeartbeatTask(int32_t pid, uint32_t delay, StoreInfo &s
             taskId = iter->second;
         }
         if (delay == 0) {
-            if (taskId != ExecutorPool::INVALID_TASK_ID) {
+            if (taskId != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
                 executors_->Remove(taskId);
             }
             tasks.erase(storeInfo.path);
