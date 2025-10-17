@@ -130,7 +130,7 @@ ExecutorPool::Task ScreenLock::GetTask(uint32_t retry)
         }
         ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, retry);
 
-        if (retry + 1 > MAX_RETRY_TIME) {
+        if (retry + 1 > MAX_RETRY_TIMES) {
             ZLOGE("fail to register subscriber!");
             return;
         }

@@ -47,7 +47,7 @@ private:
     ExecutorPool::Task GetTask(uint32_t retry);
     static constexpr int32_t EFFECTIVE_DURATION = 30 * 1000; // ms
     static constexpr int32_t NET_LOST_DURATION = 10 * 1000;  // ms
-    static constexpr int32_t MAX_RETRY_TIME = 3;
+    static constexpr int32_t MAX_RETRY_TIMES = 3;
     static constexpr int32_t RETRY_WAIT_TIME_S = 1;
     NetworkType defaultNetwork_ = NONE;
     uint64_t expireTime_ = 0;

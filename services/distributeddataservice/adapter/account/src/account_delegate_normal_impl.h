@@ -57,7 +57,7 @@ private:
     std::string Sha256AccountId(const std::string &plainText) const;
     ExecutorPool::Task GetTask(uint32_t retry);
     void UpdateUserStatus(const AccountEventInfo &account);
-    static constexpr int MAX_RETRY_TIME = 300;
+    static constexpr int MAX_RETRY_TIMES = 300;
     static constexpr int RETRY_WAIT_TIME_S = 1;
     std::shared_ptr<AccountSubscriber> accountSubscriber_{};
     std::shared_ptr<ExecutorPool> executors_;
