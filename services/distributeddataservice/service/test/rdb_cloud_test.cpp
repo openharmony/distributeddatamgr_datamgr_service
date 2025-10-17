@@ -419,5 +419,21 @@ HWTEST_F(RdbCloudTest, Query003, TestSize.Level1)
     auto result = rdbCloud.Query(tableName, g_DBVBucket, g_DBVBuckets);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
 }
+
+/**
+* @tc.name: Query004
+* @tc.desc: RdbCloud Query test code is CLOUD_ERROR.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, Query004, TestSize.Level1)
+{
+    std::shared_ptr<MockCursor> mockCursor = std::make_shared<MockCursor>();
+    std::string tableName = "testTable";
+    EXPECT_CALL(*mockCloudDB, Query(tableName, _)).WillOnce(Return(std::make_pair(E_ERROR, mockCursor)));
+
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
+    auto result = rdbCloud.Query(tableName, g_DBVBucket, g_DBVBuckets);
+    EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

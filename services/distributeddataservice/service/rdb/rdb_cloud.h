@@ -80,6 +80,7 @@ private:
         DistributedData::AssetEvent eventId);
     std::pair<GeneralError, uint32_t> InnerLock(FLAG flag);
     GeneralError InnerUnLock(FLAG flag);
+    int32_t BackFillData(std::shared_ptr<DistributedData::Cursor> cursor, std::vector<DBVBucket> &data>);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
