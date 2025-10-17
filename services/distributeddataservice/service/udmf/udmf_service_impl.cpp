@@ -278,7 +278,7 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
             BizScene::GET_DATA, GetDataStage::GRANT_URI_PERMISSION, StageRes::FAILED, ret);
         ZLOGE("ProcessUri failed:%{public}d", ret);
-        return E_NO_PERMISSION;
+        return ret;
     }
     {
         std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
@@ -334,13 +334,6 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
 
 int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifiedData)
 {
-    std::vector<Uri> readUris;
-    std::vector<Uri> writeUris;
-    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, readUris, writeUris);
-    if (verifyRes != E_OK) {
-        ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
-        return verifyRes;
-    }
     std::string bundleName;
     if (!PreProcessUtils::GetHapBundleNameByToken(query.tokenId, bundleName)) {
         ZLOGE("Get bundleName fail,key=%{public}s,tokenId=%d", query.key.c_str(), query.tokenId);
@@ -350,6 +343,13 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     if (isLocal && query.tokenId == unifiedData.GetRuntime()->tokenId) {
         ZLOGW("No uri permissions needed,queryKey=%{public}s", query.key.c_str());
         return E_OK;
+    }
+    std::vector<Uri> readUris;
+    std::vector<Uri> writeUris;
+    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, readUris, writeUris);
+    if (verifyRes != E_OK) {
+        ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
+        return verifyRes;
     }
     if (isLocal && !VerifySavedTokenId(unifiedData.GetRuntime())) {
         ZLOGE("VerifySavedTokenId fail");
@@ -389,8 +389,12 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &u
     bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
     bool hasError = false;
     PreProcessUtils::ProcessFiles(hasError, unifiedData, isLocal, readUris, writeUris);
+    if (hasError) {
+        ZLOGE("ProcessFiles fail");
+        return E_INVALID_PARAMETERS;
+    }
     PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal, readUris, writeUris);
-    return hasError ? E_ERROR : E_OK;
+    return E_OK;
 }
 
 int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet)
