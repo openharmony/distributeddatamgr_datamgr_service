@@ -35,6 +35,9 @@ std::vector<uint8_t> Crypto::Random(int32_t len, int32_t minimum, int32_t maximu
 
 std::string Crypto::Sha256(const void *data, size_t size, bool isUpper)
 {
+    if (data == nullptr) {
+        return "";
+    }
     unsigned char hash[SHA256_DIGEST_LENGTH * 2 + 1] = "";
     SHA256_CTX ctx;
     SHA256_Init(&ctx);

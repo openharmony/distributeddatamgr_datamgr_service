@@ -85,6 +85,9 @@ HWTEST_F(FeatureSystemTest, GetStaticActsAndetStaticActsTest, TestSize.Level1)
     int32_t result = featureSystem.RegisterStaticActs(staticActsName, staticActs);
     EXPECT_EQ(result, E_OK);
 
+    result = featureSystem.RegisterStaticActs(staticActsName, nullptr);
+    EXPECT_EQ(result, E_INVALID_ARGS);
+
     const OHOS::ConcurrentMap<std::string, std::shared_ptr<StaticActs>>& staticActsMap = featureSystem.GetStaticActs();
     auto [success, staticActsPtr] = staticActsMap.Find("StaticActs");
     EXPECT_NE(staticActsPtr, nullptr);
