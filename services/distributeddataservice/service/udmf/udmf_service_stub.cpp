@@ -300,6 +300,10 @@ int32_t UdmfServiceStub::OnSetDelayInfo(MessageParcel &data, MessageParcel &repl
         ZLOGE("Unmarshal failed!");
         return E_READ_PARCEL_ERROR;
     }
+    if (iUdmfNotifier == nullptr) {
+        ZLOGE("iUdmfNotifier is null!");
+        return E_ERROR;
+    }
     std::string key;
     int32_t status = SetDelayInfo(dataLoadInfo, iUdmfNotifier, key);
     if (!ITypesUtil::Marshal(reply, status, key)) {
@@ -337,6 +341,10 @@ int32_t UdmfServiceStub::OnGetDataIfAvailable(MessageParcel &data, MessageParcel
     if (!ITypesUtil::Unmarshal(data, key, dataLoadInfo, iUdmfNotifier)) {
         ZLOGE("Unmarshal failed!");
         return E_READ_PARCEL_ERROR;
+    }
+    if (iUdmfNotifier == nullptr) {
+        ZLOGE("iUdmfNotifier is null!");
+        return E_ERROR;
     }
     auto unifiedData = std::make_shared<UnifiedData>();
     int32_t status = GetDataIfAvailable(key, dataLoadInfo, iUdmfNotifier, unifiedData);
