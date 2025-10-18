@@ -136,7 +136,7 @@ void KvStoreDataService::Initialize()
     AccountDelegate::GetInstance()->Subscribe(accountEventObserver_);
     screenEventObserver_ = std::make_shared<KvStoreScreenObserver>(*this, executors_);
     ScreenManager::GetInstance()->Subscribe(screenEventObserver_);
-    deviceInnerListener_ = std::make_unique<KvStoreDeviceListener>(*this);
+    deviceInnerListener_ = std::make_shared<KvStoreDeviceListener>(*this);
     DmAdapter::GetInstance().StartWatchDeviceChange(deviceInnerListener_.get(), { "innerListener" });
     CommunicatorContext::GetInstance().RegSessionListener(deviceInnerListener_.get());
     auto translateCall = [](const std::string &oriDevId, const DistributedDB::StoreInfo &info) {
