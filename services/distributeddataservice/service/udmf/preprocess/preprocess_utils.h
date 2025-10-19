@@ -24,12 +24,14 @@ namespace UDMF {
 class PreProcessUtils {
 public:
     static int32_t FillRuntimeInfo(UnifiedData &data, CustomOption &option);
+    static int32_t FillDelayRuntimeInfo(UnifiedData &data, CustomOption &option, const DataLoadInfo &info);
     static std::string GenerateId();
     static time_t GetTimestamp();
     static int32_t GetHapUidByToken(uint32_t tokenId, int &userId);
     static bool GetHapBundleNameByToken(uint32_t tokenId, std::string &bundleName);
     static bool GetNativeProcessNameByToken(uint32_t tokenId, std::string &processName);
     static std::string GetLocalDeviceId();
+    static std::string GetRealLocalDeviceId();
     static void SetRemoteData(UnifiedData &data);
     static int32_t HandleFileUris(uint32_t tokenId, UnifiedData &data);
     static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);

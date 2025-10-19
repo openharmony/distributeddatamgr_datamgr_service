@@ -44,6 +44,12 @@ public:
     virtual Status PutRuntime(const std::string &key, const Runtime &runtime) = 0;
     virtual Status GetRuntime(const std::string &key, Runtime &runtime) = 0;
     virtual Status PutSummary(UnifiedKey &key, const Summary &summary) = 0;
+    virtual Status SetRemotePullStartNotify() = 0;
+    virtual Status RegisterDataChangedObserver(std::string &key, uint32_t type) = 0;
+    virtual bool UnregisterDataChangedObserver(std::string &key) = 0;
+    virtual Status PutdelayData(const UnifiedData &unifiedData) = 0;
+    virtual Status PutDataLoadInfo(const DataLoadInfo &info) = 0;
+    virtual Status PushDelayData(const std::vector<std::string> &deviceIds, ProgressCallback callback) = 0;
     virtual bool Init() = 0;
 
     bool operator<(const Time &time) const

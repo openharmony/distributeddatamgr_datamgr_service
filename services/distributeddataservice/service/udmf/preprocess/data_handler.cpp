@@ -22,6 +22,7 @@ namespace OHOS::UDMF {
 constexpr const char *UD_KEY_SEPARATOR = "/";
 constexpr const char *UD_KEY_ENTRY_SEPARATOR = "#";
 constexpr const char *UD_KEY_PROPERTIES_SEPARATOR = "#properties";
+constexpr const char *UD_KEY_ACCEPTABLE_INFO_SEPARATOR = "#acceptableInfo";
 
 Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries)
 {
@@ -46,6 +47,31 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     Entry propsEntry = { propsKeyBytes, propsBytes };
     entries.emplace_back(std::move(propsEntry));
     return BuildEntries(unifiedData.GetRecords(), unifiedKey, entries);
+}
+
+Status DataHandler::MarshallDataLoadEntries(const DataLoadInfo &info, std::vector<Entry> &entries)
+{
+    std::string acceptableKey = info.sequenceKey + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
+    std::vector<uint8_t> acceptableBytes;
+    auto acceptableTlv = TLVObject(acceptableBytes);
+    if (!TLVUtil::Writing(info, acceptableTlv, TAG::TAG_DATA_LOAD_INFO)) {
+        ZLOGE("Acceptable info marshalling failed:%{public}s", acceptableKey.c_str());
+        return E_WRITE_PARCEL_ERROR;
+    }
+    std::vector<uint8_t> acceptableKeyBytes = { acceptableKey.begin(), acceptableKey.end() };
+    Entry entry = { acceptableKeyBytes, acceptableBytes };
+    entries.emplace_back(std::move(entry));
+    return E_OK;
+}
+
+Status DataHandler::UnmarshalDataLoadEntries(const Entry &entry, DataLoadInfo &info)
+{
+    auto data = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
+    if (!TLVUtil::ReadTlv(info, data, TAG::TAG_DATA_LOAD_INFO)) {
+        ZLOGE("Unmarshall data load info failed.");
+        return E_READ_PARCEL_ERROR;
+    }
+    return E_OK;
 }
 
 Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries,
