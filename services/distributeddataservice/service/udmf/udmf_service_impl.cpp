@@ -27,6 +27,7 @@
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "checker/checker_manager.h"
 #include "checker_manager.h"
+#include "delay_data_container.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "iservice_registry.h"
@@ -37,6 +38,7 @@
 #include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
 #include "dfx/reporter.h"
+#include "store_data_changed_observer.h"
 #include "system_ability_definition.h"
 #include "uri_permission_manager.h"
 #include "udmf_radar_reporter.h"
@@ -66,7 +68,7 @@ constexpr const char *DEVICE_PHONE_TAG = "phone";
 constexpr const char *DEVICE_DEFAULT_TAG = "default";
 constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
 constexpr uint32_t FOUNDATION_UID = 5523;
-constexpr uint32_t WAIT_TIME = 800;
+constexpr const char *UD_KEY_ACCEPTABLE_INFO_SEPARATOR = "#acceptableInfo";
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -82,6 +84,16 @@ UdmfServiceImpl::Factory::Factory()
 UdmfServiceImpl::Factory::~Factory()
 {
     product_ = nullptr;
+}
+
+std::shared_ptr<UdmfServiceImpl> UdmfServiceImpl::Factory::GetProduct()
+{
+    return product_;
+}
+
+std::shared_ptr<UdmfServiceImpl> UdmfServiceImpl::GetService()
+{
+    return UdmfServiceImpl::factory_.GetProduct();
 }
 
 UdmfServiceImpl::UdmfServiceImpl()
@@ -181,7 +193,7 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     }
     msg.appId = bundleName;
 
-    bool handledByDelay = HandleDelayLoad(query, unifiedData, res);
+    bool handledByDelay = DelayDataContainer::GetInstance().HandleDelayLoad(query, unifiedData, res);
     if (!handledByDelay) {
         res = RetrieveData(query, unifiedData);
     }
@@ -201,34 +213,10 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     return res;
 }
 
-bool UdmfServiceImpl::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
-{
-    return dataLoadCallback_.ComputeIfPresent(query.key, [&](const auto &key, auto &callback) {
-        std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
-        auto [found, cache] = blockDelayDataCache_.Find(key);
-        if (!found) {
-            blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
-            blockDelayDataCache_.Insert(key, BlockDelayData{query.tokenId, blockData});
-            callback->HandleDelayObserver(key, DataLoadInfo());
-        } else {
-            blockData = cache.blockData;
-        }
-        ZLOGI("Start waiting for data, key:%{public}s", key.c_str());
-        auto dataOpt = blockData->GetValue();
-        if (dataOpt.has_value()) {
-            unifiedData = *dataOpt;
-            blockDelayDataCache_.Erase(key);
-            return false;
-        }
-        res = E_NOT_FOUND;
-        return true;
-    });
-}
-
-bool UdmfServiceImpl::CheckDragParams(UnifiedKey &key, const QueryOption &query)
+bool UdmfServiceImpl::CheckDragParams(UnifiedKey &key)
 {
     if (!key.IsValid()) {
-        ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
+        ZLOGE("Unified key: %{public}s is invalid.", key.GetUnifiedKey().c_str());
         return false;
     }
     if (key.intention != UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
@@ -241,10 +229,10 @@ bool UdmfServiceImpl::CheckDragParams(UnifiedKey &key, const QueryOption &query)
 int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &unifiedData)
 {
     UnifiedKey key(query.key);
-    if (!CheckDragParams(key, query)) {
+    if (!CheckDragParams(key)) {
         return E_INVALID_PARAMETERS;
     }
-    auto store = StoreCache::GetInstance().GetStore(key.intention);
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
@@ -252,7 +240,7 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
     int32_t res = store->Get(query.key, unifiedData);
     if (res != E_OK) {
         ZLOGE("Get data failed,res:%{public}d,key:%{public}s", res, query.key.c_str());
-        HandleDbError(key.intention, res);
+        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), res);
         return res;
     }
 
@@ -270,7 +258,7 @@ int32_t UdmfServiceImpl::RetrieveData(const QueryOption &query, UnifiedData &uni
         return res;
     }
     if (!IsReadAndKeep(runtime->privileges, query) && LifeCycleManager::GetInstance().OnGot(key) != E_OK) {
-        ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
+        ZLOGE("Remove data failed");
         return E_DB_ERROR;
     }
     int32_t ret = ProcessUri(query, unifiedData);
@@ -630,7 +618,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 
     Runtime runtime;
     int32_t res = store->GetRuntime(query.key, runtime);
-    if (res == E_NOT_FOUND) {
+    if (res == E_NOT_FOUND || runtime.dataStatus == DataStatus::DELAY) {
         std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
         privilegeCache_[query.key] = privilege;
         ZLOGW("Add privilege in cache, key: %{public}s.", query.key.c_str());
@@ -930,15 +918,21 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
         return E_INVALID_PARAMETERS;
     }
     std::lock_guard<std::mutex> lock(mutex_);
+    processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
+    processInfo.srcDevName = "Local";
     if (asyncProcessInfoMap_.empty()) {
-        processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
-        processInfo.srcDevName = "Local";
+        if (!IsSyncFinished(progressInfo.businessUdKey)) {
+            processInfo.syncStatus = AsyncTaskStatus::ASYNC_RUNNING;
+            processInfo.srcDevName = "Remote";
+        }
         return E_OK;
     }
     auto it = asyncProcessInfoMap_.find(processInfo.businessUdKey);
     if (it == asyncProcessInfoMap_.end()) {
-        processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
-        processInfo.srcDevName = "Local";
+        if (!IsSyncFinished(progressInfo.businessUdKey)) {
+            processInfo.syncStatus = AsyncTaskStatus::ASYNC_RUNNING;
+            processInfo.srcDevName = "Remote";
+        }
         return E_OK;
     }
     auto asyncProcessInfo = asyncProcessInfoMap_.at(processInfo.businessUdKey);
@@ -1181,23 +1175,28 @@ bool UdmfServiceImpl::IsValidOptionsNonDrag(UnifiedKey &key, const std::string &
 int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
     std::string &key)
 {
-    std::string bundleName;
-    std::string specificBundleName;
-    auto tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    if (!PreProcessUtils::GetSpecificBundleNameByTokenId(tokenId, specificBundleName, bundleName)) {
-        ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", tokenId);
+    UnifiedData delayData;
+    CustomOption option = {
+        .intention = UD_INTENTION_DRAG,
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
+    };
+    if (PreProcessUtils::FillDelayRuntimeInfo(delayData, option, dataLoadInfo) != E_OK) {
+        ZLOGE("FillDelayRuntimeInfo failed");
         return E_ERROR;
     }
-    UnifiedKey udkey(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), specificBundleName, dataLoadInfo.sequenceKey);
-    key = udkey.GetUnifiedKey();
-    dataLoadCallback_.Insert(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
+    auto runtime = delayData.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("Runtime is null");
+        return E_ERROR;
+    }
+    key = runtime->key.GetUnifiedKey();
+    DelayDataContainer::GetInstance().RegisterDataLoadCallback(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
 
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", key.c_str());
         return E_DB_ERROR;
     }
-
     Summary summary;
     UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
     int32_t status = store->PutSummary(udkey, summary);

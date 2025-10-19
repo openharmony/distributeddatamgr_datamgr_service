@@ -56,6 +56,10 @@ public:
     int32_t PushDelayData(const std::string &key, UnifiedData &unifiedData) override;
     int32_t GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
         sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData) override;
+    int32_t SaveAcceptableInfo(const std::string &key, DataLoadInfo &info) override;
+    int32_t PushAcceptableData(const QueryOption &query, const std::vector<std::string> devices) override;
+    int32_t HandleRemoteDelayData(const std::string &key) override;
+    static std::shared_ptr<UdmfServiceImpl> GetService();
 private:
     bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
     int32_t StoreSync(const UnifiedKey &key, const QueryOption &query, const std::vector<std::string> &devices);
@@ -72,7 +76,7 @@ private:
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);
     void TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData);
     bool IsNeedTransferDeviceType(const QueryOption &query);
-    bool CheckDragParams(UnifiedKey &key, const QueryOption &query);
+    bool CheckDragParams(UnifiedKey &key);
     int32_t CheckAddPrivilegePermission(UnifiedKey &key, std::string &processName, const QueryOption &query);
     int32_t ProcessData(const QueryOption &query, std::vector<UnifiedData> &dataSet);
     int32_t VerifyIntentionPermission(const QueryOption &query, UnifiedData &dataSet,
@@ -87,20 +91,23 @@ private:
     int32_t CheckAppId(std::shared_ptr<Runtime> runtime, const std::string &bundleName);
     void CloseStoreWhenCorrupted(const std::string &intention, int32_t status);
     void HandleDbError(const std::string &intention, int32_t &status);
-    int32_t HandleDelayDataCallback(DelayGetDataInfo &delayGetDataInfo, UnifiedData &unifiedData,
-        const std::string &key);
     int32_t VerifyDataAccessPermission(std::shared_ptr<Runtime> runtime, const QueryOption &query,
         const UnifiedData &unifiedData);
     std::vector<std::string> ProcessResult(const std::map<std::string, int32_t> &results);
     DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
     int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
-    bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res);
     bool VerifySavedTokenId(std::shared_ptr<Runtime> runtime);
+    void RegisterObserver(const std::string &key);
+    void UnregisterObserver(const std::string &key);
+    bool IsSyncFinished(const std::string &key);
+    int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);
+    int32_t PushDelayDataToRemote(const QueryOption query, const std::vector<std::string> &devices);
 
     class Factory {
     public:
         Factory();
         ~Factory();
+        std::shared_ptr<UdmfServiceImpl> GetProduct();
 
     private:
         std::shared_ptr<UdmfServiceImpl> product_;
@@ -112,14 +119,6 @@ private:
 
     std::mutex mutex_;
     std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_ {};
-    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
-    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_ {};
-
-    struct BlockDelayData {
-        uint32_t tokenId {0};
-        std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
-    };
-    ConcurrentMap<std::string, BlockDelayData> blockDelayDataCache_ {};
 };
 } // namespace UDMF
 } // namespace OHOS
