@@ -49,7 +49,7 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     return BuildEntries(unifiedData.GetRecords(), unifiedKey, entries);
 }
 
-Status DataHandler::MarshallDataLoadEntries(const DataLoadInfo &info, std::vector<Entry> &entries)
+Status DataHandler::MarshalDataLoadEntries(const DataLoadInfo &info, std::vector<Entry> &entries)
 {
     std::string acceptableKey = info.sequenceKey + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
     std::vector<uint8_t> acceptableBytes;

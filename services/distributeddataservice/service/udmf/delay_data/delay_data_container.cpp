@@ -27,7 +27,7 @@ DelayDataContainer &DelayDataContainer::GetInstance()
     return instance;
 }
 
-bool DelayDataContainer::HandleDelayLoad(const QueryOptions &query, UnifiedData &unifiedData, int32_t &res)
+bool DelayDataContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
 {
     return dataLoadCallback_.ComputeIfPresent(query.key, [&](const auto &key, auto &callback) {
         std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
@@ -70,9 +70,10 @@ bool DelayDataContainer::ExecDataLoadCallback(const std::string &key, const Data
 
 void DelayDataContainer::ExecAllDataLoadCallback()
 {
-    dataLoadCallback_.ForEach([](const auto &key, auto &callback) {
+    dataLoadCallback_.ForEach([&](const auto &key, auto &callback) {
+        DataLoadInfo info;
         ZLOGI("Execute data load callback, key:%{public}s", key.c_str());
-        callback->HandleDelayObserver(key, DataLoadInfo());
+        callback->HandleDelayObserver(key, info);
         return true;
     });
     dataLoadCallback_.Clear();
@@ -93,7 +94,7 @@ bool DelayDataContainer::HandleDelayDataCallback(const std::string &key, const U
         }
         callback->DelayDataCallback(key, unifiedData);
         delayDataCallback_.Erase(key);
-        return false;
+        return true;
     });
 }
 

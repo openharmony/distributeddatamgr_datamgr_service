@@ -47,10 +47,10 @@ public:
     Status PutSummary(UnifiedKey &key, const Summary &summary) override;
     Status SetRemotePullStartNotify() override;
     Status RegisterDataChangedObserver(std::string &key, uint32_t type) override;
-    bool UnregisterDataChangedObserver(std::string &key) override;
-    Status PutdelayData(const UnifiedData &unifiedData) override;
+    bool UnRegisterDataChangedObserver(std::string &key) override;
+    Status PutDelayData(const UnifiedData &unifiedData) override;
     Status PutDataLoadInfo(const DataLoadInfo &info) override;
-    Status PushDelayData(const std::vector<std::string> &deviceIds, ProgressCallback callback) override;
+    Status PushDelayData(const std::vector<std::string> &devices, ProcessCallback callback) override;
     bool Init() override;
 
 private:

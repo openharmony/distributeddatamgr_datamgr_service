@@ -375,7 +375,7 @@ int32_t UdmfServiceStub::OnSaveAcceptableInfo(MessageParcel &data, MessageParcel
     return E_OK;
 }
 
-int32_t UdmfServiceStub::OnPushAcceptableData(MessageParcel &data, MessageParcel &reply)
+int32_t UdmfServiceStub::OnPushAcceptableInfo(MessageParcel &data, MessageParcel &reply)
 {
     queryOption query;
     std::vector<std::string> devices;
@@ -385,11 +385,12 @@ int32_t UdmfServiceStub::OnPushAcceptableData(MessageParcel &data, MessageParcel
     }
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     query.tokenId = token;
-    int32_t status = PushAcceptableData(query, devices);
+    int32_t status = PushAcceptableInfo(query, devices);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
     }
     return E_OK;
+}
 } // namespace UDMF
 } // namespace OHOS

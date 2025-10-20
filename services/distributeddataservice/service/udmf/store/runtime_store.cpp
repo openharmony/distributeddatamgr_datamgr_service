@@ -649,13 +649,13 @@ Status RuntimeStore::RegisterDataChangedObserver(std::string &key, uint32_t type
     return E_OK;
 }
 
-bool RuntimeStore::UnregisterDataChangedObserver(std::string &key)
+bool RuntimeStore::UnRegisterDataChangedObserver(std::string &key)
 {
     auto it = observers_.Find(key);
     if (it.first) {
-        auto status = kvStore_->UnregisterObserver(it.second.get());
+        auto status = kvStore_->UnRegisterObserver(it.second.get());
         if (status != DBStatus::OK) {
-            ZLOGE("UnregisterObserver failed, status: %{public}d.", static_cast<int>(status));
+            ZLOGE("UnRegisterAllObserver failed, status: %{public}d.", static_cast<int>(status));
             return false;
         }
         observers_.Erase(key);
@@ -667,9 +667,9 @@ bool RuntimeStore::UnregisterDataChangedObserver(std::string &key)
 bool RuntimeStore::UnRegisterAllObserver()
 {
     observers_.ForEach([&](const auto key, auto observer) {
-        auto status = kvStore_->UnregisterObserver(observer.get());
+        auto status = kvStore_->UnRegisterObserver(observer.get());
         if (status != DBStatus::OK) {
-            ZLOGE("UnregisterObserver failed for key %{public}s, status: %{public}d.",
+            ZLOGE("UnRegisterAllObserver failed for key %{public}s, status: %{public}d.",
                 key.c_str(), static_cast<int>(status));
             return;
         }
@@ -678,7 +678,7 @@ bool RuntimeStore::UnRegisterAllObserver()
     return true;
 }
 
-Status RuntimeStore::PutdelayData(const UnifiedData &unifiedData)
+Status RuntimeStore::PutDelayData(const UnifiedData &unifiedData)
 {
     UpdateTime();
     std::vector<Entry> entries;
@@ -694,7 +694,7 @@ Status RuntimeStore::PutDataLoadInfo(const DataLoadInfo &dataLoadInfo)
 {
     UpdateTime();
     std::vector<Entry> entries;
-    auto status = DataHandler::MarshallDataLoadEntries(dataLoadInfo, entries);
+    auto status = DataHandler::MarshalDataLoadEntries(dataLoadInfo, entries);
     if (status != E_OK) {
         ZLOGE("PutDataLoadInfo failed. status: %{public}d", status);
         return status;
@@ -705,7 +705,7 @@ Status RuntimeStore::PutDataLoadInfo(const DataLoadInfo &dataLoadInfo)
 Status RuntimeStore::PushDelayData(const std::vector<std::string> &devices, ProcessCallback callback)
 {
     UpdateTime();
-    if (deviceId.empty()) {
+    if (devices.empty()) {
         ZLOGE("DeviceId is empty, no need push delay data.");
         return E_INVALID_PARAMETERS;
     }
@@ -724,7 +724,7 @@ Status RuntimeStore::PushDelayData(const std::vector<std::string> &devices, Proc
                 break;
             }
         }
-        ZLOGI("push delay data complete, %{public}s, status:%{public}d.",
+        ZLOGI("Push delay data complete, %{public}s, status:%{public}d.",
             Anonymous::Change(storeId_).c_str(), dbStatus);
     };
     DistributedDB::DeviceSyncOption option;

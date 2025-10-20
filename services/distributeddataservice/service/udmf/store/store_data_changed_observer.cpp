@@ -25,30 +25,30 @@ namespace OHOS {
 namespace UDMF {
 void AcceptableInfoObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
-    LOGI("Received acceptable info changed notification.");
+    ZLOGI("Received acceptable info changed notification.");
     auto insertedEntries = data.GetEntriesInserted();
     for (const auto &entry : insertedEntries) {
         std::string acceptableKey(entry.key.begin(), entry.key.end());
         DataLoadInfo info;
         auto status = DataHandler::UnmarshalDataLoadEntries(entry, info);
         if (status != E_OK) {
-            LOGE("Unmarshal data load entries failed, key: %{public}s", acceptableKey.c_str());
+            ZLOGE("Unmarshal data load entries failed, key: %{public}s", acceptableKey.c_str());
             continue;
         }
         if (acceptableKey.find(info.sequenceKey) != 0 || acceptableKey == info.sequenceKey) {
-            LOGE("Acceptable key is invalid, key: %{public}s", acceptableKey.c_str());
+            ZLOGE("Acceptable key is invalid, key: %{public}s", acceptableKey.c_str());
             continue;
         }
         DelayDataContainer::GetInstance().SaveDelayAcceptableInfo(info.sequenceKey, info);
         if (!DelayDataContainer::GetInstance().ExecDataLoadCallback(info.sequenceKey, info)) {
-            LOGW("Can not find data load callback, key: %{public}s", info.sequenceKey.c_str());
+            ZLOGW("Can not find data load callback, key: %{public}s", info.sequenceKey.c_str());
         }
     }
 }
 
 void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
-    LOGI("Received runtime changed notification.");
+    ZLOGI("Received runtime changed notification.");
     auto updatedEntries = data.GetEntriesUpdated();
     auto insertedEntries = data.GetEntriesInserted();
     updatedEntries.insert(updatedEntries.end(), insertedEntries.begin(), insertedEntries.end());
@@ -58,7 +58,7 @@ void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
         std::vector<Entry> entries = { entry };
         auto status = DataHandler::UnmarshalEntries(udKey, entries, data);
         if (status != E_OK) {
-            LOGE("Unmarshal runtime failed, key: %{public}s", udKey.c_str());
+            ZLOGE("Unmarshal runtime failed, key: %{public}s", udKey.c_str());
             continue;
         }
         auto runtime = data.GetRuntime();
@@ -71,7 +71,7 @@ void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
             if (service != nullptr) {
                 service->HandleRemoteDelayData(udKey);
             } else {
-                LOGE("Get service null");
+                ZLOGE("Get service null");
             }
         }
     }

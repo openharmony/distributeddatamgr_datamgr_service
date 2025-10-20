@@ -19,7 +19,7 @@
 #include "kv_store_observer.h"
 namespace OHOS {
 namespace UDMF {
-class AcceptableInfoObserver : public KvStoreObserver {
+class AcceptableInfoObserver : public DistributedDB::KvStoreObserver {
 public:
     AcceptableInfoObserver() = default;
     ~AcceptableInfoObserver() override = default;
@@ -27,7 +27,7 @@ public:
     void OnChange(const DistributedDB::KvStoreChangedData &data) override;
 };
 
-class RuntimeObserver : public KvStoreObserver {
+class RuntimeObserver : public DistributedDB::KvStoreObserver {
 public:
     AcceptableInfoObserver() = default;
     ~AcceptableInfoObserver() override = default;

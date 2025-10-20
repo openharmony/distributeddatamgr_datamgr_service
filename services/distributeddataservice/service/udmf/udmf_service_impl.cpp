@@ -921,7 +921,7 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
     processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
     processInfo.srcDevName = "Local";
     if (asyncProcessInfoMap_.empty()) {
-        if (!IsSyncFinished(progressInfo.businessUdKey)) {
+        if (!IsSyncFinished(processInfo.businessUdKey)) {
             processInfo.syncStatus = AsyncTaskStatus::ASYNC_RUNNING;
             processInfo.srcDevName = "Remote";
         }
@@ -929,7 +929,7 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
     }
     auto it = asyncProcessInfoMap_.find(processInfo.businessUdKey);
     if (it == asyncProcessInfoMap_.end()) {
-        if (!IsSyncFinished(progressInfo.businessUdKey)) {
+        if (!IsSyncFinished(processInfo.businessUdKey)) {
             processInfo.syncStatus = AsyncTaskStatus::ASYNC_RUNNING;
             processInfo.srcDevName = "Remote";
         }
@@ -1218,15 +1218,15 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
 int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
 {
     UnifiedKey udKey(key);
-    if (CheckDragParams(udKey)) {
+    if (!CheckDragParams(udKey)) {
         return E_INVALID_PARAMETERS;
     }
     std::string observerKey = key + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
-    UnregisterObserver(observerKey);
+    UnRegisterObserver(observerKey);
     DelayGetDataInfo getDataInfo;
     BlockDelayData blockData;
-    auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayDataInfo(key, getDataInfo);
-    auto isBlcokData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
+    auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
+    auto isBlockData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
 
     CustomOption option = {
         .intention = UD_INTENTION_DRAG,
@@ -1249,8 +1249,8 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGE("HandleFileUris failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
         return ret;
     }
-    if (!isDataLoading && !isBlcokData) {
-        ZLOGE("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
+    if (!isDataLoading && !isBlockData) {
+        ZLOGW("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
         return UpdateDelayData(key, unifiedData);
     }
 
@@ -1273,8 +1273,8 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     PreProcessUtils::SetRemoteData(unifiedData);
     TransferToEntriesIfNeed(query, unifiedData);
 
-    if (!isDataLoading) {
-        return DelayDataContainer::GetInstance().HandleBlockDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
+    if (isDataLoading) {
+        return DelayDataContainer::GetInstance().HandleDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
     }
     blockData.blockData->SetValue(unifiedData);
     return E_OK;
@@ -1305,7 +1305,7 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
     };
     std::vector<std::string> devices;
     DataLoadInfo info;
-    if(DelayDataContainer::GetInstance().QueryDataLoadInfo(key, info)) {
+    if(DelayDataContainer::GetInstance().QueryDelayAcceptableInfo(key, info)) {
         ZLOGI("Find from acceptable info notify, key: %{public}s", key.c_str());
         devices = std::move(info.devices);
     } else {
@@ -1316,6 +1316,7 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         ZLOGE("Devices is empty, key:%{public}s", key.c_str());
         return E_ERROR;
     }
+    // clear delay drag device info after use
     DelayDataContainer::GetInstance().ClearDelayDragDeviceInfo();
     PushDelayDataToRemote(queryOption, devices);
     return E_OK;
@@ -1335,7 +1336,7 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     }
     auto status = RetrieveData(query, *unifiedData);
     if (status == E_OK) {
-        UnregisterObserver(key);
+        UnRegisterObserver(key);
         return E_OK;
     }
     if (status != E_NOT_FOUND) {

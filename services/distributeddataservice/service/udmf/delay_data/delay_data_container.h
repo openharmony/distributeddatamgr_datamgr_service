@@ -33,7 +33,7 @@ class DelayDataContainer {
 public:
     static DelayDataContainer &GetInstance();
     // dataLoadCallback_ part
-    bool HandleDelayLoad(const QueryOptions &query, UnifiedData &unifiedData, int32_t &res);
+    bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res);
     void RegisterDataLoadCallback(const std::string &key, sptr<UdmfNotifierProxy> callback);
     bool ExecDataLoadCallback(const std::string &key, const DataLoadInfo &info);
     void ExecAllDataLoadCallback();
