@@ -1227,12 +1227,10 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     BlockDelayData blockData;
     auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
     auto isBlockData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
-
     CustomOption option = {
         .intention = UD_INTENTION_DRAG,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
     };
-
     if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
@@ -1253,7 +1251,6 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         ZLOGW("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
         return UpdateDelayData(key, unifiedData);
     }
-
     QueryOption query;
     query.tokenId = isDataLoading ? getDataInfo.tokenId : blockData.tokenId;
     query.key = key;
@@ -1307,7 +1304,7 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
     DataLoadInfo info;
     if(DelayDataContainer::GetInstance().QueryDelayAcceptableInfo(key, info)) {
         ZLOGI("Find from acceptable info notify, key: %{public}s", key.c_str());
-        devices = std::move(info.devices);
+        devices = std::move(info.deviceId);
     } else {
         ZLOGI("Find from remote sync notify, key: %{public}s", key.c_str());
         devices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();

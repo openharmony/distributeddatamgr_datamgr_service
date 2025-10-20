@@ -201,7 +201,6 @@ std::string PreProcessUtils::GetRealLocalDeviceId()
     return info.uuid;
 }
 
-
 void PreProcessUtils::SetRemoteData(UnifiedData &data)
 {
     if (data.IsEmpty()) {

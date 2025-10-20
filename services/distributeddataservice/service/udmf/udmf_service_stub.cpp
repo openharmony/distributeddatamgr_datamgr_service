@@ -377,7 +377,7 @@ int32_t UdmfServiceStub::OnSaveAcceptableInfo(MessageParcel &data, MessageParcel
 
 int32_t UdmfServiceStub::OnPushAcceptableInfo(MessageParcel &data, MessageParcel &reply)
 {
-    queryOption query;
+    QueryOption query;
     std::vector<std::string> devices;
     if (!ITypesUtil::Unmarshal(data, query, devices)) {
         ZLOGE("Unmarshal failed!");
