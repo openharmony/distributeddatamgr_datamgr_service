@@ -1232,6 +1232,9 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
             std::to_string(info.syncId), DATA_TYPE, meta.dataType);
         return Status::ERROR;
     }
+    if (store != nullptr) {
+        store->SetProperty(meta.tokenId);
+    }
     RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_SUCCESS, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
         SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
     KVDBQuery query(info.query);

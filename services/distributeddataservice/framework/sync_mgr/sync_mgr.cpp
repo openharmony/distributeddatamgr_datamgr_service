@@ -13,8 +13,11 @@
  * limitations under the License.
  */
 #define LOG_TAG "SyncManager"
+#include "accesstoken_kit.h"
+#include "log_print.h"
 #include "sync_mgr/sync_mgr.h"
 
+using namespace OHOS::Security::AccessToken;
 namespace OHOS::DistributedData {
 SyncManager::SyncManager()
 {
@@ -72,5 +75,22 @@ bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp)
         return false;
     }
     return ((it->second.version == autoSyncApp.version) && (it->second.appId == autoSyncApp.appId));
+}
+
+void SyncManager::SetDoubleSyncSAInfo(const DoubleSyncSAInfo &doubleSyncSAInfo)
+{
+    doubleSyncSAs_.insert_or_assign(doubleSyncSAInfo.appId, doubleSyncSAInfo.bundleName);
+}
+
+bool SyncManager::isConstraintSA(const uint32_t &tokenId)
+{
+    NativeTokenInfo nativeTokenInfo;
+    if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) != RET_SUCCESS ||
+        doubleSyncSAs_.find(nativeTokenInfo.processName) == doubleSyncSAs_.end()) {
+        ZLOGE("passed wrong, tokenId: %{public}u, bundleName:%{public}s", tokenId,
+            nativeTokenInfo.processName.c_str());
+        return true;
+    }
+    return false;
 }
 } // namespace OHOS::DistributedData

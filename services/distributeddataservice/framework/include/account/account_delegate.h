@@ -77,6 +77,7 @@ public:
     API_EXPORT static AccountDelegate *GetInstance();
     API_EXPORT static bool RegisterAccountInstance(AccountDelegate *instance);
     API_EXPORT virtual bool IsUserForeground(int32_t userId) = 0;
+    API_EXPORT virtual bool CheckOsAccountConstraintEnabled() = 0;
 
 private:
     static AccountDelegate *instance_;

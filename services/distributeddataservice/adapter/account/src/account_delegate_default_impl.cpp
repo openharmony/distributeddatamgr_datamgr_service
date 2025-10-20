@@ -114,5 +114,10 @@ bool AccountDelegateDefaultImpl::Init()
     std::call_once(onceFlag, [&]() { AccountDelegate::RegisterAccountInstance(&defaultAccountDelegate); });
     return true;
 }
+
+bool AccountDelegateNormalImpl::CheckOsAccountConstraintEnabled()
+{
+    return true;
+}
 } // namespace DistributedData
 } // namespace OHOS

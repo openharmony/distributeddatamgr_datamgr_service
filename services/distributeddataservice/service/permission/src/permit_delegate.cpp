@@ -58,7 +58,11 @@ void PermitDelegate::Init()
     };
     status = DBConfig::SetPermissionCheckCallback(permitCall);
     ZLOGI("set permission callback status:%d.", status);
-
+    auto dataFlowCheckCall = [this](const CheckParam &Param, const Property &property) {
+        return CheckDataFlow(Param, property);
+    };
+    status = DBConfig::SetDataFlowCheckCallback(dataFlowCheckCall);
+    ZLOGI("set data flow callback status:%d.", status);
     auto extraCall = [this](const CondParam &param) -> std::map<std::string, std::string> {
         return GetExtraCondition(param);
     };
@@ -172,4 +176,21 @@ bool PermitDelegate::VerifyPermission(const std::string &permission,
     }
     return true;
 }
+
+DataFlowRet PermitDelegate::CheckDataFlow(const CheckParam &param, const Property &property)
+{
+    auto res = AccountDelegate::GetInstance()->CheckOsAccountConstraintEnabled();
+    if (!res) {
+        return DataFlowRet::DEFAULT;
+    }
+    auto it = property.find(Constant::TOKEN_ID);
+    if (it != property.end()) {
+        auto tokenId = std::get_if<uint32_t>(&it->second);
+        if (tokenId != nullptr && !SyncManager::GetInstance().isConstraintSA(*tokenId)) {
+            return DataFlowRet::DEFAULT;
+        }
+    }
+    return DataFlowRet::DENIED_SEND;
+}
+
 } // namespace OHOS::DistributedData
