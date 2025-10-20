@@ -1304,7 +1304,7 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
     DataLoadInfo info;
     if(DelayDataContainer::GetInstance().QueryDelayAcceptableInfo(key, info)) {
         ZLOGI("Find from acceptable info notify, key: %{public}s", key.c_str());
-        devices.emplace(std::move(info.deviceId));
+        devices.emplace_back(std::move(info.deviceId));
     } else {
         ZLOGI("Find from remote sync notify, key: %{public}s", key.c_str());
         devices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();
