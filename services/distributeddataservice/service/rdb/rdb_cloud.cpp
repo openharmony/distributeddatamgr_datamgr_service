@@ -86,16 +86,15 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
     }
     if (cursor == nullptr || code != E_OK) {
         auto errCode = ConvertStatus(static_cast<GeneralError>(code));
+        ZLOGE("errCode:%{public}d, table:%{public}s", errCode, Anonymous::Change(tableName).c_str());
         if (cursor == nullptr) {
-            ZLOGE("cursor is null, table:%{public}s, extend:%{public}zu",
-                  Anonymous::Change(tableName).c_str(), extend.size());
+            ZLOGE("cursor is null, extend:%{public}zu", extend.size());
             return errCode;
         }
-        BackFillData(cursor, data);
-        ZLOGE("errCode:{public}d, table:%{public}s", errCode, Anonymous::Change(tableName).c_str());
+        HandleEntryToData(cursor, data);
         return errCode;
     }
-    auto err = BackFillData(cursor, data);
+    auto err = HandleEntryToData(cursor, data);
     DistributedData::Value cursorFlag;
     cursor->Get(SchemaMeta::CURSOR_FIELD, cursorFlag);
     extend[SchemaMeta::CURSOR_FIELD] = ValueProxy::Convert(std::move(cursorFlag));
@@ -353,7 +352,7 @@ void RdbCloud::SetPrepareTraceId(const std::string &traceId)
     cloudDB_->SetPrepareTraceId(traceId);
 }
 
-int32_t RdbCloud::BackFillData(std::shared_ptr<DistributedData::Cursor> cursor, std::vector<DBVBucket> &data>)
+int32_t RdbCloud::HandleEntryToData(std::shared_ptr<DistributedData::Cursor> cursor, std::vector<DBVBucket> &data)
 {
     int32_t count = cursor->GetCount();
     data.reserve(count);
