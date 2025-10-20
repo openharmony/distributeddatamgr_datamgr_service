@@ -115,7 +115,7 @@ bool AccountDelegateDefaultImpl::Init()
     return true;
 }
 
-bool AccountDelegateNormalImpl::CheckOsAccountConstraintEnabled()
+bool AccountDelegateDefaultImpl::CheckOsAccountConstraintEnabled()
 {
     return true;
 }

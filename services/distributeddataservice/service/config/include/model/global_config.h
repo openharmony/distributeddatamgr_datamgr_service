@@ -24,6 +24,7 @@
 #include "model/component_config.h"
 #include "model/datashare_config.h"
 #include "model/directory_config.h"
+#include "model/double_sync_sa_config.h"
 #include "model/network_config.h"
 #include "model/thread_config.h"
 #include "serializable/serializable.h"

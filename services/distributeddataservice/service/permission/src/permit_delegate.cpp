@@ -24,8 +24,10 @@
 #include "permission_validator.h"
 #include "runtime_config.h"
 #include "store_types.h"
+#include "sync_mgr/sync_mgr.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 
 namespace OHOS::DistributedData {
 using DBStatus = DistributedDB::DBStatus;
@@ -185,12 +187,11 @@ DataFlowRet PermitDelegate::CheckDataFlow(const CheckParam &param, const Propert
     }
     auto it = property.find(Constant::TOKEN_ID);
     if (it != property.end()) {
-        auto tokenId = std::get_if<uint32_t>(&it->second);
-        if (tokenId != nullptr && !SyncManager::GetInstance().isConstraintSA(*tokenId)) {
+        uint32_t tokenId = *std::get_if<uint32_t>(&it->second);
+        if (!SyncManager::GetInstance().isConstraintSA(tokenId)) {
             return DataFlowRet::DEFAULT;
         }
     }
     return DataFlowRet::DENIED_SEND;
 }
-
 } // namespace OHOS::DistributedData

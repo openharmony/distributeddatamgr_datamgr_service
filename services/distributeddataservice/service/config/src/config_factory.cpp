@@ -107,7 +107,7 @@ AppAccessCheckConfig *ConfigFactory::GetSyncAppsConfig()
     return config_.syncAppList;
 }
 
-std::vector<DoubleSyncSAConfig> *GetDoubleSyncSAConfig()
+std::vector<DoubleSyncSAConfig> *ConfigFactory::GetDoubleSyncSAConfig()
 {
     return config_.doubleSyncSAs;
 }

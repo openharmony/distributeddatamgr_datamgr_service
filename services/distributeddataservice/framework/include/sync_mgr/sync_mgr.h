@@ -46,7 +46,7 @@ public:
 private:
     SyncManager();
     std::map<std::string, AutoSyncInfo> autoSyncApps_;
-    std::map<std::string, DoubleSyncInfo> doubleSyncSAs_;
+    std::map<std::string, std::string> doubleSyncSAs_;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_DEVICE_SYNC_APP_MANAGER_H
