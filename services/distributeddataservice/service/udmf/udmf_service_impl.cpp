@@ -1199,40 +1199,63 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
     }
     Summary summary;
     UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
-    int32_t status = store->PutSummary(udkey, summary);
+    int32_t status = store->PutSummary(runtime->key, summary);
     if (status != E_OK) {
         ZLOGE("Put summary failed:%{public}s, status:%{public}d", key.c_str(), status);
         HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
         return E_DB_ERROR;
     }
+    status = store->PutDelayData(delayData);
+    if (status != E_OK) {
+        ZLOGE("Put delay data failed:%{public}s, status:%{public}d", key.c_str(), status);
+        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
+        return E_DB_ERROR;
+    }
+    RegisterObserver(key);
     return E_OK;
 }
 
 int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
 {
-    auto delayIt = delayDataCallback_.Find(key);
-    auto blockIt = blockDelayDataCache_.Find(key);
-    bool isDataLoading = (delayIt.first);
-    if (!isDataLoading && !blockIt.first) {
-        ZLOGE("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
-        return E_ERROR;
+    UnifiedKey udKey(key);
+    if (CheckDragParams(udKey)) {
+        return E_INVALID_PARAMETERS;
     }
+    std::string observerKey = key + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
+    UnregisterObserver(observerKey);
+    DelayGetDataInfo getDataInfo;
+    BlockDelayData blockData;
+    auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayDataInfo(key, getDataInfo);
+    auto isBlcokData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
 
-    CustomOption option;
-    option.intention = UD_INTENTION_DRAG;
-    option.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    CustomOption option = {
+        .intention = UD_INTENTION_DRAG,
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
+    };
+
     if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
+    auto runtime = unifiedData.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("Runtime is null");
+        return E_ERROR;
+    }
+    runtime->key = udKey;
+    PreProcessUtils::SetRecordUid(unifiedData);
     int32_t ret = PreProcessUtils::HandleFileUris(option.tokenId, unifiedData);
     if (ret != E_OK) {
         ZLOGE("HandleFileUris failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
         return ret;
     }
+    if (!isDataLoading && !isBlcokData) {
+        ZLOGE("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
+        return UpdateDelayData(key, unifiedData);
+    }
 
     QueryOption query;
-    query.tokenId = isDataLoading ? delayIt.second.tokenId : blockIt.second.tokenId;
+    query.tokenId = isDataLoading ? getDataInfo.tokenId : blockData.tokenId;
     query.key = key;
     if (option.tokenId != query.tokenId && !IsPermissionInCache(query)) {
         ZLOGE("No permission");
@@ -1251,22 +1274,50 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     TransferToEntriesIfNeed(query, unifiedData);
 
     if (!isDataLoading) {
-        blockIt.second.blockData->SetValue(unifiedData);
-        return E_OK;
+        return DelayDataContainer::GetInstance().HandleBlockDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
     }
-    return HandleDelayDataCallback(delayIt.second, unifiedData, key);
+    blockData.blockData->SetValue(unifiedData);
+    return E_OK;
 }
 
-int32_t UdmfServiceImpl::HandleDelayDataCallback(DelayGetDataInfo &delayGetDataInfo, UnifiedData &unifiedData,
-    const std::string &key)
+int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &unifiedData)
 {
-    auto callback = iface_cast<DelayDataCallbackProxy>(delayGetDataInfo.dataCallback);
-    if (callback == nullptr) {
-        ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
+    UnifiedKey udKey(key);
+    if (!CheckDragParams(udKey)) {
+        return E_INVALID_PARAMETERS;
+    }
+    auto store = StoreCache::GetInstance().GetStore(udKey.intention);
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", key.c_str());
+        return E_DB_ERROR;
+    }
+    uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    int32_t res = store->Update(unifiedData);
+    if (res != E_OK) {
+        ZLOGE("Update delay data failed:%{public}s, status:%{public}d", key.c_str(), res);
+        HandleDbError(udKey.intention, res);
+        return E_DB_ERROR;
+    }
+    QueryOption queryOption = {
+        .key = key,
+        .tokenId = tokenId,
+        .intention = Intention::UD_INTENTION_DRAG
+    };
+    std::vector<std::string> devices;
+    DataLoadInfo info;
+    if(DelayDataContainer::GetInstance().QueryDataLoadInfo(key, info)) {
+        ZLOGI("Find from acceptable info notify, key: %{public}s", key.c_str());
+        devices = std::move(info.devices);
+    } else {
+        ZLOGI("Find from remote sync notify, key: %{public}s", key.c_str());
+        devices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();
+    }
+    if (devices.empty()) {
+        ZLOGE("Devices is empty, key:%{public}s", key.c_str());
         return E_ERROR;
     }
-    callback->DelayDataCallback(key, unifiedData);
-    delayDataCallback_.Erase(key);
+    DelayDataContainer::GetInstance().ClearDelayDragDeviceInfo();
+    PushDelayDataToRemote(queryOption, devices);
     return E_OK;
 }
 
@@ -1275,14 +1326,16 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
 {
     ZLOGD("start");
     QueryOption query;
-    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     query.key = key;
+    query.tokenId = tokenId;
     if (unifiedData == nullptr) {
         ZLOGE("Data is null, key:%{public}s", key.c_str());
         return E_ERROR;
     }
     auto status = RetrieveData(query, *unifiedData);
     if (status == E_OK) {
+        UnregisterObserver(key);
         return E_OK;
     }
     if (status != E_NOT_FOUND) {
@@ -1291,16 +1344,18 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     }
     DelayGetDataInfo delayGetDataInfo;
     delayGetDataInfo.dataCallback = iUdmfNotifier;
-    delayGetDataInfo.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    delayDataCallback_.InsertOrAssign(key, std::move(delayGetDataInfo));
+    delayGetDataInfo.tokenId = tokenId;
+    DelayDataContainer::GetInstance().RegisterDelayDataCallback(key, std::move(delayGetDataInfo));
 
-    auto it = dataLoadCallback_.Find(key);
-    if (!it.first) {
-        ZLOGE("DataLoad callback no exist, key:%{public}s", key.c_str());
+    if (!DelayDataContainer::GetInstance().ExecDataLoadCallback(key, dataLoadInfo)) {
+        auto runtime = unifiedData->GetRuntime();
+        std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
+        if (runtime != nullptr && runtime->deviceId != localDeviceId) {
+            ZLOGI("Wait delay data from another device, key:%{public}s", key.c_str());
+            return E_OK;
+        }
         return E_ERROR;
     }
-    it.second->HandleDelayObserver(key, dataLoadInfo);
-    dataLoadCallback_.Erase(key);
     return E_OK;
 }
 
@@ -1356,6 +1411,172 @@ std::vector<std::string> UdmfServiceImpl::ProcessResult(const std::map<std::stri
     }
     ZLOGI("Meta sync finish, total size:%{public}zu, success size:%{public}zu", results.size(), devices.size());
     return devices;
+}
+
+void UdmfServiceImpl::RegisterObserver(const std::string &key)
+{
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", key.c_str());
+        return;
+    }
+    // register notifier
+    store->SetRemotePullStartNotify();
+
+    // register acceptable info observer
+    std::string acceptableInfoKey = key + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
+    store->RegisterDataChangedObserver(acceptableInfoKey, ObserverFac::ObserverType::ACCEPTABLE_INFO);
+}
+
+void UdmfServiceImpl::UnRegisterObserver(const std::string &key)
+{
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", key.c_str());
+        return;
+    }
+    store->UnRegisterDataChangedObserver(key);
+}
+
+bool UdmfServiceImpl::IsSyncFinished(const std::string &key)
+{
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", key.c_str());
+        return E_DB_ERROR;
+    }
+    UnifiedData unifiedData;
+    int32_t res = store->Get(key, unifiedData);
+    if (res != E_OK) {
+        ZLOGE("Get data failed, res:%{public}d, key:%{public}s", res, key.c_str());
+        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), res);
+        return false;
+    }
+    auto runtime = unifiedData.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("Runtime is empty, key: %{public}s", key.c_str());
+        return false;
+    }
+    return true;
+}
+
+int32_t UdmfServiceImpl::SaveAcceptableInfo(const std::string &key, DataLoadInfo &info)
+{
+    UnifiedKey udKey(key);
+    if (!CheckDragParams(udKey)) {
+        return E_INVALID_PARAMETERS;
+    }
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", key.c_str());
+        return E_DB_ERROR;
+    }
+    info.deviceId = PreProcessUtils::GetRealLocalDeviceId();
+    info.sequenceKey = key;
+    int32_t status = store->PutDataLoadInfo(info);
+    if (status != E_OK) {
+        ZLOGE("Put data load info failed, status:%{public}d, key:%{public}s", status, key.c_str());
+        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
+        return E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::PushAcceptableInfo(const QueryOption &query, const std::vector<std::string> &devices)
+{
+    if (!UTILS::IsTokenNative(query.tokenId) ||
+        !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(query.tokenId)) {
+        ZLOGE("Tokenid permission verification failed!");
+        return E_NO_PERMISSION;
+    }
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", query.key.c_str());
+        return E_DB_ERROR;
+    }
+    // Watch unified data from another device.
+    store->RegisterDataChangedObserver(query.key, ObserverFac::ObserverType::RUNTIME);
+    return PushDelayDataToRemote(query, devices);
+    
+}
+
+int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices)
+{
+    if (devices.empty()) {
+        return E_OK;
+    }
+    UnifiedKey key(query.key);
+    if (!CheckDragParams(key)) {
+        return E_INVALID_PARAMETERS;
+    }
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get store failed:%{public}s", query.key.c_str());
+        return E_DB_ERROR;
+    }
+    auto callback = [this, query](AsyncProcessInfo &syncInfo) {
+        if (query.key.empty()) {
+            return;
+        }
+        syncInfo.businessUdKey = query.key;
+    };
+    int userId = 0;
+    if (!AccountDelegate::GetInstance()->QueryForegroundUserId(userId)) {
+        ZLOGE("QueryForegroundUserId failed");
+        return E_ERROR;
+    }
+    auto meta = BuildMeta(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), userId);
+    auto uuids = DmAdapter::GetInstance().ToUUID(devices);
+    if (IsNeedMetaSync(meta, uuids)) {
+        bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
+            auto successRes = ProcessResult(results);
+            if (store->PushDelayData(successRes, callback) != E_OK) {
+                ZLOGE("Store sync failed");
+            }
+        });
+        if (!res) {
+            ZLOGE("Meta sync failed");
+            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+                BizScene::SYNC_DATA, SyncDataStage::SYNC_END, StageRes::FAILED, E_DB_ERROR, BizState::DFX_END);
+            return E_DB_ERROR;
+        }
+        return E_OK;
+    }
+    if (store->PushDelayData(devices, callback) != E_OK) {
+        ZLOGE("Store sync failed");
+        return UDMF::E_DB_ERROR;
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string key)
+{
+    ZLOGI("HandleRemoteDelayData start");
+    UnRegisterObserver(key); // Unregister observer when unified data ready.
+    DelayGetDataInfo getDataInfo;
+    BlockDelayData blockData;
+    auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
+    auto isBlockData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
+
+    if (!isDataLoading && !isBlockData) {
+        ZLOGE("DelayData callback and block cache not exist key: %{public}s", key.c_str());
+        return E_ERROR;
+    }
+    UnifiedData unifiedData;
+    QueryOption query = {
+        .key = key,
+        .tokenId = isDataLoading ? getDataInfo.tokenId : blockData.tokenId
+    };
+    auto status = RetrieveData(query, unifiedData);
+    if (status != E_OK) {
+        ZLOGI("query data fail, status:%{public}d", status);
+        return status;
+    }
+    if (isDataLoading) {
+        return DelayDataContainer::GetInstance().HandleDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
+    }
+    blockData.blockData->SetValue(unifiedData);
+    return E_OK;
 }
 } // namespace UDMF
 } // namespace OHOS
