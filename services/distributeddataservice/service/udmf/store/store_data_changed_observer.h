@@ -29,8 +29,8 @@ public:
 
 class RuntimeObserver : public DistributedDB::KvStoreObserver {
 public:
-    AcceptableInfoObserver() = default;
-    ~AcceptableInfoObserver() override = default;
+    RuntimeObserver() = default;
+    ~RuntimeObserver() override = default;
 
     void OnChange(const DistributedDB::KvStoreChangedData &data) override;
 };

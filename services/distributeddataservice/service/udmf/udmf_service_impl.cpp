@@ -1297,14 +1297,14 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
     }
     QueryOption queryOption = {
         .key = key,
-        .tokenId = tokenId,
-        .intention = Intention::UD_INTENTION_DRAG
+        .intention = Intention::UD_INTENTION_DRAG,
+        .tokenId = tokenId
     };
     std::vector<std::string> devices;
     DataLoadInfo info;
     if(DelayDataContainer::GetInstance().QueryDelayAcceptableInfo(key, info)) {
         ZLOGI("Find from acceptable info notify, key: %{public}s", key.c_str());
-        devices = std::move(info.deviceId);
+        devices.emplace(std::move(info.deviceId));
     } else {
         ZLOGI("Find from remote sync notify, key: %{public}s", key.c_str());
         devices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();
@@ -1547,7 +1547,7 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string key)
+int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string &key)
 {
     ZLOGI("HandleRemoteDelayData start");
     UnRegisterObserver(key); // Unregister observer when unified data ready.

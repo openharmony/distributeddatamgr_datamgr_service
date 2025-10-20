@@ -46,8 +46,8 @@ public:
     Status GetRuntime(const std::string &key, Runtime &runtime) override;
     Status PutSummary(UnifiedKey &key, const Summary &summary) override;
     Status SetRemotePullStartNotify() override;
-    Status RegisterDataChangedObserver(std::string &key, uint32_t type) override;
-    bool UnRegisterDataChangedObserver(std::string &key) override;
+    Status RegisterDataChangedObserver(const std::string &key, uint32_t type) override;
+    bool UnRegisterDataChangedObserver(const std::string &key) override;
     Status PutDelayData(const UnifiedData &unifiedData) override;
     Status PutDataLoadInfo(const DataLoadInfo &info) override;
     Status PushDelayData(const std::vector<std::string> &devices, ProcessCallback callback) override;

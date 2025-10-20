@@ -616,7 +616,6 @@ Status RuntimeStore::SetRemotePullStartNotify()
     }
     DBStatus status = kvStore_->SetDeviceSyncNotify(DeviceSyncEvent::REMOTE_PULL_STARTED,
         [](DistributedDB::DeviceSyncNotifyInfo info) {
-        ZLOGI("Remote pull started from device: %{public}s", Anonymous::Change(deviceId).c_str());
         DelayDataContainer::GetInstance().SaveDelayDragDeviceInfo(info.deviceId);
         DelayDataContainer::GetInstance().ExecAllDataLoadCallback();
     });
@@ -628,7 +627,7 @@ Status RuntimeStore::SetRemotePullStartNotify()
     return E_OK;
 }
 
-Status RuntimeStore::RegisterDataChangedObserver(std::string &key, uint32_t type)
+Status RuntimeStore::RegisterDataChangedObserver(const std::string &key, uint32_t type)
 {
     if (key.empty()) {
         ZLOGE("Key is empty.");
@@ -649,7 +648,7 @@ Status RuntimeStore::RegisterDataChangedObserver(std::string &key, uint32_t type
     return E_OK;
 }
 
-bool RuntimeStore::UnRegisterDataChangedObserver(std::string &key)
+bool RuntimeStore::UnRegisterDataChangedObserver(const std::string &key)
 {
     auto it = observers_.Find(key);
     if (it.first) {
@@ -671,8 +670,8 @@ bool RuntimeStore::UnRegisterAllObserver()
         if (status != DBStatus::OK) {
             ZLOGE("UnRegisterAllObserver failed for key %{public}s, status: %{public}d.",
                 key.c_str(), static_cast<int>(status));
-            return;
         }
+        return true;
     });
     observers_.Clear();
     return true;

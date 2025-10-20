@@ -58,7 +58,7 @@ public:
         sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData) override;
     int32_t SaveAcceptableInfo(const std::string &key, DataLoadInfo &info) override;
     int32_t PushAcceptableInfo(const QueryOption &query, const std::vector<std::string> &devices) override;
-    int32_t HandleRemoteDelayData(const std::string &key) override;
+    int32_t HandleRemoteDelayData(const std::string &key);
     static std::shared_ptr<UdmfServiceImpl> GetService();
 private:
     bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
@@ -101,7 +101,7 @@ private:
     void UnRegisterObserver(const std::string &key);
     bool IsSyncFinished(const std::string &key);
     int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);
-    int32_t PushDelayDataToRemote(const QueryOption query, const std::vector<std::string> &devices);
+    int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
 
     class Factory {
     public:
