@@ -203,5 +203,37 @@ bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::stri
     bundleName = "bundleName";
     return true;
 }
+
+std::string PreProcessUtils::GetRealLocalDeviceId()
+{
+    return "123";
+}
+ 
+int32_t PreProcessUtils::FillDelayRuntimeInfo(UnifiedData &data, CustomOption &option,
+    const DataLoadInfo &dataLoadInfo)
+{
+    auto it = UD_INTENTION_MAP.find(option.intention);
+    if (it == UD_INTENTION_MAP.end()) {
+        return E_ERROR;
+    }
+    std::string bundleName = "bundleName";
+    std::string intention = it->second;
+    UnifiedKey key(intention, bundleName, dataLoadInfo.sequenceKey);
+    Privilege privilege;
+    privilege.tokenId = option.tokenId;
+    
+    Runtime runtime;
+    runtime.key = key;
+    runtime.privileges.emplace_back(privilege);
+    runtime.createTime = GetTimestamp();
+    runtime.sourcePackage = bundleName;
+    runtime.createPackage = bundleName;
+    runtime.recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
+    runtime.tokenId = option.tokenId;
+    runtime.visibility = option.visibility;
+    runtime.appId = "appId";
+    data.SetRuntime(runtime);
+    return E_OK;
+}
 } // namespace UDMF
 } // namespace OHOS

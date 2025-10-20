@@ -20,6 +20,7 @@ config("module_public_config") {
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/udmf/delay_data",
     "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
@@ -40,6 +41,7 @@ ohos_source_set("udmf_server") {
     debug = false
   }
   sources = [
+    "delay_data/delay_data_container.cpp",
     "lifecycle/clean_on_timeout.cpp",
     "lifecycle/lifecycle_manager.cpp",
     "lifecycle/lifecycle_policy.cpp",
@@ -51,6 +53,7 @@ ohos_source_set("udmf_server") {
     "preprocess/udmf_notifier_proxy.cpp",
     "store/runtime_store.cpp",
     "store/store_cache.cpp",
+    "store/store_data_changed_observer.cpp",
     "udmf_service_impl.cpp",
     "udmf_service_stub.cpp",
   ]

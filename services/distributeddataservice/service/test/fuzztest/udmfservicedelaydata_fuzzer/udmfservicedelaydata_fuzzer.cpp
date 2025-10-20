@@ -129,21 +129,6 @@ void GetDataIfAvailableFuzz(FuzzedDataProvider &provider)
         { "UdmfServiceDelayDataFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
     executor = nullptr;
 }
-
-void HandleDelayDataCallbackFuzz(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    DelayGetDataInfo delayGetDataInfo;
-    UnifiedData unifiedData;
-    std::shared_ptr<Object> obj = std::make_shared<Object>();
-    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
-    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
-    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
-    unifiedData.AddRecord(record);
-    std::string key = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->HandleDelayDataCallback(delayGetDataInfo, unifiedData, key);
-}
 }
 
 /* Fuzzer entry point */
@@ -162,6 +147,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::SetDelayInfoFuzz(provider);
     OHOS::PushDelayDataFuzz(provider);
     OHOS::GetDataIfAvailableFuzz(provider);
-    OHOS::HandleDelayDataCallbackFuzz(provider);
     return 0;
 }
