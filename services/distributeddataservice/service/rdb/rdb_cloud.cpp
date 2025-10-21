@@ -85,16 +85,9 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         std::tie(code, cursor) = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     }
     if (cursor == nullptr || code != E_OK) {
-        auto errCode = ConvertStatus(static_cast<GeneralError>(code));
-        ZLOGE("errCode:%{public}d, table:%{public}s", errCode, Anonymous::Change(tableName).c_str());
-        if (cursor == nullptr) {
-            ZLOGE("cursor is null, extend:%{public}zu", extend.size());
-            return errCode;
-        }
-        HandleEntryToData(cursor, data);
-        return errCode;
+        return static_cast<DBStatus>(Convert(cursor, data, code));
     }
-    auto err = HandleEntryToData(cursor, data);
+    auto err = Convert(cursor, data, code);
     DistributedData::Value cursorFlag;
     cursor->Get(SchemaMeta::CURSOR_FIELD, cursorFlag);
     extend[SchemaMeta::CURSOR_FIELD] = ValueProxy::Convert(std::move(cursorFlag));
@@ -102,7 +95,7 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         ZLOGD("query end, table:%{public}s", Anonymous::Change(tableName).c_str());
         return DBStatus::QUERY_END;
     }
-    return ConvertStatus(static_cast<GeneralError>(err));
+    return static_cast<DBStatus>(err);
 }
 
 DistributedData::GeneralError RdbCloud::PreSharing(const std::string& tableName, VBuckets& extend)
@@ -352,8 +345,12 @@ void RdbCloud::SetPrepareTraceId(const std::string &traceId)
     cloudDB_->SetPrepareTraceId(traceId);
 }
 
-int32_t RdbCloud::HandleEntryToData(std::shared_ptr<DistributedData::Cursor> cursor, std::vector<DBVBucket> &data)
+int32_t RdbCloud::Convert(std::shared_ptr<DistributedData::Cursor> cursor, std::vector<DBVBucket> &data, int32_t code)
 {
+    if (cursor == nullptr) {
+        ZLOGE("cursor is null, code:%{public}d", code);
+        return ConvertStatus(static_cast<GeneralError>(code));
+    }
     int32_t count = cursor->GetCount();
     data.reserve(count);
     auto err = cursor->MoveToFirst();
@@ -374,6 +371,7 @@ int32_t RdbCloud::HandleEntryToData(std::shared_ptr<DistributedData::Cursor> cur
         err = cursor->MoveToNext();
         count--;
     }
-    return err;
+    return err == E_OK ?
+        ConvertStatus(static_cast<GeneralError>(code)) : ConvertStatus(static_cast<GeneralError>(err);
 }
 } // namespace OHOS::DistributedRdb
