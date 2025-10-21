@@ -512,10 +512,7 @@ void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLoc
             return false;
         }
         Uri uri(oriUri);
-        std::string scheme = uri.GetScheme();
-        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-            ZLOGW("Empty authority or scheme not file");
+        if (!ValidateUriScheme(uri, hasError)) {
             return false;
         }
         if (!isLocal) {
@@ -528,10 +525,7 @@ void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLoc
             }
             uri = Uri(remoteUri);
             obj->value_.insert_or_assign(ORI_URI, std::move(remoteUri)); // cross dev, need dis path.
-            scheme = uri.GetScheme();
-            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-                ZLOGW("Empty authority or scheme not file");
+            if (!ValidateUriScheme(uri, hasError)) {
                 return false;
             }
         }
@@ -543,6 +537,23 @@ void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLoc
         writeUris.emplace_back(uri); // Compatibility Handling Between Different Versions.
         return true;
     });
+}
+
+bool PreProcessUtils::ValidateUriScheme(Uri &uri, bool &hasError)
+{
+    std::string scheme = uri.GetScheme();
+    std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+    if (!scheme.empty() && scheme != FILE_SCHEME) {
+        ZLOGW("scheme is not file");
+        return false;
+    }
+
+    if (scheme.empty() || uri.GetAuthority().empty()) {
+        hasError = true;
+        ZLOGE("Empty authority or scheme not file");
+        return false;
+    }
+    return true;
 }
 
 void PreProcessUtils::SetRecordUid(UnifiedData &data)
