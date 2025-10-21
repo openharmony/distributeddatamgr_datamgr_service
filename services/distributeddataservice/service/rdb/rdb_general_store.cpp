@@ -960,7 +960,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         auto [exist, database] = GetDistributedSchema(observer_.meta_);
         if (exist) {
             auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
-                    {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
+                {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
             delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
         }
     }

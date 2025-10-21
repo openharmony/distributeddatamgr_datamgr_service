@@ -16,6 +16,7 @@
 #include "accesstoken_kit.h"
 #include "log_print.h"
 #include "sync_mgr/sync_mgr.h"
+#include "utils/anonymous.h"
 
 using namespace OHOS::Security::AccessToken;
 namespace OHOS::DistributedData {
@@ -85,12 +86,16 @@ void SyncManager::SetDoubleSyncSAInfo(const DoubleSyncSAInfo &doubleSyncSAInfo)
 bool SyncManager::isConstraintSA(const uint32_t &tokenId)
 {
     NativeTokenInfo nativeTokenInfo;
-    if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) != RET_SUCCESS ||
-        doubleSyncSAs_.find(nativeTokenInfo.processName) == doubleSyncSAs_.end()) {
-        ZLOGE("passed wrong, tokenId: %{public}u, bundleName:%{public}s", tokenId,
-            nativeTokenInfo.processName.c_str());
-        return true;
+    if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) != RET_SUCCESS) {
+        ZLOGE("failed to get native token info, tokenId: %{public}s",
+            Anonymous::Change(std::to_string(tokenId)).c_str());
+        return false;
     }
-    return false;
+    for (const auto &entry : doubleSyncSAs_) {
+        if (entry.second == nativeTokenInfo.processName) {
+            return false;
+        }
+    }
+    return true;
 }
 } // namespace OHOS::DistributedData

@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 #include <gtest/gtest.h>
-
+#include "ipc_skeleton.h"
 #include "sync_mgr/sync_mgr.h"
 
 using namespace testing::ext;
