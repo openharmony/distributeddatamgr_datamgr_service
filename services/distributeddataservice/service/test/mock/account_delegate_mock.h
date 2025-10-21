@@ -40,7 +40,7 @@ public:
     MOCK_METHOD(void, BindExecutor, (std::shared_ptr<ExecutorPool>));
     MOCK_METHOD(std::string, GetUnencryptedAccountId, (int32_t), (const));
     MOCK_METHOD(bool, IsUserForeground, (int32_t));
-    MOCK_METHOD(bool, CheckOsAccountConstraintEnabled, (int32_t));
+    MOCK_METHOD(bool, CheckOsAccountConstraintEnabled, ());
 };
 }
 }

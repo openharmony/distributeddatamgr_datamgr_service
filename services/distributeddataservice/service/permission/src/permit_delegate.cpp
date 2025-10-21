@@ -187,9 +187,12 @@ DataFlowRet PermitDelegate::CheckDataFlow(const CheckParam &param, const Propert
     }
     auto it = property.find(Constant::TOKEN_ID);
     if (it != property.end()) {
-        uint32_t tokenId = *std::get_if<uint32_t>(&it->second);
-        if (!SyncManager::GetInstance().isConstraintSA(tokenId)) {
-            return DataFlowRet::DEFAULT;
+        auto tokenIdPtr = std::get_if<uint32_t>(&it->second);
+        if (tokenIdPtr != nullptr) {
+            uint32_t tokenId = *tokenIdPtr;
+            if (!SyncManager::GetInstance().isConstraintSA(tokenId)) {
+                return DataFlowRet::DEFAULT;
+            }
         }
     }
     return DataFlowRet::DENIED_SEND;

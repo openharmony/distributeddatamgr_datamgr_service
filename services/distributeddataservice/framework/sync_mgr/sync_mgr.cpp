@@ -89,8 +89,8 @@ bool SyncManager::isConstraintSA(const uint32_t &tokenId)
         doubleSyncSAs_.find(nativeTokenInfo.processName) == doubleSyncSAs_.end()) {
         ZLOGE("passed wrong, tokenId: %{public}u, bundleName:%{public}s", tokenId,
             nativeTokenInfo.processName.c_str());
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 } // namespace OHOS::DistributedData

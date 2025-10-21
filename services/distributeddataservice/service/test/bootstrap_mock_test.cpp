@@ -16,6 +16,7 @@
 #include "bootstrap.h"
 #include <gtest/gtest.h>
 #include <memory>
+#include "serializable/serializable.h"
 
 namespace OHOS::DistributedData {
 using namespace testing;
@@ -68,6 +69,7 @@ HWTEST_F(BootStrapMockTest, GetMetaDBName, testing::ext::TestSize.Level0)
     Bootstrap::GetInstance().LoadAppIdMappings();
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(0, 1);
     Bootstrap::GetInstance().LoadBackup(executors);
+    Bootstrap::GetInstance().LoadDoubleSyncSA();
     EXPECT_TRUE(metaDbName == BootStrapMockTest::defaultMeta);
 }
 }
