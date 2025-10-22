@@ -1228,7 +1228,7 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     BlockDelayData blockData;
     auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
     auto isBlockData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
-    int32_t ret = FillDelayUnifiedData(key, unifiedData);
+    int32_t ret = FillDelayUnifiedData(udKey, unifiedData);
     if (ret != E_OK) {
         ZLOGE("FillDelayUnifiedData failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
         return ret;
@@ -1240,7 +1240,8 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     QueryOption query;
     query.tokenId = isDataLoading ? getDataInfo.tokenId : blockData.tokenId;
     query.key = key;
-    if (option.tokenId != query.tokenId && !IsPermissionInCache(query)) {
+    uint32_t callingTokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    if (callingTokenId != query.tokenId && !IsPermissionInCache(query)) {
         ZLOGE("No permission");
         return E_NO_PERMISSION;
     }
@@ -1311,6 +1312,17 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         .intention = Intention::UD_INTENTION_DRAG,
         .tokenId = tokenId
     };
+    std::vector<std::string> devices = GetDevicesForDelayData(key);
+    if (devices.empty()) {
+        ZLOGE("Devices is empty, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
+    PushDelayDataToRemote(queryOption, devices);
+    return E_OK;
+}
+
+std::vector<std::string> UdmfServiceImpl::GetDevicesForDelayData(const std::string &key)
+{
     std::vector<std::string> devices;
     DataLoadInfo info;
     if(DelayDataContainer::GetInstance().QueryDelayAcceptableInfo(key, info)) {
@@ -1318,22 +1330,17 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         devices.emplace_back(std::move(info.deviceId));
     } else {
         ZLOGI("Find from remote sync notify, key: %{public}s", key.c_str());
-        std::vector<AppDistributedKv::DeviceInfo> devInfos = DmAdapter::GetInstance().GetRemoteDevices();
         auto syncedDevices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();
-        for (const auto &devInfo : devInfos) {
-            if (syncedDevices.find(devInfo.uuid) != syncedDevices.end()) {
-                devices.emplace_back(devInfo.uuid);
-            }
+        devices.insert(devices.end(), syncedDevices.begin(), syncedDevices.end());
+    }
+    std::vector<AppDistributedKv::DeviceInfo> devInfos = DmAdapter::GetInstance().GetRemoteDevices();
+    std::vector<std::string> validDevices;
+    for (const auto &devInfo : devInfos) {
+        if (std::find(devices.begin(), devices.end(), devInfo.uuid) != devices.end()) {
+            validDevices.emplace_back(devInfo.uuid);
         }
     }
-    if (devices.empty()) {
-        ZLOGE("Devices is empty, key:%{public}s", key.c_str());
-        return E_ERROR;
-    }
-    // clear delay drag device info after use
-    DelayDataContainer::GetInstance().ClearDelayDragDeviceInfo();
-    PushDelayDataToRemote(queryOption, devices);
-    return E_OK;
+    return validDevices;
 }
 
 int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,

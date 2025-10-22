@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace UDMF {
-
+using Time = std::chrono::steady_clock::time_point;
 struct BlockDelayData {
     uint32_t tokenId {0};
     std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
@@ -64,7 +64,7 @@ private:
     struct SyncedDeiviceInfo {
         uint32_t tokenId {0};
         std::string deviceId;
-        Time time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+        Time time_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(INTERVAL);
 
         bool operator<(const Time &time) const
         {
@@ -81,6 +81,7 @@ private:
     std::vector<SyncedDeiviceInfo> delayDragDeviceInfo_ {};
     std::mutex delayAcceptableMutex_;
     std::map<std::string, DataLoadInfo> delayAcceptableInfos_ {};
+    static constexpr int64_t INTERVAL = 30; // 30s
 };
 } // namespace UDMF
 } // namespace OHOS

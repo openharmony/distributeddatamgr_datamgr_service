@@ -145,9 +145,9 @@ bool DelayDataContainer::QueryBlockDelayData(const std::string &key, BlockDelayD
 
 void DelayDataContainer::SaveDelayDragDeviceInfo(std::string &deviceId)
 {
-    std::lock_guard<std::mutex> lock(syncedDeviceMutex_);
     std::vector<SyncedDeiviceInfo> devices;
     auto current = std::chrono::steady_clock::now();
+    std::lock_guard<std::mutex> lock(syncedDeviceMutex_);
     for (const auto &info : delayDragDeviceInfo_) {
         if (info < current) {
             continue;
@@ -164,9 +164,10 @@ void DelayDataContainer::SaveDelayDragDeviceInfo(std::string &deviceId)
 std::vector<std::string> DelayDataContainer::QueryDelayDragDeviceInfo()
 {
     std::vector<std::string> deviceIds;
+    std::vector<SyncedDeiviceInfo> devices;
     {
         std::lock_guard<std::mutex> lock(syncedDeviceMutex_);
-        auto devices = delayDragDeviceInfo_;
+        devices = delayDragDeviceInfo_;
         delayDragDeviceInfo_.clear();
     }
     auto current = std::chrono::steady_clock::now();
@@ -176,7 +177,7 @@ std::vector<std::string> DelayDataContainer::QueryDelayDragDeviceInfo()
         }
         deviceIds.emplace_back(info.deviceId);
     }
-    return devices;
+    return deviceIds;
 }
 
 void DelayDataContainer::ClearDelayDragDeviceInfo()
