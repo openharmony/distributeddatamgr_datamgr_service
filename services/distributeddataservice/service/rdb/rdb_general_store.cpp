@@ -1386,4 +1386,9 @@ int32_t RdbGeneralStore::UpdateDBStatus()
     }
     return delegate_->OperateDataStatus(static_cast<uint32_t>(DataOperator::UPDATE_TIME));
 }
+
+void KVDBGeneralStore::SetProperty(uint32_t tokenId)
+{
+    delegate_->SetProperty({ { DistributedData::Constant::TOKEN_ID, tokenId } });
+}
 } // namespace OHOS::DistributedRdb
