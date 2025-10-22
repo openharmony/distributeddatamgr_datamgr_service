@@ -37,6 +37,7 @@
 #include "object_dms_handler.h"
 #include "object_radar_reporter.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -97,6 +98,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
                 ZLOGE("RegisterObserver err %{public}d", status);
             }
         });
+    store->SetProperty({ { DistributedData::Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
     return store;
 }
 

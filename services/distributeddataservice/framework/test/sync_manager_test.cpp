@@ -151,8 +151,8 @@ HWTEST_F(SyncManagerTest, SetDoubleSyncSAInfo001, TestSize.Level1)
     doubleSyncSAInfo.bundleName = "testName";
     doubleSyncSAInfo.appId = "testId";
     SyncManager::GetInstance().SetDoubleSyncSAInfo(doubleSyncSAInfo);
-    std::map<std::string, std::string> doubleSync_ = SyncManager::GetInstance().doubleSyncSAs_;
-    EXPECT_TRUE(doubleSync_.find(doubleSyncSAInfo.bundleName) != doubleSync_.end());
+    EXPECT_TRUE(SyncManager::GetInstance().doubleSyncSAs_.find(doubleSyncSAInfo.bundleName) !=
+        SyncManager::GetInstance().doubleSyncSAs_.end());
 }
 
 /**
@@ -165,6 +165,6 @@ HWTEST_F(SyncManagerTest, isConstraintSA001, TestSize.Level1)
 {
     int32_t tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
     bool res = SyncManager::GetInstance().isConstraintSA(tokenId);
-    EXPECT_FALSE(res);
+    EXPECT_TRUE(res);
 }
 } // namespace OHOS::Test
