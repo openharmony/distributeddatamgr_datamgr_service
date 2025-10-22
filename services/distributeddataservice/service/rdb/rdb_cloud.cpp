@@ -371,7 +371,7 @@ int32_t RdbCloud::Convert(std::shared_ptr<DistributedData::Cursor> cursor, std::
         err = cursor->MoveToNext();
         count--;
     }
-    return err == E_OK ?
-        ConvertStatus(static_cast<GeneralError>(code)) : ConvertStatus(static_cast<GeneralError>(err));
+    auto errCode = err == E_OK ? code : err;
+    return ConvertStatus(static_cast<GeneralError>(errCode));
 }
 } // namespace OHOS::DistributedRdb
