@@ -349,7 +349,7 @@ int32_t RdbCloud::Convert(std::shared_ptr<DistributedData::Cursor> cursor, std::
 {
     if (cursor == nullptr) {
         ZLOGE("cursor is null, code:%{public}d", code);
-        return code;
+        return code != E_OK ? code : E_ERROR;
     }
     int32_t count = cursor->GetCount();
     data.reserve(count);
