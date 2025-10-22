@@ -85,7 +85,7 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         std::tie(code, cursor) = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     }
     if (cursor == nullptr || code != E_OK) {
-        return static_cast<DBStatus>(Convert(cursor, data, code));
+        return ConvertStatus(static_cast<GeneralError>(Convert(cursor, data, code)));
     }
     auto err = Convert(cursor, data, code);
     DistributedData::Value cursorFlag;
@@ -95,7 +95,7 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         ZLOGD("query end, table:%{public}s", Anonymous::Change(tableName).c_str());
         return DBStatus::QUERY_END;
     }
-    return static_cast<DBStatus>(err);
+    return ConvertStatus(static_cast<GeneralError>(err));
 }
 
 DistributedData::GeneralError RdbCloud::PreSharing(const std::string& tableName, VBuckets& extend)
@@ -349,7 +349,7 @@ int32_t RdbCloud::Convert(std::shared_ptr<DistributedData::Cursor> cursor, std::
 {
     if (cursor == nullptr) {
         ZLOGE("cursor is null, code:%{public}d", code);
-        return ConvertStatus(static_cast<GeneralError>(code));
+        return code;
     }
     int32_t count = cursor->GetCount();
     data.reserve(count);
@@ -371,7 +371,6 @@ int32_t RdbCloud::Convert(std::shared_ptr<DistributedData::Cursor> cursor, std::
         err = cursor->MoveToNext();
         count--;
     }
-    auto errCode = err == E_OK ? code : err;
-    return ConvertStatus(static_cast<GeneralError>(errCode));
+    return err == E_OK ? code : err;
 }
 } // namespace OHOS::DistributedRdb
