@@ -29,92 +29,117 @@ DelayDataContainer &DelayDataContainer::GetInstance()
 
 bool DelayDataContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
 {
-    return dataLoadCallback_.ComputeIfPresent(query.key, [&](const auto &key, auto &callback) {
-        std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
-        auto [found, cache] = blockDelayDataCache_.Find(key);
-        if (found) {
-            blockData = cache.blockData;
-        } else {
-            blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
-            blockDelayDataCache_.Insert(key, BlockDelayData{query.tokenId, blockData});
-            callback->HandleDelayObserver(key, DataLoadInfo());
-        }
-        ZLOGI("Start waiting for data, key:%{public}s", key.c_str());
-        auto dataOpt = blockData->GetValue();
-        if (dataOpt.has_value()) {
-            unifiedData = *dataOpt;
-            blockDelayDataCache_.Erase(key);
-            return false;
-        }
-        res = E_NOT_FOUND;
+    std::lock_guard<std::mutex> lock(dataLoadMutex_);
+    auto dataLoadIter = dataLoadCallback_.find(query.key);
+    if (dataLoadIter == dataLoadCallback_.end()) {
+        return false;
+    }
+    std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
+    auto blockDataIter = blockDelayDataCache_.find(query.key);
+    if (blockDataIter != blockDelayDataCache_.end()) {
+        blockData = blockDataIter->second.blockData;
+    } else {
+        blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
+        blockDelayDataCache_.insert_or_assign({query.key, BlockDelayData{query.tokenId, blockData}});
+        dataLoadIter->second->HandleDelayObserver(query.key, DataLoadInfo());
+    }
+    ZLOGI("Start waiting for data, key:%{public}s", query.key.c_str());
+    auto dataOpt = blockData->GetValue();
+    if (dataOpt.has_value()) {
+        unifiedData = *dataOpt;
+        blockDelayDataCache_.erase(query.key);
+        dataLoadCallback_.erase(query.key);
         return true;
-    });
+    }
+    res = E_NOT_FOUND;
+    return true;
 }
 
 void DelayDataContainer::RegisterDataLoadCallback(const std::string &key, sptr<UdmfNotifierProxy> callback)
 {
-    dataLoadCallback_.InsertOrAssign(key, callback);
+    std::lock_guard<std::mutex> lock(dataLoadMutex_);
+    dataLoadCallback_.insert_or_assign(key, callback);
 }
 
 bool DelayDataContainer::ExecDataLoadCallback(const std::string &key, const DataLoadInfo &info)
 {
-    auto it = dataLoadCallback_.Find(key);
-    if (!it.first) {
+    std::lock_guard<std::mutex> lock(dataLoadMutex_);
+    auto it = dataLoadCallback_.find(key);
+    if (it == dataLoadCallback_.end()) {
         return false;
     }
-    dataLoadCallback_.Erase(key);
+    dataLoadCallback_.erase(key);
     ZLOGI("Execute data load callback, key:%{public}s", key.c_str());
-    it.second->HandleDelayObserver(key, info);
+    it->second->HandleDelayObserver(key, info);
     return true;
 }
 
 void DelayDataContainer::ExecAllDataLoadCallback()
 {
-    dataLoadCallback_.ForEach([&](const auto &key, auto &callback) {
+    std::lock_guard<std::mutex> lock(dataLoadMutex_);
+    for (const auto &[key, callback] : dataLoadCallback_) {
         DataLoadInfo info;
         ZLOGI("Execute data load callback, key:%{public}s", key.c_str());
         callback->HandleDelayObserver(key, info);
-        return true;
-    });
-    dataLoadCallback_.Clear();
+    }
+    dataLoadCallback_.clear();
 }
 
 void DelayDataContainer::RegisterDelayDataCallback(const std::string &key, const DelayGetDataInfo &info)
 {
-    delayDataCallback_.InsertOrAssign(key, info);
+    std::lock_guard<std::mutex> lock(delayDataMutex_);
+    delayDataCallback_.insert_or_assign(key, info);
 }
 
 bool DelayDataContainer::HandleDelayDataCallback(const std::string &key, const UnifiedData &unifiedData)
 {
-    return delayDataCallback_.ComputeIfPresent(key, [&](const auto &key, auto &delayGetDataInfo) {
-        auto callback = iface_cast<DelayDataCallbackProxy>(delayGetDataInfo.dataCallback);
-        if (callback == nullptr) {
-            ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
-            return false;
-        }
-        callback->DelayDataCallback(key, unifiedData);
-        delayDataCallback_.Erase(key);
-        return true;
-    });
+    std::lock_guard<std::mutex> lock(delayDataMutex_);
+    auto it = delayDataCallback_.find(key);
+    if (it == delayDataCallback_.end()) {
+        return false;
+    }
+    auto callback = iface_cast<DelayDataCallbackProxy>(it->second.dataCallback);
+    if (callback == nullptr) {
+        ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
+        return false;
+    }
+    callback->DelayDataCallback(key, unifiedData);
+    delayDataCallback_.erase(key);
+    return true;
 }
 
 bool DelayDataContainer::QueryDelayGetDataInfo(const std::string &key, DelayGetDataInfo &getDataInfo)
 {
-    auto [found, callback] = delayDataCallback_.Find(key);
-    if (!found) {
+    std::lock_guard<std::mutex> lock(delayDataMutex_);
+    auto it = delayDataCallback_.find(key);
+    if (it == delayDataCallback_.end()) {
         return false;
     }
-    getDataInfo = callback;
+    getDataInfo = it->second;
     return true;
+}
+
+std::vector<std::string> DelayDataContainer::QueryAllDelayKeys()
+{
+    std::lock_guard<std::mutex> lock(delayDataMutex_);
+    std::vector<std::string> keys;
+    for (const auto &[key, _] : delayDataCallback_) {
+        if (key.empty()) {
+            continue;
+        }
+        keys.emplace_back(key);
+    }
+    return keys;
 }
 
 bool DelayDataContainer::QueryBlockDelayData(const std::string &key, BlockDelayData &blockData)
 {
-    auto [found, data] = blockDelayDataCache_.Find(key);
-    if (!found) {
+    std::lock_guard<std::mutex> lock(dataLoadMutex_);
+    auto it = blockDelayDataCache_.find(key);
+    if (it == blockDelayDataCache_.end()) {
         return false;
     }
-    blockData = data;
+    blockData = it->second;
     return true;
 }
 
@@ -137,17 +162,19 @@ void DelayDataContainer::ClearDelayDragDeviceInfo()
 
 void DelayDataContainer::SaveDelayAcceptableInfo(const std::string &key, const DataLoadInfo &info)
 {
-    delayAcceptableInfos_.InsertOrAssign(key, info);
+    std::lock_guard<std::mutex> lock(delayAcceptableMutex_);
+    delayAcceptableInfos_.insert_or_assign(key, info);
 }
 
 bool DelayDataContainer::QueryDelayAcceptableInfo(const std::string &key, DataLoadInfo &info)
 {
-    auto [found, dataLoadInfo] = delayAcceptableInfos_.Find(key);
-    if (!found) {
+    std::lock_guard<std::mutex> lock(delayAcceptableMutex_);
+    auto it = delayAcceptableInfos_.Find(key);
+    if (it == delayAcceptableInfos_.end()) {
         return false;
     }
-    info = dataLoadInfo;
-    delayAcceptableInfos_.Erase(key);
+    info = it->second;
+    delayAcceptableInfos_.erase(key);
     return true;
 }
 } // namespace UDMF

@@ -98,6 +98,7 @@ private:
     int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
     bool VerifySavedTokenId(std::shared_ptr<Runtime> runtime);
     void RegisterObserver(const std::string &key);
+    void RegisterAllDataChangedObserver(const std::string &key);
     void UnRegisterObserver(const std::string &key);
     bool IsSyncFinished(const std::string &key);
     int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);

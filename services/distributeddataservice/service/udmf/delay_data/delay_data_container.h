@@ -42,6 +42,7 @@ public:
     void RegisterDelayDataCallback(const std::string &key, const DelayGetDataInfo &info);
     bool HandleDelayDataCallback(const std::string &key, const UnifiedData &unifiedData);
     bool QueryDelayGetDataInfo(const std::string &key, DelayGetDataInfo &info);
+    std::vector<std::string> QueryAllDelayKeys();
 
     // blockDelayDataCache_ part
     bool QueryBlockDelayData(const std::string &key, BlockDelayData &getDataInfo);
@@ -60,11 +61,14 @@ private:
     DelayDataContainer(const DelayDataContainer &obj) = delete;
     DelayDataContainer &operator=(const DelayDataContainer &obj) = delete;
 
-    ConcurrentMap<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
-    ConcurrentMap<std::string, DelayGetDataInfo> delayDataCallback_ {};
-    ConcurrentMap<std::string, BlockDelayData> blockDelayDataCache_ {};
+    std::mutex dataLoadMutex_;
+    std::map<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
+    std::mutex delayDataMutex_;
+    std::map<std::string, DelayGetDataInfo> delayDataCallback_ {};
+    std::map<std::string, BlockDelayData> blockDelayDataCache_ {};
     std::vector<std::string> delayDragDeviceInfo_ {};
-    ConcurrentMap<std::string, DataLoadInfo> delayAcceptableInfos_ {};
+    std::mutex delayAcceptableMutex_;
+    std::map<std::string, DataLoadInfo> delayAcceptableInfos_ {};
 };
 } // namespace UDMF
 } // namespace OHOS

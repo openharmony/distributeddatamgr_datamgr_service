@@ -981,6 +981,7 @@ int32_t UdmfServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
             ZLOGE("GetStore fail, storeId:%{public}s", Anonymous::Change(storeMeta.storeId).c_str());
             continue;
         }
+        RegisterAllDataChangedObserver();
         ZLOGI("storeId:%{public}s,user:%{public}s", Anonymous::Change(storeMeta.storeId).c_str(),
             storeMeta.user.c_str());
         return E_OK;
@@ -1424,6 +1425,19 @@ void UdmfServiceImpl::RegisterObserver(const std::string &key)
     // register acceptable info observer
     std::string acceptableInfoKey = key + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
     store->RegisterDataChangedObserver(acceptableInfoKey, ObserverFac::ObserverType::ACCEPTABLE_INFO);
+}
+
+void UdmfServiceImpl::RegisterAllDataChangedObserver()
+{
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    if (store == nullptr) {
+        ZLOGE("Get drag store failed");
+        return;
+    }
+    std::vector<std::string> keys = DelayDataContainer::GetInstance().QueryAllDelayKeys();
+    for (const auto &key : keys) {
+        store->RegisterDataChangedObserver(key, ObserverFac::ObserverType::RUNTIME);
+    }
 }
 
 void UdmfServiceImpl::UnRegisterObserver(const std::string &key)
