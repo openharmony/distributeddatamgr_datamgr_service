@@ -61,12 +61,24 @@ private:
     DelayDataContainer(const DelayDataContainer &obj) = delete;
     DelayDataContainer &operator=(const DelayDataContainer &obj) = delete;
 
+    struct SyncedDeiviceInfo {
+        uint32_t tokenId {0};
+        std::string deviceId;
+        Time time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+
+        bool operator<(const Time &time) const
+        {
+            return time_ < time;
+        }
+    };
+
     std::mutex dataLoadMutex_;
     std::map<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
     std::mutex delayDataMutex_;
     std::map<std::string, DelayGetDataInfo> delayDataCallback_ {};
     std::map<std::string, BlockDelayData> blockDelayDataCache_ {};
-    std::vector<std::string> delayDragDeviceInfo_ {};
+    std::mutex syncedDeviceMutex_;
+    std::vector<SyncedDeiviceInfo> delayDragDeviceInfo_ {};
     std::mutex delayAcceptableMutex_;
     std::map<std::string, DataLoadInfo> delayAcceptableInfos_ {};
 };

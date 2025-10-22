@@ -40,7 +40,7 @@ bool DelayDataContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &
         blockData = blockDataIter->second.blockData;
     } else {
         blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
-        blockDelayDataCache_.insert_or_assign({query.key, BlockDelayData{query.tokenId, blockData}});
+        blockDelayDataCache_.insert_or_assign(query.key, BlockDelayData{query.tokenId, blockData});
         dataLoadIter->second->HandleDelayObserver(query.key, DataLoadInfo());
     }
     ZLOGI("Start waiting for data, key:%{public}s", query.key.c_str());
@@ -145,18 +145,43 @@ bool DelayDataContainer::QueryBlockDelayData(const std::string &key, BlockDelayD
 
 void DelayDataContainer::SaveDelayDragDeviceInfo(std::string &deviceId)
 {
-    delayDragDeviceInfo_.emplace_back(deviceId);
+    std::lock_guard<std::mutex> lock(syncedDeviceMutex_);
+    std::vector<SyncedDeiviceInfo> devices;
+    auto current = std::chrono::steady_clock::now();
+    for (const auto &info : delayDragDeviceInfo_) {
+        if (info < current) {
+            continue;
+        }
+        devices.emplace_back(info);
+    }
+    SyncedDeiviceInfo info;
+    info.deviceId = deviceId;
+    devices.emplace_back(info);
+    delayDragDeviceInfo_.clear();
+    delayDragDeviceInfo_ = devices;
 }
 
 std::vector<std::string> DelayDataContainer::QueryDelayDragDeviceInfo()
 {
-    auto devices = delayDragDeviceInfo_;
-    delayDragDeviceInfo_.clear();
+    std::vector<std::string> deviceIds;
+    {
+        std::lock_guard<std::mutex> lock(syncedDeviceMutex_);
+        auto devices = delayDragDeviceInfo_;
+        delayDragDeviceInfo_.clear();
+    }
+    auto current = std::chrono::steady_clock::now();
+    for (const auto &info : devices) {
+        if (info < current) {
+            continue;
+        }
+        deviceIds.emplace_back(info.deviceId);
+    }
     return devices;
 }
 
 void DelayDataContainer::ClearDelayDragDeviceInfo()
 {
+    std::lock_guard<std::mutex> lock(syncedDeviceMutex_);
     delayDragDeviceInfo_.clear();
 }
 
@@ -169,7 +194,7 @@ void DelayDataContainer::SaveDelayAcceptableInfo(const std::string &key, const D
 bool DelayDataContainer::QueryDelayAcceptableInfo(const std::string &key, DataLoadInfo &info)
 {
     std::lock_guard<std::mutex> lock(delayAcceptableMutex_);
-    auto it = delayAcceptableInfos_.Find(key);
+    auto it = delayAcceptableInfos_.find(key);
     if (it == delayAcceptableInfos_.end()) {
         return false;
     }

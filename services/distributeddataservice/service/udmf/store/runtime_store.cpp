@@ -654,7 +654,7 @@ bool RuntimeStore::UnRegisterDataChangedObserver(const std::string &key)
     if (it.first) {
         auto status = kvStore_->UnRegisterObserver(it.second.get());
         if (status != DBStatus::OK) {
-            ZLOGE("UnRegisterAllObserver failed, status: %{public}d.", static_cast<int>(status));
+            ZLOGE("Un register observer failed, status: %{public}d.", static_cast<int>(status));
             return false;
         }
         observers_.Erase(key);

@@ -1228,24 +1228,9 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     BlockDelayData blockData;
     auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
     auto isBlockData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
-    CustomOption option = {
-        .intention = UD_INTENTION_DRAG,
-        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
-    };
-    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
-        ZLOGE("Imputation failed");
-        return E_ERROR;
-    }
-    auto runtime = unifiedData.GetRuntime();
-    if (runtime == nullptr) {
-        ZLOGE("Runtime is null");
-        return E_ERROR;
-    }
-    runtime->key = udKey;
-    PreProcessUtils::SetRecordUid(unifiedData);
-    int32_t ret = PreProcessUtils::HandleFileUris(option.tokenId, unifiedData);
+    int32_t ret = FillDelayUnifiedData(key, unifiedData);
     if (ret != E_OK) {
-        ZLOGE("HandleFileUris failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+        ZLOGE("FillDelayUnifiedData failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
         return ret;
     }
     if (!isDataLoading && !isBlockData) {
@@ -1275,6 +1260,31 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
         return DelayDataContainer::GetInstance().HandleDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
     }
     blockData.blockData->SetValue(unifiedData);
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::FillDelayUnifiedData(const UnifiedKey &key, UnifiedData &unifiedData)
+{
+    CustomOption option = {
+        .intention = UD_INTENTION_DRAG,
+        .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
+    };
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
+        ZLOGE("Imputation failed");
+        return E_ERROR;
+    }
+    auto runtime = unifiedData.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("Runtime is null");
+        return E_ERROR;
+    }
+    runtime->key = key;
+    PreProcessUtils::SetRecordUid(unifiedData);
+    int32_t ret = PreProcessUtils::HandleFileUris(option.tokenId, unifiedData);
+    if (ret != E_OK) {
+        ZLOGE("HandleFileUris failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+        return ret;
+    }
     return E_OK;
 }
 
@@ -1308,7 +1318,13 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         devices.emplace_back(std::move(info.deviceId));
     } else {
         ZLOGI("Find from remote sync notify, key: %{public}s", key.c_str());
-        devices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();
+        std::vector<AppDistributedKv::DeviceInfo> devInfos = DmAdapter::GetInstance().GetRemoteDevices();
+        auto syncedDevices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();
+        for (const auto &devInfo : devInfos) {
+            if (syncedDevices.find(devInfo.uuid) != syncedDevices.end()) {
+                devices.emplace_back(devInfo.uuid);
+            }
+        }
     }
     if (devices.empty()) {
         ZLOGE("Devices is empty, key:%{public}s", key.c_str());
