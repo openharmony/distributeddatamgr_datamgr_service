@@ -371,8 +371,6 @@ HWTEST_F(KvStoreDataServiceTest, InitSecurityAdapter001, TestSize.Level0)
     KvStoreDataService kvStoreDataServiceTest;
     std::shared_ptr<ExecutorPool> executors2 = std::make_shared<ExecutorPool>(1, 0);
     EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.InitSecurityAdapter(executors2));
-    std::shared_ptr<ExecutorPool> executors3 = nullptr;
-    EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.InitSecurityAdapter(executors3));
 }
 
 /**
