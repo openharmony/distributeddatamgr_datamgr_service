@@ -40,8 +40,8 @@ public:
     API_EXPORT bool IsAutoSyncStore(const std::string &bundleName, const std::string &appId,
         const std::string &store);
     API_EXPORT bool NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp);
-    API_EXPORT void SetDoubleSyncSAInfo(const DoubleSyncSAInfo &doubleSyncSAInfo);
-    API_EXPORT bool isConstraintSA(const uint32_t &tokenId);
+    API_EXPORT void SetDoubleSyncSAInfo(const DoubleSyncSAInfo doubleSyncSAInfo);
+    API_EXPORT bool isConstraintSA(const uint32_t tokenId);
 
 private:
     SyncManager();

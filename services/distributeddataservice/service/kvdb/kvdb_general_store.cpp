@@ -832,6 +832,6 @@ void KVDBGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
 
 void KVDBGeneralStore::SetProperty(uint32_t tokenId)
 {
-    delegate_->SetProperty({ { DistributedData::Constant::TOKEN_ID, tokenId } });
+    delegate_->SetProperty({ { Constant::TOKEN_ID, tokenId } });
 }
 } // namespace OHOS::DistributedKv

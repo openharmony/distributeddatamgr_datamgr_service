@@ -30,7 +30,7 @@ using CheckParam = DistributedDB::PermissionCheckParam;
 using CondParam = DistributedDB::PermissionConditionParam;
 using ActiveParam = DistributedDB::ActivationCheckParam;
 using Property = DistributedDB::Property;
-using DataFlowRet = DistributedDB::DataFlowCheckRet;
+using DataFlowCheckRet = DistributedDB::DataFlowCheckRet;
 
 class PermitDelegate {
 public:
@@ -49,7 +49,7 @@ private:
     Status VerifyStrategy(const StoreMetaData &data, const std::string &rmdevId) const;
     Status LoadStoreMeta(const std::string &prefix, const CheckParam &param, StoreMetaData &data) const;
     std::map<std::string, std::string> GetExtraCondition(const CondParam &param);
-    DataFlowRet CheckDataFlow(const CheckParam &param, const Property &property);
+    DataFlowCheckRet IsTransferAllowed(const CheckParam &param, const Property &property);
 
     ConcurrentMap<std::string, std::string> appId2BundleNameMap_;
     LRUBucket<std::string, StoreMetaData> metaDataBucket_ {32};

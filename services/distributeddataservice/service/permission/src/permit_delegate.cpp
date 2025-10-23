@@ -60,11 +60,11 @@ void PermitDelegate::Init()
     };
     status = DBConfig::SetPermissionCheckCallback(permitCall);
     ZLOGI("set permission callback status:%d.", status);
-    auto dataFlowCheckCall = [this](const CheckParam &Param, const Property &property) {
-        return CheckDataFlow(Param, property);
+    auto dataFlowCheckCall = [this](const CheckParam &Param, const Property &property) -> DataFlowCheckRet {
+        return isTransferAllowed(Param, property);
     };
     status = DBConfig::SetDataFlowCheckCallback(dataFlowCheckCall);
-    ZLOGI("set data flow callback status:%d.", status);
+    ZLOGI("set data flow callback status:%{public}d.", status);
     auto extraCall = [this](const CondParam &param) -> std::map<std::string, std::string> {
         return GetExtraCondition(param);
     };
@@ -179,11 +179,15 @@ bool PermitDelegate::VerifyPermission(const std::string &permission,
     return true;
 }
 
-DataFlowRet PermitDelegate::CheckDataFlow(const CheckParam &param, const Property &property)
+DataFlowCheckRet PermitDelegate::isTransferAllowed(const CheckParam &param, const Property &property)
 {
-    auto res = AccountDelegate::GetInstance()->CheckOsAccountConstraintEnabled();
-    if (!res) {
-        return DataFlowRet::DEFAULT;
+    auto accountDelegate = AccountDelegate::GetInstance();
+    if (accountDelegate == nullptr) {
+        ZLOGE("accountDelegate is null.");
+        return DataFlowCheckRet::DENIED_SEND;
+    }
+    if (!accountDelegate->CheckOsAccountConstraintEnabled()) {
+        return DataFlowCheckRet::DEFAULT;
     }
     auto it = property.find(Constant::TOKEN_ID);
     if (it != property.end()) {
@@ -191,10 +195,10 @@ DataFlowRet PermitDelegate::CheckDataFlow(const CheckParam &param, const Propert
         if (tokenIdPtr != nullptr) {
             uint32_t tokenId = *tokenIdPtr;
             if (!SyncManager::GetInstance().isConstraintSA(tokenId)) {
-                return DataFlowRet::DEFAULT;
+                return DataFlowCheckRet::DEFAULT;
             }
         }
     }
-    return DataFlowRet::DENIED_SEND;
+    return DataFlowCheckRet::DENIED_SEND;
 }
 } // namespace OHOS::DistributedData

@@ -69,7 +69,7 @@ bool SyncManager::IsAutoSyncStore(const std::string &bundleName, const std::stri
     return false;
 }
 
-bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp)
+bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo autoSyncApp)
 {
     auto it = autoSyncApps_.find(autoSyncApp.bundleName);
     if (it == autoSyncApps_.end()) {
@@ -83,7 +83,7 @@ void SyncManager::SetDoubleSyncSAInfo(const DoubleSyncSAInfo &doubleSyncSAInfo)
     doubleSyncSAs_.insert_or_assign(doubleSyncSAInfo.appId, doubleSyncSAInfo.bundleName);
 }
 
-bool SyncManager::isConstraintSA(const uint32_t &tokenId)
+bool SyncManager::isConstraintSA(const uint32_t tokenId)
 {
     NativeTokenInfo nativeTokenInfo;
     if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) != RET_SUCCESS) {

@@ -117,7 +117,7 @@ bool AccountDelegateDefaultImpl::Init()
 
 bool AccountDelegateDefaultImpl::CheckOsAccountConstraintEnabled()
 {
-    return true;
+    return false;
 }
 } // namespace DistributedData
 } // namespace OHOS

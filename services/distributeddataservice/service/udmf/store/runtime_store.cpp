@@ -452,7 +452,7 @@ bool RuntimeStore::Init()
     uint32_t pragmData = 16 * 1024 * 1024;
     PragmaData input = static_cast<PragmaData>(&pragmData);
     kvStore_->Pragma(SET_MAX_VALUE_SIZE, input);
-    kvStore_->SetProperty({ { DistributedData::Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+    kvStore_->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
     return true;
 }
 

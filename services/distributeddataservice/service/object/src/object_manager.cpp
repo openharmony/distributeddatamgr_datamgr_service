@@ -98,7 +98,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
                 ZLOGE("RegisterObserver err %{public}d", status);
             }
         });
-    store->SetProperty({ { DistributedData::Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+    store->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
     return store;
 }
 

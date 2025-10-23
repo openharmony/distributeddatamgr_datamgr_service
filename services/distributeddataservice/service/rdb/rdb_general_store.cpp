@@ -956,7 +956,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         }
     }
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        delegate_->SetProperty({{DistributedData::Constant::TOKEN_ID, observer_.meta_.tokenId}});
+        delegate_->SetProperty({{Constant::TOKEN_ID, observer_.meta_.tokenId}});
         auto [exist, database] = GetDistributedSchema(observer_.meta_);
         if (exist) {
             auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
@@ -1389,6 +1389,6 @@ int32_t RdbGeneralStore::UpdateDBStatus()
 
 void RdbGeneralStore::SetProperty(uint32_t tokenId)
 {
-    delegate_->SetProperty({ { DistributedData::Constant::TOKEN_ID, tokenId } });
+    delegate_->SetProperty({ { Constant::TOKEN_ID, tokenId } });
 }
 } // namespace OHOS::DistributedRdb
