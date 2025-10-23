@@ -1387,7 +1387,7 @@ int32_t RdbGeneralStore::UpdateDBStatus()
     return delegate_->OperateDataStatus(static_cast<uint32_t>(DataOperator::UPDATE_TIME));
 }
 
-void RdbGeneralStore::SetProperty(const Property &property)
+void RdbGeneralStore::SetDBProperty(const DBProperty &property)
 {
     delegate_->SetProperty(property);
 }

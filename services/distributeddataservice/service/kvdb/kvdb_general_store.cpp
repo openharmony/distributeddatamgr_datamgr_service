@@ -830,7 +830,7 @@ void KVDBGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
     return;
 }
 
-void KVDBGeneralStore::SetProperty(const Property &property)
+void KVDBGeneralStore::SetDBProperty(const DBProperty &property)
 {
     delegate_->SetProperty(property);
 }

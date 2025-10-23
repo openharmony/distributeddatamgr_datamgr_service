@@ -39,7 +39,7 @@ public:
     using Executor = ExecutorPool;
     using Nil = std::monostate;
     using PropertyType = std::variant<Nil, uint32_t, std::string>;
-    using Property = std::map<std::string, PropertyType>;
+    using DBProperty = std::map<std::string, PropertyType>;
     enum SyncMode {
         NEARBY_BEGIN,
         NEARBY_PUSH = NEARBY_BEGIN,
@@ -208,7 +208,7 @@ public:
     {
         return 0;
     }
-    virtual void SetProperty(const Property &property) = 0;
+    virtual void SetDBProperty(const DBProperty &property) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
