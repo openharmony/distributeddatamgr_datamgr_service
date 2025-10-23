@@ -650,6 +650,7 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
 void DeviceManagerAdapter::ResetLocalDeviceInfo()
 {
     auto local = GetLocalDeviceInfo();
+    localInfo_ = local;
     DeviceInfo dvInfo;
     if (deviceInfos_.Get(local.udid, dvInfo)) {
         deviceInfos_.Delete(dvInfo.networkId);
