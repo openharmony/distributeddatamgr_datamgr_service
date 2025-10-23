@@ -50,7 +50,7 @@ public:
     bool QueryBlockDelayData(const std::string &key, BlockDelayData &getDataInfo);
 
     // delayDragDeviceInfo_ part
-    void SaveDelayDragDeviceInfo(std::string &deviceId);
+    void SaveDelayDragDeviceInfo(const std::string &deviceId);
     std::vector<std::string> QueryDelayDragDeviceInfo();
     void ClearDelayDragDeviceInfo();
 
@@ -83,7 +83,7 @@ private:
     std::vector<SyncedDeiviceInfo> delayDragDeviceInfo_ {};
     std::mutex delayAcceptableMutex_;
     std::map<std::string, DataLoadInfo> delayAcceptableInfos_ {};
-    constexpr int64_t INTERVAL = 30; // 30s
+    static constexpr int64_t INTERVAL = 30; // 30s
 };
 } // namespace UDMF
 } // namespace OHOS

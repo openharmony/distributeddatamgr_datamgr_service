@@ -93,7 +93,7 @@ bool DelayDataContainer::ExecDataLoadCallback(const std::string &key, const Data
         return false;
     }
     ZLOGI("Execute data load callback, key:%{public}s", key.c_str());
-    it->second->HandleDelayObserver(key, info);
+    callback->HandleDelayObserver(key, info);
     return true;
 }
 
@@ -168,6 +168,10 @@ bool DelayDataContainer::QueryBlockDelayData(const std::string &key, BlockDelayD
 
 void DelayDataContainer::SaveDelayDragDeviceInfo(const std::string &deviceId)
 {
+    if (deviceId.empty()) {
+        ZLOGE("DeviceId is empty");
+        return;
+    }
     std::vector<SyncedDeiviceInfo> devices;
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(syncedDeviceMutex_);

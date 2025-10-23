@@ -1499,7 +1499,7 @@ bool UdmfServiceImpl::IsSyncFinished(const std::string &key)
 }
 
 int32_t UdmfServiceImpl::PushAcceptableInfo(
-    const QueryOption &query, const std::vector<std::string> &devices, const DataLoadInfo &info)
+    const QueryOption &query, const std::vector<std::string> &devices, DataLoadInfo &info)
 {
     UnifiedKey udKey(query.key);
     if (!CheckDragParams(udKey)) {
@@ -1530,7 +1530,7 @@ int32_t UdmfServiceImpl::PushAcceptableInfo(
     info.udKey = query.key;
     int32_t status = store->PutDataLoadInfo(info);
     if (status != E_OK) {
-        ZLOGE("Put data load info failed, status:%{public}d, key:%{public}s", status, key.c_str());
+        ZLOGE("Put data load info failed, status:%{public}d, key:%{public}s", status, query.key.c_str());
         HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
         return E_DB_ERROR;
     }
