@@ -210,12 +210,12 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
 bool UdmfServiceImpl::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
 {
     return dataLoadCallback_.ComputeIfPresent(query.key, [&](const auto &key, auto &callback) {
-        if (callback == nullptr) {
-            return false;
-        }
         std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
         auto [found, cache] = blockDelayDataCache_.Find(key);
         if (!found) {
+            if (callback == nullptr) {
+                return false;
+            }
             blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
             blockDelayDataCache_.Insert(key, BlockDelayData{query.tokenId, blockData});
             callback->HandleDelayObserver(key, DataLoadInfo());

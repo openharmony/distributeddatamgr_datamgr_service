@@ -37,14 +37,14 @@ LifeCycleManager &LifeCycleManager::GetInstance()
 
 Status LifeCycleManager::OnGot(const UnifiedKey &key)
 {
+    if (executors_ == nullptr) {
+        ZLOGE("Executors_ is nullptr.");
+        return E_ERROR;
+    }
     auto findPolicy = intentionPolicy_.find(key.intention);
     if (findPolicy == intentionPolicy_.end()) {
         ZLOGE("Invalid intention:%{public}s", key.intention.c_str());
         return E_INVALID_PARAMETERS;
-    }
-    if (executors_ == nullptr) {
-        ZLOGE("Executors_ is nullptr.");
-        return E_ERROR;
     }
     auto policy = findPolicy->second;
     ExecutorPool::TaskId taskId = executors_->Execute([=] {

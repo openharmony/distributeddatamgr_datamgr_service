@@ -194,6 +194,21 @@ HWTEST_F(UdmfPreProcessUtilsTest, GetHtmlFileUris001, TestSize.Level1)
 }
 
 /**
+* @tc.name: SetRecordUid001
+* @tc.desc: Abnormal test of SetRecordUid, record is nullptr
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, SetRecordUid001, TestSize.Level1)
+{
+    UnifiedData data;
+    data.records_.emplace_back(nullptr);
+    PreProcessUtils preProcessUtils;
+    preProcessUtils.SetRecordUid(data);
+    EXPECT_EQ(data.records_[0], nullptr);
+}
+
+/**
 * @tc.name: FillUris001
 * @tc.desc: Abnormal test of FillUris
 * @tc.type: FUNC
