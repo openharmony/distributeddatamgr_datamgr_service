@@ -1387,8 +1387,8 @@ int32_t RdbGeneralStore::UpdateDBStatus()
     return delegate_->OperateDataStatus(static_cast<uint32_t>(DataOperator::UPDATE_TIME));
 }
 
-void RdbGeneralStore::SetDBProperty(const DBProperty &property)
+int32_t RdbGeneralStore::SetDBProperty(const DBProperty &property)
 {
-    delegate_->SetProperty(property);
+    return delegate_->SetProperty(property);
 }
 } // namespace OHOS::DistributedRdb

@@ -1233,7 +1233,13 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
         return Status::ERROR;
     }
     if (store != nullptr) {
-        store->SetDBProperty(meta.tokenId);
+        auto res = store->SetDBProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } });
+        if (res != DBStatus::OK) {
+            ZLOGE("Set DB property failed! res:%{public}d appId:%{public}s storeId:%{public}s storeId length:"
+                  "%{public}zu dir:%{public}s", res, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
+                  meta.storeId.size(), Anonymous::Change(meta.dataDir).c_str());
+            return Status::ERROR;
+        }
     }
     RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_SUCCESS, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
         SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);

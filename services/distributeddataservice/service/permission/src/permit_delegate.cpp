@@ -60,7 +60,7 @@ void PermitDelegate::Init()
     };
     status = DBConfig::SetPermissionCheckCallback(permitCall);
     ZLOGI("set permission callback status:%d.", status);
-    auto dataFlowCheckCall = [this](const CheckParam &Param, const Property &property) -> DataFlowCheckRet {
+    auto dataFlowCheckCall = [this](const CheckParam &Param, const DBProperty &property) -> DataFlowCheckRet {
         return IsTransferAllowed(Param, property);
     };
     status = DBConfig::SetDataFlowCheckCallback(dataFlowCheckCall);
@@ -179,7 +179,7 @@ bool PermitDelegate::VerifyPermission(const std::string &permission,
     return true;
 }
 
-DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, const Property &property)
+DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, const DBProperty &property)
 {
     auto accountDelegate = AccountDelegate::GetInstance();
     if (accountDelegate == nullptr) {

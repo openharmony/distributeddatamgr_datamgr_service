@@ -82,7 +82,7 @@ public:
     static DBSecurity GetDBSecurity(int32_t secLevel);
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
-    void SetDBProperty(const DBProperty &property) override;
+    int32_t SetDBProperty(const DBProperty &property) override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;
