@@ -37,6 +37,9 @@ public:
     using DetailAsync = GenAsync;
     using Devices = std::vector<std::string>;
     using Executor = ExecutorPool;
+    using Nil = std::monostate;
+    using PropertyType = std::variant<Nil, uint32_t, std::string>;
+    using Property = std::map<std::string, PropertyType>;
     enum SyncMode {
         NEARBY_BEGIN,
         NEARBY_PUSH = NEARBY_BEGIN,
@@ -205,7 +208,7 @@ public:
     {
         return 0;
     }
-    virtual void SetProperty(uint32_t tokenId) = 0;
+    virtual void SetProperty(const Property &property) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

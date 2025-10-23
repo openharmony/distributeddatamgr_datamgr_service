@@ -89,7 +89,7 @@ public:
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
     int32_t UpdateDBStatus() override;
-    void SetProperty(uint32_t tokenId) override;
+    void SetProperty(const Property &property) override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
