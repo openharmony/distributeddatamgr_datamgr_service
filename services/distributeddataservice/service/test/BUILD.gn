@@ -2554,6 +2554,43 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
   ]
 }
 
+ohos_unittest("UdmfDelayDataContainerTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "udmf_delay_data_container_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/delay_data",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "udmf:udmf_client",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
+
+  defines = [
+    "private=public",
+    "protected=public",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -2578,6 +2615,7 @@ group("unittest") {
   if (datamgr_service_udmf) {
     deps += [
       ":UdmfCheckerManagerTest",
+      ":UdmfDelayDataContainerTest",
       ":UdmfPreProcessUtilsMockTest",
       ":UdmfPreProcessUtilsTest",
       ":UdmfRunTimeStoreTest",

@@ -74,10 +74,11 @@ private:
     Status MarkWhenCorrupted(DistributedDB::DBStatus status);
     void ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate);
     bool UnRegisterAllObserver();
-    ConcurrentMap<std::string, std::shared_ptr<DistributedDB::KvStoreObserver>> observers_ {};
+    std::map<std::string, std::shared_ptr<DistributedDB::KvStoreObserver>> observers_ {};
 
     bool isCorrupted_ = false;
     bool hasRegisterPullNotify_ = false;
+    std::mutex observerMutex_;
 };
 } // namespace UDMF
 } // namespace OHOS

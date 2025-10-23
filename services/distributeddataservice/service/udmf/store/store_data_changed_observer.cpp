@@ -35,13 +35,13 @@ void AcceptableInfoObserver::OnChange(const DistributedDB::KvStoreChangedData &d
             ZLOGE("Unmarshal data load entries failed, key: %{public}s", acceptableKey.c_str());
             continue;
         }
-        if (acceptableKey.find(info.sequenceKey) != 0 || acceptableKey == info.sequenceKey) {
+        if (acceptableKey.find(info.udKey) != 0 || acceptableKey == info.udKey) {
             ZLOGE("Acceptable key is invalid, key: %{public}s", acceptableKey.c_str());
             continue;
         }
-        DelayDataContainer::GetInstance().SaveDelayAcceptableInfo(info.sequenceKey, info);
-        if (!DelayDataContainer::GetInstance().ExecDataLoadCallback(info.sequenceKey, info)) {
-            ZLOGW("Can not find data load callback, key: %{public}s", info.sequenceKey.c_str());
+        DelayDataContainer::GetInstance().SaveDelayAcceptableInfo(info.udKey, info);
+        if (!DelayDataContainer::GetInstance().ExecDataLoadCallback(info.udKey, info)) {
+            ZLOGE("Can not find data load callback, key: %{public}s", info.udKey.c_str());
         }
     }
 }

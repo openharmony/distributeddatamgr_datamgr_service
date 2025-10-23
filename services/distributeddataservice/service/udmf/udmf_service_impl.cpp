@@ -145,7 +145,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_INVALID_PARAMETERS;
     }
     // imput runtime info before put it into store and save one privilege
-    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option, DataLoadInfo(), false) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
@@ -1181,8 +1181,8 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
         .intention = UD_INTENTION_DRAG,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
     };
-    if (PreProcessUtils::FillDelayRuntimeInfo(delayData, option, dataLoadInfo) != E_OK) {
-        ZLOGE("FillDelayRuntimeInfo failed");
+    if (PreProcessUtils::FillRuntimeInfo(delayData, option, dataLoadInfo, true) != E_OK) {
+        ZLOGE("FillRuntimeInfo failed");
         return E_ERROR;
     }
     auto runtime = delayData.GetRuntime();
@@ -1270,7 +1270,7 @@ int32_t UdmfServiceImpl::FillDelayUnifiedData(const UnifiedKey &key, UnifiedData
         .intention = UD_INTENTION_DRAG,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
     };
-    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option, DataLoadInfo(), false) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
@@ -1283,7 +1283,7 @@ int32_t UdmfServiceImpl::FillDelayUnifiedData(const UnifiedKey &key, UnifiedData
     PreProcessUtils::SetRecordUid(unifiedData);
     int32_t ret = PreProcessUtils::HandleFileUris(option.tokenId, unifiedData);
     if (ret != E_OK) {
-        ZLOGE("HandleFileUris failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
+        ZLOGE("HandleFileUris failed, ret:%{public}d", ret);
         return ret;
     }
     return E_OK;
@@ -1461,6 +1461,9 @@ void UdmfServiceImpl::RegisterAllDataChangedObserver()
     for (const auto &key : keys) {
         store->RegisterDataChangedObserver(key, ObserverFac::ObserverType::RUNTIME);
     }
+    if (DelayDataContainer::GetInstance().QueryDataLoadCallbackSize() > 0) {
+        store->SetRemotePullStartNotify();
+    }
 }
 
 void UdmfServiceImpl::UnRegisterObserver(const std::string &key)
@@ -1495,44 +1498,45 @@ bool UdmfServiceImpl::IsSyncFinished(const std::string &key)
     return true;
 }
 
-int32_t UdmfServiceImpl::SaveAcceptableInfo(const std::string &key, DataLoadInfo &info)
+int32_t UdmfServiceImpl::PushAcceptableInfo(
+    const QueryOption &query, const std::vector<std::string> &devices, const DataLoadInfo &info)
 {
-    UnifiedKey udKey(key);
+    UnifiedKey udKey(query.key);
     if (!CheckDragParams(udKey)) {
         return E_INVALID_PARAMETERS;
     }
+    if (!UTILS::IsTokenNative(query.tokenId) ||
+        !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(query.tokenId)) {
+        ZLOGE("Tokenid permission verification failed!");
+        return E_NO_PERMISSION;
+    }
+    std::string processName;
+    if (!PreProcessUtils::GetNativeProcessNameByToken(query.tokenId, processName)) {
+        ZLOGE("GetNativeProcessNameByToken is faild");
+        return E_ERROR;
+    }
+    if (find(DRAG_AUTHORIZED_PROCESSES, std::end(DRAG_AUTHORIZED_PROCESSES), processName) ==
+        std::end(DRAG_AUTHORIZED_PROCESSES)) {
+        ZLOGE("Process:%{public}s lacks permission for intention:drag", processName.c_str());
+        return E_NO_PERMISSION;
+    }
+
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
-        ZLOGE("Get store failed:%{public}s", key.c_str());
+        ZLOGE("Get store failed:%{public}s", query.key.c_str());
         return E_DB_ERROR;
     }
     info.deviceId = PreProcessUtils::GetRealLocalDeviceId();
-    info.sequenceKey = key;
+    info.udKey = query.key;
     int32_t status = store->PutDataLoadInfo(info);
     if (status != E_OK) {
         ZLOGE("Put data load info failed, status:%{public}d, key:%{public}s", status, key.c_str());
         HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
         return E_DB_ERROR;
     }
-    return E_OK;
-}
-
-int32_t UdmfServiceImpl::PushAcceptableInfo(const QueryOption &query, const std::vector<std::string> &devices)
-{
-    if (!UTILS::IsTokenNative(query.tokenId) ||
-        !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(query.tokenId)) {
-        ZLOGE("Tokenid permission verification failed!");
-        return E_NO_PERMISSION;
-    }
-    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
-    if (store == nullptr) {
-        ZLOGE("Get store failed:%{public}s", query.key.c_str());
-        return E_DB_ERROR;
-    }
     // Watch unified data from another device.
     store->RegisterDataChangedObserver(query.key, ObserverFac::ObserverType::RUNTIME);
     return PushDelayDataToRemote(query, devices);
-    
 }
 
 int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices)

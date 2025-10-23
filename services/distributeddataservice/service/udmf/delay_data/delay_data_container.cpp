@@ -29,6 +29,11 @@ DelayDataContainer &DelayDataContainer::GetInstance()
 
 bool DelayDataContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
 {
+    if (query.key.empty()) {
+        ZLOGE("HandleDelayLoad failed, key is empty");
+        res = E_INVALID_PARAMETERS;
+        return false;
+    }
     std::lock_guard<std::mutex> lock(dataLoadMutex_);
     auto dataLoadIter = dataLoadCallback_.find(query.key);
     if (dataLoadIter == dataLoadCallback_.end()) {
@@ -58,17 +63,35 @@ bool DelayDataContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &
 void DelayDataContainer::RegisterDataLoadCallback(const std::string &key, sptr<UdmfNotifierProxy> callback)
 {
     std::lock_guard<std::mutex> lock(dataLoadMutex_);
+    if (key.empty() || callback == nullptr) {
+        ZLOGE("RegisterDataLoadCallback failed, key is empty or callback is null");
+        return;
+    }
     dataLoadCallback_.insert_or_assign(key, callback);
+}
+
+int DelayDataContainer::QueryDataLoadCallbackSize()
+{
+    std::lock_guard<std::mutex> lock(dataLoadMutex_);
+    return static_cast<int>(dataLoadCallback_.size());
 }
 
 bool DelayDataContainer::ExecDataLoadCallback(const std::string &key, const DataLoadInfo &info)
 {
-    std::lock_guard<std::mutex> lock(dataLoadMutex_);
-    auto it = dataLoadCallback_.find(key);
-    if (it == dataLoadCallback_.end()) {
+    sptr<UdmfNotifierProxy> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(dataLoadMutex_);
+        auto it = dataLoadCallback_.find(key);
+        if (it == dataLoadCallback_.end()) {
+            return false;
+        }
+        callback = it->second;
+        dataLoadCallback_.erase(key);
+    }
+    if (callback == nullptr) {
+        ZLOGE("Data load callback is null, key:%{public}s", key.c_str());
         return false;
     }
-    dataLoadCallback_.erase(key);
     ZLOGI("Execute data load callback, key:%{public}s", key.c_str());
     it->second->HandleDelayObserver(key, info);
     return true;
@@ -143,7 +166,7 @@ bool DelayDataContainer::QueryBlockDelayData(const std::string &key, BlockDelayD
     return true;
 }
 
-void DelayDataContainer::SaveDelayDragDeviceInfo(std::string &deviceId)
+void DelayDataContainer::SaveDelayDragDeviceInfo(const std::string &deviceId)
 {
     std::vector<SyncedDeiviceInfo> devices;
     auto current = std::chrono::steady_clock::now();
@@ -152,13 +175,13 @@ void DelayDataContainer::SaveDelayDragDeviceInfo(std::string &deviceId)
         if (info < current) {
             continue;
         }
-        devices.emplace_back(info);
+        devices.emplace_back(std::move(info));
     }
     SyncedDeiviceInfo info;
     info.deviceId = deviceId;
-    devices.emplace_back(info);
+    devices.emplace_back(std::move(info));
     delayDragDeviceInfo_.clear();
-    delayDragDeviceInfo_ = devices;
+    delayDragDeviceInfo_ = std::move(devices);
 }
 
 std::vector<std::string> DelayDataContainer::QueryDelayDragDeviceInfo()

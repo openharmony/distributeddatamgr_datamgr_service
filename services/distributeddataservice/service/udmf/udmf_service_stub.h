@@ -48,7 +48,6 @@ private:
     int32_t OnPushDelayData(MessageParcel &data, MessageParcel &reply);
     int32_t OnSetDelayInfo(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetDataIfAvailable(MessageParcel &data, MessageParcel &reply);
-    int32_t OnSaveAcceptableInfo(MessageParcel &data, MessageParcel &reply);
     int32_t OnPushAcceptableInfo(MessageParcel &data, MessageParcel &reply);
 
     using Handler = int32_t (UdmfServiceStub::*)(MessageParcel &data, MessageParcel &reply);
@@ -70,7 +69,6 @@ private:
         &UdmfServiceStub::OnSetDelayInfo,
         &UdmfServiceStub::OnPushDelayData,
         &UdmfServiceStub::OnGetDataIfAvailable,
-        &UdmfServiceStub::OnSaveAcceptableInfo,
         &UdmfServiceStub::OnPushAcceptableInfo,
     };
 };

@@ -35,8 +35,10 @@ public:
     // dataLoadCallback_ part
     bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res);
     void RegisterDataLoadCallback(const std::string &key, sptr<UdmfNotifierProxy> callback);
+    int QueryDataLoadCallbackSize();
     bool ExecDataLoadCallback(const std::string &key, const DataLoadInfo &info);
     void ExecAllDataLoadCallback();
+
 
     // delayDataCallback_ part
     void RegisterDelayDataCallback(const std::string &key, const DelayGetDataInfo &info);
@@ -81,7 +83,7 @@ private:
     std::vector<SyncedDeiviceInfo> delayDragDeviceInfo_ {};
     std::mutex delayAcceptableMutex_;
     std::map<std::string, DataLoadInfo> delayAcceptableInfos_ {};
-    static constexpr int64_t INTERVAL = 30; // 30s
+    constexpr int64_t INTERVAL = 30; // 30s
 };
 } // namespace UDMF
 } // namespace OHOS
