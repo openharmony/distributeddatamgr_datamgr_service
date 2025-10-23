@@ -69,7 +69,7 @@ bool SyncManager::IsAutoSyncStore(const std::string &bundleName, const std::stri
     return false;
 }
 
-bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo autoSyncApp)
+bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp)
 {
     auto it = autoSyncApps_.find(autoSyncApp.bundleName);
     if (it == autoSyncApps_.end()) {
@@ -78,7 +78,7 @@ bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo autoSyncApp)
     return ((it->second.version == autoSyncApp.version) && (it->second.appId == autoSyncApp.appId));
 }
 
-void SyncManager::SetDoubleSyncSAInfo(const DoubleSyncSAInfo &doubleSyncSAInfo)
+void SyncManager::SetDoubleSyncSAInfo(const DoubleSyncSAInfo doubleSyncSAInfo)
 {
     doubleSyncSAs_.insert_or_assign(doubleSyncSAInfo.appId, doubleSyncSAInfo.bundleName);
 }
@@ -89,7 +89,7 @@ bool SyncManager::isConstraintSA(const uint32_t tokenId)
     if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) != RET_SUCCESS) {
         ZLOGE("failed to get native token info, tokenId: %{public}s",
             Anonymous::Change(std::to_string(tokenId)).c_str());
-        return false;
+        return true;
     }
     for (const auto &entry : doubleSyncSAs_) {
         if (entry.second == nativeTokenInfo.processName) {
