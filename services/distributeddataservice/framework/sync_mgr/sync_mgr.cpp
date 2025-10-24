@@ -101,7 +101,7 @@ bool SyncManager::IsAccessRestricted(const DoubleSyncInfo info)
         }
     } else if (TokenType == TOKEN_NATIVE || TokenType == TOKEN_SHELL) {
         for (const auto &entry : doubleSyncMap_) {
-            if (entry.first == name && entry.second == info.appId) {
+            if (entry.first == info.bundleName) {
                 return false;
             }
         }
