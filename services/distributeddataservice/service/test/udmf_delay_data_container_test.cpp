@@ -212,7 +212,7 @@ HWTEST_F(UdmfDelayDataContainerTest, QueryAllDelayKeys001, TestSize.Level1)
     DelayDataContainer::GetInstance().delayDataCallback_.insert_or_assign("", DelayGetDataInfo());
     DelayDataContainer::GetInstance().delayDataCallback_.insert_or_assign("key2", DelayGetDataInfo());
     auto keys = DelayDataContainer::GetInstance().QueryAllDelayKeys();
-    EXPECT_TRUE(keys.size == 2);
+    EXPECT_TRUE(keys.size() == 2);
     EXPECT_TRUE(std::find(keys.begin(), keys.end(), "key1") != keys.end());
     DelayDataContainer::GetInstance().delayDataCallback_.clear();
 }
@@ -232,7 +232,7 @@ HWTEST_F(UdmfDelayDataContainerTest, QueryBlockDelayData001, TestSize.Level1)
     BlockDelayData data;
     auto ret = DelayDataContainer::GetInstance().QueryBlockDelayData("111", data);
     EXPECT_FALSE(ret);
-    auto ret = DelayDataContainer::GetInstance().QueryBlockDelayData(key, data);
+    ret = DelayDataContainer::GetInstance().QueryBlockDelayData(key, data);
     EXPECT_TRUE(ret);
     DelayDataContainer::GetInstance().blockDelayDataCache_.clear();
 }
@@ -248,13 +248,13 @@ HWTEST_F(UdmfDelayDataContainerTest, SaveDelayDragDeviceInfo001, TestSize.Level1
     DelayDataContainer::GetInstance().delayDragDeviceInfo_.clear();
     DelayDataContainer::GetInstance().SaveDelayDragDeviceInfo("");
     EXPECT_TRUE(DelayDataContainer::GetInstance().delayDragDeviceInfo_.empty());
-    std::string deviceId = "saavsasd11213"
+    std::string deviceId = "saavsasd11213";
     DelayDataContainer::GetInstance().SaveDelayDragDeviceInfo(deviceId);
     EXPECT_TRUE(DelayDataContainer::GetInstance().delayDragDeviceInfo_.size() == 1);
 
     auto devices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();
     EXPECT_TRUE(devices.size() == 1);
-    EXPECT_EQ(devices[0] == deviceId);
+    EXPECT_EQ(devices[0], deviceId);
 
     DelayDataContainer::GetInstance().ClearDelayDragDeviceInfo();
     EXPECT_TRUE(DelayDataContainer::GetInstance().delayDragDeviceInfo_.empty());
