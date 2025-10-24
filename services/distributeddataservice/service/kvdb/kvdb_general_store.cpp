@@ -832,6 +832,9 @@ void KVDBGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
 
 int32_t KVDBGeneralStore::SetDBProperty(const DBProperty &property)
 {
+    if (delegate_ == nullptr) {
+        return DBStatus::DB_ERROR;
+    }
     return delegate_->SetProperty(property);
 }
 } // namespace OHOS::DistributedKv
