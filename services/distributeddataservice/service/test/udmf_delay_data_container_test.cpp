@@ -12,6 +12,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#include <gtest/gtest.h>
 #include "delay_data_container.h"
 
 using namespace OHOS::UDMF;

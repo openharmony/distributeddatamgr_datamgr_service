@@ -66,7 +66,8 @@ Status DataHandler::MarshalDataLoadEntries(const DataLoadInfo &info, std::vector
 
 Status DataHandler::UnmarshalDataLoadEntries(const Entry &entry, DataLoadInfo &info)
 {
-    auto data = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
+    std::vector<uint8_t> value = std::move(entry.value);
+    auto data = TLVObject(value);
     if (!TLVUtil::ReadTlv(info, data, TAG::TAG_DATA_LOAD_INFO)) {
         ZLOGE("Unmarshall data load info failed.");
         return E_READ_PARCEL_ERROR;
@@ -101,7 +102,8 @@ Status DataHandler::UnmarshalEntryItem(UnifiedData &unifiedData, const std::vect
 {
     for (const auto &entry : entries) {
         std::string keyStr = { entry.key.begin(), entry.key.end() };
-        auto data = TLVObject(const_cast<std::vector<uint8_t> &>(entry.value));
+        std::vector<uint8_t> value = std::move(entry.value);
+        auto data = TLVObject(value);
         if (keyStr == key) {
             Runtime runtime;
             if (!TLVUtil::ReadTlv(runtime, data, TAG::TAG_RUNTIME)) {

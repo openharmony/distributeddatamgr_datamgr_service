@@ -166,8 +166,9 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, FillRuntimeInfo001, TestSize.Level1)
     CustomOption option;
     option.intention = UD_INTENTION_DATA_HUB;
     option.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    DataLoadInfo dataLoadInfo;
     PreProcessUtils preProcessUtils;
-    auto ret = preProcessUtils.FillRuntimeInfo(data, option);
+    auto ret = preProcessUtils.FillRuntimeInfo(data, option, dataLoadInfo, false);
     EXPECT_EQ(ret, E_OK);
 }
 }; // namespace UDMF
