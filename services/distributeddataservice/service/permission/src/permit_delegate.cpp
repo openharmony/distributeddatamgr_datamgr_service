@@ -88,8 +88,6 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
     ZLOGI("user:%{public}s, appId:%{public}s, storeId:%{public}s, remote devId:%{public}s, instanceId:%{public}d,"
           "flag:%{public}u", param.userId.c_str(), param.appId.c_str(), Anonymous::Change(param.storeId).c_str(),
           Anonymous::Change(param.deviceId).c_str(), param.instanceId, flag);
-
-    auto devId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     StoreMetaData data;
     LoadStoreMeta(param, data);
     auto key = data.GetKeyWithoutPath();
@@ -163,11 +161,11 @@ bool PermitDelegate::VerifyPermission(const std::string &permission,
     return true;
 }
 
-Status PermitDelegate::LoadStoreMeta(const CheckParam &param, StoreMetaData &data) const
+void PermitDelegate::LoadStoreMeta(const CheckParam &param, StoreMetaData &data)
 {
     data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
     data.storeId = param.storeId;
-    data.deviceId = devId;
+    data.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;;
     data.instanceId = param.instanceId;
     appId2BundleNameMap_.Compute(param.appId, [&data, &param](const auto &key, std::string &value) {
         if (!value.empty()) {
