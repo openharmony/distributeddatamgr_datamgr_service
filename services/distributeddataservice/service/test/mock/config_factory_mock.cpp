@@ -87,7 +87,7 @@ DataShareConfig *ConfigFactory::GetDataShareConfig()
     return nullptr;
 }
 
-std::vector<DoubleSyncAppConfig> *ConfigFactory::GetDoubleSyncAppConfig()
+std::vector<DoubleSyncConfig> *ConfigFactory::GetDoubleSyncConfig()
 {
     return nullptr;
 }

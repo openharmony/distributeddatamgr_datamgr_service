@@ -163,12 +163,11 @@ HWTEST_F(SyncManagerTest, SetDoubleSyncInfo001, TestSize.Level1)
 */
 HWTEST_F(SyncManagerTest, IsAccessRestricted001, TestSize.Level1)
 {
-    int32_t tokenId = OHOS::IPCSkeleton::GetCallingTokenID();\
     SyncManager::DoubleSyncInfo info;
-    info.tokenId = tokenId;
+    info.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
     info.appId = "";
     info.bundleName = "";
-    bool res = SyncManager::GetInstance().IsAccessRestricted(tokenId, bundleName);
+    bool res = SyncManager::GetInstance().IsAccessRestricted(info);
     EXPECT_TRUE(res);
 }
 } // namespace OHOS::Test

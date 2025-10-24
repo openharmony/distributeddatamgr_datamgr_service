@@ -351,7 +351,12 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::GetMetaKvStore()
         return OK;
     };
     MetaDataManager::GetInstance().Initialize(metaDelegate_, backup, metaDbName);
-    metaDelegate_->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+    if (metaDelegate_ != nullptr) {
+        auto res = metaDelegate_->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+        if (res != DistributedDB::DBStatus::OK) {
+            ZLOGE("meta store set DB property fail, res:%{public}d", res);
+        }
+    }
     return metaDelegate_;
 }
 
