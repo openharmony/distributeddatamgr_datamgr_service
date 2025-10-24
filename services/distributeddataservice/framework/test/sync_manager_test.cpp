@@ -157,15 +157,18 @@ HWTEST_F(SyncManagerTest, SetDoubleSyncInfo001, TestSize.Level1)
 
 /**
 
-@tc.name: isConstraintSA001
-@tc.desc: isConstraintSA test.
+@tc.name: IsAccessRestricted001
+@tc.desc: IsAccessRestricted test.
 @tc.type: FUNC
 */
-HWTEST_F(SyncManagerTest, isConstraintSA001, TestSize.Level1)
+HWTEST_F(SyncManagerTest, IsAccessRestricted001, TestSize.Level1)
 {
-    int32_t tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    string bundleName = "";
-    bool res = SyncManager::GetInstance().isConstraintSA(tokenId, bundleName);
+    int32_t tokenId = OHOS::IPCSkeleton::GetCallingTokenID();\
+    SyncManager::DoubleSyncInfo info;
+    info.tokenId = tokenId;
+    info.appId = "";
+    info.bundleName = "";
+    bool res = SyncManager::GetInstance().IsAccessRestricted(tokenId, bundleName);
     EXPECT_TRUE(res);
 }
 } // namespace OHOS::Test

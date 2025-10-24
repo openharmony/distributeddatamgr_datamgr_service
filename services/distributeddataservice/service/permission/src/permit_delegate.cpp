@@ -198,8 +198,11 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
     if (it != property.end()) {
         auto tokenIdPtr = std::get_if<uint32_t>(&it->second);
         if (tokenIdPtr != nullptr) {
-            uint32_t tokenId = *tokenIdPtr;
-            if (!SyncManager::GetInstance().isConstraintSA(tokenId, data.bundleName)) {
+            SyncManager::DoubleSyncInfo info;
+            info.tokenId = *tokenIdPtr;
+            info.appId = data.appId;
+            info.bundleName = data.bundleName;
+            if (!SyncManager::GetInstance().IsAccessRestricted(info)) {
                 return DataFlowCheckRet::DEFAULT;
             }
         }
