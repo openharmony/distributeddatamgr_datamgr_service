@@ -91,23 +91,7 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
 
     auto devId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     StoreMetaData data;
-    data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
-    data.storeId = param.storeId;
-    data.deviceId = devId;
-    data.instanceId = param.instanceId;
-    appId2BundleNameMap_.Compute(param.appId, [&data, &param](const auto &key, std::string &value) {
-        if (!value.empty()) {
-            data.bundleName = value;
-            return true;
-        }
-        AppIDMetaData appIDMeta;
-        MetaDataManager::GetInstance().LoadMeta(key, appIDMeta, true);
-        if (appIDMeta.appId == param.appId) {
-            data.bundleName = appIDMeta.bundleName;
-            value = appIDMeta.bundleName;
-        }
-        return !value.empty();
-    });
+    LoadStoreMeta(param, data);
     auto key = data.GetKeyWithoutPath();
     if (!metaDataBucket_.Get(key, data)) {
         if (!MetaDataManager::GetInstance().LoadMeta(key, data)) {
@@ -179,6 +163,27 @@ bool PermitDelegate::VerifyPermission(const std::string &permission,
     return true;
 }
 
+Status PermitDelegate::LoadStoreMeta(const CheckParam &param, StoreMetaData &data) const
+{
+    data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
+    data.storeId = param.storeId;
+    data.deviceId = devId;
+    data.instanceId = param.instanceId;
+    appId2BundleNameMap_.Compute(param.appId, [&data, &param](const auto &key, std::string &value) {
+        if (!value.empty()) {
+            data.bundleName = value;
+            return true;
+        }
+        AppIDMetaData appIDMeta;
+        MetaDataManager::GetInstance().LoadMeta(key, appIDMeta, true);
+        if (appIDMeta.appId == param.appId) {
+            data.bundleName = appIDMeta.bundleName;
+            value = appIDMeta.bundleName;
+        }
+        return !value.empty();
+    });
+}
+
 DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, const DBProperty &property)
 {
     auto accountDelegate = AccountDelegate::GetInstance();
@@ -186,6 +191,8 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
         ZLOGE("accountDelegate is null.");
         return DataFlowCheckRet::DENIED_SEND;
     }
+    StoreMetaData data;
+    LoadStoreMeta(param, data);
     if (!accountDelegate->CheckOsAccountConstraintEnabled()) {
         return DataFlowCheckRet::DEFAULT;
     }
@@ -194,7 +201,7 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
         auto tokenIdPtr = std::get_if<uint32_t>(&it->second);
         if (tokenIdPtr != nullptr) {
             uint32_t tokenId = *tokenIdPtr;
-            if (!SyncManager::GetInstance().isConstraintSA(tokenId)) {
+            if (!SyncManager::GetInstance().isConstraintSA(tokenId, data.bundleName)) {
                 return DataFlowCheckRet::DEFAULT;
             }
         }

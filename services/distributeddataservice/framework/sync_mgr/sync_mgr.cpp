@@ -83,16 +83,26 @@ void SyncManager::SetDoubleSyncSAInfo(const DoubleSyncSAInfo doubleSyncSAInfo)
     doubleSyncSAs_.insert_or_assign(doubleSyncSAInfo.appId, doubleSyncSAInfo.bundleName);
 }
 
-bool SyncManager::isConstraintSA(const uint32_t tokenId)
+bool SyncManager::isConstraintSA(const uint32_t tokenId, const std::string bundleName)
 {
-    NativeTokenInfo nativeTokenInfo;
-    if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) != RET_SUCCESS) {
-        ZLOGE("failed to get native token info, tokenId: %{public}s",
-            Anonymous::Change(std::to_string(tokenId)).c_str());
+    std::string name;
+    auto TokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (TokenType == TOKEN_HAP) {
+        HapTokenInfo haptokenInfo;
+        if (AccessTokenKit::GetHapTokenInfo(tokenId, haptokenInfo) == RET_SUCCESS) {
+            name = haptokenInfo.bundleName;
+        } else {
+            ZLOGE("failed to get native token info, tokenId: %{public}s",
+                Anonymous::Change(std::to_string(tokenId)).c_str());
+            return true;
+        }
+    } else if (TokenType == TOKEN_NATIVE) {
+        name = bundleName;
+    } else {
         return true;
     }
     for (const auto &entry : doubleSyncSAs_) {
-        if (entry.second == nativeTokenInfo.processName) {
+        if (entry.first == name) {
             return false;
         }
     }

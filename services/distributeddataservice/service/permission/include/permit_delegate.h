@@ -47,8 +47,8 @@ private:
     ~PermitDelegate();
     bool VerifyExtraCondition(const std::map<std::string, std::string> &cond) const;
     Status VerifyStrategy(const StoreMetaData &data, const std::string &rmdevId) const;
-    Status LoadStoreMeta(const std::string &prefix, const CheckParam &param, StoreMetaData &data) const;
     std::map<std::string, std::string> GetExtraCondition(const CondParam &param);
+    void LoadStoreMeta(const CheckParam &param, StoreMetaData &data) const;
     DataFlowCheckRet IsTransferAllowed(const CheckParam &param, const DBProperty &property);
 
     ConcurrentMap<std::string, std::string> appId2BundleNameMap_;

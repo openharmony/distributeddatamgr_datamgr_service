@@ -164,7 +164,8 @@ HWTEST_F(SyncManagerTest, SetDoubleSyncSAInfo001, TestSize.Level1)
 HWTEST_F(SyncManagerTest, isConstraintSA001, TestSize.Level1)
 {
     int32_t tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    bool res = SyncManager::GetInstance().isConstraintSA(tokenId);
+    string bundleName = "";
+    bool res = SyncManager::GetInstance().isConstraintSA(tokenId, bundleName);
     EXPECT_TRUE(res);
 }
 } // namespace OHOS::Test
