@@ -561,6 +561,9 @@ void PreProcessUtils::SetRecordUid(UnifiedData &data)
     uint32_t index = 0;
     auto prefix = PreProcessUtils::GenerateId().substr(0, PREFIX_LEN);
     for (const auto &record : data.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
         std::ostringstream oss;
         oss << std::setw(INDEX_LEN) << std::setfill(PLACE_HOLDER) << index;
         record->SetUid(prefix + oss.str());

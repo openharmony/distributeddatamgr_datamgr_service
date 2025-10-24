@@ -112,6 +112,9 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
 
     for (const auto &record : unifiedData.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
         for (const auto &type : record->GetUtdIds()) {
             types.append("-").append(type);
         }
@@ -188,6 +191,9 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
     for (const auto &record : unifiedData.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
         for (const auto &type : record->GetUtdIds()) {
             types.append("-").append(type);
         }
@@ -207,6 +213,9 @@ bool UdmfServiceImpl::HandleDelayLoad(const QueryOption &query, UnifiedData &uni
         std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
         auto [found, cache] = blockDelayDataCache_.Find(key);
         if (!found) {
+            if (callback == nullptr) {
+                return false;
+            }
             blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
             blockDelayDataCache_.Insert(key, BlockDelayData{query.tokenId, blockData});
             callback->HandleDelayObserver(key, DataLoadInfo());

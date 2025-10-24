@@ -2053,6 +2053,79 @@ ohos_unittest("UdmfCheckerManagerTest") {
   ]
 }
 
+ohos_unittest("LifeCycleManagerTest") {
+  module_out_path = module_output_path
+  sources = [
+    "lifecycle_manager_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/udmf/lifecycle",
+    "${data_service_path}/service/udmf/store",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "kv_store:distributeddata_inner",
+    "hilog:libhilog",
+    "samgr:samgr_proxy",
+    "udmf:udmf_client",
+    "udmf:utd_client",
+  ]
+}
+
+ohos_unittest("DataHandlerTest") {
+  module_out_path = module_output_path
+  sources = [
+    "data_handler_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/service/udmf",
+    "${data_service_path}/service/udmf/preprocess",
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/service/udmf/store",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
+    "c_utils:utils",
+    "device_manager:devicemanagersdk",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "samgr:samgr_proxy",
+    "udmf:udmf_client",
+    "udmf:utd_client",
+  ]
+}
+
 ohos_unittest("PermissionValidatorTest") {
   module_out_path = module_output_path
 
@@ -2635,6 +2708,8 @@ group("unittest") {
     ":PermissionValidatorTest",
     ":PermitDelegateMockTest",
     ":ValueProxyServiceTest",
+    ":LifeCycleManagerTest",
+    ":DataHandlerTest",
   ]
 }
 ###############################################################################
