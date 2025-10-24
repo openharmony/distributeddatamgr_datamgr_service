@@ -111,6 +111,10 @@ void DelayDataContainer::ExecAllDataLoadCallback()
 void DelayDataContainer::RegisterDelayDataCallback(const std::string &key, const DelayGetDataInfo &info)
 {
     std::lock_guard<std::mutex> lock(delayDataMutex_);
+    if (key.empty()) {
+        ZLOGE("RegisterDelayDataCallback failed, key is empty");
+        return;
+    }
     delayDataCallback_.insert_or_assign(key, info);
 }
 
