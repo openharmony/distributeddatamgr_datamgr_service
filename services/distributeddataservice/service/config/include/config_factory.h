@@ -36,7 +36,7 @@ public:
     API_EXPORT DataShareConfig *GetDataShareConfig();
     API_EXPORT std::vector<AutoSyncAppConfig> *GetAutoSyncAppConfig();
     API_EXPORT AppAccessCheckConfig *GetSyncAppsConfig();
-    API_EXPORT std::vector<DoubleSyncSAConfig> *GetDoubleSyncSAConfig();
+    API_EXPORT std::vector<DoubleSyncConfig> *GetDoubleSyncConfig();
 private:
     static constexpr const char *CONF_PATH = "/system/etc/distributeddata/conf";
     ConfigFactory();

@@ -12,23 +12,18 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#include "model/double_sync_sa_config.h"
-#include "sync_mgr/sync_mgr.h"
 
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_DOUBLE_SYNC_CONFIG_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_DOUBLE_SYNC_CONFIG_H
+#include "serializable/serializable.h"
+#include "sync_mgr/sync_mgr.h"
 namespace OHOS {
 namespace DistributedData {
-bool DoubleSyncSAConfig::Marshal(Serializable::json &node) const
-{
-    SetValue(node[GET_NAME(appId)], appId);
-    SetValue(node[GET_NAME(bundleName)], bundleName);
-    return true;
-}
-
-bool DoubleSyncSAConfig::Unmarshal(const Serializable::json &node)
-{
-    GetValue(node, GET_NAME(appId), appId);
-    GetValue(node, GET_NAME(bundleName), bundleName);
-    return true;
-}
+struct DoubleSyncConfig final : public Serializable, public SyncManager::DoubleSyncInfo {
+public:
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+};
 } // namespace DistributedData
 } // namespace OHOS
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_CONFIG_MODEL_DOUBLE_SYNC_CONFIG_H

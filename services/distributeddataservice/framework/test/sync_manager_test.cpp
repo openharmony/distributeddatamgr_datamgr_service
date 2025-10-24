@@ -141,18 +141,18 @@ HWTEST_F(SyncManagerTest, IsAutoSyncStore001, TestSize.Level1)
 }
 
 /**
-@tc.name: SetDoubleSyncSAInfo001
-@tc.desc: set doubleSyncSAInfo
+@tc.name: SetDoubleSyncInfo001
+@tc.desc: set doubleSyncInfo
 @tc.type: FUNC
 */
-HWTEST_F(SyncManagerTest, SetDoubleSyncSAInfo001, TestSize.Level1)
+HWTEST_F(SyncManagerTest, SetDoubleSyncInfo001, TestSize.Level1)
 {
-    SyncManager::DoubleSyncSAInfo doubleSyncSAInfo;
-    doubleSyncSAInfo.bundleName = "testName";
-    doubleSyncSAInfo.appId = "testId";
-    SyncManager::GetInstance().SetDoubleSyncSAInfo(doubleSyncSAInfo);
-    EXPECT_TRUE(SyncManager::GetInstance().doubleSyncSAs_.find(doubleSyncSAInfo.bundleName) !=
-        SyncManager::GetInstance().doubleSyncSAs_.end());
+    SyncManager::DoubleSyncInfo doubleSyncInfo;
+    doubleSyncInfo.bundleName = "testName";
+    doubleSyncInfo.appId = "testId";
+    SyncManager::GetInstance().SetDoubleSyncInfo(doubleSyncInfo);
+    EXPECT_TRUE(SyncManager::GetInstance().doubleSyncMap_.find(doubleSyncInfo.bundleName) !=
+        SyncManager::GetInstance().doubleSyncMap_.end());
 }
 
 /**

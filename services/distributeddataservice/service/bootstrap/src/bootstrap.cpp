@@ -223,14 +223,14 @@ void Bootstrap::LoadSyncTrustedApp()
     AppAccessCheckConfigManager::GetInstance().Initialize(infos);
 }
 
-void Bootstrap::LoadDoubleSyncSA()
+void Bootstrap::LoadDoubleSync()
 {
-    auto *doubleSyncSAs = ConfigFactory::GetInstance().GetDoubleSyncSAConfig();
-    if (doubleSyncSAs == nullptr) {
+    auto *doubleSyncList = ConfigFactory::GetInstance().GetDoubleSyncConfig();
+    if (doubleSyncList == nullptr) {
         return;
     }
-    for (auto &doubleSyncSA : *doubleSyncSAs) {
-        SyncManager::GetInstance().SetDoubleSyncSAInfo(doubleSyncSA);
+    for (auto &doubleSync : *doubleSyncList) {
+        SyncManager::GetInstance().SetDoubleSyncInfo(doubleSync);
     }
 }
 } // namespace DistributedData

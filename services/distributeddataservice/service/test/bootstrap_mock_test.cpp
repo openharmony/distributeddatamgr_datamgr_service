@@ -69,7 +69,7 @@ HWTEST_F(BootStrapMockTest, GetMetaDBName, testing::ext::TestSize.Level0)
     Bootstrap::GetInstance().LoadAppIdMappings();
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(0, 1);
     Bootstrap::GetInstance().LoadBackup(executors);
-    Bootstrap::GetInstance().LoadDoubleSyncSA();
+    Bootstrap::GetInstance().LoadDoubleSync();
     EXPECT_TRUE(metaDbName == BootStrapMockTest::defaultMeta);
 }
 }

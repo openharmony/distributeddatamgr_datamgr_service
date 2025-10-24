@@ -1390,5 +1390,7 @@ int32_t RdbGeneralStore::UpdateDBStatus()
 int32_t RdbGeneralStore::SetDBProperty(const DBProperty &property)
 {
     return delegate_->SetProperty(property);
+
+
 }
 } // namespace OHOS::DistributedRdb
