@@ -63,6 +63,7 @@ private:
         std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
         std::map<std::string, int32_t> &permissionUris);
     static int32_t ReadCheckUri(uint32_t tokenId, UnifiedData &data, std::vector<std::string> &uris);
+    static bool ValidateUriScheme(Uri &uri, bool &hasError);
 };
 } // namespace UDMF
 } // namespace OHOS

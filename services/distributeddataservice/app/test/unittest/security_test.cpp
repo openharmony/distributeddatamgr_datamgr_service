@@ -185,11 +185,11 @@ HWTEST_F(SecurityTest, GetSecurityOption003, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSecurityOption005
+ * @tc.name: GetSecurityOption004
  * @tc.desc: Test for GetSecurityOption file of securityLabel is S3.
  * @tc.type: FUNC
  */
-HWTEST_F(SecurityTest, GetSecurityOption005, TestSize.Level1)
+HWTEST_F(SecurityTest, GetSecurityOption004, TestSize.Level1)
 {
     auto security = std::make_shared<DistributedKv::Security>();
     std::string filePath = FILE_TEST_PATH;

@@ -85,23 +85,9 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
         std::tie(code, cursor) = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     }
     if (cursor == nullptr || code != E_OK) {
-        ZLOGE("cursor is null, table:%{public}s, extend:%{public}zu",
-            Anonymous::Change(tableName).c_str(), extend.size());
-        return ConvertStatus(static_cast<GeneralError>(code != E_OK ? code : E_ERROR));
+        return ConvertStatus(static_cast<GeneralError>(Convert(cursor, data, code)));
     }
-    int32_t count = cursor->GetCount();
-    data.reserve(count);
-    auto err = cursor->MoveToFirst();
-    while (err == E_OK && count > 0) {
-        DistributedData::VBucket entry;
-        err = cursor->GetEntry(entry);
-        if (err != E_OK) {
-            break;
-        }
-        data.emplace_back(ValueProxy::Convert(std::move(entry)));
-        err = cursor->MoveToNext();
-        count--;
-    }
+    auto err = Convert(cursor, data, code);
     DistributedData::Value cursorFlag;
     cursor->Get(SchemaMeta::CURSOR_FIELD, cursorFlag);
     extend[SchemaMeta::CURSOR_FIELD] = ValueProxy::Convert(std::move(cursorFlag));
@@ -357,5 +343,34 @@ void RdbCloud::SetPrepareTraceId(const std::string &traceId)
         return;
     }
     cloudDB_->SetPrepareTraceId(traceId);
+}
+
+int32_t RdbCloud::Convert(std::shared_ptr<DistributedData::Cursor> cursor, std::vector<DBVBucket> &data, int32_t code)
+{
+    if (cursor == nullptr) {
+        ZLOGE("cursor is null, code:%{public}d", code);
+        return code != E_OK ? code : E_ERROR;
+    }
+    int32_t count = cursor->GetCount();
+    data.reserve(count);
+    auto err = cursor->MoveToFirst();
+    while (err == E_OK && count > 0) {
+        DistributedData::VBucket entry;
+        err = cursor->GetEntry(entry);
+        if (err != E_OK) {
+            break;
+        }
+        auto errorField = entry.find(SchemaMeta::ERROR_FIELD);
+        if (errorField != entry.end()) {
+            auto errCode = Traits::get_if<int64_t>(&(errorField->second));
+            if (errCode != nullptr) {
+                entry[SchemaMeta::ERROR_FIELD] = ConvertStatus(static_cast<GeneralError>(*errCode));
+            }
+        }
+        data.emplace_back(ValueProxy::Convert(std::move(entry)));
+        err = cursor->MoveToNext();
+        count--;
+    }
+    return err == E_OK ? code : err;
 }
 } // namespace OHOS::DistributedRdb
