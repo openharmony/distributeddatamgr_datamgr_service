@@ -88,8 +88,25 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
     ZLOGI("user:%{public}s, appId:%{public}s, storeId:%{public}s, remote devId:%{public}s, instanceId:%{public}d,"
           "flag:%{public}u", param.userId.c_str(), param.appId.c_str(), Anonymous::Change(param.storeId).c_str(),
           Anonymous::Change(param.deviceId).c_str(), param.instanceId, flag);
+    auto devId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     StoreMetaData data;
-    LoadStoreMeta(param, data);
+    data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
+    data.storeId = param.storeId;
+    data.deviceId = devId;
+    data.instanceId = param.instanceId;
+    appId2BundleNameMap_.Compute(param.appId, [&data, &param](const auto &key, std::string &value) {
+        if (!value.empty()) {
+            data.bundleName = value;
+            return true;
+        }
+        AppIDMetaData appIDMeta;
+        MetaDataManager::GetInstance().LoadMeta(key, appIDMeta, true);
+        if (appIDMeta.appId == param.appId) {
+            data.bundleName = appIDMeta.bundleName;
+            value = appIDMeta.bundleName;
+        }
+        return !value.empty();
+    });
     auto key = data.GetKeyWithoutPath();
     if (!metaDataBucket_.Get(key, data)) {
         if (!MetaDataManager::GetInstance().LoadMeta(key, data)) {
@@ -161,27 +178,6 @@ bool PermitDelegate::VerifyPermission(const std::string &permission,
     return true;
 }
 
-void PermitDelegate::LoadStoreMeta(const CheckParam &param, StoreMetaData &data)
-{
-    data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
-    data.storeId = param.storeId;
-    data.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;;
-    data.instanceId = param.instanceId;
-    appId2BundleNameMap_.Compute(param.appId, [&data, &param](const auto &key, std::string &value) {
-        if (!value.empty()) {
-            data.bundleName = value;
-            return true;
-        }
-        AppIDMetaData appIDMeta;
-        MetaDataManager::GetInstance().LoadMeta(key, appIDMeta, true);
-        if (appIDMeta.appId == param.appId) {
-            data.bundleName = appIDMeta.bundleName;
-            value = appIDMeta.bundleName;
-        }
-        return !value.empty();
-    });
-}
-
 DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, const DBProperty &property)
 {
     auto accountDelegate = AccountDelegate::GetInstance();
@@ -189,8 +185,8 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
         ZLOGE("accountDelegate is null.");
         return DataFlowCheckRet::DENIED_SEND;
     }
-    StoreMetaData data;
-    LoadStoreMeta(param, data);
+    AppIDMetaData appIDMeta;
+    MetaDataManager::GetInstance().LoadMeta(param.appId, appIDMeta, true);
     if (!accountDelegate->CheckOsAccountConstraintEnabled()) {
         return DataFlowCheckRet::DEFAULT;
     }
@@ -200,8 +196,8 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
         if (tokenIdPtr != nullptr) {
             SyncManager::DoubleSyncInfo info;
             info.tokenId = *tokenIdPtr;
-            info.appId = data.appId;
-            info.bundleName = data.bundleName;
+            info.appId = appIDMeta.appId;
+            info.bundleName = appIDMeta.bundleName;
             if (!SyncManager::GetInstance().IsAccessRestricted(info)) {
                 return DataFlowCheckRet::DEFAULT;
             }
