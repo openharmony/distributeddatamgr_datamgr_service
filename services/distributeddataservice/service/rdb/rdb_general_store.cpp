@@ -201,6 +201,12 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
             delegate_ = nullptr;
         }
     }
+    if (delegate_ != nullptr) {
+        auto res = delegate_->SetProperty({{Constant::TOKEN_ID, meta.tokenId}});
+        if (res != DBStatus::OK) {
+            ZLOGE("set DB property fail, res:%{public}d", res);
+        }
+    }
     InitStoreInfo(meta);
     if (meta.isSearchable) {
         syncNotifyFlag_ |= SEARCHABLE_FLAG;
@@ -955,14 +961,11 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
             return GeneralError::E_ERROR;
         }
     }
-    if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        delegate_->SetProperty({{Constant::TOKEN_ID, observer_.meta_.tokenId}});
-        auto [exist, database] = GetDistributedSchema(observer_.meta_);
-        if (exist) {
-            auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
-                {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
-            delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
-        }
+    auto [exist, database] = GetDistributedSchema(observer_.meta_);
+    if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {
+        auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
+            {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
+        delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
     }
     CloudMark metaData(storeInfo_);
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {

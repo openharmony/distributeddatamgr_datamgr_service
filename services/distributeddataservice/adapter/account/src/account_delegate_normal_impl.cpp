@@ -311,7 +311,7 @@ bool AccountDelegateNormalImpl::IsDeactivating(int userId)
     return res;
 }
 
-bool AccountDelegateNormalImpl::CheckOsAccountConstraintEnabled()
+bool AccountDelegateNormalImpl::IsOsAccountConstraintEnabled()
 {
     int userId = 0;
     if (!QueryForegroundUserId(userId)) {

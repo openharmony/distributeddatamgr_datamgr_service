@@ -80,7 +80,7 @@ bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp)
 
 void SyncManager::SetDoubleSyncInfo(const DoubleSyncInfo info)
 {
-    doubleSyncMap_.insert_or_assign(info.appId, info.bundleName);
+    doubleSyncMap_.insert_or_assign(info.bundleName, info.appId);
 }
 
 bool SyncManager::IsAccessRestricted(const DoubleSyncInfo info)

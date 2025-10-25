@@ -187,7 +187,7 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
     }
     AppIDMetaData appIDMeta;
     MetaDataManager::GetInstance().LoadMeta(param.appId, appIDMeta, true);
-    if (!accountDelegate->CheckOsAccountConstraintEnabled()) {
+    if (!accountDelegate->IsOsAccountConstraintEnabled()) {
         return DataFlowCheckRet::DEFAULT;
     }
     auto it = property.find(Constant::TOKEN_ID);

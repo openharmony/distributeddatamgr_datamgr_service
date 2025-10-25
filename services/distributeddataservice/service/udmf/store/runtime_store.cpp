@@ -452,7 +452,11 @@ bool RuntimeStore::Init()
     uint32_t pragmData = 16 * 1024 * 1024;
     PragmaData input = static_cast<PragmaData>(&pragmData);
     kvStore_->Pragma(SET_MAX_VALUE_SIZE, input);
-    kvStore_->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+    auto res = kvStore_->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+    if (res != DBStatus::OK) {
+        ZLOGE("set DB property fail, res:%{public}d", res);
+        return false;
+    }
     return true;
 }
 

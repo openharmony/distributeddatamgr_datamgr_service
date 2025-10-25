@@ -223,7 +223,7 @@ void Bootstrap::LoadSyncTrustedApp()
     AppAccessCheckConfigManager::GetInstance().Initialize(infos);
 }
 
-void Bootstrap::LoadDoubleSync()
+void Bootstrap::LoadDoubleSyncConfig()
 {
     auto *doubleSyncList = ConfigFactory::GetInstance().GetDoubleSyncConfig();
     if (doubleSyncList == nullptr) {

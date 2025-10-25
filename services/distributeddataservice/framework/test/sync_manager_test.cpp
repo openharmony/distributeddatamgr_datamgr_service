@@ -151,8 +151,13 @@ HWTEST_F(SyncManagerTest, SetDoubleSyncInfo001, TestSize.Level1)
     doubleSyncInfo.bundleName = "testName";
     doubleSyncInfo.appId = "testId";
     SyncManager::GetInstance().SetDoubleSyncInfo(doubleSyncInfo);
-    EXPECT_TRUE(SyncManager::GetInstance().doubleSyncMap_.find(doubleSyncInfo.bundleName) !=
-        SyncManager::GetInstance().doubleSyncMap_.end());
+    bool res = false;
+    for (const auto &entry : SyncManager::GetInstance().doubleSyncMap_) {
+        if (entry.first == info.bundleName) {
+            res = true;
+        }
+    }
+    EXPECT_TRUE(res);
 }
 
 /**
@@ -165,8 +170,8 @@ HWTEST_F(SyncManagerTest, IsAccessRestricted001, TestSize.Level1)
 {
     SyncManager::DoubleSyncInfo info;
     info.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    info.appId = "";
-    info.bundleName = "";
+    info.appId = "testAppId";
+    info.bundleName = "testBundleName";
     bool res = SyncManager::GetInstance().IsAccessRestricted(info);
     EXPECT_TRUE(res);
 }

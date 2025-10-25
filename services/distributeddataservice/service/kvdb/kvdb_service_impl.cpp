@@ -1219,6 +1219,51 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
     if (devices.empty()) {
         return Status::INVALID_ARGUMENT;
     }
+    auto [store, status] = PrepareStoreForSync(meta, info);
+    if (status != Status::SUCCESS) {
+        return status;
+    }
+    return ExecuteSyncOperation(devices, meta, info, complete, type, store);
+}
+
+std::pair<std::shared_ptr<KVDBGeneralStore>, Status>
+KVDBServiceImpl::PrepareStoreForSync(const StoreMetaData &meta, const SyncInfo &info)
+{
+    auto watcher = GetWatchers(meta.tokenId, meta.storeId, meta.user);
+    RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_START, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
+        SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, info.syncId, DATA_TYPE, meta.dataType);
+
+    auto store = AutoCache::GetInstance().GetStore(meta, watcher);
+    if (store == nullptr) {
+        ZLOGE("GetStore failed! appId:%{public}s storeId:%{public}s storeId length:%{public}zu dir:%{public}s",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
+            meta.storeId.size(), Anonymous::Change(meta.dataDir).c_str());
+        RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_FAILED, ERROR_CODE, Status::ERROR, BIZ_STATE, END,
+            SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
+            std::to_string(info.syncId), DATA_TYPE, meta.dataType);
+        return {nullptr, Status::ERROR};
+    }
+
+    auto res = store->SetDBProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } });
+    if (res != DBStatus::OK) {
+        ZLOGE("Set DB property failed! res:%{public}d appId:%{public}s storeId:%{public}s storeId length:"
+              "%{public}zu dir:%{public}s", res, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
+              meta.storeId.size(), Anonymous::Change(meta.dataDir).c_str());
+        return {nullptr, Status::ERROR};
+    }
+
+    RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_SUCCESS, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
+        SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
+
+    return {store, Status::SUCCESS};
+}
+
+Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, const StoreMetaData &meta,
+    const SyncInfo &info, const SyncEnd &complete, int32_t type)
+{
+    if (devices.empty()) {
+        return Status::INVALID_ARGUMENT;
+    }
     auto watcher = GetWatchers(meta.tokenId, meta.storeId, meta.user);
     RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_START, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
         SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, info.syncId, DATA_TYPE, meta.dataType);
@@ -1232,14 +1277,12 @@ Status KVDBServiceImpl::DoSyncBegin(const std::vector<std::string> &devices, con
             std::to_string(info.syncId), DATA_TYPE, meta.dataType);
         return Status::ERROR;
     }
-    if (store != nullptr) {
-        auto res = store->SetDBProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } });
-        if (res != DBStatus::OK) {
-            ZLOGE("Set DB property failed! res:%{public}d appId:%{public}s storeId:%{public}s storeId length:"
-                  "%{public}zu dir:%{public}s", res, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
-                  meta.storeId.size(), Anonymous::Change(meta.dataDir).c_str());
-            return Status::ERROR;
-        }
+    auto res = store->SetDBProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } });
+    if (res != DBStatus::OK) {
+        ZLOGE("Set DB property failed! res:%{public}d appId:%{public}s storeId:%{public}s storeId length:"
+              "%{public}zu dir:%{public}s", res, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
+              meta.storeId.size(), Anonymous::Change(meta.dataDir).c_str());
+        return Status::ERROR;
     }
     RADAR_REPORT(STANDARD_DEVICE_SYNC, OPEN_STORE, RADAR_SUCCESS, SYNC_STORE_ID, Anonymous::Change(meta.storeId),
         SYNC_APP_ID, meta.bundleName, CONCURRENT_ID, std::to_string(info.syncId), DATA_TYPE, meta.dataType);
