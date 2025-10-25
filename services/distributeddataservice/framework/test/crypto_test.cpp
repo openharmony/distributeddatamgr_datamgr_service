@@ -225,3 +225,36 @@ HWTEST_F(CryptoTest, Sha256_EdgeCases_HandlesCorrectly, TestSize.Level1)
         EXPECT_EQ(result.length(), 64) << "SHA256 hash should always be 64 characters for input: " << input;
     }
 }
+
+/**
+ * @tc.name: Crypto_Sha256_InputExactly4KB_ShouldSuccess
+ * @tc.desc: Verify Sha256 handles exactly 4KB input correctly
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CryptoTest, Sha256_InputExactly4KB_ShouldSuccess, TestSize.Level1)
+{
+    std::vector<uint8_t> data(4 * 1024, 0x41); // 4KB of 'A'
+
+    std::string result = Crypto::Sha256(data.data(), data.size(), true);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_EQ(result, "6896D9EA3F73A4434F5832BC65714E7D066F177373F36F34DC8A6F735DAA41B1");
+}
+
+/**
+ * @tc.name: Crypto_Sha256_InputExceeds4KB_ShouldReturnEmpty
+ * @tc.desc: Verify Sha256 returns empty when input exceeds 4KB limit
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CryptoTest, Sha256_InputExceeds4KB_ShouldReturnEmpty, TestSize.Level1)
+{
+    std::vector<uint8_t> data(4 * 1024 + 1, 0x42); // 4KB+1 of 'B'
+
+    std::string result = Crypto::Sha256(data.data(), data.size(), false);
+
+    EXPECT_TRUE(result.empty());
+}

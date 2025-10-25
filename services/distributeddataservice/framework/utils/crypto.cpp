@@ -12,9 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#define LOG_TAG "Crypto"
+
 #include "utils/crypto.h"
+
 #include <random>
+
+#include "log_print.h"
 #include "openssl/sha.h"
+
 namespace OHOS {
 namespace DistributedData {
 std::string Crypto::Sha256(const std::string &text, bool isUpper)
@@ -38,6 +44,12 @@ std::string Crypto::Sha256(const void *data, size_t size, bool isUpper)
     if (data == nullptr) {
         return "";
     }
+
+    constexpr size_t MAX_HASH_SIZE = 4 * 1024; // 4KB
+    if (size > MAX_HASH_SIZE) {
+        ZLOGE("Sha256: input size too large: %{public}zu bytes, max allowed: %{public}zu", size, MAX_HASH_SIZE);
+        return "";
+    }
     unsigned char hash[SHA256_DIGEST_LENGTH * 2 + 1] = "";
     SHA256_CTX ctx;
     SHA256_Init(&ctx);
@@ -46,7 +58,7 @@ std::string Crypto::Sha256(const void *data, size_t size, bool isUpper)
     // here we translate sha256 hash to hexadecimal. each 8-bit char will be presented by two characters([0-9a-f])
     constexpr int WIDTH = 4;
     constexpr unsigned char MASK = 0x0F;
-    const char* hexCode = isUpper ? "0123456789ABCDEF" : "0123456789abcdef";
+    const char *hexCode = isUpper ? "0123456789ABCDEF" : "0123456789abcdef";
     for (int32_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
         unsigned char value = hash[SHA256_DIGEST_LENGTH + i];
         // uint8_t is 2 digits in hexadecimal.

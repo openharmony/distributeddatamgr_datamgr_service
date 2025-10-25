@@ -124,6 +124,74 @@ HWTEST_F(UdmfPreProcessUtilsTest, CheckUriAuthorization001, TestSize.Level1)
 }
 
 /**
+* @tc.name: ValidateUriScheme001
+* @tc.desc: Abnormal test of ValidateUriScheme
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ValidateUriScheme001, TestSize.Level1)
+{
+    std::string oriUri = "https://demo.com.html";
+    Uri uri(oriUri);
+    bool hasError = false;
+    PreProcessUtils preProcessUtils;
+    bool ret = preProcessUtils.ValidateUriScheme(uri, hasError);
+    EXPECT_FALSE(ret);
+    EXPECT_FALSE(hasError);
+}
+
+/**
+* @tc.name: ValidateUriScheme002
+* @tc.desc: Normal test of ValidateUriScheme
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ValidateUriScheme002, TestSize.Level1)
+{
+    std::string oriUri = "file://ohos.test.demo1/data/storage/el2/base/haps/101.png";
+    Uri uri(oriUri);
+    bool hasError = false;
+    PreProcessUtils preProcessUtils;
+    bool ret = preProcessUtils.ValidateUriScheme(uri, hasError);
+    EXPECT_TRUE(ret);
+    EXPECT_FALSE(hasError);
+}
+
+/**
+* @tc.name: ValidateUriScheme003
+* @tc.desc: Normal test of ValidateUriScheme
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ValidateUriScheme003, TestSize.Level1)
+{
+    std::string oriUri = "file:///data/storage/el2/base/haps/101.png";
+    Uri uri(oriUri);
+    bool hasError = false;
+    PreProcessUtils preProcessUtils;
+    bool ret = preProcessUtils.ValidateUriScheme(uri, hasError);
+    EXPECT_FALSE(ret);
+    EXPECT_TRUE(hasError);
+}
+
+/**
+* @tc.name: ValidateUriScheme004
+* @tc.desc: Normal test of ValidateUriScheme
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ValidateUriScheme004, TestSize.Level1)
+{
+    std::string oriUri = "data/storage/el2/base/haps/101.png";
+    Uri uri(oriUri);
+    bool hasError = false;
+    PreProcessUtils preProcessUtils;
+    bool ret = preProcessUtils.ValidateUriScheme(uri, hasError);
+    EXPECT_FALSE(ret);
+    EXPECT_TRUE(hasError);
+}
+
+/**
 * @tc.name: GetInstIndex001
 * @tc.desc: Normal test of GetInstIndex
 * @tc.type: FUNC
@@ -192,6 +260,21 @@ HWTEST_F(UdmfPreProcessUtilsTest, GetHtmlFileUris001, TestSize.Level1)
     std::map<std::string, int32_t> uris = { {"test", 0} };
     PreProcessUtils preProcessUtils;
     EXPECT_NO_FATAL_FAILURE(preProcessUtils.GetHtmlFileUris(tokenId, data, isLocal, uris));
+}
+
+/**
+* @tc.name: SetRecordUid001
+* @tc.desc: Abnormal test of SetRecordUid, record is nullptr
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, SetRecordUid001, TestSize.Level1)
+{
+    UnifiedData data;
+    data.records_.emplace_back(nullptr);
+    PreProcessUtils preProcessUtils;
+    preProcessUtils.SetRecordUid(data);
+    EXPECT_EQ(data.records_[0], nullptr);
 }
 
 /**
