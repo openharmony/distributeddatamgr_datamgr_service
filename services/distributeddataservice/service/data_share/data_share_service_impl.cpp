@@ -1186,6 +1186,10 @@ bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId,
     if (currentUserId == 0 || currentUserId == visitedUserId) {
         return true;
     }
+#ifdef PLATFORM_PC
+    ZLOGE("not support across user on PC, callerTokenId:0x%{public}x", callerTokenId);
+    return false;
+#endif
     return PermitDelegate::VerifyPermission(acrossAccountsPermission, callerTokenId);
 }
 

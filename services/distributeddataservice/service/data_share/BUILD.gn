@@ -30,8 +30,12 @@ config("module_public_config") {
     "../crypto/include",
     "../permission/include",
   ]
+  defines = []
   if (is_emulator) {
-    defines = [ "IS_EMULATOR" ]
+    defines += [ "IS_EMULATOR" ]
+  }
+  if (target_platform == "pc") {
+    defines += [ "PLATFORM_PC" ]
   }
 }
 group("build_module") {
