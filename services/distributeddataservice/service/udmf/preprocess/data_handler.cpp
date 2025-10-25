@@ -51,7 +51,7 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
 
 Status DataHandler::MarshalDataLoadEntries(const DataLoadInfo &info, std::vector<Entry> &entries)
 {
-    std::string acceptableKey = info.sequenceKey + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
+    std::string acceptableKey = info.udKey + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
     std::vector<uint8_t> acceptableBytes;
     auto acceptableTlv = TLVObject(acceptableBytes);
     if (!TLVUtil::Writing(info, acceptableTlv, TAG::TAG_DATA_LOAD_INFO)) {

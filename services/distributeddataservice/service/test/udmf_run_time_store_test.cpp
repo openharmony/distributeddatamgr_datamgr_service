@@ -768,24 +768,24 @@ HWTEST_F(UdmfRunTimeStoreTest, RegisterDataChangedObserver001, TestSize.Level1)
     store->Init();
     store->observers_.clear();
     std::string key1 = "";
-    auto ret = store->RegisterDataChangedObserver(key, ObserverFac::ObserverType::ACCEPTABLE_INFO);
+    auto ret = store->RegisterDataChangedObserver(key1, 0);
     EXPECT_EQ(ret, E_INVALID_PARAMETERS);
-    key = "udmf://drag/com.example.app/1233455";
-    ret = store->RegisterDataChangedObserver(key, ObserverFac::ObserverType::ACCEPTABLE_INFO);
+    key1 = "udmf://drag/com.example.app/1233455";
+    ret = store->RegisterDataChangedObserver(key1, 0);
     EXPECT_EQ(ret, E_OK);
-    EXPECT_TRUE(store->observers_ == 1);
-    ret = store->RegisterDataChangedObserver(key, 3);
+    EXPECT_TRUE(store->observers_.size() == 1);
+    ret = store->RegisterDataChangedObserver(key1, 3);
     EXPECT_EQ(ret, E_ERROR);
     std::string key2 = "udmf://drag/com.example.app/555555";
-    ret = store->RegisterDataChangedObserver(key2, ObserverFac::ObserverType::RUNTIME);
+    ret = store->RegisterDataChangedObserver(key2, 1);
     EXPECT_EQ(ret, E_OK);
-    EXPECT_TRUE(store->observers_ == 2);
+    EXPECT_TRUE(store->observers_.size() == 2);
 
     auto result = store->UnRegisterDataChangedObserver(key1);
     EXPECT_TRUE(result);
-    EXPECT_TRUE(store->observers_ == 1);
+    EXPECT_TRUE(store->observers_.size() == 1);
 
-    auto result = store->UnRegisterAllObserver();
+    result = store->UnRegisterAllObserver();
     EXPECT_TRUE(store->observers_.empty());
     result = store->UnRegisterDataChangedObserver("invalid key");
     EXPECT_FALSE(result);
@@ -822,7 +822,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutDataLoadInfo001, TestSize.Level1)
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     store->Init();
     DataLoadInfo info;
-    info.sequenceId = "111";
+    info.sequenceKey = "111";
     info.recordCount = 10;
     auto ret = store->PutDataLoadInfo(info);
     EXPECT_EQ(ret, E_OK);

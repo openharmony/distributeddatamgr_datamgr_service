@@ -189,7 +189,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, FillRuntimeInfo002, TestSize.Level1)
     option.intention = UD_INTENTION_DATA_HUB;
     option.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     DataLoadInfo dataLoadInfo;
-    dataLoadInfo.sequenceId = "123";
+    dataLoadInfo.sequenceKey = "123";
     dataLoadInfo.recordCount = 10;
     PreProcessUtils preProcessUtils;
     auto ret = preProcessUtils.FillRuntimeInfo(data, option, dataLoadInfo, true);
