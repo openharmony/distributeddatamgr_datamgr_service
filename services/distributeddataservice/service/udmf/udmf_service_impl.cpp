@@ -1579,7 +1579,7 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
     if (IsNeedMetaSync(meta, uuids)) {
         bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
             auto successRes = ProcessResult(results);
-            if (store->PushDelayData(successRes, callback) != E_OK) {
+            if (store->PushDelayData(successRes) != E_OK) {
                 ZLOGE("Store sync failed");
             }
         });
@@ -1591,7 +1591,7 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
         }
         return E_OK;
     }
-    if (store->PushDelayData(devices, callback) != E_OK) {
+    if (store->PushDelayData(devices) != E_OK) {
         ZLOGE("Store sync failed");
         return UDMF::E_DB_ERROR;
     }

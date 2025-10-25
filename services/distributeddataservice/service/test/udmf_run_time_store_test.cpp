@@ -737,5 +737,113 @@ HWTEST_F(UdmfRunTimeStoreTest, MarkWhenCorrupted002, TestSize.Level1)
     store->MarkWhenCorrupted(status);
     EXPECT_TRUE(store->isCorrupted_);
 }
+
+/**
+* @tc.name: SetRemotePullStartNotify001
+* @tc.desc: Normal testcase of SetRemotePullStartNotify
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, SetRemotePullStartNotify001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    EXPECT_FALSE(store->hasRegisterPullNotify_);
+    auto ret = store->SetRemotePullStartNotify();
+    EXPECT_EQ(ret, E_OK);
+    EXPECT_TRUE(store->hasRegisterPullNotify_);
+    ret = store->SetRemotePullStartNotify();
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: RegisterDataChangedObserver001
+* @tc.desc: Normal testcase of RegisterDataChangedObserver
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, RegisterDataChangedObserver001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    store->observers_.clear();
+    std::string key1 = "";
+    auto ret = store->RegisterDataChangedObserver(key, ObserverFac::ObserverType::ACCEPTABLE_INFO);
+    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+    key = "udmf://drag/com.example.app/1233455";
+    ret = store->RegisterDataChangedObserver(key, ObserverFac::ObserverType::ACCEPTABLE_INFO);
+    EXPECT_EQ(ret, E_OK);
+    EXPECT_TRUE(store->observers_ == 1);
+    ret = store->RegisterDataChangedObserver(key, 3);
+    EXPECT_EQ(ret, E_ERROR);
+    std::string key2 = "udmf://drag/com.example.app/555555";
+    ret = store->RegisterDataChangedObserver(key2, ObserverFac::ObserverType::RUNTIME);
+    EXPECT_EQ(ret, E_OK);
+    EXPECT_TRUE(store->observers_ == 2);
+
+    auto result = store->UnRegisterDataChangedObserver(key1);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(store->observers_ == 1);
+
+    auto result = store->UnRegisterAllObserver();
+    EXPECT_TRUE(store->observers_.empty());
+    result = store->UnRegisterDataChangedObserver("invalid key");
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name: PutDelayData001
+* @tc.desc: Normal testcase of PutDelayData
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PutDelayData001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    UnifiedData data;
+    Runtime runtime;
+    runtime.dataStatus = DataStatus::DELAY;
+    runtime.tokenId = 12344;
+    runtime.recordTotalNum = 10;
+    data.SetRuntime(runtime);
+    auto ret = store->PutDelayData(data);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: PutDataLoadInfo001
+* @tc.desc: Normal testcase of PutDataLoadInfo
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PutDataLoadInfo001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    DataLoadInfo info;
+    info.sequenceId = "111";
+    info.recordCount = 10;
+    auto ret = store->PutDataLoadInfo(info);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: PushDelayData001
+* @tc.desc: Normal testcase of PushDelayData
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PushDelayData001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    std::vector<std::string> devices;
+    auto ret = store->PushDelayData(devices);
+    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+    devices.push_back("123445");
+    ret = store->PushDelayData(devices);
+    EXPECT_EQ(ret, E_OK);
+}
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

@@ -703,7 +703,7 @@ Status RuntimeStore::PutDataLoadInfo(const DataLoadInfo &dataLoadInfo)
     return PutEntries(entries);
 }
 
-Status RuntimeStore::PushDelayData(const std::vector<std::string> &devices, ProcessCallback callback)
+Status RuntimeStore::PushDelayData(const std::vector<std::string> &devices)
 {
     UpdateTime();
     if (devices.empty()) {

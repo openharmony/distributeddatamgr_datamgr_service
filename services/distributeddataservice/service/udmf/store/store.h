@@ -49,7 +49,7 @@ public:
     virtual bool UnRegisterDataChangedObserver(const std::string &key) = 0;
     virtual Status PutDelayData(const UnifiedData &unifiedData) = 0;
     virtual Status PutDataLoadInfo(const DataLoadInfo &info) = 0;
-    virtual Status PushDelayData(const std::vector<std::string> &devices, ProcessCallback callback) = 0;
+    virtual Status PushDelayData(const std::vector<std::string> &devices) = 0;
     virtual bool Init() = 0;
 
     bool operator<(const Time &time) const
