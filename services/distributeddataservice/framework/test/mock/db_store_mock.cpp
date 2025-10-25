@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "db_store_mock.h"
+#include "error/general_error.h"
 
 namespace OHOS {
 namespace DistributedData {
@@ -106,7 +107,8 @@ DBStatus DBStoreMock::UnpublishToLocal(const Key &key, bool deletePublic, bool u
     return NOT_SUPPORT;
 }
 
-DBStatus DBStoreMock::RegisterObserver(const Key &key, unsigned int mode, KvStoreObserver *observer)
+DBStatus DBStoreMock::RegisterObserver(const Key &key, unsigned int mode,
+    std::shared_ptr<KvStoreObserver> observer)
 {
     observers_.Compute(observer, [key](auto &, std::set<Key> &prefixes) {
         prefixes.insert(key);
@@ -115,10 +117,9 @@ DBStatus DBStoreMock::RegisterObserver(const Key &key, unsigned int mode, KvStor
     return OK;
 }
 
-DBStatus DBStoreMock::UnRegisterObserver(const KvStoreObserver *observer)
+DBStatus DBStoreMock::UnRegisterObserver(std::shared_ptr<KvStoreObserver> observer)
 {
-    KvStoreObserver *key = const_cast<KvStoreObserver *>(observer);
-    observers_.Erase(key);
+    observers_.Erase(observer);
     return OK;
 }
 

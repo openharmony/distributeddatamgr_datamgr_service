@@ -68,8 +68,9 @@ public:
     DBStatus PublishLocal(const Key &key, bool deleteLocal, bool updateTimestamp,
         const KvStoreNbPublishOnConflict &onConflict) override;
     DBStatus UnpublishToLocal(const Key &key, bool deletePublic, bool updateTimestamp) override;
-    DBStatus RegisterObserver(const Key &key, unsigned int mode, KvStoreObserver *observer) override;
-    DBStatus UnRegisterObserver(const KvStoreObserver *observer) override;
+    DBStatus RegisterObserver(const Key &key, unsigned int mode,
+        std::shared_ptr<KvStoreObserver> observer) override;
+    DBStatus UnRegisterObserver(std::shared_ptr<KvStoreObserver> observer) override;
     DBStatus RemoveDeviceData(const std::string &device) override;
     std::string GetStoreId() const override;
     DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
@@ -127,7 +128,7 @@ private:
     DBStatus DeleteBatch(ConcurrentMap<Key, Value> &store, const std::vector<Key> &keys);
     mutable ConcurrentMap<Key, Value> entries_;
     mutable ConcurrentMap<Key, Value> localEntries_;
-    mutable ConcurrentMap<KvStoreObserver *, std::set<Key>> observers_;
+    mutable ConcurrentMap<std::shared_ptr<KvStoreObserver>, std::set<Key>> observers_;
 };
 } // namespace DistributedData
 } // namespace OHOS

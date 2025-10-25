@@ -54,8 +54,8 @@ public:
     DBStatus PublishLocal(const Key &key, bool deleteLocal, bool updateTimestamp,
         const KvStoreNbPublishOnConflict &onConflict);
     DBStatus UnpublishToLocal(const Key &key, bool deletePublic, bool updateTimestamp);
-    DBStatus RegisterObserver(const Key &key, unsigned int mode, KvStoreObserver *observer);
-    DBStatus UnRegisterObserver(const KvStoreObserver *observer);
+    DBStatus RegisterObserver(const Key &key, unsigned int mode, std::shared_ptr<KvStoreObserver> observer);
+    DBStatus UnRegisterObserver(std::shared_ptr<KvStoreObserver> observer);
     DBStatus RemoveDeviceData(const std::string &device);
     std::string GetStoreId() const;
     DBStatus Sync(const std::vector<std::string> &devices, SyncMode mode,
