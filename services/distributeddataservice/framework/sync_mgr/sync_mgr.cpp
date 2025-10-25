@@ -88,16 +88,15 @@ bool SyncManager::IsAccessRestricted(const DoubleSyncInfo info)
     auto TokenType = AccessTokenKit::GetTokenTypeFlag(info.tokenId);
     if (TokenType == TOKEN_HAP) {
         HapTokenInfo haptokenInfo;
-        if (AccessTokenKit::GetHapTokenInfo(info.tokenId, haptokenInfo) == RET_SUCCESS) {
-            for (const auto &entry : doubleSyncMap_) {
-                if (entry.first == haptokenInfo.bundleName && entry.second == info.appId) {
-                    return false;
-                }
-            }
-        } else {
+        if (AccessTokenKit::GetHapTokenInfo(info.tokenId, haptokenInfo) != RET_SUCCESS) {
             ZLOGE("failed to get native token info, tokenId: %{public}s",
                 Anonymous::Change(std::to_string(info.tokenId)).c_str());
             return true;
+        }
+        for (const auto &entry : doubleSyncMap_) {
+            if (entry.first == haptokenInfo.bundleName && entry.second == info.appId) {
+                return false;
+            }
         }
     } else if (TokenType == TOKEN_NATIVE || TokenType == TOKEN_SHELL) {
         for (const auto &entry : doubleSyncMap_) {
