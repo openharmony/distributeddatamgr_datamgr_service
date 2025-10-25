@@ -39,7 +39,6 @@ public:
     bool ExecDataLoadCallback(const std::string &key, const DataLoadInfo &info);
     void ExecAllDataLoadCallback();
 
-
     // delayDataCallback_ part
     void RegisterDelayDataCallback(const std::string &key, const DelayGetDataInfo &info);
     bool HandleDelayDataCallback(const std::string &key, const UnifiedData &unifiedData);

@@ -1325,7 +1325,7 @@ std::vector<std::string> UdmfServiceImpl::GetDevicesForDelayData(const std::stri
 {
     std::vector<std::string> devices;
     DataLoadInfo info;
-    if(DelayDataContainer::GetInstance().QueryDelayAcceptableInfo(key, info)) {
+    if (DelayDataContainer::GetInstance().QueryDelayAcceptableInfo(key, info)) {
         ZLOGI("Find from acceptable info notify, key: %{public}s", key.c_str());
         devices.emplace_back(std::move(info.deviceId));
     } else {
@@ -1596,7 +1596,6 @@ int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string &key)
     BlockDelayData blockData;
     auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
     auto isBlockData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
-
     if (!isDataLoading && !isBlockData) {
         ZLOGE("DelayData callback and block cache not exist key: %{public}s", key.c_str());
         return E_ERROR;

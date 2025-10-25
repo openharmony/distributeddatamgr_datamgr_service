@@ -56,7 +56,8 @@ using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 using namespace RadarReporter;
 
-int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option, const DataLoadInfo &info, bool isDelayData)
+int32_t PreProcessUtils::FillRuntimeInfo(
+    UnifiedData &data, CustomOption &option, const DataLoadInfo &info, bool isDelayData)
 {
     auto it = UD_INTENTION_MAP.find(option.intention);
     if (it == UD_INTENTION_MAP.end()) {
