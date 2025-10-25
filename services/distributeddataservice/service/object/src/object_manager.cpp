@@ -99,7 +99,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
             }
         });
     auto res = store->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
-    if (res != DBStatus::OK) {
+    if (res != DistributedDB::DBStatus::OK) {
         ZLOGE("set DB property fail, res:%{public}d", res);
     }
     return store;
