@@ -198,7 +198,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
         ZLOGE("Set DB property failed! res:%{public}d appId:%{public}s storeId:%{public}s storeId length:"
               "%{public}zu dir:%{public}s", res, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
               meta.storeId.size(), Anonymous::Change(meta.dataDir).c_str());
-        return Status::ERROR;
+        return;
     }
     SetDBPushDataInterceptor(meta.storeType);
     SetDBReceiveDataInterceptor(meta.storeType);
