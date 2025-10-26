@@ -42,13 +42,13 @@ public:
     API_EXPORT bool IsAutoSyncStore(const std::string &bundleName, const std::string &appId,
         const std::string &store);
     API_EXPORT bool NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp);
-    API_EXPORT void SetDoubleSyncInfo(const DoubleSyncInfo info);
-    API_EXPORT bool IsAccessRestricted(const DoubleSyncInfo info);
+    API_EXPORT void SetDoubleSyncInfo(const DoubleSyncInfo &info);
+    API_EXPORT bool IsAccessRestricted(const DoubleSyncInfo &info);
 
 private:
     SyncManager();
     std::map<std::string, AutoSyncInfo> autoSyncApps_;
-    std::map<std::string, std::string> doubleSyncMap_;
+    std::map<std::string, DoubleSyncInfo> doubleSyncApps_;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_DEVICE_SYNC_APP_MANAGER_H

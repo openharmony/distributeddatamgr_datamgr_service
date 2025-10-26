@@ -13,7 +13,6 @@
 * limitations under the License.
 */
 #include "model/double_sync_config.h"
-#include "sync_mgr/sync_mgr.h"
 
 namespace OHOS {
 namespace DistributedData {

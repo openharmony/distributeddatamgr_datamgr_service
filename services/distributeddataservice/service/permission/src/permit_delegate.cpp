@@ -190,6 +190,10 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
     if (!accountDelegate->IsOsAccountConstraintEnabled()) {
         return DataFlowCheckRet::DEFAULT;
     }
+    if (appIDMeta.appId == "") {
+        ZLOGE("appId is empty.");
+        return DataFlowCheckRet::DENIED_SEND;
+    }
     auto it = property.find(Constant::TOKEN_ID);
     if (it != property.end()) {
         auto tokenIdPtr = std::get_if<uint32_t>(&it->second);

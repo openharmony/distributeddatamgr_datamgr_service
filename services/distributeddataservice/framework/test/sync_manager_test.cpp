@@ -152,7 +152,7 @@ HWTEST_F(SyncManagerTest, SetDoubleSyncInfo001, TestSize.Level1)
     doubleSyncInfo.appId = "testId";
     SyncManager::GetInstance().SetDoubleSyncInfo(doubleSyncInfo);
     bool res = false;
-    for (const auto &entry : SyncManager::GetInstance().doubleSyncMap_) {
+    for (const auto &entry : SyncManager::GetInstance().doubleSyncApps_) {
         if (entry.first == doubleSyncInfo.bundleName) {
             res = true;
         }

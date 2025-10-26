@@ -78,28 +78,27 @@ bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp)
     return ((it->second.version == autoSyncApp.version) && (it->second.appId == autoSyncApp.appId));
 }
 
-void SyncManager::SetDoubleSyncInfo(const DoubleSyncInfo info)
+void SyncManager::SetDoubleSyncInfo(const DoubleSyncInfo &info)
 {
-    doubleSyncMap_.insert_or_assign(info.bundleName, info.appId);
+    doubleSyncApps_.insert_or_assign(info.bundleName, info);
 }
 
-bool SyncManager::IsAccessRestricted(const DoubleSyncInfo info)
+bool SyncManager::IsAccessRestricted(const DoubleSyncInfo &info)
 {
     auto TokenType = AccessTokenKit::GetTokenTypeFlag(info.tokenId);
     if (TokenType == TOKEN_HAP) {
         HapTokenInfo haptokenInfo;
         if (AccessTokenKit::GetHapTokenInfo(info.tokenId, haptokenInfo) != RET_SUCCESS) {
-            ZLOGE("failed to get native token info, tokenId: %{public}s",
-                Anonymous::Change(std::to_string(info.tokenId)).c_str());
+            ZLOGE("failed to get native token info, tokenId: %{public}d", info.tokenId);
             return true;
         }
-        for (const auto &entry : doubleSyncMap_) {
-            if (entry.first == haptokenInfo.bundleName && entry.second == info.appId) {
+        for (const auto &entry : doubleSyncApps_) {
+            if (entry.first == haptokenInfo.bundleName && entry.second.appId == info.appId) {
                 return false;
             }
         }
     } else if (TokenType == TOKEN_NATIVE || TokenType == TOKEN_SHELL) {
-        for (const auto &entry : doubleSyncMap_) {
+        for (const auto &entry : doubleSyncApps_) {
             if (entry.first == info.bundleName) {
                 return false;
             }

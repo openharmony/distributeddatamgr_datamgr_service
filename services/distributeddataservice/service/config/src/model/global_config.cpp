@@ -33,7 +33,7 @@ bool GlobalConfig::Marshal(json &node) const
     SetValue(node[GET_NAME(dataShare)], dataShare);
     SetValue(node[GET_NAME(autoSyncApps)], autoSyncApps);
     SetValue(node[GET_NAME(syncAppList)], syncAppList);
-    SetValue(node[GET_NAME(doubleSyncList)], doubleSyncList);
+    SetValue(node[GET_NAME(doubleSyncApps)], doubleSyncApps);
     return true;
 }
 
@@ -54,7 +54,7 @@ bool GlobalConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(dataShare), dataShare);
     GetValue(node, GET_NAME(autoSyncApps), autoSyncApps);
     GetValue(node, GET_NAME(syncAppList), syncAppList);
-    GetValue(node, GET_NAME(doubleSyncList), doubleSyncList);
+    GetValue(node, GET_NAME(doubleSyncApps), doubleSyncApps);
     return true;
 }
 
@@ -71,7 +71,7 @@ GlobalConfig::~GlobalConfig()
     delete dataShare;
     delete autoSyncApps;
     delete syncAppList;
-    delete doubleSyncList;
+    delete doubleSyncApps;
 }
 } // namespace DistributedData
 } // namespace OHOS

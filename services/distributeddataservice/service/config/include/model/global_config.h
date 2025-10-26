@@ -47,7 +47,7 @@ public:
     DataShareConfig *dataShare = nullptr;
     std::vector<AutoSyncAppConfig> *autoSyncApps = nullptr;
     AppAccessCheckConfig *syncAppList = nullptr;
-    std::vector<DoubleSyncConfig> *doubleSyncList = nullptr;
+    std::vector<DoubleSyncConfig> *doubleSyncApps = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

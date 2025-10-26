@@ -225,12 +225,12 @@ void Bootstrap::LoadSyncTrustedApp()
 
 void Bootstrap::LoadDoubleSyncConfig()
 {
-    auto *doubleSyncList = ConfigFactory::GetInstance().GetDoubleSyncConfig();
-    if (doubleSyncList == nullptr) {
+    auto *doubleSyncApps = ConfigFactory::GetInstance().GetDoubleSyncConfig();
+    if (doubleSyncApps == nullptr) {
         return;
     }
-    for (auto &doubleSync : *doubleSyncList) {
-        SyncManager::GetInstance().SetDoubleSyncInfo(doubleSync);
+    for (auto &doubleSyncApp : *doubleSyncApps) {
+        SyncManager::GetInstance().SetDoubleSyncInfo(doubleSyncApp);
     }
 }
 } // namespace DistributedData
