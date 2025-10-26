@@ -319,8 +319,7 @@ bool AccountDelegateNormalImpl::IsOsAccountConstraintEnabled()
     }
     bool isEnabled = true;
     int32_t status = AccountSA::OsAccountManager::CheckOsAccountConstraintEnabled(userId, TRANS_CONSTRAINT, isEnabled);
-    ZLOGI("CheckOsAccountConstraintEnabled failed, status: %{public}d, userId is %{public}d, isEnabled is %{public}d",
-        status, userId, isEnabled);
+    ZLOGI("status: %{public}d, userId is %{public}d, isEnabled is %{public}d", status, userId, isEnabled);
     return isEnabled;
 }
 } // namespace DistributedData
