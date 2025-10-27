@@ -1184,7 +1184,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
             errCode, URIUtils::Anonymous(providerInfo.uri).c_str(), providerInfo.visitedUserId);
         return std::make_pair(errCode, 0);
     }
-    // check if Provider is in allowList when caller is not system App
+    // check if Provider is in allowList when caller is not system App. Only for message log purpose.
     VerifyProvider(providerInfo, IPCSkeleton::GetCallingPid());
     // when HAP interacts across users, it needs to check across users permission
     if (!VerifyAcrossAccountsPermission(providerInfo.currentUserId, providerInfo.visitedUserId,
