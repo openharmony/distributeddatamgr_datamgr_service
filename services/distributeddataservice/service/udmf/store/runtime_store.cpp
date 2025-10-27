@@ -639,7 +639,7 @@ Status RuntimeStore::RegisterDataChangedObserver(const std::string &key, uint32_
         return E_ERROR;
     }
     std::vector<uint8_t> keyBytes(key.begin(), key.end());
-    DBStatus status = kvStore_->RegisterObserver(keyBytes, ObserverMode::OBSERVER_CHANGES_FOREIGN, observer.get());
+    DBStatus status = kvStore_->RegisterObserver(keyBytes, ObserverMode::OBSERVER_CHANGES_FOREIGN, observer);
     if (status != DBStatus::OK) {
         ZLOGE("RegisterObserver failed, status: %{public}d.", static_cast<int>(status));
         return E_DB_ERROR;
@@ -654,7 +654,7 @@ bool RuntimeStore::UnRegisterDataChangedObserver(const std::string &key)
     std::lock_guard<std::mutex> lock(observerMutex_);
     auto it = observers_.find(key);
     if (it != observers_.end()) {
-        auto status = kvStore_->UnRegisterObserver(it->second.get());
+        auto status = kvStore_->UnRegisterObserver(it->second);
         if (status != DBStatus::OK) {
             ZLOGE("Unregister observer failed, status: %{public}d.", static_cast<int>(status));
             return false;
@@ -669,7 +669,7 @@ bool RuntimeStore::UnRegisterAllObserver()
 {
     std::lock_guard<std::mutex> lock(observerMutex_);
     for (const auto &[key, observer] : observers_) {
-        auto status = kvStore_->UnRegisterObserver(observer.get());
+        auto status = kvStore_->UnRegisterObserver(observer);
         if (status != DBStatus::OK) {
             ZLOGE("UnRegisterAllObserver failed for key %{public}s, status: %{public}d.",
                 key.c_str(), static_cast<int>(status));
