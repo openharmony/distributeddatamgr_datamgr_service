@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #define LOG_TAG "Constant"
+#include "log_print.h"
+#include "utils/anonymous.h"
 #include "utils/constant.h"
 #include <fstream>
 #include "securec.h"
@@ -103,12 +105,14 @@ bool Constant::IsValidPath(const std::string &path)
     size_t pos = path.find(PATH_INVALID_FLAG_LEADING);
     while (pos != std::string::npos) {
         if (pos == 0 || path[pos - 1] == FILE_SEPARATOR_CHAR) {
+            ZLOGE("leading is invalid. dataDir is %{public}s", Anonymous::Change(path).c_str());
             return false;
         }
         pos = path.find(PATH_INVALID_FLAG_LEADING, pos + PATH_INVALID_FLAG_LEN);
     }
     pos = path.rfind(PATH_INVALID_FLAG_TRAILING);
     if ((pos != std::string::npos) && (path.size() - pos == PATH_INVALID_FLAG_LEN)) {
+        ZLOGE("trailing is invalid. dataDir is %{public}s", Anonymous::Change(path).c_str());
         return false;
     }
     return true;

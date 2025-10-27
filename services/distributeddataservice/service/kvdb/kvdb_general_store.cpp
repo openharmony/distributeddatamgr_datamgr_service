@@ -178,15 +178,14 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
         ZLOGE("Create ObserverProxy failed errno %{public}d.", errno);
         return;
     }
+    if (!Constant::IsValidPath(meta.dataDir)) {
+        return;
+    }
     observer_->storeId_ = meta.storeId;
     StoreMetaDataLocal local;
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
     isPublic_ = local.isPublic;
     DBStatus status = DBStatus::NOT_FOUND;
-    if (!Constant::IsValidPath(meta.dataDir)) {
-        ZLOGE("path is invalid. dataDir is %{public}s", Anonymous::Change(meta.dataDir).c_str());
-        return;
-    }
     manager_.SetKvStoreConfig({ meta.dataDir });
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     manager_.GetKvStore(
@@ -204,7 +203,10 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
         ZLOGE("Set failed! res:%{public}d dir:%{public}s", res, Anonymous::Change(meta.dataDir).c_str());
         return;
     }
-    SetSyncInterceptors(meta);
+    SetDBPushDataInterceptor(meta.storeType);
+    SetDBReceiveDataInterceptor(meta.storeType);
+    RegisterObservers();
+    SetDeviceMatrix(meta);
     if (meta.isAutoSync) {
         bool param = true;
         auto data = static_cast<DistributedDB::PragmaData>(&param);
@@ -239,12 +241,14 @@ KVDBGeneralStore::~KVDBGeneralStore()
     }
 }
 
-void KVDBGeneralStore::SetSyncInterceptors(const StoreMetaData &meta)
+void KVDBGeneralStore::RegisterObservers()
 {
-    SetDBPushDataInterceptor(meta.storeType);
-    SetDBReceiveDataInterceptor(meta.storeType);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
+}
+
+void KVDBGeneralStore::SetDeviceMatrix(const StoreMetaData &meta)
+{
     if (DeviceMatrix::GetInstance().IsDynamic(meta) || DeviceMatrix::GetInstance().IsStatics(meta)) {
         delegate_->SetRemotePushFinishedNotify([meta](const DistributedDB::RemotePushNotifyInfo &info) {
             DeviceMatrix::GetInstance().OnExchanged(info.deviceId, meta, DeviceMatrix::ChangeType::CHANGE_REMOTE);
