@@ -86,5 +86,10 @@ DataShareConfig *ConfigFactory::GetDataShareConfig()
 {
     return nullptr;
 }
+
+std::vector<DoubleSyncConfig> *ConfigFactory::GetDoubleSyncConfig()
+{
+    return nullptr;
+}
 } // namespace DistributedData
 } // namespace OHOS

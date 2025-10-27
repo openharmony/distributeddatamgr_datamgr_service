@@ -79,6 +79,7 @@ void KvStoreDataServiceTest::SetUpTestCase(void)
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
+    Bootstrap::GetInstance().LoadDoubleSyncConfig();
     KvStoreMetaManager::GetInstance().BindExecutor(executors);
     KvStoreMetaManager::GetInstance().InitMetaParameter();
     KvStoreMetaManager::GetInstance().InitMetaListener();

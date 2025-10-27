@@ -35,6 +35,7 @@ public:
     bool QueryForegroundUserId(int &foregroundUserId) override;
     bool IsUserForeground(int32_t userId) override;
     static bool Init();
+    bool IsOsAccountConstraintEnabled() override;
 
 private:
     ~AccountDelegateDefaultImpl();

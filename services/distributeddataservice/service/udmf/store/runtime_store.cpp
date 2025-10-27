@@ -29,6 +29,7 @@
 #include "bootstrap.h"
 #include "directory/directory_manager.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 #include "preprocess_utils.h"
 
 namespace OHOS {
@@ -451,6 +452,11 @@ bool RuntimeStore::Init()
     uint32_t pragmData = 16 * 1024 * 1024;
     PragmaData input = static_cast<PragmaData>(&pragmData);
     kvStore_->Pragma(SET_MAX_VALUE_SIZE, input);
+    auto res = kvStore_->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+    if (res != DBStatus::OK) {
+        ZLOGE("set DB property fail, res:%{public}d", res);
+        return false;
+    }
     return true;
 }
 

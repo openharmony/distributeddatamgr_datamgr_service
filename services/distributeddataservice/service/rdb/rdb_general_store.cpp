@@ -38,6 +38,7 @@
 #include "snapshot/bind_event.h"
 #include "sync_mgr/sync_mgr.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
@@ -198,6 +199,12 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
         if (ret != DBStatus::OK || delegate_ == nullptr) {
             manager_.CloseStore(delegate_);
             delegate_ = nullptr;
+        }
+    }
+    if (delegate_ != nullptr) {
+        auto res = delegate_->SetProperty({{Constant::TOKEN_ID, meta.tokenId}});
+        if (res != DBStatus::OK) {
+            ZLOGE("set DB property fail, res:%{public}d", res);
         }
     }
     InitStoreInfo(meta);
@@ -1381,5 +1388,13 @@ int32_t RdbGeneralStore::UpdateDBStatus()
         return GeneralError::E_ALREADY_CLOSED;
     }
     return delegate_->OperateDataStatus(static_cast<uint32_t>(DataOperator::UPDATE_TIME));
+}
+
+int32_t RdbGeneralStore::SetDBProperty(const DBProperty &property)
+{
+    if (delegate_ == nullptr) {
+        return DBStatus::DB_ERROR;
+    }
+    return delegate_->SetProperty(property);
 }
 } // namespace OHOS::DistributedRdb

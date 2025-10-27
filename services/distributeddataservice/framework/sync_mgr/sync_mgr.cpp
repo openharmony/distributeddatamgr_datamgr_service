@@ -13,8 +13,12 @@
  * limitations under the License.
  */
 #define LOG_TAG "SyncManager"
+#include "accesstoken_kit.h"
+#include "log_print.h"
 #include "sync_mgr/sync_mgr.h"
+#include "utils/anonymous.h"
 
+using namespace OHOS::Security::AccessToken;
 namespace OHOS::DistributedData {
 SyncManager::SyncManager()
 {
@@ -72,5 +76,34 @@ bool SyncManager::NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp)
         return false;
     }
     return ((it->second.version == autoSyncApp.version) && (it->second.appId == autoSyncApp.appId));
+}
+
+void SyncManager::SetDoubleSyncInfo(const DoubleSyncInfo &info)
+{
+    doubleSyncApps_.insert_or_assign(info.bundleName, info);
+}
+
+bool SyncManager::IsAccessRestricted(const DoubleSyncInfo &info)
+{
+    auto TokenType = AccessTokenKit::GetTokenTypeFlag(info.tokenId);
+    if (TokenType == TOKEN_HAP) {
+        HapTokenInfo haptokenInfo;
+        if (AccessTokenKit::GetHapTokenInfo(info.tokenId, haptokenInfo) != RET_SUCCESS) {
+            ZLOGE("failed to get native token info, tokenId: %{public}d", info.tokenId);
+            return true;
+        }
+        for (const auto &entry : doubleSyncApps_) {
+            if (entry.first == haptokenInfo.bundleName && entry.second.appId == info.appId) {
+                return false;
+            }
+        }
+    } else if (TokenType == TOKEN_NATIVE || TokenType == TOKEN_SHELL) {
+        for (const auto &entry : doubleSyncApps_) {
+            if (entry.first == info.bundleName) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 } // namespace OHOS::DistributedData

@@ -24,8 +24,10 @@
 #include "permission_validator.h"
 #include "runtime_config.h"
 #include "store_types.h"
+#include "sync_mgr/sync_mgr.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 
 namespace OHOS::DistributedData {
 using DBStatus = DistributedDB::DBStatus;
@@ -58,7 +60,11 @@ void PermitDelegate::Init()
     };
     status = DBConfig::SetPermissionCheckCallback(permitCall);
     ZLOGI("set permission callback status:%d.", status);
-
+    auto dataFlowCheckCall = [this](const CheckParam &Param, const DBProperty &property) -> DataFlowCheckRet {
+        return IsTransferAllowed(Param, property);
+    };
+    status = DBConfig::SetDataFlowCheckCallback(dataFlowCheckCall);
+    ZLOGI("set data flow callback status:%{public}d.", status);
     auto extraCall = [this](const CondParam &param) -> std::map<std::string, std::string> {
         return GetExtraCondition(param);
     };
@@ -82,7 +88,6 @@ bool PermitDelegate::VerifyPermission(const CheckParam &param, uint8_t flag)
     ZLOGI("user:%{public}s, appId:%{public}s, storeId:%{public}s, remote devId:%{public}s, instanceId:%{public}d,"
           "flag:%{public}u", param.userId.c_str(), param.appId.c_str(), Anonymous::Change(param.storeId).c_str(),
           Anonymous::Change(param.deviceId).c_str(), param.instanceId, flag);
-
     auto devId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     StoreMetaData data;
     data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
@@ -171,5 +176,38 @@ bool PermitDelegate::VerifyPermission(const std::string &permission,
         }
     }
     return true;
+}
+
+DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, const DBProperty &property)
+{
+    auto accountDelegate = AccountDelegate::GetInstance();
+    if (accountDelegate == nullptr) {
+        ZLOGE("accountDelegate is null.");
+        return DataFlowCheckRet::DENIED_SEND;
+    }
+    AppIDMetaData appIDMeta;
+    MetaDataManager::GetInstance().LoadMeta(param.appId, appIDMeta, true);
+    if (!accountDelegate->IsOsAccountConstraintEnabled()) {
+        return DataFlowCheckRet::DEFAULT;
+    }
+    if (appIDMeta.appId == "") {
+        ZLOGE("appId is empty.");
+        return DataFlowCheckRet::DENIED_SEND;
+    }
+    auto it = property.find(Constant::TOKEN_ID);
+    if (it != property.end()) {
+        auto tokenIdPtr = std::get_if<uint32_t>(&it->second);
+        if (tokenIdPtr == nullptr) {
+            return DataFlowCheckRet::DENIED_SEND;
+        }
+        SyncManager::DoubleSyncInfo info;
+        info.tokenId = *tokenIdPtr;
+        info.appId = appIDMeta.appId;
+        info.bundleName = appIDMeta.bundleName;
+        if (!SyncManager::GetInstance().IsAccessRestricted(info)) {
+            return DataFlowCheckRet::DEFAULT;
+        }
+    }
+    return DataFlowCheckRet::DENIED_SEND;
 }
 } // namespace OHOS::DistributedData

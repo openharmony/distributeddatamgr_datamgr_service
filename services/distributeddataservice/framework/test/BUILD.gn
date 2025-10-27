@@ -450,7 +450,14 @@ ohos_unittest("SyncManagerTest") {
   sources = [ "sync_manager_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
-  external_deps = [ "kv_store:datamgr_common" ]
+  external_deps = [
+    "kv_store:datamgr_common",
+    "ipc:ipc_core",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
 }
 ###############################################################################
 group("unittest") {

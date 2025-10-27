@@ -222,5 +222,16 @@ void Bootstrap::LoadSyncTrustedApp()
     }
     AppAccessCheckConfigManager::GetInstance().Initialize(infos);
 }
+
+void Bootstrap::LoadDoubleSyncConfig()
+{
+    auto *doubleSyncApps = ConfigFactory::GetInstance().GetDoubleSyncConfig();
+    if (doubleSyncApps == nullptr) {
+        return;
+    }
+    for (auto &doubleSyncApp : *doubleSyncApps) {
+        SyncManager::GetInstance().SetDoubleSyncInfo(doubleSyncApp);
+    }
+}
 } // namespace DistributedData
 } // namespace OHOS

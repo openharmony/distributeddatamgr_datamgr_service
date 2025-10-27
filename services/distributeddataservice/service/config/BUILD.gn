@@ -33,6 +33,7 @@ ohos_source_set("distributeddata_config") {
     "src/model/component_config.cpp",
     "src/model/datashare_config.cpp",
     "src/model/directory_config.cpp",
+    "src/model/double_sync_config.cpp",
     "src/model/global_config.cpp",
     "src/model/network_config.cpp",
     "src/model/protocol_config.cpp",

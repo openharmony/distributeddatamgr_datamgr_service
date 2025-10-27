@@ -29,6 +29,12 @@ public:
         std::string bundleName;
         std::vector<std::string> storeIds;
     };
+    struct DoubleSyncInfo {
+        uint32_t tokenId = 0;
+        std::string appId;
+        std::string bundleName;
+    };
+
     API_EXPORT static SyncManager &GetInstance();
     API_EXPORT void Initialize(const std::vector<AutoSyncInfo> &autoSyncApps);
     API_EXPORT void SetAutoSyncAppInfo(const AutoSyncInfo &autoSyncApp);
@@ -36,10 +42,13 @@ public:
     API_EXPORT bool IsAutoSyncStore(const std::string &bundleName, const std::string &appId,
         const std::string &store);
     API_EXPORT bool NeedForceReplaceSchema(const AutoSyncInfo &autoSyncApp);
+    API_EXPORT void SetDoubleSyncInfo(const DoubleSyncInfo &info);
+    API_EXPORT bool IsAccessRestricted(const DoubleSyncInfo &info);
 
 private:
     SyncManager();
     std::map<std::string, AutoSyncInfo> autoSyncApps_;
+    std::map<std::string, DoubleSyncInfo> doubleSyncApps_;
 };
 } // namespace OHOS::DistributedData
 #endif // DISTRIBUTEDDATAMGR_DEVICE_SYNC_APP_MANAGER_H

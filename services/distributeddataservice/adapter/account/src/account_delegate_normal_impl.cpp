@@ -35,6 +35,7 @@ using namespace OHOS::DistributedData;
 using namespace Security::AccessToken;
 __attribute__((used)) static bool g_isInit = AccountDelegateNormalImpl::Init();
 static constexpr int32_t STOPPING_TIMEOUT = 5;
+static constexpr const char *TRANS_CONSTRAINT = "constraint.distributed.transmission.outgoing";
 static inline const std::map<int32_t, AccountStatus> STATUS = {
     { AccountSA::REMOVED, AccountStatus::DEVICE_ACCOUNT_DELETE },
     { AccountSA::SWITCHED, AccountStatus::DEVICE_ACCOUNT_SWITCHED },
@@ -310,6 +311,18 @@ bool AccountDelegateNormalImpl::IsDeactivating(int userId)
     }
     userDeactivating_.InsertOrAssign(userId, res);
     return res;
+}
+
+bool AccountDelegateNormalImpl::IsOsAccountConstraintEnabled()
+{
+    int userId = 0;
+    if (!QueryForegroundUserId(userId)) {
+        return true;
+    }
+    bool isEnabled = true;
+    int32_t status = AccountSA::OsAccountManager::CheckOsAccountConstraintEnabled(userId, TRANS_CONSTRAINT, isEnabled);
+    ZLOGI("status: %{public}d, userId is %{public}d, isEnabled is %{public}d", status, userId, isEnabled);
+    return isEnabled;
 }
 } // namespace DistributedData
 } // namespace OHOS

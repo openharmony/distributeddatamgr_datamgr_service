@@ -24,6 +24,7 @@
 #include "model/component_config.h"
 #include "model/datashare_config.h"
 #include "model/directory_config.h"
+#include "model/double_sync_config.h"
 #include "model/network_config.h"
 #include "model/thread_config.h"
 #include "serializable/serializable.h"
@@ -46,6 +47,7 @@ public:
     DataShareConfig *dataShare = nullptr;
     std::vector<AutoSyncAppConfig> *autoSyncApps = nullptr;
     AppAccessCheckConfig *syncAppList = nullptr;
+    std::vector<DoubleSyncConfig> *doubleSyncApps = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

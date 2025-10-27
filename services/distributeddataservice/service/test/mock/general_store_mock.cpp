@@ -176,5 +176,10 @@ void GeneralStoreMock::SetMockDBStatus(int32_t dbStatus)
 {
     dbStatus_ = dbStatus;
 }
+
+int32_t GeneralStoreMock::SetDBProperty(const DBProperty &property)
+{
+    return dbStatus_;
+}
 } // namespace DistributedData
 } // namespace OHOS

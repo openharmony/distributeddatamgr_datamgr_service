@@ -299,4 +299,14 @@ HWTEST_F(AccountDelegateTest, QueryForegroundUsers, TestSize.Level0)
         EXPECT_EQ(users[i], accounts[i].localId);
     }
 }
+
+/**
+* @tc.name: IsOsAccountConstraintEnabled
+* @tc.desc: check account constraint
+* @tc.type: FUNC
+*/
+HWTEST_F(AccountDelegateTest, IsOsAccountConstraintEnabled, TestSize.Level0)
+{
+    EXPECT_FALSE(AccountDelegate::GetInstance()->IsOsAccountConstraintEnabled());
+}
 } // namespace

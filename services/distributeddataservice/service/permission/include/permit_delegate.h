@@ -29,6 +29,8 @@ using Status = OHOS::DistributedKv::Status;
 using CheckParam = DistributedDB::PermissionCheckParam;
 using CondParam = DistributedDB::PermissionConditionParam;
 using ActiveParam = DistributedDB::ActivationCheckParam;
+using DBProperty = DistributedDB::Property;
+using DataFlowCheckRet = DistributedDB::DataFlowCheckRet;
 
 class PermitDelegate {
 public:
@@ -45,8 +47,9 @@ private:
     ~PermitDelegate();
     bool VerifyExtraCondition(const std::map<std::string, std::string> &cond) const;
     Status VerifyStrategy(const StoreMetaData &data, const std::string &rmdevId) const;
-    Status LoadStoreMeta(const std::string &prefix, const CheckParam &param, StoreMetaData &data) const;
     std::map<std::string, std::string> GetExtraCondition(const CondParam &param);
+    Status LoadStoreMeta(const std::string &prefix, const CheckParam &param, StoreMetaData &data) const;
+    DataFlowCheckRet IsTransferAllowed(const CheckParam &param, const DBProperty &property);
 
     ConcurrentMap<std::string, std::string> appId2BundleNameMap_;
     LRUBucket<std::string, StoreMetaData> metaDataBucket_ {32};

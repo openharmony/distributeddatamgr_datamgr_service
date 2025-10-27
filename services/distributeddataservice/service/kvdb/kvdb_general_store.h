@@ -83,6 +83,7 @@ public:
     static DBSecurity GetDBSecurity(int32_t secLevel);
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
+    int32_t SetDBProperty(const DBProperty &property) override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;
@@ -101,6 +102,8 @@ private:
     void GetIdentifierParams(std::vector<std::string> &devices,
         const std::vector<std::string> &uuids, int32_t authType);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
+    void RegisterObservers();
+    void SetDeviceMatrix(const StoreMetaData &meta);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;

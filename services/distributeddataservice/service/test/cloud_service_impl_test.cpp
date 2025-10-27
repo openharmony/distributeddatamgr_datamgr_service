@@ -637,7 +637,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
     metaMapping.storeId = "storeName";
     metaMapping.cloudPath = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
- 
+
     StoreMetaData meta;
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     meta.user = "100";
@@ -646,7 +646,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
- 
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
     meta.instanceId = 1;
@@ -656,7 +656,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
     meta.user = "100";
     res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
- 
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
     metaMapping.cloudPath = "";
@@ -666,7 +666,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
     meta.user = "100";
     res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
- 
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
     metaMapping.dataDir = "";
@@ -675,7 +675,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
     meta.user = "100";
     res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
- 
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
@@ -747,14 +747,14 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_004, TestSize.Level1)
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
     CheckDelMeta(metaMapping, meta, meta1);
- 
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKeyLocal(), localMetaData, true), true);
     meta.user = "100";
     res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
- 
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKeyLocal(), true), true);
     localMetaData.isPublic = true;

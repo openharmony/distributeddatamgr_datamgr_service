@@ -13,7 +13,7 @@
 * limitations under the License.
 */
 #include <gtest/gtest.h>
-
+#include "ipc_skeleton.h"
 #include "sync_mgr/sync_mgr.h"
 
 using namespace testing::ext;
@@ -138,5 +138,41 @@ HWTEST_F(SyncManagerTest, IsAutoSyncStore001, TestSize.Level1)
     // invalid bundleName, valid appid, valid storeId,
     autoSyncStore = SyncManager::GetInstance().IsAutoSyncStore("bundleName1", "appId13", "storeId1");
     EXPECT_FALSE(autoSyncStore);
+}
+
+/**
+@tc.name: SetDoubleSyncInfo001
+@tc.desc: set doubleSyncInfo
+@tc.type: FUNC
+*/
+HWTEST_F(SyncManagerTest, SetDoubleSyncInfo001, TestSize.Level1)
+{
+    SyncManager::DoubleSyncInfo doubleSyncInfo;
+    doubleSyncInfo.bundleName = "testName";
+    doubleSyncInfo.appId = "testId";
+    SyncManager::GetInstance().SetDoubleSyncInfo(doubleSyncInfo);
+    bool res = false;
+    for (const auto &entry : SyncManager::GetInstance().doubleSyncApps_) {
+        if (entry.first == doubleSyncInfo.bundleName) {
+            res = true;
+        }
+    }
+    EXPECT_TRUE(res);
+}
+
+/**
+
+@tc.name: IsAccessRestricted001
+@tc.desc: IsAccessRestricted test.
+@tc.type: FUNC
+*/
+HWTEST_F(SyncManagerTest, IsAccessRestricted001, TestSize.Level1)
+{
+    SyncManager::DoubleSyncInfo info;
+    info.tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    info.appId = "testAppId";
+    info.bundleName = "testBundleName";
+    bool res = SyncManager::GetInstance().IsAccessRestricted(info);
+    EXPECT_TRUE(res);
 }
 } // namespace OHOS::Test

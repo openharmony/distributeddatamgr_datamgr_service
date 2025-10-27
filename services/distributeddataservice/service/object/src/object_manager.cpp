@@ -37,6 +37,7 @@
 #include "object_dms_handler.h"
 #include "object_radar_reporter.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 
 namespace OHOS {
 namespace DistributedObject {
@@ -952,6 +953,10 @@ int32_t ObjectStoreManager::Open()
     } else {
         syncCount_++;
         ZLOGI("Object kvstore syncCount: %{public}d", syncCount_.load());
+    }
+    auto res = delegate_->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+    if (res != DistributedDB::DBStatus::OK) {
+        ZLOGW("set DB property fail, res:%{public}d", res);
     }
     return OBJECT_SUCCESS;
 }
