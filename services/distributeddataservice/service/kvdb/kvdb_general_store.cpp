@@ -172,7 +172,10 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     : manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
           meta.instanceId)
 {
-    InitMetadata(meta);
+    observer_.storeId_ = meta.storeId;
+    StoreMetaDataLocal local;
+    MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
+    isPublic_ = local.isPublic;
     DBStatus status = DBStatus::NOT_FOUND;
     if (!Constant::IsValidPath(meta.dataDir)) {
         ZLOGE("path is invalid. dataDir is %{public}s", Anonymous::Change(meta.dataDir).c_str());
@@ -195,15 +198,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
         ZLOGE("Set failed! res:%{public}d dir:%{public}s", res, Anonymous::Change(meta.dataDir).c_str());
         return;
     }
-    SetDBPushDataInterceptor(meta.storeType);
-    SetDBReceiveDataInterceptor(meta.storeType);
-    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
-    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
-    if (DeviceMatrix::GetInstance().IsDynamic(meta) || DeviceMatrix::GetInstance().IsStatics(meta)) {
-        delegate_->SetRemotePushFinishedNotify([meta](const DistributedDB::RemotePushNotifyInfo &info) {
-            DeviceMatrix::GetInstance().OnExchanged(info.deviceId, meta, DeviceMatrix::ChangeType::CHANGE_REMOTE);
-        });
-    }
+    SetSyncInterceptors(meta);
     if (meta.isAutoSync) {
         bool param = true;
         auto data = static_cast<DistributedDB::PragmaData>(&param);
@@ -238,11 +233,17 @@ KVDBGeneralStore::~KVDBGeneralStore()
     }
 }
 
-void KVDBGeneralStore::InitMetadata(const StoreMetaData &meta) {
-    observer_.storeId_ = meta.storeId;
-    StoreMetaDataLocal local;
-    MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
-    isPublic_ = local.isPublic;
+void KVDBGeneralStore::SetSyncInterceptors(const StoreMetaData &meta)
+{
+    SetDBPushDataInterceptor(meta.storeType);
+    SetDBReceiveDataInterceptor(meta.storeType);
+    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
+    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
+    if (DeviceMatrix::GetInstance().IsDynamic(meta) || DeviceMatrix::GetInstance().IsStatics(meta)) {
+        delegate_->SetRemotePushFinishedNotify([meta](const DistributedDB::RemotePushNotifyInfo &info) {
+            DeviceMatrix::GetInstance().OnExchanged(info.deviceId, meta, DeviceMatrix::ChangeType::CHANGE_REMOTE);
+        });
+    }
 }
 
 int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)
