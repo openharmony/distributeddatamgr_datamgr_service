@@ -96,7 +96,7 @@ HWTEST_F(SensitiveTest, Operator002, TestSize.Level1)
 }
 
 /**
- * @tc.name: Operator002
+ * @tc.name: Operator003
  * @tc.desc: Test for Operator securityLabel is S1.
  * @tc.type: FUNC
  */
