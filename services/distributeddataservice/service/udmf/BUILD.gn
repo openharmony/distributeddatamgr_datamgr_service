@@ -41,7 +41,9 @@ ohos_source_set("udmf_server") {
     debug = false
   }
   sources = [
-    "delay_data/delay_data_container.cpp",
+    "delay_data/delay_data_acquire_container.cpp",
+    "delay_data/delay_data_prepare_container.cpp",
+    "delay_data/synced_device_container.cpp",
     "lifecycle/clean_on_timeout.cpp",
     "lifecycle/lifecycle_manager.cpp",
     "lifecycle/lifecycle_policy.cpp",

@@ -616,8 +616,8 @@ Status RuntimeStore::SetRemotePullStartNotify()
     }
     DBStatus status = kvStore_->SetDeviceSyncNotify(DeviceSyncEvent::REMOTE_PULL_STARTED,
         [](DistributedDB::DeviceSyncNotifyInfo info) {
-        DelayDataContainer::GetInstance().SaveDelayDragDeviceInfo(info.deviceId);
-        DelayDataContainer::GetInstance().ExecAllDataLoadCallback();
+        SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(info.deviceId);
+        DelayDataPrepareContainer::GetInstance().ExecAllDataLoadCallback();
     });
     if (status != DBStatus::OK) {
         ZLOGE("SetDeviceSyncNotify failed, status: %{public}d.", static_cast<int>(status));

@@ -39,8 +39,8 @@ void AcceptableInfoObserver::OnChange(const DistributedDB::KvStoreChangedData &d
             ZLOGE("Acceptable key is invalid, key: %{public}s", acceptableKey.c_str());
             continue;
         }
-        DelayDataContainer::GetInstance().SaveDelayAcceptableInfo(info.udKey, info);
-        if (!DelayDataContainer::GetInstance().ExecDataLoadCallback(info.udKey, info)) {
+        SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(info.udKey, info.deviceId);
+        if (!DelayDataPrepareContainer::GetInstance().ExecDataLoadCallback(info.udKey, info)) {
             ZLOGE("Can not find data load callback, key: %{public}s", info.udKey.c_str());
         }
     }

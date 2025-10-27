@@ -1850,7 +1850,9 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/framework/utils/constant.cpp",
     "${data_service_path}/framework/utils/corrupt_reporter.cpp",
     "${data_service_path}/framework/utils/crypto.cpp",
-    "${data_service_path}/service/udmf/delay_data/delay_data_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
@@ -2549,7 +2551,9 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
   }
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "${data_service_path}/service/udmf/delay_data/delay_data_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
     "${data_service_path}/service/udmf/lifecycle/clean_on_timeout.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
@@ -2638,7 +2642,9 @@ ohos_unittest("UdmfDelayDataContainerTest") {
   }
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "${data_service_path}/service/udmf/delay_data/delay_data_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
     "${data_service_path}/service/udmf/lifecycle/clean_on_timeout.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
@@ -2726,7 +2732,9 @@ ohos_unittest("UdmfStoreDataChangedObserverTest") {
   }
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "${data_service_path}/service/udmf/delay_data/delay_data_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
+    "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",,
     "${data_service_path}/service/udmf/lifecycle/clean_on_timeout.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",

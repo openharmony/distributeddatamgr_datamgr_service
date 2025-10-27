@@ -196,7 +196,7 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     }
     msg.appId = bundleName;
 
-    bool handledByDelay = DelayDataContainer::GetInstance().HandleDelayLoad(query, unifiedData, res);
+    bool handledByDelay = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, unifiedData, res);
     if (!handledByDelay) {
         res = RetrieveData(query, unifiedData);
     }
@@ -1201,7 +1201,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
         return E_ERROR;
     }
     key = runtime->key.GetUnifiedKey();
-    DelayDataContainer::GetInstance().RegisterDataLoadCallback(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
+    DelayDataPrepareContainer::GetInstance().RegisterDataLoadCallback(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
 
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
@@ -1236,8 +1236,8 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     UnRegisterObserver(observerKey);
     DelayGetDataInfo getDataInfo;
     BlockDelayData blockData;
-    auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
-    auto isBlockData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
+    auto isDataLoading = DelayDataAcquireContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
+    auto isBlockData = DelayDataPrepareContainer::GetInstance().QueryBlockDelayData(key, blockData);
     int32_t ret = FillDelayUnifiedData(udKey, unifiedData);
     if (ret != E_OK) {
         ZLOGE("FillDelayUnifiedData failed, ret:%{public}d, key:%{public}s.", ret, key.c_str());
@@ -1268,7 +1268,7 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     TransferToEntriesIfNeed(query, unifiedData);
 
     if (isDataLoading) {
-        return DelayDataContainer::GetInstance().HandleDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
+        return DelayDataAcquireContainer::GetInstance().HandleDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
     }
     blockData.blockData->SetValue(unifiedData);
     return E_OK;
@@ -1333,16 +1333,7 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
 
 std::vector<std::string> UdmfServiceImpl::GetDevicesForDelayData(const std::string &key)
 {
-    std::vector<std::string> devices;
-    DataLoadInfo info;
-    if (DelayDataContainer::GetInstance().QueryDelayAcceptableInfo(key, info)) {
-        ZLOGI("Find from acceptable info notify, key: %{public}s", key.c_str());
-        devices.emplace_back(std::move(info.deviceId));
-    } else {
-        ZLOGI("Find from remote sync notify, key: %{public}s", key.c_str());
-        auto syncedDevices = DelayDataContainer::GetInstance().QueryDelayDragDeviceInfo();
-        devices.insert(devices.end(), syncedDevices.begin(), syncedDevices.end());
-    }
+    std::vector<std::string> devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo(key);
     std::vector<AppDistributedKv::DeviceInfo> devInfos = DmAdapter::GetInstance().GetRemoteDevices();
     std::vector<std::string> validDevices;
     for (const auto &devInfo : devInfos) {
@@ -1377,9 +1368,9 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
     DelayGetDataInfo delayGetDataInfo;
     delayGetDataInfo.dataCallback = iUdmfNotifier;
     delayGetDataInfo.tokenId = tokenId;
-    DelayDataContainer::GetInstance().RegisterDelayDataCallback(key, std::move(delayGetDataInfo));
+    DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, std::move(delayGetDataInfo));
 
-    if (!DelayDataContainer::GetInstance().ExecDataLoadCallback(key, dataLoadInfo)) {
+    if (!DelayDataPrepareContainer::GetInstance().ExecDataLoadCallback(key, dataLoadInfo)) {
         auto runtime = unifiedData->GetRuntime();
         std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
         if (runtime != nullptr && runtime->deviceId != localDeviceId) {
@@ -1467,11 +1458,11 @@ void UdmfServiceImpl::RegisterAllDataChangedObserver()
         ZLOGE("Get drag store failed");
         return;
     }
-    std::vector<std::string> keys = DelayDataContainer::GetInstance().QueryAllDelayKeys();
+    std::vector<std::string> keys = DelayDataAcquireContainer::GetInstance().QueryAllDelayKeys();
     for (const auto &key : keys) {
         store->RegisterDataChangedObserver(key, ObserverFac::ObserverType::RUNTIME);
     }
-    if (DelayDataContainer::GetInstance().QueryDataLoadCallbackSize() > 0) {
+    if (DelayDataPrepareContainer::GetInstance().QueryDataLoadCallbackSize() > 0) {
         store->SetRemotePullStartNotify();
     }
 }
@@ -1604,8 +1595,8 @@ int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string &key)
     UnRegisterObserver(key); // Unregister observer when unified data ready.
     DelayGetDataInfo getDataInfo;
     BlockDelayData blockData;
-    auto isDataLoading = DelayDataContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
-    auto isBlockData = DelayDataContainer::GetInstance().QueryBlockDelayData(key, blockData);
+    auto isDataLoading = DelayDataAcquireContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
+    auto isBlockData = DelayDataPrepareContainer::GetInstance().QueryBlockDelayData(key, blockData);
     if (!isDataLoading && !isBlockData) {
         ZLOGE("DelayData callback and block cache not exist key: %{public}s", key.c_str());
         return E_ERROR;
@@ -1621,7 +1612,7 @@ int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string &key)
         return status;
     }
     if (isDataLoading) {
-        return DelayDataContainer::GetInstance().HandleDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
+        return DelayDataAcquireContainer::GetInstance().HandleDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
     }
     blockData.blockData->SetValue(unifiedData);
     return E_OK;

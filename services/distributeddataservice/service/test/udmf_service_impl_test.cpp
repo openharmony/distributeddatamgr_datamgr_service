@@ -928,26 +928,6 @@ HWTEST_F(UdmfServiceImplTest, VerifyDataAccessPermission002, TestSize.Level1)
 }
 
 /**
- * @tc.name: HandleDelayLoad002
- * @tc.desc: Returns false when not exist
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, HandleDelayLoad002, TestSize.Level1)
-{
-    QueryOption query;
-    query.key = "k1";
-    query.tokenId = 123;
-
-    UnifiedData result;
-    int32_t res = UDMF::E_OK;
-
-    UdmfServiceImpl service;
-    bool handled = service.HandleDelayLoad(query, result, res);
-
-    EXPECT_FALSE(handled);
-}
-
-/**
  * @tc.name: PushDelayData002
  * @tc.desc: DelayData callback and block cache not exist
  * @tc.type: FUNC
