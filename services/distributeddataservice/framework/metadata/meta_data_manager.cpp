@@ -14,7 +14,10 @@
  */
 
 #include "metadata/meta_data_manager.h"
+#include "store_types.h"
+#include "types_export.h"
 #include <csignal>
+#include <memory>
 #define LOG_TAG "MetaDataManager"
 
 #include "directory/directory_manager.h"
@@ -32,8 +35,7 @@ public:
     using DBOrigin = DistributedDB::Origin;
     using DBChangeData = DistributedDB::ChangedData;
     using Type = DistributedDB::Type;
-    MetaObserver(std::shared_ptr<MetaStore> metaStore, std::shared_ptr<Filter> filter, Observer observer,
-        bool isLocal = false);
+    MetaObserver(Observer observer, std::shared_ptr<Filter> filter);
     virtual ~MetaObserver();
 
     // Database change callback
@@ -43,33 +45,17 @@ public:
     void HandleChanges(int32_t flag, std::vector<std::vector<Type>> &priData);
 
 private:
-    std::shared_ptr<MetaStore> metaStore_;
-    std::shared_ptr<Filter> filter_;
     Observer observer_;
+    std::shared_ptr<Filter> filter_;
 };
 
-MetaObserver::MetaObserver(
-    std::shared_ptr<MetaStore> metaStore, std::shared_ptr<Filter> filter, Observer observer, bool isLocal)
-    : metaStore_(std::move(metaStore)), filter_(std::move(filter)), observer_(std::move(observer))
+MetaObserver::MetaObserver(Observer observer, std::shared_ptr<Filter> filter)
+    : observer_(std::move(observer)), filter_(filter)
 {
-    if (metaStore_ != nullptr) {
-        int mode = isLocal ? DistributedDB::OBSERVER_CHANGES_LOCAL_ONLY
-                           : (DistributedDB::OBSERVER_CHANGES_NATIVE | DistributedDB::OBSERVER_CHANGES_FOREIGN);
-        auto status = metaStore_->RegisterObserver(filter_->GetKey(), mode, this);
-        if (!isLocal) {
-            status = metaStore_->RegisterObserver(filter_->GetKey(), DistributedDB::OBSERVER_CHANGES_CLOUD, this);
-        }
-        if (status != DistributedDB::DBStatus::OK) {
-            ZLOGE("register meta observer failed :%{public}d.", status);
-        }
-    }
 }
 
 MetaObserver::~MetaObserver()
 {
-    if (metaStore_ != nullptr) {
-        metaStore_->UnRegisterObserver(this);
-    }
 }
 
 bool MetaDataManager::Filter::operator()(const std::string &key) const
@@ -391,26 +377,34 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
     return status == DistributedDB::OK;
 }
 
-bool MetaDataManager::Subscribe(std::shared_ptr<Filter> filter, Observer observer)
-{
-    if (!inited_) {
-        return false;
-    }
-
-    return metaObservers_.ComputeIfAbsent("", [this, &observer, &filter](const std::string &key) -> auto {
-        return std::make_shared<MetaObserver>(metaStore_, filter, observer);
-    });
-}
-
 bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLocal)
 {
     if (!inited_) {
         return false;
     }
-
-    return metaObservers_.ComputeIfAbsent(prefix, [this, isLocal, &observer, &prefix](const std::string &key) -> auto {
-        return std::make_shared<MetaObserver>(metaStore_, std::make_shared<Filter>(prefix), observer, isLocal);
+    auto metaObserver = std::make_shared<MetaObserver>(observer, std::make_shared<Filter>(prefix));
+    bool inserted = metaObservers_.ComputeIfAbsent(prefix, [metaObserver](const std::string &key) {
+        return metaObserver;
     });
+    if (!inserted) {
+        return true;
+    }
+    if (metaStore_ != nullptr && metaObserver != nullptr) {
+        int mode = isLocal ? DistributedDB::OBSERVER_CHANGES_LOCAL_ONLY
+                           : (DistributedDB::OBSERVER_CHANGES_NATIVE
+                           | DistributedDB::OBSERVER_CHANGES_FOREIGN);
+        auto status = metaStore_->RegisterObserver(DistributedDB::Key(), mode, metaObserver);
+        if (!isLocal && status == DistributedDB::DBStatus::OK) {
+            status = metaStore_->RegisterObserver(
+                DistributedDB::Key(), DistributedDB::OBSERVER_CHANGES_CLOUD, metaObserver);
+        }
+        if (status != DistributedDB::DBStatus::OK) {
+            metaObservers_.Erase(prefix);
+            ZLOGE("register meta observer failed :%{public}d.", status);
+            return false;
+        }
+    }
+    return false;
 }
 
 bool MetaDataManager::Unsubscribe(std::string filter)
@@ -418,8 +412,21 @@ bool MetaDataManager::Unsubscribe(std::string filter)
     if (!inited_) {
         return false;
     }
-
-    return metaObservers_.Erase(filter);
+    std::shared_ptr<MetaObserver> metaObserver = nullptr;
+    metaObservers_.ComputeIfPresent(filter,
+        [&metaObserver](const std::string &key, std::shared_ptr<MetaObserver> &obs) {
+            metaObserver = obs;
+            return false;
+    });
+    if (metaStore_ == nullptr || metaObserver == nullptr) {
+        return false;
+    }
+    auto status =  metaStore_->UnRegisterObserver(metaObserver);
+    if (status != DistributedDB::OK) {
+        ZLOGE("UnRegister meta observer failed :%{public}d.", status);
+        return false;
+    }
+    return true;
 }
 
 void MetaDataManager::StopSA()

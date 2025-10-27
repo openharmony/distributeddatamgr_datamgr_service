@@ -590,7 +590,8 @@ void RdbServiceImpl::DoCloudSync(const StoreMetaData &metaData, const RdbService
     StoreInfo storeInfo = GetStoreInfoEx(metaData);
     std::shared_ptr<RdbQuery> query = nullptr;
     if (!predicates.tables_.empty()) {
-        query = std::make_shared<RdbQuery>(predicates, true);
+        query = std::make_shared<RdbQuery>(predicates,
+                                           predicates.tables_.size() == 1 && !predicates.operations_.empty());
     }
     auto pid = IPCSkeleton::GetCallingPid();
     GenAsync asyncCallback = [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum, pid](
@@ -1577,7 +1578,7 @@ void RdbServiceImpl::PostHeartbeatTask(int32_t pid, uint32_t delay, StoreInfo &s
             taskId = iter->second;
         }
         if (delay == 0) {
-            if (taskId != ExecutorPool::INVALID_TASK_ID) {
+            if (taskId != ExecutorPool::INVALID_TASK_ID && executors_ != nullptr) {
                 executors_->Remove(taskId);
             }
             tasks.erase(storeInfo.path);

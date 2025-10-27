@@ -124,6 +124,9 @@ Status DataHandler::BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord
     const std::string &unifiedKey, std::vector<Entry> &entries)
 {
     for (const auto &record : records) {
+        if (record == nullptr) {
+            continue;
+        }
         std::string recordKey = unifiedKey + UD_KEY_SEPARATOR + record->GetUid();
         auto recordEntries = record->GetInnerEntries();
         for (auto &recordEntry : *recordEntries) {

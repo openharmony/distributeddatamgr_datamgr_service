@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef DISTRIBUTEDDATAMGR_THREAD_MANAGER_H
-#define DISTRIBUTEDDATAMGR_THREAD_MANAGER_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_THREAD_THREAD_MANAGER_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_THREAD_THREAD_MANAGER_H
 
 #include "stdint.h"
 #include "visibility.h"
@@ -34,4 +34,4 @@ private:
     uint32_t ipcThreadNum_ = 16; // normal ipc num
 };
 } // namespace OHOS::DistributedData
-#endif // DISTRIBUTEDDATAMGR_THREAD_MANAGER_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_THREAD_THREAD_MANAGER_H

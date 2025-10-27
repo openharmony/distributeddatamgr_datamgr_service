@@ -224,7 +224,7 @@ private:
     mutable std::shared_timed_mutex rwKvStoreMutex_;
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> kvStoreDelegateManager_ = nullptr;
     DistributedDB::KvStoreNbDelegate *delegate_ = nullptr;
-    ObjectDataListener objectDataListener_;
+    std::shared_ptr<ObjectDataListener> objectDataListener_;
     sptr<ObjectAssetsRecvListener> objectAssetsRecvListener_ = nullptr;
     sptr<ObjectAssetsSendListener> objectAssetsSendListener_ = nullptr;
     std::atomic<uint32_t> syncCount_{ 0 };

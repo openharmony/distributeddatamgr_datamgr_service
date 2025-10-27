@@ -61,7 +61,9 @@ void AccountSubscriber::OnStateChanged(const OsAccountStateData &data)
     accountEventInfo.userId = std::to_string(data.toId);
     accountEventInfo.status = it->second;
     int32_t timeout = accountEventInfo.status == AccountStatus::DEVICE_ACCOUNT_STOPPING ? STOPPING_TIMEOUT : 0;
-    eventCallback_(accountEventInfo, timeout);
+    if (eventCallback_) {
+        eventCallback_(accountEventInfo, timeout);
+    }
     if (data.callback == nullptr) {
         return;
     }
@@ -203,7 +205,7 @@ ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
         }
         ZLOGD("fail to register subscriber, error:%{public}d, time:%{public}d", result, retry);
 
-        if (retry + 1 > MAX_RETRY_TIME) {
+        if (retry + 1 > MAX_RETRY_TIMES) {
             ZLOGE("fail to register subscriber!");
             return;
         }

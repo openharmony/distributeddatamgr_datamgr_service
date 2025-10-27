@@ -64,6 +64,7 @@ using Status = OHOS::CloudData::CloudService::Status;
 using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
 using GenErr = OHOS::DistributedData::GeneralError;
 using RdbGeneralStore = OHOS::DistributedRdb::RdbGeneralStore;
+using RdbQuery = OHOS::CloudData::RdbQuery;
 uint64_t g_selfTokenID = 0;
 
 void AllocHapToken(const HapPolicyParams &policy)
@@ -132,6 +133,7 @@ public:
 
     static SchemaMeta schemaMeta_;
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
+    bool priority_ = false;
 
 protected:
     class CloudServerMock : public CloudServer {
@@ -326,6 +328,13 @@ void CloudDataTest::SetUp()
     StoreMetaMapping storeMetaMapping(metaData_);
     MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
+    EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [this](const Event &event) {
+        auto &evt = static_cast<const SyncEvent &>(event);
+        auto query = static_cast<RdbQuery*>(evt.GetQuery().get());
+        if (query != nullptr) {
+            priority_ = query->IsPriority();
+        }
+    });
 }
 
 void CloudDataTest::TearDown()
@@ -3181,6 +3190,49 @@ HWTEST_F(CloudDataTest, StrategyInfo, TestSize.Level0)
     info2.user = 1;
     ret = info2 == info1;
     EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name: IsPriority001
+* @tc.desc: test when isPriority_ is false
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, IsPriority001, TestSize.Level1)
+{
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_TIME_FIRST, .isAsync = true };
+    DistributedRdb::PredicatesMemo memo;
+    memo.tables_ = { "teat_cloud_table", "teat_cloud_table1" };
+    auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
+    rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
+    EXPECT_FALSE(priority_);
+}
+
+/**
+* @tc.name: IsPriority002
+* @tc.desc: test when isPriority_ is true
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, IsPriority002, TestSize.Level1)
+{
+    DistributedRdb::RdbServiceImpl rdbServiceImpl;
+    DistributedRdb::RdbSyncerParam param{ .bundleName_ = TEST_CLOUD_BUNDLE, .storeName_ = TEST_CLOUD_STORE };
+    DistributedRdb::RdbService::Option option{ .mode = GeneralStore::SyncMode::CLOUD_TIME_FIRST, .isAsync = true };
+    DistributedRdb::PredicatesMemo memo;
+    memo.tables_ = { TEST_CLOUD_TABLE };
+    std::vector<NativeRdb::AssetValue> assets;
+    NativeRdb::AssetValue asset{ .name = "name1" };
+    assets.push_back(asset);
+    NativeRdb::ValueObject object(assets);
+    memo.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
+    auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
+    rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
+    EXPECT_TRUE(priority_);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

@@ -18,6 +18,7 @@
 
 #include <atomic>
 #include <functional>
+#include <memory>
 #include <shared_mutex>
 
 #include "kv_store_changed_data.h"
@@ -124,7 +125,7 @@ private:
     };
 
     static constexpr uint8_t META_COMPRESS_RATE = 10;
-    ObserverProxy observer_;
+    const std::shared_ptr<ObserverProxy> observer_;
     KvManager manager_;
     KvDelegate *delegate_ = nullptr;
     std::shared_mutex bindMutex_;

@@ -512,10 +512,7 @@ void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLoc
             return false;
         }
         Uri uri(oriUri);
-        std::string scheme = uri.GetScheme();
-        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-            ZLOGW("Empty authority or scheme not file");
+        if (!ValidateUriScheme(uri, hasError)) {
             return false;
         }
         if (!isLocal) {
@@ -528,10 +525,7 @@ void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLoc
             }
             uri = Uri(remoteUri);
             obj->value_.insert_or_assign(ORI_URI, std::move(remoteUri)); // cross dev, need dis path.
-            scheme = uri.GetScheme();
-            std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-            if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-                ZLOGW("Empty authority or scheme not file");
+            if (!ValidateUriScheme(uri, hasError)) {
                 return false;
             }
         }
@@ -545,11 +539,31 @@ void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLoc
     });
 }
 
+bool PreProcessUtils::ValidateUriScheme(Uri &uri, bool &hasError)
+{
+    std::string scheme = uri.GetScheme();
+    std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+    if (!scheme.empty() && scheme != FILE_SCHEME) {
+        ZLOGW("scheme is not file");
+        return false;
+    }
+
+    if (scheme.empty() || uri.GetAuthority().empty()) {
+        hasError = true;
+        ZLOGE("Empty authority or scheme not file");
+        return false;
+    }
+    return true;
+}
+
 void PreProcessUtils::SetRecordUid(UnifiedData &data)
 {
     uint32_t index = 0;
     auto prefix = PreProcessUtils::GenerateId().substr(0, PREFIX_LEN);
     for (const auto &record : data.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
         std::ostringstream oss;
         oss << std::setw(INDEX_LEN) << std::setfill(PLACE_HOLDER) << index;
         record->SetUid(prefix + oss.str());
