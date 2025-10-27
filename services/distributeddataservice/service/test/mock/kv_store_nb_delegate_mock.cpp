@@ -104,12 +104,12 @@ DBStatus KvStoreNbDelegateMock::UnpublishToLocal(const Key &key, bool deletePubl
 }
 
 DBStatus KvStoreNbDelegateMock::RegisterObserver(const Key &key, unsigned int mode,
-    KvStoreObserver *observer)
+    std::shared_ptr<KvStoreObserver> observer)
 {
     return DBStatus::OK;
 }
 
-DBStatus KvStoreNbDelegateMock::UnRegisterObserver(const KvStoreObserver *observer)
+DBStatus KvStoreNbDelegateMock::UnRegisterObserver(std::shared_ptr<KvStoreObserver> observer)
 {
     return DBStatus::OK;
 }

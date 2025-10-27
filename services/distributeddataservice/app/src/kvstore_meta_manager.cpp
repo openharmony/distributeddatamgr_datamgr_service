@@ -73,6 +73,7 @@ KvStoreMetaManager::KvStoreMetaManager()
       delegateManager_(Bootstrap::GetInstance().GetProcessLabel(), "default")
 {
     ZLOGI("begin.");
+    metaObserver_ = std::make_shared<KvStoreMetaObserver>();
 }
 
 KvStoreMetaManager::~KvStoreMetaManager()
@@ -91,7 +92,10 @@ KvStoreMetaManager &KvStoreMetaManager::GetInstance()
 
 void KvStoreMetaManager::SubscribeMeta(const std::string &keyPrefix, const ChangeObserver &observer)
 {
-    metaObserver_.handlerMap_[keyPrefix] = observer;
+    if (metaObserver_ == nullptr) {
+        return;
+    }
+    metaObserver_->handlerMap_[keyPrefix] = observer;
 }
 
 void KvStoreMetaManager::InitMetaListener()
@@ -468,7 +472,10 @@ void KvStoreMetaManager::SubscribeMetaKvStore()
     }
 
     int mode = DistributedDB::OBSERVER_CHANGES_NATIVE | DistributedDB::OBSERVER_CHANGES_FOREIGN;
-    auto dbStatus = metaDelegate->RegisterObserver(DistributedDB::Key(), mode, &metaObserver_);
+    if (metaObserver_ == nullptr) {
+        return;
+    }
+    auto dbStatus = metaDelegate->RegisterObserver(DistributedDB::Key(), mode, metaObserver_);
     if (dbStatus != DistributedDB::DBStatus::OK) {
         ZLOGW("register meta observer failed :%{public}d.", dbStatus);
     }

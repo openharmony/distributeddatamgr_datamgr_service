@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <memory>
 #define LOG_TAG "KVDBGeneralStore"
 #include "kvdb_general_store.h"
 
@@ -169,10 +170,15 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
 }
 
 KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
-    : manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
-          meta.instanceId)
+    : observer_(std::make_shared<ObserverProxy>()),
+      manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
+        meta.instanceId)
 {
-    observer_.storeId_ = meta.storeId;
+    if (observer_ == nullptr) {
+        ZLOGE("Create ObserverProxy failed errno %{public}d.", errno);
+        return;
+    }
+    observer_->storeId_ = meta.storeId;
     StoreMetaDataLocal local;
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
     isPublic_ = local.isPublic;
@@ -195,8 +201,8 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     }
     SetDBPushDataInterceptor(meta.storeType);
     SetDBReceiveDataInterceptor(meta.storeType);
-    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
-    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
+    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, observer_);
+    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, observer_);
     if (DeviceMatrix::GetInstance().IsDynamic(meta) || DeviceMatrix::GetInstance().IsStatics(meta)) {
         delegate_->SetRemotePushFinishedNotify([meta](const DistributedDB::RemotePushNotifyInfo &info) {
             DeviceMatrix::GetInstance().OnExchanged(info.deviceId, meta, DeviceMatrix::ChangeType::CHANGE_REMOTE);
@@ -219,8 +225,8 @@ KVDBGeneralStore::~KVDBGeneralStore()
 {
     {
         std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
-        if (delegate_ != nullptr) {
-            delegate_->UnRegisterObserver(&observer_);
+        if (delegate_ != nullptr && observer_ != nullptr) {
+            delegate_->UnRegisterObserver(observer_);
         }
         manager_.CloseKvStore(delegate_);
         delegate_ = nullptr;
@@ -297,8 +303,8 @@ int32_t KVDBGeneralStore::Close(bool isForce)
     if (!isForce && delegate_->GetTaskCount() > 0) {
         return GeneralError::E_BUSY;
     }
-    if (delegate_ != nullptr) {
-        delegate_->UnRegisterObserver(&observer_);
+    if (delegate_ != nullptr && observer_ != nullptr) {
+        delegate_->UnRegisterObserver(observer_);
     }
     auto status = manager_.CloseKvStore(delegate_);
     if (status != DBStatus::OK) {
@@ -558,21 +564,27 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
 
 int32_t KVDBGeneralStore::Watch(int32_t origin, Watcher &watcher)
 {
-    if (origin != Watcher::Origin::ORIGIN_ALL || observer_.watcher_ != nullptr) {
+    if (observer_ == nullptr) {
+        return GeneralError::E_ERROR;
+    }
+    if (origin != Watcher::Origin::ORIGIN_ALL || observer_->watcher_ != nullptr) {
         return GeneralError::E_INVALID_ARGS;
     }
 
-    observer_.watcher_ = &watcher;
+    observer_->watcher_ = &watcher;
     return GeneralError::E_OK;
 }
 
 int32_t KVDBGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
 {
-    if (origin != Watcher::Origin::ORIGIN_ALL || observer_.watcher_ != &watcher) {
+    if (observer_ == nullptr) {
+        return GeneralError::E_ERROR;
+    }
+    if (origin != Watcher::Origin::ORIGIN_ALL || observer_->watcher_ != &watcher) {
         return GeneralError::E_INVALID_ARGS;
     }
 
-    observer_.watcher_ = nullptr;
+    observer_->watcher_ = nullptr;
     return GeneralError::E_OK;
 }
 

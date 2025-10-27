@@ -77,6 +77,9 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
         ZLOGE("Kvstore delegate manager is nullptr.");
         return store;
     }
+    if (objectDataListener_ == nullptr) {
+        objectDataListener_ = std::make_shared<ObjectDataListener>();
+    }
     kvStoreDelegateManager->GetKvStore(ObjectCommon::OBJECTSTORE_DB_STOREID, option,
         [&store, this](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *kvStoreNbDelegate) {
             if (dbStatus != DistributedDB::DBStatus::OK) {
@@ -91,8 +94,7 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
             store = kvStoreNbDelegate;
             std::vector<uint8_t> tmpKey;
             DistributedDB::DBStatus status = store->RegisterObserver(tmpKey,
-                DistributedDB::ObserverMode::OBSERVER_CHANGES_FOREIGN,
-                &objectDataListener_);
+                DistributedDB::ObserverMode::OBSERVER_CHANGES_FOREIGN, objectDataListener_);
             if (status != DistributedDB::DBStatus::OK) {
                 ZLOGE("RegisterObserver err %{public}d", status);
             }
@@ -965,6 +967,7 @@ void ObjectStoreManager::ForceClose()
     if (delegate_ == nullptr) {
         return;
     }
+    delegate_->UnRegisterObserver(objectDataListener_);
     auto status = kvStoreDelegateManager->CloseKvStore(delegate_);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("CloseKvStore fail %{public}d", status);
@@ -1031,6 +1034,7 @@ void ObjectStoreManager::FlushClosedStore()
     std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (!isSyncing_ && syncCount_ == 0 && delegate_ != nullptr) {
         ZLOGD("close store");
+        delegate_->UnRegisterObserver(objectDataListener_);
         auto status = kvStoreDelegateManager->CloseKvStore(delegate_);
         if (status != DistributedDB::DBStatus::OK) {
             int timeOut = 1000;
@@ -1041,6 +1045,7 @@ void ObjectStoreManager::FlushClosedStore()
             return;
         }
         delegate_ = nullptr;
+        objectDataListener_ = nullptr;
     }
 }
 
