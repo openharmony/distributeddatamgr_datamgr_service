@@ -172,10 +172,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     : manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
           meta.instanceId)
 {
-    observer_.storeId_ = meta.storeId;
-    StoreMetaDataLocal local;
-    MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
-    isPublic_ = local.isPublic;
+    InitMetadata(meta);
     DBStatus status = DBStatus::NOT_FOUND;
     if (!Constant::IsValidPath(meta.dataDir)) {
         ZLOGE("path is invalid. dataDir is %{public}s", Anonymous::Change(meta.dataDir).c_str());
@@ -195,7 +192,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     }
     auto res = SetDBProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } });
     if (res != DBStatus::OK) {
-        ZLOGE("Set failed! res:%{public}d, dataDir is %{public}s", res, Anonymous::Change(meta.dataDir).c_str());
+        ZLOGE("Set failed! res:%{public}d dir:%{public}s", res, Anonymous::Change(meta.dataDir).c_str());
         return;
     }
     SetDBPushDataInterceptor(meta.storeType);
@@ -239,6 +236,13 @@ KVDBGeneralStore::~KVDBGeneralStore()
         }
         bindInfos_.clear();
     }
+}
+
+void KVDBGeneralStore::InitMetadata(const StoreMetaData &meta) {
+    observer_.storeId_ = meta.storeId;
+    StoreMetaDataLocal local;
+    MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
+    isPublic_ = local.isPublic;
 }
 
 int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>> bindAssets)

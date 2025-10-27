@@ -946,15 +946,15 @@ int32_t ObjectStoreManager::Open()
             ZLOGE("Open object kvstore failed");
             return OBJECT_DBSTATUS_ERROR;
         }
-        auto res = store->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
-        if (res != DistributedDB::DBStatus::OK) {
-            ZLOGE("set DB property fail, res:%{public}d", res);
-        }
         syncCount_ = 1;
         ZLOGI("Open object kvstore success");
     } else {
         syncCount_++;
         ZLOGI("Object kvstore syncCount: %{public}d", syncCount_.load());
+    }
+    auto res = delegate_->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+    if (res != DistributedDB::DBStatus::OK) {
+        ZLOGW("set DB property fail, res:%{public}d", res);
     }
     return OBJECT_SUCCESS;
 }
