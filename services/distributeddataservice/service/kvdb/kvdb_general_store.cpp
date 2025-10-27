@@ -243,8 +243,8 @@ KVDBGeneralStore::~KVDBGeneralStore()
 
 void KVDBGeneralStore::RegisterObservers()
 {
-    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, &observer_);
-    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, &observer_);
+    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, observer_);
+    delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, observer_);
 }
 
 void KVDBGeneralStore::SetDeviceMatrix(const StoreMetaData &meta)
