@@ -98,10 +98,6 @@ DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()
                 ZLOGE("RegisterObserver err %{public}d", status);
             }
         });
-    auto res = store->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
-    if (res != DistributedDB::DBStatus::OK) {
-        ZLOGE("set DB property fail, res:%{public}d", res);
-    }
     return store;
 }
 
@@ -949,6 +945,10 @@ int32_t ObjectStoreManager::Open()
         if (delegate_ == nullptr) {
             ZLOGE("Open object kvstore failed");
             return OBJECT_DBSTATUS_ERROR;
+        }
+        auto res = store->SetProperty({ { Constant::TOKEN_ID, IPCSkeleton::GetCallingTokenID() } });
+        if (res != DistributedDB::DBStatus::OK) {
+            ZLOGE("set DB property fail, res:%{public}d", res);
         }
         syncCount_ = 1;
         ZLOGI("Open object kvstore success");

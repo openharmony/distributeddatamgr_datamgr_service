@@ -193,8 +193,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
         manager_.CloseKvStore(delegate_);
         return;
     }
-    auto res = SetDBProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } });
-    if (res != DBStatus::OK) {
+    if (SetDBProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } }) != DBStatus::OK) {
         ZLOGE("Set failed! res:%{public}d appId:%{public}s storeId:%{public}s dir:%{public}s", res,
             meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), Anonymous::Change(meta.dataDir).c_str());
         return;
