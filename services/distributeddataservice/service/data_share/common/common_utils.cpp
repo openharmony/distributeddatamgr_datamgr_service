@@ -75,18 +75,22 @@ bool ProviderInAllowList(const std::string &appIdentifier)
 }
 
 // Check if caller is system app. If not, check if given provider appIdentifier is in providerAllowList
-void VerifyProvider(const DataProviderConfig::ProviderInfo providerInfo, const pid_t calllingPid)
+bool VerifyProvider(const DataProviderConfig::ProviderInfo &providerInfo, const pid_t calllingPid)
 {
     // In data_share_service_stub, when OnRemoteRequest receive IPC call, caller has already been
     // checked if it is system app. If it is system app then no need to check if provider is in allowList
     if (DataShareThreadLocal::IsFromSystemApp()) {
-        return;
+        return true;
     }
     if (!ProviderInAllowList(providerInfo.appIdentifier)) {
         // No need to print since app not in AppGallery do not have appIdentifier.
-        DataShareFaultInfo faultInfo{HiViewFaultAdapter::unauthorizedProvider, providerInfo.bundleName.c_str(),
-            providerInfo.moduleName.c_str(), providerInfo.storeName.c_str(), __FUNCTION__, -1, ""};
+        DataShareFaultInfo faultInfo{HiViewFaultAdapter::unapprovedProvider, providerInfo.bundleName.c_str(),
+            providerInfo.moduleName.c_str(), "", __FUNCTION__, -1, "Silent"};
         HiViewFaultAdapter::ReportDataFault(faultInfo);
+        // Provider not in allowlist
+        return false;
     }
+    // Provider in allowlist
+    return true;
 }
 } // namespace OHOS::DataShare

@@ -34,7 +34,7 @@ bool CheckSystemAbility(uint32_t tokenId);
 bool CheckSystemCallingPermission(uint32_t tokenId, uint64_t fullTokenId);
 
 bool ProviderInAllowList(const std::string &appIdentifier);
-void VerifyProvider(const DataProviderConfig::ProviderInfo providerInfo, const pid_t calllingPid);
+bool VerifyProvider(const DataProviderConfig::ProviderInfo &providerInfo, const pid_t calllingPid);
 
 inline int64_t GetSystemTime()
 {
