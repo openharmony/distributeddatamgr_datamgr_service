@@ -58,7 +58,7 @@ public:
         sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData) override;
     int32_t SaveAcceptableInfo(const std::string &key, DataLoadInfo &info) override;
     int32_t PushAcceptableInfo(
-        const QueryOption &query, const std::vector<std::string> &devices, DataLoadInfo &info) override;
+        const QueryOption &query, const std::vector<std::string> &devices) override;
     int32_t HandleRemoteDelayData(const std::string &key);
     static std::shared_ptr<UdmfServiceImpl> GetService();
 private:

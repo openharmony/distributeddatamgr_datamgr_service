@@ -367,8 +367,6 @@ int32_t UdmfServiceStub::OnSaveAcceptableInfo(MessageParcel &data, MessageParcel
         ZLOGE("Unmarshal failed!");
         return E_READ_PARCEL_ERROR;
     }
-    uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    query.tokenId = token;
     int32_t status = SaveAcceptableInfo(key, info);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal failed:%{public}d", status);
@@ -381,14 +379,13 @@ int32_t UdmfServiceStub::OnPushAcceptableInfo(MessageParcel &data, MessageParcel
 {
     QueryOption query;
     std::vector<std::string> devices;
-    DataLoadInfo info;
-    if (!ITypesUtil::Unmarshal(data, query, devices, info)) {
+    if (!ITypesUtil::Unmarshal(data, query, devices)) {
         ZLOGE("Unmarshal failed!");
         return E_READ_PARCEL_ERROR;
     }
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     query.tokenId = token;
-    int32_t status = PushAcceptableInfo(query, devices, info);
+    int32_t status = PushAcceptableInfo(query, devices);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;

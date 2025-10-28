@@ -1524,7 +1524,7 @@ int32_t UdmfServiceImpl::SaveAcceptableInfo(const std::string &key, DataLoadInfo
 }
 
 int32_t UdmfServiceImpl::PushAcceptableInfo(
-    const QueryOption &query, const std::vector<std::string> &devices, DataLoadInfo &info)
+    const QueryOption &query, const std::vector<std::string> &devices)
 {
     UnifiedKey udKey(query.key);
     if (!CheckDragParams(udKey)) {
@@ -1549,14 +1549,6 @@ int32_t UdmfServiceImpl::PushAcceptableInfo(
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", query.key.c_str());
-        return E_DB_ERROR;
-    }
-    info.deviceId = PreProcessUtils::GetRealLocalDeviceId();
-    info.udKey = query.key;
-    int32_t status = store->PutDataLoadInfo(info);
-    if (status != E_OK) {
-        ZLOGE("Put data load info failed, status:%{public}d, key:%{public}s", status, query.key.c_str());
-        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
         return E_DB_ERROR;
     }
     // Watch unified data from another device.
