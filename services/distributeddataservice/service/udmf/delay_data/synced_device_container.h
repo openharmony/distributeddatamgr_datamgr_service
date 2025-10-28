@@ -38,7 +38,7 @@ private:
     struct SyncedDeiviceInfo {
         std::string key;
         std::string deviceId;
-        Time time_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(INTERVAL);
+        Time time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
 
         bool operator<(const Time &time) const
         {
