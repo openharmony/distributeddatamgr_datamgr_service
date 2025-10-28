@@ -109,7 +109,7 @@ HWTEST_F(SensitiveTest, Operator003, TestSize.Level1)
 }
 
 /**
- * @tc.name: Operator003
+ * @tc.name: Operator004
  * @tc.desc: Test for Operator securityLabel is S4.
  * @tc.type: FUNC
  */
@@ -123,7 +123,7 @@ HWTEST_F(SensitiveTest, Operator004, TestSize.Level1)
 }
 
 /**
- * @tc.name: Operator004
+ * @tc.name: Operator005
  * @tc.desc: Test for Operator securityLabel is S1.
  * @tc.type: FUNC
  */
