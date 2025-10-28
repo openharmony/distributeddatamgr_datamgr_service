@@ -17,7 +17,6 @@
 #define UDMF_DELAY_DATA_ACQUIRE_CONTAINER_H
 
 #include "block_data.h"
-#include "udmf_notifier_proxy.h"
 #include "unified_data.h"
 
 namespace OHOS {
