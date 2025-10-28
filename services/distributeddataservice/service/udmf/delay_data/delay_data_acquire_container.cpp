@@ -14,8 +14,11 @@
  */
 
 #define LOG_TAG "DelayDataAcquireContainer"
-#include "delay_data_container.h"
+
+#include "delay_data_acquire_container.h"
+
 #include "log_print.h"
+#include "udmf_notifier_proxy.h"
 
 namespace OHOS {
 namespace UDMF {

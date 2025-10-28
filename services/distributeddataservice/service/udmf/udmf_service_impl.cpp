@@ -27,7 +27,8 @@
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "checker/checker_manager.h"
 #include "checker_manager.h"
-#include "delay_data_container.h"
+#include "delay_data_acquire_container.h"
+#include "delay_data_prepare_container.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
 #include "iservice_registry.h"
@@ -46,6 +47,7 @@
 #include "unified_data_helper.h"
 #include "utils/anonymous.h"
 #include "permission_validator.h"
+#include "synced_device_container.h"
 
 namespace OHOS {
 namespace UDMF {

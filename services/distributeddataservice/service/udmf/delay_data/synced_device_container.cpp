@@ -20,7 +20,6 @@
 
 namespace OHOS {
 namespace UDMF {
-constexpr uint32_t WAIT_TIME = 800;
 
 SyncedDeviceContainer &SyncedDeviceContainer::GetInstance()
 {
@@ -42,7 +41,7 @@ void SyncedDeviceContainer::SaveSyncedDeviceInfo(const std::string &key, const s
     std::vector<SyncedDeiviceInfo> devices;
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
-    for (const auto &info : delayDragDeviceInfo_) {
+    for (const auto &info : pulledDeviceInfo_) {
         if (info < current) {
             continue;
         }
@@ -51,8 +50,8 @@ void SyncedDeviceContainer::SaveSyncedDeviceInfo(const std::string &key, const s
     SyncedDeiviceInfo info;
     info.deviceId = deviceId;
     devices.emplace_back(std::move(info));
-    delayDragDeviceInfo_.clear();
-    delayDragDeviceInfo_ = std::move(devices);
+    pulledDeviceInfo_.clear();
+    pulledDeviceInfo_ = std::move(devices);
 }
 
 std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo(const std::string &key)
@@ -71,8 +70,8 @@ std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo(const std::strin
     std::vector<SyncedDeiviceInfo> devices;
     {
         std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
-        devices = delayDragDeviceInfo_;
-        delayDragDeviceInfo_.clear();
+        devices = pulledDeviceInfo_;
+        pulledDeviceInfo_.clear();
     }
     auto current = std::chrono::steady_clock::now();
     for (const auto &info : devices) {

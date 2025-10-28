@@ -16,6 +16,10 @@
 #ifndef UDMF_SYNCED_DEVICE_CONTAINER_H
 #define UDMF_SYNCED_DEVICE_CONTAINER_H
 
+#include <map>
+#include <mutex>
+#include <string>
+
 namespace OHOS {
 namespace UDMF {
 using Time = std::chrono::steady_clock::time_point;

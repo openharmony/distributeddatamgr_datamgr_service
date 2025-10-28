@@ -18,8 +18,9 @@
 #include "store_data_changed_observer.h"
 #include "log_print.h"
 #include "data_handler.h"
-#include "delay_data_container.h"
+#include "delay_data_prepare_container.h"
 #include "udmf_service_impl.h"
+#include "synced_device_container.h"
 
 namespace OHOS {
 namespace UDMF {

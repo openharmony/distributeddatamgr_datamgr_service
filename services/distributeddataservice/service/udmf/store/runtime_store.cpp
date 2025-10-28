@@ -17,6 +17,7 @@
 #include "runtime_store.h"
 
 #include "data_handler.h"
+#include "delay_data_prepare_container.h"
 #include "log_print.h"
 #include "ipc_skeleton.h"
 #include "unified_data_helper.h"
@@ -31,7 +32,7 @@
 #include "utils/anonymous.h"
 #include "preprocess_utils.h"
 #include "store_data_changed_observer.h"
-#include "delay_data_container.h"
+#include "synced_device_container.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -616,7 +617,7 @@ Status RuntimeStore::SetRemotePullStartNotify()
     }
     DBStatus status = kvStore_->SetDeviceSyncNotify(DeviceSyncEvent::REMOTE_PULL_STARTED,
         [](DistributedDB::DeviceSyncNotifyInfo info) {
-        SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(info.deviceId);
+        SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("", info.deviceId);
         DelayDataPrepareContainer::GetInstance().ExecAllDataLoadCallback();
     });
     if (status != DBStatus::OK) {
