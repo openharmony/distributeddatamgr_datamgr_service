@@ -307,8 +307,13 @@ bool UdmfServiceImpl::IsPermissionInCache(const QueryOption &query)
 {
     std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
     auto iter = privilegeCache_.find(query.key);
-    if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId) {
-        return true;
+    if (iter == privilegeCache_.end()) {
+        return false;
+    }
+    for (const auto &privilege : iter->second) {
+        if (privilege.tokenId == query.tokenId) {
+            return true;
+        }
     }
     return false;
 }
@@ -323,9 +328,13 @@ bool UdmfServiceImpl::IsReadAndKeep(const std::vector<Privilege> &privileges, co
 
     std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
     auto iter = privilegeCache_.find(query.key);
-    if (iter != privilegeCache_.end() && iter->second.tokenId == query.tokenId &&
-        iter->second.readPermission == PRIVILEGE_READ_AND_KEEP) {
-        return true;
+    if (iter == privilegeCache_.end()) {
+        return false;
+    }
+    for (const auto &privilege : iter->second) {
+        if (privilege.tokenId == query.tokenId && privilege.readPermission == PRIVILEGE_READ_AND_KEEP) {
+            return true;
+        }
     }
     return false;
 }
@@ -634,7 +643,12 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
     int32_t res = store->GetRuntime(query.key, runtime);
     if (res == E_NOT_FOUND || runtime.dataStatus == DataStatus::DELAY) {
         std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
-        privilegeCache_[query.key] = privilege;
+        auto iter = privilegeCache_.find(query.key);
+        if (iter != privilegeCache_.end()) {
+            iter->second.emplace_back(privilege);
+        } else {
+            privilegeCache_[query.key] = { privilege };
+        }
         ZLOGW("Add privilege in cache, key: %{public}s.", query.key.c_str());
         return E_OK;
     }
@@ -1492,6 +1506,13 @@ int32_t UdmfServiceImpl::SaveAcceptableInfo(const std::string &key, DataLoadInfo
     UnifiedKey udKey(key);
     if (!CheckDragParams(udKey)) {
         return E_INVALID_PARAMETERS;
+    }
+    QueryOption query;
+    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    query.key = key;
+    if (!IsPermissionInCache(query)) {
+        ZLOGE("No permission");
+        return E_NO_PERMISSION;
     }
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {

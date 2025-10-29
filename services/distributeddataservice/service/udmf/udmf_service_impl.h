@@ -118,7 +118,7 @@ private:
     };
     static Factory factory_;
     mutable std::recursive_mutex cacheMutex_;
-    std::map<std::string, Privilege> privilegeCache_ {};
+    std::map<std::string, std::vector<Privilege>> privilegeCache_ {};
     std::shared_ptr<ExecutorPool> executors_;
 
     std::mutex mutex_;
