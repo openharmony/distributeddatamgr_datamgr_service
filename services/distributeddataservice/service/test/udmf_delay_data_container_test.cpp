@@ -40,15 +40,13 @@ public:
 HWTEST_F(UdmfDelayDataContainerTest, DataLoadCallbackTest001, TestSize.Level1)
 {
     UnifiedData data;
-    int32_t res = E_OK;
     QueryOption query;
     query.key = "";
-    auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data, res);
-    EXPECT_EQ(res, E_INVALID_PARAMETERS);
+    auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
     EXPECT_EQ(ret, false);
 
     query.key = "udmf://drag/com.example.app/1233455";
-    ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data, res);
+    ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
     EXPECT_EQ(ret, false);
 }
 
@@ -77,13 +75,10 @@ HWTEST_F(UdmfDelayDataContainerTest, DataLoadCallbackTest002, TestSize.Level1)
     QueryOption query;
     query.key = key;
     UnifiedData data;
-    int32_t res = E_OK;
-    auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data, res);
+    auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
     EXPECT_EQ(ret, true);
-    EXPECT_EQ(res, E_NOT_FOUND);
-    ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data, res);
+    ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
     EXPECT_EQ(ret, true);
-    EXPECT_EQ(res, E_NOT_FOUND);
     DelayDataPrepareContainer::GetInstance().dataLoadCallback_.clear();
 }
 
@@ -104,14 +99,11 @@ HWTEST_F(UdmfDelayDataContainerTest, ExecDataLoadCallback001, TestSize.Level1)
     QueryOption query;
     query.key = key;
     UnifiedData data;
-    int32_t res = E_OK;
-    auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data, res);
+    auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
     EXPECT_EQ(ret, true);
-    EXPECT_EQ(res, E_NOT_FOUND);
     DataLoadInfo info;
     ret = DelayDataPrepareContainer::GetInstance().ExecDataLoadCallback(query.key, info);
     EXPECT_EQ(ret, true);
-    EXPECT_EQ(res, E_NOT_FOUND);
     DelayDataPrepareContainer::GetInstance().dataLoadCallback_.clear();
 }
 
@@ -247,20 +239,30 @@ HWTEST_F(UdmfDelayDataContainerTest, QueryBlockDelayData001, TestSize.Level1)
 */
 HWTEST_F(UdmfDelayDataContainerTest, SaveDelayDragDeviceInfo001, TestSize.Level1)
 {
-    SyncedDeviceContainer::GetInstance().delayDragDeviceInfo_.clear();
-    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("");
-    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().delayDragDeviceInfo_.empty());
-    std::string deviceId = "saavsasd11213";
-    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(deviceId);
-    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().delayDragDeviceInfo_.size() == 1);
+    SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.clear();
+    SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.clear();
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("", "");
+    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.empty());
+    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.empty());
+    std::string deviceId = "deviceId";
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("", deviceId);
+    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.size() == 1);
+    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.empty());
+    std::string key = "deviceKey";
+    std::string deviceId1 = "deviceId1";
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(key, deviceId);
+    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.size() == 1);
+    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.size() == 1);
 
-    auto devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo();
+    auto devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo(key);
     EXPECT_TRUE(devices.size() == 1);
     EXPECT_EQ(devices[0], deviceId);
 
-    SyncedDeviceContainer::GetInstance().ClearDelayDragDeviceInfo();
-    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().delayDragDeviceInfo_.empty());
+    devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo("otherKey");
+    EXPECT_TRUE(devices.size() == 1);
+    EXPECT_EQ(devices[0], deviceId1);
+    SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.clear();
+    SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.clear();
 }
-
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

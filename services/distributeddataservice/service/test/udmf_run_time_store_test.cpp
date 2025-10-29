@@ -803,11 +803,12 @@ HWTEST_F(UdmfRunTimeStoreTest, PutDelayData001, TestSize.Level1)
     store->Init();
     UnifiedData data;
     Runtime runtime;
-    runtime.dataStatus = DataStatus::DELAY;
+    runtime.dataStatus = DataStatus::WAITING;
     runtime.tokenId = 12344;
     runtime.recordTotalNum = 10;
     data.SetRuntime(runtime);
-    auto ret = store->PutDelayData(data);
+    DataLoadInfo info;
+    auto ret = store->PutDelayData(data, info);
     EXPECT_EQ(ret, E_OK);
 }
 

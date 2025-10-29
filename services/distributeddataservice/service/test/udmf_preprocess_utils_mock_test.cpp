@@ -196,6 +196,6 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, FillRuntimeInfo002, TestSize.Level1)
     EXPECT_EQ(ret, E_OK);
     auto runtime = data.GetRuntime();
     EXPECT_EQ(runtime->recordTotalNum, dataLoadInfo.recordCount);
-    EXPECT_EQ(runtime->dataStatus, DataStatus::DELAY);
+    EXPECT_EQ(runtime->dataStatus, DataStatus::WAITING);
 }
 }; // namespace UDMF

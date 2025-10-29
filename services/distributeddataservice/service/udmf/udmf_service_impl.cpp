@@ -641,7 +641,7 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
 
     Runtime runtime;
     int32_t res = store->GetRuntime(query.key, runtime);
-    if (res == E_NOT_FOUND || runtime.dataStatus == DataStatus::DELAY) {
+    if (res == E_NOT_FOUND || runtime.dataStatus == DataStatus::WAITING) {
         std::lock_guard<std::recursive_mutex> lock(cacheMutex_);
         auto iter = privilegeCache_.find(query.key);
         if (iter != privilegeCache_.end()) {

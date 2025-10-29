@@ -89,7 +89,7 @@ int32_t PreProcessUtils::FillRuntimeInfo(
     runtime.visibility = option.visibility;
     runtime.appId = appId;
     if (isDelayData) {
-        runtime.dataStatus = DataStatus::DELAY;
+        runtime.dataStatus = DataStatus::WAITING;
     }
     data.SetRuntime(runtime);
     return E_OK;
