@@ -50,7 +50,7 @@ private:
     std::vector<SyncedDeiviceInfo> pulledDeviceInfo_ {};
     std::mutex receivedDeviceMutex_;
     std::map<std::string, std::string> receivedDeviceInfo_ {};
-    static constexpr int64_t INTERVAL = 30; // 30s
+    static constexpr int64_t INTERVAL = 30;
 };
 } // namespace UDMF
 } // namespace OHOS

@@ -35,7 +35,7 @@ public:
     void OnChange(const DistributedDB::KvStoreChangedData &data) override;
 };
 
-class ObserverFac {
+class ObserverFactory {
 public:
     static std::shared_ptr<DistributedDB::KvStoreObserver> GetObserver(uint32_t type)
     {

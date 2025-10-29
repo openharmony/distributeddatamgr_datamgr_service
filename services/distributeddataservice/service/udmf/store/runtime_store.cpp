@@ -114,6 +114,31 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
     return PutEntries(entries);
 }
 
+Status RuntimeStore::PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo info)
+{
+    UpdateTime();
+    auto runtime = unifiedData.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("Runtime is null");
+        return E_INVALID_PARAMETERS;
+    }
+    Summary summary;
+    UnifiedDataHelper::GetSummaryFromLoadInfo(info, summary);
+    auto status = PutSummary(runtime->key, summary);
+    if (status != E_OK) {
+        ZLOGE("PutSummary failed. status: %{public}d", status);
+        return status;
+    }
+    std::vector<Entry> entries;
+    status = DataHandler::MarshalToEntries(unifiedData, entries);
+    if (status != E_OK) {
+        ZLOGE("PutDelayData failed. status: %{public}d", status);
+        return status;
+    }
+    return PutEntries(entries);
+}
+
+
 Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
 {
     UpdateTime();
@@ -634,7 +659,7 @@ Status RuntimeStore::RegisterDataChangedObserver(const std::string &key, uint32_
         ZLOGE("Key is empty.");
         return E_INVALID_PARAMETERS;
     }
-    auto observer = ObserverFac::GetObserver(type);
+    auto observer = ObserverFactory::GetObserver(type);
     if (observer == nullptr) {
         ZLOGE("GetObserver failed, type: %{public}u.", type);
         return E_ERROR;
@@ -680,18 +705,6 @@ bool RuntimeStore::UnRegisterAllObserver()
     return true;
 }
 
-Status RuntimeStore::PutDelayData(const UnifiedData &unifiedData)
-{
-    UpdateTime();
-    std::vector<Entry> entries;
-    auto status = DataHandler::MarshalToEntries(unifiedData, entries);
-    if (status != E_OK) {
-        ZLOGE("PutDelayData failed. status: %{public}d", status);
-        return status;
-    }
-    return PutEntries(entries);
-}
-
 Status RuntimeStore::PutDataLoadInfo(const DataLoadInfo &dataLoadInfo)
 {
     UpdateTime();
@@ -704,7 +717,7 @@ Status RuntimeStore::PutDataLoadInfo(const DataLoadInfo &dataLoadInfo)
     return PutEntries(entries);
 }
 
-Status RuntimeStore::PushDelayData(const std::vector<std::string> &devices)
+Status RuntimeStore::PushSync(const std::vector<std::string> &devices)
 {
     UpdateTime();
     if (devices.empty()) {

@@ -198,9 +198,11 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     }
     msg.appId = bundleName;
 
-    bool handledByDelay = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, unifiedData, res);
+    bool handledByDelay = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, unifiedData);
     if (!handledByDelay) {
         res = RetrieveData(query, unifiedData);
+    } else if (!unifiedData.IsComplete()) {
+        res = E_NOT_FOUND;
     }
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
@@ -932,13 +934,6 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
     std::lock_guard<std::mutex> lock(mutex_);
     processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
     processInfo.srcDevName = "Local";
-    if (asyncProcessInfoMap_.empty()) {
-        if (!IsSyncFinished(processInfo.businessUdKey)) {
-            processInfo.syncStatus = AsyncTaskStatus::ASYNC_RUNNING;
-            processInfo.srcDevName = "Remote";
-        }
-        return E_OK;
-    }
     auto it = asyncProcessInfoMap_.find(processInfo.businessUdKey);
     if (it == asyncProcessInfoMap_.end()) {
         if (!IsSyncFinished(processInfo.businessUdKey)) {
@@ -947,9 +942,8 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
         }
         return E_OK;
     }
-    auto asyncProcessInfo = asyncProcessInfoMap_.at(processInfo.businessUdKey);
-    processInfo.syncStatus = asyncProcessInfo.syncStatus;
-    processInfo.srcDevName = asyncProcessInfo.srcDevName;
+    processInfo.syncStatus = it->sencond.syncStatus;
+    processInfo.srcDevName = it->sencond.srcDevName;
     return E_OK;
 }
 
@@ -1210,15 +1204,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
         ZLOGE("Get store failed:%{public}s", key.c_str());
         return E_DB_ERROR;
     }
-    Summary summary;
-    UnifiedDataHelper::GetSummaryFromLoadInfo(dataLoadInfo, summary);
-    int32_t status = store->PutSummary(runtime->key, summary);
-    if (status != E_OK) {
-        ZLOGE("Put summary failed:%{public}s, status:%{public}d", key.c_str(), status);
-        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
-        return E_DB_ERROR;
-    }
-    status = store->PutDelayData(delayData);
+    auto status = store->PutDelayData(delayData, dataLoadInfo);
     if (status != E_OK) {
         ZLOGE("Put delay data failed:%{public}s, status:%{public}d", key.c_str(), status);
         HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
@@ -1450,7 +1436,7 @@ void UdmfServiceImpl::RegisterObserver(const std::string &key)
 
     // register acceptable info observer
     std::string acceptableInfoKey = key + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
-    store->RegisterDataChangedObserver(acceptableInfoKey, ObserverFac::ObserverType::ACCEPTABLE_INFO);
+    store->RegisterDataChangedObserver(acceptableInfoKey, ObserverFactory::ObserverType::ACCEPTABLE_INFO);
 }
 
 void UdmfServiceImpl::RegisterAllDataChangedObserver()
@@ -1462,7 +1448,7 @@ void UdmfServiceImpl::RegisterAllDataChangedObserver()
     }
     std::vector<std::string> keys = DelayDataAcquireContainer::GetInstance().QueryAllDelayKeys();
     for (const auto &key : keys) {
-        store->RegisterDataChangedObserver(key, ObserverFac::ObserverType::RUNTIME);
+        store->RegisterDataChangedObserver(key, ObserverFactory::ObserverType::RUNTIME);
     }
     if (DelayDataPrepareContainer::GetInstance().QueryDataLoadCallbackSize() > 0) {
         store->SetRemotePullStartNotify();
@@ -1552,7 +1538,7 @@ int32_t UdmfServiceImpl::PushAcceptableInfo(
         return E_DB_ERROR;
     }
     // Watch unified data from another device.
-    store->RegisterDataChangedObserver(query.key, ObserverFac::ObserverType::RUNTIME);
+    store->RegisterDataChangedObserver(query.key, ObserverFactory::ObserverType::RUNTIME);
     return PushDelayDataToRemote(query, devices);
 }
 
@@ -1586,7 +1572,7 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
     if (IsNeedMetaSync(meta, uuids)) {
         bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
             auto successRes = ProcessResult(results);
-            if (store->PushDelayData(successRes) != E_OK) {
+            if (store->PushSync(successRes) != E_OK) {
                 ZLOGE("Store sync failed");
             }
         });
@@ -1598,7 +1584,7 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
         }
         return E_OK;
     }
-    if (store->PushDelayData(devices) != E_OK) {
+    if (store->PushSync(devices) != E_OK) {
         ZLOGE("Store sync failed");
         return UDMF::E_DB_ERROR;
     }

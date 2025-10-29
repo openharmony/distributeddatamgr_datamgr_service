@@ -48,9 +48,9 @@ public:
     Status SetRemotePullStartNotify() override;
     Status RegisterDataChangedObserver(const std::string &key, uint32_t type) override;
     bool UnRegisterDataChangedObserver(const std::string &key) override;
-    Status PutDelayData(const UnifiedData &unifiedData) override;
+    Status PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo info) override;
     Status PutDataLoadInfo(const DataLoadInfo &info) override;
-    Status PushDelayData(const std::vector<std::string> &devices) override;
+    Status PushSync(const std::vector<std::string> &devices) override;
     bool Init() override;
 
 private:

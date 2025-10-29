@@ -27,36 +27,41 @@ DelayDataPrepareContainer &DelayDataPrepareContainer::GetInstance()
     return instance;
 }
 
-bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res)
+bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData)
 {
     if (query.key.empty()) {
         ZLOGE("HandleDelayLoad failed, key is empty");
-        res = E_INVALID_PARAMETERS;
         return false;
     }
-    std::lock_guard<std::mutex> lock(dataLoadMutex_);
-    auto dataLoadIter = dataLoadCallback_.find(query.key);
-    if (dataLoadIter == dataLoadCallback_.end()) {
-        return false;
-    }
+    sptr<UdmfNotifierProxy> callback = nullptr;
     std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
-    auto blockDataIter = blockDelayDataCache_.find(query.key);
-    if (blockDataIter != blockDelayDataCache_.end()) {
-        blockData = blockDataIter->second.blockData;
-    } else {
-        blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
-        blockDelayDataCache_.insert_or_assign(query.key, BlockDelayData{query.tokenId, blockData});
-        dataLoadIter->second->HandleDelayObserver(query.key, DataLoadInfo());
+    {
+        std::lock_guard<std::mutex> lock(dataLoadMutex_);
+        auto dataLoadIter = dataLoadCallback_.find(query.key);
+        if (dataLoadIter == dataLoadCallback_.end()) {
+            return false;
+        }
+        auto blockDataIter = blockDelayDataCache_.find(query.key);
+        if (blockDataIter != blockDelayDataCache_.end()) {
+            blockData = blockDataIter->second.blockData;
+        } else {
+            blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
+            blockDelayDataCache_.insert_or_assign(query.key, BlockDelayData{query.tokenId, blockData});
+            callback = dataLoadIter->second;
+        }
+    }
+    if (callback != nullptr) {
+        callback->HandleDelayObserver(query.key, DataLoadInfo());
     }
     ZLOGI("Start waiting for data, key:%{public}s", query.key.c_str());
     auto dataOpt = blockData->GetValue();
     if (dataOpt.has_value()) {
         unifiedData = *dataOpt;
+        std::lock_guard<std::mutex> lock(dataLoadMutex_);
         blockDelayDataCache_.erase(query.key);
         dataLoadCallback_.erase(query.key);
         return true;
     }
-    res = E_NOT_FOUND;
     return true;
 }
 

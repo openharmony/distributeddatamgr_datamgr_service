@@ -31,7 +31,7 @@ class DelayDataPrepareContainer {
 public:
     static DelayDataPrepareContainer &GetInstance();
     // dataLoadCallback_ part
-    bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData, int32_t &res);
+    bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData);
     void RegisterDataLoadCallback(const std::string &key, sptr<UdmfNotifierProxy> callback);
     int QueryDataLoadCallbackSize();
     bool ExecDataLoadCallback(const std::string &key, const DataLoadInfo &info);
@@ -48,7 +48,6 @@ private:
 
     std::mutex dataLoadMutex_;
     std::map<std::string, sptr<UdmfNotifierProxy>> dataLoadCallback_ {};
-    std::mutex delayDataMutex_;
     std::map<std::string, BlockDelayData> blockDelayDataCache_ {};
 };
 } // namespace UDMF

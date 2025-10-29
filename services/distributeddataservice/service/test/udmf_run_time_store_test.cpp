@@ -829,20 +829,20 @@ HWTEST_F(UdmfRunTimeStoreTest, PutDataLoadInfo001, TestSize.Level1)
 }
 
 /**
-* @tc.name: PushDelayData001
-* @tc.desc: Normal testcase of PushDelayData
+* @tc.name: PushSync001
+* @tc.desc: Normal testcase of PushSync
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(UdmfRunTimeStoreTest, PushDelayData001, TestSize.Level1)
+HWTEST_F(UdmfRunTimeStoreTest, PushSync001, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     store->Init();
     std::vector<std::string> devices;
-    auto ret = store->PushDelayData(devices);
+    auto ret = store->PushSync(devices);
     EXPECT_EQ(ret, E_INVALID_PARAMETERS);
     devices.push_back("123445");
-    ret = store->PushDelayData(devices);
+    ret = store->PushSync(devices);
     EXPECT_EQ(ret, E_OK);
 }
 }; // namespace DistributedDataTest
