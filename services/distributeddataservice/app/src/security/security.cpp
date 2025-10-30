@@ -174,7 +174,7 @@ void Security::InitLocalSecurity()
 Sensitive Security::GetSensitiveByUuid(const std::string &uuid) const
 {
     auto it = devicesUdid_.Find(uuid);
-    if (!it.first) {
+    if (!it.first && executors_ != nullptr) {
         executors_->Execute([this, uuid]() {
             auto iter = devicesUdid_.Find(uuid);
             if (iter.first) {
