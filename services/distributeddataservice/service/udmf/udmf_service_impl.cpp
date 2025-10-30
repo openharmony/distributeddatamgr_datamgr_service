@@ -956,8 +956,8 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
         }
         return E_OK;
     }
-    processInfo.syncStatus = it->sencond.syncStatus;
-    processInfo.srcDevName = it->sencond.srcDevName;
+    processInfo.syncStatus = it->second.syncStatus;
+    processInfo.srcDevName = it->second.srcDevName;
     return E_OK;
 }
 
