@@ -222,7 +222,8 @@ HWTEST_F(UdmfDelayDataContainerTest, QueryBlockDelayData001, TestSize.Level1)
     DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.clear();
     std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
     std::string key = "udmf://drag/com.example.app/1233455";
-    DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.insert_or_assign(key, BlockDelayData{12345, blockData});
+    DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.insert_or_assign(
+        key, BlockDelayData{12345, blockData});
     BlockDelayData data;
     auto ret = DelayDataPrepareContainer::GetInstance().QueryBlockDelayData("111", data);
     EXPECT_FALSE(ret);

@@ -78,5 +78,36 @@ HWTEST_F(UdmfStoreDataChangedObserverTest, DataLoadCallbackTest001, TestSize.Lev
     EXPECT_NO_FATAL_FAILURE(observer.OnChange(changedData));
 }
 
+/**
+* @tc.name: HandleRemoteDelayData001
+* @tc.desc: Test HandleRemoteDelayData when data status is WORKING
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfStoreDataChangedObserverTest, HandleRemoteDelayData001, TestSize.Level1)
+{
+    UnifiedData delayData;
+    Runtime runtime;
+    runtime.key = UnifiedKey("drag", "com.example.test", "22222");
+    runtime.dataStatus = DataStatus::WAITING;
+    delayData.SetRuntime(runtime);
+    std::vector<DistributedDB::Entry> entries;
+    DataHandler::MarshalToEntries(delayData, entries);
+    std::list<DistributedDB::Entry> entriesList(entries.begin(), entries.end());
+    StoreChangedData changedData;
+    changedData.entries_ = entriesList;
+
+    RuntimeObserver observer;
+    EXPECT_NO_FATAL_FAILURE(observer.OnChange(changedData));
+
+    runtime.dataStatus = DataStatus::WORKING;
+    delayData.SetRuntime(runtime);
+    entries.clear();
+    DataHandler::MarshalToEntries(delayData, entries);
+    entriesList = std::list<DistributedDB::Entry>(entries.begin(), entries.end());
+    changedData.entries_ = entriesList;
+    EXPECT_NO_FATAL_FAILURE(observer.OnChange(changedData));
+}
+
 } // DistributedDataTest
 } // OHOS::UDMF

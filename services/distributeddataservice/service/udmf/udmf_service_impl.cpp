@@ -611,7 +611,6 @@ int32_t UdmfServiceImpl::GetSummary(const QueryOption &query, Summary &summary)
 
 int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privilege)
 {
-    ZLOGD("start");
     UnifiedKey key(query.key);
     if (!key.IsValid()) {
         ZLOGE("Invalid unified key:%{public}s", query.key.c_str());
@@ -632,13 +631,11 @@ int32_t UdmfServiceImpl::AddPrivilege(const QueryOption &query, Privilege &privi
         ZLOGE("Calling Token is not native");
         return E_NO_PERMISSION;
     }
-
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
     }
-
     Runtime runtime;
     int32_t res = store->GetRuntime(query.key, runtime);
     if (res == E_NOT_FOUND || runtime.dataStatus == DataStatus::WAITING) {
@@ -1211,7 +1208,8 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
         return E_ERROR;
     }
     key = runtime->key.GetUnifiedKey();
-    DelayDataPrepareContainer::GetInstance().RegisterDataLoadCallback(key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
+    DelayDataPrepareContainer::GetInstance().RegisterDataLoadCallback(
+        key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
 
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
@@ -1438,45 +1436,70 @@ std::vector<std::string> UdmfServiceImpl::ProcessResult(const std::map<std::stri
     return devices;
 }
 
-void UdmfServiceImpl::RegisterObserver(const std::string &key)
+int32_t UdmfServiceImpl::RegisterObserver(const std::string &key)
 {
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", key.c_str());
-        return;
+        return E_ERROR;
     }
     // register notifier
-    store->SetRemotePullStartNotify();
+    int32_t status = store->SetRemotePullStartNotify();
+    if (status != E_OK) {
+        ZLOGE("SetRemotePullStartNotify failed, status:%{public}d, key:%{public}s", status, key.c_str());
+        return status;
+    }
 
     // register acceptable info observer
     std::string acceptableInfoKey = key + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
-    store->RegisterDataChangedObserver(acceptableInfoKey, ObserverFactory::ObserverType::ACCEPTABLE_INFO);
+    status = store->RegisterDataChangedObserver(acceptableInfoKey, ObserverFactory::ObserverType::ACCEPTABLE_INFO);
+    if (status != E_OK) {
+        ZLOGE("RegisterDataChangedObserver failed, status:%{public}d, key:%{public}s",
+            status, key.c_str());
+    }
+    return status;
 }
 
-void UdmfServiceImpl::RegisterAllDataChangedObserver()
+int32_t UdmfServiceImpl::RegisterAllDataChangedObserver()
 {
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
         ZLOGE("Get drag store failed");
-        return;
+        return E_ERROR;
     }
     std::vector<std::string> keys = DelayDataAcquireContainer::GetInstance().QueryAllDelayKeys();
+    int32_t status = E_OK;
     for (const auto &key : keys) {
-        store->RegisterDataChangedObserver(key, ObserverFactory::ObserverType::RUNTIME);
+        status = store->RegisterDataChangedObserver(key, ObserverFactory::ObserverType::RUNTIME);
+        if (status != E_OK) {
+            ZLOGE("RegisterDataChangedObserver failed, status:%{public}d, key:%{public}s",
+                status, key.c_str());
+            return status;
+        }
     }
     if (DelayDataPrepareContainer::GetInstance().QueryDataLoadCallbackSize() > 0) {
-        store->SetRemotePullStartNotify();
+        status = store->SetRemotePullStartNotify();
+        if (status != E_OK) {
+            ZLOGE("SetRemotePullStartNotify failed, status:%{public}d", status);
+            return status;
+        }
     }
+    return status;
 }
 
-void UdmfServiceImpl::UnRegisterObserver(const std::string &key)
+int32_t UdmfServiceImpl::UnRegisterObserver(const std::string &key)
 {
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", key.c_str());
-        return;
+        return E_ERROR;
     }
-    store->UnRegisterDataChangedObserver(key);
+    int32_t status = store->UnRegisterDataChangedObserver(key);
+    if (status != E_OK) {
+        ZLOGE("UnRegisterDataChangedObserver failed, status:%{public}d, key:%{public}s",
+            status, key.c_str());
+    }
+    return status;
 }
 
 bool UdmfServiceImpl::IsSyncFinished(const std::string &key)
@@ -1484,7 +1507,7 @@ bool UdmfServiceImpl::IsSyncFinished(const std::string &key)
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
         ZLOGE("Get store failed:%{public}s", key.c_str());
-        return E_DB_ERROR;
+        return false;
     }
     UnifiedData unifiedData;
     int32_t res = store->Get(key, unifiedData);

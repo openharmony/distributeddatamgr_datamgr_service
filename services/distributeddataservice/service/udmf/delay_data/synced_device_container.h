@@ -38,7 +38,7 @@ private:
     struct SyncedDeiviceInfo {
         std::string key;
         std::string deviceId;
-        Time time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
+        Time time_ = std::chrono::steady_clock::now() + std::chrono::seconds(30);
 
         bool operator<(const Time &time) const
         {
@@ -50,7 +50,6 @@ private:
     std::vector<SyncedDeiviceInfo> pulledDeviceInfo_ {};
     std::mutex receivedDeviceMutex_;
     std::map<std::string, std::string> receivedDeviceInfo_ {};
-    static constexpr int64_t INTERVAL = 30;
 };
 } // namespace UDMF
 } // namespace OHOS

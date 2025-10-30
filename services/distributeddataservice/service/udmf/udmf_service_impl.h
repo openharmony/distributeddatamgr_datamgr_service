@@ -98,9 +98,9 @@ private:
     DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
     int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
     bool VerifySavedTokenId(std::shared_ptr<Runtime> runtime);
-    void RegisterObserver(const std::string &key);
-    void RegisterAllDataChangedObserver();
-    void UnRegisterObserver(const std::string &key);
+    int32_t RegisterObserver(const std::string &key);
+    int32_t RegisterAllDataChangedObserver();
+    int32_t UnRegisterObserver(const std::string &key);
     bool IsSyncFinished(const std::string &key);
     int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);
     int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
