@@ -64,12 +64,15 @@ bool Security::IsAccessControlled() const
 
 DBStatus Security::SetSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
-    if (filePath.empty()) {
+    if (filePath.empty() || !IsExist(filePath)) {
+        ZLOGE("the file path is empty or does not exist, filePath size:%{public}zu", filePath.size());
         return INVALID_ARGS;
     }
-
     struct stat curStat;
-    stat(filePath.c_str(), &curStat);
+    if (stat(filePath.c_str(), &curStat) != 0) {
+        ZLOGE("filePath stat error, errno: %{public}d", errno);
+        return DBStatus::DB_ERROR;
+    }
     if (S_ISDIR(curStat.st_mode)) {
         return SetDirSecurityOption(filePath, option);
     } else {
@@ -82,9 +85,15 @@ DBStatus Security::GetSecurityOption(const std::string &filePath, SecurityOption
     if (filePath.empty()) {
         return INVALID_ARGS;
     }
-
+    if (!IsExist(filePath)) {
+        option = {NOT_SET, ECE};
+        return OK;
+    }
     struct stat curStat;
-    stat(filePath.c_str(), &curStat);
+    if (stat(filePath.c_str(), &curStat) != 0) {
+        ZLOGE("filePath stat error, errno: %{public}d", errno);
+        return DBStatus::DB_ERROR;
+    }
     if (S_ISDIR(curStat.st_mode)) {
         return GetDirSecurityOption(filePath, option);
     } else {
@@ -160,7 +169,7 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     }
 }
 
-bool Security::IsExits(const std::string &file) const
+bool Security::IsExist(const std::string &file) const
 {
     return access(file.c_str(), F_OK) == 0;
 }
@@ -207,10 +216,6 @@ int32_t Security::GetCurrentUserStatus() const
 
 DBStatus Security::SetFileSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
-    if (!IsExits(filePath)) {
-        ZLOGE("option:%{public}d not exits", option.securityLabel);
-        return INVALID_ARGS;
-    }
     if (option.securityLabel == NOT_SET) {
         return OK;
     }
@@ -244,11 +249,6 @@ DBStatus Security::SetDirSecurityOption(const std::string &filePath, const Secur
 
 DBStatus Security::GetFileSecurityOption(const std::string &filePath, SecurityOption &option) const
 {
-    if (!IsExits(filePath)) {
-        option = {NOT_SET, ECE};
-        return OK;
-    }
-
     std::string value = OHOS::FileManagement::ModuleSecurityLabel::SecurityLabel::GetSecurityLabel(filePath);
     if (!IsXattrValueValid(value)) {
         option = {NOT_SET, ECE};
