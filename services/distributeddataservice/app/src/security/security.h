@@ -70,7 +70,7 @@ private:
     static const std::string LABEL_VALUES[DistributedDB::S4 + 1];
     static const std::string Convert2Name(const SecurityOption &option);
     static int Convert2Security(const std::string &name);
-    bool IsExits(const std::string &file) const;
+    bool IsExist(const std::string &file) const;
     Sensitive GetSensitiveByUuid(const std::string &uuid) const;
     bool EraseSensitiveByUuid(const std::string &uuid) const;
     bool IsXattrValueValid(const std::string& value) const;

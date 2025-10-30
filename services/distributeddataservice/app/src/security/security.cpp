@@ -64,8 +64,8 @@ bool Security::IsAccessControlled() const
 
 DBStatus Security::SetSecurityOption(const std::string &filePath, const SecurityOption &option)
 {
-    if (filePath.empty() || !IsExits(filePath)) {
-        ZLOGE("filePath is empty or does not exist");
+    if (filePath.empty() || !IsExist(filePath)) {
+        ZLOGE("the file path is empty or does not exist, filePath size:%{public}zu", filePath.size());
         return INVALID_ARGS;
     }
     struct stat curStat;
@@ -85,7 +85,7 @@ DBStatus Security::GetSecurityOption(const std::string &filePath, SecurityOption
     if (filePath.empty()) {
         return INVALID_ARGS;
     }
-    if (!IsExits(filePath)) {
+    if (!IsExist(filePath)) {
         option = {NOT_SET, ECE};
         return OK;
     }
@@ -169,7 +169,7 @@ void Security::OnDeviceChanged(const AppDistributedKv::DeviceInfo &info,
     }
 }
 
-bool Security::IsExits(const std::string &file) const
+bool Security::IsExist(const std::string &file) const
 {
     return access(file.c_str(), F_OK) == 0;
 }
