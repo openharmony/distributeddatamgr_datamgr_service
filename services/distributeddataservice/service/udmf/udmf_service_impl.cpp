@@ -1218,7 +1218,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
         ZLOGE("Get store failed:%{public}s", key.c_str());
         return E_DB_ERROR;
     }
-    auto status = store->PutDelayData(delayData, dataLoadInfo);
+    int32_t status = store->PutDelayData(delayData, dataLoadInfo);
     if (status != E_OK) {
         ZLOGE("Put delay data failed:%{public}s, status:%{public}d", key.c_str(), status);
         HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
