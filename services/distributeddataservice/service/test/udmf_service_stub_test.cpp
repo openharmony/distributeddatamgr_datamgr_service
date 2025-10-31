@@ -212,7 +212,7 @@ HWTEST_F(UdmfServiceStubTest, OnRemoveAppShareOption001, TestSize.Level1)
 }
 
 /**
-* @tc.name:OnObtainAsynProcess001
+* @tc.name: OnObtainAsynProcess001
 * @tc.desc: Abnormal test of OnObtainAsynProcess, data is invalid
 * @tc.type: FUNC
 * @tc.require:
@@ -227,7 +227,7 @@ HWTEST_F(UdmfServiceStubTest, OnObtainAsynProcess001, TestSize.Level1)
 }
 
 /**
-* @tc.name:OnClearAsynProcessByKey001
+* @tc.name: OnClearAsynProcessByKey001
 * @tc.desc: Abnormal test of OnClearAsynProcessByKey, data is invalid
 * @tc.type: FUNC
 * @tc.require:
@@ -238,6 +238,36 @@ HWTEST_F(UdmfServiceStubTest, OnClearAsynProcessByKey001, TestSize.Level1)
     MessageParcel reply;
     UdmfServiceImpl udmfServiceImpl;
     int ret = udmfServiceImpl.OnClearAsynProcessByKey(data, reply);
+    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+}
+
+/**
+* @tc.name: OnSaveAcceptableInfo001
+* @tc.desc: Abnormal test of OnSaveAcceptableInfo, data is invalid
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, OnSaveAcceptableInfo001, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    UdmfServiceImpl udmfServiceImpl;
+    int ret = udmfServiceImpl.OnSaveAcceptableInfo(data, reply);
+    EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
+}
+
+/**
+* @tc.name: OnPushAcceptableInfo001
+* @tc.desc: Abnormal test of OnPushAcceptableInfo, data is invalid
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, OnPushAcceptableInfo001, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    UdmfServiceImpl udmfServiceImpl;
+    int ret = udmfServiceImpl.OnPushAcceptableInfo(data, reply);
     EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
 }
 }; // namespace UDMF

@@ -20,6 +20,8 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "bootstrap.h"
+#include "delay_data_acquire_container.h"
+#include "delay_data_prepare_container.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
 #include "ipc_skeleton.h"
@@ -27,6 +29,7 @@
 #include "nativetoken_kit.h"
 #include "preprocess_utils.h"
 #include "runtime_store.h"
+#include "synced_device_container.h"
 #include "token_setproc.h"
 #include "uri_permission_manager.h"
 
@@ -1303,7 +1306,7 @@ HWTEST_F(UdmfServiceImplTest, UpdateDelayData001, TestSize.Level1)
     obj->value_["plainContent"] = "This is a test plain text.";
     auto record = std::make_shared<UnifiedRecord>(UDType::PLAIN_TEXT, obj);
     unifiedData.AddRecord(record);
-    autp status = service->UpdateDelayData(key, unifiedData);
+    auto status = service.UpdateDelayData(key, unifiedData);
     EXPECT_EQ(status, E_ERROR);
 }
 
