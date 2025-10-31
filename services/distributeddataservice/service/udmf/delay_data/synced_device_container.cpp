@@ -41,17 +41,16 @@ void SyncedDeviceContainer::SaveSyncedDeviceInfo(const std::string &key, const s
     std::vector<SyncedDeiviceInfo> devices;
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
-    for (const auto &info : pulledDeviceInfo_) {
+    pulledDeviceInfo_.erase(std::remove_if(pulledDeviceInfo_.begin(), pulledDeviceInfo_.end(),
+            [&devices, &current](SyncedDeiviceInfo &info) {
         if (info < current) {
-            continue;
+            return true;
         }
-        devices.emplace_back(std::move(info));
-    }
+        return false;
+    }), pulledDeviceInfo_.end());
     SyncedDeiviceInfo info;
     info.deviceId = deviceId;
-    devices.emplace_back(std::move(info));
-    pulledDeviceInfo_.clear();
-    pulledDeviceInfo_ = std::move(devices);
+    pulledDeviceInfo_.emplace_back(std::move(info));
 }
 
 std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo(const std::string &key)
@@ -67,19 +66,16 @@ std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo(const std::strin
         }
     }
     std::vector<std::string> deviceIds;
-    std::vector<SyncedDeiviceInfo> devices;
-    {
-        std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
-        devices = pulledDeviceInfo_;
-        pulledDeviceInfo_.clear();
-    }
     auto current = std::chrono::steady_clock::now();
-    for (const auto &info : devices) {
+    std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
+    pulledDeviceInfo_.erase(std::remove_if(pulledDeviceInfo_.begin(), pulledDeviceInfo_.end(),
+            [&deviceIds, &current](SyncedDeiviceInfo &info) {
         if (info < current) {
-            continue;
+            return true;
         }
         deviceIds.emplace_back(info.deviceId);
-    }
+        return false;
+    }), pulledDeviceInfo_.end());
     return deviceIds;
 }
 } // namespace UDMF
