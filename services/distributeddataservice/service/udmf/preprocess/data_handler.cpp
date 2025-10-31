@@ -58,8 +58,6 @@ Status DataHandler::MarshalDataLoadEntries(const DataLoadInfo &info, std::vector
         ZLOGE("Acceptable info marshalling failed:%{public}s", acceptableKey.c_str());
         return E_WRITE_PARCEL_ERROR;
     }
-    std::vector<uint8_t> acceptableKeyBytes = { acceptableKey.begin(), acceptableKey.end() };
-    Entry entry = { acceptableKeyBytes, acceptableBytes };
     entries.emplace_back(Entry {
         std::vector<uint8_t>(acceptableKey.begin(), acceptableKey.end()), std::move(acceptableBytes)
     });

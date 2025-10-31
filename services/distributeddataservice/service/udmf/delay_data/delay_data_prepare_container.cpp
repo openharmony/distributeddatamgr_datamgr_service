@@ -105,9 +105,9 @@ bool DelayDataPrepareContainer::ExecDataLoadCallback(const std::string &key, con
 void DelayDataPrepareContainer::ExecAllDataLoadCallback()
 {
     std::lock_guard<std::mutex> lock(dataLoadMutex_);
+    ZLOGI("Execute all data load callback");
     for (const auto &[key, callback] : dataLoadCallback_) {
         DataLoadInfo info;
-        ZLOGI("Execute data load callback, key:%{public}s", key.c_str());
         callback->HandleDelayObserver(key, info);
     }
     dataLoadCallback_.clear();

@@ -38,11 +38,11 @@ private:
     struct SyncedDeiviceInfo {
         std::string key;
         std::string deviceId;
-        Time time_ = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+        Time expiredTime = std::chrono::steady_clock::now() + std::chrono::seconds(30);
 
         bool operator<(const Time &time) const
         {
-            return time_ < time;
+            return expiredTime < time;
         }
     };
 

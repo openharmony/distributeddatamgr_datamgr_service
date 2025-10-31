@@ -63,7 +63,6 @@ void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
             continue;
         }
         if (runtime->dataStatus == DataStatus::WORKING) {
-            ZLOGI("Recieved delay data");
             auto service = UdmfServiceImpl::GetService();
             if (service != nullptr) {
                 service->HandleRemoteDelayData(udKey);
