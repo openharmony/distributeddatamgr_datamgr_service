@@ -38,8 +38,7 @@ using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 using namespace RadarReporter;
 
-int32_t PreProcessUtils::FillRuntimeInfo(
-    UnifiedData &data, CustomOption &option, const DataLoadInfo &info, bool isDelayData)
+int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option)
 {
     auto it = UD_INTENTION_MAP.find(option.intention);
     if (it == UD_INTENTION_MAP.end()) {
@@ -61,6 +60,28 @@ int32_t PreProcessUtils::FillRuntimeInfo(
     runtime.tokenId = option.tokenId;
     runtime.visibility = option.visibility;
     runtime.appId = "appId";
+    data.SetRuntime(runtime);
+    return E_OK;
+}
+
+int32_t PreProcessUtils::FillDelayRuntimeInfo(UnifiedData &data, CustomOption &option, const DataLoadInfo &info)
+{
+    std::string bundleName = "bundleName";
+    UnifiedKey key(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), bundleName, info.sequenceKey);
+    Privilege privilege;
+    privilege.tokenId = option.tokenId;
+    
+    Runtime runtime;
+    runtime.key = key;
+    runtime.privileges.emplace_back(privilege);
+    runtime.createTime = GetTimestamp();
+    runtime.sourcePackage = bundleName;
+    runtime.createPackage = bundleName;
+    runtime.recordTotalNum = info.recordCount;
+    runtime.tokenId = option.tokenId;
+    runtime.visibility = option.visibility;
+    runtime.appId = "appId";
+    runtime.dataStatus = DataStatus::WAITING;
     data.SetRuntime(runtime);
     return E_OK;
 }

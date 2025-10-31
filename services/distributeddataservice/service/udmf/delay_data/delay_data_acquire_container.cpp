@@ -44,6 +44,7 @@ bool DelayDataAcquireContainer::HandleDelayDataCallback(const std::string &key, 
     std::lock_guard<std::mutex> lock(delayDataMutex_);
     auto it = delayDataCallback_.find(key);
     if (it == delayDataCallback_.end()) {
+        ZLOGE("Can not find delay data callback, key:%{public}s", key.c_str());
         return false;
     }
     auto callback = iface_cast<DelayDataCallbackProxy>(it->second.dataCallback);

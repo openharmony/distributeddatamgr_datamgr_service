@@ -150,7 +150,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_INVALID_PARAMETERS;
     }
     // imput runtime info before put it into store and save one privilege
-    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option, DataLoadInfo(), false) != E_OK) {
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }
@@ -1198,8 +1198,8 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
         .intention = UD_INTENTION_DRAG,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
     };
-    if (PreProcessUtils::FillRuntimeInfo(delayData, option, dataLoadInfo, true) != E_OK) {
-        ZLOGE("FillRuntimeInfo failed");
+    if (PreProcessUtils::FillDelayRuntimeInfo(delayData, option, dataLoadInfo) != E_OK) {
+        ZLOGE("FillDelayRuntimeInfo failed");
         return E_ERROR;
     }
     auto runtime = delayData.GetRuntime();
@@ -1280,7 +1280,7 @@ int32_t UdmfServiceImpl::FillDelayUnifiedData(const UnifiedKey &key, UnifiedData
         .intention = UD_INTENTION_DRAG,
         .tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID())
     };
-    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option, DataLoadInfo(), false) != E_OK) {
+    if (PreProcessUtils::FillRuntimeInfo(unifiedData, option) != E_OK) {
         ZLOGE("Imputation failed");
         return E_ERROR;
     }

@@ -23,7 +23,8 @@ namespace OHOS {
 namespace UDMF {
 class PreProcessUtils {
 public:
-    static int32_t FillRuntimeInfo(UnifiedData &data, CustomOption &option, const DataLoadInfo &info, bool isDelayData);
+    static int32_t FillRuntimeInfo(UnifiedData &data, CustomOption &option);
+    static int32_t FillDelayRuntimeInfo(UnifiedData &data, CustomOption &option, const DataLoadInfo &info)
     static std::string GenerateId();
     static time_t GetTimestamp();
     static int32_t GetHapUidByToken(uint32_t tokenId, int &userId);

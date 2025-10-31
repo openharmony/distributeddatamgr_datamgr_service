@@ -40,7 +40,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, RuntimeDataImputation001, TestSize.Level1)
     CustomOption option;
     PreProcessUtils preProcessUtils;
     DataLoadInfo dataLoadInfo;
-    int32_t ret = preProcessUtils.FillRuntimeInfo(data, option, dataLoadInfo, false);
+    int32_t ret = preProcessUtils.FillRuntimeInfo(data, option);
     EXPECT_EQ(ret, E_ERROR);
 }
 

@@ -26,7 +26,6 @@ namespace OHOS {
 namespace UDMF {
 void AcceptableInfoObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
-    ZLOGI("Received acceptable info changed notification.");
     auto insertedEntries = data.GetEntriesInserted();
     for (const auto &entry : insertedEntries) {
         std::string acceptableKey(entry.key.begin(), entry.key.end());
@@ -45,7 +44,6 @@ void AcceptableInfoObserver::OnChange(const DistributedDB::KvStoreChangedData &d
 
 void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
-    ZLOGI("Received runtime changed notification.");
     auto updatedEntries = data.GetEntriesUpdated();
     auto insertedEntries = data.GetEntriesInserted();
     updatedEntries.insert(updatedEntries.end(), insertedEntries.begin(), insertedEntries.end());

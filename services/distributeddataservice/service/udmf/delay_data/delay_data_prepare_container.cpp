@@ -60,7 +60,6 @@ bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, Unifie
         std::lock_guard<std::mutex> lock(dataLoadMutex_);
         blockDelayDataCache_.erase(query.key);
         dataLoadCallback_.erase(query.key);
-        return true;
     }
     return true;
 }

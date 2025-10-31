@@ -56,8 +56,7 @@ using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 using namespace RadarReporter;
 
-int32_t PreProcessUtils::FillRuntimeInfo(
-    UnifiedData &data, CustomOption &option, const DataLoadInfo &info, bool isDelayData)
+int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option)
 {
     auto it = UD_INTENTION_MAP.find(option.intention);
     if (it == UD_INTENTION_MAP.end()) {
@@ -70,8 +69,7 @@ int32_t PreProcessUtils::FillRuntimeInfo(
         return E_ERROR;
     }
     std::string intention = it->second;
-    std::string sequenceId = isDelayData ? info.sequenceKey : GenerateId();
-    UnifiedKey key(intention, specificBundleName, sequenceId);
+    UnifiedKey key(intention, specificBundleName, GenerateId());
     Privilege privilege;
     privilege.tokenId = option.tokenId;
     std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(
@@ -83,14 +81,41 @@ int32_t PreProcessUtils::FillRuntimeInfo(
     runtime.sourcePackage = bundleName;
     runtime.createPackage = bundleName;
     runtime.deviceId = GetLocalDeviceId();
-    runtime.recordTotalNum = isDelayData ? info.recordCount : static_cast<uint32_t>(data.GetRecords().size());
+    runtime.recordTotalNum = static_cast<uint32_t>(data.GetRecords().size());
     runtime.tokenId = option.tokenId;
     runtime.sdkVersion = GetSdkVersionByToken(option.tokenId);
     runtime.visibility = option.visibility;
     runtime.appId = appId;
-    if (isDelayData) {
-        runtime.dataStatus = DataStatus::WAITING;
+    data.SetRuntime(runtime);
+    return E_OK;
+}
+
+int32_t PreProcessUtils::FillDelayRuntimeInfo(UnifiedData &data, CustomOption &option, const DataLoadInfo &info)
+{
+    std::string bundleName;
+    std::string specificBundleName;
+    if (!GetSpecificBundleNameByTokenId(option.tokenId, specificBundleName, bundleName)) {
+        ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", option.tokenId);
+        return E_ERROR;
     }
+    UnifiedKey key(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), specificBundleName, info.sequenceKey);
+    Privilege privilege;
+    privilege.tokenId = option.tokenId;
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(
+        { IPCSkeleton::GetCallingUid(), option.tokenId, bundleName });
+    Runtime runtime;
+    runtime.key = key;
+    runtime.privileges.emplace_back(privilege);
+    runtime.createTime = GetTimestamp();
+    runtime.sourcePackage = bundleName;
+    runtime.createPackage = bundleName;
+    runtime.deviceId = GetLocalDeviceId();
+    runtime.recordTotalNum = info.recordCount;
+    runtime.tokenId = option.tokenId;
+    runtime.sdkVersion = GetSdkVersionByToken(option.tokenId);
+    runtime.visibility = option.visibility;
+    runtime.appId = appId;
+    runtime.dataStatus = DataStatus::WAITING;
     data.SetRuntime(runtime);
     return E_OK;
 }
