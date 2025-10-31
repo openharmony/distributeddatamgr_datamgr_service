@@ -650,7 +650,10 @@ bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const Ac
 void DeviceManagerAdapter::ResetLocalDeviceInfo()
 {
     auto local = GetLocalDeviceInfo();
-    localInfo_ = local;
+    {
+        std::lock_guard<decltype(devInfoMutex_)> lock(devInfoMutex_);
+        localInfo_ = local;
+    }
     DeviceInfo dvInfo;
     if (deviceInfos_.Get(local.udid, dvInfo)) {
         deviceInfos_.Delete(dvInfo.networkId);
