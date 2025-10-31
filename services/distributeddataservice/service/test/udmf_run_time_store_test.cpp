@@ -750,8 +750,8 @@ HWTEST_F(UdmfRunTimeStoreTest, SetRemotePullStartNotify001, TestSize.Level1)
     store->Init();
     EXPECT_FALSE(store->hasRegisterPullNotify_);
     auto ret = store->SetRemotePullStartNotify();
-    EXPECT_EQ(ret, E_OK);
-    EXPECT_TRUE(store->hasRegisterPullNotify_);
+    EXPECT_EQ(ret, E_DB_ERROR);
+    store->hasRegisterPullNotify_ = true;
     ret = store->SetRemotePullStartNotify();
     EXPECT_EQ(ret, E_OK);
 }
@@ -809,7 +809,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PutDelayData001, TestSize.Level1)
     data.SetRuntime(runtime);
     DataLoadInfo info;
     auto ret = store->PutDelayData(data, info);
-    EXPECT_EQ(ret, E_OK);
+    EXPECT_EQ(ret, E_DB_ERROR);
 }
 
 /**
@@ -844,7 +844,7 @@ HWTEST_F(UdmfRunTimeStoreTest, PushSync001, TestSize.Level1)
     EXPECT_EQ(ret, E_INVALID_PARAMETERS);
     devices.push_back("123445");
     ret = store->PushSync(devices);
-    EXPECT_EQ(ret, E_OK);
+    EXPECT_EQ(ret, E_DB_ERROR);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

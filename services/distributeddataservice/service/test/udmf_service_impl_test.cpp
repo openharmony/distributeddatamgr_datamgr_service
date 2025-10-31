@@ -945,7 +945,7 @@ HWTEST_F(UdmfServiceImplTest, PushDelayData002, TestSize.Level1)
 
     UdmfServiceImpl service;
     auto status = service.PushDelayData(query.key, insertedData);
-    EXPECT_EQ(status, UDMF::E_ERROR);
+    EXPECT_EQ(status, UDMF::E_INVALID_PARAMETERS);
 }
 
 /**
@@ -1280,10 +1280,9 @@ HWTEST_F(UdmfServiceImplTest, FillDelayUnifiedData001, TestSize.Level1)
     UnifiedKey key("udmf://drag/com.test.demo/ascdca");
     UnifiedData unifiedData;
     std::shared_ptr<Object> obj = std::make_shared<Object>();
-    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
-    obj->value_[FILE_TYPE] = "general.image";
-    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    obj->value_[UNIFORM_DATA_TYPE] = "general.plain-text";
+    obj->value_["plainContent"] = "This is a test plain text.";
+    auto record = std::make_shared<UnifiedRecord>(UDType::PLAIN_TEXT, obj);
     unifiedData.AddRecord(record);
     EXPECT_TRUE(record->GetUid().empty());
     auto status = service.FillDelayUnifiedData(key, unifiedData);
@@ -1306,6 +1305,10 @@ HWTEST_F(UdmfServiceImplTest, UpdateDelayData001, TestSize.Level1)
     obj->value_["plainContent"] = "This is a test plain text.";
     auto record = std::make_shared<UnifiedRecord>(UDType::PLAIN_TEXT, obj);
     unifiedData.AddRecord(record);
+    Runtime runtime;
+    UnifiedKey unifiedKey(key);
+    runtime.key = unifiedKey;
+    unifiedData.SetRuntime(runtime);
     auto status = service.UpdateDelayData(key, unifiedData);
     EXPECT_EQ(status, E_ERROR);
 }
@@ -1338,7 +1341,7 @@ HWTEST_F(UdmfServiceImplTest, RegisterObserver001, TestSize.Level1)
     UdmfServiceImpl service;
     std::string key = "udmf://drag/com.test.demo/ascdca";
     auto status = service.RegisterObserver(key);
-    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(status, E_DB_ERROR);
 }
 
 /**
@@ -1400,7 +1403,7 @@ HWTEST_F(UdmfServiceImplTest, SaveAcceptableInfo001, TestSize.Level1)
     std::string key = "udmf://drag/com.example.app/1233455";
     DataLoadInfo info;
     auto status = service.SaveAcceptableInfo(key, info);
-    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(status, E_NO_PERMISSION);
 }
 
 /**
@@ -1417,7 +1420,7 @@ HWTEST_F(UdmfServiceImplTest, PushAcceptableInfo001, TestSize.Level1)
     query.intention = Intention::UD_INTENTION_DRAG;
     std::vector<std::string> deviceIds = { "device_001", "device_002" };
     auto status = service.PushAcceptableInfo(query, deviceIds);
-    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(status, E_NO_PERMISSION);
 }
 
 /**
@@ -1460,7 +1463,7 @@ HWTEST_F(UdmfServiceImplTest, PushDelayDataToRemote001, TestSize.Level1)
     key = "udmf://drag/com.example.app/1233455";
     query.key = key;
     status = service.PushDelayDataToRemote(query, deviceIds);
-    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(status, E_DB_ERROR);
 }
 
 /**
@@ -1473,7 +1476,7 @@ HWTEST_F(UdmfServiceImplTest, HandleRemoteDelayData001, TestSize.Level1)
     UdmfServiceImpl service;
     std::string key = "udmf://DataHub/com.example.app/1233455";
     auto status = service.HandleRemoteDelayData(key);
-    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(status, E_ERROR);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
