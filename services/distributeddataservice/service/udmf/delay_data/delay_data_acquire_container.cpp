@@ -41,19 +41,22 @@ void DelayDataAcquireContainer::RegisterDelayDataCallback(const std::string &key
 
 bool DelayDataAcquireContainer::HandleDelayDataCallback(const std::string &key, const UnifiedData &unifiedData)
 {
-    std::lock_guard<std::mutex> lock(delayDataMutex_);
-    auto it = delayDataCallback_.find(key);
-    if (it == delayDataCallback_.end()) {
-        ZLOGE("Can not find delay data callback, key:%{public}s", key.c_str());
-        return false;
+    sptr<DelayDataCallbackProxy> callback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(delayDataMutex_);
+        auto it = delayDataCallback_.find(key);
+        if (it == delayDataCallback_.end()) {
+            ZLOGE("Can not find delay data callback, key:%{public}s", key.c_str());
+            return false;
+        }
+        callback = iface_cast<DelayDataCallbackProxy>(it->second.dataCallback);
+        delayDataCallback_.erase(key);
     }
-    auto callback = iface_cast<DelayDataCallbackProxy>(it->second.dataCallback);
     if (callback == nullptr) {
         ZLOGE("Delay data callback is null, key:%{public}s", key.c_str());
         return false;
     }
     callback->DelayDataCallback(key, unifiedData);
-    delayDataCallback_.erase(key);
     return true;
 }
 

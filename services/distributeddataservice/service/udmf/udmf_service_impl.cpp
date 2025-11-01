@@ -1660,6 +1660,10 @@ int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string &key)
     if (isDataLoading) {
         return DelayDataAcquireContainer::GetInstance().HandleDelayDataCallback(key, unifiedData) ? E_OK : E_ERROR;
     }
+    if (blockData.blockData == nullptr) {
+        ZLOGE("blockData is nullptr, key:%{public}s", key.c_str());
+        return E_ERROR;
+    }
     blockData.blockData->SetValue(unifiedData);
     return E_OK;
 }

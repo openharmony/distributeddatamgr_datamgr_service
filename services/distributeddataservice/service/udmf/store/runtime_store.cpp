@@ -114,7 +114,7 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
     return PutEntries(entries);
 }
 
-Status RuntimeStore::PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo info)
+Status RuntimeStore::PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo &info)
 {
     UpdateTime();
     auto runtime = unifiedData.GetRuntime();

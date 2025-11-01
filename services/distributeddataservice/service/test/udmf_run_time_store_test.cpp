@@ -803,13 +803,32 @@ HWTEST_F(UdmfRunTimeStoreTest, PutDelayData001, TestSize.Level1)
     store->Init();
     UnifiedData data;
     Runtime runtime;
+    UnifiedKey key("udmf://drag/com.example.app/1233455");
+    runtime.key = key;
     runtime.dataStatus = DataStatus::WAITING;
     runtime.tokenId = 12344;
     runtime.recordTotalNum = 10;
     data.SetRuntime(runtime);
+    data.AddRecord(std::make_shared<UnifiedRecord>());
     DataLoadInfo info;
     auto ret = store->PutDelayData(data, info);
-    EXPECT_EQ(ret, E_DB_ERROR);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: PutDelayData002
+* @tc.desc: Abnormal testcase of PutDelayData
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PutDelayData002, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    UnifiedData data;
+    DataLoadInfo info;
+    auto ret = store->PutDelayData(data, info);
+    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
 }
 
 /**

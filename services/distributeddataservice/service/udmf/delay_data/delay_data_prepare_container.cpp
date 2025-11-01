@@ -54,6 +54,10 @@ bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, Unifie
         callback->HandleDelayObserver(query.key, DataLoadInfo());
     }
     ZLOGI("Start waiting for data, key:%{public}s", query.key.c_str());
+    if (blockData == nullptr) {
+        ZLOGE("Block data is null");
+        return false;
+    }
     auto dataOpt = blockData->GetValue();
     if (dataOpt.has_value()) {
         unifiedData = *dataOpt;
@@ -96,20 +100,24 @@ bool DelayDataPrepareContainer::ExecDataLoadCallback(const std::string &key, con
         ZLOGE("Data load callback is null, key:%{public}s", key.c_str());
         return false;
     }
-    ZLOGI("Execute data load callback, key:%{public}s", key.c_str());
     callback->HandleDelayObserver(key, info);
     return true;
 }
 
 void DelayDataPrepareContainer::ExecAllDataLoadCallback()
 {
-    std::lock_guard<std::mutex> lock(dataLoadMutex_);
-    ZLOGI("Execute all data load callback");
-    for (const auto &[key, callback] : dataLoadCallback_) {
-        DataLoadInfo info;
-        callback->HandleDelayObserver(key, info);
+    std::map<std::string, sptr<UdmfNotifierProxy>> callbacks;
+    {
+        std::lock_guard<std::mutex> lock(dataLoadMutex_);
+        callbacks = dataLoadCallback_;
+        dataLoadCallback_.clear();
     }
-    dataLoadCallback_.clear();
+    for (const auto &[key, callback] : callbacks) {
+        DataLoadInfo info;
+        if (callback != nullptr) {
+            callback->HandleDelayObserver(key, info);
+        }
+    }
 }
 
 bool DelayDataPrepareContainer::QueryBlockDelayData(const std::string &key, BlockDelayData &blockData)

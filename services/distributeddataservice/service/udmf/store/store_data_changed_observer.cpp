@@ -58,15 +58,15 @@ void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
         }
         auto runtime = data.GetRuntime();
         if (runtime == nullptr) {
+            ZLOGE("Runtime is null, key: %{public}s", udKey.c_str());
             continue;
         }
         if (runtime->dataStatus == DataStatus::WORKING) {
             auto service = UdmfServiceImpl::GetService();
-            if (service != nullptr) {
-                service->HandleRemoteDelayData(udKey);
-            } else {
+            if (service == nullptr) {
                 ZLOGE("Get service null");
             }
+            service->HandleRemoteDelayData(udKey);
         }
     }
 }
