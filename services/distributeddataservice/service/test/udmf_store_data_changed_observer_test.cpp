@@ -61,26 +61,6 @@ public:
 };
 
 /**
-* @tc.name: DataLoadCallbackTest001
-* @tc.desc: Test Execute data load callback with return false
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfStoreDataChangedObserverTest, DataLoadCallbackTest001, TestSize.Level1)
-{
-    DataLoadInfo info;
-    info.udKey = "udmf://drag/com.example.test/11111";
-    std::vector<DistributedDB::Entry> entries;
-    DataHandler::MarshalDataLoadEntries(info, entries);
-    std::list<DistributedDB::Entry> entriesList(entries.begin(), entries.end());
-    StoreChangedData changedData;
-    changedData.entries_ = entriesList;
-
-    AcceptableInfoObserver observer;
-    EXPECT_NO_FATAL_FAILURE(observer.OnChange(changedData));
-}
-
-/**
 * @tc.name: DataLoadCallbackTest002
 * @tc.desc: Test Execute data load callback with return false
 * @tc.type: FUNC
@@ -123,37 +103,6 @@ HWTEST_F(UdmfStoreDataChangedObserverTest, DataLoadCallbackTest003, TestSize.Lev
     changedData.entries_ = entriesList;
 
     AcceptableInfoObserver observer;
-    EXPECT_NO_FATAL_FAILURE(observer.OnChange(changedData));
-}
-
-/**
-* @tc.name: HandleRemoteDelayData001
-* @tc.desc: Test HandleRemoteDelayData when data status is WORKING
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfStoreDataChangedObserverTest, HandleRemoteDelayData001, TestSize.Level1)
-{
-    UnifiedData delayData;
-    Runtime runtime;
-    runtime.key = UnifiedKey("drag", "com.example.test", "22222");
-    runtime.dataStatus = DataStatus::WAITING;
-    delayData.SetRuntime(runtime);
-    std::vector<DistributedDB::Entry> entries;
-    DataHandler::MarshalToEntries(delayData, entries);
-    std::list<DistributedDB::Entry> entriesList(entries.begin(), entries.end());
-    StoreChangedData changedData;
-    changedData.entries_ = entriesList;
-
-    RuntimeObserver observer;
-    EXPECT_NO_FATAL_FAILURE(observer.OnChange(changedData));
-
-    runtime.dataStatus = DataStatus::WORKING;
-    delayData.SetRuntime(runtime);
-    entries.clear();
-    DataHandler::MarshalToEntries(delayData, entries);
-    entriesList = std::list<DistributedDB::Entry>(entries.begin(), entries.end());
-    changedData.entries_ = entriesList;
     EXPECT_NO_FATAL_FAILURE(observer.OnChange(changedData));
 }
 

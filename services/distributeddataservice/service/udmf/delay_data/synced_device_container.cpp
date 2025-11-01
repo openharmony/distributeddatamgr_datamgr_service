@@ -47,8 +47,7 @@ void SyncedDeviceContainer::SaveSyncedDeviceInfo(const std::string &key, const s
             return true;
         }
         return false;
-    }),
-    pulledDeviceInfo_.end());
+    }), pulledDeviceInfo_.end());
     SyncedDeiviceInfo info;
     info.deviceId = deviceId;
     pulledDeviceInfo_.emplace_back(std::move(info));
@@ -76,8 +75,7 @@ std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo(const std::strin
         }
         deviceIds.emplace_back(info.deviceId);
         return false;
-    }),
-    pulledDeviceInfo_.end());
+    }), pulledDeviceInfo_.end());
     return deviceIds;
 }
 } // namespace UDMF
