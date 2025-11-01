@@ -48,6 +48,8 @@ private:
     int32_t OnPushDelayData(MessageParcel &data, MessageParcel &reply);
     int32_t OnSetDelayInfo(MessageParcel &data, MessageParcel &reply);
     int32_t OnGetDataIfAvailable(MessageParcel &data, MessageParcel &reply);
+    int32_t OnPushAcceptableInfo(MessageParcel &data, MessageParcel &reply);
+    int32_t OnSaveAcceptableInfo(MessageParcel &data, MessageParcel &reply);
 
     using Handler = int32_t (UdmfServiceStub::*)(MessageParcel &data, MessageParcel &reply);
     static constexpr Handler HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)] = {
@@ -68,6 +70,8 @@ private:
         &UdmfServiceStub::OnSetDelayInfo,
         &UdmfServiceStub::OnPushDelayData,
         &UdmfServiceStub::OnGetDataIfAvailable,
+        &UdmfServiceStub::OnSaveAcceptableInfo,
+        &UdmfServiceStub::OnPushAcceptableInfo,
     };
 };
 } // namespace UDMF

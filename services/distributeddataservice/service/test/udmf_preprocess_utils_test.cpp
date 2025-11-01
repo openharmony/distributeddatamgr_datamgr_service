@@ -39,7 +39,24 @@ HWTEST_F(UdmfPreProcessUtilsTest, RuntimeDataImputation001, TestSize.Level1)
     UnifiedData data;
     CustomOption option;
     PreProcessUtils preProcessUtils;
+    DataLoadInfo dataLoadInfo;
     int32_t ret = preProcessUtils.FillRuntimeInfo(data, option);
+    EXPECT_EQ(ret, E_ERROR);
+}
+
+/**
+* @tc.name: DelayRuntimeDataImputation001
+* @tc.desc: Abnormal test of DelayRuntimeDataImputation, option is invalid
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, DelayRuntimeDataImputation001, TestSize.Level1)
+{
+    UnifiedData data;
+    CustomOption option;
+    PreProcessUtils preProcessUtils;
+    DataLoadInfo dataLoadInfo;
+    int32_t ret = preProcessUtils.FillDelayRuntimeInfo(data, option, DataLoadInfo());
     EXPECT_EQ(ret, E_ERROR);
 }
 

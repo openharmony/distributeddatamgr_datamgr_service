@@ -17,6 +17,7 @@
 #include "runtime_store.h"
 
 #include "data_handler.h"
+#include "delay_data_prepare_container.h"
 #include "log_print.h"
 #include "ipc_skeleton.h"
 #include "unified_data_helper.h"
@@ -31,6 +32,8 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "preprocess_utils.h"
+#include "store_data_changed_observer.h"
+#include "synced_device_container.h"
 
 namespace OHOS {
 namespace UDMF {
@@ -111,6 +114,31 @@ Status RuntimeStore::Put(const UnifiedData &unifiedData)
     }
     return PutEntries(entries);
 }
+
+Status RuntimeStore::PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo &info)
+{
+    UpdateTime();
+    auto runtime = unifiedData.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("Runtime is null");
+        return E_INVALID_PARAMETERS;
+    }
+    Summary summary;
+    UnifiedDataHelper::GetSummaryFromLoadInfo(info, summary);
+    auto status = PutSummary(runtime->key, summary);
+    if (status != E_OK) {
+        ZLOGE("PutSummary failed. status: %{public}d", status);
+        return status;
+    }
+    std::vector<Entry> entries;
+    status = DataHandler::MarshalToEntries(unifiedData, entries);
+    if (status != E_OK) {
+        ZLOGE("PutDelayData failed. status: %{public}d", status);
+        return status;
+    }
+    return PutEntries(entries);
+}
+
 
 Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
 {
@@ -545,6 +573,7 @@ void RuntimeStore::ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate)
     if (delegate == nullptr) {
         return;
     }
+    UnRegisterAllObserver();
     auto retStatus = delegateManager_->CloseKvStore(delegate);
     if (retStatus != DBStatus::OK) {
         ZLOGE("CloseKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
@@ -610,6 +639,125 @@ Status RuntimeStore::MarkWhenCorrupted(DistributedDB::DBStatus status)
         return E_DB_CORRUPTED;
     }
     return E_DB_ERROR;
+}
+
+Status RuntimeStore::SetRemotePullStartNotify()
+{
+    if (hasRegisterPullNotify_) {
+        return E_OK;
+    }
+    DBStatus status = kvStore_->SetDeviceSyncNotify(DeviceSyncEvent::REMOTE_PULL_STARTED,
+        [](DistributedDB::DeviceSyncNotifyInfo info) {
+        SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("", info.deviceId);
+        DelayDataPrepareContainer::GetInstance().ExecAllDataLoadCallback();
+    });
+    if (status != DBStatus::OK) {
+        ZLOGE("SetDeviceSyncNotify failed, status: %{public}d.", static_cast<int>(status));
+        return E_DB_ERROR;
+    }
+    hasRegisterPullNotify_ = true;
+    return E_OK;
+}
+
+Status RuntimeStore::RegisterDataChangedObserver(const std::string &key, uint32_t type)
+{
+    if (key.empty()) {
+        ZLOGE("Key is empty.");
+        return E_INVALID_PARAMETERS;
+    }
+    auto observer = ObserverFactory::GetObserver(type);
+    if (observer == nullptr) {
+        ZLOGE("GetObserver failed, type: %{public}u.", type);
+        return E_ERROR;
+    }
+    std::vector<uint8_t> keyBytes(key.begin(), key.end());
+    DBStatus status = kvStore_->RegisterObserver(keyBytes, ObserverMode::OBSERVER_CHANGES_FOREIGN, observer);
+    if (status != DBStatus::OK) {
+        ZLOGE("RegisterObserver failed, status: %{public}d.", static_cast<int>(status));
+        return E_DB_ERROR;
+    }
+    std::lock_guard<std::mutex> lock(observerMutex_);
+    observers_.insert_or_assign(key, observer);
+    return E_OK;
+}
+
+bool RuntimeStore::UnRegisterDataChangedObserver(const std::string &key)
+{
+    std::lock_guard<std::mutex> lock(observerMutex_);
+    auto it = observers_.find(key);
+    if (it != observers_.end()) {
+        auto status = kvStore_->UnRegisterObserver(it->second);
+        if (status != DBStatus::OK) {
+            ZLOGE("Unregister observer failed, status: %{public}d.", static_cast<int>(status));
+            return false;
+        }
+        observers_.erase(key);
+        return true;
+    }
+    return false;
+}
+
+bool RuntimeStore::UnRegisterAllObserver()
+{
+    std::lock_guard<std::mutex> lock(observerMutex_);
+    for (const auto &[key, observer] : observers_) {
+        auto status = kvStore_->UnRegisterObserver(observer);
+        if (status != DBStatus::OK) {
+            ZLOGE("UnRegisterAllObserver failed for key %{public}s, status: %{public}d.",
+                key.c_str(), static_cast<int>(status));
+        }
+    }
+    observers_.clear();
+    return true;
+}
+
+Status RuntimeStore::PutDataLoadInfo(const DataLoadInfo &dataLoadInfo)
+{
+    UpdateTime();
+    std::vector<Entry> entries;
+    auto status = DataHandler::MarshalDataLoadEntries(dataLoadInfo, entries);
+    if (status != E_OK) {
+        ZLOGE("PutDataLoadInfo failed. status: %{public}d", status);
+        return status;
+    }
+    return PutEntries(entries);
+}
+
+Status RuntimeStore::PushSync(const std::vector<std::string> &devices)
+{
+    UpdateTime();
+    if (devices.empty()) {
+        ZLOGE("DeviceId is empty, no need push delay data.");
+        return E_INVALID_PARAMETERS;
+    }
+    std::vector<std::string> syncDevices = DmAdapter::ToUUID(devices);
+    DevNameMap deviceNameMap;
+    for (const auto &device : devices) {
+        std::string deviceUuid = DmAdapter::GetInstance().ToUUID(device);
+        std::string deviceName = DmAdapter::GetInstance().GetDeviceInfo(device).deviceName;
+        deviceNameMap.emplace(deviceUuid, deviceName);
+    }
+    auto onComplete = [this](const std::map<std::string, DBStatus> &devsSyncStatus) {
+        DBStatus dbStatus = DBStatus::OK;
+        for (const auto &[originDeviceId, status] : devsSyncStatus) {  // only one device.
+            if (status != DBStatus::OK) {
+                dbStatus = status;
+                break;
+            }
+        }
+        ZLOGI("Push delay data complete, %{public}s, status:%{public}d.",
+            Anonymous::Change(storeId_).c_str(), dbStatus);
+    };
+    DistributedDB::DeviceSyncOption option;
+    option.devices = syncDevices;
+    option.isWait = false;
+    option.mode = SyncMode::SYNC_MODE_PUSH_ONLY;
+    DBStatus status = kvStore_->Sync(option, onComplete);
+    if (status != DBStatus::OK) {
+        ZLOGE("Sync kvStore failed, status: %{public}d.", status);
+        return E_DB_ERROR;
+    }
+    return E_OK;
 }
 } // namespace UDMF
 } // namespace OHOS

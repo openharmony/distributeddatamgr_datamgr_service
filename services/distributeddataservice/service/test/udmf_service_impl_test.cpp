@@ -20,6 +20,8 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "bootstrap.h"
+#include "delay_data_acquire_container.h"
+#include "delay_data_prepare_container.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
 #include "ipc_skeleton.h"
@@ -27,6 +29,7 @@
 #include "nativetoken_kit.h"
 #include "preprocess_utils.h"
 #include "runtime_store.h"
+#include "synced_device_container.h"
 #include "token_setproc.h"
 #include "uri_permission_manager.h"
 
@@ -928,91 +931,6 @@ HWTEST_F(UdmfServiceImplTest, VerifyDataAccessPermission002, TestSize.Level1)
 }
 
 /**
- * @tc.name: HandleDelayLoad001
- * @tc.desc: Returns true when data not arrives
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, HandleDelayLoad001, TestSize.Level1)
-{
-    QueryOption query;
-    query.key = "k1";
-    query.tokenId = 123;
-
-    UnifiedData result;
-    int32_t res = UDMF::E_OK;
-
-    UdmfServiceImpl service;
-    service.dataLoadCallback_.Insert(query.key, nullptr);
-
-    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
-    UdmfServiceImpl::BlockDelayData data;
-    data.tokenId = query.tokenId;
-    data.blockData = std::make_shared<CacheData>(100);
-    service.blockDelayDataCache_.Insert(query.key, data);
-
-    bool handled = service.HandleDelayLoad(query, result, res);
-
-    service.dataLoadCallback_.Erase(query.key);
-    service.blockDelayDataCache_.Erase(query.key);
-
-    EXPECT_TRUE(handled);
-    EXPECT_EQ(res, UDMF::E_NOT_FOUND);
-}
-
-/**
- * @tc.name: HandleDelayLoad002
- * @tc.desc: Returns false when not exist
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, HandleDelayLoad002, TestSize.Level1)
-{
-    QueryOption query;
-    query.key = "k1";
-    query.tokenId = 123;
-
-    UnifiedData result;
-    int32_t res = UDMF::E_OK;
-
-    UdmfServiceImpl service;
-    bool handled = service.HandleDelayLoad(query, result, res);
-
-    EXPECT_FALSE(handled);
-}
-
-/**
- * @tc.name: HandleDelayLoad003
- * @tc.desc: Returns true when data arrives
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, HandleDelayLoad003, TestSize.Level1)
-{
-    QueryOption query;
-    query.key = "k1";
-    query.tokenId = 123;
-
-    UnifiedData result;
-    int32_t res = UDMF::E_OK;
-
-    UnifiedData insertedData;
-    insertedData.AddRecord(std::make_shared<UnifiedRecord>());
-
-    UdmfServiceImpl service;
-    service.dataLoadCallback_.Insert(query.key, nullptr);
-
-    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
-    UdmfServiceImpl::BlockDelayData data;
-    data.tokenId = query.tokenId;
-    data.blockData = std::make_shared<CacheData>(100);
-    service.blockDelayDataCache_.Insert(query.key, data);
-
-    data.blockData->SetValue(insertedData);
-    bool handled = service.HandleDelayLoad(query, result, res);
-
-    EXPECT_TRUE(handled);
-    EXPECT_EQ(res, UDMF::E_OK);
-}
-
-/**
  * @tc.name: PushDelayData002
  * @tc.desc: DelayData callback and block cache not exist
  * @tc.type: FUNC
@@ -1027,57 +945,7 @@ HWTEST_F(UdmfServiceImplTest, PushDelayData002, TestSize.Level1)
 
     UdmfServiceImpl service;
     auto status = service.PushDelayData(query.key, insertedData);
-    EXPECT_EQ(status, UDMF::E_ERROR);
-}
-
-/**
- * @tc.name: PushDelayData003
- * @tc.desc: No permission
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, PushDelayData003, TestSize.Level1)
-{
-    QueryOption query;
-    query.key = "k1";
-    query.tokenId = 123;
-    
-    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
-    UdmfServiceImpl::BlockDelayData data;
-    data.tokenId = query.tokenId;
-    data.blockData = std::make_shared<CacheData>(100);
-    UdmfServiceImpl service;
-    service.blockDelayDataCache_.Insert(query.key, data);
-    
-    UnifiedData insertedData;
-    auto status = service.PushDelayData(query.key, insertedData);
-    EXPECT_EQ(status, UDMF::E_NO_PERMISSION);
-}
-
-/**
- * @tc.name: PushDelayData004
- * @tc.desc: PushDelayData success
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, PushDelayData004, TestSize.Level1)
-{
-    QueryOption query;
-    query.key = "k1";
-    query.tokenId = IPCSkeleton::GetSelfTokenID();
-    
-    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
-    UdmfServiceImpl::BlockDelayData data;
-    data.tokenId = query.tokenId;
-    data.blockData = std::make_shared<CacheData>(100);
-    UdmfServiceImpl service;
-    service.blockDelayDataCache_.Insert(query.key, data);
-
-    Privilege privilege;
-    privilege.tokenId = query.tokenId;
-    service.privilegeCache_[query.key] = privilege;
-
-    UnifiedData insertedData;
-    auto status = service.PushDelayData(query.key, insertedData);
-    EXPECT_EQ(status, UDMF::E_OK);
+    EXPECT_EQ(status, UDMF::E_INVALID_PARAMETERS);
 }
 
 /**
@@ -1103,33 +971,6 @@ HWTEST_F(UdmfServiceImplTest, SaveData005, TestSize.Level1)
     UdmfServiceImpl impl;
     auto status = impl.SaveData(option, unifiedData, key);
     EXPECT_EQ(status, E_NO_PERMISSION);
-}
-
-/**
- * @tc.name: PushDelayData007
- * @tc.desc: test no permission
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, PushDelayData007, TestSize.Level1)
-{
-    QueryOption query;
-    query.key = "k1";
-
-    UdmfServiceImpl service;
-    DelayGetDataInfo delayGetDataInfo;
-    service.delayDataCallback_.Insert(query.key, delayGetDataInfo);
-    
-    UnifiedData insertedData;
-    std::shared_ptr<Object> obj = std::make_shared<Object>();
-    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj->value_[FILE_URI_PARAM] = "file://error_bundle_name/a.jpeg";
-    obj->value_[FILE_TYPE] = "general.image";
-    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
-    insertedData.AddRecord(record);
-
-    auto status = service.PushDelayData(query.key, insertedData);
-    EXPECT_EQ(status, E_NO_PERMISSION);
-    service.delayDataCallback_.Clear();
 }
 
 /**
@@ -1426,6 +1267,216 @@ HWTEST_F(UdmfServiceImplTest, HandleFileUris001, TestSize.Level1)
     auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
     auto result = PreProcessUtils::HandleFileUris(tokenId, unifiedData);
     EXPECT_EQ(result, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: FillDelayUnifiedData001
+ * @tc.desc: FillDelayUnifiedData function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, FillDelayUnifiedData001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    UnifiedKey key("udmf://drag/com.test.demo/ascdca");
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.plain-text";
+    obj->value_["plainContent"] = "This is a test plain text.";
+    auto record = std::make_shared<UnifiedRecord>(UDType::PLAIN_TEXT, obj);
+    unifiedData.AddRecord(record);
+    EXPECT_TRUE(record->GetUid().empty());
+    auto status = service.FillDelayUnifiedData(key, unifiedData);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_FALSE(record->GetUid().empty());
+}
+
+/**
+ * @tc.name: UpdateDelayData001
+ * @tc.desc: UpdateDelayData function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UpdateDelayData001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://drag/com.test.demo/ascdca";
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.plain-text";
+    obj->value_["plainContent"] = "This is a test plain text.";
+    auto record = std::make_shared<UnifiedRecord>(UDType::PLAIN_TEXT, obj);
+    unifiedData.AddRecord(record);
+    Runtime runtime;
+    UnifiedKey unifiedKey(key);
+    runtime.key = unifiedKey;
+    unifiedData.SetRuntime(runtime);
+    auto status = service.UpdateDelayData(key, unifiedData);
+    EXPECT_EQ(status, E_ERROR);
+}
+
+/**
+ * @tc.name: GetDevicesForDelayData001
+ * @tc.desc: UpdateDelayData function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, GetDevicesForDelayData001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://drag/com.test.demo/ascdca";
+    auto devices = service.GetDevicesForDelayData(key);
+    EXPECT_EQ(devices.size(), 0);
+
+    std::string deviceId = "device_001";
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(key, deviceId);
+    devices = service.GetDevicesForDelayData(key);
+    EXPECT_EQ(devices.size(), 0);
+}
+
+/**
+ * @tc.name: RegisterObserver001
+ * @tc.desc: RegisterObserver function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, RegisterObserver001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://drag/com.test.demo/ascdca";
+    auto status = service.RegisterObserver(key);
+    EXPECT_EQ(status, E_DB_ERROR);
+}
+
+/**
+ * @tc.name: RegisterAllDataChangedObserver001
+ * @tc.desc: RegisterAllDataChangedObserver function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, RegisterAllDataChangedObserver001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    auto status = service.RegisterAllDataChangedObserver();
+    EXPECT_EQ(status, E_OK);
+    DelayDataAcquireContainer::GetInstance().delayDataCallback_.insert_or_assign("key1", DelayGetDataInfo());
+    status = service.RegisterAllDataChangedObserver();
+    EXPECT_EQ(status, E_OK);
+    DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.clear();
+    std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
+    std::string key = "udmf://drag/com.example.app/1233455";
+    DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.insert_or_assign(
+        key, BlockDelayData{12345, blockData});
+    status = service.RegisterAllDataChangedObserver();
+    EXPECT_EQ(status, E_OK);
+}
+
+/**
+ * @tc.name: UnRegisterObserver001
+ * @tc.desc: UnRegisterObserver function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UnRegisterObserver001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://drag/com.example.app/1233455";
+    auto status = service.UnRegisterObserver(key);
+    EXPECT_EQ(status, E_OK);
+}
+
+/**
+ * @tc.name: IsSyncFinished001
+ * @tc.desc: IsSyncFinished function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsSyncFinished001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://drag/com.example.app/1233455";
+    auto ret = service.IsSyncFinished(key);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: SaveAcceptableInfo001
+ * @tc.desc: SaveAcceptableInfo function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, SaveAcceptableInfo001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://drag/com.example.app/1233455";
+    DataLoadInfo info;
+    auto status = service.SaveAcceptableInfo(key, info);
+    EXPECT_EQ(status, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: PushAcceptableInfo001
+ * @tc.desc: PushAcceptableInfo function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushAcceptableInfo001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://drag/com.example.app/1233455";
+    QueryOption query;
+    query.key = key;
+    query.intention = Intention::UD_INTENTION_DRAG;
+    std::vector<std::string> deviceIds = { "device_001", "device_002" };
+    auto status = service.PushAcceptableInfo(query, deviceIds);
+    EXPECT_EQ(status, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: PushAcceptableInfo002
+ * @tc.desc: PushAcceptableInfo function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushAcceptableInfo002, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://DataHub/com.example.app/1233455";
+    QueryOption query;
+    query.key = key;
+    query.intention = Intention::UD_INTENTION_DRAG;
+    std::vector<std::string> deviceIds = { "device_001", "device_002" };
+    auto status = service.PushAcceptableInfo(query, deviceIds);
+    EXPECT_EQ(status, E_INVALID_PARAMETERS);
+}
+
+/**
+ * @tc.name: PushDelayDataToRemote001
+ * @tc.desc: PushDelayDataToRemote function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayDataToRemote001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://DataHub/com.example.app/1233455";
+    QueryOption query;
+    query.key = key;
+    query.intention = Intention::UD_INTENTION_DRAG;
+    std::vector<std::string> deviceIds;
+    auto status = service.PushDelayDataToRemote(query, deviceIds);
+    EXPECT_EQ(status, E_OK);
+
+    deviceIds = { "device_001", "device_002" };
+    status = service.PushDelayDataToRemote(query, deviceIds);
+    EXPECT_EQ(status, E_INVALID_PARAMETERS);
+
+    key = "udmf://drag/com.example.app/1233455";
+    query.key = key;
+    status = service.PushDelayDataToRemote(query, deviceIds);
+    EXPECT_EQ(status, E_DB_ERROR);
+}
+
+/**
+ * @tc.name: HandleRemoteDelayData001
+ * @tc.desc: HandleRemoteDelayData function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleRemoteDelayData001, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://DataHub/com.example.app/1233455";
+    auto status = service.HandleRemoteDelayData(key);
+    EXPECT_EQ(status, E_ERROR);
 }
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

@@ -17,6 +17,7 @@
 #define UDMF_RUNTIMESTORE_H
 
 #include "store.h"
+#include "concurrent_map.h"
 #include "kv_store_delegate_manager.h"
 #include "metadata/store_meta_data.h"
 
@@ -44,6 +45,12 @@ public:
     Status PutRuntime(const std::string &key, const Runtime &runtime) override;
     Status GetRuntime(const std::string &key, Runtime &runtime) override;
     Status PutSummary(UnifiedKey &key, const Summary &summary) override;
+    Status SetRemotePullStartNotify() override;
+    Status RegisterDataChangedObserver(const std::string &key, uint32_t type) override;
+    bool UnRegisterDataChangedObserver(const std::string &key) override;
+    Status PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo &info) override;
+    Status PutDataLoadInfo(const DataLoadInfo &info) override;
+    Status PushSync(const std::vector<std::string> &devices) override;
     bool Init() override;
 
 private:
@@ -66,8 +73,12 @@ private:
     Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
     Status MarkWhenCorrupted(DistributedDB::DBStatus status);
     void ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate);
+    bool UnRegisterAllObserver();
+    std::map<std::string, std::shared_ptr<DistributedDB::KvStoreObserver>> observers_ {};
 
     bool isCorrupted_ = false;
+    bool hasRegisterPullNotify_ = false;
+    std::mutex observerMutex_;
 };
 } // namespace UDMF
 } // namespace OHOS

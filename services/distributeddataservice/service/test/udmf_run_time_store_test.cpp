@@ -737,5 +737,133 @@ HWTEST_F(UdmfRunTimeStoreTest, MarkWhenCorrupted002, TestSize.Level1)
     store->MarkWhenCorrupted(status);
     EXPECT_TRUE(store->isCorrupted_);
 }
+
+/**
+* @tc.name: SetRemotePullStartNotify001
+* @tc.desc: Normal testcase of SetRemotePullStartNotify
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, SetRemotePullStartNotify001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    EXPECT_FALSE(store->hasRegisterPullNotify_);
+    auto ret = store->SetRemotePullStartNotify();
+    EXPECT_EQ(ret, E_DB_ERROR);
+    store->hasRegisterPullNotify_ = true;
+    ret = store->SetRemotePullStartNotify();
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: RegisterDataChangedObserver001
+* @tc.desc: Normal testcase of RegisterDataChangedObserver
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, RegisterDataChangedObserver001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    store->observers_.clear();
+    std::string key1 = "";
+    auto ret = store->RegisterDataChangedObserver(key1, 0);
+    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+    key1 = "udmf://drag/com.example.app/1233455";
+    ret = store->RegisterDataChangedObserver(key1, 0);
+    EXPECT_EQ(ret, E_OK);
+    EXPECT_TRUE(store->observers_.size() == 1);
+    ret = store->RegisterDataChangedObserver(key1, 3);
+    EXPECT_EQ(ret, E_ERROR);
+    std::string key2 = "udmf://drag/com.example.app/555555";
+    ret = store->RegisterDataChangedObserver(key2, 1);
+    EXPECT_EQ(ret, E_OK);
+    EXPECT_TRUE(store->observers_.size() == 2);
+
+    auto result = store->UnRegisterDataChangedObserver(key1);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(store->observers_.size() == 1);
+
+    result = store->UnRegisterAllObserver();
+    EXPECT_TRUE(store->observers_.empty());
+    result = store->UnRegisterDataChangedObserver("invalid key");
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name: PutDelayData001
+* @tc.desc: Normal testcase of PutDelayData
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PutDelayData001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    UnifiedData data;
+    Runtime runtime;
+    UnifiedKey key("udmf://drag/com.example.app/1233455");
+    runtime.key = key;
+    runtime.dataStatus = DataStatus::WAITING;
+    runtime.tokenId = 12344;
+    runtime.recordTotalNum = 10;
+    data.SetRuntime(runtime);
+    data.AddRecord(std::make_shared<UnifiedRecord>());
+    DataLoadInfo info;
+    auto ret = store->PutDelayData(data, info);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: PutDelayData002
+* @tc.desc: Abnormal testcase of PutDelayData
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PutDelayData002, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    UnifiedData data;
+    DataLoadInfo info;
+    auto ret = store->PutDelayData(data, info);
+    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: PutDataLoadInfo001
+* @tc.desc: Normal testcase of PutDataLoadInfo
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PutDataLoadInfo001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    DataLoadInfo info;
+    info.sequenceKey = "111";
+    info.recordCount = 10;
+    auto ret = store->PutDataLoadInfo(info);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: PushSync001
+* @tc.desc: Normal testcase of PushSync
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PushSync001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    std::vector<std::string> devices;
+    auto ret = store->PushSync(devices);
+    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
+    devices.push_back("123445");
+    ret = store->PushSync(devices);
+    EXPECT_EQ(ret, E_DB_ERROR);
+}
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

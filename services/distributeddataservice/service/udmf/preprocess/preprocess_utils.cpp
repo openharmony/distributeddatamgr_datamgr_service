@@ -90,6 +90,36 @@ int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option
     return E_OK;
 }
 
+int32_t PreProcessUtils::FillDelayRuntimeInfo(UnifiedData &data, CustomOption &option, const DataLoadInfo &info)
+{
+    std::string bundleName;
+    std::string specificBundleName;
+    if (!GetSpecificBundleNameByTokenId(option.tokenId, specificBundleName, bundleName)) {
+        ZLOGE("GetSpecificBundleNameByTokenId failed, tokenid:%{public}u", option.tokenId);
+        return E_ERROR;
+    }
+    UnifiedKey key(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), specificBundleName, info.sequenceKey);
+    Privilege privilege;
+    privilege.tokenId = option.tokenId;
+    std::string appId = DistributedData::CheckerManager::GetInstance().GetAppId(
+        { IPCSkeleton::GetCallingUid(), option.tokenId, bundleName });
+    Runtime runtime;
+    runtime.key = key;
+    runtime.privileges.emplace_back(privilege);
+    runtime.createTime = GetTimestamp();
+    runtime.sourcePackage = bundleName;
+    runtime.createPackage = bundleName;
+    runtime.deviceId = GetLocalDeviceId();
+    runtime.recordTotalNum = info.recordCount;
+    runtime.tokenId = option.tokenId;
+    runtime.sdkVersion = GetSdkVersionByToken(option.tokenId);
+    runtime.visibility = option.visibility;
+    runtime.appId = appId;
+    runtime.dataStatus = DataStatus::WAITING;
+    data.SetRuntime(runtime);
+    return E_OK;
+}
+
 std::string PreProcessUtils::GenerateId()
 {
     std::vector<uint8_t> randomDevices = DistributedData::Crypto::Random(ID_LEN, MINIMUM, MAXIMUM);
@@ -163,6 +193,12 @@ std::string PreProcessUtils::GetLocalDeviceId()
     auto info = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
     std::string encryptedUuid = DistributedData::DeviceManagerAdapter::GetInstance().CalcClientUuid(" ", info.uuid);
     return encryptedUuid;
+}
+
+std::string PreProcessUtils::GetRealLocalDeviceId()
+{
+    auto info = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
+    return info.uuid;
 }
 
 void PreProcessUtils::SetRemoteData(UnifiedData &data)

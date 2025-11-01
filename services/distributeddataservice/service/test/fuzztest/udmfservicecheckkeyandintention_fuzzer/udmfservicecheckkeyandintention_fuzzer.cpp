@@ -45,8 +45,7 @@ void CheckDragParamsFuzz(FuzzedDataProvider &provider)
     }
     std::string groupIdStr(groupId.begin(), groupId.end());
     UnifiedKey udKey(intention, bundleName, groupIdStr);
-    QueryOption query;
-    udmfServiceImpl->CheckDragParams(udKey, query);
+    udmfServiceImpl->CheckDragParams(udKey);
 }
 
 void IsFileMangerIntentionFuzz(FuzzedDataProvider &provider)

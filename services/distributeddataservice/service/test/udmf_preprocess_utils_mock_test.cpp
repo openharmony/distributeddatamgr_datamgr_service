@@ -166,8 +166,36 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, FillRuntimeInfo001, TestSize.Level1)
     CustomOption option;
     option.intention = UD_INTENTION_DATA_HUB;
     option.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    DataLoadInfo dataLoadInfo;
     PreProcessUtils preProcessUtils;
     auto ret = preProcessUtils.FillRuntimeInfo(data, option);
     EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: FillDelayRuntimeInfo001
+* @tc.desc: Normal test of FillDelayRuntimeInfo
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsMockTest, FillDelayRuntimeInfo001, TestSize.Level1)
+{
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Return(RET_FAILED));
+    EXPECT_CALL(*accessTokenKitMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(TOKEN_NATIVE));
+    EXPECT_CALL(*accessTokenKitMock, GetNativeTokenInfo(_, _)).WillRepeatedly(Return(RET_SUCCESS));
+
+    UnifiedData data;
+    CustomOption option;
+    option.intention = UD_INTENTION_DATA_HUB;
+    option.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    DataLoadInfo dataLoadInfo;
+    dataLoadInfo.sequenceKey = "123";
+    dataLoadInfo.recordCount = 10;
+    PreProcessUtils preProcessUtils;
+    auto ret = preProcessUtils.FillDelayRuntimeInfo(data, option, dataLoadInfo);
+    EXPECT_EQ(ret, E_OK);
+    auto runtime = data.GetRuntime();
+    EXPECT_EQ(runtime->recordTotalNum, dataLoadInfo.recordCount);
+    EXPECT_EQ(runtime->dataStatus, DataStatus::WAITING);
 }
 }; // namespace UDMF

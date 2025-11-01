@@ -130,19 +130,57 @@ void GetDataIfAvailableFuzz(FuzzedDataProvider &provider)
     executor = nullptr;
 }
 
-void HandleDelayDataCallbackFuzz(FuzzedDataProvider &provider)
+void OnSaveAcceptableInfoFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    DelayGetDataInfo delayGetDataInfo;
-    UnifiedData unifiedData;
-    std::shared_ptr<Object> obj = std::make_shared<Object>();
-    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
-    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
-    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
-    unifiedData.AddRecord(record);
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceDelayDataFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
+    MessageParcel acceptableInfo;
+    acceptableInfo.WriteInterfaceToken(INTERFACE_TOKEN);
     std::string key = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->HandleDelayDataCallback(delayGetDataInfo, unifiedData, key);
+
+    DataLoadInfo dataLoadInfo;
+    dataLoadInfo.recordCount = provider.ConsumeIntegral<uint32_t>();
+    dataLoadInfo.types.emplace(provider.ConsumeRandomLengthString());
+    dataLoadInfo.sequenceKey = provider.ConsumeRandomLengthString();
+    ITypesUtil::Marshal(acceptableInfo, key, dataLoadInfo);
+
+    MessageParcel reply;
+    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SAVE_ACCEPTABLE_INFO),
+        acceptableInfo, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceDelayDataFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+    executor = nullptr;
+}
+
+void OnPushAcceptableInfoFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceDelayDataFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    QueryOption query;
+    query.key = provider.ConsumeRandomLengthString();
+
+    std::vector<std::string> deviceIds;
+    size_t deviceCount = provider.ConsumeIntegralInRange<size_t>(0, 5);
+    for (size_t i = 0; i < deviceCount; ++i) {
+        deviceIds.push_back(provider.ConsumeRandomLengthString());
+    }
+
+    ITypesUtil::Marshal(request, query, deviceIds);
+
+    MessageParcel reply;
+    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::PUSH_ACCEPTABLE_INFO),
+        request, reply);
+    udmfServiceImpl->OnBind(
+        { "UdmfServiceDelayDataFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
+    executor = nullptr;
 }
 }
 
@@ -162,6 +200,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::SetDelayInfoFuzz(provider);
     OHOS::PushDelayDataFuzz(provider);
     OHOS::GetDataIfAvailableFuzz(provider);
-    OHOS::HandleDelayDataCallbackFuzz(provider);
+    OHOS::OnSaveAcceptableInfoFuzz(provider);
+    OHOS::OnPushAcceptableInfoFuzz(provider);
     return 0;
 }

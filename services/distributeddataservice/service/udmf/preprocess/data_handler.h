@@ -31,6 +31,8 @@ public:
     static Status MarshalToEntries(const T &data, Value &value, TAG tag);
     template <typename T>
     static Status UnmarshalEntries(const Value &value, T &data, TAG tag);
+    static Status MarshalDataLoadEntries(const DataLoadInfo &info, std::vector<Entry> &entries);
+    static Status UnmarshalDataLoadEntries(const Entry &entry, DataLoadInfo &info);
 
 private:
     static Status BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord>> &records,
