@@ -83,6 +83,40 @@ HWTEST_F(UdmfDelayDataContainerTest, DataLoadCallbackTest002, TestSize.Level1)
 }
 
 /**
+* @tc.name: DataLoadCallbackTest003
+* @tc.desc: Test Execute data load callback after registering callback
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfDelayDataContainerTest, DataLoadCallbackTest003, TestSize.Level1)
+{
+    DelayDataPrepareContainer::GetInstance().dataLoadCallback_.clear();
+    std::string key = "udmf://drag/com.example.app/1233455";
+    sptr<IRemoteObject> re = nullptr;
+    sptr<UdmfNotifierProxy> callback = new (std::nothrow) UdmfNotifierProxy(re);
+    DelayDataPrepareContainer::GetInstance().RegisterDataLoadCallback(key, callback);
+    EXPECT_TRUE(DelayDataPrepareContainer::GetInstance().dataLoadCallback_.size() == 1);
+
+    using CacheData = BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>;
+    BlockDelayData data;
+    data.tokenId = query.tokenId;
+    data.blockData = std::make_shared<CacheData>(100);
+    DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.Insert(key, data);
+
+    UnifiedData insertedData;
+    insertedData.AddRecord(std::make_shared<UnifiedRecord>());
+    data.blockData->SetValue(insertedData);
+
+    QueryOption query;
+    query.key = key;
+    UnifiedData data;
+    ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
+    EXPECT_EQ(ret, true);
+    DelayDataPrepareContainer::GetInstance().dataLoadCallback_.clear();
+    DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.clear();
+}
+
+/**
 * @tc.name: ExecDataLoadCallback001
 * @tc.desc: Test Execute data load callback after registering callback
 * @tc.type: FUNC

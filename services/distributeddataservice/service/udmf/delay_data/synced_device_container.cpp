@@ -42,12 +42,13 @@ void SyncedDeviceContainer::SaveSyncedDeviceInfo(const std::string &key, const s
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
     pulledDeviceInfo_.erase(std::remove_if(pulledDeviceInfo_.begin(), pulledDeviceInfo_.end(),
-            [&devices, &current](SyncedDeiviceInfo &info) {
+        [&devices, &current](SyncedDeiviceInfo &info) {
         if (info < current) {
             return true;
         }
         return false;
-    }), pulledDeviceInfo_.end());
+    }),
+    pulledDeviceInfo_.end());
     SyncedDeiviceInfo info;
     info.deviceId = deviceId;
     pulledDeviceInfo_.emplace_back(std::move(info));
@@ -69,13 +70,14 @@ std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo(const std::strin
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
     pulledDeviceInfo_.erase(std::remove_if(pulledDeviceInfo_.begin(), pulledDeviceInfo_.end(),
-            [&deviceIds, &current](SyncedDeiviceInfo &info) {
+        [&deviceIds, &current](SyncedDeiviceInfo &info) {
         if (info < current) {
             return true;
         }
         deviceIds.emplace_back(info.deviceId);
         return false;
-    }), pulledDeviceInfo_.end());
+    }),
+    pulledDeviceInfo_.end());
     return deviceIds;
 }
 } // namespace UDMF
