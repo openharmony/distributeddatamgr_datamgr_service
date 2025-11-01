@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "route_head_handler_impl.h"
-
 #define LOG_TAG "RouteHeadHandler"
 #include <chrono>
 #include <cinttypes>
