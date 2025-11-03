@@ -506,8 +506,8 @@ bool RouteHeadHandlerImpl::UnPackStoreId(uint8_t **data, uint32_t leftSize)
         return false;
     }
     session_.storeId = std::string(storeId->storeId, storeIdLen);
-    leftSize -= (sizeof(SessionAppId) + storeIdLen);
-    *data += (sizeof(SessionAppId) + storeIdLen);
+    leftSize -= (sizeof(SessionStoreId) + storeIdLen);
+    *data += (sizeof(SessionStoreId) + storeIdLen);
     return true;
 }
 
