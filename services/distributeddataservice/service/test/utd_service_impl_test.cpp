@@ -44,7 +44,6 @@ public:
         size_t max = 2;
         size_t min = 1;
         executors_ = std::make_shared<OHOS::ExecutorPool>(max, min);
-
     }
     static void TearDownTestCase(void)
     {
