@@ -55,12 +55,12 @@ HWTEST_F(DataShareSysEventSubscriberTest, OnBMSReady001, TestSize.Level1)
     // make sysEventSubscriber not null
     auto sysEventSubscriber = std::make_shared<SysEventSubscriber>(subscribeInfo, executors);
     ASSERT_NE(sysEventSubscriber, nullptr);
+
+    // OnBMSReady is void-typed and const; test both normal/error cases.
     sysEventSubscriber->OnBMSReady();
     ASSERT_NE(sysEventSubscriber->executors_, nullptr);
-
     // cover executors == nullptr branch
     sysEventSubscriber->executors_ = nullptr;
-    ASSERT_EQ(sysEventSubscriber->executors_, nullptr);
     sysEventSubscriber->OnBMSReady();
     ZLOGI("DataShareSysEventSubscriberTest OnBMSReady001 end");
 }
