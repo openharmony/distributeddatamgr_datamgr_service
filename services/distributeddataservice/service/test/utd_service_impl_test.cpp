@@ -36,14 +36,14 @@ namespace OHOS::Test {
 namespace DistributedDataTest {
 constexpr const char *HAP_BUNDLE_NAME1 = "ohos.utd_service_test.demo1";
 constexpr const char *MANAGE_DYNAMIC_UTD_TYPE = "ohos.permission.MANAGE_DYNAMIC_UTD_TYPE";
+static constexpr size_t THREAD_MIN = 0;
+static constexpr size_t THREAD_MAX = 2;
 
 class UtdServiceImplTest : public testing::Test {
 public:
     static void SetUpTestCase(void)
     {
-        size_t max = 2;
-        size_t min = 1;
-        executors_ = std::make_shared<OHOS::ExecutorPool>(max, min);
+        executors_ = std::make_shared<OHOS::ExecutorPool>(THREAD_MAX, THREAD_MIN);
     }
     static void TearDownTestCase(void)
     {
@@ -128,7 +128,7 @@ HWTEST_F(UtdServiceImplTest, RegisterTypeDescriptors001, TestSize.Level1)
     UtdServiceImpl utdServiceImpl;
     std::vector<TypeDescriptorCfg> descriptors;
     int32_t ret = utdServiceImpl.RegisterTypeDescriptors(descriptors);
-    EXPECT_TRUE(ret == E_NO_SYSTEM_PERMISSION || ret == E_NO_PERMISSION);
+    EXPECT_TRUE(ret == E_NO_SYSTEM_PERMISSION);
 }
 
 /**
@@ -142,7 +142,7 @@ HWTEST_F(UtdServiceImplTest, UnregisterTypeDescriptors001, TestSize.Level1)
     UtdServiceImpl utdServiceImpl;
     std::vector<std::string> typeIds;
     int32_t ret = utdServiceImpl.UnregisterTypeDescriptors(typeIds);
-    EXPECT_TRUE(ret == E_NO_SYSTEM_PERMISSION || ret == E_NO_PERMISSION);
+    EXPECT_TRUE(ret == E_NO_SYSTEM_PERMISSION);
 }
 
 /**

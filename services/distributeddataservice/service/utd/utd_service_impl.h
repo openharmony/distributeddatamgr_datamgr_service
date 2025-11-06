@@ -20,9 +20,6 @@
 #include "utd_service_stub.h"
 namespace OHOS {
 namespace UDMF {
-/*
- * UTD server implementation
- */
 class UtdServiceImpl final : public UtdServiceStub {
 public:
     UtdServiceImpl() = default;
@@ -47,7 +44,7 @@ private:
     static Factory factory_;
 
     std::shared_ptr<ExecutorPool> executors_;
-    ConcurrentMap<uint32_t, sptr<UtdNotifierProxy>> utdNotifiers_;
+    ConcurrentMap<uint32_t, sptr<IUtdNotifier>> utdNotifiers_;
     std::atomic<uint32_t> foundationTokenId_ = 0;
 };
 } // namespace UDMF

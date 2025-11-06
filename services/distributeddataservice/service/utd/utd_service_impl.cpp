@@ -64,7 +64,12 @@ int32_t UtdServiceImpl::RegServiceNotifier(sptr<IRemoteObject> iUtdNotifier)
             foundationTokenId_ = tokenId;
         }
     }
-    utdNotifiers_.InsertOrAssign(tokenId, iface_cast<UtdNotifierProxy>(iUtdNotifier));
+    auto notifier = iface_cast<IUtdNotifier>(iUtdNotifier);
+    if (notifier == nullptr) {
+        ZLOGE("notifier is null!");
+        return E_ERROR;
+    }
+    utdNotifiers_.InsertOrAssign(tokenId, notifier);
     ZLOGI("utdNotifiers_.Size = %{public}zu", utdNotifiers_.Size());
     return E_OK;
 }
@@ -155,7 +160,7 @@ int32_t UtdServiceImpl::NotifyUtdClients(uint32_t callingTokenId)
 {
     ZLOGI("utdNotifiers_.Size = %{public}zu", utdNotifiers_.Size());
     ExecutorPool::TaskId taskId = executors_->Execute([this, callingTokenId] {
-        utdNotifiers_.EraseIf([this, callingTokenId](auto tokenId, const sptr<UtdNotifierProxy>& notifier) {
+        utdNotifiers_.EraseIf([this, callingTokenId](auto tokenId, const sptr<IUtdNotifier>& notifier) {
             if (tokenId == foundationTokenId_ || tokenId == callingTokenId) {
                 return false;
             }
