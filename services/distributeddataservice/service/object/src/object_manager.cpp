@@ -155,7 +155,7 @@ void ObjectStoreManager::ProcessSyncCallback(const std::map<std::string, int32_t
 int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &sessionId,
     const ObjectRecord &data, const std::string &deviceId, sptr<IRemoteObject> callback)
 {
-    auto proxy = iface_cast<ObjectSaveCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectSaveCallbackProxyBroker>(callback);
     if (proxy == nullptr) {
         ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
         return INVALID_ARGUMENT;
@@ -235,7 +235,7 @@ int32_t ObjectStoreManager::PushAssets(const std::string &srcBundleName, const s
 int32_t ObjectStoreManager::RevokeSave(
     const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
-    auto proxy = iface_cast<ObjectRevokeSaveCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectRevokeSaveCallbackProxyBroker>(callback);
     if (proxy == nullptr) {
         ZLOGE("proxy is nullptr, callback is %{public}s, appId: %{public}s, sessionId: %{public}s.",
             (callback == nullptr) ? "nullptr" : "not null", appId.c_str(), Anonymous::Change(sessionId).c_str());
@@ -279,7 +279,7 @@ int32_t ObjectStoreManager::RevokeSave(
 int32_t ObjectStoreManager::Retrieve(
     const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId)
 {
-    auto proxy = iface_cast<ObjectRetrieveCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectRetrieveCallbackProxyBroker>(callback);
     if (proxy == nullptr) {
         ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
         return INVALID_ARGUMENT;
@@ -416,7 +416,7 @@ void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, c
         return;
     }
     ZLOGD("ObjectStoreManager::RegisterRemoteCallback start");
-    auto proxy = iface_cast<ObjectChangeCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectChangeCallbackProxyBroker>(callback);
     if (proxy == nullptr) {
         ZLOGE("proxy is nullptr, callback is %{public}s, bundleName: %{public}s, sessionId: %{public}s, pid: "
               "%{public}d, tokenId: %{public}u.",
@@ -469,7 +469,7 @@ void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bun
             bundleName.c_str(), DistributedData::Anonymous::Change(sessionId).c_str());
         return;
     }
-    auto proxy = iface_cast<ObjectProgressCallbackProxy>(callback);
+    auto proxy = iface_cast<ObjectProgressCallbackProxyBroker>(callback);
     if (proxy == nullptr) {
         ZLOGE("proxy is nullptr, callback is %{public}s, bundleName: %{public}s, sessionId: %{public}s, pid: "
               "%{public}d, tokenId: %{public}u.",
@@ -478,7 +478,7 @@ void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bun
         return;
     }
     std::string objectKey = bundleName + sessionId;
-    sptr<ObjectProgressCallbackProxy> observer;
+    sptr<ObjectProgressCallbackProxyBroker> observer;
     processCallbacks_.Compute(
         tokenId, ([pid, &proxy, &objectKey, &observer](const uint32_t key, ProgressCallbackInfo &value) {
             if (value.pid != pid) {
@@ -706,7 +706,7 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, ObjectRecord>& d
 void ObjectStoreManager::NotifyAssetsRecvProgress(const std::string &objectKey, int32_t progress)
 {
     assetsRecvProgress_.InsertOrAssign(objectKey, progress);
-    std::list<sptr<ObjectProgressCallbackProxy>> observers;
+    std::list<sptr<ObjectProgressCallbackProxyBroker>> observers;
     bool flag = false;
     processCallbacks_.ForEach(
         [&objectKey, &observers, &flag](uint32_t tokenId, const ProgressCallbackInfo &value) {

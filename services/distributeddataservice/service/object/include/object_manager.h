@@ -132,7 +132,7 @@ private:
     static constexpr int64_t INTERVAL = 1;
     struct CallbackInfo {
         pid_t pid;
-        std::map<std::string, sptr<ObjectChangeCallbackProxy>> observers_;
+        std::map<std::string, sptr<ObjectChangeCallbackProxyBroker>> observers_;
         bool operator<(const CallbackInfo &it_) const
         {
             return pid < it_.pid;
@@ -140,7 +140,7 @@ private:
     };
     struct ProgressCallbackInfo {
         pid_t pid;
-        std::map<std::string, sptr<ObjectProgressCallbackProxy>> observers_;
+        std::map<std::string, sptr<ObjectProgressCallbackProxyBroker>> observers_;
         bool operator<(const ProgressCallbackInfo &it_) const
         {
             return pid < it_.pid;

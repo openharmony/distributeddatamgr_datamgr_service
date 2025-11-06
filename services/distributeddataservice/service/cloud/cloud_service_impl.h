@@ -135,7 +135,7 @@ private:
 
     struct SyncAgent {
         SyncAgent() = default;
-        sptr<CloudNotifierProxy> notifier_;
+        sptr<CloudNotifierProxyBroker> notifier_;
     };
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
