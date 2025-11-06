@@ -49,14 +49,14 @@ void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
     updatedEntries.insert(updatedEntries.end(), insertedEntries.begin(), insertedEntries.end());
     for (const auto &entry : updatedEntries) {
         std::string udKey(entry.key.begin(), entry.key.end());
-        UnifiedData data;
+        UnifiedData changedData;
         std::vector<Entry> entries = { entry };
-        auto status = DataHandler::UnmarshalEntries(udKey, entries, data);
+        auto status = DataHandler::UnmarshalEntries(udKey, entries, changedData);
         if (status != E_OK) {
             ZLOGE("Unmarshal runtime failed, key: %{public}s", udKey.c_str());
             continue;
         }
-        auto runtime = data.GetRuntime();
+        auto runtime = changedData.GetRuntime();
         if (runtime == nullptr) {
             ZLOGE("Runtime is null, key: %{public}s", udKey.c_str());
             continue;
@@ -65,6 +65,7 @@ void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
             auto service = UdmfServiceImpl::GetService();
             if (service == nullptr) {
                 ZLOGE("Get service null");
+                return;
             }
             service->HandleRemoteDelayData(udKey);
         }

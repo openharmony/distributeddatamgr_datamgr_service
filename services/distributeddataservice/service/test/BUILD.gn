@@ -2836,7 +2836,6 @@ group("unittest") {
   if (datamgr_service_udmf) {
     deps += [
       ":UdmfCheckerManagerTest",
-      ":UdmfDelayDataContainerTest",
       ":UdmfPreProcessUtilsMockTest",
       ":UdmfPreProcessUtilsTest",
       ":UdmfRunTimeStoreTest",
@@ -2845,7 +2844,6 @@ group("unittest") {
       ":UdmfServiceImplDbCorruptionMockTest",
       ":UdmfServiceStubMockTest",
       ":UdmfServiceStubTest",
-      ":UdmfStoreDataChangedObserverTest",
     ]
   }
 
