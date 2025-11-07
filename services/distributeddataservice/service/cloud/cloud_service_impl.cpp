@@ -1369,7 +1369,7 @@ int32_t CloudServiceImpl::InitNotifier(sptr<IRemoteObject> notifier)
         ZLOGE("no notifier.");
         return INVALID_ARGUMENT;
     }
-    auto notifierProxy = iface_cast<CloudNotifierProxy>(notifier);
+    auto notifierProxy = iface_cast<CloudNotifierProxyBroker>(notifier);
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     syncAgents_.Compute(tokenId, [notifierProxy](auto, SyncAgent &agent) {
         agent = SyncAgent();
@@ -1397,7 +1397,7 @@ Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
 void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
 {
     ZLOGI("tokenId=%{public}x, seqnum=%{public}u", tokenId, seqNum);
-    sptr<CloudNotifierProxy> notifier = nullptr;
+    sptr<CloudNotifierProxyBroker> notifier = nullptr;
     syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &syncAgent) {
         notifier = syncAgent.notifier_;
         return true;
