@@ -33,7 +33,7 @@ bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, Unifie
         ZLOGE("HandleDelayLoad failed, key is empty");
         return false;
     }
-    sptr<UdmfNotifierProxy> callback = nullptr;
+    sptr<IUdmfNotifier> callback = nullptr;
     std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
     {
         std::lock_guard<std::mutex> lock(dataLoadMutex_);
@@ -68,7 +68,7 @@ bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, Unifie
     return true;
 }
 
-void DelayDataPrepareContainer::RegisterDataLoadCallback(const std::string &key, sptr<UdmfNotifierProxy> callback)
+void DelayDataPrepareContainer::RegisterDataLoadCallback(const std::string &key, sptr<IUdmfNotifier> callback)
 {
     std::lock_guard<std::mutex> lock(dataLoadMutex_);
     if (key.empty() || callback == nullptr) {
@@ -86,7 +86,7 @@ int DelayDataPrepareContainer::QueryDataLoadCallbackSize()
 
 bool DelayDataPrepareContainer::ExecDataLoadCallback(const std::string &key, const DataLoadInfo &info)
 {
-    sptr<UdmfNotifierProxy> callback = nullptr;
+    sptr<IUdmfNotifier> callback = nullptr;
     {
         std::lock_guard<std::mutex> lock(dataLoadMutex_);
         auto it = dataLoadCallback_.find(key);
@@ -106,7 +106,7 @@ bool DelayDataPrepareContainer::ExecDataLoadCallback(const std::string &key, con
 
 void DelayDataPrepareContainer::ExecAllDataLoadCallback()
 {
-    std::map<std::string, sptr<UdmfNotifierProxy>> callbacks;
+    std::map<std::string, sptr<IUdmfNotifier>> callbacks;
     {
         std::lock_guard<std::mutex> lock(dataLoadMutex_);
         callbacks = dataLoadCallback_;
