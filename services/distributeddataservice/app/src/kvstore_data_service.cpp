@@ -276,12 +276,14 @@ std::pair<int32_t, std::string> KvStoreDataService::GetSelfBundleName()
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     HapTokenInfo tokenInfo;
     auto result = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (result != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, result);
-        return {Status::ERROR, ""};
+    if (result == RET_SUCCESS) {
+        return { Status::SUCCESS, tokenInfo.bundleName };
     }
-
-    return {Status::SUCCESS, tokenInfo.bundleName};
+    NativeTokenInfo nativeTokenInfo;
+    if (AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo) == RET_SUCCESS) {
+        return { Status::SUCCESS, nativeTokenInfo.processName };
+    }
+    return { Status::ERROR, "" };
 }
 
 Status KvStoreDataService::AppExit(pid_t uid, pid_t pid, uint32_t token, const AppId &appId)
