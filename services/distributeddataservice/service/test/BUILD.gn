@@ -101,6 +101,8 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
     "mock:distributeddata_mock_static",
+    "ohos_test:copy_ohos_test",
+    "testCloud:testCloud",
   ]
 
   cflags = [
@@ -2831,8 +2833,6 @@ group("unittest") {
       ":CloudDataMockTest",
       ":CloudServiceImplTest",
       ":CloudTest",
-      "ohos_test:copy_ohos_test",
-      "testCloud:testCloud",
     ]
   }
 
