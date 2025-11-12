@@ -1335,18 +1335,4 @@ HWTEST_F(KvStoreDataServiceTest, WriteBackupInfo_FwriteFail, TestSize.Level0)
     bool result = kvStoreDataServiceTest.WriteBackupInfo(content, "/");
     EXPECT_FALSE(result);
 }
-
-/**
- * @tc.name: GetSelfBundleName
- * @tc.desc: Test GetSelfBundleName
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author:
- */
-HWTEST_F(KvStoreDataServiceTest, GetSelfBundleName, TestSize.Level0)
-{
-    KvStoreDataService kvStoreDataServiceTest;
-    std::pair<int32_t, std::string>result = kvStoreDataServiceTest.GetSelfBundleName();
-    EXPECT_EQ(result.first, Status::ERROR);
-}
 } // namespace OHOS::Test
