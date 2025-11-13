@@ -98,7 +98,6 @@ private:
     int32_t RegisterObserver(const std::string &key);
     int32_t RegisterAllDataChangedObserver();
     int32_t UnRegisterObserver(const std::string &key);
-    bool IsSyncFinished(const std::string &key);
     int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);
     int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
     int32_t FillDelayUnifiedData(const UnifiedKey &key, UnifiedData &unifiedData);

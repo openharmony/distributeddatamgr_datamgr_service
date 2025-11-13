@@ -1448,7 +1448,7 @@ int32_t UdmfServiceImpl::RegisterObserver(const std::string &key)
         ZLOGE("SetRemotePullStartNotify failed, status:%{public}d, key:%{public}s", status, key.c_str());
         return status;
     }
-    return status;
+    return E_OK;
 }
 
 int32_t UdmfServiceImpl::RegisterAllDataChangedObserver()
@@ -1490,28 +1490,6 @@ int32_t UdmfServiceImpl::UnRegisterObserver(const std::string &key)
             status, key.c_str());
     }
     return status;
-}
-
-bool UdmfServiceImpl::IsSyncFinished(const std::string &key)
-{
-    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
-    if (store == nullptr) {
-        ZLOGE("Get store failed:%{public}s", key.c_str());
-        return false;
-    }
-    UnifiedData unifiedData;
-    int32_t res = store->Get(key, unifiedData);
-    if (res != E_OK) {
-        ZLOGE("Get data failed, res:%{public}d, key:%{public}s", res, key.c_str());
-        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), res);
-        return false;
-    }
-    auto runtime = unifiedData.GetRuntime();
-    if (runtime == nullptr) {
-        ZLOGE("Runtime is empty, key: %{public}s", key.c_str());
-        return false;
-    }
-    return true;
 }
 
 int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices)
