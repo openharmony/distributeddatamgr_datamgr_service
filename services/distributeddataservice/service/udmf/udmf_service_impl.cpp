@@ -1315,7 +1315,7 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         .intention = Intention::UD_INTENTION_DRAG,
         .tokenId = tokenId
     };
-    std::vector<std::string> devices = GetDevicesForDelayData(key);
+    std::vector<std::string> devices = GetDevicesForDelayData();
     if (devices.empty()) {
         ZLOGE("Devices is empty, key:%{public}s", key.c_str());
         return E_ERROR;
@@ -1324,9 +1324,9 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
     return E_OK;
 }
 
-std::vector<std::string> UdmfServiceImpl::GetDevicesForDelayData(const std::string &key)
+std::vector<std::string> UdmfServiceImpl::GetDevicesForDelayData()
 {
-    std::vector<std::string> devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo(key);
+    std::vector<std::string> devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo();
     std::vector<AppDistributedKv::DeviceInfo> devInfos = DmAdapter::GetInstance().GetRemoteDevices();
     std::vector<std::string> validDevices;
     for (const auto &devInfo : devInfos) {

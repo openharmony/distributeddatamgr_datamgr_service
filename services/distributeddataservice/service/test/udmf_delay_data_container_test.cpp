@@ -295,7 +295,7 @@ HWTEST_F(UdmfDelayDataContainerTest, SaveDelayDragDeviceInfo001, TestSize.Level1
     SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("");
     EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.empty());
     std::string deviceId = "deviceId";
-    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("", deviceId);
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(deviceId);
     EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.size() == 1);
     std::string deviceId1 = "deviceId1";
     SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(deviceId1);

@@ -1321,13 +1321,12 @@ HWTEST_F(UdmfServiceImplTest, UpdateDelayData001, TestSize.Level1)
 HWTEST_F(UdmfServiceImplTest, GetDevicesForDelayData001, TestSize.Level1)
 {
     UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.test.demo/ascdca";
-    auto devices = service.GetDevicesForDelayData(key);
+    auto devices = service.GetDevicesForDelayData();
     EXPECT_EQ(devices.size(), 0);
 
     std::string deviceId = "device_001";
-    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(key, deviceId);
-    devices = service.GetDevicesForDelayData(key);
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(deviceId);
+    devices = service.GetDevicesForDelayData();
     EXPECT_EQ(devices.size(), 0);
 }
 

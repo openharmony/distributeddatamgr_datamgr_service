@@ -101,7 +101,7 @@ private:
     int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);
     int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
     int32_t FillDelayUnifiedData(const UnifiedKey &key, UnifiedData &unifiedData);
-    std::vector<std::string> GetDevicesForDelayData(const std::string &key);
+    std::vector<std::string> GetDevicesForDelayData();
 
     class Factory {
     public:
