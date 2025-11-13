@@ -49,7 +49,7 @@ void KvStoreDataServiceMockTest::TearDown(void)
 
 /**
  * @tc.name: GetSelfBundleName_001
- * @tc.desc: Test GetSelfBundleName
+ * @tc.desc: Test GetSelfBundleName with get hap info success
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
@@ -68,7 +68,7 @@ HWTEST_F(KvStoreDataServiceMockTest, GetSelfBundleName_001, TestSize.Level0)
 
 /**
  * @tc.name: GetSelfBundleName_002
- * @tc.desc: Test GetSelfBundleName
+ * @tc.desc: Test GetSelfBundleName with get hap info failed and get process success
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
@@ -90,7 +90,7 @@ HWTEST_F(KvStoreDataServiceMockTest, GetSelfBundleName_002, TestSize.Level0)
 
 /**
  * @tc.name: GetSelfBundleName_003
- * @tc.desc: Test GetSelfBundleName
+ * @tc.desc: Test GetSelfBundleName with get hap info failed and get process failed
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
