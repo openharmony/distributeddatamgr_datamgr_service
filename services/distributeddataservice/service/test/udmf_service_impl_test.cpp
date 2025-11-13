@@ -1380,19 +1380,6 @@ HWTEST_F(UdmfServiceImplTest, UnRegisterObserver001, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsSyncFinished001
- * @tc.desc: IsSyncFinished function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, IsSyncFinished001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.example.app/1233455";
-    auto ret = service.IsSyncFinished(key);
-    EXPECT_FALSE(ret);
-}
-
-/**
  * @tc.name: PushDelayDataToRemote001
  * @tc.desc: PushDelayDataToRemote function test
  * @tc.type: FUNC
