@@ -16,7 +16,7 @@
 #include "app_pipe_mgr.h"
 
 #include <gtest/gtest.h>
-
+#include "kvstore_utils.h"
 #include "socket.h"
 
 namespace OHOS::Test {
