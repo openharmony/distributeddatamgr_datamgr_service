@@ -16,14 +16,14 @@
 #define LOG_TAG "DeviceManagerAdapter"
 
 #include "device_manager_adapter.h"
-
+#include "kvstore_utils.h"
 #include "log_print.h"
 #include "serializable/serializable.h"
-#include "utils/anonymous.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::DistributedHardware;
 using namespace OHOS::AppDistributedKv;
+using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 __attribute__((used)) static bool g_delegateInit =
@@ -173,8 +173,8 @@ void DeviceManagerAdapter::Online(const DmDeviceInfo &info)
         return;
     }
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
-        Anonymous::Change(dvInfo.uuid).c_str(), Anonymous::Change(dvInfo.deviceName).c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
+        dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_ONLINE);
     syncTask_.Insert(dvInfo.uuid, dvInfo.uuid);
     auto observers = GetObservers();
@@ -217,7 +217,7 @@ void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
     if (uuid == CLOUD_DEVICE_UUID) {
         return;
     }
-    ZLOGI("[NotifyReadyEvent] uuid:%{public}s", Anonymous::Change(uuid).c_str());
+    ZLOGI("[NotifyReadyEvent] uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
     std::string event = R"({"extra": {"deviceId":")" + uuid + R"(" } })";
     DeviceManager::GetInstance().NotifyEvent(PKG_NAME, DmNotifyEvent::DM_NOTIFY_EVENT_ONDEVICEREADY, event);
 }
@@ -242,8 +242,8 @@ void DeviceManagerAdapter::Offline(const DmDeviceInfo &info)
     }
     syncTask_.Erase(dvInfo.uuid);
     ZLOGI("[offline] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
-        Anonymous::Change(dvInfo.uuid).c_str(), Anonymous::Change(dvInfo.deviceName).c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
+        dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     SaveDeviceInfo(dvInfo, DeviceChangeType::DEVICE_OFFLINE);
     auto task = [this, dvInfo]() {
         observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
@@ -264,8 +264,8 @@ void DeviceManagerAdapter::OnChanged(const DmDeviceInfo &info)
         return;
     }
     ZLOGI("[OnChanged] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d osType:%{public}d",
-        Anonymous::Change(dvInfo.uuid).c_str(), Anonymous::Change(dvInfo.deviceName).c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
+        dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
 }
 
 void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
@@ -277,8 +277,8 @@ void DeviceManagerAdapter::OnReady(const DmDeviceInfo &info)
     }
     readyDevices_.InsertOrAssign(dvInfo.uuid, std::make_pair(DeviceState::DEVICE_ONREADY, dvInfo));
     ZLOGI("[OnReady] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
-        Anonymous::Change(dvInfo.uuid).c_str(), Anonymous::Change(dvInfo.deviceName).c_str(), dvInfo.deviceType,
-        static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
+        KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
+        dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);
     auto task = [this, dvInfo]() {
         observers_.ForEachCopies([&dvInfo](const auto &key, auto &value) {
             if (value != nullptr) {
@@ -309,7 +309,7 @@ bool DeviceManagerAdapter::GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo 
     }
     DeviceExtraInfo deviceExtraInfo;
     if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
-        ZLOGE("Unmarshall extraData failed. uuid:%{public}s", Anonymous::Change(uuid).c_str());
+        ZLOGE("Unmarshall extraData failed. uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
         return false;
     }
     dvInfo = { uuid, udid, networkId, std::string(dmInfo.deviceName), dmInfo.deviceTypeId, deviceExtraInfo.OS_TYPE,
@@ -380,7 +380,7 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetRemoteDevices()
         auto udid = GetUdidByNetworkId(networkId);
         DeviceExtraInfo deviceExtraInfo;
         if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
-            ZLOGE("Unmarshall extraData failed. uuid:%{public}s", Anonymous::Change(uuid).c_str());
+            ZLOGE("Unmarshall extraData failed. uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
             continue;
         }
         DeviceInfo dvInfo = { std::move(uuid), std::move(udid), std::move(networkId),
@@ -446,7 +446,7 @@ DeviceInfo DeviceManagerAdapter::GetDeviceInfoFromCache(const std::string &id)
         deviceInfos_.Get(id, dvInfo);
     }
     if (dvInfo.uuid.empty()) {
-        ZLOGE("invalid id:%{public}s", Anonymous::Change(id).c_str());
+        ZLOGE("invalid id:%{public}s", KvStoreUtils::ToBeAnonymous(id).c_str());
     }
     return dvInfo;
 }
@@ -463,7 +463,7 @@ void DeviceManagerAdapter::InitDeviceInfo(bool onlyCache)
     for (const auto &info : dvInfos) {
         if (info.networkId.empty() || info.uuid.empty() || info.udid.empty()) {
             ZLOGE("networkId:%{public}s, uuid:%{public}d, udid:%{public}d",
-                Anonymous::Change(info.networkId).c_str(), info.uuid.empty(), info.udid.empty());
+                KvStoreUtils::ToBeAnonymous(info.networkId).c_str(), info.uuid.empty(), info.udid.empty());
             continue;
         }
         deviceInfos_.Set(info.networkId, info);
@@ -495,12 +495,12 @@ DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
     }
     DeviceExtraInfo deviceExtraInfo;
     if (!DistributedData::Serializable::Unmarshall(info.extraData, deviceExtraInfo)) {
-        ZLOGE("Unmarshall extraData failed. uuid:%{public}s", Anonymous::Change(uuid).c_str());
+        ZLOGE("Unmarshall extraData failed. uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
         return {};
     }
     ZLOGI("[LocalDevice] uuid:%{public}s, name:%{public}s, type:%{public}d, osType:%{public}d",
-        Anonymous::Change(uuid).c_str(), Anonymous::Change(info.deviceName).c_str(), info.deviceTypeId,
-        deviceExtraInfo.OS_TYPE);
+        KvStoreUtils::ToBeAnonymous(uuid).c_str(), KvStoreUtils::ToBeAnonymous(info.deviceName).c_str(),
+        info.deviceTypeId, deviceExtraInfo.OS_TYPE);
     return { std::move(uuid), std::move(udid), std::move(networkId), std::string(info.deviceName), info.deviceTypeId,
         deviceExtraInfo.OS_TYPE, static_cast<int32_t>(info.authForm) };
 }
@@ -520,7 +520,7 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
     std::string uuid;
     auto ret = DeviceManager::GetInstance().GetUuidByNetworkId(PKG_NAME, networkId, uuid);
     if (ret != DM_OK || uuid.empty()) {
-        ZLOGE("failed, result:%{public}d, networkId:%{public}s", ret, Anonymous::Change(networkId).c_str());
+        ZLOGE("failed, result:%{public}d, networkId:%{public}s", ret, KvStoreUtils::ToBeAnonymous(networkId).c_str());
         return "";
     }
     dvInfo.uuid = uuid;
@@ -544,7 +544,7 @@ std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkI
     std::string udid;
     auto ret = DeviceManager::GetInstance().GetUdidByNetworkId(PKG_NAME, networkId, udid);
     if (ret != DM_OK || udid.empty()) {
-        ZLOGE("failed, result:%{public}d, networkId:%{public}s", ret, Anonymous::Change(networkId).c_str());
+        ZLOGE("failed, result:%{public}d, networkId:%{public}s", ret, KvStoreUtils::ToBeAnonymous(networkId).c_str());
         return "";
     }
     return udid;
