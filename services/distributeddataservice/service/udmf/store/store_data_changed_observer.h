@@ -39,7 +39,7 @@ public:
     }
 
     enum ObserverType : uint32_t {
-        RUNTIME,
+        RUNTIME = 0,
     };
 };
 } // namespace UDMF

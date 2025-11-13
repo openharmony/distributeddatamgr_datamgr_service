@@ -686,6 +686,10 @@ bool RuntimeStore::UnRegisterDataChangedObserver(const std::string &key)
     std::lock_guard<std::mutex> lock(observerMutex_);
     auto it = observers_.find(key);
     if (it != observers_.end()) {
+        if (it->second == nullptr) {
+            observers_.erase(key);
+            return true;
+        }
         auto status = kvStore_->UnRegisterObserver(it->second);
         if (status != DBStatus::OK) {
             ZLOGE("Unregister observer failed, status: %{public}d.", static_cast<int>(status));
@@ -701,6 +705,9 @@ bool RuntimeStore::UnRegisterAllObserver()
 {
     std::lock_guard<std::mutex> lock(observerMutex_);
     for (const auto &[key, observer] : observers_) {
+        if (observer == nullptr) {
+            continue;
+        }
         auto status = kvStore_->UnRegisterObserver(observer);
         if (status != DBStatus::OK) {
             ZLOGE("UnRegisterAllObserver failed for key %{public}s, status: %{public}d.",

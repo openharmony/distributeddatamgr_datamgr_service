@@ -303,7 +303,7 @@ HWTEST_F(UdmfDelayDataContainerTest, SaveDelayDragDeviceInfo001, TestSize.Level1
 
     auto devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo();
     EXPECT_TRUE(devices.size() == 2);
-    EXPECT_EQ(devices[0], deviceId1);
+    EXPECT_EQ(devices[0], deviceId);
     SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.clear();
 }
 } // namespace DistributedDataTest

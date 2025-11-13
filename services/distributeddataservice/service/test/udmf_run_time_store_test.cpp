@@ -778,17 +778,25 @@ HWTEST_F(UdmfRunTimeStoreTest, RegisterDataChangedObserver001, TestSize.Level1)
     EXPECT_EQ(ret, E_ERROR);
     std::string key2 = "udmf://drag/com.example.app/555555";
     ret = store->RegisterDataChangedObserver(key2, 1);
-    EXPECT_EQ(ret, E_OK);
-    EXPECT_TRUE(store->observers_.size() == 2);
+    EXPECT_EQ(ret, E_ERROR);
+    EXPECT_TRUE(store->observers_.size() == 1);
 
     auto result = store->UnRegisterDataChangedObserver(key1);
     EXPECT_TRUE(result);
-    EXPECT_TRUE(store->observers_.size() == 1);
+    EXPECT_TRUE(store->observers_.size() == 0);
 
+    std::string key3 = "udmf://drag/com.example.app/666666";
+    ret = store->RegisterDataChangedObserver(key3, 0);
+    EXPECT_EQ(ret, E_OK);
+    std::string key4 = "udmf://drag/com.example.app/777777";
+    store->observers_.insert_or_assign(key4, nullptr);
     result = store->UnRegisterAllObserver();
     EXPECT_TRUE(store->observers_.empty());
     result = store->UnRegisterDataChangedObserver("invalid key");
     EXPECT_FALSE(result);
+    store->observers_.insert_or_assign(key4, nullptr);
+    result = store->UnRegisterDataChangedObserver(key4);
+    EXPECT_TRUE(result);
 }
 
 /**
