@@ -53,6 +53,7 @@ RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
 RuntimeStore::~RuntimeStore()
 {
     ZLOGD("Destruct runtimeStore: %{public}s.", Anonymous::Change(storeId_).c_str());
+    UnRegisterAllObserver();
 }
 
 Status RuntimeStore::PutLocal(const std::string &key, const std::string &value)
@@ -573,7 +574,6 @@ void RuntimeStore::ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate)
     if (delegate == nullptr) {
         return;
     }
-    UnRegisterAllObserver();
     auto retStatus = delegateManager_->CloseKvStore(delegate);
     if (retStatus != DBStatus::OK) {
         ZLOGE("CloseKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
