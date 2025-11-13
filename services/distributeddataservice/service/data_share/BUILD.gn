@@ -118,6 +118,7 @@ ohos_source_set("data_share_service") {
   ]
 
   external_deps = [
+    "ability_base:configuration",
     "ability_base:want",
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:dataobs_manager",
@@ -142,6 +143,7 @@ ohos_source_set("data_share_service") {
     "qos_manager:qos",
     "relational_store:native_rdb",
     "relational_store:rdb_data_share_adapter",
+    "resource_management:global_resmgr",
     "samgr:samgr_proxy",
     "time_service:time_client",
   ]
