@@ -292,29 +292,19 @@ HWTEST_F(UdmfDelayDataContainerTest, QueryBlockDelayData001, TestSize.Level1)
 HWTEST_F(UdmfDelayDataContainerTest, SaveDelayDragDeviceInfo001, TestSize.Level1)
 {
     SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.clear();
-    SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.clear();
-    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("", "");
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("");
     EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.empty());
-    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.empty());
     std::string deviceId = "deviceId";
     SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("", deviceId);
     EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.size() == 1);
-    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.empty());
-    std::string key = "deviceKey";
     std::string deviceId1 = "deviceId1";
-    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(key, deviceId1);
-    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.size() == 1);
-    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.size() == 1);
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(deviceId1);
+    EXPECT_TRUE(SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.size() == 2);
 
-    auto devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo(key);
-    EXPECT_TRUE(devices.size() == 1);
+    auto devices = SyncedDeviceContainer::GetInstance().QueryDeviceInfo();
+    EXPECT_TRUE(devices.size() == 2);
     EXPECT_EQ(devices[0], deviceId1);
-
-    auto devices1 = SyncedDeviceContainer::GetInstance().QueryDeviceInfo("otherKey");
-    EXPECT_TRUE(devices1.size() == 1);
-    EXPECT_EQ(devices1[0], deviceId);
     SyncedDeviceContainer::GetInstance().pulledDeviceInfo_.clear();
-    SyncedDeviceContainer::GetInstance().receivedDeviceInfo_.clear();
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
