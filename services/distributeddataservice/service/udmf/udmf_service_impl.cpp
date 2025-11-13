@@ -1368,6 +1368,12 @@ int32_t UdmfServiceImpl::GetDataIfAvailable(const std::string &key, const DataLo
         std::string localDeviceId = PreProcessUtils::GetLocalDeviceId();
         if (runtime != nullptr && runtime->deviceId != localDeviceId) {
             ZLOGI("Wait delay data from another device, key:%{public}s", key.c_str());
+            auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+            if (store == nullptr) {
+                ZLOGE("Get store failed:%{public}s", key.c_str());
+                return E_DB_ERROR;
+            }
+            store->RegisterDataChangedObserver(query.key, ObserverFactory::ObserverType::RUNTIME);
             return E_OK;
         }
         return E_ERROR;

@@ -22,7 +22,6 @@ namespace OHOS::UDMF {
 constexpr const char *UD_KEY_SEPARATOR = "/";
 constexpr const char *UD_KEY_ENTRY_SEPARATOR = "#";
 constexpr const char *UD_KEY_PROPERTIES_SEPARATOR = "#properties";
-constexpr const char *UD_KEY_ACCEPTABLE_INFO_SEPARATOR = "#acceptableInfo";
 
 Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries)
 {
