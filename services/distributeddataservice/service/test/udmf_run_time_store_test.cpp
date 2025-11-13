@@ -832,23 +832,6 @@ HWTEST_F(UdmfRunTimeStoreTest, PutDelayData002, TestSize.Level1)
 }
 
 /**
-* @tc.name: PutDataLoadInfo001
-* @tc.desc: Normal testcase of PutDataLoadInfo
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfRunTimeStoreTest, PutDataLoadInfo001, TestSize.Level1)
-{
-    auto store = std::make_shared<RuntimeStore>(STORE_ID);
-    store->Init();
-    DataLoadInfo info;
-    info.sequenceKey = "111";
-    info.recordCount = 10;
-    auto ret = store->PutDataLoadInfo(info);
-    EXPECT_EQ(ret, E_OK);
-}
-
-/**
 * @tc.name: PushSync001
 * @tc.desc: Normal testcase of PushSync
 * @tc.type: FUNC

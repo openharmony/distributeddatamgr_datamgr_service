@@ -1393,54 +1393,6 @@ HWTEST_F(UdmfServiceImplTest, IsSyncFinished001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SaveAcceptableInfo001
- * @tc.desc: SaveAcceptableInfo function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, SaveAcceptableInfo001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.example.app/1233455";
-    DataLoadInfo info;
-    auto status = service.SaveAcceptableInfo(key, info);
-    EXPECT_EQ(status, E_NO_PERMISSION);
-}
-
-/**
- * @tc.name: PushAcceptableInfo001
- * @tc.desc: PushAcceptableInfo function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, PushAcceptableInfo001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.example.app/1233455";
-    QueryOption query;
-    query.key = key;
-    query.intention = Intention::UD_INTENTION_DRAG;
-    std::vector<std::string> deviceIds = { "device_001", "device_002" };
-    auto status = service.PushAcceptableInfo(query, deviceIds);
-    EXPECT_EQ(status, E_NO_PERMISSION);
-}
-
-/**
- * @tc.name: PushAcceptableInfo002
- * @tc.desc: PushAcceptableInfo function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, PushAcceptableInfo002, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://DataHub/com.example.app/1233455";
-    QueryOption query;
-    query.key = key;
-    query.intention = Intention::UD_INTENTION_DRAG;
-    std::vector<std::string> deviceIds = { "device_001", "device_002" };
-    auto status = service.PushAcceptableInfo(query, deviceIds);
-    EXPECT_EQ(status, E_INVALID_PARAMETERS);
-}
-
-/**
  * @tc.name: PushDelayDataToRemote001
  * @tc.desc: PushDelayDataToRemote function test
  * @tc.type: FUNC

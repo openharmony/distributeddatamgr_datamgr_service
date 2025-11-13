@@ -49,32 +49,6 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     return BuildEntries(unifiedData.GetRecords(), unifiedKey, entries);
 }
 
-Status DataHandler::MarshalDataLoadEntries(const DataLoadInfo &info, std::vector<Entry> &entries)
-{
-    std::string acceptableKey = info.udKey + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
-    std::vector<uint8_t> acceptableBytes;
-    auto acceptableTlv = TLVObject(acceptableBytes);
-    if (!TLVUtil::Writing(info, acceptableTlv, TAG::TAG_DATA_LOAD_INFO)) {
-        ZLOGE("Acceptable info marshalling failed:%{public}s", acceptableKey.c_str());
-        return E_WRITE_PARCEL_ERROR;
-    }
-    entries.emplace_back(Entry {
-        std::vector<uint8_t>(acceptableKey.begin(), acceptableKey.end()), std::move(acceptableBytes)
-    });
-    return E_OK;
-}
-
-Status DataHandler::UnmarshalDataLoadEntries(const Entry &entry, DataLoadInfo &info)
-{
-    std::vector<uint8_t> value = std::move(entry.value);
-    auto data = TLVObject(value);
-    if (!TLVUtil::ReadTlv(info, data, TAG::TAG_DATA_LOAD_INFO)) {
-        ZLOGE("Unmarshall data load info failed.");
-        return E_READ_PARCEL_ERROR;
-    }
-    return E_OK;
-}
-
 Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries,
     UnifiedData &unifiedData)
 {

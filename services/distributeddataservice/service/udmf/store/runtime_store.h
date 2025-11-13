@@ -49,7 +49,6 @@ public:
     Status RegisterDataChangedObserver(const std::string &key, uint32_t type) override;
     bool UnRegisterDataChangedObserver(const std::string &key) override;
     Status PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo &info) override;
-    Status PutDataLoadInfo(const DataLoadInfo &info) override;
     Status PushSync(const std::vector<std::string> &devices) override;
     bool Init() override;
 

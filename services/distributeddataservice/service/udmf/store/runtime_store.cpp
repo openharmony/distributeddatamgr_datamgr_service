@@ -711,18 +711,6 @@ bool RuntimeStore::UnRegisterAllObserver()
     return true;
 }
 
-Status RuntimeStore::PutDataLoadInfo(const DataLoadInfo &dataLoadInfo)
-{
-    UpdateTime();
-    std::vector<Entry> entries;
-    auto status = DataHandler::MarshalDataLoadEntries(dataLoadInfo, entries);
-    if (status != E_OK) {
-        ZLOGE("PutDataLoadInfo failed. status: %{public}d", status);
-        return status;
-    }
-    return PutEntries(entries);
-}
-
 Status RuntimeStore::PushSync(const std::vector<std::string> &devices)
 {
     UpdateTime();
@@ -731,12 +719,6 @@ Status RuntimeStore::PushSync(const std::vector<std::string> &devices)
         return E_INVALID_PARAMETERS;
     }
     std::vector<std::string> syncDevices = DmAdapter::ToUUID(devices);
-    DevNameMap deviceNameMap;
-    for (const auto &device : devices) {
-        std::string deviceUuid = DmAdapter::GetInstance().ToUUID(device);
-        std::string deviceName = DmAdapter::GetInstance().GetDeviceInfo(device).deviceName;
-        deviceNameMap.emplace(deviceUuid, deviceName);
-    }
     auto onComplete = [this](const std::map<std::string, DBStatus> &devsSyncStatus) {
         DBStatus dbStatus = DBStatus::OK;
         for (const auto &[originDeviceId, status] : devsSyncStatus) {  // only one device.

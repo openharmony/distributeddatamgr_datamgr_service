@@ -70,7 +70,6 @@ constexpr const char *DEVICE_PHONE_TAG = "phone";
 constexpr const char *DEVICE_DEFAULT_TAG = "default";
 constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
 constexpr uint32_t FOUNDATION_UID = 5523;
-constexpr const char *UD_KEY_ACCEPTABLE_INFO_SEPARATOR = "#acceptableInfo";
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -943,14 +942,10 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
         return E_INVALID_PARAMETERS;
     }
     std::lock_guard<std::mutex> lock(mutex_);
-    processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
-    processInfo.srcDevName = "Local";
     auto it = asyncProcessInfoMap_.find(processInfo.businessUdKey);
     if (it == asyncProcessInfoMap_.end()) {
-        if (!IsSyncFinished(processInfo.businessUdKey)) {
-            processInfo.syncStatus = AsyncTaskStatus::ASYNC_RUNNING;
-            processInfo.srcDevName = "Remote";
-        }
+        processInfo.syncStatus = AsyncTaskStatus::ASYNC_SUCCESS;
+        processInfo.srcDevName = "Local";
         return E_OK;
     }
     processInfo.syncStatus = it->second.syncStatus;
@@ -1232,8 +1227,6 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     if (!CheckDragParams(udKey)) {
         return E_INVALID_PARAMETERS;
     }
-    std::string observerKey = key + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
-    UnRegisterObserver(observerKey);
     DelayGetDataInfo getDataInfo;
     BlockDelayData blockData;
     auto isDataLoading = DelayDataAcquireContainer::GetInstance().QueryDelayGetDataInfo(key, getDataInfo);
@@ -1449,14 +1442,6 @@ int32_t UdmfServiceImpl::RegisterObserver(const std::string &key)
         ZLOGE("SetRemotePullStartNotify failed, status:%{public}d, key:%{public}s", status, key.c_str());
         return status;
     }
-
-    // register acceptable info observer
-    std::string acceptableInfoKey = key + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
-    status = store->RegisterDataChangedObserver(acceptableInfoKey, ObserverFactory::ObserverType::ACCEPTABLE_INFO);
-    if (status != E_OK) {
-        ZLOGE("RegisterDataChangedObserver failed, status:%{public}d, key:%{public}s",
-            status, key.c_str());
-    }
     return status;
 }
 
@@ -1474,7 +1459,6 @@ int32_t UdmfServiceImpl::RegisterAllDataChangedObserver()
         if (status != E_OK) {
             ZLOGE("RegisterDataChangedObserver failed, status:%{public}d, key:%{public}s",
                 status, key.c_str());
-            return status;
         }
     }
     if (DelayDataPrepareContainer::GetInstance().QueryDataLoadCallbackSize() > 0) {
@@ -1522,68 +1506,6 @@ bool UdmfServiceImpl::IsSyncFinished(const std::string &key)
         return false;
     }
     return true;
-}
-
-int32_t UdmfServiceImpl::SaveAcceptableInfo(const std::string &key, DataLoadInfo &info)
-{
-    UnifiedKey udKey(key);
-    if (!CheckDragParams(udKey)) {
-        return E_INVALID_PARAMETERS;
-    }
-    QueryOption query;
-    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    query.key = key;
-    if (!IsPermissionInCache(query)) {
-        ZLOGE("No permission");
-        return E_NO_PERMISSION;
-    }
-    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
-    if (store == nullptr) {
-        ZLOGE("Get store failed:%{public}s", key.c_str());
-        return E_DB_ERROR;
-    }
-    info.deviceId = PreProcessUtils::GetRealLocalDeviceId();
-    info.udKey = key;
-    int32_t status = store->PutDataLoadInfo(info);
-    if (status != E_OK) {
-        ZLOGE("Put data load info failed, status:%{public}d, key:%{public}s", status, key.c_str());
-        HandleDbError(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), status);
-        return E_DB_ERROR;
-    }
-    return E_OK;
-}
-
-int32_t UdmfServiceImpl::PushAcceptableInfo(
-    const QueryOption &query, const std::vector<std::string> &devices)
-{
-    UnifiedKey udKey(query.key);
-    if (!CheckDragParams(udKey)) {
-        return E_INVALID_PARAMETERS;
-    }
-    if (!UTILS::IsTokenNative(query.tokenId) ||
-        !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(query.tokenId)) {
-        ZLOGE("Tokenid permission verification failed!");
-        return E_NO_PERMISSION;
-    }
-    std::string processName;
-    if (!PreProcessUtils::GetNativeProcessNameByToken(query.tokenId, processName)) {
-        ZLOGE("GetNativeProcessNameByToken is faild");
-        return E_ERROR;
-    }
-    if (find(DRAG_AUTHORIZED_PROCESSES, std::end(DRAG_AUTHORIZED_PROCESSES), processName) ==
-        std::end(DRAG_AUTHORIZED_PROCESSES)) {
-        ZLOGE("Process:%{public}s lacks permission for intention:drag", processName.c_str());
-        return E_NO_PERMISSION;
-    }
-
-    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
-    if (store == nullptr) {
-        ZLOGE("Get store failed:%{public}s", query.key.c_str());
-        return E_DB_ERROR;
-    }
-    // Watch unified data from another device.
-    store->RegisterDataChangedObserver(query.key, ObserverFactory::ObserverType::RUNTIME);
-    return PushDelayDataToRemote(query, devices);
 }
 
 int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices)
