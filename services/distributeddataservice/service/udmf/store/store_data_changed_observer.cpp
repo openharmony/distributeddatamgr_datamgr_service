@@ -50,6 +50,7 @@ void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
                 return;
             }
             service->HandleRemoteDelayData(udKey);
+            return;
         }
     }
 }
