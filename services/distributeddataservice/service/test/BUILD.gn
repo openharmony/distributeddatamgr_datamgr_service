@@ -1108,6 +1108,8 @@ ohos_unittest("ObjectSnapshotTest") {
 ohos_unittest("MetaDataTest") {
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/adapter/account/src/account_delegate_default_impl.cpp",
+    "${data_service_path}/adapter/account/src/account_delegate_impl.cpp",
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
     "meta_data_test.cpp",
   ]
@@ -1147,7 +1149,6 @@ ohos_unittest("MetaDataTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
