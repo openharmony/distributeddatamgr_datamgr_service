@@ -13,123 +13,109 @@
  * limitations under the License.
  */
 
-#include "relational_cursor.h"
+#include "relational_store_cursor.h"
+#include "rdb_types.h"
+#include "result_set.h"
+#include <cstdint>
 
 namespace OHOS::DistributedRdb {
-using namespace NativeRdb;
-RelationalStoreCursor::RelationalStoreCursor(std::shared_ptr<OHOS::NativeRdb::ResultSet> resultSet,
-    bool isNeedTerminator) : resultSet_(std::move(resultSet)), isNeedTerminator_(isNeedTerminator)
+RelationalStoreCursor::RelationalStoreCursor(std::shared_ptr<NativeRdb::ResultSet> resultSet)
+    : resultSet_(resultSet)
 {
 }
 
-int32_t RelationalStoreCursor::GetColumnCount(int &count)  
+RelationalStoreCursor::~RelationalStoreCursor()
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetColumnCount(count);
+    resultSet_->Close();
 }
 
-int32_t RelationalStoreCursor::GetColumnType(int32_t columnIndex, ColumnType &columnType)
+int32_t RelationalStoreCursor::GetColumnNames(std::vector<std::string> &names) const
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
+    auto errCode = resultSet_->GetAllColumnNames(names);
+    if (errCode != NativeRdb::E_OK) {
+        return errCode;
     }
-    return resultSet_->GetColumnType(columnIndex, columnType);
+    return NativeRdb::E_OK;
 }
 
-int32_t RelationalStoreCursor::GetColumnIndex(const std::string &name, int &columnIndex)
+int32_t RelationalStoreCursor::GetColumnName(int32_t col, std::string &name) const
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetColumnIndex(name, columnIndex);
+    return resultSet_->GetColumnName(col, name);
 }
 
-int32_t RelationalStoreCursor::GetColumnName(int32_t columnIndex, std::string &columnName)
+int32_t RelationalStoreCursor::GetColumnType(int32_t col) const
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
+    ColumnType columnType = ColumnType::TYPE_NULL;
+    int32_t errCode = resultSet_->GetColumnType(col, columnType);
+    if (errCode != NativeRdb::E_OK) {
+        columnType = ColumnType::TYPE_NULL;
     }
-    return resultSet_->GetColumnName(columnIndex, columnName);
+    return static_cast<int32_t>(columnType);
 }
 
-int32_t RelationalStoreCursor::GetRowCount(int &count)
+int32_t RelationalStoreCursor::GetCount() const
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetRowCount(count);
+    int32_t maxCount = 0;
+    resultSet_->GetRowCount(maxCount);
+    return maxCount;
 }
 
-int32_t RelationalStoreCursor::GoToNextRow()
+int32_t RelationalStoreCursor::MoveToFirst()
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GoToNextRow();
+    return resultSet_->GoToFirstRow() ? NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
-int32_t RelationalStoreCursor::GetSize(int columnIndex, size_t &size)
+int32_t RelationalStoreCursor::MoveToNext()
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetSize(columnIndex, size);
+    return resultSet_->GoToNextRow() ? NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
-int32_t RelationalStoreCursor::GetText(int columnIndex, std::string &value)
+int32_t RelationalStoreCursor::MoveToPrev()
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetString(columnIndex, value);
+    return resultSet_->GoToPreviousRow() ? NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
-int32_t RelationalStoreCursor::GetInt64(int columnIndex, int64_t &value)
+int32_t RelationalStoreCursor::GetEntry(DistributedData::VBucket &entry)
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetLong(columnIndex, value);
+    return GetRow(entry);
 }
 
-int32_t RelationalStoreCursor::GetReal(int columnIndex, double &value)
+int32_t RelationalStoreCursor::GetRow(DistributedData::VBucket &data)
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetDouble(columnIndex, value);
+    NativeRdb::RowEntity rowEntity;
+    auto ret = resultSet_->GetRow(rowEntity);
+    std::map<std::string, NativeRdb::ValueObject> values = rowEntity.Get();
+    data = ValueProxy::Convert(std::move(values));
+    return ret == NativeRdb::E_OK ? NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
-int32_t RelationalStoreCursor::GetBlob(int32_t columnIndex, std::vector<uint8_t> &vec)
+int32_t RelationalStoreCursor::Get(int32_t col, DistributedData::Value &value)
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetBlob(columnIndex, vec);
+    NativeRdb::ValueObject valueObj;
+    auto ret = resultSet_->Get(col, valueObj);
+    value = ValueProxy::Convert(std::move(valueObj));
+    return ret == NativeRdb::E_OK ? NativeRdb::E_OK : NativeRdb::E_ERROR;
 }
 
-int32_t RelationalStoreCursor::GetAsset(int32_t columnIndex, NativeRdb::AssetValue &value)
+int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Value &value)
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
+    int32_t index = -1;
+    auto ret = resultSet_->GetColumnIndex(col, index);
+    if (ret != NativeRdb::E_OK) {
+        return NativeRdb::E_ERROR;
     }
-    return resultSet_->GetAsset(columnIndex, value);
+    return Get(col, value);
 }
 
-int32_t RelationalStoreCursor::GetAssets(int32_t columnIndex, std::vector<NativeRdb::AssetValue> &assets)
+int32_t RelationalStoreCursor::Close()
 {
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
-    return resultSet_->GetAssets(columnIndex, assets);
-}
-
-int32_t RelationalStoreCursor::Destroy()
-{
-    if (resultSet_ == nullptr) {
-        return GeneralError::E_ERROR;
-    }
     return resultSet_->Close();
+}
+
+bool RelationalStoreCursor::IsEnd()
+{
+    bool isEnd;
+    resultSet_->IsEnded(isEnd);
+    return isEnd;
+}
 }

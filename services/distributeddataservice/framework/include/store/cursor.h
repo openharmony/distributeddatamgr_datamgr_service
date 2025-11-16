@@ -37,7 +37,7 @@ public:
 
     virtual int32_t MoveToNext() = 0;
 
-    virtual int32_t MoveToPrev() = 0; 
+    virtual int32_t MoveToPrev() = 0;
 
     virtual int32_t GetEntry(VBucket &entry) = 0;
 
