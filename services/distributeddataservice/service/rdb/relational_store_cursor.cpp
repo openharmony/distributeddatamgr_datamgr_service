@@ -14,11 +14,14 @@
  */
 
 #include "relational_store_cursor.h"
+#include "log_print.h"
+#include "rdb_errno.h"
 #include "rdb_types.h"
 #include "result_set.h"
 #include <cstdint>
 
 namespace OHOS::DistributedRdb {
+using namespace OHOS::DistributedData;
 RelationalStoreCursor::RelationalStoreCursor(std::shared_ptr<NativeRdb::ResultSet> resultSet)
     : resultSet_(resultSet)
 {
@@ -26,53 +29,106 @@ RelationalStoreCursor::RelationalStoreCursor(std::shared_ptr<NativeRdb::ResultSe
 
 RelationalStoreCursor::~RelationalStoreCursor()
 {
-    resultSet_->Close();
+    if (resultSet_ == nullptr) {
+        return;
+    }
+    resultSet_ = nullptr;
+}
+
+int32_t RelationalStoreCursor::ConvertNativeRdbStatus(int32_t status) const
+{
+    switch (status) {
+        case NativeRdb::E_OK:
+            return GeneralError::E_OK;
+        case NativeRdb::E_SQLITE_BUSY:
+        case NativeRdb::E_DATABASE_BUSY:
+        case NativeRdb::E_SQLITE_LOCKED:
+            return GeneralError::E_BUSY;
+        case NativeRdb::E_INVALID_ARGS:
+        case NativeRdb::E_INVALID_ARGS_NEW:
+            return GeneralError::E_INVALID_ARGS;
+        case NativeRdb::E_ALREADY_CLOSED:
+            return GeneralError::E_ALREADY_CLOSED;
+        case NativeRdb::E_SQLITE_CORRUPT:
+            return GeneralError::E_DB_CORRUPT;
+        default:
+            break;
+    }
+    return GeneralError::E_ERROR;
 }
 
 int32_t RelationalStoreCursor::GetColumnNames(std::vector<std::string> &names) const
 {
-    auto errCode = resultSet_->GetAllColumnNames(names);
-    if (errCode != NativeRdb::E_OK) {
-        return errCode;
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
     }
-    return NativeRdb::E_OK;
+    auto ret = resultSet_->GetAllColumnNames(names);
+    return ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetColumnName(int32_t col, std::string &name) const
 {
-    return resultSet_->GetColumnName(col, name);
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto ret = resultSet_->GetColumnName(col, name);
+    return ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetColumnType(int32_t col) const
 {
-    ColumnType columnType = ColumnType::TYPE_NULL;
-    int32_t errCode = resultSet_->GetColumnType(col, columnType);
-    if (errCode != NativeRdb::E_OK) {
-        columnType = ColumnType::TYPE_NULL;
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
     }
-    return static_cast<int32_t>(columnType);
+    ColumnType columnType = ColumnType::TYPE_NULL;
+    auto ret = resultSet_->GetColumnType(col, columnType);
+    if (ret == NativeRdb::E_OK) {
+        return static_cast<int32_t>(columnType);
+    }
+    ZLOGE("get column type failed:%{public}d", ret);
+    return ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetCount() const
 {
+    if (resultSet_ == nullptr) {
+        ZLOGE("resultSet is nullptr");
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     int32_t maxCount = 0;
-    resultSet_->GetRowCount(maxCount);
+    auto ret = resultSet_->GetRowCount(maxCount);
+    if (ret != NativeRdb::E_OK) {
+        ZLOGE("get row count failed:%{public}d", ret);
+        return ConvertNativeRdbStatus(ret);
+    }
     return maxCount;
 }
 
 int32_t RelationalStoreCursor::MoveToFirst()
 {
-    return resultSet_->GoToFirstRow() ? NativeRdb::E_OK : NativeRdb::E_ERROR;
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto ret = resultSet_->GoToFirstRow();
+    return ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::MoveToNext()
 {
-    return resultSet_->GoToNextRow() ? NativeRdb::E_OK : NativeRdb::E_ERROR;
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto ret = resultSet_->GoToNextRow();
+    return ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::MoveToPrev()
 {
-    return resultSet_->GoToPreviousRow() ? NativeRdb::E_OK : NativeRdb::E_ERROR;
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto ret = resultSet_->GoToPreviousRow();
+    return ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetEntry(DistributedData::VBucket &entry)
@@ -82,38 +138,54 @@ int32_t RelationalStoreCursor::GetEntry(DistributedData::VBucket &entry)
 
 int32_t RelationalStoreCursor::GetRow(DistributedData::VBucket &data)
 {
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     NativeRdb::RowEntity rowEntity;
     auto ret = resultSet_->GetRow(rowEntity);
     std::map<std::string, NativeRdb::ValueObject> values = rowEntity.Get();
     data = ValueProxy::Convert(std::move(values));
-    return ret == NativeRdb::E_OK ? NativeRdb::E_OK : NativeRdb::E_ERROR;
+    return ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::Get(int32_t col, DistributedData::Value &value)
 {
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     NativeRdb::ValueObject valueObj;
     auto ret = resultSet_->Get(col, valueObj);
     value = ValueProxy::Convert(std::move(valueObj));
-    return ret == NativeRdb::E_OK ? NativeRdb::E_OK : NativeRdb::E_ERROR;
+    return ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Value &value)
 {
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     int32_t index = -1;
     auto ret = resultSet_->GetColumnIndex(col, index);
-    if (ret != NativeRdb::E_OK) {
-        return NativeRdb::E_ERROR;
+    if (ret != GeneralError::E_OK) {
+        return ConvertNativeRdbStatus(ret);
     }
-    return Get(col, value);
+    return Get(index, value);
 }
 
 int32_t RelationalStoreCursor::Close()
 {
-    return resultSet_->Close();
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto ret = resultSet_->Close();
+    return ConvertNativeRdbStatus(ret);
 }
 
 bool RelationalStoreCursor::IsEnd()
 {
+    if (resultSet_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     bool isEnd;
     resultSet_->IsEnded(isEnd);
     return isEnd;
