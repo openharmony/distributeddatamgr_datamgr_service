@@ -60,7 +60,8 @@ private:
     class ObjectStatic : public StaticActs {
     public:
         ~ObjectStatic() override {};
-        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
+            int32_t tokenId = -1) override;
     };
     class Factory {
     public:

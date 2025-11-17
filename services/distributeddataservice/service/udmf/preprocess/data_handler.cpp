@@ -15,6 +15,8 @@
 #define LOG_TAG "DataHandler"
 
 #include "data_handler.h"
+
+#include <unordered_set>
 #include "log_print.h"
 #include "tlv_util.h"
 
@@ -158,4 +160,26 @@ Status DataHandler::BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord
     }
     return E_OK;
 }
+
+Status DataHandler::UnmarshalRuntimes(const std::vector<std::string> &keySet,
+    const std::vector<Entry> &entries, std::vector<Runtime> &runtimes)
+{
+    std::unordered_set<std::string> keys(keySet.begin(), keySet.end());
+    for (const auto &entry : entries) {
+        std::string keyStr(entry.key.begin(), entry.key.end());
+        if (keys.find(keyStr) == keys.end()) {
+            continue;
+        }
+        Runtime runtime;
+        auto value = entry.value;
+        TLVObject data(value);
+        if (!TLVUtil::ReadTlv(runtime, data, TAG::TAG_RUNTIME)) {
+            ZLOGE("Unmarshall runtime info failed.");
+            return E_READ_PARCEL_ERROR;
+        }
+        runtimes.emplace_back(std::move(runtime));
+    }
+    return E_OK;
+}
+
 } // namespace UDMF::OHOS

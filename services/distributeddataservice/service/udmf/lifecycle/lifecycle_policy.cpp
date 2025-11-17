@@ -23,7 +23,7 @@ namespace OHOS {
 namespace UDMF {
 using namespace std::chrono;
 
-Status LifeCyclePolicy::OnGot(const UnifiedKey &key)
+Status LifeCyclePolicy::OnGot(const UnifiedKey &key, bool isNeedPush)
 {
     auto store = StoreCache::GetInstance().GetStore(key.intention);
     if (store == nullptr) {
@@ -33,6 +33,9 @@ Status LifeCyclePolicy::OnGot(const UnifiedKey &key)
     if (store->Delete(UnifiedKey(key.key).GetKeyCommonPrefix()) != E_OK) {
         ZLOGE("Remove data failed:%{public}s", key.intention.c_str());
         return E_DB_ERROR;
+    }
+    if (isNeedPush && OnGotToRemote(store) != E_OK) {
+        ZLOGE("Remove remote data failed:%{public}s", key.intention.c_str());
     }
     return E_OK;
 }
@@ -59,8 +62,6 @@ Status LifeCyclePolicy::OnTimeout(const std::string &intention)
         return E_DB_ERROR;
     }
     std::vector<std::string> timeoutKeys;
-    Duration interval = INTERVAL;
-    CheckFileMangerIntention(intention, interval);
     auto status = GetTimeoutKeys(store, INTERVAL, timeoutKeys);
     if (status != E_OK) {
         ZLOGE("Timeout keys get failed");
@@ -76,38 +77,30 @@ Status LifeCyclePolicy::OnTimeout(const std::string &intention)
 Status LifeCyclePolicy::GetTimeoutKeys(
     const std::shared_ptr<Store> &store, Duration interval, std::vector<std::string> &timeoutKeys)
 {
-    std::vector<UnifiedData> datas;
-    auto status = store->GetBatchData(DATA_PREFIX, datas);
+    std::vector<Runtime> runtimes;
+    auto status = store->GetBatchRuntime(DATA_PREFIX, runtimes);
     if (status != E_OK) {
         ZLOGE("Get data failed.");
         return E_DB_ERROR;
     }
-    if (datas.empty()) {
+    if (runtimes.empty()) {
         ZLOGD("entries is empty.");
         return E_OK;
     }
     auto curTime = PreProcessUtils::GetTimestamp();
-    for (const auto &data : datas) {
-        if (data.GetRuntime() == nullptr) {
-            ZLOGD("Runtime is null");
-            return E_DB_ERROR;
-        }
-        if (curTime > data.GetRuntime()->createTime + duration_cast<milliseconds>(interval).count()
-            || curTime < data.GetRuntime()->createTime) {
-            timeoutKeys.push_back(UnifiedKey(data.GetRuntime()->key.key).GetKeyCommonPrefix());
+    for (const auto &runtime : runtimes) {
+        if (curTime > runtime.createTime + duration_cast<milliseconds>(interval).count()
+            || curTime < runtime.createTime) {
+            timeoutKeys.push_back(UnifiedKey(runtime.key.key).GetKeyCommonPrefix());
         }
     }
     return E_OK;
 }
 
-Status LifeCyclePolicy::CheckFileMangerIntention(const std::string &intention, Duration &interval)
+Status LifeCyclePolicy::OnGotToRemote(std::shared_ptr<Store> store)
 {
-    if (intention == UD_INTENTION_MAP.at(UD_INTENTION_SYSTEM_SHARE) ||
-        intention == UD_INTENTION_MAP.at(UD_INTENTION_PICKER) ||
-        intention == UD_INTENTION_MAP.at(UD_INTENTION_MENU)) {
-        interval = SYSTEM_SHARE_INTERVAL;
-    }
     return E_OK;
 }
+
 } // namespace UDMF
 } // namespace OHOS

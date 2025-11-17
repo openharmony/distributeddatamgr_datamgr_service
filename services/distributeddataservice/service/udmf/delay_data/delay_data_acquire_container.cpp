@@ -83,5 +83,12 @@ std::vector<std::string> DelayDataAcquireContainer::QueryAllDelayKeys()
     }
     return keys;
 }
+
+bool DelayDataAcquireContainer::IsContainDelayData(const std::string &key)
+{
+    std::lock_guard<std::mutex> lock(delayDataMutex_);
+    return delayDataCallback_.find(key) != delayDataCallback_.end();
+}
+
 } // namespace UDMF
 } // namespace OHOS

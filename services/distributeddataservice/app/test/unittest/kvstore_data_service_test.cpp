@@ -240,8 +240,8 @@ HWTEST_F(KvStoreDataServiceTest, Dump001, TestSize.Level1)
 HWTEST_F(KvStoreDataServiceTest, OnUninstall001, TestSize.Level1)
 {
     KvStoreDataService kvStoreDataServiceTest;
-    std::string bundleNametest = "ohos.kvstoredatatest.demo";
-    int32_t status = kvStoreDataServiceTest.OnUninstall(bundleNametest, TEST_USERID, TEST_APP_INDEX);
+    AppDistributedKv::BundleEventInfo bundleEventInfo{"ohos.kvstoredatatest.demo", TEST_USERID, TEST_APP_INDEX};
+    int32_t status = kvStoreDataServiceTest.OnUninstall(bundleEventInfo);
     EXPECT_EQ(status, SUCCESS);
 }
 
@@ -255,8 +255,8 @@ HWTEST_F(KvStoreDataServiceTest, OnUninstall001, TestSize.Level1)
 HWTEST_F(KvStoreDataServiceTest, OnUpdate001, TestSize.Level1)
 {
     KvStoreDataService kvStoreDataServiceTest;
-    std::string bundleNametest = "ohos.kvstoredatatest.demo";
-    int32_t status = kvStoreDataServiceTest.OnUpdate(bundleNametest, TEST_USERID, TEST_APP_INDEX);
+    AppDistributedKv::BundleEventInfo bundleEventInfo{"ohos.kvstoredatatest.demo", TEST_USERID, TEST_APP_INDEX};
+    int32_t status = kvStoreDataServiceTest.OnUpdate(bundleEventInfo);
     EXPECT_EQ(status, SUCCESS);
 }
 
@@ -270,8 +270,8 @@ HWTEST_F(KvStoreDataServiceTest, OnUpdate001, TestSize.Level1)
 HWTEST_F(KvStoreDataServiceTest, OnInstall001, TestSize.Level1)
 {
     KvStoreDataService kvStoreDataServiceTest;
-    std::string bundleNametest = "ohos.kvstoredatatest.demo";
-    int32_t status = kvStoreDataServiceTest.OnInstall(bundleNametest, TEST_USERID, TEST_APP_INDEX);
+    AppDistributedKv::BundleEventInfo bundleEventInfo{"ohos.kvstoredatatest.demo", TEST_USERID, TEST_APP_INDEX};
+    int32_t status = kvStoreDataServiceTest.OnInstall(bundleEventInfo);
     EXPECT_EQ(status, SUCCESS);
 }
 

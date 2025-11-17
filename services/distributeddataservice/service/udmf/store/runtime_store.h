@@ -44,10 +44,10 @@ public:
     Status DeleteLocal(const std::string &key) override;
     Status PutRuntime(const std::string &key, const Runtime &runtime) override;
     Status GetRuntime(const std::string &key, Runtime &runtime) override;
+    Status GetBatchRuntime(const std::string &dataPrefix, std::vector<Runtime> &runtimeSet) override;
     Status PutSummary(UnifiedKey &key, const Summary &summary) override;
     Status SetRemotePullStartNotify() override;
-    Status RegisterDataChangedObserver(const std::string &key, uint32_t type) override;
-    bool UnRegisterDataChangedObserver(const std::string &key) override;
+    Status RegisterDataChangedObserver(const std::string &intention) override;
     Status PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo &info) override;
     Status PushSync(const std::vector<std::string> &devices) override;
     bool Init() override;
@@ -72,7 +72,7 @@ private:
     Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
     Status MarkWhenCorrupted(DistributedDB::DBStatus status);
     void ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate);
-    bool UnRegisterAllObserver();
+    void UnRegisterAllObserver();
     std::map<std::string, std::shared_ptr<DistributedDB::KvStoreObserver>> observers_ {};
 
     bool isCorrupted_ = false;

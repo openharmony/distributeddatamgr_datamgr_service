@@ -50,6 +50,10 @@ std::shared_ptr<Store> StoreCache::GetStore(std::string intention)
                 ZLOGE("Init runtime store failed.");
                 return false;
             }
+            auto res = storePtr->RegisterDataChangedObserver(intention);
+            if (res != E_OK) {
+                ZLOGW("RegisterDataChangedObserver fail, res:%{public}d", res);
+            }
             store = storePtr;
             return true;
         }

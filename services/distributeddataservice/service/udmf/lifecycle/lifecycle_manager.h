@@ -15,23 +15,32 @@
 #ifndef UDMF_LIFECYCLE_MANAGER_H
 #define UDMF_LIFECYCLE_MANAGER_H
 
-#include "clean_on_timeout.h"
+#include "lifecycle_policy.h"
+
+#include <unordered_set>
+#include "concurrent_map.h"
 
 namespace OHOS {
 namespace UDMF {
 class LifeCycleManager {
 public:
     static LifeCycleManager &GetInstance();
-    Status OnGot(const UnifiedKey &key);
+    Status OnGot(UnifiedKey &key, const uint32_t tokenId, bool isNeedPush = true);
     Status OnStart();
     Status StartLifeCycleTimer();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+    bool InsertUdKey(uint32_t tokenId, const std::string &udKey);
+    void EraseUdkey(const std::string &udKey, uint32_t tokenId);
+    Status OnAppUninstall(uint32_t tokenId);
 
 private:
     ExecutorPool::Task GetTask();
     static std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> intentionPolicy_;
     static constexpr const char *DATA_PREFIX = "udmf://";
     std::shared_ptr<ExecutorPool> executors_;
+    ConcurrentMap<uint32_t, std::unordered_set<std::string>> udKeys_;
+
+    void ClearUdKeys();
 };
 } // namespace UDMF
 } // namespace OHOS

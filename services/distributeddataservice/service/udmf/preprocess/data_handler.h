@@ -27,6 +27,9 @@ public:
     static Status MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries);
     static Status UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries,
         UnifiedData &unifiedData);
+    static Status UnmarshalRuntimes(const std::vector<std::string> &keySet,
+        const std::vector<Entry> &entries, std::vector<Runtime> &runtimes);
+    
     template <typename T>
     static Status MarshalToEntries(const T &data, Value &value, TAG tag);
     template <typename T>

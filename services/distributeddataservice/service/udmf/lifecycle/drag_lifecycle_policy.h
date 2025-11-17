@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,17 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef UDMF_CLEAN_ON_TIMEOUT_H
-#define UDMF_CLEAN_ON_TIMEOUT_H
+#ifndef UDMF_DRAG_LIFECYCLE_POLICY_H
+#define UDMF_DRAG_LIFECYCLE_POLICY_H
 #include "lifecycle_policy.h"
 
 namespace OHOS {
 namespace UDMF {
-class CleanOnTimeout : public LifeCyclePolicy {
+class DragLifeCyclePolicy : public LifeCyclePolicy {
 public:
-    Status OnStart(const std::string &intention) override;
-    Status OnGot(const UnifiedKey &key) override;
+    Status OnTimeout(const std::string &intention) override;
+private:
+    Status OnGotToRemote(std::shared_ptr<Store> store) override;
+    Status GetTimeoutRuntime(const std::shared_ptr<Store> &store,
+        std::unordered_map<std::string, Runtime> &timeoutRuntimes);
 };
 } // namespace UDMF
 } // namespace OHOS
-#endif // UDMF_CLEAN_ON_TIMEOUT_H
+#endif // UDMF_DRAG_LIFECYCLE_POLICY_H
