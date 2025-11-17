@@ -195,12 +195,6 @@ std::string PreProcessUtils::GetLocalDeviceId()
     return encryptedUuid;
 }
 
-std::string PreProcessUtils::GetRealLocalDeviceId()
-{
-    auto info = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
-    return info.uuid;
-}
-
 void PreProcessUtils::SetRemoteData(UnifiedData &data)
 {
     if (data.IsEmpty()) {

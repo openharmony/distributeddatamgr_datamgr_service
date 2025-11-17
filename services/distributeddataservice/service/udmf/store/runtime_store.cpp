@@ -53,6 +53,7 @@ RuntimeStore::RuntimeStore(const std::string &storeId) : storeId_(storeId)
 RuntimeStore::~RuntimeStore()
 {
     ZLOGD("Destruct runtimeStore: %{public}s.", Anonymous::Change(storeId_).c_str());
+    UnRegisterAllObserver();
 }
 
 Status RuntimeStore::PutLocal(const std::string &key, const std::string &value)
@@ -573,7 +574,6 @@ void RuntimeStore::ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate)
     if (delegate == nullptr) {
         return;
     }
-    UnRegisterAllObserver();
     auto retStatus = delegateManager_->CloseKvStore(delegate);
     if (retStatus != DBStatus::OK) {
         ZLOGE("CloseKvStore fail, status: %{public}d.", static_cast<int>(retStatus));
@@ -648,7 +648,7 @@ Status RuntimeStore::SetRemotePullStartNotify()
     }
     DBStatus status = kvStore_->SetDeviceSyncNotify(DeviceSyncEvent::REMOTE_PULL_STARTED,
         [](DistributedDB::DeviceSyncNotifyInfo info) {
-        SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo("", info.deviceId);
+        SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(info.deviceId);
         DelayDataPrepareContainer::GetInstance().ExecAllDataLoadCallback();
     });
     if (status != DBStatus::OK) {
@@ -686,6 +686,10 @@ bool RuntimeStore::UnRegisterDataChangedObserver(const std::string &key)
     std::lock_guard<std::mutex> lock(observerMutex_);
     auto it = observers_.find(key);
     if (it != observers_.end()) {
+        if (it->second == nullptr) {
+            observers_.erase(key);
+            return true;
+        }
         auto status = kvStore_->UnRegisterObserver(it->second);
         if (status != DBStatus::OK) {
             ZLOGE("Unregister observer failed, status: %{public}d.", static_cast<int>(status));
@@ -701,6 +705,9 @@ bool RuntimeStore::UnRegisterAllObserver()
 {
     std::lock_guard<std::mutex> lock(observerMutex_);
     for (const auto &[key, observer] : observers_) {
+        if (observer == nullptr) {
+            continue;
+        }
         auto status = kvStore_->UnRegisterObserver(observer);
         if (status != DBStatus::OK) {
             ZLOGE("UnRegisterAllObserver failed for key %{public}s, status: %{public}d.",
@@ -711,18 +718,6 @@ bool RuntimeStore::UnRegisterAllObserver()
     return true;
 }
 
-Status RuntimeStore::PutDataLoadInfo(const DataLoadInfo &dataLoadInfo)
-{
-    UpdateTime();
-    std::vector<Entry> entries;
-    auto status = DataHandler::MarshalDataLoadEntries(dataLoadInfo, entries);
-    if (status != E_OK) {
-        ZLOGE("PutDataLoadInfo failed. status: %{public}d", status);
-        return status;
-    }
-    return PutEntries(entries);
-}
-
 Status RuntimeStore::PushSync(const std::vector<std::string> &devices)
 {
     UpdateTime();
@@ -731,12 +726,6 @@ Status RuntimeStore::PushSync(const std::vector<std::string> &devices)
         return E_INVALID_PARAMETERS;
     }
     std::vector<std::string> syncDevices = DmAdapter::ToUUID(devices);
-    DevNameMap deviceNameMap;
-    for (const auto &device : devices) {
-        std::string deviceUuid = DmAdapter::GetInstance().ToUUID(device);
-        std::string deviceName = DmAdapter::GetInstance().GetDeviceInfo(device).deviceName;
-        deviceNameMap.emplace(deviceUuid, deviceName);
-    }
     auto onComplete = [this](const std::map<std::string, DBStatus> &devsSyncStatus) {
         DBStatus dbStatus = DBStatus::OK;
         for (const auto &[originDeviceId, status] : devsSyncStatus) {  // only one device.

@@ -48,7 +48,6 @@ public:
     virtual Status RegisterDataChangedObserver(const std::string &key, uint32_t type) = 0;
     virtual bool UnRegisterDataChangedObserver(const std::string &key) = 0;
     virtual Status PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo &info) = 0;
-    virtual Status PutDataLoadInfo(const DataLoadInfo &info) = 0;
     virtual Status PushSync(const std::vector<std::string> &devices) = 0;
     virtual bool Init() = 0;
 
