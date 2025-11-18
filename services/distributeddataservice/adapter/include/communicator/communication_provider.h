@@ -22,7 +22,6 @@
 
 #include "app_data_change_listener.h"
 #include "app_device_change_listener.h"
-#include "idevice_query.h"
 namespace OHOS {
 namespace AppDistributedKv {
 class CommunicationProvider {
@@ -57,8 +56,6 @@ public:
 
     // check peer device pipeInfo Process
     virtual bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const = 0;
-
-    virtual void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) = 0;
 
     virtual void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) = 0;
 

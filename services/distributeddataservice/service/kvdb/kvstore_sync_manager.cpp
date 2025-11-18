@@ -52,7 +52,7 @@ Status KvStoreSyncManager::AddSyncOperation(uintptr_t syncId, uint32_t delayMs, 
 
     std::lock_guard<std::mutex> lock(syncOpsMutex_);
     scheduleSyncOps_.emplace(beginTime, syncOp);
-    ZLOGD("add op %u delay %u count %zu.", opSeq, delayMs, scheduleSyncOps_.size());
+    ZLOGD("add op %{public}u delay %{public}u count %{public}zu", opSeq, delayMs, scheduleSyncOps_.size());
     if ((scheduleSyncOps_.size() == 1) ||
         (nextScheduleTime_ > beginTime + std::chrono::milliseconds(GetExpireTimeRange(delayMs)))) {
         AddTimer(beginTime);
@@ -100,7 +100,7 @@ uint32_t KvStoreSyncManager::DoRemoveSyncingOp(OpPred pred, std::list<KvSyncOper
 
 Status KvStoreSyncManager::RemoveSyncingOp(uint32_t opSeq, std::list<KvSyncOperation> &syncingOps)
 {
-    ZLOGD("remove op %u", opSeq);
+    ZLOGD("remove op %{public}u", opSeq);
     auto pred = [opSeq](const KvSyncOperation &op) -> bool { return opSeq == op.opSeq; };
     std::lock_guard<std::mutex> lock(syncOpsMutex_);
     uint32_t count = DoRemoveSyncingOp(pred, syncingOps);
@@ -109,13 +109,15 @@ Status KvStoreSyncManager::RemoveSyncingOp(uint32_t opSeq, std::list<KvSyncOpera
 
 void KvStoreSyncManager::AddTimer(const TimePoint &expireTime)
 {
-    ZLOGD("time %lld", expireTime.time_since_epoch().count());
+    ZLOGD("time %{public}lld", expireTime.time_since_epoch().count());
     nextScheduleTime_ = expireTime;
-    executors_->Schedule(
-        expireTime - std::chrono::steady_clock::now(),
-        [time = expireTime, this]() {
-            Schedule(time);
-        });
+    if (executors_ != nullptr) {
+        executors_->Schedule(
+            expireTime - std::chrono::steady_clock::now(),
+            [time = expireTime, this]() {
+                Schedule(time);
+            });
+    }
 }
 
 bool KvStoreSyncManager::GetTimeoutSyncOps(const TimePoint &currentTime, std::list<KvSyncOperation> &syncOps)
@@ -151,13 +153,13 @@ void KvStoreSyncManager::DoCheckSyncingTimeout(std::list<KvSyncOperation> &synci
     };
     uint32_t count = DoRemoveSyncingOp(syncingTimeoutPred, syncingOps);
     if (count > 0) {
-        ZLOGI("remove %u syncing ops by timeout", count);
+        ZLOGI("remove %{public}u syncing ops by timeout", count);
     }
 }
 
 void KvStoreSyncManager::Schedule(const TimePoint &time)
 {
-    ZLOGD("timeout %lld", time.time_since_epoch().count());
+    ZLOGD("timeout %{public}lld", time.time_since_epoch().count());
     std::list<KvSyncOperation> syncOps;
     bool delaySchedule = GetTimeoutSyncOps(time, syncOps);
 

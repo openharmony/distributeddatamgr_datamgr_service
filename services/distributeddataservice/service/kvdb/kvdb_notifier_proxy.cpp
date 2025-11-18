@@ -41,6 +41,10 @@ using namespace OHOS::DistributedData;
                 break;                                                          \
             }                                                                   \
             MessageOption option;                                               \
+            if (remote_ == nullptr) {                                           \
+                __status = IPC_ERROR;                                           \
+                break;                                                          \
+            }                                                                   \
             auto result = remote_->SendRequest((code), request, reply, option); \
             if (result != 0) {                                                  \
                 __status = IPC_ERROR;                                           \

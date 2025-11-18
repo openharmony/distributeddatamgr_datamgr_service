@@ -477,6 +477,7 @@ HWTEST_F(KVDBGeneralStoreTest, BindTest, TestSize.Level0)
 HWTEST_F(KVDBGeneralStoreTest, BindWithDifferentUsersTest, TestSize.Level0)
 {
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     EXPECT_NE(store->delegate_, nullptr);

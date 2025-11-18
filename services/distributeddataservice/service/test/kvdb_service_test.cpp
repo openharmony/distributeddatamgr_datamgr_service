@@ -45,6 +45,7 @@ using namespace DistributedDB;
 using namespace OHOS;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
+using namespace std::chrono_literals;
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using DBPassword = DistributedDB::CipherPassword;
 using DBStatus = DistributedDB::DBStatus;
@@ -304,6 +305,24 @@ HWTEST_F(KvStoreSyncManagerTest, AddSyncOperation, TestSize.Level0)
     };
     kvStatus = syncManager.AddSyncOperation(0, 0, syncFunc, syncEnd);
     EXPECT_EQ(kvStatus, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: AddTimerTest
+* @tc.desc: AddTimerTest test.
+* @tc.type: FUNC
+*/
+HWTEST_F(KvStoreSyncManagerTest, AddTimerTest, TestSize.Level0)
+{
+    DistributedKv::KvStoreSyncManager syncManager;
+    syncManager.executors_ = nullptr;
+    std::chrono::milliseconds delay = 100ms;
+    DistributedKv::KvStoreSyncManager::TimePoint expireTime = std::chrono::steady_clock::now() + delay;
+    syncManager.AddTimer(expireTime);
+    EXPECT_EQ(syncManager.nextScheduleTime_, expireTime);
+    syncManager.executors_ = std::make_shared<ExecutorPool>(1, 1);
+    syncManager.AddTimer(expireTime);
+    EXPECT_EQ(syncManager.nextScheduleTime_, expireTime);
 }
 
 /**

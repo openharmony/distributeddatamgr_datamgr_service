@@ -176,7 +176,9 @@ void UserDelegate::Init(const std::shared_ptr<ExecutorPool> &executors)
     if (!executors_) {
         executors_ = executors;
     }
-    executors_->Execute(GeTask());
+    if (executors_ != nullptr) {
+        executors_->Execute(GeTask());
+    }
     ZLOGD("subscribe os account ret:%{public}d", ret);
 }
 

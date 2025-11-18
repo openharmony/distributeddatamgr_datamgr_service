@@ -596,7 +596,7 @@ Status KVDBServiceImpl::Unsubscribe(const AppId &appId, const StoreId &storeId, 
             return true;
         }
         for (auto watcher : iter->second) {
-            if (watcher->GetObserver() == observer) {
+            if (watcher == nullptr || watcher->GetObserver() == observer) {
                 destroyed = true;
                 iter->second.erase(watcher);
                 break;
@@ -697,7 +697,9 @@ Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, co
     }
     auto stores = AutoCache::GetInstance().GetStoresIfPresent(meta.tokenId, meta.dataDir, storeId);
     for (auto store : stores) {
-        store->SetConfig({ storeConfig.cloudConfig.enableCloud });
+        if (store != nullptr) {
+            store->SetConfig({ storeConfig.cloudConfig.enableCloud });
+        }
     }
     ZLOGI("appId:%{public}s storeId:%{public}s enable:%{public}d", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str(), storeConfig.cloudConfig.enableCloud);

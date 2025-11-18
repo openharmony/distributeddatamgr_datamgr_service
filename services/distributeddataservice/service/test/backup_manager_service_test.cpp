@@ -220,6 +220,7 @@ HWTEST_F(BackupManagerServiceTest, BackSchedule, TestSize.Level1)
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(0, 1);
     BackupManager instance;
     instance.executors_ = nullptr;
+    instance.BackSchedule(nullptr);
     instance.BackSchedule(executors);
     EXPECT_FALSE(instance.executors_ == nullptr);
 }

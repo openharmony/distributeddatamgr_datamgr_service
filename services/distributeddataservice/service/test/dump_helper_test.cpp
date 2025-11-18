@@ -85,14 +85,10 @@ HWTEST_F(DumpHelperTest, GetInstanceTest, TestSize.Level0)
 */
 HWTEST_F(DumpHelperTest, AddErrorInfoTest, TestSize.Level0)
 {
-    DumpHelper &dumpHelper = DumpHelper::GetInstance();
-    EXPECT_NE(&dumpHelper, nullptr);
     int32_t errorCode = 1001;
     std::string errorInfo = "Test error information";
-
-    dumpHelper.AddErrorInfo(errorCode, errorInfo);
-
-    const OHOS::DistributedData::DumpHelper::ErrorInfo& lastError = dumpHelper.errorInfo_.back();
+    DumpHelper::GetInstance().AddErrorInfo(errorCode, errorInfo);
+    const OHOS::DistributedData::DumpHelper::ErrorInfo& lastError = DumpHelper::GetInstance().errorInfo_.back();
     EXPECT_EQ(lastError.errorCode, errorCode);
     EXPECT_EQ(lastError.errorInfo, errorInfo);
 }

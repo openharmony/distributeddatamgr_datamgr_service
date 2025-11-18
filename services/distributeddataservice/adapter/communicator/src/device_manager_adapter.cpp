@@ -26,6 +26,7 @@ using namespace OHOS::AppDistributedKv;
 using KvStoreUtils = OHOS::DistributedKv::KvStoreUtils;
 constexpr int32_t DM_OK = 0;
 constexpr const char *PKG_NAME = "ohos.distributeddata.service";
+static constexpr int32_t OH_OS_TYPE = 10;
 __attribute__((used)) static bool g_delegateInit =
     DeviceManagerDelegate::RegisterInstance(&DeviceManagerAdapter::GetInstance());
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {

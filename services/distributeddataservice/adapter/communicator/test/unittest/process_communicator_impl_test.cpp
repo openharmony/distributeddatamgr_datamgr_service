@@ -54,7 +54,6 @@ public:
         const DataInfo&, uint32_t, const MessageInfo &), (override));
     MOCK_METHOD(bool, IsSameStartedOnPeer, (const PipeInfo &, const DeviceId &), (const));
     MOCK_METHOD(Status, ReuseConnect, (const PipeInfo&, const DeviceId&, const ExtraDataInfo&), (override));
-    MOCK_METHOD(void, SetDeviceQuery, (std::shared_ptr<IDeviceQuery>), (override));
     MOCK_METHOD(void, SetMessageTransFlag, (const PipeInfo &, bool), (override));
     MOCK_METHOD(Status, Broadcast, (const PipeInfo &, const LevelInfo &), (override));
     MOCK_METHOD(int32_t, ListenBroadcastMsg, (const PipeInfo &,
