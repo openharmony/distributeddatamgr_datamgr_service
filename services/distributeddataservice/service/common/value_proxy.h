@@ -223,11 +223,11 @@ public:
     static Bucket Convert(NativeRdb::ValuesBucket &&bucket);
     static Bucket Convert(CommonType::ValuesBucket &&bucket);
     static Bucket Convert(DistributedDB::VBucket &&bucket);
+    static Bucket Convert(std::map<std::string, NativeRdb::ValueObject> &&bucket);
     static Buckets Convert(DistributedData::VBuckets &&buckets);
     static Buckets Convert(std::vector<NativeRdb::ValuesBucket> &&buckets);
     static Buckets Convert(std::vector<CommonType::ValuesBucket> &&buckets);
     static Buckets Convert(std::vector<DistributedDB::VBucket> &&buckets);
-    static Bucket Convert(std::map<std::string, NativeRdb::ValueObject> &&bucket);
 
     static Value Convert(DistributedDB::VariantData &&value);
     static Bucket Convert(std::map<std::string, DistributedDB::VariantData> &&value);

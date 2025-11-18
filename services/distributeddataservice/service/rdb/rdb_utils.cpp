@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "relational_store_utils.h"
+#include "rdb_utils.h"
 #include "rdb_errno.h"
 #include "store/general_value.h"
 

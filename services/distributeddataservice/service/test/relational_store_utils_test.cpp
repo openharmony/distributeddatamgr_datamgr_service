@@ -14,7 +14,7 @@
  */
 #define LOG_TAG "RdbUtilsTest"
 
-#include "relational_store_utils.h"
+#include "rdb_utils.h"
 #include "gtest/gtest.h"
 #include "rdb_errno.h"
 #include "rdb_types.h"

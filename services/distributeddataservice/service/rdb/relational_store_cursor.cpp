@@ -18,7 +18,7 @@
 #include "rdb_errno.h"
 #include "rdb_types.h"
 #include "result_set.h"
-#include "relational_store_utils.h"
+#include "rdb_utils.h"
 
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
@@ -90,9 +90,7 @@ int32_t RelationalStoreCursor::GetRow(DistributedData::VBucket &data)
     NativeRdb::RowEntity rowEntity;
     auto ret = resultSet_.GetRow(rowEntity);
     std::map<std::string, NativeRdb::ValueObject> values = rowEntity.Steal();
-    for (auto &[key, value] : values) {
-        data.emplace(key, ValueProxy::Convert(std::move(value.value)));
-    }
+    data = ValueProxy::Convert(std::move(values));
     return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
