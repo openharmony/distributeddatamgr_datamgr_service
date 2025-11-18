@@ -189,7 +189,7 @@ public:
 
     int GetSize(int columnIndex, size_t &size) override
     {
-        return NativeRdb::E_OK; 
+        return NativeRdb::E_OK;
     }
 };
 
@@ -204,9 +204,9 @@ protected:
     static std::shared_ptr<MockRdbResultSet> resultSet;
     static std::shared_ptr<RelationalStoreCursor> relationalStoreCursor;
 };
-std::shared_ptr<MockRdbResultSet> RelationalStoreCursorTest::resultSet(new MockRdbResultSet());
+std::shared_ptr<MockRdbResultSet> RelationalStoreCursorTest::resultSet = std::make_shared<MockRdbResultSet>();
 std::shared_ptr<RelationalStoreCursor> RelationalStoreCursorTest::relationalStoreCursor =
-    std::make_shared<RelationalStoreCursor>(resultSet);
+    std::make_shared<RelationalStoreCursor>(*resultSet, std::move(resultSet));
 
 /**
 * @tc.name: RelationalStoreCursorTest001

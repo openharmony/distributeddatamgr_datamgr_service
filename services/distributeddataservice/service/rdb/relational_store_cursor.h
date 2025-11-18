@@ -27,7 +27,7 @@ using ValueProxy = DistributedData::ValueProxy;
 using ColumnType = NativeRdb::ColumnType;
 class RelationalStoreCursor : public DistributedData::Cursor {
 public:
-    explicit RelationalStoreCursor(std::shared_ptr<NativeRdb::ResultSet> resultSet);
+    explicit RelationalStoreCursor(NativeRdb::ResultSet &resultSet, std::shared_ptr<NativeRdb::ResultSet> hold);
     ~RelationalStoreCursor();
     int32_t GetColumnNames(std::vector<std::string> &names) const override;
     int32_t GetColumnName(int32_t col, std::string &name) const override;
@@ -44,7 +44,8 @@ public:
     bool IsEnd() override;
 private:
     int32_t ConvertNativeRdbStatus(int32_t status) const;
-    const std::shared_ptr<NativeRdb::ResultSet> resultSet_;
+    NativeRdb::ResultSet &resultSet_;
+    std::shared_ptr<NativeRdb::ResultSet> hold_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
