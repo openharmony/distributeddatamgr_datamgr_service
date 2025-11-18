@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RELATIONALSTORE_CURSOR_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RELATIONALSTORE_CURSOR_H
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RELATIONAL_STORE_CURSOR_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RELATIONAL_STORE_CURSOR_H
 
 #include "result_set.h"
 #include "rdb_errno.h"
@@ -43,9 +43,8 @@ public:
     int32_t Close() override;
     bool IsEnd() override;
 private:
-    int32_t ConvertNativeRdbStatus(int32_t status) const;
     NativeRdb::ResultSet &resultSet_;
     std::shared_ptr<NativeRdb::ResultSet> hold_;
 };
 } // namespace OHOS::DistributedRdb
-#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RELATIONAL_STORE_CURSOR_H

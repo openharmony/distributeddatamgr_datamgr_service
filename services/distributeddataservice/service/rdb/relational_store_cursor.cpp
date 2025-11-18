@@ -18,7 +18,7 @@
 #include "rdb_errno.h"
 #include "rdb_types.h"
 #include "result_set.h"
-#include <cstdint>
+#include "relational_store_utils.h"
 
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
@@ -30,38 +30,16 @@ RelationalStoreCursor::~RelationalStoreCursor()
     resultSet_.Close();
 }
 
-int32_t RelationalStoreCursor::ConvertNativeRdbStatus(int32_t status) const
-{
-    switch (status) {
-        case NativeRdb::E_OK:
-            return GeneralError::E_OK;
-        case NativeRdb::E_SQLITE_BUSY:
-        case NativeRdb::E_DATABASE_BUSY:
-        case NativeRdb::E_SQLITE_LOCKED:
-            return GeneralError::E_BUSY;
-        case NativeRdb::E_INVALID_ARGS:
-        case NativeRdb::E_INVALID_ARGS_NEW:
-            return GeneralError::E_INVALID_ARGS;
-        case NativeRdb::E_ALREADY_CLOSED:
-            return GeneralError::E_ALREADY_CLOSED;
-        case NativeRdb::E_SQLITE_CORRUPT:
-            return GeneralError::E_DB_CORRUPT;
-        default:
-            break;
-    }
-    return GeneralError::E_ERROR;
-}
-
 int32_t RelationalStoreCursor::GetColumnNames(std::vector<std::string> &names) const
 {
     auto ret = resultSet_.GetAllColumnNames(names);
-    return ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetColumnName(int32_t col, std::string &name) const
 {
     auto ret = resultSet_.GetColumnName(col, name);
-    return ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetColumnType(int32_t col) const
@@ -87,19 +65,19 @@ int32_t RelationalStoreCursor::GetCount() const
 int32_t RelationalStoreCursor::MoveToFirst()
 {
     auto ret = resultSet_.GoToFirstRow();
-    return ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::MoveToNext()
 {
     auto ret = resultSet_.GoToNextRow();
-    return ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::MoveToPrev()
 {
     auto ret = resultSet_.GoToPreviousRow();
-    return ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetEntry(DistributedData::VBucket &entry)
@@ -111,9 +89,11 @@ int32_t RelationalStoreCursor::GetRow(DistributedData::VBucket &data)
 {
     NativeRdb::RowEntity rowEntity;
     auto ret = resultSet_.GetRow(rowEntity);
-    std::map<std::string, NativeRdb::ValueObject> values = rowEntity.Get();
-    data = ValueProxy::Convert(std::move(values));
-    return ConvertNativeRdbStatus(ret);
+    std::map<std::string, NativeRdb::ValueObject> values = rowEntity.Steal();
+    for (auto &[key, value] : values) {
+        data.emplace(key, ValueProxy::Convert(std::move(value.value)));
+    }
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::Get(int32_t col, DistributedData::Value &value)
@@ -121,7 +101,7 @@ int32_t RelationalStoreCursor::Get(int32_t col, DistributedData::Value &value)
     NativeRdb::ValueObject valueObj;
     auto ret = resultSet_.Get(col, valueObj);
     value = ValueProxy::Convert(std::move(valueObj));
-    return ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Value &value)
@@ -130,7 +110,7 @@ int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Valu
     auto ret = resultSet_.GetColumnIndex(col, index);
     if (ret != NativeRdb::E_OK) {
         ZLOGE("get column index failed:%{public}d", ret);
-        return ConvertNativeRdbStatus(ret);
+        return RdbUtils::ConvertNativeRdbStatus(ret);
     }
     return Get(index, value);
 }
@@ -138,7 +118,7 @@ int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Valu
 int32_t RelationalStoreCursor::Close()
 {
     auto ret = resultSet_.Close();
-    return ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 bool RelationalStoreCursor::IsEnd()
@@ -147,4 +127,4 @@ bool RelationalStoreCursor::IsEnd()
     resultSet_.IsEnded(isEnd);
     return isEnd;
 }
-}
+} // namespace OHOS::DistributedRdb

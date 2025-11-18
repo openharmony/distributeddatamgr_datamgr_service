@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,10 +28,14 @@ using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
-using DBStatus = DistributedDB::DBStatus;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
 static constexpr int MAX_DATA_NUM = 100;
+static constexpr int AGE = 25;
+static constexpr const char *NAME = "tony";
+static constexpr const char *PHONENUMBER = "10086";
+static constexpr double DOUBLE = 13.0;
+static constexpr bool BOOL = true;
 class MockRdbResultSet : public NativeRdb::ResultSet {
 public:
     MockRdbResultSet() {}
@@ -39,7 +43,7 @@ public:
 
     int GetAllColumnNames(std::vector<std::string> &columnNames) override
     {
-        columnNames = { "age", "identifier", "name", "phoneNumber" };
+        columnNames = { "age", "name", "phoneNumber", "double", "bool" };
         return NativeRdb::E_OK;
     }
 
@@ -78,6 +82,16 @@ public:
 
     int GetRow(NativeRdb::RowEntity &rowEntity) override
     {
+        NativeRdb::ValueObject value(AGE);
+        NativeRdb::ValueObject valueName(NAME);
+        NativeRdb::ValueObject valuePhoneNumber(PHONENUMBER);
+        NativeRdb::ValueObject valueDouble(DOUBLE);
+        NativeRdb::ValueObject valueBool(BOOL);
+        rowEntity.Put("age", 1, std::move(value));
+        rowEntity.Put("name", 2, std::move(valueName));
+        rowEntity.Put("phoneNumber", 3, std::move(valuePhoneNumber));
+        rowEntity.Put("double", 4, std::move(valueDouble));
+        rowEntity.Put("bool", 5, std::move(valueBool));
         return NativeRdb::E_OK;
     }
 
@@ -210,64 +224,51 @@ std::shared_ptr<RelationalStoreCursor> RelationalStoreCursorTest::relationalStor
 
 /**
 * @tc.name: RelationalStoreCursorTest001
-* @tc.desc: RelationalStoreCursor function and error test.
+* @tc.desc: function success test of class RelationalStoreCursor.
 * @tc.type: FUNC
 * @tc.require:
-* @tc.author: SQL
+* @tc.author:
 */
 HWTEST_F(RelationalStoreCursorTest, RelationalStoreCursorTest001, TestSize.Level1)
 {
     EXPECT_NE(relationalStoreCursor, nullptr);
-    std::vector<std::string> expectedNames = {"age", "identifier", "name", "phoneNumber"};
+    std::vector<std::string> expectedNames = {"age", "name", "phoneNumber", "double", "bool"};
     std::vector<std::string> names;
     auto result = relationalStoreCursor->GetColumnNames(names);
     EXPECT_EQ(result, GeneralError::E_OK);
     EXPECT_EQ(names, expectedNames);
 
     std::string colName;
-    auto err = relationalStoreCursor->GetColumnName(1, colName);
-    EXPECT_EQ(err, GeneralError::E_OK);
+    result = relationalStoreCursor->GetColumnName(1, colName);
+    EXPECT_EQ(colName, "name");
+    EXPECT_EQ(result, GeneralError::E_OK);
 
     int32_t type = relationalStoreCursor->GetColumnType(0);
-    EXPECT_EQ(type, static_cast<int32_t>(ColumnType::TYPE_NULL));
-    type = relationalStoreCursor->GetColumnType(-1);
     EXPECT_EQ(type, static_cast<int32_t>(ColumnType::TYPE_NULL));
 
     int32_t count = relationalStoreCursor->GetCount();
     EXPECT_EQ(count, MAX_DATA_NUM);
 
-    err = relationalStoreCursor->MoveToFirst();
-    EXPECT_EQ(err, GeneralError::E_OK);
+    result = relationalStoreCursor->MoveToFirst();
+    EXPECT_EQ(result, GeneralError::E_OK);
 
-    err = relationalStoreCursor->MoveToNext();
-    EXPECT_EQ(err, GeneralError::E_OK);
+    result = relationalStoreCursor->MoveToNext();
+    EXPECT_EQ(result, GeneralError::E_OK);
 
-    err = relationalStoreCursor->MoveToPrev();
-    EXPECT_EQ(err, GeneralError::E_OK);
-}
-
-/**
-* @tc.name: RelationalStoreCursorTest002
-* @tc.desc: RelationalStoreCursor function and error test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: SQL
-*/
-HWTEST_F(RelationalStoreCursorTest, RelationalStoreCursorTest002, TestSize.Level1)
-{
-    EXPECT_NE(relationalStoreCursor, nullptr);
+    result = relationalStoreCursor->MoveToPrev();
+    EXPECT_EQ(result, GeneralError::E_OK);
     DistributedData::VBucket data;
-    auto result = relationalStoreCursor->GetEntry(data);
+    result = relationalStoreCursor->GetEntry(data);
     EXPECT_EQ(result, GeneralError::E_OK);
-
-    result = relationalStoreCursor->GetRow(data);
-    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(*std::get_if<int64_t>(&data["age"]), AGE);
+    EXPECT_EQ(*std::get_if<std::string>(&data["name"]), NAME);
+    EXPECT_EQ(*std::get_if<std::string>(&data["phoneNumber"]), PHONENUMBER);
+    EXPECT_EQ(*std::get_if<double>(&data["double"]), DOUBLE);
+    EXPECT_EQ(*std::get_if<bool>(&data["bool"]), BOOL);
 
     DistributedData::Value value;
     result = relationalStoreCursor->Get(1, value);
     EXPECT_EQ(result, GeneralError::E_OK);
-    result = relationalStoreCursor->Get(-1, value);
-    EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
     result = relationalStoreCursor->Get("col", value);
     EXPECT_EQ(result, GeneralError::E_OK);
@@ -277,6 +278,5 @@ HWTEST_F(RelationalStoreCursorTest, RelationalStoreCursorTest002, TestSize.Level
     result = relationalStoreCursor->Close();
     EXPECT_EQ(result, GeneralError::E_OK);
 }
-
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

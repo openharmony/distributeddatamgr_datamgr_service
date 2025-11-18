@@ -57,6 +57,7 @@ ohos_source_set("distributeddata_rdb") {
     "rdb_types_utils.cpp",
     "rdb_watcher.cpp",
     "relational_store_cursor.cpp",
+    "relational_store_utils.cpp",
   ]
 
   configs = [ ":rdb_public_config" ]
