@@ -21,6 +21,7 @@
 #include <optional>
 #include <set>
 
+#include "cloud/cloud_conflict_handler.h"
 #include "executor_pool.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
@@ -207,6 +208,10 @@ public:
         return 0;
     }
     virtual int32_t SetDBProperty(const DBProperty &property) = 0;
+    virtual int32_t SetCloudConflictHandle(const std::shared_ptr<CloudConflictHandler> &handler)
+    {
+        return 0;
+    }
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

@@ -82,6 +82,7 @@ static DBSchema GetDBSchema(const Database &database)
             dbField.type = field.type;
             dbField.primary = field.primary;
             dbField.nullable = field.nullable;
+            dbField.dupCheckCol = field.dupCheckCol;
             dbTable.fields.push_back(std::move(dbField));
         }
     }
@@ -324,6 +325,7 @@ int32_t RdbGeneralStore::Close(bool isForce)
             return status;
         }
         delegate_ = nullptr;
+        ReleaseCloudConflictHandler();
     }
     RemoveTasks();
     bindInfo_.loader_ = nullptr;
@@ -1396,5 +1398,21 @@ int32_t RdbGeneralStore::SetDBProperty(const DBProperty &property)
         return DBStatus::DB_ERROR;
     }
     return delegate_->SetProperty(property);
+}
+
+int32_t RdbGeneralStore::SetCloudConflictHandle(const std::shared_ptr<CloudConflictHandler> &handler)
+{
+    if (delegate_ == nullptr) {
+        return DBStatus::DB_ERROR;
+    }
+    delegate_->SetCloudConflictHandle(handler);
+    return GenErr::E_OK;
+}
+
+void RdbGeneralStore::ReleaseCloudConflictHandler()
+{
+    StoreInfo info;
+    auto evt = std::make_unique<CloudEvent>(CloudEvent::RELEASE_CONFLICT_HANDLER, std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 } // namespace OHOS::DistributedRdb

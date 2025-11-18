@@ -40,6 +40,8 @@ public:
         UNLOCK_CLOUD_CONTAINER,
         SET_SEARCH_TRIGGER,
         UPGRADE_SCHEMA,
+        GET_CONFLICT_HANDLER,
+        RELEASE_CONFLICT_HANDLER,
         CLOUD_BUTT
     };
 

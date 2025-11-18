@@ -340,6 +340,9 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
         }
         metaMapping.cloudPath = metaData.dataDir;
+        if (!param.autoSyncSwitch) {
+            LoadCloudConflictHandler(metaData);
+        }
     }
     metaMapping = metaData;
     MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
@@ -2007,5 +2010,18 @@ void RdbServiceImpl::RegisterEvent()
     };
     EventCenter::GetInstance().Subscribe(BindEvent::COMPENSATE_SYNC, compensateSyncProcess);
     EventCenter::GetInstance().Subscribe(BindEvent::RECOVER_SYNC, compensateSyncProcess);
+}
+
+void RdbServiceImpl::LoadCloudConflictHandler(const StoreMetaData &metaData)
+{
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is null");
+        return;
+    }
+    StoreInfo storeInfo = GetStoreInfoEx(metaData);
+    executors_->Execute([storeInfo]() {
+        auto event = std::make_unique<CloudEvent>(CloudEvent::GET_CONFLICT_HANDLER, std::move(storeInfo));
+        EventCenter::GetInstance().PostEvent(move(event));
+    });
 }
 } // namespace OHOS::DistributedRdb

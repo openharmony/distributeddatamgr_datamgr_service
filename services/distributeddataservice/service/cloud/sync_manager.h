@@ -198,6 +198,9 @@ private:
     void AddCompensateSync(const StoreMetaData &meta);
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
+    std::function<void(const Event &)> GetConflictHandler();
+    std::function<void(const Event &)> ReleaseConflictHandler();
+
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;

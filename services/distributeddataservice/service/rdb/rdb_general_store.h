@@ -45,6 +45,7 @@ public:
     using DBPassword = DistributedDB::CipherPassword;
     using Snapshot = DistributedData::Snapshot;
     using BindAssets = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
+    using CloudConflictHandler = DistributedData::CloudConflictHandler;
 
     explicit RdbGeneralStore(const StoreMetaData &meta);
     ~RdbGeneralStore();
@@ -90,6 +91,7 @@ public:
     int32_t UnLockCloudDB() override;
     int32_t UpdateDBStatus() override;
     int32_t SetDBProperty(const DBProperty &property) override;
+    int32_t SetCloudConflictHandle(const std::shared_ptr<CloudConflictHandler> &handler) override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
@@ -161,6 +163,7 @@ private:
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
     DBPassword GetDBPassword(const StoreMetaData &data);
+    void ReleaseCloudConflictHandler();
 
     ObserverProxy observer_;
     RdbManager manager_;
