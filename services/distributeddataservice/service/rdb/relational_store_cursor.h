@@ -44,7 +44,7 @@ public:
     bool IsEnd() override;
 private:
     int32_t ConvertNativeRdbStatus(int32_t status) const;
-    std::shared_ptr<NativeRdb::ResultSet> resultSet_;
+    const std::shared_ptr<NativeRdb::ResultSet> resultSet_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CURSOR_H

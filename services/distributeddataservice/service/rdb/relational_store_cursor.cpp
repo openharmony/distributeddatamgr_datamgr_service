@@ -82,11 +82,10 @@ int32_t RelationalStoreCursor::GetColumnType(int32_t col) const
     }
     ColumnType columnType = ColumnType::TYPE_NULL;
     auto ret = resultSet_->GetColumnType(col, columnType);
-    if (ret == NativeRdb::E_OK) {
-        return static_cast<int32_t>(columnType);
+    if (ret != NativeRdb::E_OK) {
+        ZLOGE("get column type failed:%{public}d", ret);
     }
-    ZLOGE("get column type failed:%{public}d", ret);
-    return ConvertNativeRdbStatus(ret);
+    return static_cast<int32_t>(columnType);
 }
 
 int32_t RelationalStoreCursor::GetCount() const
@@ -99,7 +98,6 @@ int32_t RelationalStoreCursor::GetCount() const
     auto ret = resultSet_->GetRowCount(maxCount);
     if (ret != NativeRdb::E_OK) {
         ZLOGE("get row count failed:%{public}d", ret);
-        return ConvertNativeRdbStatus(ret);
     }
     return maxCount;
 }
@@ -166,7 +164,7 @@ int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Valu
     }
     int32_t index = -1;
     auto ret = resultSet_->GetColumnIndex(col, index);
-    if (ret != GeneralError::E_OK) {
+    if (ret != NativeRdb::E_OK) {
         return ConvertNativeRdbStatus(ret);
     }
     return Get(index, value);
@@ -184,7 +182,8 @@ int32_t RelationalStoreCursor::Close()
 bool RelationalStoreCursor::IsEnd()
 {
     if (resultSet_ == nullptr) {
-        return GeneralError::E_ALREADY_CLOSED;
+        ZLOGE("resultSet is nullptr");
+        return false;
     }
     bool isEnd;
     resultSet_->IsEnded(isEnd);
