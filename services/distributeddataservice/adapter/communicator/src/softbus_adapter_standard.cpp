@@ -299,7 +299,7 @@ std::pair<Status, int32_t> SoftBusAdapter::OpenConnect(const std::shared_ptr<Sof
     auto applyTask = [deviceId](int32_t errcode) {
         CommunicatorContext::GetInstance().NotifySessionReady(deviceId.deviceId, errcode);
     };
-    auto connectTask = [this, connect = std::weak_ptr<SoftBusClient>(conn), &sessionAccessInfo]() {
+    auto connectTask = [this, connect = std::weak_ptr<SoftBusClient>(conn), sessionAccessInfo]() {
         auto conn = connect.lock();
         if (conn != nullptr) {
             conn->OpenConnect(&clientListener_, sessionAccessInfo);
