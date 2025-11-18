@@ -37,6 +37,7 @@ static constexpr bool FLAG = true;
 static constexpr int INDEX_SALARY = 2;
 static constexpr int INDEX_FLAG = 3;
 static constexpr int INDEX_BLOB = 4;
+static constexpr int ENTITY = 5;
 static std::vector<uint8_t> BLOB = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 static std::vector<std::string> EXCEPTED_COLUMN_NAMES = { "age", "blob", "flag", "name", "salary" };
 static std::vector<NativeRdb::ColumnType> EXCEPTED_COLUMN_TYPE = { NativeRdb::ColumnType::TYPE_INTEGER,
@@ -229,7 +230,7 @@ public:
     {
         std::shared_ptr<MockRdbResultSet> resultSet = std::make_shared<MockRdbResultSet>();
         NativeRdb::RowEntity entity;
-        entity.Clear(5);
+        entity.Clear(ENTITY);
         entity.Put("age", 0, NativeRdb::ValueObject(AGE));
         entity.Put("name", 1, NativeRdb::ValueObject(NAME));
         entity.Put("salary", INDEX_SALARY, NativeRdb::ValueObject(SALARY));
