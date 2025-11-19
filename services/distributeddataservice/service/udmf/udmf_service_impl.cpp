@@ -1204,7 +1204,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
     }
     key = runtime->key.GetUnifiedKey();
     DelayDataPrepareContainer::GetInstance().RegisterDataLoadCallback(
-        key, iface_cast<UdmfNotifierProxy>(iUdmfNotifier));
+        key, iface_cast<IUdmfNotifier>(iUdmfNotifier));
 
     auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
     if (store == nullptr) {
