@@ -24,6 +24,7 @@
 #include "rdb_asset_loader.h"
 #include "rdb_cloud.h"
 #include "rdb_store.h"
+#include "rdb_store_config.h"
 #include "relational_store_delegate.h"
 #include "relational_store_manager.h"
 #include "store/general_store.h"
@@ -46,23 +47,15 @@ public:
     using Snapshot = DistributedData::Snapshot;
     using BindAssets = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
 
-    explicit RdbGeneralStore(const StoreMetaData &meta);
+    explicit RdbGeneralStore(const StoreMetaData &, bool createRequired = false);
     ~RdbGeneralStore();
 
-    static void OnSyncStart(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode,
-        uint32_t traceId, uint32_t syncCount);
-    static void OnSyncFinish(const DistributedData::StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode,
-        uint32_t traceId);
+    int32_t Init();
     void SetExecutor(std::shared_ptr<Executor> executor) override;
     int32_t Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
         const CloudConfig &config) override;
     bool IsBound(uint32_t user) override;
-    bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
-    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
-	    const std::vector<Reference> &references) override;
-    int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
-        const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
     int32_t Insert(const std::string &table, VBuckets &&values) override;
     int32_t Update(const std::string &table, const std::string &setSql, Values &&values, const std::string &whereSql,
         Values &&conditions) override;
@@ -71,6 +64,26 @@ public:
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, const std::string &sql,
         Values &&args) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) override;
+
+    std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value, ConflictResolution resolution) override;
+    std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values, ConflictResolution resolution) override;
+    std::pair<int32_t, int64_t> Update(GenQuery &query, VBucket &&value, ConflictResolution resolution) override;
+    std::pair<int32_t, int64_t> Delete(GenQuery &query) override;
+    std::pair<int32_t, Value> Execute(const std::string &sql, Values &&args) override;
+    std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &sql, Values &&args = {},
+        bool preCount = false) override;
+    std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const std::vector<std::string> &columns = {},
+        bool preCount = false) override;
+
+    void SetConfig(const StoreConfig &storeConfig) override;
+    int32_t AddRef() override;
+    int32_t Release() override;
+    int32_t Close(bool isForce = false) override;
+
+    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
+        const std::vector<Reference> &references) override;
+    int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
+        const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
     std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
         const DistributedData::SyncParam &syncParam) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
@@ -79,35 +92,37 @@ public:
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t RegisterDetailProgressObserver(DetailAsync async) override;
     int32_t UnregisterDetailProgressObserver() override;
-    int32_t Close(bool isForce = false) override;
-    void SetConfig(const StoreConfig &storeConfig) override;
-    int32_t AddRef() override;
-    int32_t Release() override;
     int32_t BindSnapshots(BindAssets bindAssets) override;
     int32_t MergeMigratedData(const std::string &tableName, VBuckets&& values) override;
     int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
     int32_t UpdateDBStatus() override;
-    int32_t SetDBProperty(const DBProperty &property) override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
     RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore);
-    int32_t SetReference(const std::vector<Reference> &references);
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
     using SyncProcess = DistributedDB::SyncProcess;
     using DBBriefCB = DistributedDB::SyncStatusCallback;
+    using DBOption = DistributedDB::RelationalStoreDelegate::Option;
     using DBProcessCB = std::function<void(const std::map<std::string, SyncProcess> &processes)>;
     using TaskId = ExecutorPool::TaskId;
     using Time = std::chrono::steady_clock::time_point;
     using SyncId = uint64_t;
     static GenErr ConvertStatus(DistributedDB::DBStatus status);
-    void InitStoreInfo(const StoreMetaData &meta);
+//    static GenErr ConvertNativeRdbStatus(uint32_t status);
     // GetIntersection and return results in the order of collecter1
     static std::vector<std::string> GetIntersection(std::vector<std::string> &&syncTables,
         const std::set<std::string> &localTables);
+    static std::vector<uint8_t> GetDBPassword(const StoreMetaData &data, bool createRequired = false);
+    static NativeRdb::RdbStoreConfig GetRdbConfig(const StoreMetaData &meta, bool createRequired);
+
+    static void OnSyncStart(DistributedData::StoreInfo storeInfo, uint32_t flag, uint32_t syncMode,
+        uint32_t traceId, uint32_t syncCount);
+    static void OnSyncFinish(DistributedData::StoreInfo storeInfo, uint32_t flag, uint32_t syncMode,
+        uint32_t traceId);
     static constexpr inline uint64_t REMOTE_QUERY_TIME_OUT = 30 * 1000;
     static constexpr int64_t INTERVAL = 1;
     static constexpr const char* CLOUD_GID = "cloud_gid";
@@ -119,6 +134,7 @@ private:
     static constexpr uint32_t ITERS_COUNT = sizeof(ITERS) / sizeof(ITERS[0]);
     class ObserverProxy : public DistributedDB::StoreObserver {
     public:
+        ObserverProxy(const StoreMetaData &meta);
         using DBChangedIF = DistributedDB::StoreChangedData;
         using DBChangedData = DistributedDB::ChangedData;
         using DBOrigin = DistributedDB::Origin;
@@ -137,14 +153,22 @@ private:
         void PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables, ChangeType type);
         friend RdbGeneralStore;
         Watcher *watcher_ = nullptr;
-        std::string storeId_;
-        StoreMetaData meta_;
+        const StoreMetaData meta_;
+        const std::string &storeId_;
     };
+    struct FinishTask {
+        TaskId taskId = Executor::INVALID_TASK_ID;
+        DBProcessCB cb = nullptr;
+    };
+    DBOption GetOption(const StoreMetaData &meta);
     DBBriefCB GetDBBriefCB(DetailAsync async);
     DBProcessCB GetCB(SyncId syncId);
     DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t syncMode, SyncId syncId,
         uint32_t highMode = AUTO_SYNC_MODE);
+
+
     Executor::Task GetFinishTask(SyncId syncId);
+    int32_t SetReference(const std::vector<Reference> &references);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
     std::string BuildSql(const std::string& table, const std::string& statement,
@@ -160,36 +184,44 @@ private:
     std::pair<int32_t, int32_t> DoCloudSync(const Devices &devices, const DistributedDB::Query &dbQuery,
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
-    DBPassword GetDBPassword(const StoreMetaData &data);
+    std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> InitRdbStore();
+    int32_t InitDelegate();
+    DistributedData::StoreInfo GetStoreInfo() const;
+    DetailAsync GetAsync() const;
+    void SetAsync(DetailAsync async);
+    BindAssets GetSnapshots() const;
+    std::shared_ptr<Executor> GetExecutor() const;
 
-    ObserverProxy observer_;
-    RdbManager manager_;
-    RdbDelegate *delegate_ = nullptr;
-    DetailAsync async_ = nullptr;
-    std::shared_ptr<RdbCloud> rdbCloud_ {};
-    std::shared_ptr<RdbAssetLoader> rdbLoader_ {};
-    BindInfo bindInfo_;
-    std::atomic<bool> isBound_ = false;
     std::mutex mutex_;
     int32_t ref_ = 1;
-    mutable std::shared_timed_mutex rwMutex_;
 
+    ObserverProxy observer_;
+    const StoreMetaData &meta_;
+    RdbManager manager_;
+    const bool createRequired_ = false;
+
+    bool isClosed_ = false;
+    mutable std::shared_timed_mutex dbMutex_;
+    RdbDelegate *delegate_ = nullptr;
+    std::shared_ptr<NativeRdb::RdbStore> rdbStore_ = nullptr;
+
+    std::atomic<bool> isBound_ = false;
+
+    mutable std::shared_mutex rwMutex_;
+    DetailAsync async_ = nullptr;
+    std::shared_ptr<RdbCloud> rdbCloud_ {};
+    BindInfo bindInfo_;
     BindAssets snapshots_;
-    DistributedData::StoreInfo storeInfo_;
+    std::shared_ptr<Executor> executor_ = nullptr;
+
+    uint32_t syncNotifyFlag_ = 0;
+    std::atomic<SyncId> syncTaskId_ = 0;
+    const std::shared_ptr<ConcurrentMap<SyncId, FinishTask>> tasks_;
 
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
-    uint32_t syncNotifyFlag_ = 0;
-    std::atomic<SyncId> syncTaskId_ = 0;
-    std::shared_mutex asyncMutex_ {};
-    mutable std::shared_mutex rdbCloudMutex_;
-    struct FinishTask {
-        TaskId taskId = Executor::INVALID_TASK_ID;
-        DBProcessCB cb = nullptr;
-    };
-    std::shared_ptr<Executor> executor_ = nullptr;
-    std::shared_ptr<ConcurrentMap<SyncId, FinishTask>> tasks_;
+
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

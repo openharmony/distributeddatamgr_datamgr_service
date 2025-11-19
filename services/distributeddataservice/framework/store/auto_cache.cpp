@@ -70,7 +70,7 @@ std::string AutoCache::GenerateKey(const std::string &path, const std::string &s
     return key.append(path).append(KEY_SEPARATOR).append(storeId);
 }
 
-int32_t AutoCache::GetStatus(const StoreMetaData &meta)
+int32_t AutoCache::CheckStatusBeforeOpen(const StoreMetaData &meta)
 {
     if (meta.area == GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
         ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s",
@@ -88,12 +88,13 @@ int32_t AutoCache::GetStatus(const StoreMetaData &meta)
     if (!Account::GetInstance()->IsVerified(atoi(meta.user.c_str()))) {
         ZLOGW("user %{public}s is locked, bundleName:%{public}s, storeName: %{public}s",
             meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-        return E_USER_LOCKED;
+        return E_USER_UNLOCK;
     }
     return E_OK;
 }
 
-std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &meta, const Watchers &watchers)
+std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &meta, const Watchers &watchers,
+    const StoreOption &option)
 {
     Store store;
     auto storeKey = GenerateKey(meta.dataDir, meta.storeId);
@@ -105,12 +106,13 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
               meta.GetStoreAlias().c_str());
         return { E_ERROR, store };
     }
-    int32_t errCode = GetStatus(meta);
-    if (errCode != E_OK) {
-        return { errCode, store };
+    int32_t ret = CheckStatusBeforeOpen(meta);
+    if (ret != E_OK) {
+        return { ret, store };
     }
     stores_.Compute(meta.tokenId,
-        [this, &meta, &watchers, &store, &storeKey](auto &, std::map<std::string, Delegate> &stores) -> bool {
+        [this, &meta, &watchers, &store, &storeKey, &option, &ret](auto &,
+            std::map<std::string, Delegate> &stores) -> bool {
             if (disableStores_.count(meta.dataDir) != 0) {
                 ZLOGW("store is closing,tokenId:0x%{public}x,user:%{public}s,bundleName:%{public}s,storeId:%{public}s",
                     meta.tokenId, meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
@@ -124,7 +126,8 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
                 store = it->second;
                 return !stores.empty();
             }
-            auto *dbStore = creators_[meta.storeType](meta);
+            GeneralStore *dbStore = nullptr;
+            std::tie(ret, dbStore) = creators_[meta.storeType](meta, option);
             if (dbStore == nullptr) {
                 ZLOGE("creator failed. storeName:%{public}s", meta.GetStoreAlias().c_str());
                 return !stores.empty();
@@ -136,7 +139,7 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
             StartTimer();
             return !stores.empty();
         });
-    return { E_OK, store };
+    return { ret == E_OK && store == nullptr ? E_ERROR : ret, store };
 }
 
 AutoCache::Store AutoCache::GetStore(const StoreMetaData &meta, const Watchers &watchers)
