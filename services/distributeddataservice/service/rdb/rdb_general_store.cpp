@@ -1400,12 +1400,12 @@ int32_t RdbGeneralStore::SetDBProperty(const DBProperty &property)
     return delegate_->SetProperty(property);
 }
 
-int32_t RdbGeneralStore::SetCloudConflictHandle(const std::shared_ptr<CloudConflictHandler> &handler)
+int32_t RdbGeneralStore::SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
 {
     if (delegate_ == nullptr) {
         return DBStatus::DB_ERROR;
     }
-    delegate_->SetCloudConflictHandle(handler);
+    delegate_->SetCloudConflictHandler(handler);
     return GenErr::E_OK;
 }
 

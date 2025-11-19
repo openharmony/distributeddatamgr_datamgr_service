@@ -19,13 +19,15 @@
 #include "store/general_value.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-using namespace DistributedDB;
-class API_EXPORT CloudConflictHandler : public ICloudConflictHandler {
+
+class CloudConflictHandler : public DistributedDB::ICloudConflictHandler {
 public:
+    using ConflictRet = DistributedDB::ConflictRet;
+    using VBucket = DistributedDB::VBucket;
     CloudConflictHandler() = default;
     ~CloudConflictHandler() override = default;
     ConflictRet HandleConflict(const std::string &table, const VBucket &oldData, const VBucket &newData,
-        const VBucket &upsert) override;
+        VBucket &upsert) override;
 };
 } // namespace OHOS::DistributedData
 #endif

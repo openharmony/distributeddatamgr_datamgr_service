@@ -1198,8 +1198,9 @@ std::function<void(const Event &)> SyncManager::GetConflictHandler()
         if (code != E_OK || store == nullptr) {
             ZLOGE("GetStore failed, bundleName:%{public}s, storeName:%{public}s, user:%{public}d",
                 storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
+            return;
         }
-        auto ret = store->SetCloudConflictHandle(instance->GetConflictHandler());
+        auto ret = store->SetCloudConflictHandler(instance->GetConflictHandler());
         ZLOGI("SetCloudConflictHandle, bundleName:%{public}s, storeName:%{public}s, user:%{public}d, ret:%{public}d",
             storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user, ret);
     };

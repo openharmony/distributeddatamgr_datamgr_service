@@ -208,7 +208,7 @@ public:
         return 0;
     }
     virtual int32_t SetDBProperty(const DBProperty &property) = 0;
-    virtual int32_t SetCloudConflictHandle(const std::shared_ptr<CloudConflictHandler> &handler)
+    virtual int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
     {
         return 0;
     }
