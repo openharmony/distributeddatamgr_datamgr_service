@@ -151,6 +151,15 @@ ValueProxy::Buckets ValueProxy::Convert(std::vector<DistributedDB::VBucket> &&bu
     return proxy;
 }
 
+ValueProxy::Bucket ValueProxy::Convert(std::map<std::string, NativeRdb::ValueObject> &&bucket)
+{
+    ValueProxy::Bucket proxy;
+    for (auto &[key, value] : bucket) {
+        proxy.value_.insert_or_assign(key, Convert(std::move(value)));
+    }
+    return proxy;
+}
+
 ValueProxy::Buckets ValueProxy::Convert(DistributedData::VBuckets &&buckets)
 {
     ValueProxy::Buckets proxy;

@@ -64,6 +64,7 @@ enum GeneralError : int32_t {
     E_SKIP_ASSET,
     E_BUTT,
     E_USER_LOCKED,
+    E_DB_CORRUPT,
 };
 }
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_ERROR_H
