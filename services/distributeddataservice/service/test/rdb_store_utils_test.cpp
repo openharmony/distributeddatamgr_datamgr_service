@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "RdbUtilsTest"
+#define LOG_TAG "RdbStoreUtilsTest"
 
-#include "rdb_utils.h"
+#include "rdb_store_utils.h"
 #include "gtest/gtest.h"
 #include "rdb_errno.h"
 #include "rdb_types.h"
@@ -29,7 +29,7 @@ using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
 namespace DistributedRDBTest {
-class RdbUtilsTest : public testing::Test {
+class RdbStoreUtilsTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
@@ -38,37 +38,37 @@ public:
 };
 
 /**
-* @tc.name: RdbUtilsTest001
+* @tc.name: RdbStoreUtilsTest001
 * @tc.desc: ConvertNativeRdbStatus error code test.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author:
 */
-HWTEST_F(RdbUtilsTest, RdbUtilsTest001, TestSize.Level1)
+HWTEST_F(RdbStoreUtilsTest, RdbStoreUtilsTest001, TestSize.Level1)
 {
     int32_t status = NativeRdb::E_SQLITE_BUSY;
-    int32_t ret = RdbUtils::ConvertNativeRdbStatus(status);
+    int32_t ret = RdbStoreUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, GeneralError::E_BUSY);
     status = NativeRdb::E_DATABASE_BUSY;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbStoreUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, GeneralError::E_BUSY);
     status = NativeRdb::E_SQLITE_LOCKED;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbStoreUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, GeneralError::E_BUSY);
     status = NativeRdb::E_INVALID_ARGS;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbStoreUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
     status = NativeRdb::E_INVALID_ARGS_NEW;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbStoreUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
     status = NativeRdb::E_ALREADY_CLOSED;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbStoreUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, GeneralError::E_ALREADY_CLOSED);
     status = NativeRdb::E_SQLITE_CORRUPT;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbStoreUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, GeneralError::E_DB_CORRUPT);
     status = NativeRdb::E_SQLITE_SCHEMA;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbStoreUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, GeneralError::E_ERROR);
 }
 } // namespace DistributedRDBTest

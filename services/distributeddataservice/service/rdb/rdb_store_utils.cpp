@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "rdb_utils.h"
+#include "rdb_store_utils.h"
 #include "rdb_errno.h"
 #include "store/general_value.h"
 
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
-int32_t RdbUtils::ConvertNativeRdbStatus(int32_t status)
+int32_t RdbStoreUtils::ConvertNativeRdbStatus(int32_t status)
 {
     switch (status) {
         case NativeRdb::E_OK:

@@ -18,7 +18,7 @@
 #include <cstdint>
 
 namespace OHOS::DistributedRdb {
-class RdbUtils {
+class RdbStoreUtils {
 public:
     static int32_t ConvertNativeRdbStatus(int32_t status);
 };
