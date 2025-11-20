@@ -16,9 +16,9 @@
 #include "cloud/cloud_conflict_handler.h"
 
 namespace OHOS::DistributedData {
-ConflictRet CloudConflictHandler::HandleConflict(const std::string &table, const VBucket &oldData,
-    const VBucket &newData, const VBucket &upsert)
+DistributedDB::ConflictRet CloudConflictHandler::HandleConflict(const std::string &table, const VBucket &oldData,
+    const VBucket &newData, VBucket &upsert)
 {
-    return ConflictRet::BUTT;
+    return DistributedDB::ConflictRet::NOT_HANDLE;
 }
 } // namespace OHOS::DistributedData

@@ -261,6 +261,7 @@ ohos_unittest("CloudInfoTest") {
     "c_utils:utils",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
+    "kv_store:distributeddb",
   ]
 }
 
@@ -283,6 +284,7 @@ ohos_unittest("GeneralStoreTest") {
   external_deps = [
     "c_utils:utils",
     "kv_store:datamgr_common",
+    "kv_store:distributeddb",
   ]
 }
 

@@ -818,6 +818,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -855,6 +856,7 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -889,6 +891,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -1096,6 +1099,7 @@ ohos_unittest("ObjectSnapshotTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
 

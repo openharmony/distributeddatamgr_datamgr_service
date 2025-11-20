@@ -20,7 +20,8 @@
 #include "visibility.h"
 namespace OHOS::DistributedData {
 
-class CloudConflictHandler : public DistributedDB::ICloudConflictHandler {
+
+class API_EXPORT CloudConflictHandler : public DistributedDB::ICloudConflictHandler {
 public:
     using ConflictRet = DistributedDB::ConflictRet;
     using VBucket = DistributedDB::VBucket;

@@ -1403,10 +1403,9 @@ int32_t RdbGeneralStore::SetDBProperty(const DBProperty &property)
 int32_t RdbGeneralStore::SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
 {
     if (delegate_ == nullptr) {
-        return DBStatus::DB_ERROR;
+        return GeneralError::E_ALREADY_CLOSED;;
     }
-    delegate_->SetCloudConflictHandler(handler);
-    return GenErr::E_OK;
+    return delegate_->SetCloudConflictHandler(handler);
 }
 
 void RdbGeneralStore::ReleaseCloudConflictHandler()

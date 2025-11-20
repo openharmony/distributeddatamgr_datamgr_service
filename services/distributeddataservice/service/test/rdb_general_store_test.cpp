@@ -1154,5 +1154,20 @@ HWTEST_F(RdbGeneralStoreTest, UpdateDBStatus, TestSize.Level1)
     result = store->UpdateDBStatus();
     EXPECT_EQ(result, E_OK);
 }
+
+/**
+* @tc.name: SetCloudConflictHandle
+* @tc.desc: SetCloudConflictHandle test
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
+{
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    auto result = store->SetCloudConflictHandler(nullptr);
+    EXPECT_EQ(result, DBStatus::OK);
+    store->delegate_ = nullptr;
+    result = store->SetCloudConflictHandler(nullptr);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

@@ -16,7 +16,7 @@
 #define LOG_TAG "CloudInfoTest"
 #include <gtest/gtest.h>
 
-#include "serializable/serializable.h"
+#include "cloud/cloud_conflict_handler.h"
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
@@ -34,42 +34,42 @@ using namespace OHOS::DistributedData;
 namespace OHOS::Test {
 class CloudInfoTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
-    void SetUp(){};
-    void TearDown(){};
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+    void SetUp() {};
+    void TearDown() {};
 };
 
 class ServicesCloudServerTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
-    void SetUp(){};
-    void TearDown(){};
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+    void SetUp() {};
+    void TearDown() {};
 };
 
 class ServicesCloudDBTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
-    void SetUp(){};
-    void TearDown(){};
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+    void SetUp() {};
+    void TearDown() {};
 };
 
 class CloudEventTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
-    void SetUp(){};
-    void TearDown(){};
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+    void SetUp() {};
+    void TearDown() {};
 };
 
 class ScreenManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
-    static void TearDownTestCase(void){};
-    void SetUp(){};
-    void TearDown(){};
+    static void TearDownTestCase(void) {};
+    void SetUp() {};
+    void TearDown() {};
 };
 
 void ScreenManagerTest::SetUpTestCase()
@@ -102,7 +102,7 @@ public:
 
     std::vector<std::string> GetTables() override
     {
-        return {"table1", "table2"};
+        return { "table1", "table2" };
     }
 };
 
@@ -334,7 +334,8 @@ HWTEST_F(CloudInfoTest, CloudInfoTest003, TestSize.Level0)
     EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].instanceId = 1;
     EXPECT_NE(cloudInfo2, cloudInfo1);
-    cloudInfo2.apps["ohos.test.demo"].version = 1;EXPECT_NE(cloudInfo2, cloudInfo1);
+    cloudInfo2.apps["ohos.test.demo"].version = 1;
+    EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].appId = "test2_id";
     EXPECT_NE(cloudInfo2, cloudInfo1);
     cloudInfo2.apps["ohos.test.demo"].bundleName = "ohos.test.demo2";
@@ -469,7 +470,6 @@ HWTEST_F(CloudInfoTest, FieldTest, TestSize.Level0)
     field1.primary = true;
     field1.nullable = false;
 
-
     Field field2 = field1;
     EXPECT_EQ(field2, field1);
 }
@@ -571,7 +571,7 @@ HWTEST_F(CloudInfoTest, GetSchemaKeyTest4, TestSize.Level0)
     apps = { { "test_cloud", appInfo } };
     cloudInfo.apps = apps;
     std::map<std::string, std::string> info;
-    info = { {"test_cloud_bundleName", "CLOUD_SCHEMA###0###test_cloud###100"} };
+    info = { { "test_cloud_bundleName", "CLOUD_SCHEMA###0###test_cloud###100" } };
     auto result = cloudInfo.GetSchemaKey();
     ASSERT_EQ(info, result);
 }
@@ -1050,5 +1050,46 @@ HWTEST_F(CloudEventTest, GetCloudTables_002, TestSize.Level0)
     auto tables = database.GetCloudTables();
     std::vector<std::string> tagTable;
     EXPECT_EQ(tables, tagTable);
+}
+
+/**
+* @tc.name: HandleConflict001
+* @tc.desc: Test the default value of the HandleConflict interface
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudEventTest, HandleConflict001, TestSize.Level1)
+{
+    CloudConflictHandler handler;
+    DistributedDB::VBucket data;
+    auto ret = handler.HandleConflict("table", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
+}
+
+/**
+* @tc.name: Field001
+* @tc.desc: SchemaMeta Overload function Field test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudInfoTest, Field001, TestSize.Level0)
+{
+    SchemaMeta::Field field1;
+    field1.colName = "test_cloud_field_name1";
+    field1.alias = "test_cloud_field_alias1";
+    field1.dupCheckCol = true;
+
+    SchemaMeta::Field field2;
+    field2.colName = "test_cloud_field_name2";
+    field2.alias = "test_cloud_field_alias2";
+    EXPECT_FALSE(field1 == field2);
+    Serializable::json node;
+    field1.Marshal(node);
+
+    SchemaMeta::Field field3;
+    field3.Unmarshal(node);
+    EXPECT_TRUE(field1 == field3);
 }
 } // namespace OHOS::Test
