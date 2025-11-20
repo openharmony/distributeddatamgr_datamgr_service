@@ -19,11 +19,9 @@
 #include "result_set.h"
 #include "rdb_errno.h"
 #include "store/cursor.h"
-#include "value_proxy.h"
 #include "store/general_value.h"
 
 namespace OHOS::DistributedRdb {
-using ValueProxy = DistributedData::ValueProxy;
 using ColumnType = NativeRdb::ColumnType;
 class RelationalStoreCursor : public DistributedData::Cursor {
 public:

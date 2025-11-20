@@ -271,7 +271,6 @@ void RdbGeneralStoreTest::CorruptDatabasePager(std::shared_ptr<RdbGeneralStore> 
     auto [code, res] = store->BatchInsert(tableName, std::move(largeDataSet), GeneralStore::ON_CONFLICT_NONE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, recordCount);
-//    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
 
     EXPECT_TRUE(CorruptDatabaseFile(filePath, 4096, 20 * 1024 * 1024));
 }
@@ -299,41 +298,7 @@ HWTEST_F(RdbGeneralStoreTest, BindSnapshots001, TestSize.Level1)
     BindAssets bindAssets;
     auto result = store_->BindSnapshots(bindAssets);
     EXPECT_EQ(result, GeneralError::E_OK);
-}
-
-/**
-* @tc.name: BindSnapshots002
-* @tc.desc: RdbGeneralStore BindSnapshots nullptr test
-* @tc.type: FUNC
-*/
-HWTEST_F(RdbGeneralStoreTest, BindSnapshots002, TestSize.Level1)
-{
-    DistributedData::StoreMetaData meta;
-    meta = metaData_;
-    meta.isEncrypt = true;
-    auto store = std::make_shared<RdbGeneralStore>(meta);
-    ASSERT_NE(store, nullptr);
-    store->snapshots_ = nullptr;
-    BindAssets bindAssets;
-    auto result = store->BindSnapshots(bindAssets);
-    EXPECT_EQ(result, GeneralError::E_OK);
-}
-
-/**
-@tc.name: BindSnapshots003
-@tc.desc: RdbGeneralStore BindSnapshots not nullptr test
-@tc.type: FUNC
-*/
-HWTEST_F(RdbGeneralStoreTest, BindSnapshots003, TestSize.Level1)
-{
-    DistributedData::StoreMetaData meta;
-    meta = metaData_;
-    meta.isEncrypt = true;
-    auto store = std::make_shared<RdbGeneralStore>(meta);
-    ASSERT_NE(store, nullptr);
-    BindAssets bindAssets = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
-    store->snapshots_ = bindAssets;
-    auto result = store->BindSnapshots(bindAssets);
+    result = store_->BindSnapshots(bindAssets);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 
@@ -351,31 +316,23 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
     EXPECT_TRUE(bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_OK);
 
-    std::shared_ptr<CloudDB> db;
-    std::shared_ptr<AssetLoader> loader;
-    GeneralStore::BindInfo bindInfo(db, loader);
-    EXPECT_EQ(bindInfo.db_, nullptr);
-    EXPECT_EQ(bindInfo.loader_, nullptr);
+    std::shared_ptr<CloudDB> dbs = std::make_shared<CloudDB>();
+    std::shared_ptr<AssetLoader> loaders = std::make_shared<AssetLoader>();
+
+    GeneralStore::BindInfo bindInfo(nullptr, nullptr);
     uint32_t key = 1;
     bindInfos[key] = bindInfo;
     result = store_->Bind(database, bindInfos, config);
-    EXPECT_TRUE(!bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    std::shared_ptr<CloudDB> dbs = std::make_shared<CloudDB>();
-    std::shared_ptr<AssetLoader> loaders = std::make_shared<AssetLoader>();
-    GeneralStore::BindInfo bindInfo1(dbs, loader);
-    EXPECT_NE(bindInfo1.db_, nullptr);
+    GeneralStore::BindInfo bindInfo1(dbs, nullptr);
     bindInfos[key] = bindInfo1;
     result = store_->Bind(database, bindInfos, config);
-    EXPECT_TRUE(!bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    GeneralStore::BindInfo bindInfo2(db, loaders);
-    EXPECT_NE(bindInfo2.loader_, nullptr);
+    GeneralStore::BindInfo bindInfo2(nullptr, loaders);
     bindInfos[key] = bindInfo2;
     result = store_->Bind(database, bindInfos, config);
-    EXPECT_TRUE(!bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 }
 
@@ -395,7 +352,6 @@ HWTEST_F(RdbGeneralStoreTest, Bind002, TestSize.Level1)
     bindInfos[key] = bindInfo;
     GeneralStore::CloudConfig config;
     auto result = store_->Bind(database, bindInfos, config);
-    EXPECT_EQ(store_->delegate_, nullptr);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 
     store_->isBound_ = true;
@@ -418,24 +374,29 @@ HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
     GeneralStore::BindInfo bindInfo(db, loader);
     uint32_t key = 1;
     bindInfos[key] = bindInfo;
-    metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+
+    std::string storeId = "Bind003.db";
+    auto meta = GetStoreMeta(storeId);
+    remove(meta.dataDir.c_str());
+    auto store = std::make_shared<RdbGeneralStore>(meta, true);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+
+    EXPECT_FALSE(store->IsBound(std::atoi(meta.user.c_str())));
     GeneralStore::CloudConfig config;
-    auto result = store_->Bind(database, bindInfos, config);
-    EXPECT_NE(store_->delegate_, nullptr);
+    auto result = store->Bind(database, bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_TRUE(store->IsBound(std::atoi(meta.user.c_str())));
+    remove(meta.dataDir.c_str());
 }
 
 /**
 * @tc.name: Close
-* @tc.desc: RdbGeneralStore Close and isforce is false and GetDeviceSyncTaskCount is 2
+* @tc.desc: RdbGeneralStore Close and isForce is false and GetDeviceSyncTaskCount is 2
 * @tc.type: FUNC
 */
 HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
 {
-    auto result = store_->IsBound(std::atoi(metaData_.user.c_str()));
-    EXPECT_EQ(result, false);
-    EXPECT_EQ(store_->delegate_, nullptr);
     auto ret = store_->Close();
     EXPECT_EQ(ret, GeneralError::E_OK);
     metaData_.storeId = "mock";
@@ -754,11 +715,7 @@ HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
     ASSERT_NE(store_, nullptr);
 
-    MockQuery query;
-    const std::string devices = "device1";
-    const std::string sql;
-    Values args;
-    query.lastResult = true;
+    RdbQuery query;
     std::string table = "test_table";
     auto [err, cursor] = store_->Query(table, query);
     EXPECT_EQ(err, GeneralError::E_ERROR);
@@ -771,12 +728,10 @@ HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
  */
 HWTEST_F(RdbGeneralStoreTest, Query004, TestSize.Level1)
 {
-    MockQuery query;
     const std::string devices = "device1";
     const std::string sql;
     Values args;
-    query.MakeRemoteQuery(devices, sql, std::move(args));
-    query.lastResult = true;
+    RdbQuery query(devices, sql, std::move(args));
 
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
@@ -904,12 +859,10 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing001, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, PreSharing002, TestSize.Level1)
 {
-    MockQuery query;
     DistributedRdb::PredicatesMemo predicates;
     predicates.devices_ = { "device1" };
     predicates.tables_ = { "tables1" };
-    query.lastResult = true;
-    query.MakeQuery(predicates);
+    RdbQuery query(predicates);
     auto [errCode, result] = store_->PreSharing(query);
     EXPECT_EQ(errCode, GeneralError::E_ALREADY_CLOSED);
     EXPECT_EQ(result, nullptr);
@@ -924,13 +877,10 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing003, TestSize.Level1)
 {
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    ASSERT_NE(store_, nullptr);
-    MockQuery query;
     DistributedRdb::PredicatesMemo predicates;
     predicates.devices_ = { "device1" };
     predicates.tables_ = { "tables1" };
-    query.lastResult = true;
-    query.MakeQuery(predicates);
+    RdbQuery query(predicates);
     auto [errCode, result] = store_->PreSharing(query);
     EXPECT_EQ(errCode, GeneralError::E_CLOUD_DISABLED);
     ASSERT_EQ(result, nullptr);

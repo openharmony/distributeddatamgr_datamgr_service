@@ -88,7 +88,7 @@ int32_t AutoCache::CheckStatusBeforeOpen(const StoreMetaData &meta)
     if (!Account::GetInstance()->IsVerified(atoi(meta.user.c_str()))) {
         ZLOGW("user %{public}s is locked, bundleName:%{public}s, storeName: %{public}s",
             meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-        return E_USER_UNLOCK;
+        return E_USER_LOCKED;
     }
     return E_OK;
 }

@@ -167,7 +167,6 @@ RdbGeneralStore::DBOption RdbGeneralStore::GetOption(const StoreMetaData &meta)
     return option;
 }
 
-//TODO 重构
 std::vector<uint8_t> RdbGeneralStore::GetDBPassword(const StoreMetaData &data, bool createRequired)
 {
     SecretKeyMetaData secretKey;
@@ -198,9 +197,6 @@ std::vector<uint8_t> RdbGeneralStore::GetDBPassword(const StoreMetaData &data, b
     // update secret key of area or nonce
     CryptoManager::GetInstance().UpdateSecretMeta(password, data, metaKey, secretKey);
     return password;
-//    dbPassword.SetValue(password.data(), password.size());
-//    password.assign(password.size(), 0);
-//    return dbPassword;
 }
 
 std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> RdbGeneralStore::InitRdbStore()
@@ -374,16 +370,13 @@ int32_t RdbGeneralStore::Close(bool isForce)
     }
     {
         std::unique_lock<decltype(dbMutex_)> lock(dbMutex_, std::chrono::seconds(isForce ? LOCK_TIMEOUT : 0));
-        if (!lock) { // 可以考虑判断下引用计数，如果超过1直接返回busy
+        if (!lock) {
             return GeneralError::E_BUSY;
         }
 
         if (delegate_ == nullptr && rdbStore_ == nullptr) {
             return GeneralError::E_OK;
         }
-//        if (rdbStore_.use_count() > 1) { //如果datashare在使用同一个db, 这里会关不掉。
-//            return GeneralError::E_BUSY;
-//        }
         if (delegate_ != nullptr) {
             auto [dbStatus, downloadCount] = delegate_->GetDownloadingAssetsCount();
             if (!isForce && (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0 ||
@@ -1540,7 +1533,7 @@ NativeRdb::RdbStoreConfig RdbGeneralStore::GetRdbConfig(const StoreMetaData &met
     if (meta.isEncrypt) {
         auto key = RdbGeneralStore::GetDBPassword(meta, createRequired);
         if (key.empty()) {
-            ZLOGE("database:%{public}s GetDBPassword failed! table:%{public}s", meta.GetStoreAlias().c_str());
+            ZLOGE("database:%{public}s GetDBPassword failed!", meta.GetStoreAlias().c_str());
             return config;
         }
         config.SetEncryptKey(std::move(key));
@@ -1574,29 +1567,6 @@ NativeRdb::ConflictResolution ConvertResolution(GeneralStore::ConflictResolution
     ZLOGW("resolution:%{public}d convert failed, return default!", conflictResolution);
     return NativeRdb::ConflictResolution::ON_CONFLICT_NONE;
 }
-
-//RdbGeneralStore::GenErr RdbGeneralStore::ConvertNativeRdbStatus(uint32_t status)
-//{
-//    switch (status) {
-//        case NativeRdb::E_OK:
-//            return GenErr::E_OK;
-//        case NativeRdb::E_SQLITE_BUSY:
-//        case NativeRdb::E_DATABASE_BUSY:
-//        case NativeRdb::E_SQLITE_LOCKED:
-//            return GenErr::E_BUSY;
-//        case NativeRdb::E_INVALID_ARGS:
-//        case NativeRdb::E_INVALID_ARGS_NEW:
-//            return GenErr::E_INVALID_ARGS;
-//        case NativeRdb::E_ALREADY_CLOSED:
-//            return GenErr::E_ALREADY_CLOSED;
-//        case NativeRdb::E_SQLITE_CORRUPT:
-//            return GenErr::E_DB_CORRUPT;
-//        default:
-//            ZLOGW("status:0x%{public}x", status);
-//            break;
-//    }
-//    return GenErr::E_ERROR;
-//}
 
 std::pair<int32_t, int64_t> RdbGeneralStore::Insert(const std::string &table, VBucket &&value,
     GeneralStore::ConflictResolution resolution)
@@ -1711,7 +1681,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(GenQuery &que
     AbsRdbPredicates predicates(table);
     predicates.SetWhereClause(query.GetWhereClause());
     predicates.SetBindArgs(ValueProxy::Convert(query.GetArgs()));
-    //TOD SetOrder Limit..
+    // TOD SetOrder Limit..
     auto resultSet = store->QueryByStep(predicates, columns, preCount);
     if (resultSet == nullptr) {
         return { GenErr::E_ERROR, nullptr };
