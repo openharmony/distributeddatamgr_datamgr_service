@@ -28,7 +28,7 @@ DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::s
     }
     delegate->CreateDistributedTable("naturalbase_rdb_test");
     delegate->CreateDistributedTable("naturalbase_rdb_name");
-    if (storeId == "mock") {
+    if (storeId.find("errorDb") == std::string::npos || access(path.c_str(), F_OK) == 0) {
         return OK;
     }
     return DB_ERROR;

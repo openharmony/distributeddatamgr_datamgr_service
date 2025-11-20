@@ -549,7 +549,7 @@ int32_t RdbGeneralStore::Update(const std::string &table, const std::string &set
     if (delegate_ == nullptr) {
         ZLOGE("Database already closed! database:%{public}s, table:%{public}s", meta_.GetStoreAlias().c_str(),
             Anonymous::Change(table).c_str());
-        return GeneralError::E_ERROR;
+        return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->ExecuteSql({ sqlIn, std::move(bindArgs), false }, changedData);
     if (status != DBStatus::OK) {
@@ -758,7 +758,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::PreSharing(GenQuery
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
-        return { GeneralError::E_INVALID_ARGS, nullptr };
+        return { GeneralError::E_ALREADY_CLOSED, nullptr };
     }
     RdbQuery *rdbQuery = nullptr;
     auto ret = query.QueryInterface(rdbQuery);

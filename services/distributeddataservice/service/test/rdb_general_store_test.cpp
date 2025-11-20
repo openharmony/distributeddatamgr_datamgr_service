@@ -51,9 +51,8 @@ namespace DistributedRDBTest {
 using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
-static constexpr uint32_t PRINT_ERROR_CNT = 150;
 static constexpr const char *BUNDLE_NAME = "test_rdb_general_store";
-static constexpr const char *STORE_NAME = "test_service_rdb";
+static constexpr const char *STORE_NAME = "test_service_rdb_errorDb";
 
 class RdbGeneralStoreTest : public testing::Test {
 public:
@@ -118,6 +117,8 @@ void RdbGeneralStoreTest::InitMetaData()
     metaData_.storeType = 1;
     metaData_.storeId = STORE_NAME;
     metaData_.dataDir = "/data/service/el1/public/database/" + std::string(BUNDLE_NAME) + "/rdb";
+    mkdir(("/data/service/el1/public/database/" + std::string(BUNDLE_NAME)).c_str(),
+        (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     metaData_.securityLevel = DistributedKv::SecurityLevel::S2;
     metaData_.isSearchable = true;
 }
@@ -135,6 +136,8 @@ StoreMetaData RdbGeneralStoreTest::GetStoreMeta(const std::string &storeName, in
     metaData.storeId = storeName;
     metaData.dataDir = "/data/service/el" + std::to_string(area) + "/public/database/" + std::string(BUNDLE_NAME) +
                        "/rdb/" + storeName;
+    mkdir(("/data/service/el1/public/database/" + std::string(BUNDLE_NAME)).c_str(),
+        (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     metaData.securityLevel = DistributedKv::SecurityLevel::S2;
     metaData.isSearchable = true;
     return metaData;
@@ -397,14 +400,18 @@ HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Close, TestSize.Level1)
 {
-    auto ret = store_->Close();
+    std::string storeId = "Close.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
+    auto ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_OK);
     metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
     MockRelationalStoreDelegate::SetCloudSyncTaskCount(0);
     MockRelationalStoreDelegate::SetDownloadingAssetsCount(0);
     MockRelationalStoreDelegate::SetDeviceTaskCount(2);
-    ret = store_->Close();
+    ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_BUSY);
 }
 
@@ -417,10 +424,12 @@ HWTEST_F(RdbGeneralStoreTest, Close1, TestSize.Level1)
 {
     metaData_.storeId = "mock";
     auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
     MockRelationalStoreDelegate::SetCloudSyncTaskCount(1);
     auto ret = store->Close();
     EXPECT_EQ(ret, GeneralError::E_BUSY);
 }
+
 /**
  * @tc.name: Close2
  * @tc.desc: RdbGeneralStore Close and isforce is false and DownloadingAssetsCount is 1
@@ -430,6 +439,7 @@ HWTEST_F(RdbGeneralStoreTest, Close2, TestSize.Level1)
 {
     metaData_.storeId = "mock";
     auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
     MockRelationalStoreDelegate::SetCloudSyncTaskCount(0);
     MockRelationalStoreDelegate::SetDownloadingAssetsCount(1);
     auto ret = store->Close();
@@ -456,6 +466,7 @@ HWTEST_F(RdbGeneralStoreTest, Close4, TestSize.Level1)
 {
     metaData_.storeId = "mock";
     auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
     MockRelationalStoreDelegate::SetCloudSyncTaskCount(0);
     MockRelationalStoreDelegate::SetDownloadingAssetsCount(0);
     MockRelationalStoreDelegate::SetDeviceTaskCount(0);
@@ -472,9 +483,10 @@ HWTEST_F(RdbGeneralStoreTest, Close4, TestSize.Level1)
 HWTEST_F(RdbGeneralStoreTest, BusyClose, TestSize.Level1)
 {
     auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
     ASSERT_NE(store, nullptr);
     std::thread thread([store]() {
-        std::unique_lock<decltype(store->rwMutex_)> lock(store->rwMutex_);
+        std::unique_lock<decltype(store->dbMutex_)> lock(store->dbMutex_);
         std::this_thread::sleep_for(std::chrono::seconds(1));
     });
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -496,9 +508,10 @@ HWTEST_F(RdbGeneralStoreTest, Execute, TestSize.Level1)
     std::string sql = "sql";
     EXPECT_EQ(store_->delegate_, nullptr);
     auto result = store_->Execute(table, sql);
-    EXPECT_EQ(result, GeneralError::E_ERROR);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     result = store_->Execute(table, sql);
     EXPECT_EQ(result, GeneralError::E_OK);
 
@@ -566,25 +579,16 @@ HWTEST_F(RdbGeneralStoreTest, Insert001, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Insert002, TestSize.Level1)
 {
+    std::string storeId = "Insert002.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
     std::string table = "table";
     DistributedData::VBuckets extends = { { g_RdbVBucket } };
-    auto result = store_->Insert(table, std::move(extends));
-    EXPECT_EQ(result, GeneralError::E_ERROR);
+    auto result = store->Insert(table, std::move(extends));
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 
-    std::string test = "test";
-    result = store_->Insert(test, std::move(extends));
-    EXPECT_EQ(result, GeneralError::E_ERROR);
-
-    result = store_->Insert(test, std::move(extends));
-    EXPECT_EQ(result, GeneralError::E_ERROR);
-
-    for (size_t i = 0; i < PRINT_ERROR_CNT + 1; i++) {
-        result = store_->Insert(test, std::move(extends));
-        EXPECT_EQ(result, GeneralError::E_ERROR);
-    }
-    metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    result = store_->Insert(table, std::move(extends));
+    store->Init();
+    result = store->Insert(table, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 
@@ -595,34 +599,36 @@ HWTEST_F(RdbGeneralStoreTest, Insert002, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Update, TestSize.Level1)
 {
+    std::string storeId = "Update_errorDb.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
     std::string table = "table";
     std::string setSql = "setSql";
     RdbGeneralStore::Values values;
     std::string whereSql = "whereSql";
     RdbGeneralStore::Values conditions;
-    auto result = store_->Update("", setSql, std::move(values), whereSql, std::move(conditions));
+    auto result = store->Update("", setSql, std::move(values), whereSql, std::move(conditions));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    result = store_->Update(table, "", std::move(values), whereSql, std::move(conditions));
+    result = store->Update(table, "", std::move(values), whereSql, std::move(conditions));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    result = store_->Update(table, setSql, std::move(values), whereSql, std::move(conditions));
+    result = store->Update(table, setSql, std::move(values), whereSql, std::move(conditions));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    result = store_->Update(table, setSql, std::move(g_RdbValues), "", std::move(conditions));
+    result = store->Update(table, setSql, std::move(g_RdbValues), "", std::move(conditions));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    result = store_->Update(table, setSql, std::move(g_RdbValues), whereSql, std::move(conditions));
+    result = store->Update(table, setSql, std::move(g_RdbValues), whereSql, std::move(conditions));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    result = store_->Update(table, setSql, std::move(g_RdbValues), whereSql, std::move(g_RdbValues));
-    EXPECT_EQ(result, GeneralError::E_ERROR);
-    metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    result = store_->Update(table, setSql, std::move(g_RdbValues), whereSql, std::move(g_RdbValues));
+    result = store->Update(table, setSql, std::move(g_RdbValues), whereSql, std::move(g_RdbValues));
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    store->Init();
+    result = store->Update(table, setSql, std::move(g_RdbValues), whereSql, std::move(g_RdbValues));
     EXPECT_EQ(result, GeneralError::E_OK);
 
-    result = store_->Update("test", setSql, std::move(g_RdbValues), whereSql, std::move(g_RdbValues));
+    result = store->Update("test", setSql, std::move(g_RdbValues), whereSql, std::move(g_RdbValues));
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }
 
@@ -633,22 +639,24 @@ HWTEST_F(RdbGeneralStoreTest, Update, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Replace, TestSize.Level1)
 {
+    std::string storeId = "Replace_errorDb.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
     std::string table = "table";
     RdbGeneralStore::VBucket values;
-    auto result = store_->Replace("", std::move(g_RdbVBucket));
+    auto result = store->Replace("", std::move(g_RdbVBucket));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    result = store_->Replace(table, std::move(values));
+    result = store->Replace(table, std::move(values));
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
-    result = store_->Replace(table, std::move(g_RdbVBucket));
-    EXPECT_EQ(result, GeneralError::E_ERROR);
-    metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    result = store_->Replace(table, std::move(g_RdbVBucket));
+    result = store->Replace(table, std::move(g_RdbVBucket));
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    store->Init();
+    result = store->Replace(table, std::move(g_RdbVBucket));
     EXPECT_EQ(result, GeneralError::E_OK);
 
-    result = store_->Replace("test", std::move(g_RdbVBucket));
+    result = store->Replace("test", std::move(g_RdbVBucket));
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }
 
@@ -672,14 +680,18 @@ HWTEST_F(RdbGeneralStoreTest, Delete, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Query001, TestSize.Level1)
 {
+    std::string storeId = "Query001_errorDb.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
     std::string table = "table";
     std::string sql = "sql";
-    auto [err1, result1] = store_->Query(table, sql, std::move(g_RdbValues));
+    auto [err1, result1] = store->Query(table, sql, std::move(g_RdbValues));
     EXPECT_EQ(err1, GeneralError::E_ALREADY_CLOSED);
     EXPECT_EQ(result1, nullptr);
     metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    auto [err2, result2] = store_->Query(table, sql, std::move(g_RdbValues));
+    store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
+    auto [err2, result2] = store->Query(table, sql, std::move(g_RdbValues));
     EXPECT_EQ(err2, GeneralError::E_OK);
     EXPECT_NE(result2, nullptr);
 }
@@ -691,15 +703,18 @@ HWTEST_F(RdbGeneralStoreTest, Query001, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Query002, TestSize.Level1)
 {
+    std::string storeId = "Query001_errorDb.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
     std::string table = "table";
     std::string sql = "sql";
     MockQuery query;
-    auto [err1, result1] = store_->Query(table, query);
+    auto [err1, result1] = store->Query(table, query);
     EXPECT_EQ(err1, GeneralError::E_INVALID_ARGS);
     EXPECT_EQ(result1, nullptr);
 
     query.lastResult = true;
-    auto [err2, result2] = store_->Query(table, query);
+    auto [err2, result2] = store->Query(table, query);
     EXPECT_EQ(err2, GeneralError::E_ALREADY_CLOSED);
     EXPECT_EQ(result2, nullptr);
 }
@@ -711,13 +726,13 @@ HWTEST_F(RdbGeneralStoreTest, Query002, TestSize.Level1)
  */
 HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
 {
-    metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    ASSERT_NE(store_, nullptr);
-
+    std::string storeId = "Query003.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
+    store->Init();
     RdbQuery query;
     std::string table = "test_table";
-    auto [err, cursor] = store_->Query(table, query);
+    auto [err, cursor] = store->Query(table, query);
     EXPECT_EQ(err, GeneralError::E_ERROR);
 }
 
@@ -728,17 +743,17 @@ HWTEST_F(RdbGeneralStoreTest, Query003, TestSize.Level1)
  */
 HWTEST_F(RdbGeneralStoreTest, Query004, TestSize.Level1)
 {
-    const std::string devices = "device1";
+    std::string storeId = "Query004.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
+    store->Init();
+    const std::string devices = "device001";
     const std::string sql;
     Values args;
     RdbQuery query(devices, sql, std::move(args));
 
-    metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-
     std::string table = "test_table";
-    auto [err, cursor] = store_->Query(table, query);
-
+    auto [err, cursor] = store->Query(table, query);
     EXPECT_EQ(err, GeneralError::E_OK);
     EXPECT_NE(cursor, nullptr);
 }
@@ -750,14 +765,18 @@ HWTEST_F(RdbGeneralStoreTest, Query004, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, MergeMigratedData, TestSize.Level1)
 {
+    std::string storeId = "MergeMigratedData_errorDb.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
     std::string tableName = "tableName";
     DistributedData::VBuckets extends = { { g_RdbVBucket } };
-    auto result = store_->MergeMigratedData(tableName, std::move(extends));
-    EXPECT_EQ(result, GeneralError::E_ERROR);
+    auto result = store->MergeMigratedData(tableName, std::move(extends));
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 
     metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    result = store_->MergeMigratedData(tableName, std::move(extends));
+    store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
+    result = store->MergeMigratedData(tableName, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 
@@ -768,16 +787,20 @@ HWTEST_F(RdbGeneralStoreTest, MergeMigratedData, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Sync, TestSize.Level1)
 {
+    std::string storeId = "Sync_errorDb.db";
+    auto meta = GetStoreMeta(storeId);
+    auto store = std::make_shared<RdbGeneralStore>(meta);
     GeneralStore::Devices devices;
     MockQuery query;
     GeneralStore::DetailAsync async;
     SyncParam syncParam;
-    auto result = store_->Sync(devices, query, async, syncParam);
+    auto result = store->Sync(devices, query, async, syncParam);
     EXPECT_EQ(result.first, GeneralError::E_ALREADY_CLOSED);
 
     metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    result = store_->Sync(devices, query, async, syncParam);
+    store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
+    result = store->Sync(devices, query, async, syncParam);
     EXPECT_EQ(result.first, GeneralError::E_OK);
 }
 
@@ -796,6 +819,7 @@ HWTEST_F(RdbGeneralStoreTest, Sync001, TestSize.Level1)
 
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
     EXPECT_EQ(result1, GeneralError::E_OK);
     syncParam.mode = GeneralStore::NEARBY_END;
@@ -815,6 +839,7 @@ HWTEST_F(RdbGeneralStoreTest, Sync002, TestSize.Level1)
 {
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     ASSERT_NE(store_, nullptr);
 
     GeneralStore::Devices devices;
@@ -862,6 +887,7 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing002, TestSize.Level1)
     DistributedRdb::PredicatesMemo predicates;
     predicates.devices_ = { "device1" };
     predicates.tables_ = { "tables1" };
+    predicates.AddOperation(EQUAL_TO, "id", "1");
     RdbQuery query(predicates);
     auto [errCode, result] = store_->PreSharing(query);
     EXPECT_EQ(errCode, GeneralError::E_ALREADY_CLOSED);
@@ -876,12 +902,14 @@ HWTEST_F(RdbGeneralStoreTest, PreSharing002, TestSize.Level1)
 HWTEST_F(RdbGeneralStoreTest, PreSharing003, TestSize.Level1)
 {
     metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    store->Init();
     DistributedRdb::PredicatesMemo predicates;
     predicates.devices_ = { "device1" };
     predicates.tables_ = { "tables1" };
+    predicates.AddOperation(EQUAL_TO, "id", "1");
     RdbQuery query(predicates);
-    auto [errCode, result] = store_->PreSharing(query);
+    auto [errCode, result] = store->PreSharing(query);
     EXPECT_EQ(errCode, GeneralError::E_CLOUD_DISABLED);
     ASSERT_EQ(result, nullptr);
 }
@@ -922,6 +950,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
 
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     result = store_->Clean(devices, GeneralStore::CLOUD_INFO, tableName);
     EXPECT_EQ(result, GeneralError::E_OK);
     result = store_->Clean(devices, GeneralStore::CLOUD_DATA, tableName);
@@ -930,6 +959,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean, TestSize.Level1)
     result = store_->Clean(devices1, GeneralStore::NEARBY_DATA, tableName);
     EXPECT_EQ(result, GeneralError::E_OK);
 
+    MockRelationalStoreDelegate::gTestResult = true;
     result = store_->Clean(devices, GeneralStore::CLOUD_INFO, tableName);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     result = store_->Clean(devices, GeneralStore::CLOUD_DATA, tableName);
@@ -1069,12 +1099,14 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
 
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     result = store_->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_OK);
 
     std::vector<std::string> test = { "test" };
     result = store_->SetDistributedTables(test, type, references);
     EXPECT_EQ(result, GeneralError::E_ERROR);
+    MockRelationalStoreDelegate::gTestResult = true;
     result = store_->SetDistributedTables(tables, type, references);
     EXPECT_EQ(result, GeneralError::E_OK);
     type = DistributedTableType::DISTRIBUTED_CLOUD;
@@ -1097,6 +1129,7 @@ HWTEST_F(RdbGeneralStoreTest, SetTrackerTable, TestSize.Level1)
 
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     result = store_->SetTrackerTable(tableName, trackerColNames, extendColNames);
     EXPECT_EQ(result, GeneralError::E_OK);
     result = store_->SetTrackerTable("WITH_INVENTORY_DATA", trackerColNames, extendColNames);
@@ -1268,6 +1301,7 @@ HWTEST_F(RdbGeneralStoreTest, UpdateDBStatus, TestSize.Level1)
     EXPECT_EQ(result, E_ALREADY_CLOSED);
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     result = store_->UpdateDBStatus();
     EXPECT_EQ(result, E_OK);
 }
@@ -1285,7 +1319,7 @@ HWTEST_F(RdbGeneralStoreTest, UpdateDBStatus, TestSize.Level1)
 HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InitWithCreateRequired, TestSize.Level1)
 {
     // Setup test environment with unique database identifier
-    std::string storeId = "RdbGeneralStore_InitWithCreateRequired.db";
+    std::string storeId = "RdbGeneralStore_InitWithCreateRequired_errorDb.db";
     auto meta = GetStoreMeta(storeId);
     remove(meta.dataDir.c_str());
 
@@ -1731,6 +1765,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_HandleDatabaseCorruption, TestSize
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
 
     // Step 2: Corrupt the database file by overwriting with random data
+    remove(std::string(meta.dataDir + "-dwr").c_str());
     EXPECT_TRUE(CorruptDatabaseFile(meta.dataDir, 0, 512));
 
     // Step 3: Reopen the store - should detect corruption
