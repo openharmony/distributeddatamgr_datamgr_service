@@ -212,6 +212,8 @@ public:
     {
         return 0;
     }
+    
+    virtual int32_t StopCloudSync() = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
