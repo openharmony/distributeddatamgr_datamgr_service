@@ -65,8 +65,10 @@ public:
         Values &&args) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) override;
 
-    std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value, ConflictResolution resolution) override;
-    std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values, ConflictResolution resolution) override;
+    std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value,
+        ConflictResolution resolution) override;
+    std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values,
+        ConflictResolution resolution) override;
     std::pair<int32_t, int64_t> Update(GenQuery &query, VBucket &&value, ConflictResolution resolution) override;
     std::pair<int32_t, int64_t> Delete(GenQuery &query) override;
     std::pair<int32_t, Value> Execute(const std::string &sql, Values &&args) override;
@@ -133,7 +135,7 @@ private:
     static constexpr uint32_t ITERS_COUNT = sizeof(ITERS) / sizeof(ITERS[0]);
     class ObserverProxy : public DistributedDB::StoreObserver {
     public:
-        ObserverProxy(const StoreMetaData &meta);
+        explicit ObserverProxy(const StoreMetaData &meta);
         using DBChangedIF = DistributedDB::StoreChangedData;
         using DBChangedData = DistributedDB::ChangedData;
         using DBOrigin = DistributedDB::Origin;

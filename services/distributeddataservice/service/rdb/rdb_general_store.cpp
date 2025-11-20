@@ -176,7 +176,7 @@ std::vector<uint8_t> RdbGeneralStore::GetDBPassword(const StoreMetaData &data, b
         return {};
     }
     if (secretKey.sKey.empty()) {
-        auto key = Crypto::Random(KEY_SIZE, 0, UINT8_MAX);
+        auto key = CryptoManager::GetInstance().Random(KEY_SIZE);
         if (key.empty()) {
             return {};
         }
@@ -1023,6 +1023,8 @@ int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
     auto status = delegate_->SetReference(properties);
     if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
         ZLOGE("distributed table set reference failed, err:%{public}d", status);
+        Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
+            "SetDistributedTables: set reference=" + std::to_string(static_cast<int32_t>(status)));
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -1055,9 +1057,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
         auto status = SetReference(references);
         if (status != GeneralError::E_OK) {
-            Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
-                "SetDistributedTables: set reference=" + std::to_string(static_cast<int32_t>(status)));
-            return GeneralError::E_ERROR;
+            return status;
         }
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);

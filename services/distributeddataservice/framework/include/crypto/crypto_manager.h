@@ -69,6 +69,7 @@ public:
 
     std::vector<uint8_t> Encrypt(const std::vector<uint8_t> &password, CryptoParams &encryptParams);
     std::vector<uint8_t> Decrypt(const std::vector<uint8_t> &source, CryptoParams &decryptParams);
+    std::vector<uint8_t> Random(uint32_t length);
     void UpdateSecretMeta(const std::vector<uint8_t> &password, const StoreMetaData &metaData,
         const std::string &metaKey, SecretKeyMetaData &secretKey);
 

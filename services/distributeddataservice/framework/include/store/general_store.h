@@ -177,15 +177,17 @@ public:
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) = 0;
 
-    virtual std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value, ConflictResolution resolution) = 0;
-    virtual std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values, ConflictResolution resolution) = 0;
+    virtual std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value,
+        ConflictResolution resolution) = 0;
+    virtual std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values,
+        ConflictResolution resolution) = 0;
     virtual std::pair<int32_t, int64_t> Update(GenQuery &query, VBucket &&value, ConflictResolution resolution) = 0;
     virtual std::pair<int32_t, int64_t> Delete(GenQuery &query) = 0;
     virtual std::pair<int32_t, Value> Execute(const std::string &sql, Values &&args) = 0;
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &sql, Values &&args = {},
         bool preCount = false) = 0;
-    virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const std::vector<std::string> &columns = {},
-        bool preCount = false) = 0;
+    virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query,
+        const std::vector<std::string> &columns = {}, bool preCount = false) = 0;
 
     virtual std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query,
         DetailAsync async, const SyncParam &syncParam) = 0;
