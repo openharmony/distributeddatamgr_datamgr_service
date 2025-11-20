@@ -62,7 +62,7 @@ public:
     {
         Bootstrap::GetInstance().LoadDirectory();
         InitMetaData();
-        mkdir(metaData_.dataDir.c_str(), 0771);
+        mkdir(metaData_.dataDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
         store_ = std::make_shared<RdbGeneralStore>(metaData_);
         ASSERT_NE(store_, nullptr);
     };
@@ -74,9 +74,11 @@ protected:
     void InitMetaData();
     static StoreMetaData GetStoreMeta(const std::string &storeName, int32_t area = 1, int32_t user = 0);
     static int32_t CreateTable(std::shared_ptr<RdbGeneralStore> store, const std::string &tableName = "employee");
+    static bool Equal(const Value &left, const Value &right);
     static bool Equal(const VBucket &left, const VBucket &right);
     static bool CorruptDatabaseFile(const std::string &filePath, int32_t offset = 0, int32_t size = 0);
-    static void CorruptDatabasePager(std::shared_ptr<RdbGeneralStore> store, const std::string &filePath, const std::string &tableName);
+    static void CorruptDatabasePager(std::shared_ptr<RdbGeneralStore> store, const std::string &filePath,
+        const std::string &tableName);
     StoreMetaData metaData_;
     std::shared_ptr<RdbGeneralStore> store_;
 };
@@ -87,7 +89,7 @@ public:
     ~RdbGeneralQuery() override = default;
     bool IsEqual(uint64_t tid) override
     {
-        return TYPE_ID == tid;
+        return tid == TYPE_ID;
     }
     std::vector<std::string> GetTables() override
     {
@@ -104,6 +106,18 @@ public:
     std::string table;
     std::string whereClause;
     std::vector<Value> args;
+};
+
+class RdbOpenCallbackImpl : public NativeRdb::RdbOpenCallback {
+public:
+    int OnCreate(NativeRdb::RdbStore &rdbStore) override
+    {
+        return 0;
+    }
+    int OnUpgrade(NativeRdb::RdbStore &rdbStore, int currentVersion, int targetVersion) override
+    {
+        return 0;
+    }
 };
 
 void RdbGeneralStoreTest::InitMetaData()
@@ -162,6 +176,43 @@ int32_t RdbGeneralStoreTest::CreateTable(std::shared_ptr<RdbGeneralStore> store,
     return code;
 }
 
+bool RdbGeneralStoreTest::Equal(const Value &lValue, const Value &rValue)
+{
+    if (lValue.index() != rValue.index()) {
+        return false;
+    }
+    if (lValue.index() == TYPE_INDEX<std::string>) {
+        auto ls = Traits::get_if<std::string>(&lValue);
+        auto rs = Traits::get_if<std::string>(&rValue);
+        return ls != nullptr && rs != nullptr && *ls == *rs;
+    }
+    if (lValue.index() == TYPE_INDEX<int64_t>) {
+        auto ls = Traits::get_if<int64_t>(&lValue);
+        auto rs = Traits::get_if<int64_t>(&rValue);
+        return ls != nullptr && rs != nullptr && *ls == *rs;
+    }
+    if (lValue.index() == TYPE_INDEX<double>) {
+        auto ls = Traits::get_if<double>(&lValue);
+        auto rs = Traits::get_if<double>(&rValue);
+        const double epsilon = 1e-9;
+        if (ls == nullptr || rs == nullptr || std::abs(*ls - *rs) > epsilon) {
+            return false;
+        }
+        return ls != nullptr && rs != nullptr && std::abs(*ls - *rs) <= epsilon;
+    }
+    if (lValue.index() == TYPE_INDEX<bool>) {
+        auto ls = Traits::get_if<bool>(&lValue);
+        auto rs = Traits::get_if<bool>(&rValue);
+        return ls != nullptr && rs != nullptr && *ls == *rs;
+    }
+    if (lValue.index() == TYPE_INDEX<DistributedData::Bytes>) {
+        auto ls = Traits::get_if<Bytes>(&lValue);
+        auto rs = Traits::get_if<Bytes>(&rValue);
+        return ls != nullptr && rs != nullptr && *ls == *rs;
+    }
+    return true;
+}
+
 bool RdbGeneralStoreTest::Equal(const VBucket &left, const VBucket &right)
 {
     if (left.size() != right.size()) {
@@ -171,48 +222,8 @@ bool RdbGeneralStoreTest::Equal(const VBucket &left, const VBucket &right)
         if (lIt->first != rIt->first) {
             return false;
         }
-        auto &lValue = lIt->second;
-        auto &rValue = rIt->second;
-        if (lValue.index() != rValue.index()) {
+        if (!Equal(lIt->second, rIt->second)) {
             return false;
-        }
-        if (lValue.index() == TYPE_INDEX<std::string>) {
-            auto ls = Traits::get_if<std::string>(&lValue);
-            auto rs = Traits::get_if<std::string>(&rValue);
-            return ls != nullptr && rs != nullptr && *ls == *rs;
-        }
-        if (lValue.index() == TYPE_INDEX<int64_t>) {
-            auto ls = Traits::get_if<int64_t>(&lValue);
-            auto rs = Traits::get_if<int64_t>(&rValue);
-            if (ls == nullptr || rs == nullptr || *ls != *rs) {
-                return false;
-            }
-            continue;
-        }
-        if (lValue.index() == TYPE_INDEX<double>) {
-            auto ls = Traits::get_if<double>(&lValue);
-            auto rs = Traits::get_if<double>(&rValue);
-            const double epsilon = 1e-9;
-            if (ls == nullptr || rs == nullptr || std::abs(*ls - *rs) > epsilon) {
-                return false;
-            }
-            continue;
-        }
-        if (lValue.index() == TYPE_INDEX<bool>) {
-            auto ls = Traits::get_if<bool>(&lValue);
-            auto rs = Traits::get_if<bool>(&rValue);
-            if (ls == nullptr || rs == nullptr || *ls != *rs) {
-                return false;
-            }
-            continue;
-        }
-        if (lValue.index() == TYPE_INDEX<DistributedData::Bytes>) {
-            auto ls = Traits::get_if<Bytes>(&lValue);
-            auto rs = Traits::get_if<Bytes>(&rValue);
-            if (ls == nullptr || rs == nullptr || *ls != *rs) {
-                return false;
-            }
-            continue;
         }
     }
     return true;
@@ -225,23 +236,29 @@ bool RdbGeneralStoreTest::CorruptDatabaseFile(const string &filePath, int32_t of
         return false;
     }
 
-    fseek(file, 0, SEEK_END);
+    if (fseek(file, 0, SEEK_END) != 0) {
+        (void)fclose(file);
+        return false;
+    }
     long fileSize = ftell(file);
     if (fileSize <= 0) {
-        fclose(file);
+        (void)fclose(file);
         return false;
     }
 
-    fseek(file, offset, SEEK_SET);
+    if (fseek(file, offset, SEEK_SET) != 0) {
+        (void)fclose(file);
+        return false;
+    }
     int32_t corruptSize = std::min(size, static_cast<int32_t>(fileSize - offset));
     if (corruptSize <= 0) {
-        fclose(file);
+        (void)fclose(file);
         return false;
     }
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 255);
+    std::uniform_int_distribution<> dis(0, UINT8_MAX);
 
     std::vector<char> garbage(corruptSize);
     for (int32_t i = 0; i < corruptSize; i++) {
@@ -249,7 +266,7 @@ bool RdbGeneralStoreTest::CorruptDatabaseFile(const string &filePath, int32_t of
     }
 
     size_t written = fwrite(garbage.data(), 1, corruptSize, file);
-    fclose(file);
+    (void)fclose(file);
 
     return written == static_cast<size_t>(corruptSize);
 }
@@ -258,15 +275,18 @@ void RdbGeneralStoreTest::CorruptDatabasePager(std::shared_ptr<RdbGeneralStore> 
     const std::string &tableName)
 {
     std::vector<DistributedData::VBucket> largeDataSet;
-    const size_t DATA_SIZE = 2 * 1024 * 1024 + 1024; // 2MB + 1KB to ensure we exceed 2MB
-    std::vector<uint8_t> largeData(DATA_SIZE, 'A');  // Create large data vector
+    const size_t dataSize = 2 * 1024 * 1024 + 1024; // 2MB + 1KB to ensure we exceed 2MB
+    std::vector<uint8_t> largeData(dataSize, 'A');  // Create large data vector
 
     const int32_t recordCount = 5; // Number of records to insert
+    const int32_t age = 25;
+    const double salary = 5000.0;
+    const int32_t step = 100;
     DistributedData::VBucket vBucket;
     for (int32_t i = 0; i < recordCount; ++i) {
         vBucket["name"] = "test_user_" + std::to_string(i);
-        vBucket["age"] = 25 + i;
-        vBucket["salary"] = 5000.0 + i * 100;
+        vBucket["age"] = age + i;
+        vBucket["salary"] = salary + i * step;
         vBucket["data"] = largeData; // Use large data to exceed 2MB in total
         largeDataSet.push_back(vBucket);
     }
@@ -275,7 +295,9 @@ void RdbGeneralStoreTest::CorruptDatabasePager(std::shared_ptr<RdbGeneralStore> 
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, recordCount);
 
-    EXPECT_TRUE(CorruptDatabaseFile(filePath, 4096, 20 * 1024 * 1024));
+    const int32_t pageSize = 4096;
+    const int32_t corruptSize = 20 * 1024 * 1024; // 20MB
+    EXPECT_TRUE(CorruptDatabaseFile(filePath, pageSize, corruptSize));
 }
 
 class MockStoreChangedData : public DistributedDB::StoreChangedData {
@@ -1138,23 +1160,6 @@ HWTEST_F(RdbGeneralStoreTest, SetTrackerTable, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }
 
-///**
-//* @tc.name: RemoteQuery
-//* @tc.desc: RdbGeneralStore RemoteQuery function test//todo:using public interface
-//* @tc.type: FUNC
-//*/
-//HWTEST_F(RdbGeneralStoreTest, RemoteQuery, TestSize.Level1)
-//{
-//    std::string device = "device";
-//    DistributedDB::RemoteCondition remoteCondition;
-//    metaData_.storeId = "mock";
-//    store = std::make_shared<RdbGeneralStore>(metaData_);
-//    auto result = store->RemoteQuery("test", remoteCondition);
-//    EXPECT_EQ(result, nullptr);
-//    result = store->RemoteQuery(device, remoteCondition);
-//    EXPECT_NE(result, nullptr);
-//}
-
 /**
 * @tc.name: ConvertStatus
 * @tc.desc: RdbGeneralStore ConvertStatus function test
@@ -1680,17 +1685,6 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_CRUDWhenBusy, TestSize.Level1)
     EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
 
     // Step 2: Acquire exclusive lock on database using native RDB interface
-    class RdbOpenCallbackImpl : public NativeRdb::RdbOpenCallback {
-    public:
-        int OnCreate(NativeRdb::RdbStore &rdbStore) override
-        {
-            return 0;
-        }
-        int OnUpgrade(NativeRdb::RdbStore &rdbStore, int currentVersion, int targetVersion) override
-        {
-            return 0;
-        }
-    };
     NativeRdb::RdbStoreConfig config(meta.dataDir);
     RdbOpenCallbackImpl callback;
     auto rdb = NativeRdb::RdbHelper::GetRdbStore(config, 0, callback, code);
@@ -1849,7 +1843,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_HandlePageCorruption, TestSize.Lev
 
 /**
  * @tc.name: RdbGeneralStore_ValidateInvalidParameters
- * @tc.desc: Validate that update and delete operations correctly return E_INVALID_ARGS when provided with invalid parameters
+ * @tc.desc: Validate that update and delete operations correctly return E_INVALID_ARGS when provided with
+ * invalid parameters
  * Test scenarios:
  * 1. Initialize database environment and create a test table
  * 2. Execute Update operation with invalid parameter configurations

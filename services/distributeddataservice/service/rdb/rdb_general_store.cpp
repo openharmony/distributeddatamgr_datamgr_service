@@ -1573,7 +1573,8 @@ std::pair<int32_t, int64_t> RdbGeneralStore::Insert(const std::string &table, VB
 {
     auto [ret, store] = InitRdbStore();
     if (store == nullptr || ret != GenErr::E_OK) {
-        ZLOGE("database:%{public}s already closed! table:%{public}s", meta_.GetStoreAlias().c_str(), table.c_str());
+        ZLOGE("database:%{public}s already closed! table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
         return { ret, -1 };
     }
     auto [code, id] = store->Insert(table, ValueProxy::Convert(std::move(value)), ConvertResolution(resolution));

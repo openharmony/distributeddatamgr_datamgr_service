@@ -167,7 +167,6 @@ private:
     DBProcessCB GetDBProcessCB(DetailAsync async, uint32_t syncMode, SyncId syncId,
         uint32_t highMode = AUTO_SYNC_MODE);
 
-
     Executor::Task GetFinishTask(SyncId syncId);
     int32_t SetReference(const std::vector<Reference> &references);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
@@ -222,7 +221,6 @@ private:
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
-
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H
