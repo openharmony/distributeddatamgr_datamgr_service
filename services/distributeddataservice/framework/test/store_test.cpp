@@ -174,6 +174,28 @@ HWTEST_F(AutoCacheTest, OnChange002, TestSize.Level2)
 }
 
 /**
+* @tc.name: OnChange003
+* @tc.desc: AutoCache Delegate OnChange
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(AutoCacheTest, OnChange003, TestSize.Level2)
+{
+    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    ASSERT_NE(store, nullptr);
+    AutoCache::Watchers watchers;
+    int32_t user = 0;
+    StoreMetaData meta;
+    AutoCache::Delegate delegate(store, watchers, user, meta);
+    delegate.SetObservers(watchers);
+    std::string storeId = "testStoreId";
+    int32_t triggerMode = 1;
+    auto ret = delegate.OnChange(storeId, triggerMode);
+    EXPECT_EQ(ret, GeneralError::E_OK);
+}
+
+/**
 * @tc.name: operatorStore
 * @tc.desc: AutoCache Delegate operator Store()
 * @tc.type: FUNC

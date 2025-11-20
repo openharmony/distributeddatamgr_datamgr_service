@@ -174,8 +174,10 @@ private:
         const std::string &prepareTraceId);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
-    std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
+    std::function<void(const Event &)> GetSyncHandler(Retryer retryer, const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetClientChangeHandler();
+    std::function<void(const Event &)> GetSyncTriggerHandler();
+    std::function<void(const Event &)> GetSyncTriggerCleanHandler();
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
@@ -210,6 +212,8 @@ private:
     std::set<std::string> kvApps_;
     ConcurrentMap<int32_t, std::map<std::string, std::set<std::string>>> compensateSyncInfos_;
     NetworkRecoveryManager networkRecoveryManager_{ *this };
+    std::mutex syncTriggerMutex_;
+    std::map<std::string, StoreInfo> syncTriggerMap_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

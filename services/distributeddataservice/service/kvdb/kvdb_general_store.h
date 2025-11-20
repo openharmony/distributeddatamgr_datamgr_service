@@ -85,6 +85,7 @@ public:
     int32_t UnLockCloudDB() override;
     int32_t SetDBProperty(const DBProperty &property) override;
     int32_t StopCloudSync() override;
+    void OnSyncTrigger(const std::string &storeId, const int32_t triggerMode) override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;

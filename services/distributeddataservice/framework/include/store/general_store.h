@@ -49,6 +49,8 @@ public:
         CLOUD_TIME_FIRST = CLOUD_BEGIN,
         CLOUD_NATIVE_FIRST,
         CLOUD_CLOUD_FIRST,
+        CLOUD_CUSTOM_PUSH,
+        CLOUD_CUSTOM_PULL,
         CLOUD_END,
         NEARBY_SUBSCRIBE_REMOTE,
         NEARBY_UNSUBSCRIBE_REMOTE,
@@ -214,6 +216,8 @@ public:
     }
     
     virtual int32_t StopCloudSync() = 0;
+
+    virtual void OnSyncTrigger(const std::string &storeId, const int32_t triggerMode) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

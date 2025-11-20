@@ -42,6 +42,8 @@ public:
         UPGRADE_SCHEMA,
         GET_CONFLICT_HANDLER,
         RELEASE_CONFLICT_HANDLER,
+        SYNC_TRIGGER,
+        SYNC_TRIGGER_CLEAN,
         CLOUD_BUTT
     };
 

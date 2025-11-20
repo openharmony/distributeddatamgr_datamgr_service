@@ -28,6 +28,7 @@ public:
     RdbWatcher();
     int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
     int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
+    int32_t OnChange(const std::string &storeId, const int32_t triggerMode) override;
     sptr<RdbNotifierProxy> GetNotifier() const;
     void SetNotifier(sptr<RdbNotifierProxy> notifier);
 

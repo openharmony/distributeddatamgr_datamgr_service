@@ -214,6 +214,8 @@ SyncManager::SyncManager()
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::GET_CONFLICT_HANDLER, GetConflictHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::RELEASE_CONFLICT_HANDLER, ReleaseConflictHandler());
+    EventCenter::GetInstance().Subscribe(CloudEvent::SYNC_TRIGGER, GetSyncTriggerHandler());
+    EventCenter::GetInstance().Subscribe(CloudEvent::SYNC_TRIGGER_CLEAN, GetSyncTriggerCleanHandler());
     syncStrategy_ = std::make_shared<NetworkSyncStrategy>();
     auto metaName = Bootstrap::GetInstance().GetProcessLabel();
     kvApps_.insert(std::move(metaName));
@@ -390,7 +392,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                 return;
             }
         }
-        Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
+        Defer defer(GetSyncHandler(std::move(retryer), info), CloudEvent::CLOUD_SYNC);
         if (createdByDefaultUser) {
             info.user_ = 0;
         }
@@ -427,9 +429,9 @@ void SyncManager::StartCloudSync(const DistributedData::SyncEvent &evt, const St
     }
 }
 
-std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
+std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, const SyncInfo &info)
 {
-    return [this, retryer](const Event &event) {
+    return [this, retryer, info](const Event &event) {
         auto &evt = static_cast<const SyncEvent &>(event);
         auto &storeInfo = evt.GetStoreInfo();
         GenAsync async = evt.GetAsyncDetail();
@@ -458,6 +460,14 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
             return DoExceptionalCallback(async, details, storeInfo,
                 {0, "", prepareTraceId, SyncStage::END, E_CLOUD_DISABLED, "disable cloud"});
         }
+        if (!meta.autoSyncSwitch && (info.triggerMode_ == MODE_PUSH || info.triggerMode_ == MODE_SWITCHON ||
+            info.triggerMode_ == MODE_PROCESSRESTART)) {
+            ZLOGW("triggerMode: %{public}d, bundleName: %{public}s, autoSyncSwitch: %{public}d",
+                info.triggerMode_, info.bundleName_.c_str(), meta.autoSyncSwitch);
+            store->OnSyncTrigger(storeInfo.storeName, info.triggerMode_);
+            return DoExceptionalCallback(async, details, storeInfo,
+                {0, "", prepareTraceId, SyncStage::END, E_OK, "syncTrigger"});
+            }
         ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
               storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
               meta.asyncDownloadAsset);
@@ -497,6 +507,30 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetTriggerMode(evt.GetTriggerMode());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
         executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
+    };
+}
+
+std::function<void(const Event &)> SyncManager::GetSyncTriggerHandler()
+{
+    return [this](const Event &event) {
+        auto &evt = static_cast<const CloudEvent &>(event);
+        auto storeInfo = evt.GetStoreInfo();
+        std::lock_guard<std::mutex> lock(syncTriggerMutex_);
+        std::string key = storeInfo.bundleName + storeInfo.storeName;
+        syncTriggerMap_[key] = storeInfo;
+    };
+}
+std::function<void(const Event &)> SyncManager::GetSyncTriggerCleanHandler()
+{
+    return [this](const Event &event) {
+        auto &evt = static_cast<const CloudEvent &>(event);
+        auto storeInfo = evt.GetStoreInfo();
+        std::lock_guard<std::mutex> lock(syncTriggerMutex_);
+        std::string key = storeInfo.bundleName + storeInfo.storeName;
+        auto it = syncTriggerMap_.find(key);
+        if (it != syncTriggerMap_.end()) {
+            syncTriggerMap_.erase(it);
+        }
     };
 }
 
@@ -1100,6 +1134,21 @@ void SyncManager::OnNetworkDisconnected()
 
 void SyncManager::OnNetworkConnected(const std::vector<int32_t> &users)
 {
+    std::lock_guard<std::mutex> lock(syncTriggerMutex_);
+    for (const auto& it : syncTriggerMap_) {
+        auto &storeInfo = it.second;
+        auto [hasMeta, meta] = GetMetaData(storeInfo);
+        if (!hasMeta) {
+            continue;
+        }
+        auto [code, store] = GetStore(meta, storeInfo.user);
+        if (store == nullptr) {
+            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+            continue;
+        }
+        store->OnSyncTrigger(storeInfo.storeName, MODE_ONLINE);
+    }
+
     networkRecoveryManager_.OnNetworkConnected(users);
 }
 

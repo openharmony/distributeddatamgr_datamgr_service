@@ -1184,5 +1184,23 @@ HWTEST_F(RdbGeneralStoreTest, StopCloudSync, TestSize.Level1)
     result = store->StopCloudSync();
     EXPECT_EQ(result, E_OK);
 }
+
+/**
+* @tc.name: OnSyncTrigger
+* @tc.desc: RdbGeneralStore OnSyncTrigger function test Watch and Unwatch
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, OnSyncTrigger, TestSize.Level1)
+{
+    MockGeneralWatcher watcher;
+    std::string storeId = "testStoreId";
+    int32_t triggerMode = 1;
+    auto result = store->Watch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
+    store->OnSyncTrigger(storeId, triggerMode);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
+    store->OnSyncTrigger(storeId, triggerMode);
+    EXPECT_EQ(result, GeneralError::E_OK);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

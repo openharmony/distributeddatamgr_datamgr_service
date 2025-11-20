@@ -1511,6 +1511,193 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
 }
 
 /**
+ * @tc.name: SetDistributedTables006
+ * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    metaData_.asyncDownloadAsset = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables007
+ * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    metaData_.asyncDownloadAsset = false;
+    metaData_.enableCloud = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables008
+ * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables008, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    metaData_.asyncDownloadAsset = false;
+    metaData_.enableCloud = false;
+    metaData_.autoSyncSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables009
+ * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables009, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    metaData_.asyncDownloadAsset = false;
+    metaData_.enableCloud = true;
+    metaData_.autoSyncSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables010
+ * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables010, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    metaData_.asyncDownloadAsset = false;
+    metaData_.enableCloud = false;
+    metaData_.autoSyncSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
  * @tc.name: Sync001
  * @tc.desc: Test Sync when CheckAccess not pass.
  * @tc.type: FUNC

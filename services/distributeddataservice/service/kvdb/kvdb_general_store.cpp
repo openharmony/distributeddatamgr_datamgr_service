@@ -868,4 +868,9 @@ int32_t KVDBGeneralStore::StopCloudSync()
 {
     return GeneralError::E_OK;
 }
+
+void KVDBGeneralStore::OnSyncTrigger(const std::string &storeId, const int32_t triggerMode)
+{
+    return;
+}
 } // namespace OHOS::DistributedKv

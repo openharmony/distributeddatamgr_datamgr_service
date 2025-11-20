@@ -1270,6 +1270,16 @@ int32_t RdbGeneralStore::UnLockCloudDB()
     return rdbCloud->UnLockCloudDB(RdbCloud::FLAG::APPLICATION);
 }
 
+void RdbGeneralStore::OnSyncTrigger(const std::string &storeId, const int32_t triggerMode)
+{
+    if (observer_.watcher_ == nullptr) {
+        return;
+    }
+    ZLOGD("store: %{public}s OnSyncTrigger triggerMode:%{public}d", Anonymous::Change(storeId).c_str(), triggerMode);
+    observer_.watcher_->OnChange(storeId, triggerMode);
+    return;
+}
+
 std::shared_ptr<RdbCloud> RdbGeneralStore::GetRdbCloud() const
 {
     std::shared_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
