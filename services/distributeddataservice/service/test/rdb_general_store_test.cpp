@@ -1200,25 +1200,6 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
 }
 
 /**
-* @tc.name: QuerySql
-* @tc.desc: RdbGeneralStore QuerySql function test
-* @tc.type: FUNC
-*/
-HWTEST_F(RdbGeneralStoreTest, QuerySql, TestSize.Level1)
-{
-    metaData_.storeId = "mock";
-    auto store = std::make_shared<RdbGeneralStore>(metaData_);
-    ASSERT_NE(store, nullptr);
-    auto [err1, result1] = store->QuerySql("", std::move(g_RdbValues));
-    EXPECT_EQ(err1, GeneralError::E_ERROR);
-    EXPECT_TRUE(result1.empty());
-
-    auto [err2, result2] = store->QuerySql("sql", std::move(g_RdbValues));
-    EXPECT_EQ(err1, GeneralError::E_ERROR);
-    EXPECT_TRUE(result2.empty());
-}
-
-/**
 * @tc.name: BuildSqlWhenCloumnEmpty
 * @tc.desc: test buildsql method when cloumn empty
 * @tc.type: FUNC

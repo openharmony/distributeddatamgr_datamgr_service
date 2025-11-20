@@ -536,7 +536,7 @@ int32_t RdbGeneralStore::Update(const std::string &table, const std::string &set
         return GeneralError::E_ALREADY_CLOSED;
     }
     if (table.empty() || setSql.empty() || values.empty() || whereSql.empty() || conditions.empty()) {
-        ZLOGE("invalid args![%{public]zu,%{public]zu,%{public]zu,%{public]zu,%{public]zu]", table.size(),
+        ZLOGE("invalid args![%{public}zu,%{public}zu,%{public}zu,%{public}zu,%{public}zu]", table.size(),
             setSql.size(), values.size(), whereSql.size(), conditions.size());
         return GeneralError::E_INVALID_ARGS;
     }
