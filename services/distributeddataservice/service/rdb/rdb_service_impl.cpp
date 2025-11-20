@@ -340,7 +340,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
         }
         metaMapping.cloudPath = metaData.dataDir;
-        if (!param.autoSyncSwitch) {
+        if (!param.autoSyncSwitch_) {
             LoadCloudConflictHandler(metaData);
         }
     }
