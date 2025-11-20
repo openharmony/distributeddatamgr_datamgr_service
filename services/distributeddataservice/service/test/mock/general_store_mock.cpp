@@ -181,5 +181,10 @@ int32_t GeneralStoreMock::SetDBProperty(const DBProperty &property)
 {
     return dbStatus_;
 }
+
+int32_t GeneralStoreMock::StopCloudSync()
+{
+    return 0;
+}
 } // namespace DistributedData
 } // namespace OHOS

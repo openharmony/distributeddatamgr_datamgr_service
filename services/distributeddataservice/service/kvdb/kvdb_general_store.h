@@ -84,6 +84,7 @@ public:
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
     int32_t SetDBProperty(const DBProperty &property) override;
+    int32_t StopCloudSync() override;
 
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;

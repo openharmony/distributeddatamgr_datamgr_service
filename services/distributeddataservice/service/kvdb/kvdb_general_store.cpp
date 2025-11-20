@@ -863,4 +863,9 @@ int32_t KVDBGeneralStore::SetDBProperty(const DBProperty &property)
     }
     return delegate_->SetProperty(property);
 }
+
+int32_t KVDBGeneralStore::StopCloudSync()
+{
+    return GeneralError::E_OK;
+}
 } // namespace OHOS::DistributedKv

@@ -92,6 +92,7 @@ public:
     int32_t UpdateDBStatus() override;
     int32_t SetDBProperty(const DBProperty &property) override;
     int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler) override;
+    int32_t StopCloudSync() override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);

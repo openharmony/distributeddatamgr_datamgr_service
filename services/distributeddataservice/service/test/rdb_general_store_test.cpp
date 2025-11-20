@@ -1169,5 +1169,20 @@ HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
     result = store->SetCloudConflictHandler(nullptr);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
+
+/**
+* @tc.name: StopCloudSync
+* @tc.desc: StopCloudSync test
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, StopCloudSync, TestSize.Level1)
+{
+    auto result = store->StopCloudSync();
+    EXPECT_EQ(result, E_ALREADY_CLOSED);
+    metaData_.storeId = "mock";
+    store = std::make_shared<RdbGeneralStore>(metaData_);
+    result = store->StopCloudSync();
+    EXPECT_EQ(result, E_OK);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

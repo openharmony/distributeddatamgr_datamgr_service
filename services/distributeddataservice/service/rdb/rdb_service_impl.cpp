@@ -2024,4 +2024,32 @@ void RdbServiceImpl::LoadCloudConflictHandler(const StoreMetaData &metaData)
         EventCenter::GetInstance().PostEvent(move(event));
     });
 }
+
+int32_t RdbServiceImpl::StopCloudSync(const RdbSyncerParam &param)
+{
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    auto [exists, metaData] = LoadStoreMetaData(param);
+    if (metaData.instanceId != 0) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), metaData.instanceId);
+        return RDB_ERROR;
+    }
+    StoreMetaData syncMeta;
+    exists = MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), syncMeta);
+    if (!exists || syncMeta.dataDir != metaData.dataDir) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s No sync meta(%{public}d) or dataDir invalid",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), exists);
+        return RDB_ERROR;
+    }
+    auto store = GetStore(metaData);
+    if (store == nullptr) {
+        ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    return store->StopCloudSync();
+}
 } // namespace OHOS::DistributedRdb

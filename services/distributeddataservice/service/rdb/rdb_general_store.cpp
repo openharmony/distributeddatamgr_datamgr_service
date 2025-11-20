@@ -1414,4 +1414,19 @@ void RdbGeneralStore::ReleaseCloudConflictHandler()
     auto evt = std::make_unique<CloudEvent>(CloudEvent::RELEASE_CONFLICT_HANDLER, std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
+
+int32_t RdbGeneralStore::StopCloudSync()
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto status = delegate_->StopTask(DistributedDB::TaskType::BACKGROUND_TASK);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("Failed to stop cloud data sync");
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
 } // namespace OHOS::DistributedRdb
