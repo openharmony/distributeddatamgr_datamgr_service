@@ -141,10 +141,19 @@ protected:
         std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo) override;
         std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundle) override;
         std::shared_ptr<CloudConflictHandler> GetConflictHandler() override;
+        std::shared_ptr<AssetLoader> ConnectAssetLoader(const std::string &bundleName, int user,
+            const Database &dbMeta);
+        std::shared_ptr<CloudDB> ConnectCloudDB(const std::string &bundleName, int user, const Database &dbMeta);
         virtual ~CloudServerMock() = default;
         static constexpr uint64_t REMAINSPACE = 1000;
         static constexpr uint64_t TATALSPACE = 2000;
         static constexpr int32_t INVALID_USER_ID = -1;
+        bool GetFlag()
+        {
+            return flag_;
+        }
+
+    private:
         bool flag_ = false;
     };
 
@@ -198,6 +207,18 @@ std::shared_ptr<CloudConflictHandler> CloudDataTest::CloudServerMock::GetConflic
 {
     flag_ = true;
     return std::make_shared<CloudConflictHandler>();
+}
+
+std::shared_ptr<AssetLoader> CloudDataTest::CloudServerMock::ConnectAssetLoader(const std::string &bundleName,
+    int user, const Database &dbMeta)
+{
+    return std::make_shared<AssetLoader>();
+}
+
+std::shared_ptr<CloudDB> CloudDataTest::CloudServerMock::ConnectCloudDB(const std::string &bundleName, int user,
+    const Database &dbMeta)
+{
+    return std::make_shared<CloudDB>();
 }
 
 std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
@@ -277,8 +298,7 @@ void CloudDataTest::SetUpTestCase(void)
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
     });
 
-    auto cloudServerMock = new CloudServerMock();
-    CloudServer::RegisterCloudInstance(cloudServerMock);
+    CloudServer::RegisterCloudInstance(&cloudServerMock_);
     HapPolicyParams policy = { .apl = APL_SYSTEM_BASIC,
         .domain = "test.domain",
         .permList = { GetPermissionDef(PERMISSION_CLOUDDATA_CONFIG), GetPermissionDef(PERMISSION_GET_NETWORK_INFO),
@@ -3272,15 +3292,14 @@ HWTEST_F(CloudDataTest, ConflictHandler001, TestSize.Level1)
 HWTEST_F(CloudDataTest, ConflictHandler002, TestSize.Level1)
 {
     int32_t user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
-    StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, "testStoreId", user };
+    StoreInfo storeInfo{ metaData_.tokenId, TEST_CLOUD_BUNDLE, "testStoreId", 0, user };
     auto event = std::make_unique<CloudEvent>(CloudEvent::GET_CONFLICT_HANDLER, storeInfo);
     EventCenter::GetInstance().PostEvent(std::move(event));
-    StoreMetaData metaData(storeInfo);
-    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-    EXPECT_FALSE(cloudServerMock_.flag_);
-    metaData.storeId = TEST_CLOUD_STORE;
-    EventCenter::GetInstance().PostEvent(std::move(event));
-    EXPECT_TRUE(cloudServerMock_.flag_);
+    EXPECT_FALSE(cloudServerMock_.GetFlag());
+    storeInfo.storeName = TEST_CLOUD_STORE;
+    auto event1 = std::make_unique<CloudEvent>(CloudEvent::GET_CONFLICT_HANDLER, storeInfo);
+    EventCenter::GetInstance().PostEvent(std::move(event1));
+    EXPECT_TRUE(cloudServerMock_.GetFlag());
 }
 
 /**

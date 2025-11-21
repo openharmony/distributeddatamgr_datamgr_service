@@ -20,6 +20,7 @@
 #include <thread>
 
 #include "bootstrap.h"
+#include "cloud/cloud_conflict_handler.h"
 #include "cloud/schema_meta.h"
 #include "error/general_error.h"
 #include "errors.h"
@@ -1162,12 +1163,13 @@ HWTEST_F(RdbGeneralStoreTest, UpdateDBStatus, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
 {
-    auto store = std::make_shared<RdbGeneralStore>(metaData_);
-    auto result = store->SetCloudConflictHandler(nullptr);
-    EXPECT_EQ(result, DBStatus::OK);
-    store->delegate_ = nullptr;
-    result = store->SetCloudConflictHandler(nullptr);
+    auto handler = std::make_shared<CloudConflictHandler>();
+    auto result = store->SetCloudConflictHandler(handler);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    metaData_.storeId = "mock";
+    store = std::make_shared<RdbGeneralStore>(metaData_);
+    result = store->SetCloudConflictHandler(handler);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
