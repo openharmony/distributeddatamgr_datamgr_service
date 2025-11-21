@@ -33,17 +33,17 @@ void SyncedDeviceContainer::SaveSyncedDeviceInfo(const std::string &deviceId)
         ZLOGE("DeviceId is empty");
         return;
     }
-    std::vector<SyncedDeiviceInfo> devices;
+    std::vector<SyncedDeviceInfo> devices;
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
     pulledDeviceInfo_.erase(std::remove_if(pulledDeviceInfo_.begin(), pulledDeviceInfo_.end(),
-        [&devices, &current](SyncedDeiviceInfo &info) {
+        [&devices, &current](SyncedDeviceInfo &info) {
         if (info < current) {
             return true;
         }
         return false;
     }), pulledDeviceInfo_.end());
-    SyncedDeiviceInfo info;
+    SyncedDeviceInfo info;
     info.deviceId = deviceId;
     pulledDeviceInfo_.emplace_back(std::move(info));
 }
@@ -54,7 +54,7 @@ std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo()
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
     pulledDeviceInfo_.erase(std::remove_if(pulledDeviceInfo_.begin(), pulledDeviceInfo_.end(),
-        [&deviceIds, &current](SyncedDeiviceInfo &info) {
+        [&deviceIds, &current](SyncedDeviceInfo &info) {
         if (info < current) {
             return true;
         }
