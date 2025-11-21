@@ -96,8 +96,8 @@ public:
     void OnSyncTrigger(const std::string &storeId, const int32_t triggerMode) override;
 
 private:
-    RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
-    RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore);
+    RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore) = delete;
+    RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore) = delete;
     int32_t SetReference(const std::vector<Reference> &references);
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
