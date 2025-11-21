@@ -1700,6 +1700,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables011, TestSize.Level0)
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
 
 /**
  * @tc.name: SetDistributedTables012
