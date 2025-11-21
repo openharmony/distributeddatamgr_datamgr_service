@@ -177,9 +177,40 @@ void GeneralStoreMock::SetMockDBStatus(int32_t dbStatus)
     dbStatus_ = dbStatus;
 }
 
-int32_t GeneralStoreMock::SetDBProperty(const DBProperty &property)
+std::pair<int32_t, int64_t> GeneralStoreMock::Insert(const std::string &table, VBucket &&value,
+    ConflictResolution resolution)
 {
-    return dbStatus_;
+    return { E_OK, E_OK };
+}
+
+std::pair<int32_t, int64_t> GeneralStoreMock::BatchInsert(const std::string &table, VBuckets &&values,
+    ConflictResolution resolution)
+{
+    return { E_OK, E_OK };
+}
+
+std::pair<int32_t, int64_t> GeneralStoreMock::Update(GenQuery &query, VBucket &&value, ConflictResolution resolution)
+{
+    return { E_OK, E_OK };
+}
+
+std::pair<int32_t, int64_t> GeneralStoreMock::Delete(GenQuery &query)
+{
+    return { E_OK, E_OK };
+}
+std::pair<int32_t, Value> GeneralStoreMock::Execute(const std::string &sql, Values &&args)
+{
+    return { E_OK, E_OK };
+}
+std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(const std::string &sql, Values &&args,
+    bool preCount)
+{
+    return { E_OK, nullptr };
+}
+std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(GenQuery &query,
+    const std::vector<std::string> &columns, bool preCount)
+{
+    return { E_OK, nullptr };
 }
 } // namespace DistributedData
 } // namespace OHOS

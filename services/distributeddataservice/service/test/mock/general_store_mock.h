@@ -55,7 +55,17 @@ public:
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
     int32_t UpdateDBStatus() override;
-    int32_t SetDBProperty(const DBProperty &property) override;
+    std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value,
+        ConflictResolution resolution) override;
+    std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values,
+        ConflictResolution resolution) override;
+    std::pair<int32_t, int64_t> Update(GenQuery &query, VBucket &&value, ConflictResolution resolution) override;
+    std::pair<int32_t, int64_t> Delete(GenQuery &query) override;
+    std::pair<int32_t, Value> Execute(const std::string &sql, Values &&args) override;
+    std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &sql, Values &&args = {},
+        bool preCount = false) override;
+    std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const std::vector<std::string> &columns = {},
+            bool preCount = false) override;
     void SetMockCursor(const std::map<std::string, Value> &entry);
     void SetMockDBStatus(int32_t dbStatus);
 

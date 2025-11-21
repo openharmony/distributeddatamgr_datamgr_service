@@ -198,7 +198,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
         manager_.CloseKvStore(delegate_);
         return;
     }
-    auto res = SetDBProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } });
+    auto res = delegate_->SetProperty({ { DistributedData::Constant::TOKEN_ID, meta.tokenId } });
     if (res != DBStatus::OK) {
         ZLOGE("Set failed! res:%{public}d dir:%{public}s", res, Anonymous::Change(meta.dataDir).c_str());
         return;
@@ -856,11 +856,37 @@ void KVDBGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
     return;
 }
 
-int32_t KVDBGeneralStore::SetDBProperty(const DBProperty &property)
+std::pair<int32_t, int64_t> KVDBGeneralStore::Insert(const std::string &table, VBucket &&value,
+    GeneralStore::ConflictResolution resolution)
 {
-    if (delegate_ == nullptr) {
-        return DBStatus::DB_ERROR;
-    }
-    return delegate_->SetProperty(property);
+    return { GeneralError::E_NOT_SUPPORT, -1 };
+}
+std::pair<int32_t, int64_t> KVDBGeneralStore::BatchInsert(const std::string &table, VBuckets &&values,
+    GeneralStore::ConflictResolution resolution)
+{
+    return { GeneralError::E_NOT_SUPPORT, -1 };
+}
+std::pair<int32_t, int64_t> KVDBGeneralStore::Update(GenQuery &query, VBucket &&value,
+    GeneralStore::ConflictResolution resolution)
+{
+    return { GeneralError::E_NOT_SUPPORT, -1 };
+}
+std::pair<int32_t, int64_t> KVDBGeneralStore::Delete(GenQuery &query)
+{
+    return { GeneralError::E_NOT_SUPPORT, -1 };
+}
+std::pair<int32_t, KVDBGeneralStore::Value> KVDBGeneralStore::Execute(const std::string &sql, Values &&args)
+{
+    return { GeneralError::E_NOT_SUPPORT, Value() };
+}
+std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::Query(const std::string &sql, Values &&args,
+    bool preCount)
+{
+    return { GeneralError::E_NOT_SUPPORT, nullptr };
+}
+std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::Query(GenQuery &query,
+    const std::vector<std::string> &columns, bool preCount)
+{
+    return { GeneralError::E_NOT_SUPPORT, nullptr };
 }
 } // namespace OHOS::DistributedKv

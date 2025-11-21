@@ -14,16 +14,21 @@
  */
 
 #include "relational_store_cursor.h"
+
 #include "log_print.h"
 #include "rdb_errno.h"
 #include "rdb_store_utils.h"
 #include "rdb_types.h"
 #include "result_set.h"
+#include "value_proxy.h"
 
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
 RelationalStoreCursor::RelationalStoreCursor(NativeRdb::ResultSet &resultSet,
-    std::shared_ptr<NativeRdb::ResultSet> hold) : resultSet_(resultSet), hold_(std::move(hold)) {}
+    std::shared_ptr<NativeRdb::ResultSet> hold)
+    : resultSet_(resultSet), hold_(std::move(hold))
+{
+}
 
 RelationalStoreCursor::~RelationalStoreCursor()
 {
@@ -121,7 +126,7 @@ int32_t RelationalStoreCursor::Close()
 
 bool RelationalStoreCursor::IsEnd()
 {
-    bool isEnd;
+    bool isEnd = false;
     resultSet_.IsEnded(isEnd);
     return isEnd;
 }
