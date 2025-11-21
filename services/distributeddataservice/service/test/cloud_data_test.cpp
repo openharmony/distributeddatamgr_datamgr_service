@@ -3282,5 +3282,33 @@ HWTEST_F(CloudDataTest, ConflictHandler002, TestSize.Level1)
     EventCenter::GetInstance().PostEvent(std::move(event));
     EXPECT_TRUE(cloudServerMock_.flag_);
 }
+
+/**
+* @tc.name: DoCloudSync002
+* @tc.desc: Test the DoCloudSync function CloudSyncScene is SERVICE_INIT
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, DoCloudSync002, TestSize.Level1)
+{
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    auto ret = cloudServiceImpl_->DoCloudSync(user, CloudSyncScene::SERVICE_INIT);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: DoCloudSync003
+* @tc.desc: Test the DoCloudSync function CloudSyncScene is not SERVICE_INIT
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level1)
+{
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    auto ret = cloudServiceImpl_->DoCloudSync(user, CloudSyncScene::SWITCH_ON);
+    EXPECT_TRUE(ret);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
