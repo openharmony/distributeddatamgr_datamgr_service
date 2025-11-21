@@ -1312,6 +1312,83 @@ HWTEST_F(RdbGeneralStoreTest, UpdateDBStatus, TestSize.Level1)
 }
 
 /**
+* @tc.name: RdbGeneralStore_DBOperationAfterClose
+* @tc.desc: Test DB CRUD operations after closing RdbGeneralStore
+* Test scenarios:
+* 1. Initialize database and close it properly
+* 2. Attempt various db operations on closed database
+* 3. Verify that all operations return E_ALREADY_CLOSED error
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_DBOperationAfterClose, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and immediately close it
+    std::string storeId = "RdbGeneralStore_DBOperationAfterClose.db";
+    auto meta = GetStoreMeta(storeId);
+    remove(meta.dataDir.c_str());
+    auto store = std::make_shared<RdbGeneralStore>(meta, true);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+
+    // Step 2: Close store
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+
+    // Step 3: DB operations
+    code = store->Execute("tableName", "CREATE TABLE IF NOT EXISTS");
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    std::vector<DistributedData::VBucket> values;
+    DistributedData::VBucket vBucket;
+    code = store->Insert("tableName", std::vector<VBucket>(values));
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    code = store->Replace("tableName", VBucket(vBucket));
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    code = store->Update("tableName", "setSql", {}, "whereSql", {});
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    std::shared_ptr<Cursor> cursor = nullptr;
+    std::tie(code, cursor) = store->Query("selectSql");
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+    EXPECT_EQ(cursor, nullptr);
+
+    code = store->MergeMigratedData("tableName", {});
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    code = store->CleanTrackerData("tableName", 0);
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    GeneralStore::Devices devices;
+    MockQuery query;
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::CLOUD_TIME_FIRST;
+    int32_t res = -1;
+    std::tie(code, res) = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    std::tie(code, cursor) = store->PreSharing(query);
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+    EXPECT_EQ(cursor, nullptr);
+
+    code = store->Clean({ "deviceId" }, GeneralStore::NEARBY_DATA, "tableName");
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    code = store->SetTrackerTable("tableName", { "colName" }, { "extColName" }, false);
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    std::vector<std::string> tables = { "table1", "table2" };
+    int32_t type = DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    code = store->SetDistributedTables(tables, type, references);
+    EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
+
+    // Cleanup test environment
+    remove(meta.dataDir.c_str());
+}
+
+/**
 * @tc.name: RdbGeneralStore_InitWithCreateRequired
 * @tc.desc: Test RdbGeneralStore initialization with createRequired parameter
 * Test scenarios:

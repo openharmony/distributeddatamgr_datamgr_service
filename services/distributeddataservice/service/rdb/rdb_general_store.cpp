@@ -1555,8 +1555,7 @@ NativeRdb::ConflictResolution ConvertResolution(GeneralStore::ConflictResolution
         { GeneralStore::ConflictResolution::ON_CONFLICT_IGNORE, NativeRdb::ConflictResolution::ON_CONFLICT_IGNORE },
         { GeneralStore::ConflictResolution::ON_CONFLICT_REPLACE, NativeRdb::ConflictResolution::ON_CONFLICT_REPLACE },
     };
-    Resolution resolution = { GeneralStore::ConflictResolution::ON_CONFLICT_NONE,
-        NativeRdb::ConflictResolution::ON_CONFLICT_NONE };
+    Resolution resolution = { conflictResolution, NativeRdb::ConflictResolution::ON_CONFLICT_NONE };
     auto iter = std::lower_bound(RESOLUTIONS, RESOLUTIONS + sizeof(RESOLUTIONS) / sizeof(RESOLUTIONS[0]), resolution,
         [](const Resolution &resolution1, const Resolution &resolution2) {
             return resolution1.resolution < resolution2.resolution;
