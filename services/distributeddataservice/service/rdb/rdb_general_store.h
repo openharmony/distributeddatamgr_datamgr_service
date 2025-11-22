@@ -196,7 +196,6 @@ private:
     void SetAsync(DetailAsync async);
     BindAssets GetSnapshots() const;
     std::shared_ptr<Executor> GetExecutor() const;
-    void ReleaseCloudConflictHandler();
 
     std::mutex mutex_;
     int32_t ref_ = 1;
