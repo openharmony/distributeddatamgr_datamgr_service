@@ -72,13 +72,17 @@ KVDBServiceImpl::Factory::Factory()
         }
         return product_;
     });
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
+    auto creator = [](const StoreMetaData &metaData, auto &options) -> std::pair<int32_t, GeneralStore *> {
         auto store = new (std::nothrow) KVDBGeneralStore(metaData);
-        if (store != nullptr && !store->IsValid()) {
+        if (store == nullptr) {
+            return { E_ERROR, store };
+        }
+        if (!store->IsValid()) {
             delete store;
             store = nullptr;
+            return { E_ERROR, store };
         }
-        return store;
+        return { E_OK, store };
     };
     AutoCache::GetInstance().RegCreator(KvStoreType::SINGLE_VERSION, creator);
     AutoCache::GetInstance().RegCreator(KvStoreType::DEVICE_COLLABORATION, creator);

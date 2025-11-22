@@ -33,12 +33,16 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "rdb_cursor.h"
+#include "rdb_helper.h"
 #include "rdb_query.h"
+#include "rdb_store_utils.h"
 #include "relational_store_manager.h"
+#include "relational_store_cursor.h"
 #include "snapshot/bind_event.h"
 #include "sync_mgr/sync_mgr.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
+#include "utils/crypto.h"
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
@@ -66,6 +70,19 @@ constexpr uint32_t SEARCHABLE_FLAG = 2;
 constexpr uint32_t LOCK_TIMEOUT = 3600; // second
 static constexpr const char *FT_OPEN_STORE = "OPEN_STORE";
 static constexpr const char *FT_CLOUD_SYNC = "CLOUD_SYNC";
+static constexpr uint32_t KEY_SIZE = 32;
+
+class RdbOpenCallbackImpl : public RdbOpenCallback {
+public:
+    int OnCreate(RdbStore &rdbStore) override
+    {
+        return 0;
+    }
+    int OnUpgrade(RdbStore &rdbStore, int currentVersion, int targetVersion) override
+    {
+        return 0;
+    }
+};
 
 static DBSchema GetDBSchema(const Database &database)
 {
@@ -121,129 +138,166 @@ static DistributedSchema GetGaussDistributedSchema(const Database &database)
 
 static std::pair<bool, Database> GetDistributedSchema(const StoreMetaData &meta)
 {
-    std::pair<bool, Database> tableData;
     Database database;
     database.bundleName = meta.bundleName;
     database.name = meta.storeId;
     database.user = meta.user;
     database.deviceId = meta.deviceId;
-    tableData.first = MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true);
-    tableData.second = database;
-    return tableData;
+    return { MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true), database };
 }
 
-void RdbGeneralStore::InitStoreInfo(const StoreMetaData &meta)
-{
-    storeInfo_.tokenId = meta.tokenId;
-    storeInfo_.bundleName = meta.bundleName;
-    storeInfo_.storeName = meta.storeId;
-    storeInfo_.instanceId = meta.instanceId;
-    storeInfo_.user = std::atoi(meta.user.c_str());
-    storeInfo_.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    storeInfo_.path = meta.dataDir;
-}
-
-RelationalStoreDelegate::Option GetOption(const StoreMetaData &meta)
+RdbGeneralStore::DBOption RdbGeneralStore::GetOption(const StoreMetaData &meta)
 {
     RelationalStoreDelegate::Option option;
     option.syncDualTupleMode = true;
     if (GetDistributedSchema(meta).first) {
-        option.tableMode = DistributedTableMode::COLLABORATION;
+        option.tableMode = DistributedDB::DistributedTableMode::COLLABORATION;
+    }
+    option.isNeedCompressOnSync = true;
+    option.observer = &observer_;
+    if (meta.isEncrypt) {
+        auto password = RdbGeneralStore::GetDBPassword(meta);
+        DBPassword dbPassword;
+        dbPassword.SetValue(password.data(), password.size());
+        password.assign(password.size(), 0);
+        option.passwd = std::move(dbPassword);
+        option.isEncryptedDb = meta.isEncrypt;
+        option.cipher = CipherType::AES_256_GCM;
+        option.iterateTimes = ITER_V0;
     }
     return option;
 }
 
-RdbGeneralStore::DBPassword RdbGeneralStore::GetDBPassword(const StoreMetaData &data)
+std::vector<uint8_t> RdbGeneralStore::GetDBPassword(const StoreMetaData &data, bool createRequired)
 {
-    DBPassword dbPassword;
     SecretKeyMetaData secretKey;
     auto metaKey = data.GetSecretKey();
-    if (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) {
-        return dbPassword;
+    if (!createRequired &&
+        (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty())) {
+        return {};
     }
-    CryptoManager::CryptoParams decryptParams = { .area = secretKey.area, .userId = data.user,
+    if (secretKey.sKey.empty()) {
+        auto key = CryptoManager::GetInstance().Random(KEY_SIZE);
+        if (key.empty()) {
+            return {};
+        }
+        CryptoManager::CryptoParams cryptoParams = { .area = secretKey.area, .userId = data.user };
+        secretKey.sKey = CryptoManager::GetInstance().Encrypt(key, cryptoParams);
+        secretKey.nonce = cryptoParams.nonce;
+    }
+    if (secretKey.sKey.empty()) {
+        return {};
+    }
+    CryptoManager::CryptoParams cryptoParams = { .area = secretKey.area,
+        .userId = data.user,
         .nonce = secretKey.nonce };
-    auto password = CryptoManager::GetInstance().Decrypt(secretKey.sKey, decryptParams);
+    auto password = CryptoManager::GetInstance().Decrypt(secretKey.sKey, cryptoParams);
     if (password.empty()) {
-        return dbPassword;
+        return {};
     }
     // update secret key of area or nonce
     CryptoManager::GetInstance().UpdateSecretMeta(password, data, metaKey, secretKey);
-    dbPassword.SetValue(password.data(), password.size());
-    password.assign(password.size(), 0);
-    return dbPassword;
+    return password;
 }
 
-RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta)
-    : manager_(meta.appId, meta.user, meta.instanceId), tasks_(std::make_shared<ConcurrentMap<SyncId, FinishTask>>())
+std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> RdbGeneralStore::InitRdbStore()
 {
-    observer_.storeId_ = meta.storeId;
-    observer_.meta_ = meta;
-    RelationalStoreDelegate::Option option = GetOption(meta);
-    option.isNeedCompressOnSync = true;
-    option.observer = &observer_;
-    if (meta.isEncrypt) {
-        option.passwd = GetDBPassword(meta);
-        option.isEncryptedDb = meta.isEncrypt;
-        option.cipher = CipherType::AES_256_GCM;
-        for (uint32_t i = 0; i < ITERS_COUNT; ++i) {
-            option.iterateTimes = ITERS[i];
-            auto ret = manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
-            if (ret == DBStatus::OK && delegate_ != nullptr) {
-                break;
-            }
-            manager_.CloseStore(delegate_);
-            delegate_ = nullptr;
-        }
-    } else {
-        auto ret = manager_.OpenStore(meta.dataDir, meta.storeId, option, delegate_);
-        if (ret != DBStatus::OK || delegate_ == nullptr) {
-            manager_.CloseStore(delegate_);
-            delegate_ = nullptr;
+    if (isClosed_) {
+        return { GenErr::E_ALREADY_CLOSED, nullptr };
+    }
+    {
+        std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+        if (rdbStore_ != nullptr) {
+            return { GenErr::E_OK, rdbStore_ };
         }
     }
-    if (delegate_ != nullptr) {
-        auto res = delegate_->SetProperty({{Constant::TOKEN_ID, meta.tokenId}});
-        if (res != DBStatus::OK) {
-            ZLOGE("set DB property fail, res:%{public}d", res);
-        }
+    RdbStoreConfig config = GetRdbConfig(meta_, createRequired_);
+    RdbOpenCallbackImpl callback;
+    int32_t code = -1;
+    auto rdbStore = RdbHelper::GetRdbStore(config, 0, callback, code);
+    std::unique_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return { GenErr::E_ALREADY_CLOSED, nullptr };
     }
-    InitStoreInfo(meta);
+    if (rdbStore_ != nullptr) {
+        return { GenErr::E_OK, rdbStore_ };
+    }
+    rdbStore_ = std::move(rdbStore);
+    return { RdbStoreUtils::ConvertNativeRdbStatus(code), rdbStore_ };
+}
+
+int32_t RdbGeneralStore::InitDelegate()
+{
+    RelationalStoreDelegate::Option option = GetOption(meta_);
+    auto ret = manager_.OpenStore(meta_.dataDir, meta_.storeId, option, delegate_);
+    if ((ret != DBStatus::OK || delegate_ == nullptr) && meta_.isEncrypt) {
+        manager_.CloseStore(delegate_);
+        delegate_ = nullptr;
+        option.iterateTimes = ITER_V1;
+        ret = manager_.OpenStore(meta_.dataDir, meta_.storeId, option, delegate_);
+        ZLOGW("Retry with ITER_V1, [%{public}s,%{public}s,%{public}d,%{public}s: %{public}d]", meta_.user.c_str(),
+            meta_.bundleName.c_str(), meta_.tokenId, Anonymous::Change(meta_.storeId).c_str(), ret);
+    }
+    if (delegate_ == nullptr) {
+        return GenErr::E_ERROR;
+    }
+    auto res = delegate_->SetProperty({ { Constant::TOKEN_ID, meta_.tokenId } });
+    if (res != DBStatus::OK) {
+        ZLOGE("set DB property fail, res:%{public}d", res);
+    }
+    if (meta_.isManualClean) {
+        PragmaData data = static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta_.isManualClean)));
+        delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
+    }
+    return ConvertStatus(ret);
+}
+
+RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta, bool createRequired)
+    : observer_(meta), meta_(observer_.meta_), manager_(meta.appId, meta.user, meta.instanceId),
+      createRequired_(createRequired), isClosed_(false), tasks_(std::make_shared<ConcurrentMap<SyncId, FinishTask>>())
+{
     if (meta.isSearchable) {
         syncNotifyFlag_ |= SEARCHABLE_FLAG;
     }
-    if (delegate_ != nullptr && meta.isManualClean) {
-        PragmaData data = static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta.isManualClean)));
-        delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
-    }
-    ZLOGI("Get rdb store, tokenId:%{public}u, bundleName:%{public}s, storeName:%{public}s, user:%{public}s,"
-          "isEncrypt:%{public}d, isManualClean:%{public}d, isSearchable:%{public}d",
-          meta.tokenId, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.user.c_str(),
-          meta.isEncrypt, meta.isManualClean, meta.isSearchable);
 }
 
 RdbGeneralStore::~RdbGeneralStore()
 {
-    ZLOGI("Destruct. BundleName: %{public}s. StoreName: %{public}s. user: %{public}d",
-        storeInfo_.bundleName.c_str(), Anonymous::Change(storeInfo_.storeName).c_str(), storeInfo_.user);
+    ZLOGI("%{public}s,%{public}s,%{public}u,%{public}s", meta_.user.c_str(), meta_.bundleName.c_str(), meta_.tokenId,
+        Anonymous::Change(meta_.storeId).c_str());
     manager_.CloseStore(delegate_);
     delegate_ = nullptr;
     bindInfo_.loader_ = nullptr;
-    if (bindInfo_.db_ != nullptr) {
-        bindInfo_.db_->Close();
-    }
     bindInfo_.db_ = nullptr;
+    if (rdbCloud_ != nullptr) {
+        rdbCloud_->Close();
+    }
     rdbCloud_ = nullptr;
-    rdbLoader_ = nullptr;
     RemoveTasks();
-    tasks_ = nullptr;
     executor_ = nullptr;
+}
+
+int32_t RdbGeneralStore::Init()
+{
+    int32_t ret = GenErr::E_OK;
+    if (createRequired_) {
+        ret = InitRdbStore().first;
+    }
+    if (ret == GenErr::E_OK) {
+        ret = InitDelegate();
+    }
+    ZLOGI("store:[%{public}s,%{public}s,%{public}u,%{public}s],cfg[%{public}d,%{public}d,%{public}d], ret:%{public}d",
+        meta_.user.c_str(), meta_.bundleName.c_str(), meta_.tokenId, Anonymous::Change(meta_.storeId).c_str(),
+        meta_.isEncrypt, meta_.isManualClean, meta_.isSearchable, ret);
+    return ret;
 }
 
 int32_t RdbGeneralStore::BindSnapshots(BindAssets bindAssets)
 {
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (snapshots_ == nullptr) {
-        snapshots_ = bindAssets;
+        snapshots_ = std::move(bindAssets);
     }
     return GenErr::E_OK;
 }
@@ -264,19 +318,21 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     }
 
     BindEvent::BindEventInfo eventInfo;
-    eventInfo.tokenId = storeInfo_.tokenId;
-    eventInfo.bundleName = storeInfo_.bundleName;
-    eventInfo.storeName = storeInfo_.storeName;
-    eventInfo.user = storeInfo_.user;
-    eventInfo.instanceId = storeInfo_.instanceId;
+    eventInfo.tokenId = meta_.tokenId;
+    eventInfo.bundleName = meta_.bundleName;
+    eventInfo.storeName = meta_.storeId;
+    eventInfo.user = atoi(meta_.user.c_str());
+    eventInfo.instanceId = meta_.instanceId;
 
     auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
-    bindInfo_ = std::move(bindInfo);
+    auto snapshots = GetSnapshots();
+    std::shared_ptr<RdbCloud> rdbCloud = std::make_shared<RdbCloud>(bindInfo.db_, snapshots);
+    std::shared_ptr<RdbAssetLoader> loader = std::make_shared<RdbAssetLoader>(bindInfo.loader_, std::move(snapshots));
     {
-        std::unique_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
-        rdbCloud_ = std::make_shared<RdbCloud>(bindInfo_.db_, snapshots_);
-        rdbLoader_ = std::make_shared<RdbAssetLoader>(bindInfo_.loader_, snapshots_);
+        std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+        bindInfo_ = std::move(bindInfo);
+        rdbCloud_ = rdbCloud;
     }
 
     DistributedDB::CloudSyncConfig dbConfig;
@@ -285,13 +341,17 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     dbConfig.maxRetryConflictTimes = config.maxRetryConflictTimes;
     dbConfig.isSupportEncrypt = config.isSupportEncrypt;
     DBSchema schema = GetDBSchema(database);
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", Anonymous::Change(database.name).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("database:%{public}s already closed!", Anonymous::Change(database.name).c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
-    delegate_->SetCloudDB(rdbCloud_);
-    delegate_->SetIAssetLoader(rdbLoader_);
+    delegate_->SetCloudDB(rdbCloud);
+    delegate_->SetIAssetLoader(loader);
     delegate_->SetCloudDbSchema(std::move(schema));
     delegate_->SetCloudSyncConfig(dbConfig);
 
@@ -306,55 +366,64 @@ bool RdbGeneralStore::IsBound(uint32_t user)
 
 int32_t RdbGeneralStore::Close(bool isForce)
 {
+    if (isForce) {
+        isClosed_ = true;
+    }
     {
-        std::unique_lock<decltype(rwMutex_)> lock(rwMutex_, std::chrono::seconds(isForce ? LOCK_TIMEOUT : 0));
+        std::unique_lock<decltype(dbMutex_)> lock(dbMutex_, std::chrono::seconds(isForce ? LOCK_TIMEOUT : 0));
         if (!lock) {
             return GeneralError::E_BUSY;
         }
 
-        if (delegate_ == nullptr) {
+        if (delegate_ == nullptr && rdbStore_ == nullptr) {
             return GeneralError::E_OK;
         }
-        auto [dbStatus, downloadCount] = delegate_->GetDownloadingAssetsCount();
-        if (!isForce &&
-            (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0 || delegate_->GetDeviceSyncTaskCount() > 0)) {
-            return GeneralError::E_BUSY;
+        if (delegate_ != nullptr) {
+            auto [dbStatus, downloadCount] = delegate_->GetDownloadingAssetsCount();
+            if (!isForce && (delegate_->GetCloudSyncTaskCount() > 0 || downloadCount > 0 ||
+                                delegate_->GetDeviceSyncTaskCount() > 0)) {
+                return GeneralError::E_BUSY;
+            }
+            auto status = manager_.CloseStore(delegate_);
+            if (status != DBStatus::OK) {
+                return status;
+            }
+            delegate_ = nullptr;
         }
-        auto status = manager_.CloseStore(delegate_);
-        if (status != DBStatus::OK) {
-            return status;
-        }
-        delegate_ = nullptr;
+        rdbStore_ = nullptr;
+        isClosed_ = true;
         ReleaseCloudConflictHandler();
     }
     RemoveTasks();
-    bindInfo_.loader_ = nullptr;
-    if (bindInfo_.db_ != nullptr) {
-        bindInfo_.db_->Close();
-    }
-    bindInfo_.db_ = nullptr;
+    auto cloudDb = GetRdbCloud();
     {
-        std::unique_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
+        std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+        bindInfo_.loader_ = nullptr;
+        bindInfo_.db_ = nullptr;
         rdbCloud_ = nullptr;
-        rdbLoader_ = nullptr;
+    }
+    if (cloudDb != nullptr) {
+        cloudDb->Close();
     }
     return GeneralError::E_OK;
 }
 
 int32_t RdbGeneralStore::Execute(const std::string &table, const std::string &sql)
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
-    if (delegate_ == nullptr) {
+    if (isClosed_) {
         ZLOGE("Database already closed! database:%{public}s, table:%{public}s, sql:%{public}s",
-            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str(),
-            Anonymous::Change(sql).c_str());
-        return GeneralError::E_ERROR;
+            meta_.GetStoreAlias().c_str(), Anonymous::Change(table).c_str(), Anonymous::Change(sql).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
     }
     std::vector<DistributedDB::VBucket> changedData;
     auto status = delegate_->ExecuteSql({ sql, {}, false }, changedData);
     if (status != DBStatus::OK) {
         ZLOGE("Execute failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status,
-              Anonymous::Change(sql).c_str(), changedData.size());
+            Anonymous::Change(sql).c_str(), changedData.size());
         if (status == DBStatus::BUSY) {
             return GeneralError::E_BUSY;
         }
@@ -383,6 +452,11 @@ size_t RdbGeneralStore::SqlConcatenate(VBucket &value, std::string &strColumnSql
 
 int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
 {
+    if (isClosed_) {
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     if (table.empty() || values.size() == 0) {
         ZLOGE("Insert:table maybe empty:%{public}d,value size is:%{public}zu", table.empty(), values.size());
         return GeneralError::E_INVALID_ARGS;
@@ -414,19 +488,17 @@ int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
 
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
-            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
-        return GeneralError::E_ERROR;
+        return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs), false }, changedData);
     if (status != DBStatus::OK) {
         if (IsPrintLog(status)) {
             auto time =
                 static_cast<uint64_t>(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
-                ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu times %{public}" PRIu64 ".",
-                status, Anonymous::Change(sql).c_str(), changedData.size(), time);
+            ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu times %{public}" PRIu64 ".", status,
+                Anonymous::Change(sql).c_str(), changedData.size(), time);
         }
         return GeneralError::E_ERROR;
     }
@@ -454,16 +526,13 @@ bool RdbGeneralStore::IsPrintLog(DBStatus status)
 int32_t RdbGeneralStore::Update(const std::string &table, const std::string &setSql, Values &&values,
     const std::string &whereSql, Values &&conditions)
 {
-    if (table.empty()) {
-        ZLOGE("Update: table can't be empty!");
-        return GeneralError::E_INVALID_ARGS;
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
     }
-    if (setSql.empty() || values.size() == 0) {
-        ZLOGE("Update: setSql and values can't be empty!");
-        return GeneralError::E_INVALID_ARGS;
-    }
-    if (whereSql.empty() || conditions.size() == 0) {
-        ZLOGE("Update: whereSql and conditions can't be empty!");
+    if (table.empty() || setSql.empty() || values.empty() || whereSql.empty() || conditions.empty()) {
+        ZLOGE("invalid args![%{public}zu,%{public}zu,%{public}zu,%{public}zu,%{public}zu]", table.size(),
+            setSql.size(), values.size(), whereSql.size(), conditions.size());
         return GeneralError::E_INVALID_ARGS;
     }
 
@@ -478,16 +547,16 @@ int32_t RdbGeneralStore::Update(const std::string &table, const std::string &set
 
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
-            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
-        return GeneralError::E_ERROR;
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->ExecuteSql({ sqlIn, std::move(bindArgs), false }, changedData);
     if (status != DBStatus::OK) {
-        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status, Anonymous::Change(sqlIn).c_str(),
-              changedData.size());
+        ZLOGE("Failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status,
+            Anonymous::Change(sqlIn).c_str(), changedData.size());
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -495,6 +564,11 @@ int32_t RdbGeneralStore::Update(const std::string &table, const std::string &set
 
 int32_t RdbGeneralStore::Replace(const std::string &table, VBucket &&value)
 {
+    if (isClosed_) {
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     if (table.empty() || value.size() == 0) {
         return GeneralError::E_INVALID_ARGS;
     }
@@ -509,16 +583,14 @@ int32_t RdbGeneralStore::Replace(const std::string &table, VBucket &&value)
     }
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
-            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
-        return GeneralError::E_ERROR;
+        return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->ExecuteSql({ sql, std::move(bindArgs) }, changedData);
     if (status != DBStatus::OK) {
-        ZLOGE("Replace failed! ret:%{public}d, table:%{public}s, sql:%{public}s, fields:%{public}s",
-            status, Anonymous::Change(table).c_str(), Anonymous::Change(sql).c_str(), columnSql.c_str());
+        ZLOGE("Replace failed! ret:%{public}d, table:%{public}s, sql:%{public}s, fields:%{public}s", status,
+            Anonymous::Change(table).c_str(), Anonymous::Change(sql).c_str(), columnSql.c_str());
         if (status == DBStatus::BUSY) {
             return GeneralError::E_BUSY;
         }
@@ -532,12 +604,16 @@ int32_t RdbGeneralStore::Delete(const std::string &table, const std::string &sql
     return 0;
 }
 
-std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(__attribute__((unused))const std::string &table,
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(__attribute__((unused)) const std::string &table,
     const std::string &sql, Values &&args)
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed! sql:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(sql).c_str());
+        return { GeneralError::E_ALREADY_CLOSED, nullptr };
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
         return { GeneralError::E_ALREADY_CLOSED, nullptr };
     }
     auto [errCode, records] = QuerySql(sql, std::move(args));
@@ -546,16 +622,19 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(__attribute__
 
 std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(const std::string &table, GenQuery &query)
 {
+    if (isClosed_) {
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return { GeneralError::E_ALREADY_CLOSED, nullptr };
+    }
     RdbQuery *rdbQuery = nullptr;
     auto ret = query.QueryInterface(rdbQuery);
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
         ZLOGE("not RdbQuery!");
         return { GeneralError::E_INVALID_ARGS, nullptr };
     }
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
-            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(table).c_str());
         return { GeneralError::E_ALREADY_CLOSED, nullptr };
     }
     if (rdbQuery->IsRemoteQuery()) {
@@ -564,18 +643,21 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(const std::st
             return { GeneralError::E_ERROR, nullptr };
         }
         auto cursor = RemoteQuery(*rdbQuery->GetDevices().begin(), rdbQuery->GetRemoteCondition());
-        return { cursor != nullptr ? GeneralError::E_OK : GeneralError::E_ERROR, cursor};
+        return { cursor != nullptr ? GeneralError::E_OK : GeneralError::E_ERROR, cursor };
     }
     return { GeneralError::E_ERROR, nullptr };
 }
 
 int32_t RdbGeneralStore::MergeMigratedData(const std::string &tableName, VBuckets &&values)
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (isClosed_) {
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(tableName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
-            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
-        return GeneralError::E_ERROR;
+        return GeneralError::E_ALREADY_CLOSED;
     }
 
     auto status = delegate_->UpsertData(tableName, ValueProxy::Convert(std::move(values)));
@@ -584,10 +666,15 @@ int32_t RdbGeneralStore::MergeMigratedData(const std::string &tableName, VBucket
 
 int32_t RdbGeneralStore::CleanTrackerData(const std::string &tableName, int64_t cursor)
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (isClosed_) {
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(tableName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s, table:%{public}s",
-              Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
+        ZLOGE("Database already closed! database:%{public}s, table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(tableName).c_str());
         return GeneralError::E_ERROR;
     }
 
@@ -602,8 +689,9 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     auto highMode = GetHighMode(static_cast<uint32_t>(syncParam.mode));
     SyncId syncId = ++syncTaskId_;
     auto callback = GetDBProcessCB(std::move(async), syncMode, syncId, highMode);
-    if (executor_ != nullptr && tasks_ != nullptr) {
-        auto id = executor_->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
+    auto executor = GetExecutor();
+    if (executor != nullptr && tasks_ != nullptr) {
+        auto id = executor->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
         tasks_->Insert(syncId, { id, callback });
     }
     CloudSyncOption option;
@@ -625,7 +713,7 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     }
     Report(FT_CLOUD_SYNC, static_cast<int32_t>(Fault::CSF_GS_CLOUD_SYNC),
         "Cloud sync ret=" + std::to_string(static_cast<int32_t>(dbStatus)));
-    tasks_->ComputeIfPresent(syncId, [executor = executor_](SyncId syncId, const FinishTask &task) {
+    tasks_->ComputeIfPresent(syncId, [executor = GetExecutor()](SyncId syncId, const FinishTask &task) {
         if (executor != nullptr) {
             executor->Remove(task.taskId);
         }
@@ -637,6 +725,12 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
 std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQuery &query, DetailAsync async,
     const SyncParam &syncParam)
 {
+    if (isClosed_) {
+        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, wait:%{public}d",
+            devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParam.mode,
+            syncParam.wait);
+        return { GeneralError::E_ALREADY_CLOSED, DBStatus::OK };
+    }
     DistributedDB::Query dbQuery;
     RdbQuery *rdbQuery = nullptr;
     bool isPriority = false;
@@ -649,11 +743,8 @@ std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQue
     }
     auto syncMode = GeneralStore::GetSyncMode(syncParam.mode);
     auto dbMode = DistributedDB::SyncMode(syncMode);
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
-              "wait:%{public}d", devices.size(),
-              devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), syncParam.mode, syncParam.wait);
         return { GeneralError::E_ALREADY_CLOSED, DBStatus::OK };
     }
     auto dbStatus = DistributedDB::INVALID_ARGS;
@@ -667,6 +758,10 @@ std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQue
 
 std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::PreSharing(GenQuery &query)
 {
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return { GeneralError::E_ALREADY_CLOSED, nullptr };
+    }
     RdbQuery *rdbQuery = nullptr;
     auto ret = query.QueryInterface(rdbQuery);
     if (ret != GeneralError::E_OK || rdbQuery == nullptr) {
@@ -682,9 +777,9 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::PreSharing(GenQuery
     std::string sql = BuildSql(*tables.begin(), statement, rdbQuery->GetColumns());
     VBuckets values;
     {
-        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
         if (delegate_ == nullptr) {
-            ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+            ZLOGE("Database already closed! database:%{public}s", meta_.GetStoreAlias().c_str());
             return { GeneralError::E_ALREADY_CLOSED, nullptr };
         }
         auto [errCode, ret] = QuerySql(sql, rdbQuery->GetBindArgs());
@@ -724,8 +819,8 @@ VBuckets RdbGeneralStore::ExtractExtend(VBuckets &values) const
     return extends;
 }
 
-std::string RdbGeneralStore::BuildSql(
-    const std::string &table, const std::string &statement, const std::vector<std::string> &columns) const
+std::string RdbGeneralStore::BuildSql(const std::string &table, const std::string &statement,
+    const std::vector<std::string> &columns) const
 {
     std::string sql = "select ";
     sql.append(CLOUD_GID);
@@ -743,16 +838,19 @@ std::string RdbGeneralStore::BuildSql(
 
 int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
 {
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
+              "tableName:%{public}s", meta_.GetStoreAlias().c_str(), devices.size(),
+            devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode,
+            Anonymous::Change(tableName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
     if (mode < 0 || mode > CLEAN_MODE_BUTT) {
         return GeneralError::E_INVALID_ARGS;
     }
     DBStatus status = DistributedDB::DB_ERROR;
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("store already closed! devices count:%{public}zu, the 1st:%{public}s, mode:%{public}d, "
-              "tableName:%{public}s",
-            devices.size(), devices.empty() ? "null" : Anonymous::Change(*devices.begin()).c_str(), mode,
-            Anonymous::Change(tableName).c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
     switch (mode) {
@@ -812,8 +910,7 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
     if (!async) {
         return [](auto &) {};
     }
-    return [async = std::move(async)](
-        const std::map<std::string, std::vector<TableStatus>> &result) {
+    return [async = std::move(async)](const std::map<std::string, std::vector<TableStatus>> &result) {
         DistributedData::GenDetails details;
         for (auto &[key, tables] : result) {
             auto &value = details[key];
@@ -832,9 +929,8 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
 RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, uint32_t syncMode, SyncId syncId,
     uint32_t highMode)
 {
-    std::shared_lock<std::shared_mutex> lock(asyncMutex_);
-    return [async, autoAsync = async_, highMode, storeInfo = storeInfo_, flag = syncNotifyFlag_, syncMode, syncId,
-        rdbCloud = GetRdbCloud()](const std::map<std::string, SyncProcess> &processes) {
+    return [async, autoAsync = GetAsync(), highMode, storeInfo = GetStoreInfo(), flag = syncNotifyFlag_, syncMode,
+               syncId, rdbCloud = GetRdbCloud()](const std::map<std::string, SyncProcess> &processes) mutable {
         DistributedData::GenDetails details;
         for (auto &[id, process] : processes) {
             bool isDownload = false;
@@ -856,15 +952,15 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
                 table.download.failed = value.downLoadInfo.failCount;
                 table.download.untreated = table.download.total - table.download.success - table.download.failed;
                 detail.changeCount = (process.process == FINISHED)
-                                        ? value.downLoadInfo.insertCount + value.downLoadInfo.updateCount +
-                                              value.downLoadInfo.deleteCount
-                                        : 0;
+                                         ? value.downLoadInfo.insertCount + value.downLoadInfo.updateCount +
+                                               value.downLoadInfo.deleteCount
+                                         : 0;
                 totalCount += table.download.total;
             }
             if (process.process == FINISHED) {
-                RdbGeneralStore::OnSyncFinish(storeInfo, flag, syncMode, syncId);
+                RdbGeneralStore::OnSyncFinish(std::move(storeInfo), flag, syncMode, syncId);
             } else {
-                RdbGeneralStore::OnSyncStart(storeInfo, flag, syncMode, syncId, totalCount);
+                RdbGeneralStore::OnSyncStart(std::move(storeInfo), flag, syncMode, syncId, totalCount);
             }
 
             if (isDownload && (process.process == FINISHED || process.process == PROCESSING) && rdbCloud != nullptr &&
@@ -876,8 +972,8 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
             async(details);
         }
 
-        if (highMode == AUTO_SYNC_MODE && autoAsync
-            && (details.empty() || details.begin()->second.code != E_SYNC_TASK_MERGED)) {
+        if (highMode == AUTO_SYNC_MODE && autoAsync &&
+            (details.empty() || details.begin()->second.code != E_SYNC_TASK_MERGED)) {
             autoAsync(details);
         }
     };
@@ -912,9 +1008,9 @@ int32_t RdbGeneralStore::AddRef()
 void RdbGeneralStore::Report(const std::string &faultType, int32_t errCode, const std::string &appendix)
 {
     ArkDataFaultMsg msg = { .faultType = faultType,
-        .bundleName = storeInfo_.bundleName,
+        .bundleName = meta_.bundleName,
         .moduleName = ModuleName::RDB_STORE,
-        .storeName = storeInfo_.storeName,
+        .storeName = meta_.storeId,
         .errorType = errCode + GeneralStore::CLOUD_ERR_OFFSET,
         .appendixMsg = appendix };
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
@@ -924,11 +1020,13 @@ int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
 {
     std::vector<DistributedDB::TableReferenceProperty> properties;
     for (const auto &reference : references) {
-        properties.push_back({reference.sourceTable, reference.targetTable, reference.refFields});
+        properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
     }
     auto status = delegate_->SetReference(properties);
     if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
         ZLOGE("distributed table set reference failed, err:%{public}d", status);
+        Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
+            "SetDistributedTables: set reference=" + std::to_string(static_cast<int32_t>(status)));
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -937,10 +1035,13 @@ int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
     const std::vector<Reference> &references)
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed! tables size:%{public}zu, type:%{public}d",
+            meta_.GetStoreAlias().c_str(), tables.size(), type);
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s, tables size:%{public}zu, type:%{public}d",
-            Anonymous::Change(storeInfo_.storeName).c_str(), tables.size(), type);
         return GeneralError::E_ALREADY_CLOSED;
     }
     for (const auto &table : tables) {
@@ -950,26 +1051,24 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
             ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d",
                 Anonymous::Change(table).c_str(), dBStatus);
             Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
-                "SetDistributedTables: set table(" + Anonymous::Change(table) + ") =" +
-                std::to_string(static_cast<int32_t>(dBStatus)));
+                "SetDistributedTables: set table(" + Anonymous::Change(table) +
+                    ") =" + std::to_string(static_cast<int32_t>(dBStatus)));
             return GeneralError::E_ERROR;
         }
     }
     if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
         auto status = SetReference(references);
         if (status != GeneralError::E_OK) {
-            Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
-                "SetDistributedTables: set reference=" + std::to_string(static_cast<int32_t>(status)));
-            return GeneralError::E_ERROR;
+            return status;
         }
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
     if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {
         auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
-            {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
+            { database.version, observer_.meta_.appId, observer_.meta_.bundleName, {} });
         delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
     }
-    CloudMark metaData(storeInfo_);
+    CloudMark metaData(meta_);
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {
         DistributedDB::ClearMetaDataOption option{ .mode = DistributedDB::ClearMetaDataMode::CLOUD_WATERMARK };
         auto ret = delegate_->ClearMetaData(option);
@@ -978,20 +1077,23 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
             return GeneralError::E_ERROR;
         }
         MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
-        auto event = std::make_unique<CloudEvent>(CloudEvent::UPGRADE_SCHEMA, storeInfo_);
+        auto event = std::make_unique<CloudEvent>(CloudEvent::UPGRADE_SCHEMA, GetStoreInfo());
         EventCenter::GetInstance().PostEvent(std::move(event));
-        ZLOGI("clear watermark success, bundleName:%{public}s, storeName:%{public}s", storeInfo_.bundleName.c_str(),
-            Anonymous::Change(storeInfo_.storeName).c_str());
+        ZLOGI("clear watermark success, bundleName:%{public}s, storeName:%{public}s", meta_.bundleName.c_str(),
+            meta_.GetStoreAlias().c_str());
     }
     return GeneralError::E_OK;
 }
 
 void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
-     if (delegate_ == nullptr) {
-        ZLOGE("database already closed!, tableMode is :%{public}d",
-              storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed! tableMode is :%{public}d", meta_.GetStoreAlias().c_str(),
+            storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
+        return;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
         return;
     }
     if (storeConfig.tableMode.has_value()) {
@@ -1008,21 +1110,24 @@ void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
 int32_t RdbGeneralStore::SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
     const std::set<std::string> &extendColNames, bool isForceUpgrade)
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed! tables name:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(tableName).c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed! database:%{public}s, tables name:%{public}s",
-            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->SetTrackerTable({ tableName, extendColNames, trackerColNames, isForceUpgrade });
     if (status == DBStatus::WITH_INVENTORY_DATA) {
         ZLOGI("Set tracker table with inventory data, database:%{public}s, tables name:%{public}s",
-            Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
+            meta_.GetStoreAlias().c_str(), Anonymous::Change(tableName).c_str());
         return GeneralError::E_WITH_INVENTORY_DATA;
     }
     if (status != DBStatus::OK) {
-        ZLOGE("Set tracker table failed! ret:%{public}d, database:%{public}s, tables name:%{public}s",
-            status, Anonymous::Change(storeInfo_.storeName).c_str(), Anonymous::Change(tableName).c_str());
+        ZLOGE("Set tracker table failed! ret:%{public}d, database:%{public}s, tables name:%{public}s", status,
+            meta_.GetStoreAlias().c_str(), Anonymous::Change(tableName).c_str());
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -1068,22 +1173,15 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
     return GenErr::E_ERROR;
 }
 
-bool RdbGeneralStore::IsValid()
-{
-    return delegate_ != nullptr;
-}
-
 int32_t RdbGeneralStore::RegisterDetailProgressObserver(GeneralStore::DetailAsync async)
 {
-    std::unique_lock<std::shared_mutex> lock(asyncMutex_);
-    async_ = std::move(async);
+    SetAsync(std::move(async));
     return GenErr::E_OK;
 }
 
 int32_t RdbGeneralStore::UnregisterDetailProgressObserver()
 {
-    std::unique_lock<std::shared_mutex> lock(asyncMutex_);
-    async_ = nullptr;
+    SetAsync(nullptr);
     return GenErr::E_OK;
 }
 
@@ -1095,45 +1193,39 @@ std::pair<int32_t, VBuckets> RdbGeneralStore::QuerySql(const std::string &sql, V
     if (status != DBStatus::OK) {
         ZLOGE("Query failed! ret:%{public}d, sql:%{public}s, data size:%{public}zu", status,
             Anonymous::Change(sql).c_str(), changedData.size());
-        if (status == DBStatus::BUSY) {
-            return { GenErr::E_BUSY, {} };
-        }
-        return { GenErr::E_ERROR, {} };
     }
-    return { GenErr::E_OK, ValueProxy::Convert(std::move(changedData)) };
+    return { ConvertStatus(status), ValueProxy::Convert(std::move(changedData)) };
 }
 
-void RdbGeneralStore::OnSyncStart(const StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode, uint32_t traceId,
+void RdbGeneralStore::OnSyncStart(StoreInfo info, uint32_t flag, uint32_t syncMode, uint32_t traceId,
     uint32_t syncCount)
 {
     uint32_t requiredFlag = (CLOUD_SYNC_FLAG | SEARCHABLE_FLAG);
     if (requiredFlag != (requiredFlag & flag)) {
         return;
     }
-    StoreInfo info = storeInfo;
     auto evt = std::make_unique<DataSyncEvent>(std::move(info), syncMode, DataSyncEvent::DataSyncStatus::START,
         traceId, syncCount);
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
-void RdbGeneralStore::OnSyncFinish(const StoreInfo &storeInfo, uint32_t flag, uint32_t syncMode, uint32_t traceId)
+void RdbGeneralStore::OnSyncFinish(StoreInfo info, uint32_t flag, uint32_t syncMode, uint32_t traceId)
 {
     uint32_t requiredFlag = (CLOUD_SYNC_FLAG | SEARCHABLE_FLAG);
     if (requiredFlag != (requiredFlag & flag)) {
         return;
     }
-    StoreInfo info = storeInfo;
-    auto evt = std::make_unique<DataSyncEvent>(std::move(info), syncMode, DataSyncEvent::DataSyncStatus::FINISH,
-        traceId);
+    auto evt =
+        std::make_unique<DataSyncEvent>(std::move(info), syncMode, DataSyncEvent::DataSyncStatus::FINISH, traceId);
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
 std::set<std::string> RdbGeneralStore::GetTables()
 {
     std::set<std::string> tables;
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        ZLOGE("Database already closed! database:%{public}s", meta_.GetStoreAlias().c_str());
         return tables;
     }
     auto [errCode, res] = QuerySql(QUERY_TABLES_SQL, {});
@@ -1143,7 +1235,7 @@ std::set<std::string> RdbGeneralStore::GetTables()
     for (auto &table : res) {
         auto it = table.find("name");
         if (it == table.end() || TYPE_INDEX<std::string> != it->second.index()) {
-            ZLOGW("error res! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+            ZLOGW("error res! database:%{public}s", meta_.GetStoreAlias().c_str());
             continue;
         }
         tables.emplace(std::move(*std::get_if<std::string>(&(it->second))));
@@ -1156,16 +1248,17 @@ std::vector<std::string> RdbGeneralStore::GetIntersection(std::vector<std::strin
 {
     std::vector<std::string> res;
     for (auto &it : syncTables) {
-        if (localTables.count(it) &&
-            localTables.count(RelationalStoreManager::GetDistributedLogTableName(it))) {
+        if (localTables.count(it) && localTables.count(RelationalStoreManager::GetDistributedLogTableName(it))) {
             res.push_back(std::move(it));
         }
     }
     return res;
 }
 
-void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta,
-    const std::vector<std::string> &tables, ChangeType type)
+RdbGeneralStore::ObserverProxy::ObserverProxy(const StoreMetaData &meta) : meta_(meta), storeId_(meta_.storeId) {}
+
+void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables,
+    ChangeType type)
 {
     RemoteChangeEvent::DataInfo info;
     info.userId = meta.user;
@@ -1207,9 +1300,9 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     ZLOGD("store:%{public}s table:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
         Anonymous::Change(data.tableName).c_str(), Anonymous::Change(originalId).c_str());
     GenOrigin genOrigin;
-    genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)
-                           ? GenOrigin::ORIGIN_LOCAL
-                           : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD : GenOrigin::ORIGIN_NEARBY;
+    genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)   ? GenOrigin::ORIGIN_LOCAL
+                       : (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD
+                                                            : GenOrigin::ORIGIN_NEARBY;
     genOrigin.dataType = data.type == DistributedDB::ASSET ? GenOrigin::ASSET_DATA : GenOrigin::BASIC_DATA;
     genOrigin.id.push_back(originalId);
     genOrigin.store = storeId_;
@@ -1282,15 +1375,15 @@ void RdbGeneralStore::OnSyncTrigger(const std::string &storeId, const int32_t tr
 
 std::shared_ptr<RdbCloud> RdbGeneralStore::GetRdbCloud() const
 {
-    std::shared_lock<decltype(rdbCloudMutex_)> lock(rdbCloudMutex_);
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
     return rdbCloud_;
 }
 
 bool RdbGeneralStore::IsFinished(SyncId syncId) const
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        ZLOGE("database already closed! database:%{public}s", meta_.GetStoreAlias().c_str());
         return true;
     }
     return delegate_->GetCloudTaskStatus(syncId).process == DistributedDB::FINISHED;
@@ -1298,27 +1391,27 @@ bool RdbGeneralStore::IsFinished(SyncId syncId) const
 
 Executor::Task RdbGeneralStore::GetFinishTask(SyncId syncId)
 {
-    return [this, executor = executor_, task = tasks_, syncId]() {
+    return [this, executor = GetExecutor(), task = tasks_, syncId]() {
         auto [exist, finishTask] = task->Find(syncId);
         if (!exist || finishTask.cb == nullptr) {
             task->Erase(syncId);
             return;
         }
         if (!IsFinished(syncId)) {
-            task->ComputeIfPresent(syncId, [executor = executor_, this](SyncId syncId, FinishTask &task) {
+            task->ComputeIfPresent(syncId, [executor = GetExecutor(), this](SyncId syncId, FinishTask &task) {
                 task.taskId = executor->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
                 return true;
             });
             return;
         }
         DBProcessCB cb;
-        task->ComputeIfPresent(syncId, [&cb, executor = executor_](SyncId syncId, const FinishTask &task) {
+        task->ComputeIfPresent(syncId, [&cb, executor = GetExecutor()](SyncId syncId, const FinishTask &task) {
             cb = task.cb;
             return false;
         });
         if (cb != nullptr) {
-            ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ",
-                  Anonymous::Change(storeInfo_.storeName).c_str(), syncId);
+            ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ", meta_.GetStoreAlias().c_str(),
+                syncId);
             std::map<std::string, SyncProcess> result;
             result.insert({ "", { DistributedDB::FINISHED, DBStatus::DB_ERROR } });
             cb(result);
@@ -1328,6 +1421,7 @@ Executor::Task RdbGeneralStore::GetFinishTask(SyncId syncId)
 
 void RdbGeneralStore::SetExecutor(std::shared_ptr<Executor> executor)
 {
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (executor_ == nullptr) {
         executor_ = executor;
     }
@@ -1340,10 +1434,10 @@ void RdbGeneralStore::RemoveTasks()
     }
     std::list<DBProcessCB> cbs;
     std::list<TaskId> taskIds;
-    tasks_->EraseIf([&cbs, &taskIds, store = storeInfo_.storeName](SyncId syncId, const FinishTask &task) {
+    tasks_->EraseIf([&cbs, &taskIds, store = meta_.storeId](SyncId syncId, const FinishTask &task) {
         if (task.cb != nullptr) {
             ZLOGW("database:%{public}s syncId:%{public}" PRIu64 " miss finished. ", Anonymous::Change(store).c_str(),
-                  syncId);
+                syncId);
         }
         cbs.push_back(std::move(task.cb));
         taskIds.push_back(task.taskId);
@@ -1358,11 +1452,12 @@ void RdbGeneralStore::RemoveTasks()
             }
         }
     };
-    if (executor_ != nullptr) {
-        for (auto taskId: taskIds) {
-            executor_->Remove(taskId, true);
+    auto excutor = GetExecutor();
+    if (excutor != nullptr) {
+        for (auto taskId : taskIds) {
+            excutor->Remove(taskId, true);
         }
-        executor_->Execute([cbs, func]() {
+        excutor->Execute([cbs, func]() {
             func(cbs);
         });
     } else {
@@ -1372,7 +1467,7 @@ void RdbGeneralStore::RemoveTasks()
 
 RdbGeneralStore::DBProcessCB RdbGeneralStore::GetCB(SyncId syncId)
 {
-    return [task = tasks_, executor = executor_, syncId](const std::map<std::string, SyncProcess> &progress) {
+    return [task = tasks_, executor = GetExecutor(), syncId](const std::map<std::string, SyncProcess> &progress) {
         if (task == nullptr) {
             return;
         }
@@ -1394,20 +1489,216 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetCB(SyncId syncId)
 
 int32_t RdbGeneralStore::UpdateDBStatus()
 {
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        ZLOGE("Database already closed! database:%{public}s", meta_.GetStoreAlias().c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
     return delegate_->OperateDataStatus(static_cast<uint32_t>(DataOperator::UPDATE_TIME));
 }
 
-int32_t RdbGeneralStore::SetDBProperty(const DBProperty &property)
+DistributedData::StoreInfo RdbGeneralStore::GetStoreInfo() const
 {
-    if (delegate_ == nullptr) {
-        return DBStatus::DB_ERROR;
+    DistributedData::StoreInfo storeInfo;
+    storeInfo.tokenId = meta_.tokenId;
+    storeInfo.bundleName = meta_.bundleName;
+    storeInfo.storeName = meta_.storeId;
+    storeInfo.instanceId = meta_.instanceId;
+    storeInfo.user = std::atoi(meta_.user.c_str());
+    storeInfo.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
+    storeInfo.path = meta_.dataDir;
+    return storeInfo;
+}
+
+GeneralStore::DetailAsync RdbGeneralStore::GetAsync() const
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    return async_;
+}
+
+void RdbGeneralStore::SetAsync(DetailAsync async)
+{
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
+    async_ = std::move(async);
+}
+
+BindAssets RdbGeneralStore::GetSnapshots() const
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    return snapshots_;
+}
+
+std::shared_ptr<GeneralStore::Executor> RdbGeneralStore::GetExecutor() const
+{
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    return executor_;
+}
+
+NativeRdb::RdbStoreConfig RdbGeneralStore::GetRdbConfig(const StoreMetaData &meta, bool createRequired)
+{
+    RdbStoreConfig config(meta.dataDir);
+    config.SetCreateNecessary(createRequired);
+    if (meta.isEncrypt) {
+        auto key = RdbGeneralStore::GetDBPassword(meta, createRequired);
+        if (key.empty()) {
+            ZLOGE("database:%{public}s GetDBPassword failed!", meta.GetStoreAlias().c_str());
+            return config;
+        }
+        config.SetEncryptKey(std::move(key));
     }
-    return delegate_->SetProperty(property);
+    return config;
+}
+
+NativeRdb::ConflictResolution ConvertResolution(GeneralStore::ConflictResolution conflictResolution)
+{
+    struct Resolution {
+        GeneralStore::ConflictResolution resolution;
+        NativeRdb::ConflictResolution rdbResolution;
+    };
+    static constexpr Resolution RESOLUTIONS[] = {
+        { GeneralStore::ConflictResolution::ON_CONFLICT_NONE, NativeRdb::ConflictResolution::ON_CONFLICT_NONE },
+        { GeneralStore::ConflictResolution::ON_CONFLICT_ROLLBACK, NativeRdb::ConflictResolution::ON_CONFLICT_ROLLBACK },
+        { GeneralStore::ConflictResolution::ON_CONFLICT_ABORT, NativeRdb::ConflictResolution::ON_CONFLICT_ABORT },
+        { GeneralStore::ConflictResolution::ON_CONFLICT_FAIL, NativeRdb::ConflictResolution::ON_CONFLICT_FAIL },
+        { GeneralStore::ConflictResolution::ON_CONFLICT_IGNORE, NativeRdb::ConflictResolution::ON_CONFLICT_IGNORE },
+        { GeneralStore::ConflictResolution::ON_CONFLICT_REPLACE, NativeRdb::ConflictResolution::ON_CONFLICT_REPLACE },
+    };
+    Resolution resolution = { conflictResolution, NativeRdb::ConflictResolution::ON_CONFLICT_NONE };
+    auto iter = std::lower_bound(RESOLUTIONS, RESOLUTIONS + sizeof(RESOLUTIONS) / sizeof(RESOLUTIONS[0]), resolution,
+        [](const Resolution &resolution1, const Resolution &resolution2) {
+            return resolution1.resolution < resolution2.resolution;
+        });
+    if (iter < RESOLUTIONS + sizeof(RESOLUTIONS) / sizeof(RESOLUTIONS[0]) && iter->resolution == conflictResolution) {
+        return iter->rdbResolution;
+    }
+    ZLOGW("resolution:%{public}d convert failed, return default!", conflictResolution);
+    return NativeRdb::ConflictResolution::ON_CONFLICT_NONE;
+}
+
+std::pair<int32_t, int64_t> RdbGeneralStore::Insert(const std::string &table, VBucket &&value,
+    GeneralStore::ConflictResolution resolution)
+{
+    auto [ret, store] = InitRdbStore();
+    if (store == nullptr || ret != GenErr::E_OK) {
+        ZLOGE("database:%{public}s already closed! table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return { ret, -1 };
+    }
+    auto [code, id] = store->Insert(table, ValueProxy::Convert(std::move(value)), ConvertResolution(resolution));
+    return { RdbStoreUtils::ConvertNativeRdbStatus(code), id };
+}
+
+std::pair<int32_t, int64_t> RdbGeneralStore::BatchInsert(const std::string &table, VBuckets &&values,
+    GeneralStore::ConflictResolution resolution)
+{
+    auto [ret, store] = InitRdbStore();
+    if (store == nullptr || ret != GenErr::E_OK) {
+        ZLOGE("database:%{public}s already closed! table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return { ret, -1 };
+    }
+    NativeRdb::ValuesBuckets valuesBuckets(ValueProxy::Convert(std::move(values)));
+    auto [code, count] = store->BatchInsert(table, valuesBuckets, ConvertResolution(resolution));
+    return { RdbStoreUtils::ConvertNativeRdbStatus(code), count };
+}
+
+std::pair<int32_t, int64_t> RdbGeneralStore::Update(GenQuery &query, VBucket &&value,
+    GeneralStore::ConflictResolution resolution)
+{
+    auto tables = query.GetTables();
+    if (tables.size() != 1) {
+        ZLOGE("invalid args, table size:%{public}zu", tables.size());
+        return { GeneralError::E_INVALID_ARGS, -1 };
+    }
+    auto &table = tables[0];
+    auto [ret, store] = InitRdbStore();
+    if (store == nullptr || ret != GenErr::E_OK) {
+        ZLOGE("database:%{public}s already closed! table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return { ret, -1 };
+    }
+    int count = -1;
+    NativeRdb::RdbStore::Values args = ValueProxy::Convert(query.GetArgs());
+    auto code = store->UpdateWithConflictResolution(count, table, ValueProxy::Convert(std::move(value)),
+        query.GetWhereClause(), args, ConvertResolution(resolution));
+    return { RdbStoreUtils::ConvertNativeRdbStatus(code), count };
+}
+
+std::pair<int32_t, int64_t> RdbGeneralStore::Delete(GenQuery &query)
+{
+    auto tables = query.GetTables();
+    if (tables.size() != 1) {
+        ZLOGE("invalid args, table size:%{public}zu", tables.size());
+        return { GeneralError::E_INVALID_ARGS, -1 };
+    }
+    auto &table = tables[0];
+    auto [ret, store] = InitRdbStore();
+    if (store == nullptr || ret != GenErr::E_OK) {
+        ZLOGE("database:%{public}s already closed! table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return { ret, -1 };
+    }
+    int count = -1;
+    NativeRdb::RdbStore::Values args = ValueProxy::Convert(query.GetArgs());
+    auto code = store->Delete(count, table, query.GetWhereClause(), args);
+    return { RdbStoreUtils::ConvertNativeRdbStatus(code), count };
+}
+
+std::pair<int32_t, Value> RdbGeneralStore::Execute(const std::string &sql, Values &&args)
+{
+    auto [ret, store] = InitRdbStore();
+    if (store == nullptr || ret != GenErr::E_OK) {
+        ZLOGE("database:%{public}s already closed! sql:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(sql).c_str());
+        return { ret, -1 };
+    }
+    auto [code, value] = store->Execute(sql, ValueProxy::Convert(std::move(args)));
+    return { RdbStoreUtils::ConvertNativeRdbStatus(code), ValueProxy::Convert(std::move(value)) };
+}
+
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(const std::string &sql, Values &&args, bool preCount)
+{
+    auto [ret, store] = InitRdbStore();
+    if (store == nullptr || ret != GenErr::E_OK) {
+        ZLOGE("database:%{public}s already closed! sql:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(sql).c_str());
+        return { ret, nullptr };
+    }
+    auto resultSet = store->QueryByStep(sql, ValueProxy::Convert(std::move(args)), preCount);
+    if (resultSet == nullptr) {
+        return { GenErr::E_ERROR, nullptr };
+    }
+    return { GenErr::E_OK, std::make_shared<DistributedRdb::RelationalStoreCursor>(*resultSet, resultSet) };
+}
+
+std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(GenQuery &query,
+    const std::vector<std::string> &columns, bool preCount)
+{
+    auto tables = query.GetTables();
+    if (tables.size() != 1) {
+        ZLOGE("invalid args, table size:%{public}zu", tables.size());
+        return { GeneralError::E_INVALID_ARGS, nullptr };
+    }
+    auto &table = tables[0];
+    auto [ret, store] = InitRdbStore();
+    if (store == nullptr || ret != GenErr::E_OK) {
+        ZLOGE("database:%{public}s already closed! table:%{public}s", meta_.GetStoreAlias().c_str(),
+            Anonymous::Change(table).c_str());
+        return { ret, nullptr };
+    }
+    AbsRdbPredicates predicates(table);
+    predicates.SetWhereClause(query.GetWhereClause());
+    predicates.SetBindArgs(ValueProxy::Convert(query.GetArgs()));
+    // TOD SetOrder Limit..
+    auto resultSet = store->QueryByStep(predicates, columns, preCount);
+    if (resultSet == nullptr) {
+        return { GenErr::E_ERROR, nullptr };
+    }
+    return { GenErr::E_OK, std::make_shared<DistributedRdb::RelationalStoreCursor>(*resultSet, resultSet) };
 }
 
 int32_t RdbGeneralStore::SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)

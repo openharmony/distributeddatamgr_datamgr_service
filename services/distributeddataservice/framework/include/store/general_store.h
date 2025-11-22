@@ -136,6 +136,16 @@ public:
         DB_MODE_ID = 1,
         CLOUD_MODE_ID = 10,
     };
+
+    enum ConflictResolution : uint8_t {
+        ON_CONFLICT_NONE = 0,
+        ON_CONFLICT_ROLLBACK,
+        ON_CONFLICT_ABORT,
+        ON_CONFLICT_FAIL,
+        ON_CONFLICT_IGNORE,
+        ON_CONFLICT_REPLACE,
+    };
+
     static const int32_t DB_ERR_OFFSET = ErrCodeOffset(SUBSYS_DISTRIBUTEDDATAMNG, DB_MODE_ID);
     static const int32_t CLOUD_ERR_OFFSET = ErrCodeOffset(SUBSYS_DISTRIBUTEDDATAMNG, CLOUD_MODE_ID);
 
@@ -158,10 +168,10 @@ public:
 
     virtual int32_t Insert(const std::string &table, VBuckets &&values) = 0;
 
+    virtual int32_t Replace(const std::string &table, VBucket &&value) = 0;
+
     virtual int32_t Update(const std::string &table, const std::string &setSql, Values &&values,
         const std::string &whereSql, Values &&conditions) = 0;
-
-    virtual int32_t Replace(const std::string &table, VBucket &&value) = 0;
 
     virtual int32_t Delete(const std::string &table, const std::string &sql, Values &&args) = 0;
 
@@ -169,6 +179,18 @@ public:
         Values &&args) = 0;
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) = 0;
+
+    virtual std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value,
+        ConflictResolution resolution) = 0;
+    virtual std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values,
+        ConflictResolution resolution) = 0;
+    virtual std::pair<int32_t, int64_t> Update(GenQuery &query, VBucket &&value, ConflictResolution resolution) = 0;
+    virtual std::pair<int32_t, int64_t> Delete(GenQuery &query) = 0;
+    virtual std::pair<int32_t, Value> Execute(const std::string &sql, Values &&args) = 0;
+    virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &sql, Values &&args = {},
+        bool preCount = false) = 0;
+    virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query,
+        const std::vector<std::string> &columns = {}, bool preCount = false) = 0;
 
     virtual std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query,
         DetailAsync async, const SyncParam &syncParam) = 0;
@@ -209,7 +231,6 @@ public:
     {
         return 0;
     }
-    virtual int32_t SetDBProperty(const DBProperty &property) = 0;
     virtual int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
     {
         return 0;

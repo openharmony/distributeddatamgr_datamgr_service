@@ -24,24 +24,6 @@
 
 namespace OHOS {
 namespace UDMF {
-void AcceptableInfoObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
-{
-    auto insertedEntries = data.GetEntriesInserted();
-    for (const auto &entry : insertedEntries) {
-        std::string acceptableKey(entry.key.begin(), entry.key.end());
-        DataLoadInfo info;
-        auto status = DataHandler::UnmarshalDataLoadEntries(entry, info);
-        if (status != E_OK) {
-            ZLOGE("Unmarshal data load entries failed, key: %{public}s", acceptableKey.c_str());
-            continue;
-        }
-        SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(info.udKey, info.deviceId);
-        if (!DelayDataPrepareContainer::GetInstance().ExecDataLoadCallback(info.udKey, info)) {
-            ZLOGE("Can not find data load callback, key: %{public}s", info.udKey.c_str());
-        }
-    }
-}
-
 void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
     auto updatedEntries = data.GetEntriesUpdated();
@@ -68,6 +50,7 @@ void RuntimeObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
                 return;
             }
             service->HandleRemoteDelayData(udKey);
+            return;
         }
     }
 }

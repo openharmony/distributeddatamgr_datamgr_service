@@ -327,29 +327,35 @@ void CloudDataTest::SetUpTestCase(void)
     InitSchemaMeta();
     // Construct the statisticInfo data
     AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION,
-        [](const StoreMetaData &metaData) -> GeneralStore * {
+        [](const StoreMetaData &metaData, const AutoCache::StoreOption &option) -> std::pair<int32_t, GeneralStore *> {
             auto store = new (std::nothrow) GeneralStoreMock();
             if (store != nullptr) {
                 std::map<std::string, Value> entry = { { "inserted", 1 }, { "updated", 2 }, { "normal", 3 } };
                 store->SetMockCursor(entry);
                 store->SetEqualIdentifier("", "");
                 store->SetMockDBStatus(dbStatus_);
+                return { GeneralError::E_OK, store };
             }
-            return store;
+            return { GeneralError::E_ERROR, nullptr };
         });
 }
 
 void CloudDataTest::TearDownTestCase()
 {
     SetSelfTokenID(g_selfTokenID);
+
     AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION,
-        [](const StoreMetaData &metaData) -> GeneralStore * {
-            auto store = new (std::nothrow) RdbGeneralStore(metaData);
-            if (store != nullptr && !store->IsValid()) {
+        [](const StoreMetaData &metaData, const AutoCache::StoreOption &option) -> std::pair<int32_t, GeneralStore *> {
+            auto store = new (std::nothrow) RdbGeneralStore(metaData, option.createRequired);
+            if (store == nullptr) {
+                return { GeneralError::E_ERROR, nullptr };
+            }
+            auto ret = store->Init();
+            if (ret != GeneralError::E_OK) {
                 delete store;
                 store = nullptr;
             }
-            return store;
+            return { ret, store };
         });
 }
 

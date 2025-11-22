@@ -53,8 +53,9 @@ HWTEST_F(AutoCacheMockTest, GetDBStoreMockTest001, TestSize.Level0)
     AccountDelegateMock *accountDelegateMock = nullptr;
     accountDelegateMock = new (std::nothrow) AccountDelegateMock();
     ASSERT_NE(accountDelegateMock, nullptr);
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
-        return new (std::nothrow) GeneralStoreMock();
+    auto creator = [](const StoreMetaData &metaData,
+                       const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+        return { GeneralError::E_OK, new (std::nothrow) GeneralStoreMock() };
     };
     AccountDelegate::RegisterAccountInstance(accountDelegateMock);
     AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);

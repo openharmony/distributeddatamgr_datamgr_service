@@ -31,7 +31,6 @@ public:
     static bool GetHapBundleNameByToken(uint32_t tokenId, std::string &bundleName);
     static bool GetNativeProcessNameByToken(uint32_t tokenId, std::string &processName);
     static std::string GetLocalDeviceId();
-    static std::string GetRealLocalDeviceId();
     static void SetRemoteData(UnifiedData &data);
     static int32_t HandleFileUris(uint32_t tokenId, UnifiedData &data);
     static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);

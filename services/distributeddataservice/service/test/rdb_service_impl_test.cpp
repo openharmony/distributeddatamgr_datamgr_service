@@ -141,8 +141,9 @@ void RdbServiceImplTest::SetUpTestCase()
     CryptoManager::GetInstance().GenerateRootKey();
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
 
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
-        return new (std::nothrow) GeneralStoreMock();
+    auto creator = [](const StoreMetaData &metaData,
+                       const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+        return { GeneralError::E_OK, new (std::nothrow) GeneralStoreMock() };
     };
     AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
     SyncManager::AutoSyncInfo syncInfo = { 3, TEST_APPID, TEST_BUNDLE };
@@ -154,13 +155,17 @@ void RdbServiceImplTest::TearDownTestCase()
     deviceManagerAdapterMock = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
     AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION,
-        [](const StoreMetaData &metaData) -> GeneralStore* {
-            auto store = new (std::nothrow) RdbGeneralStore(metaData);
-            if (store != nullptr && !store->IsValid()) {
+        [](const StoreMetaData &metaData, const AutoCache::StoreOption &option) -> std::pair<int32_t, GeneralStore *> {
+            auto store = new (std::nothrow) RdbGeneralStore(metaData, option.createRequired);
+            if (store == nullptr) {
+                return { GeneralError::E_ERROR, nullptr };
+            }
+            auto ret = store->Init();
+            if (ret != GeneralError::E_OK) {
                 delete store;
                 store = nullptr;
             }
-            return store;
+            return { ret, store };
         });
 }
 

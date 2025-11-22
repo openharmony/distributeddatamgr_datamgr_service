@@ -225,10 +225,5 @@ bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::stri
     bundleName = "bundleName";
     return true;
 }
-
-std::string PreProcessUtils::GetRealLocalDeviceId()
-{
-    return "123";
-}
 } // namespace UDMF
 } // namespace OHOS

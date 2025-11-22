@@ -87,14 +87,19 @@ RdbServiceImpl::Factory::Factory()
         }
         return product_;
     });
-    AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION, [](const StoreMetaData& metaData) -> GeneralStore* {
-        auto store = new (std::nothrow) RdbGeneralStore(metaData);
-        if (store != nullptr && !store->IsValid()) {
-            delete store;
-            store = nullptr;
-        }
-        return store;
-    });
+    AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION,
+        [](const StoreMetaData &metaData, const AutoCache::StoreOption &option) -> std::pair<int32_t, GeneralStore *> {
+            auto store = new (std::nothrow) RdbGeneralStore(metaData, option.createRequired);
+            if (store == nullptr) {
+                return { GeneralError::E_ERROR, nullptr };
+            }
+            auto ret = store->Init();
+            if (ret != GeneralError::E_OK) {
+                delete store;
+                store = nullptr;
+            }
+            return { ret, store };
+        });
     staticActs_ = std::make_shared<RdbStatic>();
     FeatureSystem::GetInstance().RegisterStaticActs(RdbServiceImpl::SERVICE_NAME, staticActs_);
 }

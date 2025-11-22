@@ -294,7 +294,7 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
         return E_NETWORK_ERROR;
     }
     if (!Account::GetInstance()->IsVerified(info.user_)) {
-        info.SetError(E_USER_UNLOCK);
+        info.SetError(E_USER_LOCKED);
         ZLOGD("user unverified");
         return E_ERROR;
     }
@@ -676,7 +676,7 @@ std::pair<int32_t, AutoCache::Store> SyncManager::GetStore(const StoreMetaData &
 {
     if (user != 0 && !Account::GetInstance()->IsVerified(user)) {
         ZLOGW("user:%{public}d is locked!", user);
-        return { E_USER_UNLOCK, nullptr };
+        return { E_USER_LOCKED, nullptr };
     }
     if (CloudServer::GetInstance() == nullptr) {
         return { E_NOT_SUPPORT, nullptr };

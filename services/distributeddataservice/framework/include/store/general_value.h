@@ -162,6 +162,14 @@ struct GenQuery {
     virtual ~GenQuery() = default;
     virtual bool IsEqual(uint64_t tid) = 0;
     virtual std::vector<std::string> GetTables() = 0;
+    virtual std::vector<Value> GetArgs()
+    {
+        return {};
+    };
+    virtual std::string GetWhereClause()
+    {
+        return "";
+    };
     virtual void SetQueryNodes(const std::string& tableName, QueryNodes&& nodes) {};
     virtual QueryNodes GetQueryNodes(const std::string& tableName)
     {

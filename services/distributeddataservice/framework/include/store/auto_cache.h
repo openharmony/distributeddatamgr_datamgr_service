@@ -31,6 +31,9 @@ namespace OHOS::DistributedData {
 class SchemaMeta;
 class AutoCache {
 public:
+    struct StoreOption {
+        bool createRequired = false;
+    };
     using Error = GeneralError;
     using Store = std::shared_ptr<GeneralStore>;
     using Stores = std::list<std::shared_ptr<GeneralStore>>;
@@ -39,7 +42,7 @@ public:
     using Time = std::chrono::steady_clock::time_point;
     using Executor = ExecutorPool;
     using TaskId = ExecutorPool::TaskId;
-    using Creator = std::function<GeneralStore *(const StoreMetaData &)>;
+    using Creator = std::function<std::pair<int32_t, GeneralStore *>(const StoreMetaData &, const StoreOption &)>;
     using Filter = std::function<bool(const StoreMetaData &)>;
 
     API_EXPORT static AutoCache &GetInstance();
@@ -50,7 +53,8 @@ public:
 
     API_EXPORT Store GetStore(const StoreMetaData &meta, const Watchers &watchers);
 
-    API_EXPORT std::pair<int32_t, Store> GetDBStore(const StoreMetaData &meta, const Watchers &watchers);
+    API_EXPORT std::pair<int32_t, Store> GetDBStore(const StoreMetaData &meta, const Watchers &watchers,
+        const StoreOption &option = { false });
 
     API_EXPORT Stores GetStoresIfPresent(
         uint32_t tokenId, const std::string &path = "", const std::string &storeId = "");
@@ -72,7 +76,7 @@ private:
     std::string GenerateKey(const std::string &path, const std::string &storeId) const;
     void GarbageCollect(bool isForce);
     void StartTimer();
-    int32_t GetStatus(const StoreMetaData &meta);
+    static int32_t CheckStatusBeforeOpen(const StoreMetaData &meta);
     struct Delegate : public GeneralWatcher {
         Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user, const StoreMetaData &meta);
         Delegate(const Delegate& delegate);

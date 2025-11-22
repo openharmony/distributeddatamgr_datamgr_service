@@ -27,8 +27,8 @@ using Time = std::chrono::steady_clock::time_point;
 class SyncedDeviceContainer {
 public:
     static SyncedDeviceContainer &GetInstance();
-    void SaveSyncedDeviceInfo(const std::string &key, const std::string &deviceId);
-    std::vector<std::string> QueryDeviceInfo(const std::string &key);
+    void SaveSyncedDeviceInfo(const std::string &deviceId);
+    std::vector<std::string> QueryDeviceInfo();
 private:
     SyncedDeviceContainer() = default;
     ~SyncedDeviceContainer() = default;
@@ -36,9 +36,8 @@ private:
     SyncedDeviceContainer &operator=(const SyncedDeviceContainer &obj) = delete;
 
     struct SyncedDeiviceInfo {
-        std::string key;
         std::string deviceId;
-        Time expiredTime = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+        Time expiredTime = std::chrono::steady_clock::now() + std::chrono::hours(12);
 
         bool operator<(const Time &time) const
         {
@@ -48,8 +47,6 @@ private:
 
     std::mutex pulledDeviceMutex_;
     std::vector<SyncedDeiviceInfo> pulledDeviceInfo_ {};
-    std::mutex receivedDeviceMutex_;
-    std::map<std::string, std::string> receivedDeviceInfo_ {};
 };
 } // namespace UDMF
 } // namespace OHOS

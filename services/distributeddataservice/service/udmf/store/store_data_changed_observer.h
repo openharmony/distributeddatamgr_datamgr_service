@@ -19,14 +19,6 @@
 #include "kv_store_observer.h"
 namespace OHOS {
 namespace UDMF {
-class AcceptableInfoObserver : public DistributedDB::KvStoreObserver {
-public:
-    AcceptableInfoObserver() = default;
-    ~AcceptableInfoObserver() override = default;
-
-    void OnChange(const DistributedDB::KvStoreChangedData &data) override;
-};
-
 class RuntimeObserver : public DistributedDB::KvStoreObserver {
 public:
     RuntimeObserver() = default;
@@ -39,9 +31,7 @@ class ObserverFactory {
 public:
     static std::shared_ptr<DistributedDB::KvStoreObserver> GetObserver(uint32_t type)
     {
-        if (type == ACCEPTABLE_INFO) {
-            return std::make_shared<AcceptableInfoObserver>();
-        } else if (type == RUNTIME) {
+        if (type == RUNTIME) {
             return std::make_shared<RuntimeObserver>();
         } else {
             return nullptr;
@@ -49,8 +39,7 @@ public:
     }
 
     enum ObserverType : uint32_t {
-        ACCEPTABLE_INFO = 0,
-        RUNTIME,
+        RUNTIME = 0,
     };
 };
 } // namespace UDMF
