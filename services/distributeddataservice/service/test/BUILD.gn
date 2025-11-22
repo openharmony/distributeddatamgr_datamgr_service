@@ -620,7 +620,6 @@ ohos_unittest("RdbServiceTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/network:distributeddata_network",

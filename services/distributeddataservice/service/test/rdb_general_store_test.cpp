@@ -64,7 +64,9 @@ public:
         InitMetaData();
         mkdir(metaData_.dataDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
         store_ = std::make_shared<RdbGeneralStore>(metaData_);
-        ASSERT_NE(store_, nullptr);
+        MockRelationalStoreDelegate::SetCloudSyncTaskCount(0);
+        MockRelationalStoreDelegate::SetDownloadingAssetsCount(0);
+        MockRelationalStoreDelegate::SetDeviceTaskCount(0);
     };
     void TearDown()
     {
@@ -195,9 +197,6 @@ bool RdbGeneralStoreTest::Equal(const Value &lValue, const Value &rValue)
         auto ls = Traits::get_if<double>(&lValue);
         auto rs = Traits::get_if<double>(&rValue);
         const double epsilon = 1e-9;
-        if (ls == nullptr || rs == nullptr || std::abs(*ls - *rs) > epsilon) {
-            return false;
-        }
         return ls != nullptr && rs != nullptr && std::abs(*ls - *rs) <= epsilon;
     }
     if (lValue.index() == TYPE_INDEX<bool>) {
@@ -504,9 +503,12 @@ HWTEST_F(RdbGeneralStoreTest, Close4, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, BusyClose, TestSize.Level1)
 {
-    auto store = std::make_shared<RdbGeneralStore>(metaData_);
-    store->Init();
-    ASSERT_NE(store, nullptr);
+    std::string storeId = "BusyClose.db";
+    auto meta = GetStoreMeta(storeId);
+    remove(meta.dataDir.c_str());
+    auto store = std::make_shared<RdbGeneralStore>(meta);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
     std::thread thread([store]() {
         std::unique_lock<decltype(store->dbMutex_)> lock(store->dbMutex_);
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -621,7 +623,7 @@ HWTEST_F(RdbGeneralStoreTest, Insert002, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Update, TestSize.Level1)
 {
-    std::string storeId = "Update_errorDb.db";
+    std::string storeId = "Update.db";
     auto meta = GetStoreMeta(storeId);
     auto store = std::make_shared<RdbGeneralStore>(meta);
     std::string table = "table";
@@ -661,7 +663,7 @@ HWTEST_F(RdbGeneralStoreTest, Update, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Replace, TestSize.Level1)
 {
-    std::string storeId = "Replace_errorDb.db";
+    std::string storeId = "Replace.db";
     auto meta = GetStoreMeta(storeId);
     auto store = std::make_shared<RdbGeneralStore>(meta);
     std::string table = "table";
@@ -2065,6 +2067,323 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertWithInconsistentFields,
     EXPECT_EQ(cursor->Close(), GeneralError::E_OK);
 
     // Cleanup test environment
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    remove(meta.dataDir.c_str());
+}
+
+/**
+ * @tc.name: RdbGeneralStore_InsertConflictResolution
+ * @tc.desc: Test insert operations with different conflict resolution strategies
+ * Test scenarios:
+ * 1. Initialize database and create test table with primary key constraint
+ * 2. Insert initial record with id=1
+ * 3. Attempt to insert another record with same id=1 using different conflict resolution modes
+ * 4. Verify behavior of each conflict resolution strategy:
+ *    - ON_CONFLICT_NONE: Should fail with error
+ *    - ON_CONFLICT_IGNORE: Should succeed but not insert (return -1)
+ *    - ON_CONFLICT_REPLACE: Should succeed and replace existing record
+ *    - ON_CONFLICT_FAIL: Should fail with error
+ * 5. Validate final data state matches expected outcome
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InsertConflictResolution, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and create test table
+    std::string storeId = "RdbGeneralStore_InsertConflictResolution.db";
+    auto meta = GetStoreMeta(storeId);
+    meta.isEncrypt = true;
+    remove(meta.dataDir.c_str());
+    auto store = std::make_shared<RdbGeneralStore>(meta, true);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+
+    std::string tableName = "RdbGeneralStore_InsertConflictResolution";
+    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+
+    // Step 2: Insert the first record with id=1
+    DistributedData::VBucket firstRecord;
+    firstRecord["id"] = 1;
+    firstRecord["name"] = "tom";
+    firstRecord["age"] = 25;
+    firstRecord["salary"] = 3000.0;
+
+    int64_t res = -1;
+    std::tie(code, res) = store->Insert(tableName, VBucket(firstRecord), GeneralStore::ON_CONFLICT_NONE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, 1);
+
+    // Step 3: Prepare conflicting record with same id=1 for testing conflict resolution strategies
+    DistributedData::VBucket conflictingRecord;
+    conflictingRecord["id"] = 1; // Same primary key to cause conflict
+    conflictingRecord["name"] = "jerry";
+    conflictingRecord["age"] = 30;
+    conflictingRecord["salary"] = 4000.0;
+
+    // Step 4: Test ON_CONFLICT_NONE - Should return error when conflict occurs
+    std::tie(code, res) = store->Insert(tableName, VBucket(conflictingRecord), GeneralStore::ON_CONFLICT_NONE);
+    EXPECT_EQ(code, GeneralError::E_CONSTRAIN_VIOLATION); // Should fail due to primary key constraint violation
+
+    // Step 5: Test ON_CONFLICT_IGNORE - Should ignore conflict, return success but not insert
+    std::tie(code, res) = store->Insert(tableName, VBucket(conflictingRecord), GeneralStore::ON_CONFLICT_IGNORE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, -1); // IGNORE strategy returns -1 indicating no insertion occurred
+
+    // Step 6: Test ON_CONFLICT_FAIL - Should return error when conflict occurs
+    std::tie(code, res) = store->Insert(tableName, VBucket(conflictingRecord), GeneralStore::ON_CONFLICT_FAIL);
+    EXPECT_EQ(code, GeneralError::E_CONSTRAIN_VIOLATION); // Should fail due to primary key constraint violation
+
+    // Step 7: Test ON_CONFLICT_REPLACE - Should replace the existing record
+    std::tie(code, res) = store->Insert(tableName, VBucket(conflictingRecord), GeneralStore::ON_CONFLICT_REPLACE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, 1); // Successfully replaced the existing record
+
+    // Step 8: Verify that the record has been correctly replaced with new values
+    std::shared_ptr<Cursor> cursor = nullptr;
+    std::tie(code, cursor) = store->Query(std::string("select * from ") + tableName + " where id = 1");
+    EXPECT_EQ(code, GeneralError::E_OK);
+    ASSERT_NE(cursor, nullptr);
+    EXPECT_EQ(cursor->MoveToFirst(), GeneralError::E_OK);
+
+    Value name;
+    EXPECT_EQ(cursor->Get("name", name), GeneralError::E_OK);
+    auto nameVal = Traits::get_if<std::string>(&name);
+    ASSERT_NE(nameVal, nullptr);
+    EXPECT_EQ(*nameVal, "jerry"); // Should be the new value from conflictingRecord
+
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    remove(meta.dataDir.c_str());
+}
+
+/**
+ * @tc.name: RdbGeneralStore_UpdateConflictResolution
+ * @tc.desc: Test update operations with different conflict resolution strategies
+ * Test scenarios:
+ * 1. Initialize database and create test table with unique index constraint
+ * 2. Insert two records with different names
+ * 3. Create unique index on name column to enforce uniqueness
+ * 4. Attempt to update one record's name to match another's using different conflict resolution modes
+ * 5. Verify behavior of each conflict resolution strategy:
+ *    - ON_CONFLICT_ABORT: Should fail and abort the operation
+ *    - ON_CONFLICT_IGNORE: Should succeed but not update conflicting rows
+ *    - ON_CONFLICT_REPLACE: Should behave like IGNORE for unique constraint violations in UPDATE
+ *    - ON_CONFLICT_FAIL: Should fail the operation when conflict occurs
+ * 6. Validate final data state matches expected outcome
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_UpdateConflictResolution, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and create test table
+    std::string storeId = "RdbGeneralStore_UpdateConflictResolution.db";
+    auto meta = GetStoreMeta(storeId);
+    remove(meta.dataDir.c_str());
+    auto store = std::make_shared<RdbGeneralStore>(meta, true);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+
+    std::string tableName = "RdbGeneralStore_UpdateConflictResolution";
+    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+
+    // Step 2: Insert initial test data - first record
+    DistributedData::VBucket vBucket;
+    vBucket["id"] = 1;
+    vBucket["name"] = "tom";
+    vBucket["age"] = 25;
+    vBucket["salary"] = 3000.0;
+
+    int64_t res = -1;
+    std::tie(code, res) = store->Insert(tableName, VBucket(vBucket), GeneralStore::ON_CONFLICT_NONE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, 1);
+
+    // Step 4: Prepare update query that will cause constraint violation by setting name to empty (NOT NULL constraint)
+    RdbGeneralQuery query;
+    query.table = tableName;
+    NativeRdb::AbsRdbPredicates predicates(tableName);
+    predicates.EqualTo("id", 1);
+    query.whereClause = predicates.GetWhereClause();
+    query.args = ValueProxy::Convert(predicates.GetBindArgs());
+
+    // Step 5: Prepare update values that will violate the NOT NULL constraint
+    DistributedData::VBucket updateValues;
+    updateValues["name"] = Value(); // This will violate the NOT NULL constraint
+
+    // Step 6: Test ON_CONFLICT_ABORT - Should abort the operation when conflict occurs
+    std::tie(code, res) = store->Update(query, VBucket(updateValues), GeneralStore::ON_CONFLICT_ABORT);
+    EXPECT_EQ(code, GeneralError::E_CONSTRAIN_VIOLATION); // Should fail due to NOT NULL constraint violation
+
+    // Step 7: Test ON_CONFLICT_FAIL - Should fail the operation when conflict occurs
+    std::tie(code, res) = store->Update(query, VBucket(updateValues), GeneralStore::ON_CONFLICT_FAIL);
+    EXPECT_EQ(code, GeneralError::E_CONSTRAIN_VIOLATION); // Should fail due to NOT NULL constraint violation
+
+    // Step 8: Test ON_CONFLICT_IGNORE - Should ignore constraint violation, return success but not update
+    std::tie(code, res) = store->Update(query, VBucket(updateValues), GeneralStore::ON_CONFLICT_IGNORE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, 0); // No rows should be updated due to constraint violation
+
+    // Step 9: Test ON_CONFLICT_REPLACE - Should behave like IGNORE for constraint violations in UPDATE
+    std::tie(code, res) = store->Update(query, VBucket(updateValues), GeneralStore::ON_CONFLICT_REPLACE);
+    EXPECT_EQ(code, GeneralError::E_CONSTRAIN_VIOLATION); // Should fail due to NOT NULL constraint violation
+
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    remove(meta.dataDir.c_str());
+}
+
+/**
+ * @tc.name: RdbGeneralStore_BatchInsertConflictResolution001
+ * @tc.desc: Test batch insert operations with ON_CONFLICT_ABORT and ON_CONFLICT_IGNORE strategies
+ * Test scenarios:
+ * 1. Initialize database and create test table
+ * 2. Insert initial record with id=1
+ * 3. Prepare batch data including conflicting and non-conflicting records
+ * 4. Test ON_CONFLICT_ABORT: Should abort entire batch on first conflict
+ * 5. Test ON_CONFLICT_IGNORE: Should skip conflicting records, continue with others
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution001, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and create test table
+    std::string storeId = "RdbGeneralStore_BatchInsertConflictResolution001.db";
+    auto meta = GetStoreMeta(storeId);
+    remove(meta.dataDir.c_str());
+    auto store = std::make_shared<RdbGeneralStore>(meta, true);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+
+    std::string tableName = "RdbGeneralStore_BatchInsertConflictResolution001";
+    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+
+    // Step 2: Insert initial data record with id=1
+    DistributedData::VBucket firstRecord;
+    firstRecord["id"] = 1;
+    firstRecord["name"] = "tom";
+
+    int64_t res = -1;
+    std::tie(code, res) = store->Insert(tableName, VBucket(firstRecord), GeneralStore::ON_CONFLICT_NONE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, 1);
+
+    // Step 3: Prepare batch insert data including conflicting and non-conflicting records
+    std::vector<DistributedData::VBucket> batchData;
+
+    // Non-conflicting record
+    DistributedData::VBucket secondRecord;
+    secondRecord["id"] = 2;
+    secondRecord["name"] = "jerry";
+    batchData.push_back(secondRecord);
+
+    // Conflicting record with existing id=1
+    DistributedData::VBucket thirdRecord;
+    thirdRecord["id"] = 1; // Conflict with existing record
+    thirdRecord["name"] = "spike";
+    batchData.push_back(thirdRecord);
+
+    // Another non-conflicting record
+    DistributedData::VBucket fourthRecord;
+    fourthRecord["id"] = 3;
+    fourthRecord["name"] = "tyke";
+    batchData.push_back(fourthRecord);
+
+    // Step 4: Test ON_CONFLICT_ABORT - Should abort entire batch when first conflict encountered
+    std::vector<DistributedData::VBucket> batchDataCopyForAbortTest = batchData;
+    std::tie(code, res) = store->BatchInsert(tableName,
+        std::move(batchDataCopyForAbortTest), GeneralStore::ON_CONFLICT_ABORT);
+    EXPECT_EQ(code, GeneralError::E_CONSTRAIN_VIOLATION); // Should fail due to primary key constraint violation
+
+    // Step 5: Verify no new records were inserted during failed batch operation
+    std::shared_ptr<Cursor> cursor = nullptr;
+    std::tie(code, cursor) = store->Query(std::string("select count(*) as count from ") + tableName);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    ASSERT_NE(cursor, nullptr);
+    EXPECT_EQ(cursor->MoveToFirst(), GeneralError::E_OK);
+    Value count;
+    EXPECT_EQ(cursor->Get("count", count), GeneralError::E_OK);
+    auto countVal = Traits::get_if<int64_t>(&count);
+    ASSERT_NE(countVal, nullptr);
+    EXPECT_EQ(*countVal, 1); // Should still only have the original record
+
+    // Step 6: Test ON_CONFLICT_IGNORE - Should skip conflicting records, continue with others
+    std::tie(code, res) = store->BatchInsert(tableName,
+        std::move(batchData), GeneralStore::ON_CONFLICT_IGNORE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, 2); // Should insert 2 non-conflicting records
+
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    remove(meta.dataDir.c_str());
+}
+
+/**
+ * @tc.name: RdbGeneralStore_BatchInsertConflictResolution002
+ * @tc.desc: Test batch insert operations with ON_CONFLICT_REPLACE strategy
+ * Test scenarios:
+ * 1. Initialize database and create test table
+ * 2. Insert initial record with id=1
+ * 3. Prepare batch data including conflicting and non-conflicting records
+ * 4. Test ON_CONFLICT_REPLACE: Should replace conflicting records, insert others
+ * 5. Validate final data state and record counts match expected outcomes
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution002, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and create test table
+    std::string storeId = "RdbGeneralStore_BatchInsertConflictResolution002.db";
+    auto meta = GetStoreMeta(storeId);
+    remove(meta.dataDir.c_str());
+    auto store = std::make_shared<RdbGeneralStore>(meta, true);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+
+    std::string tableName = "RdbGeneralStore_BatchInsertConflictResolution002";
+    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+
+    // Step 2: Insert initial data record with id=1
+    DistributedData::VBucket firstRecord;
+    firstRecord["id"] = 1;
+    firstRecord["name"] = "tom";
+
+    int64_t res = -1;
+    std::tie(code, res) = store->Insert(tableName, VBucket(firstRecord), GeneralStore::ON_CONFLICT_NONE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, 1);
+
+    // Step 3: Prepare batch insert data including conflicting and non-conflicting records
+    std::vector<DistributedData::VBucket> batchData;
+
+    // Non-conflicting record
+    DistributedData::VBucket secondRecord;
+    secondRecord["id"] = 2;
+    secondRecord["name"] = "jerry";
+    batchData.push_back(secondRecord);
+
+    // Conflicting record with existing id=1
+    DistributedData::VBucket thirdRecord = firstRecord;
+
+    // Another non-conflicting record
+    DistributedData::VBucket fourthRecord;
+    fourthRecord["id"] = 3;
+    fourthRecord["name"] = "tyke";
+    batchData.push_back(fourthRecord);
+
+    // Step 4: Test ON_CONFLICT_REPLACE - Should replace conflicting records and insert others
+    // Update the conflicting record's values to verify replacement
+    batchData[1]["name"] = "updated_tom";
+
+    std::tie(code, res) = store->BatchInsert(tableName, std::move(batchData), GeneralStore::ON_CONFLICT_REPLACE);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, 3); // Should process all 3 records (1 replaced, 2 inserted)
+
+    // Step 5: Verify that the conflicting record was correctly updated
+    std::shared_ptr<Cursor> cursor = nullptr;
+    std::tie(code, cursor) = store->Query(std::string("select * from ") + tableName + " where id = 1");
+    EXPECT_EQ(code, GeneralError::E_OK);
+    ASSERT_NE(cursor, nullptr);
+    EXPECT_EQ(cursor->MoveToFirst(), GeneralError::E_OK);
+
+    Value name;
+    EXPECT_EQ(cursor->Get("name", name), GeneralError::E_OK);
+    auto nameVal = Traits::get_if<std::string>(&name);
+    ASSERT_NE(nameVal, nullptr);
+    EXPECT_EQ(*nameVal, "updated_tom"); // Should be the updated value
+
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
     remove(meta.dataDir.c_str());
 }
