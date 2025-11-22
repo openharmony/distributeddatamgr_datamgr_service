@@ -455,9 +455,7 @@ int32_t AutoCache::Delegate::OnChange(const std::string &storeId, const int32_t 
         std::unique_lock<decltype(mutex_)> lock(mutex_);
         watchers = watchers_;
     }
-    size_t remain = watchers.size();
     for (auto &watcher : watchers) {
-        remain--;
         if (watcher == nullptr) {
             continue;
         }
