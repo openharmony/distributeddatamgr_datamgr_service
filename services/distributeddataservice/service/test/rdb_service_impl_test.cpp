@@ -3244,7 +3244,7 @@ HWTEST_F(RdbServiceImplTest, StopCloudSync004, TestSize.Level0)
     param.storeName_ = metaData_.storeId;
     auto errCode = service.StopCloudSync(param);
     EXPECT_EQ(errCode, RDB_OK);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
