@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_CONFLICT_HANDLER_H
- #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_CONFLICT_HANDLER_H
- 
-#include "cloud/icloud_conflict_handler.h"
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_CONFLICT_HANDLER_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_CONFLICT_HANDLER_H
+
 #include "cloud/cloud_conflict_handler.h"
+#include "cloud/icloud_conflict_handler.h"
 namespace OHOS::DistributedRdb {
 class RdbCloudConflictHandler : public DistributedDB::ICloudConflictHandler {
 public:
@@ -28,9 +28,9 @@ public:
     ~RdbCloudConflictHandler() override = default;
     ConflictRet HandleConflict(const std::string &table, const DBVBucket &oldData, const DBVBucket &newData,
         DBVBucket &upsert) override;
+
 private:
     std::shared_ptr<CloudConflictHandler> handler_;
 };
 } // namespace OHOS::DistributedRdb
 #endif
- 

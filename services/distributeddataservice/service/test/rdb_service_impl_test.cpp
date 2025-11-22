@@ -1517,7 +1517,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
 
 /**
  * @tc.name: SetDistributedTables006
- * @tc.desc: Test SetDistributedTables when type is cloud 
+ * @tc.desc: Test SetDistributedTables when type is cloud
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:

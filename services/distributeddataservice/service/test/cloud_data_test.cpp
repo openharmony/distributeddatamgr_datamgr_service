@@ -159,7 +159,7 @@ protected:
 
     class CloudConflictHandlerMock : public CloudConflictHandler {
     public:
-        virtual int32_t HandleConflict(const std::string &table, const VBucket &oldData, const VBucket &newData,
+        int32_t HandleConflict(const std::string &table, const VBucket &oldData, const VBucket &newData,
             VBucket &upsert) override;
     };
 

@@ -18,12 +18,12 @@
 #include "store/general_value.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT CloudConflictHandler  {
+class API_EXPORT CloudConflictHandler {
 public:
     CloudConflictHandler() = default;
     virtual ~CloudConflictHandler() = default;
     virtual int32_t HandleConflict(const std::string &table, const VBucket &oldData, const VBucket &newData,
-        VBucket &upsert) = 0;  
+        VBucket &upsert) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif
