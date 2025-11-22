@@ -866,7 +866,7 @@ int32_t KVDBGeneralStore::SetDBProperty(const DBProperty &property)
 
 int32_t KVDBGeneralStore::StopCloudSync()
 {
-    return GeneralError::E_OK;
+    return GeneralError::E_NOT_SUPPORT;
 }
 
 void KVDBGeneralStore::OnSyncTrigger(const std::string &storeId, const int32_t triggerMode)

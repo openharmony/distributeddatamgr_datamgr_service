@@ -2052,18 +2052,17 @@ int32_t RdbServiceImpl::StopCloudSync(const RdbSyncerParam &param)
             metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), metaData.instanceId);
         return RDB_ERROR;
     }
-    StoreMetaData syncMeta;
-    exists = MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), syncMeta);
-    if (!exists || syncMeta.dataDir != metaData.dataDir) {
-        ZLOGW("bundleName:%{public}s, storeName:%{public}s No sync meta(%{public}d) or dataDir invalid",
-            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), exists);
-        return RDB_ERROR;
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(metaData.tokenId, metaData.dataDir, metaData.storeId);
+    for (auto store : stores) {
+        if (store == nullptr) {
+            ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", metaData.bundleName.c_str(),
+                Anonymous::Change(metaData.storeId).c_str());
+        }
+        if (store->StopCloudSync() != RDB_OK) {
+            ZLOGE("stop cloud sync fail, bundleName:%{public}s storeName:%{public}s", metaData.bundleName.c_str(),
+                Anonymous::Change(metaData.storeId).c_str());
+        }
     }
-    auto store = GetStore(metaData);
-    if (store == nullptr) {
-        ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
-        return RDB_ERROR;
-    }
-    return store->StopCloudSync();
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

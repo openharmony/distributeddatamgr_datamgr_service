@@ -1434,9 +1434,9 @@ int32_t RdbGeneralStore::StopCloudSync()
     }
     auto status = delegate_->StopTask(DistributedDB::TaskType::BACKGROUND_TASK);
     if (status != DistributedDB::DBStatus::OK) {
-        ZLOGE("Failed to stop cloud data sync");
-        return GeneralError::E_ERROR;
+        ZLOGE("Failed to stop cloud data sync, bundleName:%{public}s, storeName:%{public}s",
+            storeInfo_.bundleName.c_str(), Anonymous::Change(storeInfo_.storeName).c_str());
     }
-    return GeneralError::E_OK;
+    return ConvertStatus(status);
 }
 } // namespace OHOS::DistributedRdb
