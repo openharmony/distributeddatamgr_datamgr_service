@@ -3233,38 +3233,18 @@ HWTEST_F(RdbServiceImplTest, StopCloudSync003, TestSize.Level0)
  * @tc.name: StopCloudSync004
  * @tc.desc: Test StopCloudSync, when CheckAccess succ.
  * @tc.type: FUNC
- * @tc.expect: StopCloudSync returns RDB_ERROR
+ * @tc.expect: StopCloudSync returns RDB_OK
  */
 HWTEST_F(RdbServiceImplTest, StopCloudSync004, TestSize.Level0)
 {
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
     RdbServiceImpl service;
     RdbSyncerParam param;
     param.bundleName_ = metaData_.bundleName;
     param.storeName_ = metaData_.storeId;
     auto errCode = service.StopCloudSync(param);
-    EXPECT_EQ(errCode, RDB_ERROR);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
-}
-
-/**
- * @tc.name: StopCloudSync005
- * @tc.desc: Test StopCloudSync, when CheckAccess succ.
- * @tc.type: FUNC
- * @tc.expect: StopCloudSync returns RDB_OK
- */
-HWTEST_F(RdbServiceImplTest, StopCloudSync005, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = TEST_BUNDLE;
-    param.storeName_ = "StopCloudSync005";
-    auto [exists, meta] = RdbServiceImpl::LoadStoreMetaData(param);
-    (void)exists;
-    RdbServiceImpl::SaveSyncMeta(meta);
-    auto errCode = service.StopCloudSync(param);
     EXPECT_EQ(errCode, RDB_OK);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

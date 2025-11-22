@@ -1726,7 +1726,7 @@ int32_t RdbGeneralStore::StopCloudSync()
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->StopTask(DistributedDB::TaskType::BACKGROUND_TASK);
-    if (status != DistributedDB::DBStatus::OK) {
+    if (status != DBStatus::OK) {
         ZLOGE("Failed to stop cloud data sync, bundleName:%{public}s, storeName:%{public}s",
             meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
     }

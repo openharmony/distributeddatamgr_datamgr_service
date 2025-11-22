@@ -2085,7 +2085,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertWithInconsistentFields,
 
 /**
 * @tc.name: StopCloudSync
-* @tc.desc: StopCloudSync test
+* @tc.desc: StopCloudSync test delegate_ == nullptr and delegate_ != nullptr
 * @tc.type: FUNC
 */
 HWTEST_F(RdbGeneralStoreTest, StopCloudSync, TestSize.Level1)
