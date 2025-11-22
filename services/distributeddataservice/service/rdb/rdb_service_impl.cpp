@@ -330,8 +330,8 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         }
         metaMapping.devicePath = metaData.dataDir;
     } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
-        if (metaData.asyncDownloadAsset != param.asyncDownloadAsset_ || metaData.enableCloud != param.enableCloud_ ||
-            metaData.autoSyncSwitch != param.autoSyncSwitch_) {
+        if ((metaData.asyncDownloadAsset != param.asyncDownloadAsset_) || (metaData.enableCloud != param.enableCloud_) ||
+            (metaData.autoSyncSwitch != param.autoSyncSwitch_)) {
             ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
                 "%{public}d],enableCloud? [%{public}d -> %{public}d],autoSyncSwitch? [%{public}d -> %{public}d]",
                 param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset,
