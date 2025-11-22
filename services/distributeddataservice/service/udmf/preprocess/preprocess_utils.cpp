@@ -406,6 +406,16 @@ bool PreProcessUtils::IsNetworkingEnabled()
     return true;
 }
 
+std::vector<std::string> PreProcessUtils::GetRemoteDeviceIds()
+{
+    auto devInfos = DistributedData::DeviceManagerAdapter::GetInstance().GetRemoteDevices();
+    std::vector<std::string> deviceIds;
+    for (auto &devInfo : devInfos) {
+        deviceIds.emplace_back(std::move(devInfo.uuid));
+    }
+    return deviceIds;
+}
+
 void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
     std::function<bool(std::shared_ptr<Object>)> callback)
 {

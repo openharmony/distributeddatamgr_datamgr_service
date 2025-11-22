@@ -16,13 +16,14 @@
 
 #include "lifecycle_manager.h"
 
+#include "drag_lifecycle_policy.h"
 #include "log_print.h"
 
 namespace OHOS {
 namespace UDMF {
 using CleanAfterGet = LifeCyclePolicy;
 std::unordered_map<std::string, std::shared_ptr<LifeCyclePolicy>> LifeCycleManager::intentionPolicy_ = {
-    { UD_INTENTION_MAP.at(UD_INTENTION_DRAG), std::make_shared<CleanAfterGet>() },
+    { UD_INTENTION_MAP.at(UD_INTENTION_DRAG), std::make_shared<DragLifeCyclePolicy>() },
     { UD_INTENTION_MAP.at(UD_INTENTION_PICKER), std::make_shared<CleanAfterGet>() },
     { UD_INTENTION_MAP.at(UD_INTENTION_MENU), std::make_shared<CleanAfterGet>() },
     { UD_INTENTION_MAP.at(UD_INTENTION_SYSTEM_SHARE), std::make_shared<CleanAfterGet>() },
@@ -35,7 +36,7 @@ LifeCycleManager &LifeCycleManager::GetInstance()
     return instance;
 }
 
-Status LifeCycleManager::OnGot(const UnifiedKey &key)
+Status LifeCycleManager::OnGot(UnifiedKey &key, const uint32_t tokenId, bool isNeedPush)
 {
     if (executors_ == nullptr) {
         ZLOGE("Executors_ is nullptr.");
@@ -47,8 +48,13 @@ Status LifeCycleManager::OnGot(const UnifiedKey &key)
         return E_INVALID_PARAMETERS;
     }
     auto policy = findPolicy->second;
-    ExecutorPool::TaskId taskId = executors_->Execute([=] {
-        policy->OnGot(key);
+    auto udKey = key.GetUnifiedKey();
+    ExecutorPool::TaskId taskId = executors_->Execute([this, key, tokenId, isNeedPush, udKey, policy] {
+        if (policy->OnGot(key, isNeedPush) != E_OK) {
+            ZLOGE("OnGot failed, key = %{public}s", key.key.c_str());
+            return;
+        }
+        this->EraseUdkey(udKey, tokenId);
     });
     if (taskId == ExecutorPool::INVALID_TASK_ID) {
         ZLOGE("Task execution failed");
@@ -73,8 +79,10 @@ Status LifeCycleManager::OnStart()
     }
     if (status != E_OK) {
         ZLOGW("fail, status = %{public}d, intention = [%{public}s].", status, errorInfo.c_str());
+        return status;
     }
-    return status;
+    ClearUdKeys();
+    return E_OK;
 }
 
 Status LifeCycleManager::StartLifeCycleTimer()
@@ -118,5 +126,48 @@ void LifeCycleManager::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;
 }
+
+bool LifeCycleManager::InsertUdKey(uint32_t tokenId, const std::string &udKey)
+{
+    return udKeys_.Compute(tokenId,
+        [&](const uint32_t &tokenId, std::unordered_set<std::string> &set) -> bool {
+            set.insert(udKey);
+            return true;
+        });
+}
+
+void LifeCycleManager::ClearUdKeys()
+{
+    ZLOGI("UDMF begin clear");
+    udKeys_.Clear();
+}
+
+void LifeCycleManager::EraseUdkey(const std::string &udKey, uint32_t tokenId)
+{
+    ZLOGI("erase udkey, tokenId = %{public}u, udKey = %{public}s", tokenId, udKey.c_str());
+    udKeys_.ComputeIfPresent(tokenId,
+        [&](uint32_t tokenId, std::unordered_set<std::string> &set) -> bool {
+            set.erase(udKey);
+            return !set.empty();
+        });
+}
+
+Status LifeCycleManager::OnAppUninstall(uint32_t tokenId)
+{
+    auto result = udKeys_.Find(tokenId);
+    if (!result.first) {
+        return E_OK;
+    }
+    const auto &keys = result.second;
+    for (const auto &udKey : keys) {
+        UnifiedKey unifiedKey(udKey);
+        if (!unifiedKey.IsValid()) {
+            continue;
+        }
+        OnGot(unifiedKey, tokenId);
+    }
+    return E_OK;
+}
+
 } // namespace UDMF
 } // namespace OHOS

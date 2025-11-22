@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,18 +13,21 @@
  * limitations under the License.
  */
 
-#include "clean_on_timeout.h"
+#define LOG_TAG "ObserverFactory"
 
-namespace OHOS {
-namespace UDMF {
-Status CleanOnTimeout::OnStart(const std::string &intention)
-{
-    return LifeCyclePolicy::OnTimeout(intention);
-}
+#include "observer_factory.h"
+#include "drag_observer.h"
+#include "log_print.h"
 
-Status CleanOnTimeout::OnGot(const UnifiedKey &key)
-{
-    return E_OK;
-}
-} // namespace UDMF
-} // namespace OHOS
+namespace OHOS::UDMF {
+
+std::shared_ptr<DistributedDB::KvStoreObserver> ObserverFactory::GetObserver(const std::string &intention)
+    {
+        if (intention == "drag") {
+            return std::make_shared<DragObserver>();
+        }
+        ZLOGE("GetObserver failed, intention: %{public}s.", intention.c_str());
+        return nullptr;
+    }
+
+} // namespace OHOS::UDMF

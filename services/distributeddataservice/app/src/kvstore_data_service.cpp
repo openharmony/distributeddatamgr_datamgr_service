@@ -1065,33 +1065,41 @@ void KvStoreDataService::OnSessionReady(const AppDistributedKv::DeviceInfo &info
     });
 }
 
-int32_t KvStoreDataService::OnUninstall(const std::string &bundleName, int32_t user, int32_t index)
+int32_t KvStoreDataService::OnUninstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo)
 {
-    CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
+    CheckerManager::GetInstance().DeleteCache(
+        bundleEventInfo.bundleName, bundleEventInfo.userId, bundleEventInfo.appIndex);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
-    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
-        acts->OnAppUninstall(bundleName, user, index);
+    staticActs.ForEachCopies([bundleEventInfo](const auto &, const std::shared_ptr<StaticActs> &acts) {
+        acts->OnAppUninstall(bundleEventInfo.bundleName, bundleEventInfo.userId,
+            bundleEventInfo.appIndex, bundleEventInfo.tokenId);
         return false;
     });
     return SUCCESS;
 }
 
-int32_t KvStoreDataService::OnUpdate(const std::string &bundleName, int32_t user, int32_t index)
+int32_t KvStoreDataService::OnUpdate(const AppDistributedKv::BundleEventInfo &bundleEventInfo)
 {
+    auto bundleName = bundleEventInfo.bundleName;
+    auto user = bundleEventInfo.userId;
+    auto index = bundleEventInfo.appIndex;
     CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
-    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
+    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs> &acts) {
         acts->OnAppUpdate(bundleName, user, index);
         return false;
     });
     return SUCCESS;
 }
 
-int32_t KvStoreDataService::OnInstall(const std::string &bundleName, int32_t user, int32_t index)
+int32_t KvStoreDataService::OnInstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo)
 {
+    auto bundleName = bundleEventInfo.bundleName;
+    auto user = bundleEventInfo.userId;
+    auto index = bundleEventInfo.appIndex;
     CheckerManager::GetInstance().DeleteCache(bundleName, user, index);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
-    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs>& acts) {
+    staticActs.ForEachCopies([bundleName, user, index](const auto &, const std::shared_ptr<StaticActs> &acts) {
         acts->OnAppInstall(bundleName, user, index);
         return false;
     });
