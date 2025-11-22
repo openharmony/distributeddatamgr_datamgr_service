@@ -288,8 +288,6 @@ private:
 
     void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password);
 
-    void LoadCloudConflictHandler(const StoreMetaData &metaData);
-
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

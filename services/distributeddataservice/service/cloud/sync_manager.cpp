@@ -212,8 +212,6 @@ SyncManager::SyncManager()
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCK_CLOUD_CONTAINER, SyncManager::GetLockChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::UNLOCK_CLOUD_CONTAINER, SyncManager::GetLockChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
-    EventCenter::GetInstance().Subscribe(CloudEvent::GET_CONFLICT_HANDLER, GetConflictHandler());
-    EventCenter::GetInstance().Subscribe(CloudEvent::RELEASE_CONFLICT_HANDLER, ReleaseConflictHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::SYNC_TRIGGER, GetSyncTriggerHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::SYNC_TRIGGER_CLEAN, GetSyncTriggerCleanHandler());
     syncStrategy_ = std::make_shared<NetworkSyncStrategy>();
@@ -471,6 +469,13 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, 
         ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
               storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
               meta.asyncDownloadAsset);
+        if (meta.autoSyncSwitch) {
+            auto ret = SetCloudConflictHandler(store);
+            if (ret != E_OK) {
+                return DoExceptionalCallback(async, details, storeInfo,
+                    { 0, "", prepareTraceId, SyncStage::END, GeneralError::E_ERROR, "SetCloudConflictHandler failed" });
+            }
+        }
         StartCloudSync(evt, meta, store, retryer, details);
     };
 }
@@ -1227,43 +1232,25 @@ std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const i
     return appList;
 }
 
-std::function<void(const Event &)> SyncManager::GetConflictHandler()
+int32_t SyncManager::SetCloudConflictHandler(const AutoCache::Store &store)
 {
-    return [this](const Event &event) {
-        auto instance = CloudServer::GetInstance();
-        if (instance == nullptr) {
-            ZLOGE("CloudServer::GetInstance() failed");
-            return;
-        }
-        auto &evt = static_cast<const CloudEvent &>(event);
-        auto storeInfo = evt.GetStoreInfo();
-        auto [hasMeta, meta] = GetMetaData(storeInfo);
-        if (!hasMeta) {
-            ZLOGE("not have MetaData, bundleName:%{public}s, storeName:%{public}s, user:%{public}d",
-                storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
-            return;
-        }
-        auto [code, store] = GetStore(meta, storeInfo.user);
-        if (code != E_OK || store == nullptr) {
-            ZLOGE("GetStore failed, bundleName:%{public}s, storeName:%{public}s, user:%{public}d",
-                storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
-            return;
-        }
-        auto ret = store->SetCloudConflictHandler(instance->GetConflictHandler());
-        ZLOGI("SetCloudConflictHandle, bundleName:%{public}s, storeName:%{public}s, user:%{public}d, ret:%{public}d",
-            storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user, ret);
-    };
-}
+    if (store == nullptr) {
+        ZLOGE("Store is null");
+        return E_ERROR;
+    }
 
-std::function<void(const Event &)> SyncManager::ReleaseConflictHandler()
-{
-    return [this](const Event &event) {
-        auto instance = CloudServer::GetInstance();
-        if (instance == nullptr) {
-            ZLOGE("CloudServer::GetInstance failed");
-            return;
-        }
-        instance->ReleaseConflictHandler();
-    };
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("CloudServer instance is null");
+        return E_ERROR;
+    }
+
+    auto handler = instance->GetConflictHandler();
+    if (handler == nullptr) {
+        ZLOGE("Conflict handler is null");
+        return E_ERROR;
+    }
+
+    return store->SetCloudConflictHandler(handler);
 }
 } // namespace OHOS::CloudData

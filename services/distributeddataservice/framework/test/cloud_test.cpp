@@ -1058,21 +1058,6 @@ HWTEST_F(CloudEventTest, GetCloudTables_002, TestSize.Level0)
 }
 
 /**
-* @tc.name: HandleConflict001
-* @tc.desc: Test the default value of the HandleConflict interface
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(CloudEventTest, HandleConflict001, TestSize.Level1)
-{
-    CloudConflictHandler handler;
-    DistributedDB::VBucket data;
-    auto ret = handler.HandleConflict("table", data, data, data);
-    EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
-}
-
-/**
 * @tc.name: Field001
 * @tc.desc: SchemaMeta Overload function Field test.
 * @tc.type: FUNC

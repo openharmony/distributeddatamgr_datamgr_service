@@ -20,6 +20,7 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
+#include "cloud/cloud_conflict_handler.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_last_sync_info.h"
 #include "cloud/cloud_mark.h"
@@ -84,6 +85,12 @@ namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const int32_t SCHEMA_VERSION = 101;
 static constexpr const int32_t EVT_USER = 102;
+static constexpr const int32_t INSERT = 0;
+static constexpr const int32_t UPDATE = 1;
+static constexpr const int32_t DELETE = 2;
+static constexpr const int32_t NOT_HANDLE = 3;
+static constexpr const int32_t OTHER_ERROR = -1;
+
 static constexpr const char *TEST_TRACE_ID = "123456789";
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
@@ -148,13 +155,12 @@ protected:
         static constexpr uint64_t REMAINSPACE = 1000;
         static constexpr uint64_t TATALSPACE = 2000;
         static constexpr int32_t INVALID_USER_ID = -1;
-        bool GetFlag()
-        {
-            return flag_;
-        }
+    };
 
-    private:
-        bool flag_ = false;
+    class CloudConflictHandlerMock : public CloudConflictHandler {
+    public:
+        virtual int32_t HandleConflict(const std::string &table, const VBucket &oldData, const VBucket &newData,
+            VBucket &upsert) override;
     };
 
     static void InitMetaData();
@@ -166,8 +172,6 @@ protected:
     static DistributedData::CheckerMock checker_;
     static NetworkDelegateMock delegate_;
     static int32_t dbStatus_;
-
-public:
     static CloudServerMock cloudServerMock_;
 };
 
@@ -205,8 +209,7 @@ std::pair<int32_t, SchemaMeta> CloudDataTest::CloudServerMock::GetAppSchema(int3
 
 std::shared_ptr<CloudConflictHandler> CloudDataTest::CloudServerMock::GetConflictHandler()
 {
-    flag_ = true;
-    return std::make_shared<CloudConflictHandler>();
+    return std::make_shared<CloudConflictHandlerMock>();
 }
 
 std::shared_ptr<AssetLoader> CloudDataTest::CloudServerMock::ConnectAssetLoader(const std::string &bundleName,
@@ -219,6 +222,21 @@ std::shared_ptr<CloudDB> CloudDataTest::CloudServerMock::ConnectCloudDB(const st
     const Database &dbMeta)
 {
     return std::make_shared<CloudDB>();
+}
+
+int32_t CloudDataTest::CloudConflictHandlerMock::HandleConflict(const std::string &table, const VBucket &oldData,
+    const VBucket &newData, VBucket &upsert)
+{
+    if (table == "INSERT") {
+        return INSERT;
+    } else if (table == "UPDATE") {
+        return UPDATE;
+    } else if (table == "DELETE") {
+        return DELETE;
+    } else if (table == "NOT_HANDLE") {
+        return NOT_HANDLE;
+    }
+    return OTHER_ERROR;
 }
 
 std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
@@ -3283,29 +3301,51 @@ HWTEST_F(CloudDataTest, IsPriority002, TestSize.Level1)
 HWTEST_F(CloudDataTest, ConflictHandler001, TestSize.Level1)
 {
     CloudServer server;
-    server.ReleaseConflictHandler();
     auto handler = server.GetConflictHandler();
     EXPECT_EQ(handler, nullptr);
 }
 
 /**
 * @tc.name: ConflictHandler002
-* @tc.desc: Test the GetConflictHandler interface
-* @tc.type: FUNC    
+* @tc.desc: Test the SetCloudConflictHandler interface
+* @tc.type: FUNC
 * @tc.require:
 * @tc.author:
 */
-HWTEST_F(CloudDataTest, ConflictHandler002, TestSize.Level1)
+HWTEST_F(CloudDataTest, SetCloudConflictHandler, TestSize.Level1)
 {
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
-    StoreInfo storeInfo{ metaData_.tokenId, TEST_CLOUD_BUNDLE, "testStoreId", 0, user };
-    auto event = std::make_unique<CloudEvent>(CloudEvent::GET_CONFLICT_HANDLER, storeInfo);
-    EventCenter::GetInstance().PostEvent(std::move(event));
-    EXPECT_FALSE(cloudServerMock_.GetFlag());
-    storeInfo.storeName = TEST_CLOUD_STORE;
-    auto event1 = std::make_unique<CloudEvent>(CloudEvent::GET_CONFLICT_HANDLER, storeInfo);
-    EventCenter::GetInstance().PostEvent(std::move(event1));
-    EXPECT_TRUE(cloudServerMock_.GetFlag());
+    CloudData::SyncManager syncManager;
+    auto ret = syncManager.SetCloudConflictHandler(nullptr);
+    EXPECT_EQ(ret, E_ERROR);
+    ret = syncManager.SetCloudConflictHandler(std::make_shared<GeneralStoreMock>());
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: ConflictHandler003
+* @tc.desc: Test the handleConflict method of the RdbCloudConflictHandler class
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, ConflictHandler003, TestSize.Level1)
+{
+    DistributedRdb::RdbCloudConflictHandler handler(nullptr);
+    DistributedDB::VBucket data;
+    auto ret = handler.HandleConflict("test", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
+    auto mock = std::make_shared<CloudConflictHandlerMock>();
+    DistributedRdb::RdbCloudConflictHandler handler1(mock);
+    ret = handler1.HandleConflict("INSERT", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::UPSERT);
+    ret = handler1.HandleConflict("UPDATE", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::UPSERT);
+    ret = handler1.HandleConflict("DELETE", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::DELETE);
+    ret = handler1.HandleConflict("NOT_HANDLE", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
+    ret = handler1.HandleConflict("OTHER", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
 }
 
 /**

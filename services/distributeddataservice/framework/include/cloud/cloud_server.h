@@ -47,7 +47,6 @@ public:
     virtual bool IsSupportCloud(int32_t userId);
     virtual bool CloudDriverUpdated(const std::string &bundleName);
     virtual std::shared_ptr<CloudConflictHandler> GetConflictHandler();
-    virtual void ReleaseConflictHandler();
 
 private:
     static CloudServer *instance_;

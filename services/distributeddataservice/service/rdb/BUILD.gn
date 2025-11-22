@@ -43,6 +43,7 @@ ohos_source_set("distributeddata_rdb") {
   sources = [
     "cache_cursor.cpp",
     "rdb_asset_loader.cpp",
+    "rdb_cloud_conflict_handler.cpp",
     "rdb_cloud.cpp",
     "rdb_cursor.cpp",
     "rdb_general_store.cpp",

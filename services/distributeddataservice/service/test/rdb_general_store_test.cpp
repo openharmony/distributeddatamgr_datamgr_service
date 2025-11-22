@@ -121,6 +121,18 @@ public:
     }
 };
 
+class CloudConflictHandlerMock : public CloudConflictHandler {
+public:
+    virtual int32_t HandleConflict(const std::string &table, const OHOS::DistributedData::VBucket &oldData, const OHOS::DistributedData::VBucket &newData,
+        OHOS::DistributedData::VBucket &upsert) override;
+};
+
+int32_t CloudConflictHandlerMock::HandleConflict(const std::string &table, const OHOS::DistributedData::VBucket &oldData, const OHOS::DistributedData::VBucket &newData,
+    OHOS::DistributedData::VBucket &upsert)
+{
+    return 0;
+}
+
 void RdbGeneralStoreTest::InitMetaData()
 {
     metaData_.bundleName = BUNDLE_NAME;
@@ -2070,23 +2082,6 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertWithInconsistentFields,
     remove(meta.dataDir.c_str());
 }
 
-
-/**
-* @tc.name: SetCloudConflictHandle
-* @tc.desc: SetCloudConflictHandle test
-* @tc.type: FUNC
-*/
-HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
-{
-    auto handler = std::make_shared<CloudConflictHandler>();
-    auto result = store->SetCloudConflictHandler(handler);
-    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
-    metaData_.storeId = "mock";
-    store = std::make_shared<RdbGeneralStore>(metaData_);
-    result = store->SetCloudConflictHandler(handler);
-    EXPECT_EQ(result, E_OK);
-}
-
 /**
 * @tc.name: StopCloudSync
 * @tc.desc: StopCloudSync test
@@ -2118,6 +2113,24 @@ HWTEST_F(RdbGeneralStoreTest, OnSyncTrigger, TestSize.Level1)
     result = store->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     store->OnSyncTrigger(storeId, triggerMode);
     EXPECT_EQ(result, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: SetCloudConflictHandle
+* @tc.desc: SetCloudConflictHandle test
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
+{
+    auto handler = std::make_shared<CloudConflictHandlerMock>();
+    auto result = store->SetCloudConflictHandler(handler);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    metaData_.storeId = "mock";
+    store = std::make_shared<RdbGeneralStore>(metaData_);
+    result = store->SetCloudConflictHandler(handler);
+    EXPECT_EQ(result, E_OK);
+    result = store->SetCloudConflictHandler(handler);
+    EXPECT_EQ(result, E_OK);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

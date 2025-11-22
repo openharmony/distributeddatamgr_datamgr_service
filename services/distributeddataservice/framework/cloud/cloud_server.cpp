@@ -97,8 +97,4 @@ std::shared_ptr<CloudConflictHandler> CloudServer::GetConflictHandler()
 {
     return nullptr;
 }
-
-void CloudServer::ReleaseConflictHandler()
-{
-}
 } // namespace OHOS::DistributedData

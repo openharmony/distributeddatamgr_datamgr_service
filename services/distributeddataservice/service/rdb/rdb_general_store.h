@@ -22,6 +22,7 @@
 #include "concurrent_map.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_asset_loader.h"
+#include "rdb_cloud_conflict_handler.h"
 #include "rdb_cloud.h"
 #include "rdb_store.h"
 #include "rdb_store_config.h"
@@ -226,6 +227,7 @@ private:
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
+    std::weak_ptr<RdbCloudConflictHandler> conflictHandler_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

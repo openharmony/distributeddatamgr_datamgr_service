@@ -15,20 +15,15 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_CONFLICT_HANDLER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_CONFLICT_HANDLER_H
 
-#include "cloud/icloud_conflict_handler.h"
 #include "store/general_value.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-
-
-class API_EXPORT CloudConflictHandler : public DistributedDB::ICloudConflictHandler {
+class API_EXPORT CloudConflictHandler  {
 public:
-    using ConflictRet = DistributedDB::ConflictRet;
-    using VBucket = DistributedDB::VBucket;
     CloudConflictHandler() = default;
-    ~CloudConflictHandler() override = default;
-    ConflictRet HandleConflict(const std::string &table, const VBucket &oldData, const VBucket &newData,
-        VBucket &upsert) override;
+    virtual ~CloudConflictHandler() = default;
+    virtual int32_t HandleConflict(const std::string &table, const VBucket &oldData, const VBucket &newData,
+        VBucket &upsert) = 0;  
 };
 } // namespace OHOS::DistributedData
 #endif
