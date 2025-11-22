@@ -63,7 +63,6 @@ ohos_shared_library("opencloudextension") {
     "json:nlohmann_json_static",
     "c_utils:utils",
     "kv_store:datamgr_common",
-    "kv_store:distributeddb",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

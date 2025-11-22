@@ -1441,7 +1441,7 @@ bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
     }
     for (const auto &appInfo : cloudInfo.apps) {
         if (scene == CloudSyncScene::SERVICE_INIT) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, appInfo.first, "", {}, MODE_PROCESSRESTART));
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, appInfo.first, "", {}, MODE_PROCESSSTART));
         } else {
             syncManager_.DoCloudSync(SyncManager::SyncInfo(user, appInfo.first));
         }

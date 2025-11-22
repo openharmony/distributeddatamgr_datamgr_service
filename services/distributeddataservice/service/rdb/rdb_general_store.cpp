@@ -1722,13 +1722,13 @@ int32_t RdbGeneralStore::StopCloudSync()
 {
     std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s", Anonymous::Change(storeInfo_.storeName).c_str());
+        ZLOGE("Database already closed! database:%{public}s", meta_.GetStoreAlias().c_str());
         return GeneralError::E_ALREADY_CLOSED;
     }
     auto status = delegate_->StopTask(DistributedDB::TaskType::BACKGROUND_TASK);
     if (status != DistributedDB::DBStatus::OK) {
         ZLOGE("Failed to stop cloud data sync, bundleName:%{public}s, storeName:%{public}s",
-            storeInfo_.bundleName.c_str(), Anonymous::Change(storeInfo_.storeName).c_str());
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
     }
     return ConvertStatus(status);
 }
