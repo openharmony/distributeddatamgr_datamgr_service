@@ -49,12 +49,12 @@ Status LifeCycleManager::OnGot(UnifiedKey &key, const uint32_t tokenId, bool isN
     }
     auto policy = findPolicy->second;
     auto udKey = key.GetUnifiedKey();
-    ExecutorPool::TaskId taskId = executors_->Execute([=] {
+    ExecutorPool::TaskId taskId = executors_->Execute([this, key, tokenId, isNeedPush, udKey, policy] {
         if (policy->OnGot(key, isNeedPush) != E_OK) {
             ZLOGE("OnGot failed, key = %{public}s", key.key.c_str());
             return;
         }
-        EraseUdkey(udKey, tokenId);
+        this->EraseUdkey(udKey, tokenId);
     });
     if (taskId == ExecutorPool::INVALID_TASK_ID) {
         ZLOGE("Task execution failed");

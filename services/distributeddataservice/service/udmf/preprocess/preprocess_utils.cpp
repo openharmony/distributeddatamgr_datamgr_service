@@ -408,10 +408,10 @@ bool PreProcessUtils::IsNetworkingEnabled()
 
 std::vector<std::string> PreProcessUtils::GetRemoteDeviceIds()
 {
-    const auto &devInfos = DistributedData::DeviceManagerAdapter::GetInstance().GetRemoteDevices();
+    auto devInfos = DistributedData::DeviceManagerAdapter::GetInstance().GetRemoteDevices();
     std::vector<std::string> deviceIds;
-    for (const auto &devInfo : devInfos) {
-        deviceIds.emplace_back(devInfo.uuid);
+    for (auto &devInfo : devInfos) {
+        deviceIds.emplace_back(std::move(devInfo.uuid));
     }
     return deviceIds;
 }

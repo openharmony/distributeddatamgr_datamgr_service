@@ -111,7 +111,7 @@ struct API_EXPORT SessionAccessInfo {
     bool isOHType = true;
 };
 
-struct API_EXPORT BundleEventInfo {
+struct BundleEventInfo {
     std::string bundleName;
     int32_t userId = 0;
     int32_t appIndex = 0;
