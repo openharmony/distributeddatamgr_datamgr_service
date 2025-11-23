@@ -124,6 +124,19 @@ public:
     }
 };
 
+class CloudConflictHandlerMock : public CloudConflictHandler {
+public:
+    int32_t HandleConflict(const std::string &table, const OHOS::DistributedData::VBucket &oldData,
+        const OHOS::DistributedData::VBucket &newData, OHOS::DistributedData::VBucket &upsert) override;
+};
+
+int32_t CloudConflictHandlerMock::HandleConflict(const std::string &table,
+    const OHOS::DistributedData::VBucket &oldData, const OHOS::DistributedData::VBucket &newData,
+    OHOS::DistributedData::VBucket &upsert)
+{
+    return 0;
+}
+
 void RdbGeneralStoreTest::InitMetaData()
 {
     metaData_.bundleName = BUNDLE_NAME;
