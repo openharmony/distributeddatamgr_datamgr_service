@@ -469,7 +469,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, 
         ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
               storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
               meta.asyncDownloadAsset);
-        if (meta.autoSyncSwitch) {
+        if (!meta.autoSyncSwitch) {
             auto ret = SetCloudConflictHandler(store);
             if (ret != E_OK) {
                 return DoExceptionalCallback(async, details, storeInfo,
