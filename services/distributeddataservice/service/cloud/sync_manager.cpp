@@ -1140,8 +1140,10 @@ void SyncManager::OnNetworkDisconnected()
 void SyncManager::OnNetworkConnected(const std::vector<int32_t> &users)
 {
     std::lock_guard<std::mutex> lock(syncTriggerMutex_);
-    for (const auto& it : syncTriggerMap_) {
+    for (const auto &it : syncTriggerMap_) {
         auto &storeInfo = it.second;
+        auto evt = std::make_unique<CloudEvent>(CloudEvent::SYNC_TRIGGER_REGISTER, std::move(storeInfo));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
         auto [hasMeta, meta] = GetMetaData(storeInfo);
         if (!hasMeta) {
             continue;

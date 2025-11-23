@@ -2008,6 +2008,7 @@ void RdbServiceImpl::RegisterEvent()
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
     EventCenter::GetInstance().Subscribe(CloudEvent::CLEAN_DATA, process);
+    EventCenter::GetInstance().Subscribe(CloudEvent::SYNC_TRIGGER_REGISTER, process);
 
     EventCenter::GetInstance().Subscribe(CloudEvent::MAKE_QUERY, [](const Event &event) {
         auto &evt = static_cast<const MakeQueryEvent &>(event);

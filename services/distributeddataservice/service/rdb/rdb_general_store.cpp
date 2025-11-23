@@ -1367,7 +1367,7 @@ void RdbGeneralStore::OnSyncTrigger(const std::string &storeId, const int32_t tr
     if (observer_.watcher_ == nullptr) {
         return;
     }
-    ZLOGD("store: %{public}s OnSyncTrigger triggerMode:%{public}d", Anonymous::Change(storeId).c_str(), triggerMode);
+    ZLOGI("store: %{public}s OnSyncTrigger triggerMode:%{public}d", Anonymous::Change(storeId).c_str(), triggerMode);
     observer_.watcher_->OnChange(storeId, triggerMode);
     return;
 }

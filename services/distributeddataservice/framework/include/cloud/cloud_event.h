@@ -42,6 +42,7 @@ public:
         UPGRADE_SCHEMA,
         SYNC_TRIGGER,
         SYNC_TRIGGER_CLEAN,
+        SYNC_TRIGGER_REGISTER,
         CLOUD_BUTT
     };
 
