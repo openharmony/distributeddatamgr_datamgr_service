@@ -2355,11 +2355,13 @@ HWTEST_F(RdbGeneralStoreTest, OnSyncTrigger, TestSize.Level1)
     int32_t triggerMode = 1;
     store_->Init();
     auto result = store_->Watch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
-    store_->OnSyncTrigger(storeId, triggerMode);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    result = store_->OnSyncTrigger(storeId, triggerMode);
     EXPECT_EQ(result, GeneralError::E_OK);
     result = store_->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
-    store_->OnSyncTrigger(storeId, triggerMode);
     EXPECT_EQ(result, GeneralError::E_OK);
+    result = store_->OnSyncTrigger(storeId, triggerMode);
+    EXPECT_EQ(result, GeneralError::E_ERROR);
 }
 
 /**

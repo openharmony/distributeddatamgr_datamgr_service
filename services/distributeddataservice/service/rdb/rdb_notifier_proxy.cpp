@@ -68,7 +68,7 @@ int32_t RdbNotifierProxy::OnChange(const Origin &origin, const PrimaryFields &pr
     return RDB_OK;
 }
 
-int32_t RdbNotifierProxy::OnChange(const std::string &storeId, const int32_t triggerMode)
+int32_t RdbNotifierProxy::OnChange(const std::string &storeId, int32_t triggerMode)
 {
     MessageParcel data;
     if (!data.WriteInterfaceToken(GetDescriptor())) {

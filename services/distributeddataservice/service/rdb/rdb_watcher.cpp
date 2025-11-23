@@ -50,7 +50,7 @@ int32_t RdbWatcher::OnChange(const Origin &origin, const Fields &fields, ChangeD
     return E_OK;
 }
 
-int32_t RdbWatcher::OnChange(const std::string &storeId, const int32_t triggerMode)
+int32_t RdbWatcher::OnChange(const std::string &storeId, int32_t triggerMode)
 {
     auto notifier = GetNotifier();
     if (notifier == nullptr) {

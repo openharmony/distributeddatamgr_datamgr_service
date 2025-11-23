@@ -42,7 +42,7 @@ int32_t MockGeneralWatcher::OnChange(const Origin &origin, const Fields &fields,
     return GeneralError::E_OK;
 }
 
-int32_t MockGeneralWatcher::OnChange(const std::string &storeId, const int32_t triggerMode)
+int32_t MockGeneralWatcher::OnChange(const std::string &storeId, int32_t triggerMode)
 {
     return GeneralError::E_OK;
 }

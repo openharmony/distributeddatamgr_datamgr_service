@@ -520,9 +520,8 @@ std::function<void(const Event &)> SyncManager::GetSyncTriggerHandler()
     return [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
         auto storeInfo = evt.GetStoreInfo();
-        std::lock_guard<std::mutex> lock(syncTriggerMutex_);
-        std::string key = storeInfo.bundleName + storeInfo.storeName;
-        syncTriggerMap_[key] = storeInfo;
+        std::string key = storeInfo.bundleName + storeInfo.storeName + std::to_string(storeInfo.user);
+        syncTriggerMap_.Insert(key, storeInfo);
     };
 }
 std::function<void(const Event &)> SyncManager::GetSyncTriggerCleanHandler()
@@ -530,12 +529,8 @@ std::function<void(const Event &)> SyncManager::GetSyncTriggerCleanHandler()
     return [this](const Event &event) {
         auto &evt = static_cast<const CloudEvent &>(event);
         auto storeInfo = evt.GetStoreInfo();
-        std::lock_guard<std::mutex> lock(syncTriggerMutex_);
-        std::string key = storeInfo.bundleName + storeInfo.storeName;
-        auto it = syncTriggerMap_.find(key);
-        if (it != syncTriggerMap_.end()) {
-            syncTriggerMap_.erase(it);
-        }
+        std::string key = storeInfo.bundleName + storeInfo.storeName + std::to_string(storeInfo.user);
+        syncTriggerMap_.Erase(key);
     };
 }
 
@@ -1139,22 +1134,22 @@ void SyncManager::OnNetworkDisconnected()
 
 void SyncManager::OnNetworkConnected(const std::vector<int32_t> &users)
 {
-    std::lock_guard<std::mutex> lock(syncTriggerMutex_);
-    for (const auto &it : syncTriggerMap_) {
-        auto &storeInfo = it.second;
-        auto evt = std::make_unique<CloudEvent>(CloudEvent::SYNC_TRIGGER_REGISTER, std::move(storeInfo));
+    syncTriggerMap_.ForEach([this](const std::string &key, StoreInfo &value) {
+        auto &storeInfo = value;
+        auto evt = std::make_unique<CloudEvent>(CloudEvent::SYNC_TRIGGER_REGISTER, storeInfo);
         EventCenter::GetInstance().PostEvent(std::move(evt));
         auto [hasMeta, meta] = GetMetaData(storeInfo);
         if (!hasMeta) {
-            continue;
+            return false;
         }
         auto [code, store] = GetStore(meta, storeInfo.user);
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
-            continue;
+            return false;
         }
         store->OnSyncTrigger(storeInfo.storeName, MODE_ONLINE);
-    }
+        return false;
+    });
 
     networkRecoveryManager_.OnNetworkConnected(users);
 }

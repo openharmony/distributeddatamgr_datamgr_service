@@ -451,7 +451,7 @@ void AutoCache::Delegate::PostDataChange(const StoreMetaData &meta, const std::v
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
-int32_t AutoCache::Delegate::OnChange(const std::string &storeId, const int32_t triggerMode)
+int32_t AutoCache::Delegate::OnChange(const std::string &storeId, int32_t triggerMode)
 {
     Watchers watchers;
     {

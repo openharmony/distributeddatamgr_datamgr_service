@@ -895,8 +895,8 @@ int32_t KVDBGeneralStore::StopCloudSync()
     return GeneralError::E_NOT_SUPPORT;
 }
 
-void KVDBGeneralStore::OnSyncTrigger(const std::string &storeId, const int32_t triggerMode)
+int32_t KVDBGeneralStore::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
 {
-    return;
+    return GeneralError::E_NOT_SUPPORT;
 }
 } // namespace OHOS::DistributedKv

@@ -17,7 +17,7 @@
 
 #include "gtest/gtest.h"
 #include "itypes_util.h"
-#include "rdb_service.impl.h"
+#include "rdb_service_impl.h"
 
 using namespace testing::ext;
 using namespace OHOS;

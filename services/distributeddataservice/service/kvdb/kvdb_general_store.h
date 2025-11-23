@@ -84,7 +84,7 @@ public:
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
     int32_t StopCloudSync() override;
-    void OnSyncTrigger(const std::string &storeId, const int32_t triggerMode) override;
+    int32_t OnSyncTrigger(const std::string &storeId, int32_t triggerMode) override;
 
     std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value,
         ConflictResolution resolution) override;

@@ -66,7 +66,7 @@ int32_t KVDBWatcher::OnChange(const Origin &origin, const Fields &fields, Change
     }
     return E_OK;
 }
-int32_t KVDBWatcher::OnChange(const std::string &storeId, const int32_t triggerMode)
+int32_t KVDBWatcher::OnChange(const std::string &storeId, int32_t triggerMode)
 {
     return GeneralError::E_NOT_SUPPORT;
 }

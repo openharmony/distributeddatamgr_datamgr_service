@@ -104,7 +104,7 @@ public:
     int32_t UpdateDBStatus() override;
     int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler) override;
     int32_t StopCloudSync() override;
-    void OnSyncTrigger(const std::string &storeId, const int32_t triggerMode) override;
+    int32_t OnSyncTrigger(const std::string &storeId, int32_t triggerMode) override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore) = delete;

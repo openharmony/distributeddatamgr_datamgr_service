@@ -213,8 +213,7 @@ private:
     std::set<std::string> kvApps_;
     ConcurrentMap<int32_t, std::map<std::string, std::set<std::string>>> compensateSyncInfos_;
     NetworkRecoveryManager networkRecoveryManager_{ *this };
-    std::mutex syncTriggerMutex_;
-    std::map<std::string, StoreInfo> syncTriggerMap_;
+    ConcurrentMap<std::string, StoreInfo> syncTriggerMap_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

@@ -238,7 +238,7 @@ public:
     
     virtual int32_t StopCloudSync() = 0;
 
-    virtual void OnSyncTrigger(const std::string &storeId, const int32_t triggerMode) = 0;
+    virtual int32_t OnSyncTrigger(const std::string &storeId, int32_t triggerMode) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

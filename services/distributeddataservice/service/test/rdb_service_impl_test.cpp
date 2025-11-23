@@ -1516,13 +1516,13 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
 }
 
 /**
- * @tc.name: SetDistributedTables006
- * @tc.desc: Test SetDistributedTables when type is cloud
+ * @tc.name: SetDistributedTablesCloudWithAsyncFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when asyncDownloadAsset is false but metadata is true
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAsyncFalse, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
@@ -1548,13 +1548,13 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
 }
 
 /**
- * @tc.name: SetDistributedTables007
- * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.name: SetDistributedTablesCloudWithCloudFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when enableCloud is false but metadata is true
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithCloudFalse, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
@@ -1580,13 +1580,13 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
 }
 
 /**
- * @tc.name: SetDistributedTables008
- * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.name: SetDistributedTablesCloudWithSyncFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when autoSyncSwitch is false but metadata is true
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables008, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithSyncFalse, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
@@ -1612,13 +1612,13 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables008, TestSize.Level0)
 }
 
 /**
- * @tc.name: SetDistributedTables009
- * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.name: SetDistributedTablesCloudWithAllFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when all parameters are false
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables009, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAllFalse, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
@@ -1644,13 +1644,13 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables009, TestSize.Level0)
 }
 
 /**
- * @tc.name: SetDistributedTables010
- * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.name: SetDistributedTablesCloudWithCloudMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when enableCloud parameter differs from metadata
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables010, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithCloudMismatch, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
@@ -1676,13 +1676,13 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables010, TestSize.Level0)
 }
 
 /**
- * @tc.name: SetDistributedTables011
- * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.name: SetDistributedTablesCloudWithSyncMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when autoSyncSwitch parameter differs from metadata
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables011, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithSyncMismatch, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
@@ -1708,13 +1708,13 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables011, TestSize.Level0)
 }
 
 /**
- * @tc.name: SetDistributedTables012
- * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.name: SetDistributedTablesCloudWithAsyncMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when asyncDownloadAsset parameter differs from metadata
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables012, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAsyncMismatch, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
@@ -1740,13 +1740,13 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables012, TestSize.Level0)
 }
 
 /**
- * @tc.name: SetDistributedTables013
- * @tc.desc: Test SetDistributedTables when type is cloud.
+ * @tc.name: SetDistributedTablesCloudWithAllMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when all parameters differ from metadata
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables013, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAllMismatch, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;

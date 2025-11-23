@@ -218,9 +218,9 @@ int32_t GeneralStoreMock::StopCloudSync()
     return 0;
 }
 
-void GeneralStoreMock::OnSyncTrigger(const std::string &storeId, const int32_t triggerMode)
+int32_t GeneralStoreMock::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
 {
-    return;
+    return E_OK;
 }
 } // namespace DistributedData
 } // namespace OHOS
