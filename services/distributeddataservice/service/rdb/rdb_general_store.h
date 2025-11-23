@@ -226,7 +226,7 @@ private:
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
-    std::weak_ptr<RdbCloudConflictHandler> conflictHandler_;
+    std::shared_ptr<RdbCloudConflictHandler> conflictHandler_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

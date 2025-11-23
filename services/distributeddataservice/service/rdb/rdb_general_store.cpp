@@ -392,6 +392,7 @@ int32_t RdbGeneralStore::Close(bool isForce)
         }
         rdbStore_ = nullptr;
         isClosed_ = true;
+        conflictHandler_ = nullptr;
     }
     RemoveTasks();
     auto cloudDb = GetRdbCloud();
@@ -1702,19 +1703,20 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(GenQuery &que
 
 int32_t RdbGeneralStore::SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
 {
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GenErr::E_ALREADY_CLOSED;
+    }
     std::unique_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        return GeneralError::E_ALREADY_CLOSED;
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GenErr::E_ALREADY_CLOSED;
     }
-    if (conflictHandler_.lock() != nullptr) {
-        return GeneralError::E_OK;
+    if (conflictHandler_ != nullptr) {
+        return GenErr::E_OK;
     }
-    auto conflictHandler = std::make_shared<RdbCloudConflictHandler>(handler);
-    conflictHandler_ = conflictHandler;
-    auto ret = delegate_->SetCloudConflictHandler(conflictHandler);
-    if (ret != DBStatus::OK) {
-        conflictHandler_.reset();
-    }
+    conflictHandler_ = std::make_shared<RdbCloudConflictHandler>(handler);
+    auto ret = delegate_->SetCloudConflictHandler(conflictHandler_);
     return ConvertStatus(ret);
 }
 
