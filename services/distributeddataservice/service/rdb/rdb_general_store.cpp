@@ -1366,7 +1366,8 @@ int32_t RdbGeneralStore::UnLockCloudDB()
 int32_t RdbGeneralStore::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
 {
     if (observer_.watcher_ == nullptr) {
-        ZLOGE("watcher_ is null store: %{public}s triggerMode:%{public}d", Anonymous::Change(storeId).c_str(), triggerMode);
+        ZLOGE("watcher_ is null store: %{public}s triggerMode:%{public}d",
+            Anonymous::Change(storeId).c_str(), triggerMode);
         return GeneralError::E_ERROR;
     }
     ZLOGI("store: %{public}s OnSyncTrigger triggerMode:%{public}d", Anonymous::Change(storeId).c_str(), triggerMode);
