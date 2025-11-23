@@ -593,6 +593,7 @@ ohos_unittest("RdbServiceTest") {
     "rdb_result_set_stub_test.cpp",
     "relational_store_cursor_test.cpp",
     "rdb_store_utils_test.cpp",
+    "rdb_service_stub_test.cpp"
   ]
 
   configs = [ ":module_private_config" ]

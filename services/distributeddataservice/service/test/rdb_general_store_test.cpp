@@ -2094,6 +2094,7 @@ HWTEST_F(RdbGeneralStoreTest, StopCloudSync, TestSize.Level1)
     EXPECT_EQ(result, E_ALREADY_CLOSED);
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     result = store_->StopCloudSync();
     EXPECT_EQ(result, E_OK);
 }
@@ -2108,6 +2109,7 @@ HWTEST_F(RdbGeneralStoreTest, OnSyncTrigger, TestSize.Level1)
     MockGeneralWatcher watcher;
     std::string storeId = "testStoreId";
     int32_t triggerMode = 1;
+    store_->Init();
     auto result = store_->Watch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
     store_->OnSyncTrigger(storeId, triggerMode);
     EXPECT_EQ(result, GeneralError::E_OK);
@@ -2128,6 +2130,7 @@ HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
     result = store_->SetCloudConflictHandler(handler);
     EXPECT_EQ(result, E_OK);
     result = store_->SetCloudConflictHandler(handler);
