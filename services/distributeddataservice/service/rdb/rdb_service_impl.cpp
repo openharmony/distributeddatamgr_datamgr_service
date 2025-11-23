@@ -1404,7 +1404,8 @@ int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int
     return E_OK;
 }
 
-int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index)
+int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user,
+    int32_t index, int32_t tokenId)
 {
     std::string prefix = Database::GetPrefix({ std::to_string(user), "default", bundleName });
     std::vector<Database> dataBase;

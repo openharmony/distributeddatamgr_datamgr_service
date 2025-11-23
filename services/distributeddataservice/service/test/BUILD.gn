@@ -80,10 +80,10 @@ ohos_unittest("CloudDataTest") {
     "access_token:libtokenid_sdk",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
-    "hicollie:libhicollie",
-    "hilog:libhilog",
     "googletest:gmock",
     "googletest:gtest",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
     "ipc:ipc_single",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
@@ -130,9 +130,9 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "cloud_data_mock_test.cpp",
     "mock/access_token_mock.cpp",
     "mock/account_delegate_mock.cpp",
-    "cloud_data_mock_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -168,7 +168,6 @@ ohos_unittest("CloudDataMockTest") {
   ]
 }
 
-
 ohos_unittest("CloudServiceImplTest") {
   sanitize = {
     cfi = true
@@ -196,7 +195,6 @@ ohos_unittest("CloudServiceImplTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
-    "json:nlohmann_json_static",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
     "googletest:gmock",
@@ -204,6 +202,7 @@ ohos_unittest("CloudServiceImplTest") {
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
@@ -358,8 +357,8 @@ ohos_unittest("CryptoManagerTest") {
     "ability_base:base",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
-    "access_token:libtoken_setproc",
     "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
     "c_utils:utils",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -562,9 +561,9 @@ ohos_unittest("RdbResultSetImplTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
-    "kv_store:datamgr_common",
   ]
 
   deps = [
@@ -620,7 +619,6 @@ ohos_unittest("RdbServiceTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/network:distributeddata_network",
@@ -666,12 +664,12 @@ ohos_unittest("RdbServiceImplTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "${data_service_path}/service/test/mock/cursor_mock.cpp",
-    "mock/device_manager_adapter_mock.cpp",
+    "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
+    "mock/device_manager_adapter_mock.cpp",
     "rdb_service_impl_test.cpp",
     "rdb_types_utils_test.cpp",
   ]
@@ -1028,11 +1026,11 @@ ohos_unittest("ObjectManagerMockTest") {
     "mock/access_token_mock.cpp",
     "mock/account_delegate_mock.cpp",
     "mock/device_manager_adapter_mock.cpp",
-    "mock/kv_store_nb_delegate_mock.cpp",
-    "object_manager_mock_test.cpp",
-    "mock/meta_data_manager_mock.cpp",
     "mock/device_matrix_mock.cpp",
     "mock/distributed_file_daemon_manager_mock.cpp",
+    "mock/kv_store_nb_delegate_mock.cpp",
+    "mock/meta_data_manager_mock.cpp",
+    "object_manager_mock_test.cpp",
   ]
 
   include_dirs = [
@@ -1048,9 +1046,10 @@ ohos_unittest("ObjectManagerMockTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
-    "data_object:distributeddataobject_impl",
     "data_object:data_object_inner",
+    "data_object:distributeddataobject_impl",
     "dataclassification:data_transit_mgr",
     "device_manager:devicemanagersdk",
     "dfs_service:cloudsync_asset_kit_inner",
@@ -1060,7 +1059,6 @@ ohos_unittest("ObjectManagerMockTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
@@ -1182,6 +1180,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf",
+    "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/framework/include",
@@ -1212,13 +1211,13 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "hisysevent:libhisysevent",
     "image_framework:image",
     "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
     "kv_store:datamgr_common",
-    "kv_store:distributeddb",
+    "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "openssl:libcrypto_shared",
-    "samgr:samgr_proxy",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 
@@ -1259,8 +1258,8 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/common/extension_ability_manager.cpp",
     "${data_service_path}/service/data_share/common/extension_connect_adaptor.cpp",
     "${data_service_path}/service/data_share/common/extension_mgr_proxy.cpp",
-    "${data_service_path}/service/data_share/common/proxy_data_manager.cpp",
     "${data_service_path}/service/data_share/common/kv_delegate.cpp",
+    "${data_service_path}/service/data_share/common/proxy_data_manager.cpp",
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
     "${data_service_path}/service/data_share/common/seq_strategy.cpp",
@@ -1306,9 +1305,9 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_service_stub_test.cpp",
     "data_share_subscriber_managers_test.cpp",
     "data_share_types_util_test.cpp",
+    "data_share_uri_utils_test.cpp",
     "kv_dalegate_test.cpp",
     "mock/account_delegate_mock.cpp",
-    "data_share_uri_utils_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1408,8 +1407,8 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "${data_service_path}/service/data_share/common/extension_ability_manager.cpp",
     "${data_service_path}/service/data_share/common/extension_connect_adaptor.cpp",
     "${data_service_path}/service/data_share/common/extension_mgr_proxy.cpp",
-    "${data_service_path}/service/data_share/common/proxy_data_manager.cpp",
     "${data_service_path}/service/data_share/common/kv_delegate.cpp",
+    "${data_service_path}/service/data_share/common/proxy_data_manager.cpp",
     "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
     "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
     "${data_service_path}/service/data_share/common/seq_strategy.cpp",
@@ -1444,8 +1443,8 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
-    "data_share_sys_event_subscriber_test.cpp",
     "data_share_scheduler_manager_test.cpp",
+    "data_share_sys_event_subscriber_test.cpp",
     "mock/config_factory_mock.cpp",
   ]
 
@@ -1476,6 +1475,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "access_token:libtokenid_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "cJSON:cjson",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
@@ -1490,7 +1490,6 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "huks:libhukssdk",
     "init:libbegetutil",
     "ipc:ipc_core",
-    "cJSON:cjson",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "kv_store:distributeddb",
@@ -1676,8 +1675,8 @@ ohos_unittest("UdmfServiceImplTest") {
     blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   sources = [
-    "${data_service_path}/framework/feature/feature_system.cpp",
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/framework/feature/feature_system.cpp",
     "udmf_service_impl_test.cpp",
   ]
 
@@ -1689,6 +1688,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/udmf/delay_data",
+    "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/permission",
@@ -1715,11 +1715,11 @@ ohos_unittest("UdmfServiceImplTest") {
     "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "openssl:libcrypto_shared",
-    "samgr:samgr_proxy",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
 
@@ -1782,11 +1782,11 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "hisysevent:libhisysevent",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
-    "samgr:samgr_proxy",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
     "udmf:udmf_client",
   ]
   sanitize = {
@@ -1848,6 +1848,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/framework/dfx/reporter.cpp",
     "${data_service_path}/framework/directory/directory_manager.cpp",
     "${data_service_path}/framework/feature/feature_system.cpp",
+    "${data_service_path}/framework/feature/static_acts.cpp",
     "${data_service_path}/framework/metadata/appid_meta_data.cpp",
     "${data_service_path}/framework/metadata/auto_launch_meta_data.cpp",
     "${data_service_path}/framework/metadata/capability_meta_data.cpp",
@@ -1866,6 +1867,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
     "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
     "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
+    "${data_service_path}/service/udmf/lifecycle/drag_lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
@@ -1873,9 +1875,10 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
     "${data_service_path}/service/udmf/preprocess/udmf_notifier_proxy.cpp",
+    "${data_service_path}/service/udmf/store/drag_observer.cpp",
+    "${data_service_path}/service/udmf/store/observer_factory.cpp",
     "${data_service_path}/service/udmf/store/runtime_store.cpp",
     "${data_service_path}/service/udmf/store/store_cache.cpp",
-    "${data_service_path}/service/udmf/store/store_data_changed_observer.cpp",
     "${data_service_path}/service/udmf/udmf_service_impl.cpp",
     "${data_service_path}/service/udmf/udmf_service_stub.cpp",
     "udmf_service_stub_mock_test.cpp",
@@ -1887,6 +1890,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/test/mock",
+    "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/delay_data",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
@@ -2008,10 +2012,10 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gmock_main",
     "googletest:gtest_main",
+    "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
-    "hilog:libhilog",
     "ipc:ipc_single",
     "kv_store:datamgr_common",
     "samgr:samgr_proxy",
@@ -2075,9 +2079,7 @@ ohos_unittest("UdmfCheckerManagerTest") {
 
 ohos_unittest("LifeCycleManagerTest") {
   module_out_path = module_output_path
-  sources = [
-    "lifecycle_manager_test.cpp",
-  ]
+  sources = [ "lifecycle_manager_test.cpp" ]
 
   include_dirs = [
     "${data_service_path}/service/udmf/lifecycle",
@@ -2097,8 +2099,8 @@ ohos_unittest("LifeCycleManagerTest") {
 
   external_deps = [
     "c_utils:utils",
-    "kv_store:distributeddata_inner",
     "hilog:libhilog",
+    "kv_store:distributeddata_inner",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
     "udmf:utd_client",
@@ -2107,9 +2109,7 @@ ohos_unittest("LifeCycleManagerTest") {
 
 ohos_unittest("DataHandlerTest") {
   module_out_path = module_output_path
-  sources = [
-    "data_handler_test.cpp",
-  ]
+  sources = [ "data_handler_test.cpp" ]
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
@@ -2136,10 +2136,10 @@ ohos_unittest("DataHandlerTest") {
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "device_manager:devicemanagersdk",
-    "kv_store:datamgr_common",
-    "kv_store:distributeddb",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
     "udmf:utd_client",
@@ -2568,7 +2568,7 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
     "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
     "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
     "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
-    "${data_service_path}/service/udmf/lifecycle/clean_on_timeout.cpp",
+    "${data_service_path}/service/udmf/lifecycle/drag_lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
@@ -2576,9 +2576,10 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/udmf_notifier_proxy.cpp",
+    "${data_service_path}/service/udmf/store/drag_observer.cpp",
+    "${data_service_path}/service/udmf/store/observer_factory.cpp",
     "${data_service_path}/service/udmf/store/runtime_store.cpp",
     "${data_service_path}/service/udmf/store/store_cache.cpp",
-    "${data_service_path}/service/udmf/store/store_data_changed_observer.cpp",
     "${data_service_path}/service/udmf/udmf_service_impl.cpp",
     "${data_service_path}/service/udmf/udmf_service_stub.cpp",
     "mock/kv_store_nb_delegate_corruption_mock.cpp",
@@ -2593,6 +2594,7 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf",
+    "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/delay_data",
     "${data_service_path}/service/udmf/preprocess",
@@ -2659,7 +2661,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
     "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
     "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
-    "${data_service_path}/service/udmf/lifecycle/clean_on_timeout.cpp",
+    "${data_service_path}/service/udmf/lifecycle/drag_lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
@@ -2668,9 +2670,10 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
     "${data_service_path}/service/udmf/preprocess/udmf_notifier_proxy.cpp",
+    "${data_service_path}/service/udmf/store/drag_observer.cpp",
+    "${data_service_path}/service/udmf/store/observer_factory.cpp",
     "${data_service_path}/service/udmf/store/runtime_store.cpp",
     "${data_service_path}/service/udmf/store/store_cache.cpp",
-    "${data_service_path}/service/udmf/store/store_data_changed_observer.cpp",
     "${data_service_path}/service/udmf/udmf_service_impl.cpp",
     "${data_service_path}/service/udmf/udmf_service_stub.cpp",
     "udmf_delay_data_container_test.cpp",
@@ -2683,6 +2686,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf",
+    "${data_service_path}/service/lifecycle",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/delay_data",
     "${data_service_path}/service/udmf/preprocess",
@@ -2736,7 +2740,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
   ]
 }
 
-ohos_unittest("UdmfStoreDataChangedObserverTest") {
+ohos_unittest("UdmfObserverTest") {
   module_out_path = module_output_path
   sanitize = {
     cfi = true
@@ -2749,7 +2753,7 @@ ohos_unittest("UdmfStoreDataChangedObserverTest") {
     "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
     "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
     "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
-    "${data_service_path}/service/udmf/lifecycle/clean_on_timeout.cpp",
+    "${data_service_path}/service/udmf/lifecycle/drag_lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
@@ -2758,12 +2762,13 @@ ohos_unittest("UdmfStoreDataChangedObserverTest") {
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
     "${data_service_path}/service/udmf/preprocess/udmf_notifier_proxy.cpp",
+    "${data_service_path}/service/udmf/store/drag_observer.cpp",
+    "${data_service_path}/service/udmf/store/observer_factory.cpp",
     "${data_service_path}/service/udmf/store/runtime_store.cpp",
     "${data_service_path}/service/udmf/store/store_cache.cpp",
-    "${data_service_path}/service/udmf/store/store_data_changed_observer.cpp",
     "${data_service_path}/service/udmf/udmf_service_impl.cpp",
     "${data_service_path}/service/udmf/udmf_service_stub.cpp",
-    "udmf_store_data_changed_observer_test.cpp",
+    "udmf_observer_test.cpp",
   ]
 
   include_dirs = [
@@ -2773,6 +2778,7 @@ ohos_unittest("UdmfStoreDataChangedObserverTest") {
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/udmf",
+    "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf/delay_data",
     "${data_service_path}/service/udmf/preprocess",
@@ -2870,8 +2876,8 @@ ohos_unittest("UtdServiceImplTest") {
     blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   sources = [
-    "${data_service_path}/framework/feature/feature_system.cpp",
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/framework/feature/feature_system.cpp",
     "utd_service_impl_test.cpp",
   ]
 
@@ -2901,11 +2907,11 @@ ohos_unittest("UtdServiceImplTest") {
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
     "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "openssl:libcrypto_shared",
-    "samgr:samgr_proxy",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
     "udmf:utd_client",
   ]
 
@@ -2933,8 +2939,8 @@ group("unittest") {
 
   if (datamgr_service_cloud) {
     deps += [
-      ":CloudDataTest",
       ":CloudDataMockTest",
+      ":CloudDataTest",
       ":CloudServiceImplTest",
       ":CloudTest",
     ]
@@ -2943,12 +2949,13 @@ group("unittest") {
   if (datamgr_service_udmf) {
     deps += [
       ":UdmfCheckerManagerTest",
+      ":UdmfObserverTest",
       ":UdmfPreProcessUtilsMockTest",
       ":UdmfPreProcessUtilsTest",
       ":UdmfRunTimeStoreTest",
+      ":UdmfServiceImplDbCorruptionMockTest",
       ":UdmfServiceImplMockTest",
       ":UdmfServiceImplTest",
-      ":UdmfServiceImplDbCorruptionMockTest",
       ":UdmfServiceStubMockTest",
       ":UdmfServiceStubTest",
       ":UtdServiceImplTest",
@@ -2960,11 +2967,11 @@ group("unittest") {
     deps += [
       ":ObjectAssetLoaderTest",
       ":ObjectAssetMachineTest",
+      ":ObjectAssetSyncManagerTest",
       ":ObjectDmsHandlerTest",
+      ":ObjectManagerMockTest",
       ":ObjectManagerTest",
       ":ObjectSnapshotTest",
-      ":ObjectManagerMockTest",
-      ":ObjectAssetSyncManagerTest",
     ]
   }
 
@@ -2993,24 +3000,24 @@ group("unittest") {
 
   if (datamgr_service_data_share) {
     deps += [
-      ":DataShareServiceImplTest",
       ":DataShareServiceImplMockTest",
+      ":DataShareServiceImplTest",
     ]
   }
 
   deps += [
     ":BootStrapMockTest",
     ":CryptoManagerTest",
+    ":DataHandlerTest",
     ":DeviceMatrixTest",
     ":DirectoryManagerTest",
     ":DumpHelperTest",
+    ":LifeCycleManagerTest",
     ":MetaDataTest",
     ":PermissionValidatorMockTest",
     ":PermissionValidatorTest",
     ":PermitDelegateMockTest",
     ":ValueProxyServiceTest",
-    ":LifeCycleManagerTest",
-    ":DataHandlerTest",
   ]
 }
 ###############################################################################

@@ -23,8 +23,7 @@
 namespace OHOS::DistributedKv {
 class InstallEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
-using InstallEventCallback = void (InstallEventSubscriber::*)
-    (const std::string &bundleName, int32_t userId, int32_t appIndex);
+using InstallEventCallback = void (InstallEventSubscriber::*)(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
     InstallEventSubscriber(const EventFwk::CommonEventSubscribeInfo &info, KvStoreDataService *kvStoreDataService);
 
     ~InstallEventSubscriber() {}
@@ -34,9 +33,10 @@ private:
     static constexpr const char *USER_ID = "userId";
     static constexpr const char *SANDBOX_APP_INDEX = "sandbox_app_index";
     static constexpr const char *APP_INDEX = "appIndex";
-    void OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
-    void OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex);
-    void OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex);
+    static constexpr const char *TOKEN_ID = "accessTokenId";
+    void OnUninstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
+    void OnUpdate(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
+    void OnInstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
     std::map<std::string, InstallEventCallback> callbacks_;
     KvStoreDataService *kvStoreDataService_;
 };

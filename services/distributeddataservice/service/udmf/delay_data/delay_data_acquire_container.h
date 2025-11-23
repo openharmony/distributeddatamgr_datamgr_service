@@ -29,6 +29,7 @@ public:
     void RegisterDelayDataCallback(const std::string &key, const DelayGetDataInfo &info);
     bool HandleDelayDataCallback(const std::string &key, const UnifiedData &unifiedData);
     bool QueryDelayGetDataInfo(const std::string &key, DelayGetDataInfo &info);
+    bool IsContainDelayData(const std::string &key);
     std::vector<std::string> QueryAllDelayKeys();
 
 private:

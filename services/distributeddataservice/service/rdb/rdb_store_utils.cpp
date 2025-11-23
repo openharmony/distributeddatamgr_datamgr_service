@@ -36,6 +36,8 @@ int32_t RdbStoreUtils::ConvertNativeRdbStatus(int32_t status)
             return GeneralError::E_DB_CORRUPT;
         case NativeRdb::E_ROW_OUT_RANGE:
             return GeneralError::E_MOVE_DONE;
+        case NativeRdb::E_SQLITE_CONSTRAINT:
+            return GeneralError::E_CONSTRAIN_VIOLATION;
         default:
             break;
     }

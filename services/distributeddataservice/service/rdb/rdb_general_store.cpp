@@ -287,7 +287,7 @@ int32_t RdbGeneralStore::Init()
     if (ret == GenErr::E_OK) {
         ret = InitDelegate();
     }
-    ZLOGI("store:[%{public}s,%{public}s,%{public}u,%{public}s],cfg[%{public}d,%{public}d,%{public}d], ret:%{public}d",
+    ZLOGI("store[%{public}s,%{public}s,%{public}u,%{public}s], cfg[%{public}d,%{public}d,%{public}d], ret:%{public}d",
         meta_.user.c_str(), meta_.bundleName.c_str(), meta_.tokenId, Anonymous::Change(meta_.storeId).c_str(),
         meta_.isEncrypt, meta_.isManualClean, meta_.isSearchable, ret);
     return ret;
