@@ -22,6 +22,9 @@ bool MockRelationalStoreDelegate::gTestResult = false;
 DBStatus RelationalStoreManager::OpenStore(const std::string &path, const std::string &storeId,
     const RelationalStoreDelegate::Option &option, RelationalStoreDelegate *&delegate)
 {
+    if (delegate != nullptr) {
+        return DB_ERROR;
+    }
     delegate = new (std::nothrow) MockRelationalStoreDelegate();
     if (delegate == nullptr) {
         return DB_ERROR;

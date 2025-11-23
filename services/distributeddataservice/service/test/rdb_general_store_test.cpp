@@ -78,6 +78,8 @@ protected:
     static int32_t CreateTable(std::shared_ptr<RdbGeneralStore> store, const std::string &tableName = "employee");
     static bool Equal(const Value &left, const Value &right);
     static bool Equal(const VBucket &left, const VBucket &right);
+    static std::pair<std::shared_ptr<RdbGeneralStore>, StoreMetaData> InitRdbStore(const std::string &storeId,
+        const std::string &tableName, bool encrypt = false);
     static bool CorruptDatabaseFile(const std::string &filePath, int32_t offset = 0, int32_t size = 0);
     static void CorruptDatabasePager(std::shared_ptr<RdbGeneralStore> store, const std::string &filePath,
         const std::string &tableName);
@@ -157,6 +159,22 @@ StoreMetaData RdbGeneralStoreTest::GetStoreMeta(const std::string &storeName, in
     metaData.securityLevel = DistributedKv::SecurityLevel::S2;
     metaData.isSearchable = true;
     return metaData;
+}
+
+std::pair<std::shared_ptr<RdbGeneralStore>, StoreMetaData> RdbGeneralStoreTest::InitRdbStore(
+    const std::string &storeId, const std::string &tableName, bool encrypt)
+{
+    auto meta = GetStoreMeta(storeId);
+    meta.isEncrypt = encrypt;
+    std::remove(meta.dataDir.c_str());
+    auto store = std::make_shared<RdbGeneralStore>(meta, true);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+    if (tableName.empty()) {
+        return { store, meta };
+    }
+    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    return { store, meta };
 }
 
 int32_t RdbGeneralStoreTest::CreateTable(std::shared_ptr<RdbGeneralStore> store, const string &tableName)
@@ -400,11 +418,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
     bindInfos[key] = bindInfo;
 
     std::string storeId = "Bind003.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, "");
 
     EXPECT_FALSE(store->IsBound(std::atoi(meta.user.c_str())));
     GeneralStore::CloudConfig config;
@@ -1326,17 +1340,13 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_DBOperationAfterClose, TestSize.Le
 {
     // Step 1: Initialize database environment and immediately close it
     std::string storeId = "RdbGeneralStore_DBOperationAfterClose.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, "");
 
     // Step 2: Close store
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
 
     // Step 3: DB operations
-    code = store->Execute("tableName", "CREATE TABLE IF NOT EXISTS");
+    auto code = store->Execute("tableName", "CREATE TABLE IF NOT EXISTS");
     EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
 
     std::vector<DistributedData::VBucket> values;
@@ -1436,15 +1446,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InitWithCreateRequired, TestSize.L
 HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InsertSingleRecord, TestSize.Level1)
 {
     std::string storeId = "RdbGeneralStore_InsertSingleRecord.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
-    // Create test table
     std::string tableName = "RdbGeneralStore_InsertSingleRecord";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Construct test data with various data types
     DistributedData::VBucket vBucket;
@@ -1456,6 +1459,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InsertSingleRecord, TestSize.Level
 
     // Execute insert operation
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->Insert(tableName, VBucket(vBucket), GeneralStore::ON_CONFLICT_IGNORE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 1);
@@ -1490,15 +1494,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InsertSingleRecord, TestSize.Level
 HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_UpdateRecord, TestSize.Level1)
 {
     std::string storeId = "RdbGeneralStore_UpdateRecord.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
-    // Create test table
     std::string tableName = "RdbGeneralStore_UpdateRecord";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Insert initial test data
     DistributedData::VBucket vBucket;
@@ -1507,6 +1504,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_UpdateRecord, TestSize.Level1)
     vBucket["salary"] = 11112;
 
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->Insert(tableName, VBucket(vBucket), GeneralStore::ON_CONFLICT_NONE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 1);
@@ -1563,14 +1561,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_DeleteWithInClause, TestSize.Level
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_DeleteWithInClause.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_DeleteWithInClause";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Step 2: Prepare and insert test data record
     DistributedData::VBucket vBucket;
@@ -1580,6 +1572,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_DeleteWithInClause, TestSize.Level
     vBucket["data"] = std::vector<uint8_t>{ 2, 2, 2 };
 
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->Insert(tableName, VBucket(vBucket), GeneralStore::ON_CONFLICT_ROLLBACK);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 1);
@@ -1622,14 +1615,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertRecords, TestSize.Level
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_BatchInsertRecords.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_BatchInsertRecords";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Step 2: Prepare batch data with 10 identical records
     std::vector<DistributedData::VBucket> values;
@@ -1645,6 +1632,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertRecords, TestSize.Level
 
     // Step 3: Execute batch insert operation and verify results
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->BatchInsert(tableName, std::move(values), GeneralStore::ON_CONFLICT_REPLACE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, size);
@@ -1681,13 +1669,9 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_CRUDAfterClose, TestSize.Level1)
 {
     // Step 1: Initialize database environment and immediately close it
     std::string storeId = "RdbGeneralStore_CRUDAfterClose.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_CRUDAfterClose";
+    auto[store, meta] = InitRdbStore(storeId, tableName);
+
     EXPECT_EQ(store->Close(), GeneralError::E_OK);
 
     // Step 2: Prepare test data for CRUD operations
@@ -1704,6 +1688,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_CRUDAfterClose, TestSize.Level1)
 
     // Step 3: Test BatchInsert operation on closed database
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->BatchInsert(tableName, std::move(values), GeneralStore::ON_CONFLICT_REPLACE);
     EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
     EXPECT_EQ(res, -1);
@@ -1754,18 +1739,13 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_CRUDWhenBusy, TestSize.Level1)
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_CRUDWhenBusy.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_CRUDWhenBusy";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Step 2: Acquire exclusive lock on database using native RDB interface
     NativeRdb::RdbStoreConfig config(meta.dataDir);
     RdbOpenCallbackImpl callback;
+    int32_t code;
     auto rdb = NativeRdb::RdbHelper::GetRdbStore(config, 0, callback, code);
     EXPECT_EQ(code, NativeRdb::E_OK);
     ASSERT_NE(rdb, nullptr);
@@ -1825,14 +1805,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_HandleDatabaseCorruption, TestSize
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_HandleDatabaseCorruption.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_HandleDatabaseCorruption";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Close the store before corrupting the database file
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
@@ -1843,7 +1817,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_HandleDatabaseCorruption, TestSize
 
     // Step 3: Reopen the store - should detect corruption
     store = std::make_shared<RdbGeneralStore>(meta, true);
-    code = store->Init();
+    auto code = store->Init();
     EXPECT_EQ(code, GeneralError::E_DB_CORRUPT);
 
     // Cleanup test environment
@@ -1859,14 +1833,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_HandlePageCorruption, TestSize.Lev
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_HandlePageCorruption.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_HandlePageCorruption";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Step 2: Insert initial data exceeding 2MB
     CorruptDatabasePager(store, meta.dataDir.c_str(), tableName);
@@ -1878,6 +1846,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_HandlePageCorruption, TestSize.Lev
     vBucket["salary"] = 5000.0;
     vBucket["data"] = std::vector<uint8_t>{ 1, 2, 3 }; // Use large data to exceed 2MB in total
     int64_t res = -1;
+    int32_t code;
     std::vector<DistributedData::VBucket> values = { vBucket };
     std::tie(code, res) = store->BatchInsert(tableName, std::move(values), GeneralStore::ON_CONFLICT_REPLACE);
     EXPECT_EQ(code, GeneralError::E_DB_CORRUPT);
@@ -1935,14 +1904,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_ValidateInvalidParameters, TestSiz
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_ValidateInvalidParameters.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_ValidateInvalidParameters";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Insert initial test data
     DistributedData::VBucket vBucket;
@@ -1952,6 +1915,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_ValidateInvalidParameters, TestSiz
     vBucket["data"] = std::vector<uint8_t>{ 1, 2, 3, 4 };
 
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->Insert(tableName, VBucket(vBucket), GeneralStore::ON_CONFLICT_NONE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 1);
@@ -2013,14 +1977,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertWithInconsistentFields,
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_BatchInsertWithInconsistentFields.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_BatchInsertWithInconsistentFields";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Step 2: Prepare batch data with inconsistent fields
     std::vector<DistributedData::VBucket> values;
@@ -2047,6 +2005,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertWithInconsistentFields,
 
     // Step 3: Execute batch insert operation and verify result
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->BatchInsert(tableName, std::move(values), GeneralStore::ON_CONFLICT_REPLACE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 3);
@@ -2090,15 +2049,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InsertConflictResolution, TestSize
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_InsertConflictResolution.db";
-    auto meta = GetStoreMeta(storeId);
-    meta.isEncrypt = true;
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_InsertConflictResolution";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName, true);
 
     // Step 2: Insert the first record with id=1
     DistributedData::VBucket firstRecord;
@@ -2108,6 +2060,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InsertConflictResolution, TestSize
     firstRecord["salary"] = 3000.0;
 
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->Insert(tableName, VBucket(firstRecord), GeneralStore::ON_CONFLICT_NONE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 1);
@@ -2174,14 +2127,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_UpdateConflictResolution, TestSize
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_UpdateConflictResolution.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_UpdateConflictResolution";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Step 2: Insert initial test data - first record
     DistributedData::VBucket vBucket;
@@ -2191,6 +2138,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_UpdateConflictResolution, TestSize
     vBucket["salary"] = 3000.0;
 
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->Insert(tableName, VBucket(vBucket), GeneralStore::ON_CONFLICT_NONE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 1);
@@ -2243,14 +2191,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution001, 
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_BatchInsertConflictResolution001.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_BatchInsertConflictResolution001";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Step 2: Insert initial data record with id=1
     DistributedData::VBucket firstRecord;
@@ -2258,6 +2200,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution001, 
     firstRecord["name"] = "tom";
 
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->Insert(tableName, VBucket(firstRecord), GeneralStore::ON_CONFLICT_NONE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 1);
@@ -2326,14 +2269,8 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution002, 
 {
     // Step 1: Initialize database environment and create test table
     std::string storeId = "RdbGeneralStore_BatchInsertConflictResolution002.db";
-    auto meta = GetStoreMeta(storeId);
-    remove(meta.dataDir.c_str());
-    auto store = std::make_shared<RdbGeneralStore>(meta, true);
-    auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_OK);
-
     std::string tableName = "RdbGeneralStore_BatchInsertConflictResolution002";
-    EXPECT_EQ(CreateTable(store, tableName), GeneralError::E_OK);
+    auto[store, meta] = InitRdbStore(storeId, tableName);
 
     // Step 2: Insert initial data record with id=1
     DistributedData::VBucket firstRecord;
@@ -2341,6 +2278,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution002, 
     firstRecord["name"] = "tom";
 
     int64_t res = -1;
+    int32_t code;
     std::tie(code, res) = store->Insert(tableName, VBucket(firstRecord), GeneralStore::ON_CONFLICT_NONE);
     EXPECT_EQ(code, GeneralError::E_OK);
     EXPECT_EQ(res, 1);
@@ -2356,6 +2294,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution002, 
 
     // Conflicting record with existing id=1
     DistributedData::VBucket thirdRecord = firstRecord;
+    batchData.push_back(thirdRecord);
 
     // Another non-conflicting record
     DistributedData::VBucket fourthRecord;
@@ -2369,7 +2308,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution002, 
 
     std::tie(code, res) = store->BatchInsert(tableName, std::move(batchData), GeneralStore::ON_CONFLICT_REPLACE);
     EXPECT_EQ(code, GeneralError::E_OK);
-    EXPECT_EQ(res, 3); // Should process all 3 records (1 replaced, 2 inserted)
+    EXPECT_EQ(res, 3); // Should process all 3 records
 
     // Step 5: Verify that the conflicting record was correctly updated
     std::shared_ptr<Cursor> cursor = nullptr;
