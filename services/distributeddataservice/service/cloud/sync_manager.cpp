@@ -457,7 +457,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, 
         if (!meta.enableCloud) {
             ZLOGW("meta.enableCloud is false, storeId:%{public}s, prepareTraceId:%{public}s",
                 meta.GetStoreAlias().c_str(), prepareTraceId.c_str());
-            return exCallback(GeneralError::E_ERROR, "disable cloud");
+            return exCallback(E_CLOUD_DISABLED, "disable cloud");
         }
         if (!meta.autoSyncSwitch) {
             auto ret = SetCloudConflictHandler(store);
@@ -466,8 +466,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, 
             }
             if ((info.triggerMode_ == MODE_PUSH) || (info.triggerMode_ == MODE_SWITCHON) ||
                 (info.triggerMode_ == MODE_PROCESSSTART)) {
-                ZLOGW("triggerMode: %{public}d, bundleName: %{public}s, autoSyncSwitch: %{public}d",
-                    info.triggerMode_, info.bundleName_.c_str(), meta.autoSyncSwitch);
+                ZLOGW("triggerMode: %{public}d, bundleName: %{public}s", info.triggerMode_, info.bundleName_.c_str());
                 store->OnSyncTrigger(storeInfo.storeName, info.triggerMode_);
                 return return exCallback(E_OK, "syncTrigger");
             }
