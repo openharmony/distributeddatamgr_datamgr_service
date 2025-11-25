@@ -19,6 +19,7 @@
 #include <chrono>
 #include <cstdint>
 
+#include "device_manager/device_manager_types.h"
 #include "network/network_delegate.h"
 
 namespace OHOS::DistributedData {
