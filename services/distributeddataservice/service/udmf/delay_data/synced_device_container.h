@@ -35,7 +35,7 @@ private:
     SyncedDeviceContainer(const SyncedDeviceContainer &obj) = delete;
     SyncedDeviceContainer &operator=(const SyncedDeviceContainer &obj) = delete;
 
-    struct SyncedDeiviceInfo {
+    struct SyncedDeviceInfo {
         std::string deviceId;
         Time expiredTime = std::chrono::steady_clock::now() + std::chrono::hours(12);
 
@@ -46,7 +46,7 @@ private:
     };
 
     std::mutex pulledDeviceMutex_;
-    std::vector<SyncedDeiviceInfo> pulledDeviceInfo_ {};
+    std::vector<SyncedDeviceInfo> pulledDeviceInfo_ {};
 };
 } // namespace UDMF
 } // namespace OHOS

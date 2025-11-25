@@ -108,6 +108,65 @@ HWTEST_F(UdmfPreProcessUtilsTest, SetRemoteData002, TestSize.Level1)
 }
 
 /**
+* @tc.name: SetRemoteData003
+* @tc.desc: Normal test of SetRemoteData
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, SetRemoteData003, TestSize.Level1)
+{
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = "file://demo.com/a.png";
+    obj->value_[FILE_TYPE] = "abcdefg";
+    obj->value_[REMOTE_URI] = "abcdefg";
+    std::shared_ptr<Object> detailObj = std::make_shared<Object>();
+    detailObj->value_[TITLE] = "title";
+    obj->value_[DETAILS] = detailObj;
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data.AddRecord(record);
+    Runtime runtime;
+    runtime.deviceId = "remote";
+    data.SetRuntime(runtime);
+    PreProcessUtils::SetRemoteData(data);
+    auto remoteUriGet = std::get<std::string>(obj->value_[REMOTE_URI]);
+    EXPECT_EQ(remoteUriGet, "abcdefg");
+    auto detailGet = std::get<std::shared_ptr<Object>>(obj->value_[DETAILS]);
+    auto isRemote = std::get<std::string>(detailGet->value_["isRemote"]);
+    EXPECT_EQ(isRemote, "true");
+}
+
+/**
+* @tc.name: SetRemoteData004
+* @tc.desc: Normal test of SetRemoteData
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, SetRemoteData004, TestSize.Level1)
+{
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = "file://demo.com/a.png";
+    obj->value_[FILE_TYPE] = "abcdefg";
+    obj->value_[REMOTE_URI] = "abcdefg";
+    std::shared_ptr<Object> detailObj = std::make_shared<Object>();
+    detailObj->value_[TITLE] = "title";
+    obj->value_[DETAILS] = detailObj;
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data.AddRecord(record);
+    Runtime runtime;
+    runtime.deviceId = PreProcessUtils::GetLocalDeviceId();
+    data.SetRuntime(runtime);
+    PreProcessUtils::SetRemoteData(data);
+    auto remoteUriGet = std::get<std::string>(obj->value_[REMOTE_URI]);
+    EXPECT_TRUE(remoteUriGet.empty());
+    auto detailGet = std::get<std::shared_ptr<Object>>(obj->value_[DETAILS]);
+    EXPECT_TRUE(detailGet->value_.find("isRemote") == detailGet->value_.end());
+}
+
+/**
 * @tc.name: GetDfsUrisFromLocal001
 * @tc.desc: Abnormal test of GetDfsUrisFromLocal, uris is null
 * @tc.type: FUNC
