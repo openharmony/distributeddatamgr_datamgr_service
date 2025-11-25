@@ -43,11 +43,14 @@ HWTEST_F(RdbServiceStubTest, OnStopCloudSync001, TestSize.Level1)
     auto rdbServiceStub = std::make_shared<RdbServiceImpl>();
     MessageParcel data;
     MessageParcel reply;
-    auto ret = rdbServiceStub->OnStopCloudSync(data, reply);
+    data.WriteInterfaceToken(RdbServiceStub::GetDescriptor());
+    auto code = static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_STOP_CLOUD_SYNC);
+    auto ret = rdbServiceStub->OnRemoteRequest(code, data, reply);
     EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
+    data.WriteInterfaceToken(RdbServiceStub::GetDescriptor());
     RdbSyncerParam param;
     ITypesUtil::Marshal(data, param);
-    ret = rdbServiceStub->OnStopCloudSync(data, reply);
+    ret = rdbServiceStub->OnRemoteRequest(code, data, reply);
     EXPECT_EQ(ret, RDB_OK);
 }
 } // namespace DistributedRDBTest
