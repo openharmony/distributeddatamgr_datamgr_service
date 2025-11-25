@@ -434,13 +434,16 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, 
         auto &storeInfo = evt.GetStoreInfo();
         GenAsync async = evt.GetAsyncDetail();
         auto prepareTraceId = evt.GetPrepareTraceId();
+        auto isAutoSync = evt.AutoRetry();
         GenDetails details;
         auto &detail = details[SyncInfo::DEFAULT_ID];
         detail.progress = GenProgress::SYNC_FINISH;
+        auto exCallback = [this, async, &details, &storeInfo, &prepareTraceId](int32_t code, const std::string &msg) {
+            return DoExceptionalCallback(async, details, storeInfo, {0, "", prepareTraceId, SyncStage::END, code, msg});
+        };
         auto [hasMeta, meta] = GetMetaData(storeInfo);
         if (!hasMeta) {
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, GeneralError::E_ERROR, "no meta"});
+            return exCallback(GeneralError::E_ERROR, "no meta");
         }
         auto [code, store] = GetStore(meta, storeInfo.user);
         if (code == E_SCREEN_LOCKED) {
@@ -449,33 +452,32 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, 
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s, prepareTraceId:%{public}s", meta.GetStoreAlias().c_str(),
                 prepareTraceId.c_str());
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, GeneralError::E_ERROR, "store null"});
+            return exCallback(GeneralError::E_ERROR, "store null");
         }
         if (!meta.enableCloud) {
             ZLOGW("meta.enableCloud is false, storeId:%{public}s, prepareTraceId:%{public}s",
                 meta.GetStoreAlias().c_str(), prepareTraceId.c_str());
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, E_CLOUD_DISABLED, "disable cloud"});
+            return exCallback(GeneralError::E_ERROR, "disable cloud");
         }
-        if (!meta.autoSyncSwitch && (info.triggerMode_ == MODE_PUSH || info.triggerMode_ == MODE_SWITCHON ||
-            info.triggerMode_ == MODE_PROCESSSTART)) {
-            ZLOGW("triggerMode: %{public}d, bundleName: %{public}s, autoSyncSwitch: %{public}d",
-                info.triggerMode_, info.bundleName_.c_str(), meta.autoSyncSwitch);
-            store->OnSyncTrigger(storeInfo.storeName, info.triggerMode_);
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, E_OK, "syncTrigger"});
-            }
-        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
-              storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
-              meta.asyncDownloadAsset);
         if (!meta.autoSyncSwitch) {
             auto ret = SetCloudConflictHandler(store);
             if (ret != E_OK) {
-                return DoExceptionalCallback(async, details, storeInfo,
-                    { 0, "", prepareTraceId, SyncStage::END, GeneralError::E_ERROR, "SetCloudConflictHandler failed" });
+                return exCallback(GeneralError::E_ERROR, "SetCloudConflictHandler failed");
+            }
+            if ((info.triggerMode_ == MODE_PUSH) || (info.triggerMode_ == MODE_SWITCHON) ||
+                (info.triggerMode_ == MODE_PROCESSSTART)) {
+                ZLOGW("triggerMode: %{public}d, bundleName: %{public}s, autoSyncSwitch: %{public}d",
+                    info.triggerMode_, info.bundleName_.c_str(), meta.autoSyncSwitch);
+                store->OnSyncTrigger(storeInfo.storeName, info.triggerMode_);
+                return return exCallback(E_OK, "syncTrigger");
+            }
+            if (isAutoSync) {
+                return exCallback(E_OK, "syncTrigger isAutoSync");
             }
         }
+        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d],"
+            "mode:%{public}d", storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(),
+            prepareTraceId.c_str(), meta.asyncDownloadAsset, info.triggerMode_);
         StartCloudSync(evt, meta, store, retryer, details);
     };
 }

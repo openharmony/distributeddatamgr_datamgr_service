@@ -1166,6 +1166,8 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_SYNC_TASK_MERGED;
         case DBStatus::CLOUD_DISABLED:
             return GeneralError::E_CLOUD_DISABLED;
+        case DBStatus::TASK_INTERRUPTED:
+            return GeneralError::E_CLOUD_TASK_INTERRUPTED;
         default:
             ZLOGI("status:0x%{public}x", status);
             break;
