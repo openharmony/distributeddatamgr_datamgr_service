@@ -33,6 +33,7 @@ int32_t RdbNotifierProxy::OnComplete(uint32_t seqNum, Details &&result)
         return RDB_ERROR;
     }
     if (!ITypesUtil::Marshal(data, seqNum, result)) {
+        ZLOGE("seqNum:%{public}u, marshal failed", seqNum);
         return RDB_ERROR;
     }
 
@@ -76,6 +77,7 @@ int32_t RdbNotifierProxy::OnComplete(const std::string& storeName, Details&& res
         return RDB_ERROR;
     }
     if (!ITypesUtil::Marshal(data, storeName, result)) {
+        ZLOGE("storeName:%{public}s, marshal failed", DistributedData::Anonymous::Change(storeName).c_str());
         return RDB_ERROR;
     }
 
