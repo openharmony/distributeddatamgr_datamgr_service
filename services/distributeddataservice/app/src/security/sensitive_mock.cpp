@@ -27,7 +27,7 @@ using Anonymous = DistributedData::Anonymous;
 static constexpr uint32_t DATA_SEC_LEVEL1 = 1;
 static constexpr uint32_t MAX_UDID_LENGTH = 64;
 
-struct DEVSLQueryParams{
+struct DEVSLQueryParams {
     uint8_t udid[MAX_UDID_LENGTH];
     uint32_t udidLen;
 };

@@ -476,8 +476,6 @@ HWTEST_F(DeviceManagerAdapterTest, OnChanged, TestSize.Level0)
 HWTEST_F(DeviceManagerAdapterTest, OnReady, TestSize.Level0)
 {
     DeviceManagerAdapter DeviceManagerAdapterTest;
-    auto executors = std::make_shared<OHOS::ExecutorPool>(12, 5);
-    DeviceManagerAdapterTest.Init(executors);
     DeviceInfo info = {
         .uuid = "123",
         .udid = "123",

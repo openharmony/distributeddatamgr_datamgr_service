@@ -24,7 +24,7 @@ namespace OHOS::DistributedData {
 using Status = OHOS::DistributedKv::Status;
 
 enum SoftBusErrNo {
-  SOFTBUS_OK = 0,
+    SOFTBUS_OK = 0,
 };
 
 CommunicatorContext &CommunicatorContext::GetInstance()
