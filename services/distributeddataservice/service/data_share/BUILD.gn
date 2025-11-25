@@ -130,7 +130,6 @@ ohos_source_set("data_share_service") {
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_common_lite",
-    "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",

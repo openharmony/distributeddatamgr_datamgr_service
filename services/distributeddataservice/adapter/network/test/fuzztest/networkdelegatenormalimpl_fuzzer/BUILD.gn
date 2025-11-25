@@ -50,7 +50,6 @@ ohos_fuzztest("NetworkDelegateNormalImplFuzzTest") {
 
   external_deps = [
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:datamgr_common",

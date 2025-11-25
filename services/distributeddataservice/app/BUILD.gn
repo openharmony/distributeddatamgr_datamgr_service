@@ -103,8 +103,6 @@ ohos_shared_library("distributeddataservice") {
     "src/kvstore_device_listener.cpp",
     "src/kvstore_meta_manager.cpp",
     "src/kvstore_screen_observer.cpp",
-    "src/security/security.cpp",
-    "src/security/sensitive.cpp",
     "src/session_manager/route_head_handler_impl.cpp",
     "src/session_manager/session_manager.cpp",
     "src/session_manager/upgrade_manager.cpp",
@@ -133,8 +131,6 @@ ohos_shared_library("distributeddataservice") {
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -157,6 +153,21 @@ ohos_shared_library("distributeddataservice") {
       "power_manager:powermgr_client",
     ]
     defines = [ "SUPPORT_POWER" ]
+  }
+
+  if (dataclassification_part_is_enabled && datamgr_service_distribured_capability) {
+    sources += [
+      "src/security/security.cpp",
+      "src/security/sensitive.cpp",
+    ]
+    external_deps += [
+      "dataclassification:data_transit_mgr",
+    ]
+  } else {
+    sources += [
+      "src/security/security_mock.cpp",
+      "src/security/sensitive_mock.cpp",
+    ]
   }
 
   subsystem_name = "distributeddatamgr"

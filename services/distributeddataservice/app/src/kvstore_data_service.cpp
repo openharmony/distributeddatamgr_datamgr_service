@@ -58,6 +58,7 @@
 #include "process_communicator_impl.h"
 #include "route_head_handler_impl.h"
 #include "runtime_config.h"
+#include "securec.h"
 #include "store/auto_cache.h"
 #include "string_ex.h"
 #include "system_ability_definition.h"
@@ -999,8 +1000,6 @@ void KvStoreDataService::NotifyAccountEvent(const AccountEventInfo &eventInfo)
 
 void KvStoreDataService::InitSecurityAdapter(std::shared_ptr<ExecutorPool> executors)
 {
-    auto ret = DATASL_OnStart();
-    ZLOGI("datasl on start ret:%d", ret);
     security_ = std::make_shared<Security>(executors);
     if (security_ == nullptr) {
         ZLOGE("security is nullptr.");

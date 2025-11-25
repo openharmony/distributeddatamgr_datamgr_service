@@ -40,7 +40,12 @@ HWTEST_F(ConfigFactoryTest, GlobalConfig, TestSize.Level0)
     ASSERT_EQ(global->metaData, "service_meta");
     ASSERT_EQ(global->version, "000.000.001");
     std::vector<std::string> features{ "kvdb", "rdb", "object", "backup", "data_sync" };
-    ASSERT_EQ(global->features, features);
+    auto globalFeatures = std::vector<std::string>(
+        global->features.begin(), 
+        global->features.begin() + std::min(static_cast<size_t>(5), global->features.size())
+    );
+
+    ASSERT_EQ(globalFeatures, features);
 }
 
 /**

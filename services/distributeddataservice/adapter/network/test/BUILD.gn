@@ -38,7 +38,6 @@ ohos_unittest("NetworkDelegateTest") {
 
   external_deps = [
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "kv_store:datamgr_common",
@@ -74,7 +73,6 @@ ohos_unittest("NetworkDelegateNormalImplTest") {
 
   external_deps = [
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",

@@ -19,13 +19,11 @@
 #include <chrono>
 #include <cstdint>
 
-#include "dm_device_info.h"
 #include "network/network_delegate.h"
 
 namespace OHOS::DistributedData {
 class NetworkDelegateNormalImpl : public NetworkDelegate {
 public:
-    using DmDeviceInfo = OHOS::DistributedHardware::DmDeviceInfo;
     static bool Init();
     bool IsNetworkAvailable() override;
     NetworkType GetNetworkType(bool retrieve = false) override;
@@ -35,7 +33,7 @@ public:
 private:
     NetworkDelegateNormalImpl();
     ~NetworkDelegateNormalImpl();
-    const DmDeviceInfo cloudDmInfo_;
+    const DeviceInfo cloudDmInfo_;
     NetworkType SetNet(NetworkType netWorkType);
     NetworkType RefreshNet();
     static inline uint64_t GetTimeStamp()

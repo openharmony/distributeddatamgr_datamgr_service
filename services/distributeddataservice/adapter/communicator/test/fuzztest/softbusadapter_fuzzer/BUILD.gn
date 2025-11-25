@@ -65,6 +65,9 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
 group("fuzztest") {
   testonly = true
 
-  deps = [ ":SoftBusAdapterFuzzTest" ]
+  deps = []
+  if (dm_part_is_enabled && datamgr_service_distribured_capability) {
+    deps += [ ":SoftBusAdapterFuzzTest" ]
+  }
 }
 ###############################################################################

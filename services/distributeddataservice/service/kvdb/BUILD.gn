@@ -74,7 +74,6 @@ ohos_source_set("distributeddata_kvdb") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",

@@ -19,7 +19,6 @@
 #include <string>
 #include "visibility.h"
 #include "iprocess_system_api_adapter.h"
-#include "dev_slinfo_mgr.h"
 
 namespace OHOS {
 namespace DistributedKv {
@@ -38,7 +37,6 @@ public:
 
 private:
     uint32_t GetSensitiveLevel(const std::string &udid);
-    bool InitDEVSLQueryParams(DEVSLQueryParams *params, const std::string &udid);
     std::string deviceId {};
     uint32_t securityLevel = 0;
 };

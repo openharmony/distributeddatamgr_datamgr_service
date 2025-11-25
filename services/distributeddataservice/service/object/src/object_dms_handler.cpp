@@ -23,7 +23,6 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
-constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 void DmsEventListener::DSchedEventNotify(DistributedSchedule::EventNotify &notify)
 {
     ObjectDmsHandler::GetInstance().ReceiveDmsEvent(notify);
@@ -47,8 +46,7 @@ bool ObjectDmsHandler::IsContinue(const std::string &bundleName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto validityTime = std::chrono::steady_clock::now() - std::chrono::seconds(VALIDITY);
-    DistributedHardware::DmDeviceInfo localDeviceInfo;
-    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, localDeviceInfo);
+    DistributedData::DeviceInfo localDeviceInfo = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
     for (auto it = dmsEvents_.rbegin(); it != dmsEvents_.rend(); ++it) {
         if (it->second < validityTime) {
             continue;
@@ -76,8 +74,7 @@ std::string ObjectDmsHandler::GetDstBundleName(const std::string &srcBundleName,
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto validityTime = std::chrono::steady_clock::now() - std::chrono::seconds(VALIDITY);
-    DistributedHardware::DmDeviceInfo localDeviceInfo;
-    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, localDeviceInfo);
+    DistributedData::DeviceInfo localDeviceInfo = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
     for (auto it = dmsEvents_.rbegin(); it != dmsEvents_.rend(); ++it) {
         if (it->second < validityTime) {
             continue;

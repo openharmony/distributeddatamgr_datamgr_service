@@ -44,7 +44,6 @@ ohos_source_set("distributeddata_dfx") {
   ]
   external_deps = [
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "kv_store:datamgr_common",

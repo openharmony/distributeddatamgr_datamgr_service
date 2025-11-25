@@ -113,7 +113,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gtest_main",
     "hicollie:libhicollie",
@@ -196,7 +195,6 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gtest_main",
     "googletest:gmock",
@@ -272,7 +270,6 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gmock",
     "googletest:gtest_main",
@@ -332,9 +329,7 @@ ohos_unittest("SessionManagerTest") {
     "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gmock",
     "googletest:gtest_main",
@@ -406,7 +401,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gtest_main",
     "hicollie:libhicollie",
@@ -472,9 +466,7 @@ ohos_unittest("FeatureStubImplTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -595,9 +587,7 @@ ohos_unittest("RouteHeadHandlerImplTest") {
     "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gmock",
     "googletest:gtest_main",
@@ -711,7 +701,6 @@ ohos_unittest("DDMSDumpTest") {
     "common_event_service:cesfwk_innerkits",
     "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "googletest:gmock",
     "googletest:gtest_main",
@@ -743,13 +732,18 @@ group("unittest") {
   deps += [
     ":BundleCheckerTest",
     ":FeatureStubImplTest",
-    ":KvStoreDataServiceClearTest",
-    ":KvStoreDataServiceTest",
-    ":KvStoreDataServiceMockTest",
-    ":DDMSDumpTest",
-    ":KvStoreMetaManagerUpdateKeyTest",
     ":SessionManagerTest",
     ":UpgradeManagerTest",
     ":RouteHeadHandlerImplTest",
   ]
+
+  if (dataclassification_part_is_enabled && datamgr_service_distribured_capability) {
+    deps += [
+      ":KvStoreDataServiceMockTest",
+      ":KvStoreDataServiceTest",
+      ":DDMSDumpTest",
+      ":KvStoreMetaManagerUpdateKeyTest",
+      ":KvStoreDataServiceClearTest",
+    ]
+  }
 }

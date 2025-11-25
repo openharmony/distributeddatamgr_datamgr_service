@@ -54,6 +54,18 @@ declare_args() {
     os_account_part_is_enabled = false
   }
 
+  if (!defined(global_parts_info) || defined(global_parts_info.distributedhardware_device_manager)) {
+    dm_part_is_enabled = true
+  } else {
+    dm_part_is_enabled = false
+  }
+ 
+  if (!defined(global_parts_info) || defined(global_parts_info.security_dataclassification)) {
+    dataclassification_part_is_enabled = true
+  } else {
+    dataclassification_part_is_enabled = false
+  }
+
   datamgr_service_config = true
 
   datamgr_service_udmf = false
@@ -67,4 +79,6 @@ declare_args() {
   datamgr_service_object = true
 
   datamgr_service_data_share = true
+
+  datamgr_service_distribured_capability = true
 }

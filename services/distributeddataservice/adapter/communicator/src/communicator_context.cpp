@@ -18,11 +18,14 @@
 #include "communicator_context.h"
 
 #include "log_print.h"
-#include "softbus_error_code.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedData {
 using Status = OHOS::DistributedKv::Status;
+
+enum SoftBusErrNo {
+  SOFTBUS_OK = 0,
+};
 
 CommunicatorContext &CommunicatorContext::GetInstance()
 {

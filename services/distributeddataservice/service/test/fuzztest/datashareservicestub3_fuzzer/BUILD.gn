@@ -125,7 +125,6 @@ ohos_fuzztest("DataShareServiceStub3FuzzTest") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",

@@ -176,6 +176,8 @@ bool Security::IsExist(const std::string &file) const
 
 void Security::InitLocalSecurity()
 {
+    auto ret = DATASL_OnStart();
+    ZLOGI("datasl on start ret:%d", ret);
     auto devInfo = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
     GetSensitiveByUuid(devInfo.uuid);
 }

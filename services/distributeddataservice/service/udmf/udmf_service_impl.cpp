@@ -52,7 +52,6 @@
 namespace OHOS {
 namespace UDMF {
 using namespace Security::AccessToken;
-using namespace OHOS::DistributedHardware;
 using namespace OHOS::DistributedData;
 using FeatureSystem = DistributedData::FeatureSystem;
 using UdmfBehaviourMsg = OHOS::DistributedDataDfx::UdmfBehaviourMsg;
@@ -1055,8 +1054,9 @@ void UdmfServiceImpl::TransferToEntriesIfNeed(const QueryOption &query, UnifiedD
 bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
 {
     auto deviceInfo = DmAdapter::GetInstance().GetLocalDevice();
-    if (deviceInfo.deviceType != DEVICE_TYPE_PC && deviceInfo.deviceType != DEVICE_TYPE_PAD
-        && deviceInfo.deviceType != DEVICE_TYPE_2IN1) {
+    if (deviceInfo.deviceType != DistributedData::DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PC &&
+        deviceInfo.deviceType != DistributedData::DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PAD &&
+        deviceInfo.deviceType != DistributedData::DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_2IN1) {
         return false;
     }
     auto bundleManager = PreProcessUtils::GetBundleMgr();
