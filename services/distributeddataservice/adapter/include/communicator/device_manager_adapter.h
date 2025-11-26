@@ -101,7 +101,7 @@ private:
     void InitDeviceInfo(bool onlyCache = true);
     DeviceInfo GetLocalDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
-    void Online(const DeviceInfo &info);
+    void Online(const DeviceInfo &dvInfo);
     void OnChanged(const DeviceInfo &dvInfo);
     std::vector<const AppDeviceChangeListener *> GetObservers();
     void ResetLocalDeviceInfo();

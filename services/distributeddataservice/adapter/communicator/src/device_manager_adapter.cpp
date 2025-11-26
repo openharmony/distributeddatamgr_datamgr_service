@@ -63,17 +63,14 @@ std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
     }
     if (uuid == DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         DeviceInfo cloudDeviceInfo;
-        cloudDeviceInfo.uuid = uuid;
-        cloudDeviceInfo.udid = udid;
-        cloudDeviceInfo.networkId = networkId;
+        cloudDeviceInfo.uuid = std::move(uuid);
+        cloudDeviceInfo.udid = std::move(udid);
+        cloudDeviceInfo.networkId = std::move(networkId);
         cloudDeviceInfo.deviceName = std::string(dmInfo.deviceName);
         cloudDeviceInfo.deviceType = dmInfo.deviceTypeId;
         cloudDeviceInfo.osType = DeviceExtraInfo::OH_OS_TYPE;
         cloudDeviceInfo.authForm = static_cast<int32_t>(dmInfo.authForm);
-
-        result.first = true;
-        result.second = cloudDeviceInfo;
-        return result;
+        return {true, cloudDeviceInfo};
     }
     DeviceExtraInfo deviceExtraInfo;
     if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
@@ -81,16 +78,14 @@ std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
         return result;
     }
     DeviceInfo deviceInfo;
-    deviceInfo.uuid = uuid;
-    deviceInfo.udid = udid;
-    deviceInfo.networkId = networkId;
+    deviceInfo.uuid = std::move(uuid);
+    deviceInfo.udid = std::move(udid);
+    deviceInfo.networkId = std::move(networkId);
     deviceInfo.deviceName = std::string(dmInfo.deviceName);
     deviceInfo.deviceType = dmInfo.deviceTypeId;
     deviceInfo.osType = deviceExtraInfo.OS_TYPE;
     deviceInfo.authForm = static_cast<int32_t>(dmInfo.authForm);
-    result.first = true;
-    result.second = deviceInfo;
-    return result;
+    return {true, deviceInfo};
 }
 
 class DataMgrDmStateCall final : public DistributedHardware::DeviceStateCallback {
@@ -107,42 +102,42 @@ private:
 
 void DataMgrDmStateCall::OnDeviceOnline(const DmDeviceInfo &info)
 {
-    auto result = ::OHOS::DistributedData::GetDeviceInfo(info);
-    if (!result.first) {
+    auto [success, devInfo] = ::OHOS::DistributedData::GetDeviceInfo(info);
+    if (!success) {
         ZLOGE("get device info fail");
         return;
     }
-    dmAdapter_.Online(result.second);
+    dmAdapter_.Online(devInfo);
 }
 
 void DataMgrDmStateCall::OnDeviceOffline(const DmDeviceInfo &info)
 {
-    auto result = ::OHOS::DistributedData::GetDeviceInfo(info);
-    if (!result.first) {
+    auto [success, devInfo] = ::OHOS::DistributedData::GetDeviceInfo(info);
+    if (!success) {
         ZLOGE("get device info fail");
         return;
     }
-    dmAdapter_.Offline(result.second);
+    dmAdapter_.Offline(devInfo);
 }
 
 void DataMgrDmStateCall::OnDeviceChanged(const DmDeviceInfo &info)
 {
-    auto result = ::OHOS::DistributedData::GetDeviceInfo(info);
-    if (!result.first) {
+    auto [success, devInfo] = ::OHOS::DistributedData::GetDeviceInfo(info);
+    if (!success) {
         ZLOGE("get device info fail");
         return;
     }
-    dmAdapter_.OnChanged(result.second);
+    dmAdapter_.OnChanged(devInfo);
 }
 
 void DataMgrDmStateCall::OnDeviceReady(const DmDeviceInfo &info)
 {
-    auto result = ::OHOS::DistributedData::GetDeviceInfo(info);
-    if (!result.first) {
+    auto [success, devInfo] = ::OHOS::DistributedData::GetDeviceInfo(info);
+    if (!success) {
         ZLOGE("get device info fail");
         return;
     }
-    dmAdapter_.OnReady(result.second);
+    dmAdapter_.OnReady(devInfo);
 }
 
 class DataMgrDmInitCall final : public DistributedHardware::DmInitCallback {
@@ -233,9 +228,8 @@ Status DeviceManagerAdapter::StopWatchDeviceChange(const AppDeviceChangeListener
     return Status::SUCCESS;
 }
 
-void DeviceManagerAdapter::Online(const DeviceInfo &info)
+void DeviceManagerAdapter::Online(const DeviceInfo &dvInfo)
 {
-    DeviceInfo dvInfo;
     ZLOGI("[online] uuid:%{public}s, name:%{public}s, type:%{public}d, authForm:%{public}d, osType:%{public}d",
         KvStoreUtils::ToBeAnonymous(dvInfo.uuid).c_str(), KvStoreUtils::ToBeAnonymous(dvInfo.deviceName).c_str(),
         dvInfo.deviceType, static_cast<int32_t>(dvInfo.authForm), dvInfo.osType);

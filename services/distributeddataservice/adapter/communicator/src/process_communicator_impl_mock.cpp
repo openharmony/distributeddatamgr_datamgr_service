@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "processCommunication"
+#define LOG_TAG "ProcessCommunicatorImplMock"
 
 #include "communicator_context.h"
 #include "device_manager_adapter.h"
