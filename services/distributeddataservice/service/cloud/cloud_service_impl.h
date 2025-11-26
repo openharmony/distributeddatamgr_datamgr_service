@@ -85,7 +85,8 @@ private:
     class CloudStatic : public StaticActs {
     public:
         ~CloudStatic() override{};
-        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index) override;
+        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
+            int32_t tokenId = -1) override;
         int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
     private:
@@ -135,7 +136,7 @@ private:
 
     struct SyncAgent {
         SyncAgent() = default;
-        sptr<CloudNotifierProxy> notifier_;
+        sptr<CloudNotifierProxyBroker> notifier_;
     };
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);

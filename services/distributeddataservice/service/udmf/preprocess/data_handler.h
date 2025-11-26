@@ -27,12 +27,13 @@ public:
     static Status MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries);
     static Status UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries,
         UnifiedData &unifiedData);
+    static Status UnmarshalRuntimes(const std::vector<std::string> &keySet,
+        const std::vector<Entry> &entries, std::vector<Runtime> &runtimes);
+    
     template <typename T>
     static Status MarshalToEntries(const T &data, Value &value, TAG tag);
     template <typename T>
     static Status UnmarshalEntries(const Value &value, T &data, TAG tag);
-    static Status MarshalDataLoadEntries(const DataLoadInfo &info, std::vector<Entry> &entries);
-    static Status UnmarshalDataLoadEntries(const Entry &entry, DataLoadInfo &info);
 
 private:
     static Status BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord>> &records,

@@ -478,7 +478,7 @@ void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bun
         return;
     }
     std::string objectKey = bundleName + sessionId;
-    sptr<ObjectProgressCallbackProxy> observer;
+    sptr<ObjectProgressCallbackProxyBroker> observer;
     processCallbacks_.Compute(
         tokenId, ([pid, &proxy, &objectKey, &observer](const uint32_t key, ProgressCallbackInfo &value) {
             if (value.pid != pid) {
@@ -706,7 +706,7 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, ObjectRecord>& d
 void ObjectStoreManager::NotifyAssetsRecvProgress(const std::string &objectKey, int32_t progress)
 {
     assetsRecvProgress_.InsertOrAssign(objectKey, progress);
-    std::list<sptr<ObjectProgressCallbackProxy>> observers;
+    std::list<sptr<ObjectProgressCallbackProxyBroker>> observers;
     bool flag = false;
     processCallbacks_.ForEach(
         [&objectKey, &observers, &flag](uint32_t tokenId, const ProgressCallbackInfo &value) {

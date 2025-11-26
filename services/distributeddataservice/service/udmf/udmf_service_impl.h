@@ -56,12 +56,10 @@ public:
     int32_t PushDelayData(const std::string &key, UnifiedData &unifiedData) override;
     int32_t GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
         sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData) override;
-    int32_t SaveAcceptableInfo(const std::string &key, DataLoadInfo &info) override;
-    int32_t PushAcceptableInfo(
-        const QueryOption &query, const std::vector<std::string> &devices) override;
     int32_t HandleRemoteDelayData(const std::string &key);
     static std::shared_ptr<UdmfServiceImpl> GetService();
 private:
+    using StaticActs = DistributedData::StaticActs;
     bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
     int32_t StoreSync(const UnifiedKey &key, const QueryOption &query, const std::vector<std::string> &devices);
     int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
@@ -98,15 +96,18 @@ private:
     DistributedData::StoreMetaData BuildMeta(const std::string &storeId, int userId);
     int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
     bool VerifySavedTokenId(std::shared_ptr<Runtime> runtime);
-    int32_t RegisterObserver(const std::string &key);
-    int32_t RegisterAllDataChangedObserver();
-    int32_t UnRegisterObserver(const std::string &key);
-    bool IsSyncFinished(const std::string &key);
+    int32_t RegisterRemotePullObserver(const std::string &key);
     int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);
     int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
     int32_t FillDelayUnifiedData(const UnifiedKey &key, UnifiedData &unifiedData);
-    std::vector<std::string> GetDevicesForDelayData(const std::string &key);
+    std::vector<std::string> GetDevicesForDelayData();
 
+    class UdmfStatic : public StaticActs {
+    public:
+        ~UdmfStatic() override{};
+        int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
+            int32_t tokenId) override;
+    };
     class Factory {
     public:
         Factory();
@@ -115,12 +116,12 @@ private:
 
     private:
         std::shared_ptr<UdmfServiceImpl> product_;
+        std::shared_ptr<UdmfStatic> staticActs_;
     };
     static Factory factory_;
     mutable std::recursive_mutex cacheMutex_;
     std::map<std::string, std::vector<Privilege>> privilegeCache_ {};
     std::shared_ptr<ExecutorPool> executors_;
-
     std::mutex mutex_;
     std::unordered_map<std::string, AsyncProcessInfo> asyncProcessInfoMap_ {};
 };

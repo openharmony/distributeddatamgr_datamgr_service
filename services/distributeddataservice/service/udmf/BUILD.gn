@@ -25,7 +25,6 @@ config("module_public_config") {
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
-    "${data_service_path}/service/udmf/utd",
     "${data_service_path}/service/udmf",
     "${data_service_path}/service/bootstrap/include",
   ]
@@ -44,7 +43,7 @@ ohos_source_set("udmf_server") {
     "delay_data/delay_data_acquire_container.cpp",
     "delay_data/delay_data_prepare_container.cpp",
     "delay_data/synced_device_container.cpp",
-    "lifecycle/clean_on_timeout.cpp",
+    "lifecycle/drag_lifecycle_policy.cpp",
     "lifecycle/lifecycle_manager.cpp",
     "lifecycle/lifecycle_policy.cpp",
     "permission/checker_manager.cpp",
@@ -53,9 +52,10 @@ ohos_source_set("udmf_server") {
     "preprocess/data_handler.cpp",
     "preprocess/preprocess_utils.cpp",
     "preprocess/udmf_notifier_proxy.cpp",
+    "store/drag_observer.cpp",
+    "store/observer_factory.cpp",
     "store/runtime_store.cpp",
     "store/store_cache.cpp",
-    "store/store_data_changed_observer.cpp",
     "udmf_service_impl.cpp",
     "udmf_service_stub.cpp",
   ]
@@ -70,7 +70,7 @@ ohos_source_set("udmf_server") {
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/permission:distributeddata_permit"
+    "${data_service_path}/service/permission:distributeddata_permit",
   ]
 
   external_deps = [

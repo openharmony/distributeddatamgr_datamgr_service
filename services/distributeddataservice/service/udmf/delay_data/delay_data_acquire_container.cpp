@@ -41,7 +41,7 @@ void DelayDataAcquireContainer::RegisterDelayDataCallback(const std::string &key
 
 bool DelayDataAcquireContainer::HandleDelayDataCallback(const std::string &key, const UnifiedData &unifiedData)
 {
-    sptr<DelayDataCallbackProxy> callback = nullptr;
+    sptr<IDelayDataCallback> callback = nullptr;
     {
         std::lock_guard<std::mutex> lock(delayDataMutex_);
         auto it = delayDataCallback_.find(key);
@@ -49,7 +49,7 @@ bool DelayDataAcquireContainer::HandleDelayDataCallback(const std::string &key, 
             ZLOGE("Can not find delay data callback, key:%{public}s", key.c_str());
             return false;
         }
-        callback = iface_cast<DelayDataCallbackProxy>(it->second.dataCallback);
+        callback = iface_cast<IDelayDataCallback>(it->second.dataCallback);
         delayDataCallback_.erase(key);
     }
     if (callback == nullptr) {
@@ -83,5 +83,12 @@ std::vector<std::string> DelayDataAcquireContainer::QueryAllDelayKeys()
     }
     return keys;
 }
+
+bool DelayDataAcquireContainer::IsContainDelayData(const std::string &key)
+{
+    std::lock_guard<std::mutex> lock(delayDataMutex_);
+    return delayDataCallback_.find(key) != delayDataCallback_.end();
+}
+
 } // namespace UDMF
 } // namespace OHOS

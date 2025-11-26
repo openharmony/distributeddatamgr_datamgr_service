@@ -1,0 +1,70 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+config("module_public_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/service/utd",
+    "${data_service_path}/service/bootstrap/include",
+  ]
+}
+
+ohos_source_set("utd_server") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  sources = [
+    "utd_notifier_proxy.cpp",
+    "utd_service_impl.cpp",
+    "utd_service_stub.cpp",
+  ]
+
+  configs = [ ":module_public_config" ]
+
+  cflags = [
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Werror",
+    "-Oz",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/permission:distributeddata_permit"
+  ]
+
+  external_deps = [
+    "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:datamgr_common",
+    "udmf:utd_client",
+  ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
+  subsystem_name = "distributeddatamgr"
+
+  part_name = "datamgr_service"
+}

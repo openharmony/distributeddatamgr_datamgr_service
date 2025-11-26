@@ -244,8 +244,9 @@ HWTEST_F(AutoCacheTest, GetArea, TestSize.Level2)
 */
 HWTEST_F(AutoCacheTest, GetDBStore, TestSize.Level2)
 {
-    auto creator = [](const StoreMetaData &metaData) -> GeneralStore* {
-        return new (std::nothrow) GeneralStoreMock();
+    auto creator = [](const StoreMetaData &metaData,
+                       const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+        return { GeneralError::E_OK, new (std::nothrow) GeneralStoreMock() };
     };
     AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
     AutoCache::Watchers watchers;

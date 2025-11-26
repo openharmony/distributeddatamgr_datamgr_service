@@ -100,7 +100,10 @@ ohos_shared_library("distributeddatasvc") {
   }
 
   if (datamgr_service_udmf) {
-    deps += [ "${data_service_path}/service/udmf:udmf_server" ]
+    deps += [
+      "${data_service_path}/service/udmf:udmf_server",
+      "${data_service_path}/service/utd:utd_server",
+    ]
   }
 
   if (datamgr_service_rdb) {

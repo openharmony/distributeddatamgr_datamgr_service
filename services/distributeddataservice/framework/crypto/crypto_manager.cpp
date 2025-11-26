@@ -415,4 +415,16 @@ bool CryptoManager::DeleteKey(const std::vector<uint8_t> &keyAlias)
     }
     return true;
 }
+
+std::vector<uint8_t> CryptoManager::Random(uint32_t length)
+{
+    std::vector<uint8_t> value(length, 0);
+    struct HksBlob blobValue = { .size = length, .data = value.data() };
+    auto ret = HksGenerateRandom(nullptr, &blobValue);
+    if (ret != HKS_SUCCESS || value.empty()) {
+        ZLOGE("HksGenerateRandom failed, status: %{public}d", ret);
+        return {};
+    }
+    return value;
+}
 } // namespace OHOS::DistributedData

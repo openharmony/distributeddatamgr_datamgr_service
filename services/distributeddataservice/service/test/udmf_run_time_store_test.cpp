@@ -21,8 +21,10 @@
 #include "bootstrap.h"
 #include "device_manager_adapter.h"
 #include "directory/directory_manager.h"
+#include "drag_lifecycle_policy.h"
 #include "executor_pool.h"
 #include "kvstore_meta_manager.h"
+#include "lifecycle_manager.h"
 #include "nativetoken_kit.h"
 #include "preprocess_utils.h"
 #include "runtime_store.h"
@@ -766,29 +768,33 @@ HWTEST_F(UdmfRunTimeStoreTest, RegisterDataChangedObserver001, TestSize.Level1)
 {
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     store->Init();
-    store->observers_.clear();
-    std::string key1 = "";
-    auto ret = store->RegisterDataChangedObserver(key1, 0);
-    EXPECT_EQ(ret, E_INVALID_PARAMETERS);
-    key1 = "udmf://drag/com.example.app/1233455";
-    ret = store->RegisterDataChangedObserver(key1, 0);
-    EXPECT_EQ(ret, E_OK);
-    EXPECT_TRUE(store->observers_.size() == 1);
-    ret = store->RegisterDataChangedObserver(key1, 3);
+    auto ret = store->RegisterDataChangedObserver("dataHub");
     EXPECT_EQ(ret, E_ERROR);
-    std::string key2 = "udmf://drag/com.example.app/555555";
-    ret = store->RegisterDataChangedObserver(key2, 1);
+    ret = store->RegisterDataChangedObserver("drag");
     EXPECT_EQ(ret, E_OK);
-    EXPECT_TRUE(store->observers_.size() == 2);
+    EXPECT_EQ(1, store->observers_.size());
+}
 
-    auto result = store->UnRegisterDataChangedObserver(key1);
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(store->observers_.size() == 1);
-
-    result = store->UnRegisterAllObserver();
-    EXPECT_TRUE(store->observers_.empty());
-    result = store->UnRegisterDataChangedObserver("invalid key");
-    EXPECT_FALSE(result);
+/**
+* @tc.name: UnRegisterAllObserver001
+* @tc.desc: Normal testcase of UnRegisterAllObserver
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, UnRegisterAllObserver001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    store->Init();
+    EXPECT_EQ(0, store->observers_.size());
+    store->UnRegisterAllObserver();
+    EXPECT_EQ(0, store->observers_.size());
+    auto ret = store->RegisterDataChangedObserver("dataHub");
+    EXPECT_EQ(ret, E_ERROR);
+    ret = store->RegisterDataChangedObserver("drag");
+    EXPECT_EQ(ret, E_OK);
+    EXPECT_EQ(1, store->observers_.size());
+    store->UnRegisterAllObserver();
+    EXPECT_EQ(0, store->observers_.size());
 }
 
 /**
@@ -832,23 +838,6 @@ HWTEST_F(UdmfRunTimeStoreTest, PutDelayData002, TestSize.Level1)
 }
 
 /**
-* @tc.name: PutDataLoadInfo001
-* @tc.desc: Normal testcase of PutDataLoadInfo
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfRunTimeStoreTest, PutDataLoadInfo001, TestSize.Level1)
-{
-    auto store = std::make_shared<RuntimeStore>(STORE_ID);
-    store->Init();
-    DataLoadInfo info;
-    info.sequenceKey = "111";
-    info.recordCount = 10;
-    auto ret = store->PutDataLoadInfo(info);
-    EXPECT_EQ(ret, E_OK);
-}
-
-/**
 * @tc.name: PushSync001
 * @tc.desc: Normal testcase of PushSync
 * @tc.type: FUNC
@@ -865,5 +854,183 @@ HWTEST_F(UdmfRunTimeStoreTest, PushSync001, TestSize.Level1)
     ret = store->PushSync(devices);
     EXPECT_EQ(ret, E_DB_ERROR);
 }
+
+/**
+* @tc.name: GetBatchRuntime001
+* @tc.desc: Normal testcase of GetBatchRuntime
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetBatchRuntime001, TestSize.Level1)
+{
+    UnifiedKey udKey(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    Runtime runtime{
+        .key = udKey
+    };
+    auto record = std::make_shared<UnifiedRecord>();
+    record->AddEntry("type1", "value1");
+    record->AddEntry("type2", "value2");
+    auto properties = std::make_shared<UnifiedDataProperties>();
+    UnifiedData inputData(properties);
+    inputData.SetRuntime(runtime);
+    inputData.SetRecords({record});
+    auto key = inputData.GetRuntime()->key.GetUnifiedKey();
+
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    auto status = store->Put(inputData);
+    EXPECT_EQ(status, E_OK);
+
+    std::vector<Runtime> outRuntimes;
+    status = store->GetBatchRuntime(key, outRuntimes);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(1, outRuntimes.size());
+    EXPECT_EQ(inputData.GetRuntime()->createTime, outRuntimes[0].createTime);
+}
+
+/**
+* @tc.name: GetBatchRuntime002
+* @tc.desc: Empty testcase of GetBatchRuntime
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetBatchRuntime002, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    std::vector<Runtime> outRuntimes;
+    auto status = store->GetBatchRuntime("udmf://drag/demo1/test", outRuntimes);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(0, outRuntimes.size());
+}
+
+/**
+* @tc.name: OnTimeout001
+* @tc.desc: Normal test of OnTimeout, intention is DataHub
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, OnTimeout001, TestSize.Level1)
+{
+    UnifiedKey udKey1("DataHub", "com.test", "111");
+    udKey1.GetUnifiedKey();
+    Runtime yesterdayRunTime {
+        .key = udKey1,
+        .createTime = (std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()) -
+                      std::chrono::hours(25)).time_since_epoch().count()
+    };
+    auto record = std::make_shared<UnifiedRecord>(UDType::PLAIN_TEXT, "value1");
+    UnifiedData inputData;
+    inputData.SetRuntime(yesterdayRunTime);
+    inputData.SetRecords({record});
+
+    auto store = std::make_shared<RuntimeStore>("DataHub");
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    auto status = store->Put(inputData);
+    EXPECT_EQ(status, E_OK);
+
+    UnifiedKey udKey2("DataHub", "com.test", "222");
+    Runtime tomorrowRuntime {
+        .key = udKey2,
+        .createTime = (std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()) +
+                      std::chrono::hours(25)).time_since_epoch().count()
+    };
+    inputData.SetRuntime(tomorrowRuntime);
+    status = store->Put(inputData);
+    EXPECT_EQ(status, E_OK);
+    LifeCyclePolicy policy;
+    policy.OnTimeout("DataHub");
+    std::vector<Entry> entries;
+    status = store->GetEntries("udmf://", entries);
+    EXPECT_EQ(E_OK, status);
+    EXPECT_EQ(0, entries.size());
+}
+
+/**
+* @tc.name: OnTimeout002
+* @tc.desc: Normal test of OnTimeout, intention is drag
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, OnTimeout002, TestSize.Level1)
+{
+    UnifiedKey udKey1("drag", "com.test", PreProcessUtils::GenerateId());
+    udKey1.GetUnifiedKey();
+    Runtime yesterdayRunTime {
+        .key = udKey1,
+        .createTime = (std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()) -
+                      std::chrono::hours(25)).time_since_epoch().count(),
+        .tokenId = 123
+    };
+    auto record = std::make_shared<UnifiedRecord>(UDType::PLAIN_TEXT, "value1");
+    UnifiedData inputData;
+    inputData.SetRuntime(yesterdayRunTime);
+    inputData.SetRecords({record});
+
+    LifeCycleManager::GetInstance().InsertUdKey(123, udKey1.GetUnifiedKey());
+    auto store = std::make_shared<RuntimeStore>("drag");
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    auto status = store->Put(inputData);
+    EXPECT_EQ(status, E_OK);
+
+    UnifiedKey udKey2("drag", "com.test", PreProcessUtils::GenerateId());
+    udKey2.GetUnifiedKey();
+    Runtime tomorrowRuntime {
+        .key = udKey2,
+        .createTime = (std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()) +
+                      std::chrono::hours(25)).time_since_epoch().count(),
+        .tokenId = 123
+    };
+    inputData.SetRuntime(tomorrowRuntime);
+    status = store->Put(inputData);
+    EXPECT_EQ(status, E_OK);
+    LifeCycleManager::GetInstance().InsertUdKey(123, udKey2.GetUnifiedKey());
+    EXPECT_EQ(1, LifeCycleManager::GetInstance().udKeys_.Size());
+    DragLifeCyclePolicy policy;
+    policy.OnTimeout("drag");
+    std::vector<Entry> entries;
+    status = store->GetEntries("udmf://", entries);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(0, entries.size());
+    EXPECT_EQ(0, LifeCycleManager::GetInstance().udKeys_.Size());
+}
+
+/**
+* @tc.name: OnStart001
+* @tc.desc: Normal test of OnStart
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, OnStart001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>("drag");
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+    UnifiedKey udKey("drag", "com.test", "111");
+    udKey.GetUnifiedKey();
+    auto record = std::make_shared<UnifiedRecord>(UDType::PLAIN_TEXT, "value1");
+    UnifiedData inputData;
+    Runtime runtime {
+        .key = udKey,
+        .tokenId = 123
+    };
+    inputData.SetRuntime(runtime);
+    inputData.SetRecords({record});
+    auto status = store->Put(inputData);
+    EXPECT_EQ(status, E_OK);
+
+    LifeCycleManager::GetInstance().SetThreadPool(std::make_shared<ExecutorPool>(1, 1));
+    LifeCycleManager::GetInstance().InsertUdKey(123, udKey.GetUnifiedKey());
+    EXPECT_EQ(1, LifeCycleManager::GetInstance().udKeys_.Size());
+    status = LifeCycleManager::GetInstance().OnStart();
+    EXPECT_EQ(E_OK, status);
+    EXPECT_EQ(0, LifeCycleManager::GetInstance().udKeys_.Size());
+}
+
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

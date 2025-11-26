@@ -110,5 +110,12 @@ struct API_EXPORT SessionAccessInfo {
     uint32_t tokenId = 0;
     bool isOHType = true;
 };
+
+struct BundleEventInfo {
+    std::string bundleName;
+    int32_t userId = 0;
+    int32_t appIndex = 0;
+    int32_t tokenId = -1;
+};
 }
 #endif // OHOS_DISTRIBUTED_DATA_ADAPTER_COMMUNICATOR_COMMU_TYPES_H

@@ -195,12 +195,6 @@ std::string PreProcessUtils::GetLocalDeviceId()
     return encryptedUuid;
 }
 
-std::string PreProcessUtils::GetRealLocalDeviceId()
-{
-    auto info = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
-    return info.uuid;
-}
-
 void PreProcessUtils::SetRemoteData(UnifiedData &data)
 {
     if (data.IsEmpty()) {
@@ -208,14 +202,14 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
         return;
     }
     std::shared_ptr<Runtime> runtime = data.GetRuntime();
-    if (runtime->deviceId == GetLocalDeviceId()) {
-        ZLOGD("not remote data.");
-        return;
-    }
-    ZLOGD("is remote data.");
+    bool isLocal = runtime->deviceId == GetLocalDeviceId();
     auto records = data.GetRecords();
-    ProcessFileType(records, [] (std::shared_ptr<Object> obj) {
+    ProcessFileType(records, [isLocal] (std::shared_ptr<Object> obj) {
         std::shared_ptr<Object> detailObj;
+        if (isLocal) {
+            obj->value_[REMOTE_URI] = "";
+            return true;
+        }
         obj->GetValue(DETAILS, detailObj);
         if (detailObj == nullptr) {
             ZLOGE("No details for object");
@@ -410,6 +404,16 @@ bool PreProcessUtils::IsNetworkingEnabled()
         return false;
     }
     return true;
+}
+
+std::vector<std::string> PreProcessUtils::GetRemoteDeviceIds()
+{
+    auto devInfos = DistributedData::DeviceManagerAdapter::GetInstance().GetRemoteDevices();
+    std::vector<std::string> deviceIds;
+    for (auto &devInfo : devInfos) {
+        deviceIds.emplace_back(std::move(devInfo.uuid));
+    }
+    return deviceIds;
 }
 
 void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,

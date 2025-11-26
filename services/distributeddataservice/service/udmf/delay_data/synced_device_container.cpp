@@ -27,49 +27,34 @@ SyncedDeviceContainer &SyncedDeviceContainer::GetInstance()
     return instance;
 }
 
-void SyncedDeviceContainer::SaveSyncedDeviceInfo(const std::string &key, const std::string &deviceId)
+void SyncedDeviceContainer::SaveSyncedDeviceInfo(const std::string &deviceId)
 {
     if (deviceId.empty()) {
         ZLOGE("DeviceId is empty");
         return;
     }
-    if (!key.empty()) {
-        std::lock_guard<std::mutex> lock(receivedDeviceMutex_);
-        receivedDeviceInfo_.insert_or_assign(key, deviceId);
-        return;
-    }
-    std::vector<SyncedDeiviceInfo> devices;
+    std::vector<SyncedDeviceInfo> devices;
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
     pulledDeviceInfo_.erase(std::remove_if(pulledDeviceInfo_.begin(), pulledDeviceInfo_.end(),
-        [&devices, &current](SyncedDeiviceInfo &info) {
+        [&devices, &current](SyncedDeviceInfo &info) {
         if (info < current) {
             return true;
         }
         return false;
     }), pulledDeviceInfo_.end());
-    SyncedDeiviceInfo info;
+    SyncedDeviceInfo info;
     info.deviceId = deviceId;
     pulledDeviceInfo_.emplace_back(std::move(info));
 }
 
-std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo(const std::string &key)
+std::vector<std::string> SyncedDeviceContainer::QueryDeviceInfo()
 {
-    {
-        std::lock_guard<std::mutex> lock(receivedDeviceMutex_);
-        auto it = receivedDeviceInfo_.find(key);
-        if (it != receivedDeviceInfo_.end()) {
-            ZLOGI("Query deviceId from receivedDeviceInfo");
-            std::string deviceId = it->second;
-            receivedDeviceInfo_.erase(it);
-            return { deviceId };
-        }
-    }
     std::vector<std::string> deviceIds;
     auto current = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(pulledDeviceMutex_);
     pulledDeviceInfo_.erase(std::remove_if(pulledDeviceInfo_.begin(), pulledDeviceInfo_.end(),
-        [&deviceIds, &current](SyncedDeiviceInfo &info) {
+        [&deviceIds, &current](SyncedDeviceInfo &info) {
         if (info < current) {
             return true;
         }

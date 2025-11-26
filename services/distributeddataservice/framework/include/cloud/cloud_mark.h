@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_MARK_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_MARK_H
+#include "metadata/store_meta_data.h"
 #include "serializable/serializable.h"
 #include "store/store_info.h"
 namespace OHOS::DistributedData {
@@ -27,9 +28,9 @@ public:
     int32_t userId = 0;
     int32_t index = 0;
     CloudMark() = default;
-    CloudMark(const StoreInfo &info)
-        : bundleName(info.bundleName), deviceId(info.deviceId), storeId(info.storeName), userId(info.user),
-          index(info.instanceId)
+    CloudMark(const StoreMetaData &meta)
+        : bundleName(meta.bundleName), deviceId(meta.deviceId), storeId(meta.storeId), userId(atoi(meta.user.c_str())),
+          index(meta.instanceId)
     {
     }
     bool Marshal(json &node) const override;

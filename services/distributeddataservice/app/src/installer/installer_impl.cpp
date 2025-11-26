@@ -36,6 +36,7 @@ using namespace OHOS::AAFwk;
 using namespace OHOS::AppExecFwk;
 using namespace OHOS::DistributedData;
 using namespace OHOS::EventFwk;
+using BundleInfo = KvStoreDataService::BundleInfo;
 
 InstallEventSubscriber::InstallEventSubscriber(const CommonEventSubscribeInfo &info,
     KvStoreDataService *kvStoreDataService)
@@ -55,41 +56,47 @@ void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
     std::string action = want.GetAction();
     auto it = callbacks_.find(action);
     if (it != callbacks_.end()) {
-        std::string bundleName = want.GetElement().GetBundleName();
-        int32_t userId = want.GetIntParam(USER_ID, -1);
-        int32_t appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
+        BundleEventInfo bundleEventInfo;
+        bundleEventInfo.bundleName = want.GetElement().GetBundleName();
+        bundleEventInfo.userId = want.GetIntParam(USER_ID, -1);
+        bundleEventInfo.appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
+        bundleEventInfo.tokenId = want.GetIntParam(TOKEN_ID, -1);
         int32_t newAppIndex = want.GetIntParam(APP_INDEX, 0);
         ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d, newAppIndex:%{public}d",
-            bundleName.c_str(), userId, appIndex, newAppIndex);
+            bundleEventInfo.bundleName.c_str(), bundleEventInfo.userId, bundleEventInfo.appIndex, newAppIndex);
         // appIndex's key in want is "appIndex", the value of the elder key "sandbox_app_index" is unsure,
         // to avoid effecting historical function, passing non-zero value to the function
-        if (appIndex == 0 && newAppIndex != 0) {
-            appIndex = newAppIndex;
+        if (bundleEventInfo.appIndex == 0 && newAppIndex != 0) {
+            bundleEventInfo.appIndex = newAppIndex;
         }
-        (this->*(it->second))(bundleName, userId, appIndex);
+        (this->*(it->second))(bundleEventInfo);
     }
 }
 
-void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
+void InstallEventSubscriber::OnUninstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo)
 {
     if (kvStoreDataService_ == nullptr) {
         ZLOGW("kvStoreDataService is null. bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d",
-            bundleName.c_str(), userId, appIndex);
+            bundleEventInfo.bundleName.c_str(), bundleEventInfo.userId,
+            bundleEventInfo.appIndex);
         return;
     }
-    kvStoreDataService_->OnUninstall(bundleName, userId, appIndex);
-    std::string prefix = StoreMetaData::GetPrefix(
-        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid, std::to_string(userId), "default", bundleName });
+    kvStoreDataService_->OnUninstall(bundleEventInfo);
+    std::string prefix = StoreMetaData::GetPrefix({DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid,
+        std::to_string(bundleEventInfo.userId), "default", bundleEventInfo.bundleName});
     std::vector<StoreMetaData> storeMetaData;
     if (!MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true)) {
-        ZLOGE("load meta failed! bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d", bundleName.c_str(),
-            userId, appIndex);
+        ZLOGE("load meta failed! bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d",
+            bundleEventInfo.bundleName.c_str(), bundleEventInfo.userId,
+            bundleEventInfo.appIndex);
         return;
     }
     for (auto &meta : storeMetaData) {
-        if (meta.instanceId == appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
+        if (meta.instanceId == bundleEventInfo.appIndex && !meta.appId.empty() && !meta.storeId.empty()) {
             ZLOGI("storeMetaData uninstalled bundleName:%{public}s storeId:%{public}s, userId:%{public}d, "
-                "appIndex:%{public}d", bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), userId, appIndex);
+                  "appIndex:%{public}d",
+                bundleEventInfo.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(),
+                bundleEventInfo.userId, bundleEventInfo.appIndex);
             MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath());
             MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true);
             MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
@@ -107,24 +114,24 @@ void InstallEventSubscriber::OnUninstall(const std::string &bundleName, int32_t 
     }
 }
 
-void InstallEventSubscriber::OnUpdate(const std::string &bundleName, int32_t userId, int32_t appIndex)
+void InstallEventSubscriber::OnUpdate(const AppDistributedKv::BundleEventInfo &bundleEventInfo)
 {
     if (kvStoreDataService_ == nullptr) {
         ZLOGW("kvStoreDataService is null. bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d",
-            bundleName.c_str(), userId, appIndex);
+            bundleEventInfo.bundleName.c_str(), bundleEventInfo.userId, bundleEventInfo.appIndex);
         return;
     }
-    kvStoreDataService_->OnUpdate(bundleName, userId, appIndex);
+    kvStoreDataService_->OnUpdate(bundleEventInfo);
 }
 
-void InstallEventSubscriber::OnInstall(const std::string &bundleName, int32_t userId, int32_t appIndex)
+void InstallEventSubscriber::OnInstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo)
 {
     if (kvStoreDataService_ == nullptr) {
         ZLOGW("kvStoreDataService is null. bundleName:%{public}s, userId:%{public}d, appIndex:%{public}d",
-            bundleName.c_str(), userId, appIndex);
+            bundleEventInfo.bundleName.c_str(), bundleEventInfo.userId, bundleEventInfo.appIndex);
         return;
     }
-    kvStoreDataService_->OnInstall(bundleName, userId, appIndex);
+    kvStoreDataService_->OnInstall(bundleEventInfo);
 }
 
 InstallerImpl::~InstallerImpl()

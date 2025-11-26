@@ -141,6 +141,12 @@ bool PreProcessUtils::IsNetworkingEnabled()
     return true;
 }
 
+std::vector<std::string> PreProcessUtils::GetRemoteDeviceIds()
+{
+    std::vector<std::string> deviceIds = {"123"};
+    return deviceIds;
+}
+
 void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
     std::function<bool(std::shared_ptr<Object>)> callback)
 {
@@ -224,11 +230,6 @@ bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::stri
     specificBundleName = "specificBundleName";
     bundleName = "bundleName";
     return true;
-}
-
-std::string PreProcessUtils::GetRealLocalDeviceId()
-{
-    return "123";
 }
 } // namespace UDMF
 } // namespace OHOS

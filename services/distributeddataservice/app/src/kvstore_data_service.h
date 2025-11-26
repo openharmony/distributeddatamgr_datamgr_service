@@ -127,11 +127,11 @@ public:
 
     void OnSessionReady(const AppDistributedKv::DeviceInfo &info);
 
-    int32_t OnUninstall(const std::string &bundleName, int32_t user, int32_t index);
+    int32_t OnUninstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
 
-    int32_t OnUpdate(const std::string &bundleName, int32_t user, int32_t index);
+    int32_t OnUpdate(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
 
-    int32_t OnInstall(const std::string &bundleName, int32_t user, int32_t index);
+    int32_t OnInstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
 
     int32_t OnScreenUnlocked(int32_t user);
 

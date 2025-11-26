@@ -26,7 +26,9 @@
 #include "executor_pool.h"
 #include "ipc_skeleton.h"
 #include "kvstore_meta_manager.h"
+#include "lifecycle_manager.h"
 #include "nativetoken_kit.h"
+#include "plain_text.h"
 #include "preprocess_utils.h"
 #include "runtime_store.h"
 #include "synced_device_container.h"
@@ -1321,123 +1323,13 @@ HWTEST_F(UdmfServiceImplTest, UpdateDelayData001, TestSize.Level1)
 HWTEST_F(UdmfServiceImplTest, GetDevicesForDelayData001, TestSize.Level1)
 {
     UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.test.demo/ascdca";
-    auto devices = service.GetDevicesForDelayData(key);
+    auto devices = service.GetDevicesForDelayData();
     EXPECT_EQ(devices.size(), 0);
 
     std::string deviceId = "device_001";
-    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(key, deviceId);
-    devices = service.GetDevicesForDelayData(key);
+    SyncedDeviceContainer::GetInstance().SaveSyncedDeviceInfo(deviceId);
+    devices = service.GetDevicesForDelayData();
     EXPECT_EQ(devices.size(), 0);
-}
-
-/**
- * @tc.name: RegisterObserver001
- * @tc.desc: RegisterObserver function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, RegisterObserver001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.test.demo/ascdca";
-    auto status = service.RegisterObserver(key);
-    EXPECT_EQ(status, E_DB_ERROR);
-}
-
-/**
- * @tc.name: RegisterAllDataChangedObserver001
- * @tc.desc: RegisterAllDataChangedObserver function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, RegisterAllDataChangedObserver001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    auto status = service.RegisterAllDataChangedObserver();
-    EXPECT_EQ(status, E_OK);
-    DelayDataAcquireContainer::GetInstance().delayDataCallback_.insert_or_assign("key1", DelayGetDataInfo());
-    status = service.RegisterAllDataChangedObserver();
-    EXPECT_EQ(status, E_OK);
-    DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.clear();
-    std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
-    std::string key = "udmf://drag/com.example.app/1233455";
-    DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.insert_or_assign(
-        key, BlockDelayData{12345, blockData});
-    status = service.RegisterAllDataChangedObserver();
-    EXPECT_EQ(status, E_OK);
-}
-
-/**
- * @tc.name: UnRegisterObserver001
- * @tc.desc: UnRegisterObserver function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, UnRegisterObserver001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.example.app/1233455";
-    auto status = service.UnRegisterObserver(key);
-    EXPECT_EQ(status, E_OK);
-}
-
-/**
- * @tc.name: IsSyncFinished001
- * @tc.desc: IsSyncFinished function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, IsSyncFinished001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.example.app/1233455";
-    auto ret = service.IsSyncFinished(key);
-    EXPECT_FALSE(ret);
-}
-
-/**
- * @tc.name: SaveAcceptableInfo001
- * @tc.desc: SaveAcceptableInfo function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, SaveAcceptableInfo001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.example.app/1233455";
-    DataLoadInfo info;
-    auto status = service.SaveAcceptableInfo(key, info);
-    EXPECT_EQ(status, E_NO_PERMISSION);
-}
-
-/**
- * @tc.name: PushAcceptableInfo001
- * @tc.desc: PushAcceptableInfo function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, PushAcceptableInfo001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.example.app/1233455";
-    QueryOption query;
-    query.key = key;
-    query.intention = Intention::UD_INTENTION_DRAG;
-    std::vector<std::string> deviceIds = { "device_001", "device_002" };
-    auto status = service.PushAcceptableInfo(query, deviceIds);
-    EXPECT_EQ(status, E_NO_PERMISSION);
-}
-
-/**
- * @tc.name: PushAcceptableInfo002
- * @tc.desc: PushAcceptableInfo function test
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, PushAcceptableInfo002, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://DataHub/com.example.app/1233455";
-    QueryOption query;
-    query.key = key;
-    query.intention = Intention::UD_INTENTION_DRAG;
-    std::vector<std::string> deviceIds = { "device_001", "device_002" };
-    auto status = service.PushAcceptableInfo(query, deviceIds);
-    EXPECT_EQ(status, E_INVALID_PARAMETERS);
 }
 
 /**
@@ -1478,5 +1370,38 @@ HWTEST_F(UdmfServiceImplTest, HandleRemoteDelayData001, TestSize.Level1)
     auto status = service.HandleRemoteDelayData(key);
     EXPECT_EQ(status, E_ERROR);
 }
+
+/**
+ * @tc.name: OnAppUninstall001
+ * @tc.desc: OnAppUninstall001 function test
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, OnAppUninstall001, TestSize.Level1)
+{
+    auto tokenId = IPCSkeleton::GetSelfTokenID();
+    CustomOption option {UD_INTENTION_DRAG, tokenId};
+
+    UdmfServiceImpl service;
+    auto executors = std::make_shared<OHOS::ExecutorPool>(2, 1);
+    DistributedData::FeatureSystem::Feature::BindInfo bindInfo;
+    bindInfo.executors = executors;
+    service.OnBind(bindInfo);
+    UnifiedData data;
+    data.AddRecord(std::make_shared<PlainText>());
+    std::string key;
+    auto status = service.SaveData(option, data, key);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(1, LifeCycleManager::GetInstance().udKeys_.Size());
+    UdmfServiceImpl::UdmfStatic udmfStatic;
+    status = udmfStatic.OnAppUninstall("com.demo.test", 1, 1, 123456);
+    EXPECT_EQ(status, E_OK);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_EQ(1, LifeCycleManager::GetInstance().udKeys_.Size());
+    status = udmfStatic.OnAppUninstall("com.demo.test", 1, 1, tokenId);
+    EXPECT_EQ(status, E_OK);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    EXPECT_EQ(0, LifeCycleManager::GetInstance().udKeys_.Size());
+}
+
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test

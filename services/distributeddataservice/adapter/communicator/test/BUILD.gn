@@ -201,6 +201,7 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "${data_service_path}/adapter/communicator/test/mock/device_manager",
     "${data_service_path}/adapter/communicator/test/mock/softbus",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/utils",
     "${data_service_path}/service/test/mock",
   ]
   sources = [
@@ -232,6 +233,7 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "-Dprotected=public",
   ]
   deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
@@ -271,6 +273,7 @@ ohos_unittest("SoftbusClientTest") {
 ohos_unittest("AppPipeMgrServiceTest") {
   module_out_path = module_output_path
   include_dirs = [
+    "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/communicator/src",
     "${data_service_path}/adapter/communicator/test/mock/device_manager",
     "${data_service_path}/adapter/communicator/test/mock/softbus",
@@ -302,6 +305,7 @@ ohos_unittest("AppPipeMgrServiceTest") {
     "-Dprotected=public",
   ]
   deps = [
+    "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]

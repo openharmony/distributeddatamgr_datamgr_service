@@ -15,6 +15,8 @@
 #define LOG_TAG "DataHandler"
 
 #include "data_handler.h"
+
+#include <unordered_set>
 #include "log_print.h"
 #include "tlv_util.h"
 
@@ -22,7 +24,6 @@ namespace OHOS::UDMF {
 constexpr const char *UD_KEY_SEPARATOR = "/";
 constexpr const char *UD_KEY_ENTRY_SEPARATOR = "#";
 constexpr const char *UD_KEY_PROPERTIES_SEPARATOR = "#properties";
-constexpr const char *UD_KEY_ACCEPTABLE_INFO_SEPARATOR = "#acceptableInfo";
 
 Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector<Entry> &entries)
 {
@@ -47,32 +48,6 @@ Status DataHandler::MarshalToEntries(const UnifiedData &unifiedData, std::vector
     Entry propsEntry = { propsKeyBytes, propsBytes };
     entries.emplace_back(std::move(propsEntry));
     return BuildEntries(unifiedData.GetRecords(), unifiedKey, entries);
-}
-
-Status DataHandler::MarshalDataLoadEntries(const DataLoadInfo &info, std::vector<Entry> &entries)
-{
-    std::string acceptableKey = info.udKey + UD_KEY_ACCEPTABLE_INFO_SEPARATOR;
-    std::vector<uint8_t> acceptableBytes;
-    auto acceptableTlv = TLVObject(acceptableBytes);
-    if (!TLVUtil::Writing(info, acceptableTlv, TAG::TAG_DATA_LOAD_INFO)) {
-        ZLOGE("Acceptable info marshalling failed:%{public}s", acceptableKey.c_str());
-        return E_WRITE_PARCEL_ERROR;
-    }
-    entries.emplace_back(Entry {
-        std::vector<uint8_t>(acceptableKey.begin(), acceptableKey.end()), std::move(acceptableBytes)
-    });
-    return E_OK;
-}
-
-Status DataHandler::UnmarshalDataLoadEntries(const Entry &entry, DataLoadInfo &info)
-{
-    std::vector<uint8_t> value = std::move(entry.value);
-    auto data = TLVObject(value);
-    if (!TLVUtil::ReadTlv(info, data, TAG::TAG_DATA_LOAD_INFO)) {
-        ZLOGE("Unmarshall data load info failed.");
-        return E_READ_PARCEL_ERROR;
-    }
-    return E_OK;
 }
 
 Status DataHandler::UnmarshalEntries(const std::string &key, const std::vector<Entry> &entries,
@@ -185,4 +160,26 @@ Status DataHandler::BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord
     }
     return E_OK;
 }
+
+Status DataHandler::UnmarshalRuntimes(const std::vector<std::string> &keySet,
+    const std::vector<Entry> &entries, std::vector<Runtime> &runtimes)
+{
+    std::unordered_set<std::string> keys(keySet.begin(), keySet.end());
+    for (const auto &entry : entries) {
+        std::string keyStr(entry.key.begin(), entry.key.end());
+        if (keys.find(keyStr) == keys.end()) {
+            continue;
+        }
+        Runtime runtime;
+        auto value = entry.value;
+        TLVObject data(value);
+        if (!TLVUtil::ReadTlv(runtime, data, TAG::TAG_RUNTIME)) {
+            ZLOGE("Unmarshall runtime info failed.");
+            return E_READ_PARCEL_ERROR;
+        }
+        runtimes.emplace_back(std::move(runtime));
+    }
+    return E_OK;
+}
+
 } // namespace UDMF::OHOS
