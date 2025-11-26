@@ -50,6 +50,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "checker/checker_manager.cpp",
     "cloud/asset_loader.cpp",
     "cloud/cloud_config_manager.cpp",
+    "cloud/cloud_db_sync_config.cpp",
     "cloud/cloud_db.cpp",
     "cloud/cloud_event.cpp",
     "cloud/cloud_extra_data.cpp",

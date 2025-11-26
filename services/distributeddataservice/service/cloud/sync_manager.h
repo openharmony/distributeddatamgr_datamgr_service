@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 
+#include "cloud/cloud_db_sync_config.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
 #include "cloud/cloud_last_sync_info.h"
@@ -46,6 +47,10 @@ public:
     using TraceIds = std::map<std::string, std::string>;
     using SyncStage = DistributedData::SyncStage;
     using ReportParam = DistributedData::ReportParam;
+    using CloudDbSyncConfig = DistributedData::CloudDbSyncConfig;
+    using DbSyncConfig = DistributedData::CloudDbSyncConfig::DbSyncConfig;
+    using TableSyncConfig = DistributedData::CloudDbSyncConfig::TableSyncConfig;
+    using Database = DistributedData::Database;
     class SyncInfo final {
     public:
         using Store = std::string;
@@ -75,6 +80,7 @@ public:
         void SetPrepareTraceId(const std::string &prepareTraceId);
         std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
         bool Contains(const std::string &storeName);
+        std::shared_ptr<GenQuery> GetQuery();
         static constexpr const char *DEFAULT_ID = "default";
 
     private:
@@ -198,6 +204,18 @@ private:
     void AddCompensateSync(const StoreMetaData &meta);
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
+
+    bool ProcessDatabase(const SchemaMeta &schema, const Database &database, CloudInfo &cloud, SyncInfo &info,
+        bool retry, const std::string &traceId, int32_t syncId);
+    bool PostSyncEvent(const SchemaMeta &schema, const Database &database, CloudInfo &cloud, SyncInfo &info,
+        bool retry, const std::string &traceId, const StoreInfo &storeInfo, std::vector<std::string> &tables);
+    void HandleSyncError(const CloudInfo &cloud, const std::string &bundleName, const std::string &dbName,
+        int32_t syncId, int32_t errorCode, const std::string &reason, const std::string &traceId);
+    bool GetDataBaseCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName);
+    bool GetTableCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName,
+        std::vector<std::string> &tables);
+    std::optional<DbSyncConfig> FindDbConfig(const CloudDbSyncConfig &syncConfig, const std::string &bundleName,
+        const std::string &dbName) const;
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;

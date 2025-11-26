@@ -64,6 +64,7 @@ public:
         CLOUD_INFO,
         LOCAL_DATA,
         CLEAN_WATER,
+        CLOUD_NONE,
         CLEAN_MODE_BUTT
     };
 

@@ -114,11 +114,12 @@ int32_t CloudServiceStub::OnChangeAppSwitch(MessageParcel &data, MessageParcel &
     std::string id;
     std::string bundleName;
     int32_t appSwitch = SWITCH_OFF;
-    if (!ITypesUtil::Unmarshal(data, id, bundleName, appSwitch)) {
+    SwitchConfig config;
+    if (!ITypesUtil::Unmarshal(data, id, bundleName, appSwitch, config)) {
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto result = ChangeAppSwitch(id, CloudConfigManager::GetInstance().ToLocal(bundleName), appSwitch);
+    auto result = ChangeAppSwitch(id, CloudConfigManager::GetInstance().ToLocal(bundleName), appSwitch, config);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -126,7 +127,8 @@ int32_t CloudServiceStub::OnClean(MessageParcel &data, MessageParcel &reply)
 {
     std::string id;
     std::map<std::string, int32_t> actions;
-    if (!ITypesUtil::Unmarshal(data, id, actions)) {
+    std::map<std::string, ClearConfig> configs;
+    if (!ITypesUtil::Unmarshal(data, id, actions, configs)) {
         ZLOGE("Unmarshal id:%{public}s", Anonymous::Change(id).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
@@ -134,7 +136,7 @@ int32_t CloudServiceStub::OnClean(MessageParcel &data, MessageParcel &reply)
     for (const auto &[bundle, action] : actions) {
         localActions.insert_or_assign(CloudConfigManager::GetInstance().ToLocal(bundle), action);
     }
-    auto result = Clean(id, localActions);
+    auto result = Clean(id, localActions, configs);
     return ITypesUtil::Marshal(reply, result) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
