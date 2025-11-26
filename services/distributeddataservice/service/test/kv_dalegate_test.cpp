@@ -14,6 +14,7 @@
 */
 #define LOG_TAG "KvDelegateTest"
 
+#include <dlfcn.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
 #include <fstream>
@@ -48,6 +49,7 @@ const char* g_backupFiles[] = {
 const char* BACKUP_SUFFIX = ".backup";
 std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(5, 3);
 bool g_isRK3568 = false;
+static void *g_library = nullptr;
 
 void KvDelegateTest::SetUpTestCase(void)
 {
@@ -89,6 +91,16 @@ bool FileComparison(const std::string& file1, const std::string& file2)
         std::istreambuf_iterator<char>(),
         std::istreambuf_iterator<char>(f2)
     );
+}
+
+bool IsUsingArkData()
+{
+#ifndef _WIN32
+    g_library = dlopen("libarkdata_db_core.z.so", RTLD_LAZY);
+    return g_library != nullptr;
+#else
+    return false;
+#endif
 }
 
 /**
@@ -427,7 +439,7 @@ HWTEST_F(KvDelegateTest, KVDelegateGetInstanceTest003, TestSize.Level0) {
 * @tc.experct: backup file should be the same as original file.
 */
 HWTEST_F(KvDelegateTest, KVDelegateResetBackupTest001, TestSize.Level0) {
-    if (g_isRK3568) {
+    if (g_isRK3568 || !IsUsingArkData()) {
         GTEST_SKIP();
     }
     ZLOGI("KVDelegateResetBackupTest001 start");
@@ -477,7 +489,7 @@ HWTEST_F(KvDelegateTest, KVDelegateResetBackupTest001, TestSize.Level0) {
 * @tc.experct: Successfully Get the dataset previously inserted.
 */
 HWTEST_F(KvDelegateTest, KVDelegateRestoreTest001, TestSize.Level1) {
-    if (g_isRK3568) {
+    if (g_isRK3568 || !IsUsingArkData()) {
         GTEST_SKIP();
     }
     ZLOGI("KVDelegateRestoreTest001 start");

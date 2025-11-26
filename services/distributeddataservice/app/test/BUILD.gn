@@ -730,17 +730,17 @@ group("unittest") {
   deps = []
 
   deps += [
-    ":BundleCheckerTest",
     ":FeatureStubImplTest",
     ":SessionManagerTest",
     ":UpgradeManagerTest",
     ":RouteHeadHandlerImplTest",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distribured_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
     deps += [
       ":KvStoreDataServiceMockTest",
       ":KvStoreDataServiceTest",
+      ":BundleCheckerTest",
       ":DDMSDumpTest",
       ":KvStoreMetaManagerUpdateKeyTest",
       ":KvStoreDataServiceClearTest",

@@ -33,7 +33,7 @@ bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo, std::string u
 }
 
 DeviceManagerAdapter::DeviceManagerAdapter()
-    : cloudDmInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 })
+    : cloudDeviceInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 })
 {
     ZLOGI("construct");
 }

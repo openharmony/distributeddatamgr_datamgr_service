@@ -317,7 +317,7 @@ group("unittest") {
     ":SoftbusClientTest",
   ]
 
-  if (dm_part_is_enabled && datamgr_service_distribured_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
     deps += [
       ":ProcessCommunicatorImplTest",
       ":DeviceManagerAdapterTest",

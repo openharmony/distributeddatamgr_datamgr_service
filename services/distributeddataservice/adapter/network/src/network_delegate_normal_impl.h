@@ -34,7 +34,7 @@ public:
 private:
     NetworkDelegateNormalImpl();
     ~NetworkDelegateNormalImpl();
-    const DeviceInfo cloudDmInfo_;
+    const DeviceInfo cloudDeviceInfo_;
     NetworkType SetNet(NetworkType netWorkType);
     NetworkType RefreshNet();
     static inline uint64_t GetTimeStamp()

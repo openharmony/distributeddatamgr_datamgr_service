@@ -29,7 +29,7 @@ ohos_source_set("distributeddata_communicator") {
 
   sources = ["src/communicator_context.cpp",]
  
-  if (dm_part_is_enabled && datamgr_service_distribured_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
     sources += [
       "src/app_pipe_handler.cpp",
       "src/app_pipe_handler.h",
@@ -78,7 +78,7 @@ ohos_source_set("distributeddata_communicator") {
     "kv_store:distributeddb",
   ]
 
-  if (dm_part_is_enabled && datamgr_service_distribured_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
     external_deps += [
       "device_manager:devicemanagersdk",
       "dsoftbus:softbus_client",

@@ -80,5 +80,5 @@ declare_args() {
 
   datamgr_service_data_share = true
 
-  datamgr_service_distribured_capability = true
+  datamgr_service_distributed_capability = true
 }

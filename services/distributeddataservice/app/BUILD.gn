@@ -155,7 +155,7 @@ ohos_shared_library("distributeddataservice") {
     defines = [ "SUPPORT_POWER" ]
   }
 
-  if (dataclassification_part_is_enabled && datamgr_service_distribured_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
     sources += [
       "src/security/security.cpp",
       "src/security/sensitive.cpp",

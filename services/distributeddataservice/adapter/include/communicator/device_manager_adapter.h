@@ -88,8 +88,8 @@ public:
     bool IsSameAccount(const std::string &id);
     bool IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
     bool CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
-    void Offline(const DeviceInfo &info);
-    void OnReady(const DeviceInfo &info);
+    void Offline(const DeviceInfo &dvInfo);
+    void OnReady(const DeviceInfo &dvInfo);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 
@@ -102,7 +102,7 @@ private:
     DeviceInfo GetLocalDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
     void Online(const DeviceInfo &info);
-    void OnChanged(const DeviceInfo &info);
+    void OnChanged(const DeviceInfo &dvInfo);
     std::vector<const AppDeviceChangeListener *> GetObservers();
     void ResetLocalDeviceInfo();
     static inline uint64_t GetTimeStamp()
@@ -114,7 +114,7 @@ private:
 
     std::mutex devInfoMutex_ {};
     DeviceInfo localInfo_ {};
-    const DeviceInfo cloudDmInfo;
+    const DeviceInfo cloudDeviceInfo;
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     LRUBucket<std::string, DeviceInfo> otherDeviceInfos_ {64};

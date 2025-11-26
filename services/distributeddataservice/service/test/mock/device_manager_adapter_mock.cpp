@@ -22,7 +22,7 @@ OHOS::DistributedData::DeviceManagerAdapter &OHOS::DistributedData::DeviceManage
 }
 
 OHOS::DistributedData::DeviceManagerAdapter::DeviceManagerAdapter()
-    : cloudDmInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 })
+    : cloudDeviceInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 })
 {}
 
 std::vector<std::string> OHOS::DistributedData::DeviceManagerAdapter::ToUUID(std::vector<DeviceInfo> devices)

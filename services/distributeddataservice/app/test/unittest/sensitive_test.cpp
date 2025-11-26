@@ -21,7 +21,7 @@ using namespace testing::ext;
 using namespace OHOS::DistributedKv;
 namespace OHOS::Test {
 constexpr int DATA_SEC_LEVEL1 = 1;
-constexpr int DATA_SEC_LEVEL2 = 2; 
+constexpr int DATA_SEC_LEVEL2 = 2;
 class SensitiveTest : public testing::Test {
 public:
     static void SetUpTestCase(void);

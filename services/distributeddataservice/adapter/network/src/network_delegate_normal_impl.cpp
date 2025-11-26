@@ -104,7 +104,7 @@ int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle
 }
 
 NetworkDelegateNormalImpl::NetworkDelegateNormalImpl()
-    : cloudDmInfo_({ "", "", "cloudNetworkId", "cloudDeviceName", 0 })
+    : cloudDeviceInfo_({ "", "", "cloudNetworkId", "cloudDeviceName", 0 })
 {
 }
 
@@ -171,10 +171,10 @@ NetworkDelegateNormalImpl::NetworkType NetworkDelegateNormalImpl::SetNet(Network
     defaultNetwork_ = netWorkType;
     expireTime_ = GetTimeStamp() + EFFECTIVE_DURATION;
     if (ready) {
-        DeviceManagerAdapter::GetInstance().OnReady(cloudDmInfo_);
+        DeviceManagerAdapter::GetInstance().OnReady(cloudDeviceInfo_);
     }
     if (offline) {
-        DeviceManagerAdapter::GetInstance().Offline(cloudDmInfo_);
+        DeviceManagerAdapter::GetInstance().Offline(cloudDeviceInfo_);
     }
     return netWorkType;
 }

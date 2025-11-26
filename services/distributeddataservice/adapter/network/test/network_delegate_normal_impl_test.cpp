@@ -96,7 +96,7 @@ HWTEST_F(NetworkDelegateNormalImplTest, IsNetworkAvailable, TestSize.Level1)
     bool ret = delegate.IsNetworkAvailable(); // false false
     EXPECT_FALSE(ret);
 
-    DeviceInfo& info = const_cast<DeviceInfo &>(delegate.cloudDmInfo_);
+    DeviceInfo& info = const_cast<DeviceInfo &>(delegate.cloudDeviceInfo_);
     info.networkId.resize(sizeof(info.networkId));
     std::fill(info.networkId.data(), info.networkId.data() + info.networkId.size(), '\0');
     NetworkDelegateNormalImpl::NetworkType netWorkType = NetworkDelegate::NetworkType::NONE;
@@ -160,7 +160,7 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange001, TestSize.Level
 HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange002, TestSize.Level1)
 {
     NetworkDelegateNormalImpl delegate;
-    DeviceInfo& info = const_cast<DeviceInfo &>(delegate.cloudDmInfo_);
+    DeviceInfo& info = const_cast<DeviceInfo &>(delegate.cloudDeviceInfo_);
     info.networkId.resize(sizeof(info.networkId));
     std::fill(info.networkId.data(), info.networkId.data() + info.networkId.size(), '\0');
     sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(delegate);
