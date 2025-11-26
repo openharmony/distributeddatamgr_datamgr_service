@@ -468,7 +468,7 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, 
                 (info.triggerMode_ == MODE_PROCESSSTART)) {
                 ZLOGW("triggerMode: %{public}d, bundleName: %{public}s", info.triggerMode_, info.bundleName_.c_str());
                 store->OnSyncTrigger(storeInfo.storeName, info.triggerMode_);
-                return return exCallback(E_OK, "syncTrigger");
+                return exCallback(E_OK, "syncTrigger");
             }
             if (isAutoSync) {
                 return exCallback(E_OK, "syncTrigger isAutoSync");
