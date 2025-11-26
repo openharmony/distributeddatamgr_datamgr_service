@@ -49,7 +49,8 @@ struct DeviceExtraInfo final : public Serializable {
     };
 };
 
-std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo) {
+std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
+{
     std::pair<bool, DeviceInfo> result(false, DeviceInfo{});
     std::string networkId = std::string(dmInfo.networkId);
     if (networkId.empty()) {

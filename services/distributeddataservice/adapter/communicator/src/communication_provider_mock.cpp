@@ -19,57 +19,70 @@ namespace OHOS {
 namespace AppDistributedKv {
 class MockCommunicationProvider : public CommunicationProvider {
 public:
-    Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) override {
+    Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) override
+    {
         return Status::SUCCESS;
     }
 
-    Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) override {
+    Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) override
+    {
         return Status::SUCCESS;
     }
 
     std::pair<Status, int32_t> SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
-        const DataInfo &dataInfo, uint32_t totalLength, const MessageInfo &info) override {
+        const DataInfo &dataInfo, uint32_t totalLength, const MessageInfo &info) override
+    {
         return {Status::SUCCESS, 0};
     }
 
-    Status Start(const PipeInfo &pipeInfo) override {
+    Status Start(const PipeInfo &pipeInfo) override
+    {
         return Status::SUCCESS;
     }
 
-    Status Stop(const PipeInfo &pipeInfo) override {
+    Status Stop(const PipeInfo &pipeInfo) override
+    {
         return Status::SUCCESS;
     }
 
-    bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const override {
+    bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const override
+    {
         return false;
     }
 
-    void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) override {
+    void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) override
+    {
     }
 
-    void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) override {
+    void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) override
+    {
     }
 
-    Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo) override {
+    Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo) override
+    {
         return Status::SUCCESS;
     }
 
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
-        std::function<void(const std::string &, const LevelInfo &)> listener) override {
+        std::function<void(const std::string &, const LevelInfo &)> listener) override
+    {
         return 0;
     }
 
-    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo) override {
+    Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo) override
+    {
         return Status::ERROR;
     }
 };
 
-CommunicationProvider &CommunicationProvider::GetInstance() {
+CommunicationProvider &CommunicationProvider::GetInstance()
+{
     static MockCommunicationProvider instance;
     return instance;
 }
 
-std::shared_ptr<CommunicationProvider> CommunicationProvider::MakeCommunicationProvider() {
+std::shared_ptr<CommunicationProvider> CommunicationProvider::MakeCommunicationProvider()
+{
     return nullptr;
 }
 }  // namespace AppDistributedKv
