@@ -2045,14 +2045,8 @@ int32_t RdbServiceImpl::StopCloudSync(const RdbSyncerParam &param)
     }
     auto stores = AutoCache::GetInstance().GetStoresIfPresent(metaData.tokenId, metaData.dataDir, metaData.storeId);
     for (const auto &store : stores) {
-        if (store == nullptr) {
-            ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s", metaData.bundleName.c_str(),
-                Anonymous::Change(metaData.storeId).c_str());
-            continue;
-        }
-        if (store->StopCloudSync() != RDB_OK) {
-            ZLOGE("stop cloud sync fail, bundleName:%{public}s storeName:%{public}s", metaData.bundleName.c_str(),
-                Anonymous::Change(metaData.storeId).c_str());
+        if (store != nullptr) {
+            store->StopCloudSync();
         }
     }
     return RDB_OK;

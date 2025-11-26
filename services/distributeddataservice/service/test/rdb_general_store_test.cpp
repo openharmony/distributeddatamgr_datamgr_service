@@ -2347,6 +2347,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution002, 
 */
 HWTEST_F(RdbGeneralStoreTest, StopCloudSync, TestSize.Level1)
 {
+    std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
     auto result = store_->StopCloudSync();
     EXPECT_EQ(result, E_ALREADY_CLOSED);
     metaData_.storeId = "mock";
@@ -2354,6 +2355,9 @@ HWTEST_F(RdbGeneralStoreTest, StopCloudSync, TestSize.Level1)
     store_->Init();
     result = store_->StopCloudSync();
     EXPECT_EQ(result, E_OK);
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    result = store_->StopCloudSync();
+    EXPECT_EQ(result, E_ALREADY_CLOSED);
 }
 
 /**

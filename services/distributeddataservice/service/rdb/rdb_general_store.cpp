@@ -1726,6 +1726,10 @@ int32_t RdbGeneralStore::SetCloudConflictHandler(const std::shared_ptr<CloudConf
 
 int32_t RdbGeneralStore::StopCloudSync()
 {
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GenErr::E_ALREADY_CLOSED;
+    }
     std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("Database already closed! database:%{public}s", meta_.GetStoreAlias().c_str());
