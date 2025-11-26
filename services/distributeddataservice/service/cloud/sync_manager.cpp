@@ -309,7 +309,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
         bool isPostEvent = false;
         auto syncId = info.syncId_;
         for (auto &schema : schemas) {
-            auto it = traceIds.find(schema.bundleName);
+            std::string traceId = traceIds.count(schema.bundleName) ? traceIds.at(schema.bundleName) : "";
             if (!cloud.IsOn(schema.bundleName)) {
                 HandleSyncError(cloud, schema.bundleName, "", syncId, E_ERROR, "!IsOn:" + schema.bundleName, traceId);
                 continue;
