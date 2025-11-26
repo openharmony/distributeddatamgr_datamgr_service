@@ -1369,7 +1369,11 @@ int32_t CloudServiceImpl::InitNotifier(sptr<IRemoteObject> notifier)
         ZLOGE("no notifier.");
         return INVALID_ARGUMENT;
     }
-    auto notifierProxy = iface_cast<CloudNotifierProxy>(notifier);
+    sptr<CloudNotifierProxy> notifierProxy = new (std::nothrow) CloudNotifierProxy(notifier);
+    if (notifierProxy == nullptr) {
+        ZLOGE("new notifier proxy failed.");
+        return INVALID_ARGUMENT;
+    }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     syncAgents_.Compute(tokenId, [notifierProxy](auto, SyncAgent &agent) {
         agent = SyncAgent();
