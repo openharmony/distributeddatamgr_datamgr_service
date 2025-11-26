@@ -1909,6 +1909,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -1925,6 +1926,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "relational_store:native_rdb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 }
 
@@ -2001,6 +2003,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -2016,6 +2019,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "kv_store:datamgr_common",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 }
 
@@ -2702,6 +2706,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -2723,6 +2728,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 
   deps = [
@@ -2794,6 +2800,7 @@ ohos_unittest("UdmfObserverTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -2815,6 +2822,7 @@ ohos_unittest("UdmfObserverTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 
   deps = [

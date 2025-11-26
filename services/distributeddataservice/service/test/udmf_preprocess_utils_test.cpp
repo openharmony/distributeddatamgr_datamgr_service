@@ -442,4 +442,49 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris002, TestSize.Level1)
     });
     EXPECT_EQ(dfsUri, "file://distributed/104.png");
 }
+
+/**
+* @tc.name: MatchImgExtension001
+* @tc.desc: Normal testcase of MatchImgExtension
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension001, TestSize.Level1)
+{
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.png"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.jpg"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.jpeg"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.PNG"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.JPG"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.JPEG"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///1.png"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///1.jpg"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.jpeg"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.gif"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.gif?query=aaa"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.gif;version=1"));
+    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.gif;version=1?query=aaa"));
+}
+
+/**
+* @tc.name: MatchImgExtension002
+* @tc.desc: Abnormal testcase of MatchImgExtension
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension002, TestSize.Level1)
+{
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension(""));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:////"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///./"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:////."));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///png"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///png."));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///png/"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///png/bbb"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/.png/ccc"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/1.png/ccc"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.invalidext"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///test.com/img2jpg"));
+    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///test.com/"));
+}
 }; // namespace UDMF

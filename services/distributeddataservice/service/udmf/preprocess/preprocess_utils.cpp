@@ -17,6 +17,7 @@
 #include "preprocess_utils.h"
 
 #include <sstream>
+#include <sys/stat.h>
 
 #include "bundle_info.h"
 #include "dds_trace.h"
@@ -27,10 +28,12 @@
 #include "file_mount_manager.h"
 #include "iservice_registry.h"
 #include "log_print.h"
+#include "sandbox_helper.h"
 #include "system_ability_definition.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
 #include "unified_html_record_process.h"
+#include "utd_client.h"
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
 #include "ipc_skeleton.h"
@@ -44,6 +47,10 @@ constexpr const char *FILE_SCHEME = "file";
 constexpr const char *TAG = "PreProcessUtils::";
 constexpr const char *FILE_SCHEME_PREFIX = "file://";
 constexpr const char *DOCS_LOCAL_TAG = "/docs/";
+constexpr const char *IMG_LOCAL_URI = "file:///";
+constexpr const char *DOC_LOCAL_URI = "file:///docs/";
+constexpr const char *DOC_URI_PREFIX = "file://docs/";
+constexpr const char *DOC_LEVEL_SEPERATOR = "/\\";
 static constexpr uint32_t DOCS_LOCAL_PATH_SUBSTR_START_INDEX = 1;
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
 constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
@@ -478,11 +485,10 @@ void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint3
         }
         std::string scheme = uri.GetScheme();
         std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (scheme != FILE_SCHEME) {
+        if (scheme != FILE_SCHEME || uris.find(newUriStr) != uris.end() || !MatchImgExtension(newUriStr)) {
             return true;
         }
-        auto item = uris.find(newUriStr);
-        if (item == uris.end()) {
+        if (JudgeFileUriExist(newUriStr, tokenId)) {
             uris.emplace(newUriStr, uriInfo.permission);
         }
         return true;
@@ -735,6 +741,86 @@ bool PreProcessUtils::GetSpecificBundleName(const std::string &bundleName, int32
         return false;
     }
     return true;
+}
+
+bool PreProcessUtils::JudgeFileUriExist(const std::string &uri, uint32_t tokenId)
+{
+    std::string oldUriStr = uri;
+    std::string newUriStr;
+    if (oldUriStr.find(IMG_LOCAL_URI) != 0) {
+        return false;
+    }
+    if (oldUriStr.find(DOC_LOCAL_URI) == 0) {
+        newUriStr = oldUriStr.replace(0, std::strlen(DOC_LOCAL_URI), DOC_URI_PREFIX);
+    } else {
+        std::string bundleName;
+        std::string specificBundleName;
+        if (!GetSpecificBundleNameByTokenId(tokenId, specificBundleName, bundleName)) {
+            ZLOGE("GetSpecificBundleNameByTokenId failed, tokenId:%{public}u", tokenId);
+            return false;
+        }
+        newUriStr = oldUriStr.replace(0, std::strlen(IMG_LOCAL_URI), FILE_SCHEME_PREFIX + specificBundleName + "/");
+    }
+
+    int32_t userId = 0;
+    if (GetHapUidByToken(tokenId, userId) != E_OK) {
+        ZLOGE("GetHapUidByToken failed, tokenId:%{public}u", tokenId);
+        return false;
+    }
+
+    std::string physicalPath;
+    int32_t ret = AppFileService::SandboxHelper::GetPhysicalPath(newUriStr, std::to_string(userId), physicalPath);
+    if (ret != 0) {
+        ZLOGE("get phy path fail, uri=%{private}s", newUriStr.c_str());
+        return false;
+    }
+
+    errno = 0;
+    struct stat buf = {};
+    if (stat(physicalPath.c_str(), &buf) != 0) {
+        if (errno == EACCES) {
+            ZLOGI("errno is EACCES");
+            return true;
+        }
+        ZLOGE("stat fail, uri=%{private}s, path=%{private}s, err=%{public}d",
+            newUriStr.c_str(), physicalPath.c_str(), errno);
+        return false;
+    }
+
+    if ((buf.st_mode & S_IFMT) == S_IFDIR) {
+        ZLOGE("is dir, uri=%{private}s, path=%{private}s", newUriStr.c_str(), physicalPath.c_str());
+        return false;
+    }
+    ZLOGI("uri=%{private}s, path=%{private}s, size=%{public}zu",
+        newUriStr.c_str(), physicalPath.c_str(), static_cast<size_t>(buf.st_size));
+    return true;
+}
+
+bool PreProcessUtils::MatchImgExtension(const std::string &uri)
+{
+    auto posSlash = uri.find_last_of(DOC_LEVEL_SEPERATOR);
+    std::string fileName = (posSlash == std::string::npos) ? uri : uri.substr(posSlash + 1);
+
+    auto posDot = fileName.find_last_of('.');
+    if (posDot == std::string::npos || posDot + 1 >= fileName.size()) {
+        ZLOGE("Invalid file extension");
+        return false;
+    }
+
+    size_t i = posDot + 1;
+    while (i < fileName.size() && std::isalnum(static_cast<unsigned char>(fileName[i]))) {
+        i++;
+    }
+    std::string ext = fileName.substr(posDot, i - posDot);
+    
+    std::vector<std::string> dataTypes;
+    auto status = UtdClient::GetInstance().GetUniformDataTypesByFilenameExtension(
+        ext, dataTypes, UtdUtils::GetUtdIdFromUtdEnum(UDType::IMAGE));
+    if (status != E_OK) {
+        ZLOGE("GetUniformDataTypesByFilenameExtension failed, status:%{public}d", status);
+        return false;
+    }
+    return dataTypes.size() > 0 && dataTypes[0].find(FLEXIBLE_TYPE_FLAG) != 0;
 }
 } // namespace UDMF
 } // namespace OHOS
