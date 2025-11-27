@@ -205,12 +205,21 @@ private:
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
 
-    bool ProcessDatabase(const SchemaMeta &schema, const Database &database, CloudInfo &cloud, SyncInfo &info,
-        bool retry, const std::string &traceId, int32_t syncId);
-    bool PostSyncEvent(const SchemaMeta &schema, const Database &database, CloudInfo &cloud, SyncInfo &info,
-        bool retry, const std::string &traceId, const StoreInfo &storeInfo, std::vector<std::string> &tables);
-    void HandleSyncError(const CloudInfo &cloud, const std::string &bundleName, const std::string &dbName,
-        int32_t syncId, int32_t errorCode, const std::string &reason, const std::string &traceId);
+    struct ErrorContext {
+        const CloudInfo &cloud;
+        std::string bundleName;
+        std::string dbName;
+        int32_t syncId;
+        int32_t errorCode;
+        std::string reason;
+        std::string traceId;
+        ErrorContext(const CloudInfo &c, const std::string &bn, const std::string &dn, int32_t sid, int32_t ec,
+            const std::string &r, const std::string &tid)
+            : cloud(c), bundleName(bn), dbName(dn), syncId(sid), errorCode(ec), reason(r), traceId(tid)
+        {
+        }
+    };
+    void HandleSyncError(const ErrorContext &context);
     bool GetDataBaseCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName);
     bool GetTableCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName,
         std::vector<std::string> &tables);

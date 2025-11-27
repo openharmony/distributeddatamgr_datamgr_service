@@ -232,9 +232,8 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
         }
     }
     cloudInfo.apps[bundleName].cloudSwitch = (appSwitch == SWITCH_ON);
-    CloudInfo oldCloudInfo;
-    if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), oldCloudInfo, true) ||
-        oldCloudInfo != cloudInfo) {
+    CloudInfo oldInfo;
+    if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), oldInfo, true) || oldInfo != cloudInfo) {
         if (!MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true)) {
             return ERROR;
         }
@@ -346,14 +345,11 @@ void CloudServiceImpl::ExecuteDatabaseClean(int32_t user, const StoreMetaData &m
     storeInfo.user = atoi(meta.user.c_str());
     storeInfo.storeName = meta.storeId;
     storeInfo.path = meta.dataDir;
-
     if (action != GeneralStore::CLEAN_WATER) {
         EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
     }
-
     auto store = AutoCache::GetInstance().GetStore(meta, {});
     auto status = store->Clean({}, action, tableName);
-
     if (status != E_OK) {
         ZLOGW("clean data status:%{public}d, user:%{public}d, bundleName:%{public}s, storeId:%{public}s, "
               "table:%{public}s",
@@ -2127,10 +2123,8 @@ bool CloudServiceImpl::UpdateTableConfigs(CloudDbSyncConfig::DbSyncConfig &dbCon
     for (const auto &tableEntry : tableInfo) {
         const std::string &tableName = tableEntry.first;
         bool tableEnable = tableEntry.second;
-
         auto tableIter = std::find_if(dbConfig.tableConfigs.begin(), dbConfig.tableConfigs.end(),
             [&tableName](const CloudDbSyncConfig::TableSyncConfig &config) { return config.tableName == tableName; });
-
         if (tableIter == dbConfig.tableConfigs.end()) {
             CloudDbSyncConfig::TableSyncConfig newTableConfig;
             newTableConfig.tableName = tableName;
