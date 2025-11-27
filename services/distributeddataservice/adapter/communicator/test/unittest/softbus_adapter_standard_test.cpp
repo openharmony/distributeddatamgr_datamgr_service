@@ -24,6 +24,7 @@
 #include "communicator_context.h"
 #include "data_level.h"
 #include "db_store_mock.h"
+#include "device_manager.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
 #include "inner_socket.h"
@@ -48,13 +49,19 @@ static constexpr const char *TEST_STORE_NAME = "TestStore";
 
 class DeviceChangeListenerTest : public AppDeviceChangeListener {
 public:
-    void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override {}
+    void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override;
     void OnSessionReady(const DeviceInfo &info, int32_t errCode) const override;
     void ResetReadyFlag();
 
     mutable int32_t bindResult_;
     mutable bool isReady_ = false;
+    mutable DeviceInfo info_;
 };
+
+void DeviceChangeListenerTest::OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const
+{
+    info_ = info;
+}
 
 void DeviceChangeListenerTest::OnSessionReady(const DeviceInfo &info, int32_t errCode) const
 {
@@ -465,5 +472,120 @@ HWTEST_F(SoftBusAdapterStandardTest, BroadcastTest002, TestSize.Level1)
     ASSERT_EQ(receiveLevelInfo_.statics, sendLevelInfo_.statics);
     ASSERT_EQ(receiveLevelInfo_.switches, sendLevelInfo_.switches);
     ASSERT_EQ(receiveLevelInfo_.switchesLen, sendLevelInfo_.switchesLen);
+}
+
+/**
+* @tc.name: GetDeviceInfo001
+* @tc.desc: test when networkId is cloudNetworkId GetDeviceInfo and OnDeviceOnline
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo001, TestSize.Level1)
+{
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1,2);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    DeviceChangeListenerTest listener;
+    DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
+    DistributedHardware::DmDeviceInfo info = { "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 };
+    DistributedHardware::DeviceManager::GetInstance().Online(info);
+    ASSERT_EQ(listener.info_.networkId, info.networkId);
+    ASSERT_EQ(listener.info_.deviceName, info.deviceName);
+}
+ 
+/**
+* @tc.name: GetDeviceInfo002
+* @tc.desc: test when networkId is empty GetDeviceInfo and OnDeviceOnline
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo002, TestSize.Level1)
+{
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1,2);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    DeviceChangeListenerTest listener;
+    DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
+    DistributedHardware::DmDeviceInfo info = { "cloudDeviceId", "cloudDeviceName", 0, "", 0 };
+    DistributedHardware::DeviceManager::GetInstance().Online(info);
+    ASSERT_EQ(listener.info_.networkId, info.networkId);
+}
+ 
+/**
+* @tc.name: GetDeviceInfo003
+* @tc.desc: test when networkId is cloudNetworkId GetDeviceInfo and Offline
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo003, TestSize.Level1)
+{
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1,2);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    DeviceChangeListenerTest listener;
+    DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
+    DistributedHardware::DmDeviceInfo info = { "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 };
+    DistributedHardware::DeviceManager::GetInstance().Offline(info);
+    sleep(2);
+    ASSERT_EQ(listener.info_.networkId, info.networkId);
+    ASSERT_EQ(listener.info_.deviceName, info.deviceName);
+}
+ 
+/**
+* @tc.name: GetDeviceInfo004
+* @tc.desc: test when networkId is empty GetDeviceInfo and Offline
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo004, TestSize.Level1)
+{
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1,2);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    DeviceChangeListenerTest listener;
+    DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
+    DistributedHardware::DmDeviceInfo info = { "", "localDeviceName", 0, "local_network_id", 0 };
+    DistributedHardware::DeviceManager::GetInstance().Offline(info);
+    ASSERT_EQ(listener.info_.networkId, "");
+}
+ 
+/**
+* @tc.name: GetDeviceInfo005
+* @tc.desc: test when networkId is cloudNetworkId GetDeviceInfo and OnChanged
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo005, TestSize.Level1)
+{
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1,2);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    DeviceChangeListenerTest listener;
+    DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
+    DistributedHardware::DmDeviceInfo info = { "cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0 };
+    DistributedHardware::DeviceManager::GetInstance().OnChanged(info);
+    ASSERT_EQ(listener.info_.networkId, "");
+}
+ 
+/**
+* @tc.name: GetDeviceInfo006
+* @tc.desc: test when networkId is empty GetDeviceInfo and OnChanged
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo006, TestSize.Level1)
+{
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1,2);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    DeviceChangeListenerTest listener;
+    DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
+    DistributedHardware::DmDeviceInfo info = { "localDeviceId", "", 0, "local_network_id", 0 };
+    DistributedHardware::DeviceManager::GetInstance().OnChanged(info);
+    ASSERT_EQ(listener.info_.networkId, "");
+}
+ 
+/**
+* @tc.name: GetDeviceInfo007
+* @tc.desc: test GetDeviceInfo when networkId is empty GetDeviceInfo and OnReady
+* @tc.type: FUNC
+*/
+HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo007, TestSize.Level1)
+{
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1,2);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    DeviceChangeListenerTest listener;
+    DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
+    DistributedHardware::DmDeviceInfo info = { "", "", 0, "local_network_id", 0 };
+    DistributedHardware::DeviceManager::GetInstance().OnReady(info);
+    ASSERT_EQ(listener.info_.networkId, "");
 }
 } // namespace OHOS::Test

@@ -61,30 +61,23 @@ std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
     if (uuid.empty() || udid.empty()) {
         return result;
     }
-    if (uuid == DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
-        DeviceInfo cloudDeviceInfo;
-        cloudDeviceInfo.uuid = std::move(uuid);
-        cloudDeviceInfo.udid = std::move(udid);
-        cloudDeviceInfo.networkId = std::move(networkId);
-        cloudDeviceInfo.deviceName = std::string(dmInfo.deviceName);
-        cloudDeviceInfo.deviceType = dmInfo.deviceTypeId;
-        cloudDeviceInfo.osType = DeviceExtraInfo::OH_OS_TYPE;
-        cloudDeviceInfo.authForm = static_cast<int32_t>(dmInfo.authForm);
-        return {true, cloudDeviceInfo};
-    }
-    DeviceExtraInfo deviceExtraInfo;
-    if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
-        ZLOGE("Unmarshall extraData failed. uuid:%{public}s", KvStoreUtils::ToBeAnonymous(uuid).c_str());
-        return result;
-    }
     DeviceInfo deviceInfo;
     deviceInfo.uuid = std::move(uuid);
     deviceInfo.udid = std::move(udid);
     deviceInfo.networkId = std::move(networkId);
     deviceInfo.deviceName = std::string(dmInfo.deviceName);
     deviceInfo.deviceType = dmInfo.deviceTypeId;
-    deviceInfo.osType = deviceExtraInfo.OS_TYPE;
     deviceInfo.authForm = static_cast<int32_t>(dmInfo.authForm);
+    if (deviceInfo.uuid == DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
+        deviceInfo.osType = DeviceExtraInfo::OH_OS_TYPE;
+        return {true, deviceInfo};
+    }
+    DeviceExtraInfo deviceExtraInfo;
+    if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
+         ZLOGE("Unmarshall extraData failed. uuid:%{public}s", KvStoreUtils::ToBeAnonymous(deviceInfo.uuid).c_str());
+         return result;
+     }
+    deviceInfo.osType = deviceExtraInfo.OS_TYPE;
     return {true, deviceInfo};
 }
 
@@ -102,7 +95,7 @@ private:
 
 void DataMgrDmStateCall::OnDeviceOnline(const DmDeviceInfo &info)
 {
-    auto [success, devInfo] = ::OHOS::DistributedData::GetDeviceInfo(info);
+    auto [success, devInfo] = GetDeviceInfo(info);
     if (!success) {
         ZLOGE("get device info fail");
         return;
@@ -112,7 +105,7 @@ void DataMgrDmStateCall::OnDeviceOnline(const DmDeviceInfo &info)
 
 void DataMgrDmStateCall::OnDeviceOffline(const DmDeviceInfo &info)
 {
-    auto [success, devInfo] = ::OHOS::DistributedData::GetDeviceInfo(info);
+    auto [success, devInfo] = GetDeviceInfo(info);
     if (!success) {
         ZLOGE("get device info fail");
         return;
@@ -122,7 +115,7 @@ void DataMgrDmStateCall::OnDeviceOffline(const DmDeviceInfo &info)
 
 void DataMgrDmStateCall::OnDeviceChanged(const DmDeviceInfo &info)
 {
-    auto [success, devInfo] = ::OHOS::DistributedData::GetDeviceInfo(info);
+    auto [success, devInfo] = GetDeviceInfo(info);
     if (!success) {
         ZLOGE("get device info fail");
         return;
@@ -132,7 +125,7 @@ void DataMgrDmStateCall::OnDeviceChanged(const DmDeviceInfo &info)
 
 void DataMgrDmStateCall::OnDeviceReady(const DmDeviceInfo &info)
 {
-    auto [success, devInfo] = ::OHOS::DistributedData::GetDeviceInfo(info);
+    auto [success, devInfo] = GetDeviceInfo(info);
     if (!success) {
         ZLOGE("get device info fail");
         return;
