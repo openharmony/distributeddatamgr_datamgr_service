@@ -1196,13 +1196,14 @@ HWTEST_F(CloudDataTest, Clean001, TestSize.Level0)
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_BUTT);
     std::string id = "testId";
     std::string bundleName = "testBundleName";
-    auto ret = cloudServiceImpl_->Clean(id, actions);
+    std::map<std::string, OHOS::CloudData::ClearConfig> configs;
+    auto ret = cloudServiceImpl_->Clean(id, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::ERROR);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::ERROR);
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
     actions.insert_or_assign(bundleName, CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
@@ -1217,20 +1218,21 @@ HWTEST_F(CloudDataTest, Clean002, TestSize.Level0)
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
     std::map<std::string, int32_t> actions;
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
-    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    std::map<std::string, OHOS::CloudData::ClearConfig> configs;
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     StoreMetaDataLocal localMeta;
     localMeta.isPublic = false;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     localMeta.isPublic = true;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     metaData_.user = "0";
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
     metaData_.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
@@ -1394,11 +1396,14 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
 {
     std::string id = "testId";
     std::string bundleName = "testName";
-    auto ret = cloudServiceImpl_->ChangeAppSwitch(id, bundleName, CloudData::CloudService::SWITCH_ON);
+    OHOS::CloudData::SwitchConfig switchConfig;
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(id, bundleName, CloudData::CloudService::SWITCH_ON, switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, bundleName, CloudData::CloudService::SWITCH_ON);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, bundleName, CloudData::CloudService::SWITCH_ON,
+        switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF,
+        switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 

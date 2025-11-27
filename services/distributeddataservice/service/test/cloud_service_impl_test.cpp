@@ -198,8 +198,9 @@ HWTEST_F(CloudServiceImplTest, DisableCloud001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, ChangeAppSwitch001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest ChangeAppSwitch001 start");
-    auto status =
-        cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_ON);
+    OHOS::CloudData::SwitchConfig config;
+    auto status = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE,
+        CloudData::CloudService::SWITCH_ON, config);
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
 }
 
@@ -214,7 +215,8 @@ HWTEST_F(CloudServiceImplTest, Clean001, TestSize.Level0)
     ZLOGI("CloudServiceImplTest Clean001 start");
     std::map<std::string, int32_t> actions;
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_ON);
-    auto status = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions);
+    std::map<std::string, OHOS::CloudData::ClearConfig> configs;
+    auto status = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
 }
 
