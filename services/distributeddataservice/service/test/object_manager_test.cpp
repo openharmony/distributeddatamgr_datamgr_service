@@ -406,11 +406,10 @@ HWTEST_F(ObjectManagerTest, registerAndUnregisterRemoteCallback001, TestSize.Lev
 HWTEST_F(ObjectManagerTest, registerAndUnregisterRemoteCallback002, TestSize.Level0)
 {
     auto &manager = ObjectStoreManager::GetInstance();
-    sptr<IRemoteObject> callback;
     uint32_t tokenId = 101;
-    manager.RegisterRemoteCallback("", sessionId_, pid_, tokenId, callback);
-    manager.RegisterRemoteCallback(bundleName_, "", pid_, tokenId, callback);
-    manager.RegisterRemoteCallback("", "", pid_, tokenId, callback);
+    manager.RegisterRemoteCallback("", sessionId_, pid_, tokenId, nullptr);
+    manager.RegisterRemoteCallback(bundleName_, "", pid_, tokenId, nullptr);
+    manager.RegisterRemoteCallback("", "", pid_, tokenId, nullptr);
     manager.RegisterRemoteCallback(bundleName_, sessionId_, pid_, tokenId, nullptr);
     ASSERT_EQ(manager.callbacks_.Find(tokenId).first, false);
     manager.UnregisterRemoteCallback("", pid_, tokenId, sessionId_);
@@ -1280,14 +1279,13 @@ HWTEST_F(ObjectManagerTest, registerAndUnregisterProgressObserverCallback001, Te
 HWTEST_F(ObjectManagerTest, registerAndUnregisterProgressObserverCallback002, TestSize.Level0)
 {
     auto &manager = ObjectStoreManager::GetInstance();
-    sptr<IRemoteObject> callback;
     uint32_t tokenId = 101;
-    manager.RegisterProgressObserverCallback("", sessionId_, pid_, tokenId, callback);
-    manager.RegisterProgressObserverCallback(bundleName_, "", pid_, tokenId, callback);
-    manager.RegisterProgressObserverCallback("", "", pid_, tokenId, callback);
+    manager.RegisterProgressObserverCallback("", sessionId_, pid_, tokenId, nullptr);
+    manager.RegisterProgressObserverCallback(bundleName_, "", pid_, tokenId, nullptr);
+    manager.RegisterProgressObserverCallback("", "", pid_, tokenId, nullptr);
     ObjectStoreManager::ProgressCallbackInfo progressCallbackInfo = manager.processCallbacks_.Find(tokenId_).second;
     progressCallbackInfo.pid = pid_;
-    manager.RegisterProgressObserverCallback(bundleName_, sessionId_, pid_, tokenId_, callback);
+    manager.RegisterProgressObserverCallback(bundleName_, sessionId_, pid_, tokenId_, nullptr);
     ASSERT_EQ(manager.processCallbacks_.Find(tokenId).first, false);
     manager.UnregisterProgressObserverCallback("", pid_, tokenId, sessionId_);
     manager.UnregisterProgressObserverCallback("", pid_, tokenId, "");
