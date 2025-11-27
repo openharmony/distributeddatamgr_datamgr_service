@@ -36,6 +36,8 @@ public:
 
     int32_t OnChange(const Origin &origin, const PrimaryFields &primaries, ChangeInfo &&changeInfo) override;
 
+    int32_t OnChange(const std::string &storeId, int32_t triggerMode) override;
+
 private:
     static inline BrokerDelegator<RdbNotifierProxy> delegator_;
 };

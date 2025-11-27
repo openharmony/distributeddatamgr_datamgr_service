@@ -58,6 +58,7 @@ public:
     virtual ~GeneralWatcher() = default;
     virtual int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) = 0;
     virtual int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) = 0;
+    virtual int32_t OnChange(const std::string &storeId, int32_t triggerMode) = 0;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_WATCHER_H

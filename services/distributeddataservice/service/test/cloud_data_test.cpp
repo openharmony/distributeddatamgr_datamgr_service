@@ -20,6 +20,7 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
+#include "cloud/cloud_conflict_handler.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_last_sync_info.h"
 #include "cloud/cloud_mark.h"
@@ -84,6 +85,12 @@ namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const int32_t SCHEMA_VERSION = 101;
 static constexpr const int32_t EVT_USER = 102;
+static constexpr const int32_t INSERT = 0;
+static constexpr const int32_t UPDATE = 1;
+static constexpr const int32_t DELETE = 2;
+static constexpr const int32_t NOT_HANDLE = 3;
+static constexpr const int32_t OTHER_ERROR = -1;
+
 static constexpr const char *TEST_TRACE_ID = "123456789";
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
@@ -140,10 +147,20 @@ protected:
     public:
         std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo) override;
         std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundle) override;
+        std::shared_ptr<CloudConflictHandler> GetConflictHandler() override;
+        std::shared_ptr<AssetLoader> ConnectAssetLoader(const std::string &bundleName, int user,
+            const Database &dbMeta);
+        std::shared_ptr<CloudDB> ConnectCloudDB(const std::string &bundleName, int user, const Database &dbMeta);
         virtual ~CloudServerMock() = default;
         static constexpr uint64_t REMAINSPACE = 1000;
         static constexpr uint64_t TATALSPACE = 2000;
         static constexpr int32_t INVALID_USER_ID = -1;
+    };
+
+    class CloudConflictHandlerMock : public CloudConflictHandler {
+    public:
+        int32_t HandleConflict(const std::string &table, const VBucket &oldData, const VBucket &newData,
+            VBucket &upsert) override;
     };
 
     static void InitMetaData();
@@ -155,6 +172,7 @@ protected:
     static DistributedData::CheckerMock checker_;
     static NetworkDelegateMock delegate_;
     static int32_t dbStatus_;
+    static CloudServerMock cloudServerMock_;
 };
 
 std::pair<int32_t, CloudInfo> CloudDataTest::CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
@@ -189,6 +207,38 @@ std::pair<int32_t, SchemaMeta> CloudDataTest::CloudServerMock::GetAppSchema(int3
     return { E_OK, CloudDataTest::schemaMeta_ };
 }
 
+std::shared_ptr<CloudConflictHandler> CloudDataTest::CloudServerMock::GetConflictHandler()
+{
+    return std::make_shared<CloudConflictHandlerMock>();
+}
+
+std::shared_ptr<AssetLoader> CloudDataTest::CloudServerMock::ConnectAssetLoader(const std::string &bundleName,
+    int user, const Database &dbMeta)
+{
+    return std::make_shared<AssetLoader>();
+}
+
+std::shared_ptr<CloudDB> CloudDataTest::CloudServerMock::ConnectCloudDB(const std::string &bundleName, int user,
+    const Database &dbMeta)
+{
+    return std::make_shared<CloudDB>();
+}
+
+int32_t CloudDataTest::CloudConflictHandlerMock::HandleConflict(const std::string &table, const VBucket &oldData,
+    const VBucket &newData, VBucket &upsert)
+{
+    if (table == "INSERT") {
+        return INSERT;
+    } else if (table == "UPDATE") {
+        return UPDATE;
+    } else if (table == "DELETE") {
+        return DELETE;
+    } else if (table == "NOT_HANDLE") {
+        return NOT_HANDLE;
+    }
+    return OTHER_ERROR;
+}
+
 std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 SchemaMeta CloudDataTest::schemaMeta_;
 StoreMetaData CloudDataTest::metaData_;
@@ -198,6 +248,7 @@ std::shared_ptr<CloudData::CloudServiceImpl> CloudDataTest::cloudServiceImpl_ =
 DistributedData::CheckerMock CloudDataTest::checker_;
 NetworkDelegateMock CloudDataTest::delegate_;
 int32_t CloudDataTest::dbStatus_ = E_OK;
+CloudDataTest::CloudServerMock CloudDataTest::cloudServerMock_;
 void CloudDataTest::InitMetaData()
 {
     metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
@@ -265,8 +316,7 @@ void CloudDataTest::SetUpTestCase(void)
         DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
     });
 
-    auto cloudServerMock = new CloudServerMock();
-    CloudServer::RegisterCloudInstance(cloudServerMock);
+    CloudServer::RegisterCloudInstance(&cloudServerMock_);
     HapPolicyParams policy = { .apl = APL_SYSTEM_BASIC,
         .domain = "test.domain",
         .permList = { GetPermissionDef(PERMISSION_CLOUDDATA_CONFIG), GetPermissionDef(PERMISSION_GET_NETWORK_INFO),
@@ -336,7 +386,7 @@ void CloudDataTest::SetUp()
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, [this](const Event &event) {
         auto &evt = static_cast<const SyncEvent &>(event);
-        auto query = static_cast<RdbQuery*>(evt.GetQuery().get());
+        auto query = static_cast<RdbQuery *>(evt.GetQuery().get());
         if (query != nullptr) {
             priority_ = query->IsPriority();
         }
@@ -515,8 +565,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level1)
     auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
-    cloudServiceImpl_->OnUserChange(
-        static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED), std::to_string(user), "accountId");
+    cloudServiceImpl_->OnUserChange(static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED),
+        std::to_string(user), "accountId");
 
     sleep(1);
 
@@ -545,8 +595,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level1)
     info.apps[TEST_CLOUD_BUNDLE].cloudSwitch = false;
     MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true);
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
-    cloudServiceImpl_->OnUserChange(
-        static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED), std::to_string(user), "accountId");
+    cloudServiceImpl_->OnUserChange(static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_SWITCHED),
+        std::to_string(user), "accountId");
     sleep(1);
 
     auto [status, result] =
@@ -627,7 +677,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo008, TestSize.Level0)
 {
     int32_t user = 100;
     int64_t startTime = 123456789;
-        int64_t finishTime = 123456799;
+    int64_t finishTime = 123456799;
     CloudLastSyncInfo lastSyncInfo;
     lastSyncInfo.id = TEST_CLOUD_ID;
     lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
@@ -680,7 +730,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo009, TestSize.Level0)
 {
     int32_t user = 100;
     int64_t startTime = 123456789;
-        int64_t finishTime = 123456799;
+    int64_t finishTime = 123456799;
     CloudLastSyncInfo lastSyncInfo;
     lastSyncInfo.id = TEST_CLOUD_ID;
     lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
@@ -726,7 +776,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo010, TestSize.Level0)
 {
     int32_t user = 100;
     int64_t startTime = 123456789;
-        int64_t finishTime = 123456799;
+    int64_t finishTime = 123456799;
     CloudLastSyncInfo lastSyncInfo;
     lastSyncInfo.id = TEST_CLOUD_ID;
     lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
@@ -2633,7 +2683,7 @@ HWTEST_F(CloudDataTest, GetMinExpireTime, TestSize.Level0)
     EXPECT_EQ(sub.GetMinExpireTime(), expire);
 }
 
- /**
+/**
 * @tc.name: GetTableNames
 * @tc.desc: Test GetTableNames.
 * @tc.type: FUNC
@@ -2783,7 +2833,7 @@ HWTEST_F(CloudDataTest, GetPriorityLevel004, TestSize.Level1)
 HWTEST_F(CloudDataTest, UpdateSchemaFromHap001, TestSize.Level1)
 {
     ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudData::CloudServiceImpl::HapInfo info = {  .user = -1, .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE };
+    CloudData::CloudServiceImpl::HapInfo info = { .user = -1, .instIndex = 0, .bundleName = TEST_CLOUD_BUNDLE };
     auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
     EXPECT_EQ(ret, Status::ERROR);
 }
@@ -3239,6 +3289,91 @@ HWTEST_F(CloudDataTest, IsPriority002, TestSize.Level1)
     auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
     rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
     EXPECT_TRUE(priority_);
+}
+
+/**
+* @tc.name: ConflictHandler001
+* @tc.desc: Test the default value of the GetConflictHandler interface
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, ConflictHandler001, TestSize.Level1)
+{
+    CloudServer server;
+    auto handler = server.GetConflictHandler();
+    EXPECT_EQ(handler, nullptr);
+}
+
+/**
+* @tc.name: ConflictHandler002
+* @tc.desc: Test the SetCloudConflictHandler interface
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, SetCloudConflictHandler, TestSize.Level1)
+{
+    CloudData::SyncManager syncManager;
+    auto ret = syncManager.SetCloudConflictHandler(nullptr);
+    EXPECT_EQ(ret, E_ERROR);
+    ret = syncManager.SetCloudConflictHandler(std::make_shared<GeneralStoreMock>());
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: ConflictHandler003
+* @tc.desc: Test the handleConflict method of the RdbCloudConflictHandler class
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, ConflictHandler003, TestSize.Level1)
+{
+    DistributedRdb::RdbCloudConflictHandler handler(nullptr);
+    DistributedDB::VBucket data;
+    auto ret = handler.HandleConflict("test", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
+    auto mock = std::make_shared<CloudConflictHandlerMock>();
+    DistributedRdb::RdbCloudConflictHandler handler1(mock);
+    ret = handler1.HandleConflict("INSERT", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::UPSERT);
+    ret = handler1.HandleConflict("UPDATE", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::UPSERT);
+    ret = handler1.HandleConflict("DELETE", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::DELETE);
+    ret = handler1.HandleConflict("NOT_HANDLE", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
+    ret = handler1.HandleConflict("OTHER", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
+}
+
+/**
+* @tc.name: DoCloudSync002
+* @tc.desc: Test the DoCloudSync function CloudSyncScene is SERVICE_INIT
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, DoCloudSync002, TestSize.Level1)
+{
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    auto ret = cloudServiceImpl_->DoCloudSync(user, CloudSyncScene::SERVICE_INIT);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name: DoCloudSync003
+* @tc.desc: Test the DoCloudSync function CloudSyncScene is not SERVICE_INIT
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level1)
+{
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    auto ret = cloudServiceImpl_->DoCloudSync(user, CloudSyncScene::SWITCH_ON);
+    EXPECT_TRUE(ret);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

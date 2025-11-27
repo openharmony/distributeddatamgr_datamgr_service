@@ -592,6 +592,7 @@ ohos_unittest("RdbServiceTest") {
     "rdb_result_set_stub_test.cpp",
     "relational_store_cursor_test.cpp",
     "rdb_store_utils_test.cpp",
+    "rdb_service_stub_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -818,6 +819,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -855,6 +857,7 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -889,6 +892,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -1096,6 +1100,7 @@ ohos_unittest("ObjectSnapshotTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
 

@@ -23,6 +23,7 @@ struct API_EXPORT Field final : public Serializable {
     int32_t type = 0;
     bool primary = false;
     bool nullable = true;
+    bool dupCheckCol = false;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     bool operator==(const Field &field) const;

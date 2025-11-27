@@ -83,6 +83,8 @@ public:
     static DBSecurity GetDBSecurity(int32_t secLevel);
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
+    int32_t StopCloudSync() override;
+    int32_t OnSyncTrigger(const std::string &storeId, int32_t triggerMode) override;
 
     std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value,
         ConflictResolution resolution) override;

@@ -138,6 +138,11 @@ public:
     {
         return GeneralError::E_OK;
     }
+    
+    int32_t OnChange(const std::string &storeId, int32_t triggerMode) override
+    {
+        return GeneralError::E_OK;
+    }
 };
 
 class MockKvStoreChangedData : public DistributedDB::KvStoreChangedData {

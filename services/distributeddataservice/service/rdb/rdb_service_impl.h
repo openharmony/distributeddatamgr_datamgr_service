@@ -126,6 +126,8 @@ public:
 
     int32_t VerifyPromiseInfo(const RdbSyncerParam &param) override;
 
+    int32_t StopCloudSync(const RdbSyncerParam &param) override;
+
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;

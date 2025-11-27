@@ -68,6 +68,8 @@ public:
             bool preCount = false) override;
     void SetMockCursor(const std::map<std::string, Value> &entry);
     void SetMockDBStatus(int32_t dbStatus);
+    int32_t StopCloudSync() override;
+    int32_t OnSyncTrigger(const std::string &storeId, int32_t triggerMode) override;
 
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;

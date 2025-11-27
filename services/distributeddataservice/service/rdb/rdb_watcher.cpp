@@ -50,6 +50,16 @@ int32_t RdbWatcher::OnChange(const Origin &origin, const Fields &fields, ChangeD
     return E_OK;
 }
 
+int32_t RdbWatcher::OnChange(const std::string &storeId, int32_t triggerMode)
+{
+    auto notifier = GetNotifier();
+    if (notifier == nullptr) {
+        return E_NOT_INIT;
+    }
+    ZLOGD("store:%{public}s triggerMode:%{public}d", Anonymous::Change(storeId).c_str(), triggerMode);
+    notifier->OnChange(storeId, triggerMode);
+    return E_OK;
+}
 sptr<RdbNotifierProxy> RdbWatcher::GetNotifier() const
 {
     std::shared_lock<decltype(mutex_)> lock(mutex_);

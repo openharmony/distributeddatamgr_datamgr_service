@@ -1516,6 +1516,262 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
 }
 
 /**
+ * @tc.name: SetDistributedTablesCloudWithAsyncFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when asyncDownloadAsset is false but metadata is true
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAsyncFalse, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = false;
+    param.enableCloud_ = true;
+    param.autoSyncSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = true;
+    metaData_.autoSyncSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithCloudFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when enableCloud is false but metadata is true
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithCloudFalse, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = false;
+    param.autoSyncSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = true;
+    metaData_.autoSyncSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithSyncFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when autoSyncSwitch is false but metadata is true
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithSyncFalse, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = true;
+    param.autoSyncSwitch_ = false;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = true;
+    metaData_.autoSyncSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithAllFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when all parameters are false
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAllFalse, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = false;
+    param.enableCloud_ = false;
+    param.autoSyncSwitch_ = false;
+    metaData_.asyncDownloadAsset = false;
+    metaData_.enableCloud = false;
+    metaData_.autoSyncSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithCloudMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when enableCloud parameter differs from metadata
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithCloudMismatch, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = true;
+    param.autoSyncSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = false;
+    metaData_.autoSyncSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithSyncMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when autoSyncSwitch parameter differs from metadata
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithSyncMismatch, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = true;
+    param.autoSyncSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = true;
+    metaData_.autoSyncSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithAsyncMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when asyncDownloadAsset parameter differs from metadata
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAsyncMismatch, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = false;
+    param.autoSyncSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = false;
+    metaData_.autoSyncSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithAllMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when all parameters differ from metadata
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAllMismatch, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = true;
+    param.autoSyncSwitch_ = true;
+    metaData_.asyncDownloadAsset = false;
+    metaData_.enableCloud = false;
+    metaData_.autoSyncSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
  * @tc.name: Sync001
  * @tc.desc: Test Sync when CheckAccess not pass.
  * @tc.type: FUNC
@@ -1702,6 +1958,43 @@ HWTEST_F(RdbServiceImplTest, Subscribe001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: Subscribe002
+ * @tc.desc: Test Subscribe when option mode CLOUD_SYNC_TRIGGER.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, Subscribe002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    SubscribeOption option{};
+    option.mode = SubscribeMode::CLOUD_SYNC_TRIGGER;
+
+    int32_t result = service.Subscribe(param, option, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+
+/**
+ * @tc.name: Subscribe003
+ * @tc.desc: Test Subscribe when option mode CLOUD.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, Subscribe003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    SubscribeOption option{};
+    option.mode = SubscribeMode::CLOUD;
+
+    int32_t result = service.Subscribe(param, option, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
  * @tc.name: UnSubscribe001
  * @tc.desc: Test UnSubscribe when option mode invalid.
  * @tc.type: FUNC
@@ -1717,6 +2010,42 @@ HWTEST_F(RdbServiceImplTest, UnSubscribe001, TestSize.Level0)
 
     int32_t result = service.UnSubscribe(param, option, nullptr);
     EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: UnSubscribe002
+ * @tc.desc: Test UnSubscribe when option mode CLOUD_SYNC_TRIGGER.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, UnSubscribe002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    SubscribeOption option{};
+    option.mode = SubscribeMode::CLOUD_SYNC_TRIGGER;
+
+    int32_t result = service.UnSubscribe(param, option, nullptr);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: UnSubscribe003
+ * @tc.desc: Test UnSubscribe when option mode CLOUD.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, UnSubscribe003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    SubscribeOption option{};
+    option.mode = SubscribeMode::CLOUD;
+
+    int32_t result = service.UnSubscribe(param, option, nullptr);
+    EXPECT_EQ(result, RDB_OK);
 }
 
 /**
@@ -2852,6 +3181,70 @@ HWTEST_F(RdbServiceImplTest, StealEvent001, TestSize.Level0)
     RdbServiceImpl service;
     auto result = service.eventContainer_->StealEvent(testPath);
     EXPECT_EQ(result, std::nullopt);
+}
+
+/**
+ * @tc.name: StopCloudSync001
+ * @tc.desc: Test StopCloudSync, param invalid.
+ * @tc.type: FUNC
+ * @tc.expect: StopCloudSync returns RDB_ERROR
+ */
+HWTEST_F(RdbServiceImplTest, StopCloudSync001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.hapName_ = "test/test";
+    auto errCode = service.StopCloudSync(param);
+    EXPECT_EQ(errCode, RDB_ERROR);
+}
+
+/**
+ * @tc.name: StopCloudSync002
+ * @tc.desc: Test StopCloudSync, when CheckAccess fails.
+ * @tc.type: FUNC
+ * @tc.expect: StopCloudSync returns RDB_ERROR
+ */
+HWTEST_F(RdbServiceImplTest, StopCloudSync002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    auto errCode = service.StopCloudSync(param);
+    EXPECT_EQ(errCode, RDB_ERROR);
+}
+
+/**
+ * @tc.name: StopCloudSync003
+ * @tc.desc: Test StopCloudSync, param invalid and CheckAccess fails.
+ * @tc.type: FUNC
+ * @tc.expect: StopCloudSync returns RDB_ERROR
+ */
+HWTEST_F(RdbServiceImplTest, StopCloudSync003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.hapName_ = "test/test";
+    auto errCode = service.StopCloudSync(param);
+    EXPECT_EQ(errCode, RDB_ERROR);
+}
+
+/**
+ * @tc.name: StopCloudSync004
+ * @tc.desc: Test StopCloudSync, when CheckAccess succ.
+ * @tc.type: FUNC
+ * @tc.expect: StopCloudSync returns RDB_OK
+ */
+HWTEST_F(RdbServiceImplTest, StopCloudSync004, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    auto errCode = service.StopCloudSync(param);
+    EXPECT_EQ(errCode, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
