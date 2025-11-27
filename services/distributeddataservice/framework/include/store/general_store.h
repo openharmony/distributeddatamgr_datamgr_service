@@ -197,6 +197,8 @@ public:
 
     virtual int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) = 0;
 
+    virtual int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) = 0;
+
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;
 
     virtual int32_t Unwatch(int32_t origin, Watcher &watcher) = 0;

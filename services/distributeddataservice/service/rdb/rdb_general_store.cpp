@@ -883,6 +883,31 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
+int32_t RdbGeneralStore::Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList)
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed! devices :%{public}s, mode:%{public}d, tables count:%{public}zu",
+            meta_.GetStoreAlias().c_str(), Anonymous::Change(device).c_str(), mode, tableList.size());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    if (mode != CLOUD_INFO && mode != CLOUD_DATA) {
+        ZLOGW("mode:%{public}d is not supported", mode);
+        return GeneralError::E_INVALID_ARGS;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    ClearDeviceDataOption option{ static_cast<ClearMode>(mode), device, std::move(tableList) };
+    DBStatus status = delegate_->RemoveDeviceData(option);
+    if (status == DistributedDB::OK) {
+        option.mode = ClearMode::CLEAR_SHARED_TABLE;
+        status = delegate_->RemoveDeviceData(option);
+        return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
+    }
+    (void)delegate_->RemoveDeviceData(option);
+    return GeneralError::E_ERROR;
+}
 int32_t RdbGeneralStore::Watch(int32_t origin, Watcher &watcher)
 {
     if (origin != Watcher::Origin::ORIGIN_ALL || observer_.watcher_ != nullptr) {

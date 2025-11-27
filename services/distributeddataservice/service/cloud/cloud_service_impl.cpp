@@ -301,7 +301,7 @@ void CloudServiceImpl::DoAppLevelClean(int32_t user, const SchemaMeta &schemaMet
         if (!GetStoreMetaData(meta)) {
             continue;
         }
-        ExecuteDatabaseClean(user, meta, appAction, "");
+        ExecuteDatabaseClean(user, meta, appAction);
     }
 }
 
@@ -329,7 +329,7 @@ void CloudServiceImpl::DoDbTableLevelClean(int32_t user, const SchemaMeta &schem
         if (dbIter != config.dbInfo.end() && dbIter->second.action != GeneralStore::CleanMode::CLOUD_NONE) {
             ZLOGD("db level clean - database:%{public}s, action:%{public}d", database.name.c_str(),
                 dbIter->second.action);
-            ExecuteDatabaseClean(user, meta, dbIter->second.action, "");
+            ExecuteDatabaseClean(user, meta, dbIter->second.action);
         } else if (dbIter != config.dbInfo.end() && !dbIter->second.tableInfo.empty()) {
             ZLOGD("table level clean - database:%{public}s", database.name.c_str());
             ExecuteTableLevelClean(user, meta, database, dbIter->second.tableInfo);
@@ -338,7 +338,7 @@ void CloudServiceImpl::DoDbTableLevelClean(int32_t user, const SchemaMeta &schem
 }
 
 void CloudServiceImpl::ExecuteDatabaseClean(int32_t user, const StoreMetaData &meta, int32_t action,
-    const std::string &tableName)
+    const std::vector<std::string> &tableList)
 {
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = meta.bundleName;
@@ -349,13 +349,12 @@ void CloudServiceImpl::ExecuteDatabaseClean(int32_t user, const StoreMetaData &m
         EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
     }
     auto store = AutoCache::GetInstance().GetStore(meta, {});
-    auto status = store->Clean({}, action, tableName);
+    auto status = store->Clean("", action, tableList);
     if (status != E_OK) {
-        ZLOGW("clean data status:%{public}d, user:%{public}d, bundleName:%{public}s, storeId:%{public}s, "
-              "table:%{public}s",
-            status, static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), tableName.c_str());
+        ZLOGW("clean data status:%{public}d, user:%{public}d, bundleName:%{public}s, storeId:%{public}s", status,
+            static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, meta.bundleName,
-            "Clean:" + std::to_string(status) + ", storeId=" + meta.GetStoreAlias() + ", table=" + tableName +
+            "Clean:" + std::to_string(status) + ", storeId=" + meta.GetStoreAlias() +
                 ", action=" + std::to_string(action));
     }
 }
@@ -364,6 +363,7 @@ void CloudServiceImpl::ExecuteTableLevelClean(int32_t user, const StoreMetaData 
     const std::map<std::string, int32_t> &tableActions)
 {
     const auto &cloudTables = database.GetCloudTables();
+    std::map<int32_t, std::vector<std::string>> actionToTablesMap;
     for (const auto &[tableName, tableAction] : tableActions) {
         if (std::find(cloudTables.begin(), cloudTables.end(), tableName) == cloudTables.end()) {
             ZLOGW("table:%{public}s not in cloud tables for database:%{public}s", tableName.c_str(),
@@ -377,7 +377,11 @@ void CloudServiceImpl::ExecuteTableLevelClean(int32_t user, const StoreMetaData 
         }
 
         ZLOGD("table level clean - table:%{public}s, action:%{public}d", tableName.c_str(), tableAction);
-        ExecuteDatabaseClean(user, meta, tableAction, tableName);
+        auto &list = actionToTablesMap[tableAction];
+        list.push_back(tableName);
+    }
+    for (const auto &[tableAction, tables] : actionToTablesMap) {
+        ExecuteDatabaseClean(user, meta, tableAction, tables);
     }
 }
 

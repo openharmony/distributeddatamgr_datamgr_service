@@ -192,7 +192,8 @@ private:
         std::map<std::string, ClearConfig> &configs);
     void DoAppLevelClean(int32_t user, const SchemaMeta &schemaMeta, int32_t action);
     void DoDbTableLevelClean(int32_t user, const SchemaMeta &schemaMeta, const ClearConfig &config);
-    void ExecuteDatabaseClean(int32_t user, const StoreMetaData &meta, int32_t action, const std::string &tableName);
+    void ExecuteDatabaseClean(int32_t user, const StoreMetaData &meta, int32_t action,
+        const std::vector<std::string> &tableList = {});
     void ExecuteTableLevelClean(int32_t user, const StoreMetaData &meta, const Database &database,
         const std::map<std::string, int32_t> &tableActions);
     std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(
