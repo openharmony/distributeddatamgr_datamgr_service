@@ -257,8 +257,8 @@ int32_t ObjectStoreManager::RevokeSave(
     }
     sptr<ObjectRevokeSaveCallbackProxy> proxy = new (std::nothrow) ObjectRevokeSaveCallbackProxy(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s, appId: %{public}s, sessionId: %{public}s.",
-            (callback == nullptr) ? "nullptr" : "not null", appId.c_str(), Anonymous::Change(sessionId).c_str());
+        ZLOGE("proxy is nullptr, appId: %{public}s, sessionId: %{public}s.", appId.c_str(),
+            Anonymous::Change(sessionId).c_str());
         return INVALID_ARGUMENT;
     }
     int32_t result = Open();
@@ -452,10 +452,8 @@ void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, c
     ZLOGD("ObjectStoreManager::RegisterRemoteCallback start");
     sptr<ObjectChangeCallbackProxy> proxy = new (std::nothrow) ObjectChangeCallbackProxy(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s, bundleName: %{public}s, sessionId: %{public}s, pid: "
-              "%{public}d, tokenId: %{public}u.",
-            (callback == nullptr) ? "nullptr" : "not null", bundleName.c_str(), Anonymous::Change(sessionId).c_str(),
-            pid, tokenId);
+        ZLOGE("proxy is nullptr, bundleName: %{public}s, sessionId: %{public}s, pid: %{public}d, tokenId: %{public}u.",
+            bundleName.c_str(), Anonymous::Change(sessionId).c_str(), pid, tokenId);
         return;
     }
     std::string prefix = bundleName + sessionId;
@@ -504,10 +502,8 @@ void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bun
     }
     sptr<ObjectProgressCallbackProxy> proxy = new (std::nothrow) ObjectProgressCallbackProxy(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s, bundleName: %{public}s, sessionId: %{public}s, pid: "
-              "%{public}d, tokenId: %{public}u.",
-            (callback == nullptr) ? "nullptr" : "not null", bundleName.c_str(), Anonymous::Change(sessionId).c_str(),
-            pid, tokenId);
+        ZLOGE("proxy is nullptr, bundleName: %{public}s, sessionId: %{public}s, pid:%{public}d, tokenId: %{public}u.",
+            bundleName.c_str(), Anonymous::Change(sessionId).c_str(), pid, tokenId);
         return;
     }
     std::string objectKey = bundleName + sessionId;
