@@ -201,6 +201,10 @@ private:
     int32_t Open();
     std::shared_ptr<DistributedDB::KvStoreDelegateManager> GetKvStoreDelegateManager();
     void InitKvStoreDelegateManager(const std::string &userId);
+    int32_t SaveInternal(const std::string &appId, const std::string &sessionId, const ObjectRecord &data,
+        const std::string &deviceId, sptr<ObjectSaveCallbackProxy> proxy);
+    int32_t RetrieveInternal(const std::string &bundleName, const std::string &sessionId,
+        sptr<ObjectRetrieveCallbackProxy> proxy);
     inline std::string GetPropertyPrefix(const std::string &appId, const std::string &sessionId)
     {
         return appId + SEPERATOR + sessionId + SEPERATOR + DmAdaper::GetInstance().GetLocalDevice().udid + SEPERATOR;

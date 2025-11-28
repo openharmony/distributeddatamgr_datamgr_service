@@ -592,6 +592,7 @@ ohos_unittest("RdbServiceTest") {
     "rdb_result_set_stub_test.cpp",
     "relational_store_cursor_test.cpp",
     "rdb_store_utils_test.cpp",
+    "rdb_service_stub_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -818,6 +819,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -855,6 +857,7 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -889,6 +892,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -1096,6 +1100,7 @@ ohos_unittest("ObjectSnapshotTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
 
@@ -1909,6 +1914,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -1925,6 +1931,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "relational_store:native_rdb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 }
 
@@ -2001,6 +2008,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -2016,6 +2024,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "kv_store:datamgr_common",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 }
 
@@ -2702,6 +2711,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -2723,6 +2733,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 
   deps = [
@@ -2794,6 +2805,7 @@ ohos_unittest("UdmfObserverTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -2815,6 +2827,7 @@ ohos_unittest("UdmfObserverTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:utd_client",
   ]
 
   deps = [

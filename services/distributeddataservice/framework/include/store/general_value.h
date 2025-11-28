@@ -33,8 +33,10 @@ enum GenProgress {
 
 enum SyncTriggerMode {
     MODE_DEFAULT = 0,
-    MODE_PUSH,
+    MODE_SWITCHON,
     MODE_ONLINE,
+    MODE_PUSH,
+    MODE_PROCESSSTART,
     MODE_UNLOCK,
     MODE_BROADCASTER,
     MODE_CONSISTENCY,

@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 
+#include "cloud/cloud_conflict_handler.h"
 #include "cloud/cloud_db_sync_config.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
@@ -146,6 +147,7 @@ private:
     using GeneralError = DistributedData::GeneralError;
     using GenProgress = DistributedData::GenProgress;
     using GenDetails = DistributedData::GenDetails;
+    using CloudConflictHandler = DistributedData::CloudConflictHandler;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10);  // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
@@ -180,8 +182,10 @@ private:
         const std::string &prepareTraceId);
     Task GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo);
     void UpdateSchema(const SyncInfo &syncInfo);
-    std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
+    std::function<void(const Event &)> GetSyncHandler(Retryer retryer, const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetClientChangeHandler();
+    std::function<void(const Event &)> GetSyncTriggerHandler();
+    std::function<void(const Event &)> GetSyncTriggerCleanHandler();
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
@@ -204,6 +208,7 @@ private:
     void AddCompensateSync(const StoreMetaData &meta);
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
+    int32_t SetCloudConflictHandler(const AutoCache::Store &store);
 
     struct ErrorContext {
         const CloudInfo &cloud;
@@ -234,6 +239,7 @@ private:
     std::set<std::string> kvApps_;
     ConcurrentMap<int32_t, std::map<std::string, std::set<std::string>>> compensateSyncInfos_;
     NetworkRecoveryManager networkRecoveryManager_{ *this };
+    ConcurrentMap<std::string, StoreInfo> syncTriggerMap_;
 };
 } // namespace OHOS::CloudData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H

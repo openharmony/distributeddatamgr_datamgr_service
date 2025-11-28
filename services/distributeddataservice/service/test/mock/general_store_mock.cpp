@@ -217,5 +217,15 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(GenQuery &qu
 {
     return { E_OK, nullptr };
 }
+
+int32_t GeneralStoreMock::StopCloudSync()
+{
+    return 0;
+}
+
+int32_t GeneralStoreMock::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
+{
+    return E_OK;
+}
 } // namespace DistributedData
 } // namespace OHOS

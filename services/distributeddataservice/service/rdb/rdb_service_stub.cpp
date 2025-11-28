@@ -520,4 +520,19 @@ int32_t RdbServiceStub::OnVerifyPromiseInfo(MessageParcel &data, MessageParcel &
     }
     return RDB_OK;
 }
+
+int32_t RdbServiceStub::OnStopCloudSync(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = StopCloudSync(param);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
 } // namespace OHOS::DistributedRdb

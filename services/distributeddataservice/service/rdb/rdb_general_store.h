@@ -22,6 +22,7 @@
 #include "concurrent_map.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_asset_loader.h"
+#include "rdb_cloud_conflict_handler.h"
 #include "rdb_cloud.h"
 #include "rdb_store.h"
 #include "rdb_store_config.h"
@@ -46,6 +47,7 @@ public:
     using DBPassword = DistributedDB::CipherPassword;
     using Snapshot = DistributedData::Snapshot;
     using BindAssets = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
+    using CloudConflictHandler = DistributedData::CloudConflictHandler;
 
     explicit RdbGeneralStore(const StoreMetaData &, bool createRequired = false);
     ~RdbGeneralStore();
@@ -101,10 +103,13 @@ public:
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
     int32_t UpdateDBStatus() override;
+    int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler) override;
+    int32_t StopCloudSync() override;
+    int32_t OnSyncTrigger(const std::string &storeId, int32_t triggerMode) override;
 
 private:
-    RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
-    RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore);
+    RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore) = delete;
+    RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore) = delete;
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
     using SyncProcess = DistributedDB::SyncProcess;
@@ -222,6 +227,7 @@ private:
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
+    std::shared_ptr<RdbCloudConflictHandler> conflictHandler_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

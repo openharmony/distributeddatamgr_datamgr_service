@@ -217,6 +217,8 @@ SyncManager::SyncManager()
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCK_CLOUD_CONTAINER, SyncManager::GetLockChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::UNLOCK_CLOUD_CONTAINER, SyncManager::GetLockChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
+    EventCenter::GetInstance().Subscribe(CloudEvent::SYNC_TRIGGER, GetSyncTriggerHandler());
+    EventCenter::GetInstance().Subscribe(CloudEvent::SYNC_TRIGGER_CLEAN, GetSyncTriggerCleanHandler());
     syncStrategy_ = std::make_shared<NetworkSyncStrategy>();
     auto metaName = Bootstrap::GetInstance().GetProcessLabel();
     kvApps_.insert(std::move(metaName));
@@ -397,7 +399,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
                 return;
             }
         }
-        Defer defer(GetSyncHandler(std::move(retryer)), CloudEvent::CLOUD_SYNC);
+        Defer defer(GetSyncHandler(std::move(retryer), info), CloudEvent::CLOUD_SYNC);
         if (createdByDefaultUser) {
             info.user_ = 0;
         }
@@ -434,20 +436,23 @@ void SyncManager::StartCloudSync(const DistributedData::SyncEvent &evt, const St
     }
 }
 
-std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
+std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer, const SyncInfo &info)
 {
-    return [this, retryer](const Event &event) {
+    return [this, retryer, info](const Event &event) {
         auto &evt = static_cast<const SyncEvent &>(event);
         auto &storeInfo = evt.GetStoreInfo();
         GenAsync async = evt.GetAsyncDetail();
         auto prepareTraceId = evt.GetPrepareTraceId();
+        auto isAutoSync = evt.AutoRetry();
         GenDetails details;
         auto &detail = details[SyncInfo::DEFAULT_ID];
         detail.progress = GenProgress::SYNC_FINISH;
+        auto exCallback = [this, async, &details, &storeInfo, &prepareTraceId](int32_t code, const std::string &msg) {
+            return DoExceptionalCallback(async, details, storeInfo, {0, "", prepareTraceId, SyncStage::END, code, msg});
+        };
         auto [hasMeta, meta] = GetMetaData(storeInfo);
         if (!hasMeta) {
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, GeneralError::E_ERROR, "no meta"});
+            return exCallback(GeneralError::E_ERROR, "no meta");
         }
         auto [code, store] = GetStore(meta, storeInfo.user);
         if (code == E_SCREEN_LOCKED) {
@@ -456,18 +461,31 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s, prepareTraceId:%{public}s", meta.GetStoreAlias().c_str(),
                 prepareTraceId.c_str());
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, GeneralError::E_ERROR, "store null"});
+            return exCallback(GeneralError::E_ERROR, "store null");
         }
         if (!meta.enableCloud) {
             ZLOGW("meta.enableCloud is false, storeId:%{public}s, prepareTraceId:%{public}s",
                 meta.GetStoreAlias().c_str(), prepareTraceId.c_str());
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, E_CLOUD_DISABLED, "disable cloud"});
+            return exCallback(E_CLOUD_DISABLED, "disable cloud");
         }
-        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
-              storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
-              meta.asyncDownloadAsset);
+        if (!meta.autoSyncSwitch) {
+            auto ret = SetCloudConflictHandler(store);
+            if (ret != E_OK) {
+                return exCallback(GeneralError::E_ERROR, "SetCloudConflictHandler failed");
+            }
+            if ((info.triggerMode_ == MODE_PUSH) || (info.triggerMode_ == MODE_SWITCHON) ||
+                (info.triggerMode_ == MODE_PROCESSSTART)) {
+                ZLOGW("triggerMode: %{public}d, bundleName: %{public}s", info.triggerMode_, info.bundleName_.c_str());
+                store->OnSyncTrigger(storeInfo.storeName, info.triggerMode_);
+                return exCallback(E_OK, "syncTrigger");
+            }
+            if (isAutoSync) {
+                return exCallback(E_OK, "syncTrigger isAutoSync");
+            }
+        }
+        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d],"
+            "mode:%{public}d", storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(),
+            prepareTraceId.c_str(), meta.asyncDownloadAsset, info.triggerMode_);
         StartCloudSync(evt, meta, store, retryer, details);
     };
 }
@@ -504,6 +522,25 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetTriggerMode(evt.GetTriggerMode());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
         executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
+    };
+}
+
+std::function<void(const Event &)> SyncManager::GetSyncTriggerHandler()
+{
+    return [this](const Event &event) {
+        auto &evt = static_cast<const CloudEvent &>(event);
+        auto storeInfo = evt.GetStoreInfo();
+        std::string key = storeInfo.bundleName + storeInfo.storeName + std::to_string(storeInfo.user);
+        syncTriggerMap_.Insert(key, storeInfo);
+    };
+}
+std::function<void(const Event &)> SyncManager::GetSyncTriggerCleanHandler()
+{
+    return [this](const Event &event) {
+        auto &evt = static_cast<const CloudEvent &>(event);
+        auto storeInfo = evt.GetStoreInfo();
+        std::string key = storeInfo.bundleName + storeInfo.storeName + std::to_string(storeInfo.user);
+        syncTriggerMap_.Erase(key);
     };
 }
 
@@ -1107,6 +1144,23 @@ void SyncManager::OnNetworkDisconnected()
 
 void SyncManager::OnNetworkConnected(const std::vector<int32_t> &users)
 {
+    syncTriggerMap_.ForEach([this](const std::string &key, StoreInfo &value) {
+        auto &storeInfo = value;
+        auto evt = std::make_unique<CloudEvent>(CloudEvent::SYNC_TRIGGER_REGISTER, storeInfo);
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+        auto [hasMeta, meta] = GetMetaData(storeInfo);
+        if (!hasMeta) {
+            return false;
+        }
+        auto [code, store] = GetStore(meta, storeInfo.user);
+        if (store == nullptr) {
+            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+            return false;
+        }
+        store->OnSyncTrigger(storeInfo.storeName, MODE_ONLINE);
+        return false;
+    });
+
     networkRecoveryManager_.OnNetworkConnected(users);
 }
 
@@ -1183,6 +1237,28 @@ std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const i
         addApp(std::move(app.bundleName));
     }
     return appList;
+}
+
+int32_t SyncManager::SetCloudConflictHandler(const AutoCache::Store &store)
+{
+    if (store == nullptr) {
+        ZLOGE("Store is null");
+        return E_ERROR;
+    }
+
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("CloudServer instance is null");
+        return E_ERROR;
+    }
+
+    auto handler = instance->GetConflictHandler();
+    if (handler == nullptr) {
+        ZLOGE("Conflict handler is null");
+        return E_ERROR;
+    }
+
+    return store->SetCloudConflictHandler(handler);
 }
 
 void SyncManager::HandleSyncError(const ErrorContext &context)

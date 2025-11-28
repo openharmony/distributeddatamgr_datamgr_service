@@ -155,17 +155,32 @@ void ObjectStoreManager::ProcessSyncCallback(const std::map<std::string, int32_t
 int32_t ObjectStoreManager::Save(const std::string &appId, const std::string &sessionId,
     const ObjectRecord &data, const std::string &deviceId, sptr<IRemoteObject> callback)
 {
-    auto proxy = iface_cast<ObjectSaveCallbackProxyBroker>(callback);
-    if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
+    if (callback == nullptr) {
+        ZLOGE("callback is nullptr, appId: %{public}s, sessionId: %{public}s", appId.c_str(),
+            Anonymous::Change(sessionId).c_str());
         return INVALID_ARGUMENT;
     }
-    if (deviceId.size() == 0) {
+
+    sptr<ObjectSaveCallbackProxy> proxy = new (std::nothrow) ObjectSaveCallbackProxy(callback);
+    if (proxy == nullptr) {
+        ZLOGE("new ObjectSaveCallbackProxy failed, appId: %{public}s, sessionId: %{public}s", appId.c_str(),
+            Anonymous::Change(sessionId).c_str());
+        return INVALID_ARGUMENT;
+    }
+
+    if (deviceId.empty()) {
         ZLOGE("DeviceId empty, appId: %{public}s, sessionId: %{public}s", appId.c_str(),
             Anonymous::Change(sessionId).c_str());
         proxy->Completed(std::map<std::string, int32_t>());
         return INVALID_ARGUMENT;
     }
+
+    return SaveInternal(appId, sessionId, data, deviceId, proxy);
+}
+
+int32_t ObjectStoreManager::SaveInternal(const std::string &appId, const std::string &sessionId,
+    const ObjectRecord &data, const std::string &deviceId, sptr<ObjectSaveCallbackProxy> proxy)
+{
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open object kvstore failed, result: %{public}d", result);
@@ -235,10 +250,15 @@ int32_t ObjectStoreManager::PushAssets(const std::string &srcBundleName, const s
 int32_t ObjectStoreManager::RevokeSave(
     const std::string &appId, const std::string &sessionId, sptr<IRemoteObject> callback)
 {
-    auto proxy = iface_cast<ObjectRevokeSaveCallbackProxyBroker>(callback);
+    if (callback == nullptr) {
+        ZLOGE("callback is nullptr, appId: %{public}s, sessionId: %{public}s", appId.c_str(),
+            Anonymous::Change(sessionId).c_str());
+        return INVALID_ARGUMENT;
+    }
+    sptr<ObjectRevokeSaveCallbackProxy> proxy = new (std::nothrow) ObjectRevokeSaveCallbackProxy(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s, appId: %{public}s, sessionId: %{public}s.",
-            (callback == nullptr) ? "nullptr" : "not null", appId.c_str(), Anonymous::Change(sessionId).c_str());
+        ZLOGE("proxy is nullptr, appId: %{public}s, sessionId: %{public}s.", appId.c_str(),
+            Anonymous::Change(sessionId).c_str());
         return INVALID_ARGUMENT;
     }
     int32_t result = Open();
@@ -279,11 +299,24 @@ int32_t ObjectStoreManager::RevokeSave(
 int32_t ObjectStoreManager::Retrieve(
     const std::string &bundleName, const std::string &sessionId, sptr<IRemoteObject> callback, uint32_t tokenId)
 {
-    auto proxy = iface_cast<ObjectRetrieveCallbackProxyBroker>(callback);
+    if (callback == nullptr) {
+        ZLOGE("callback is nullptr, bundleName: %{public}s, sessionId: %{public}s", bundleName.c_str(),
+            Anonymous::Change(sessionId).c_str());
+        return INVALID_ARGUMENT;
+    }
+
+    sptr<ObjectRetrieveCallbackProxy> proxy = new (std::nothrow) ObjectRetrieveCallbackProxy(callback);
     if (proxy == nullptr) {
         ZLOGE("proxy is nullptr, callback is %{public}s.", (callback == nullptr) ? "nullptr" : "not null");
         return INVALID_ARGUMENT;
     }
+
+    return RetrieveInternal(bundleName, sessionId, proxy);
+}
+
+int32_t ObjectStoreManager::RetrieveInternal(const std::string &bundleName, const std::string &sessionId,
+    sptr<ObjectRetrieveCallbackProxy> proxy)
+{
     int32_t result = Open();
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Open object kvstore failed, result: %{public}d", result);
@@ -411,17 +444,16 @@ void ObjectStoreManager::RegisterRemoteCallback(const std::string &bundleName, c
                                                 pid_t pid, uint32_t tokenId,
                                                 sptr<IRemoteObject> callback)
 {
-    if (bundleName.empty() || sessionId.empty()) {
-        ZLOGD("ObjectStoreManager::RegisterRemoteCallback empty");
+    if (bundleName.empty() || sessionId.empty() || callback == nullptr) {
+        ZLOGW("Invalid parameter, bundleName: %{public}s, sessionId: %{public}s", bundleName.c_str(),
+            Anonymous::Change(sessionId).c_str());
         return;
     }
     ZLOGD("ObjectStoreManager::RegisterRemoteCallback start");
-    auto proxy = iface_cast<ObjectChangeCallbackProxyBroker>(callback);
+    sptr<ObjectChangeCallbackProxy> proxy = new (std::nothrow) ObjectChangeCallbackProxy(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s, bundleName: %{public}s, sessionId: %{public}s, pid: "
-              "%{public}d, tokenId: %{public}u.",
-            (callback == nullptr) ? "nullptr" : "not null", bundleName.c_str(), Anonymous::Change(sessionId).c_str(),
-            pid, tokenId);
+        ZLOGE("proxy is nullptr, bundleName: %{public}s, sessionId: %{public}s, pid: %{public}d, tokenId: %{public}u.",
+            bundleName.c_str(), Anonymous::Change(sessionId).c_str(), pid, tokenId);
         return;
     }
     std::string prefix = bundleName + sessionId;
@@ -463,18 +495,15 @@ void ObjectStoreManager::UnregisterRemoteCallback(
 void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bundleName, const std::string &sessionId,
     pid_t pid, uint32_t tokenId, sptr<IRemoteObject> callback)
 {
-    if (bundleName.empty() || sessionId.empty()) {
-        ZLOGD("ObjectStoreManager::RegisterProgressObserverCallback empty bundleName = %{public}s, sessionId = "
-              "%{public}s",
-            bundleName.c_str(), DistributedData::Anonymous::Change(sessionId).c_str());
+    if (bundleName.empty() || sessionId.empty() || callback == nullptr) {
+        ZLOGW("Invalid parameter, bundleName: %{public}s, sessionId: %{public}s", bundleName.c_str(),
+            Anonymous::Change(sessionId).c_str());
         return;
     }
-    auto proxy = iface_cast<ObjectProgressCallbackProxyBroker>(callback);
+    sptr<ObjectProgressCallbackProxy> proxy = new (std::nothrow) ObjectProgressCallbackProxy(callback);
     if (proxy == nullptr) {
-        ZLOGE("proxy is nullptr, callback is %{public}s, bundleName: %{public}s, sessionId: %{public}s, pid: "
-              "%{public}d, tokenId: %{public}u.",
-            (callback == nullptr) ? "nullptr" : "not null", bundleName.c_str(), Anonymous::Change(sessionId).c_str(),
-            pid, tokenId);
+        ZLOGE("proxy is nullptr, bundleName: %{public}s, sessionId: %{public}s, pid:%{public}d, tokenId: %{public}u.",
+            bundleName.c_str(), Anonymous::Change(sessionId).c_str(), pid, tokenId);
         return;
     }
     std::string objectKey = bundleName + sessionId;

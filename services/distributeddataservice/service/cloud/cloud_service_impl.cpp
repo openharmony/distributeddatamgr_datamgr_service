@@ -241,8 +241,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     UpdateCloudDbSyncConfig(user, bundleName, config);
     Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        SyncManager::SyncInfo info(cloudInfo.user, bundleName);
-        syncManager_.DoCloudSync(info);
+        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName, "", {}, MODE_SWITCHON));
     }
     ZLOGI("ChangeAppSwitch success, id:%{public}s app:%{public}s, switch:%{public}d", Anonymous::Change(id).c_str(),
         bundleName.c_str(), appSwitch);
@@ -1448,7 +1447,11 @@ int32_t CloudServiceImpl::InitNotifier(sptr<IRemoteObject> notifier)
         ZLOGE("no notifier.");
         return INVALID_ARGUMENT;
     }
-    auto notifierProxy = iface_cast<CloudNotifierProxyBroker>(notifier);
+    sptr<CloudNotifierProxy> notifierProxy = new (std::nothrow) CloudNotifierProxy(notifier);
+    if (notifierProxy == nullptr) {
+        ZLOGE("new notifier proxy failed.");
+        return INVALID_ARGUMENT;
+    }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     syncAgents_.Compute(tokenId, [notifierProxy](auto, SyncAgent &agent) {
         agent = SyncAgent();
@@ -1520,8 +1523,11 @@ bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
         return false;
     }
     for (const auto &appInfo : cloudInfo.apps) {
-        SyncManager::SyncInfo info(user, appInfo.first);
-        syncManager_.DoCloudSync(info);
+        if (scene == CloudSyncScene::SERVICE_INIT) {
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, appInfo.first, "", {}, MODE_PROCESSSTART));
+        } else {
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, appInfo.first));
+        }
     }
     return true;
 }

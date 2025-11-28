@@ -335,13 +335,16 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         }
         metaMapping.devicePath = metaData.dataDir;
     } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
-        if (metaData.asyncDownloadAsset != param.asyncDownloadAsset_ || metaData.enableCloud != param.enableCloud_) {
+        if ((metaData.asyncDownloadAsset != param.asyncDownloadAsset_) ||
+            (metaData.enableCloud != param.enableCloud_) || (metaData.autoSyncSwitch != param.autoSyncSwitch_)) {
             ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
-                "%{public}d],enableCloud? [%{public}d -> %{public}d]", param.bundleName_.c_str(),
-                Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset, param.asyncDownloadAsset_,
-                metaData.enableCloud, param.enableCloud_);
+                  "%{public}d],enableCloud? [%{public}d -> %{public}d],autoSyncSwitch? [%{public}d -> %{public}d]",
+                param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset,
+                param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_, metaData.autoSyncSwitch,
+                param.autoSyncSwitch_);
             metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
             metaData.enableCloud = param.enableCloud_;
+            metaData.autoSyncSwitch = param.autoSyncSwitch_;
             MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
         }
         metaMapping.cloudPath = metaData.dataDir;
@@ -651,6 +654,11 @@ int32_t RdbServiceImpl::Subscribe(const RdbSyncerParam &param, const SubscribeOp
         AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_),
             GetStoreMetaData(param).dataDir, RemoveSuffix(param.storeName_));
     }
+    if (option.mode == CLOUD_SYNC_TRIGGER) {
+        auto storeInfo = GetStoreInfoEx(GetStoreMetaData(param));
+        auto evt = std::make_unique<CloudEvent>(CloudEvent::SYNC_TRIGGER, std::move(storeInfo));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+    }
     return RDB_OK;
 }
 
@@ -679,6 +687,11 @@ int32_t RdbServiceImpl::UnSubscribe(const RdbSyncerParam &param, const Subscribe
     if (destroyed) {
         AutoCache::GetInstance().SetObserver(tokenId, GetWatchers(tokenId, param.storeName_),
             GetStoreMetaData(param).dataDir, RemoveSuffix(param.storeName_));
+    }
+    if (option.mode == CLOUD_SYNC_TRIGGER) {
+        auto storeInfo = GetStoreInfoEx(GetStoreMetaData(param));
+        auto evt = std::make_unique<CloudEvent>(CloudEvent::SYNC_TRIGGER_CLEAN, std::move(storeInfo));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
     }
     return RDB_OK;
 }
@@ -983,6 +996,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     StoreMetaData old;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
+    meta.autoSyncSwitch = isCreated ? old.autoSyncSwitch : meta.autoSyncSwitch;
     if (!isCreated || meta != old) {
         Upgrade(meta, old);
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
@@ -1995,6 +2009,7 @@ void RdbServiceImpl::RegisterEvent()
     };
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC, process);
     EventCenter::GetInstance().Subscribe(CloudEvent::CLEAN_DATA, process);
+    EventCenter::GetInstance().Subscribe(CloudEvent::SYNC_TRIGGER_REGISTER, process);
 
     EventCenter::GetInstance().Subscribe(CloudEvent::MAKE_QUERY, [](const Event &event) {
         auto &evt = static_cast<const MakeQueryEvent &>(event);
@@ -2013,5 +2028,27 @@ void RdbServiceImpl::RegisterEvent()
     };
     EventCenter::GetInstance().Subscribe(BindEvent::COMPENSATE_SYNC, compensateSyncProcess);
     EventCenter::GetInstance().Subscribe(BindEvent::RECOVER_SYNC, compensateSyncProcess);
+}
+
+int32_t RdbServiceImpl::StopCloudSync(const RdbSyncerParam &param)
+{
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    auto [exists, metaData] = LoadStoreMetaData(param);
+    if (metaData.instanceId != 0) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), metaData.instanceId);
+        return RDB_ERROR;
+    }
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(metaData.tokenId, metaData.dataDir, metaData.storeId);
+    for (const auto &store : stores) {
+        if (store != nullptr) {
+            store->StopCloudSync();
+        }
+    }
+    return RDB_OK;
 }
 } // namespace OHOS::DistributedRdb

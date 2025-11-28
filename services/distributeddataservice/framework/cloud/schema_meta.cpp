@@ -184,6 +184,7 @@ bool Field::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(type)], type);
     SetValue(node[GET_NAME(primary)], primary);
     SetValue(node[GET_NAME(nullable)], nullable);
+    SetValue(node[GET_NAME(dupCheckCol)], dupCheckCol);
     return true;
 }
 
@@ -197,12 +198,13 @@ bool Field::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(nullable), nullable);
     GetValue(node, GET_NAME(columnName), colName);
     GetValue(node, GET_NAME(notNull), nullable);
+    GetValue(node, GET_NAME(dupCheckCol), dupCheckCol);
     return true;
 }
 bool Field::operator==(const Field &field) const
 {
-    return std::tie(colName, alias, type, primary, nullable) ==
-        std::tie(field.colName, field.alias, field.type, field.primary, field.nullable);
+    return std::tie(colName, alias, type, primary, nullable, dupCheckCol) ==
+           std::tie(field.colName, field.alias, field.type, field.primary, field.nullable, field.dupCheckCol);
 }
 
 Database SchemaMeta::GetDataBase(const std::string &storeId)

@@ -217,7 +217,8 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
 {
     bool isChanged = false;
     DistributedData::StoreMetaData metaData;
-    bool result = rdbCache_.ComputeIfPresent(key, [&context, &metaData, &isChanged, this](const auto &key,
+    std::vector<ObserverNode> observers;
+    bool result = rdbCache_.ComputeIfPresent(key, [&context, &metaData, &isChanged, &observers, this](const auto &key,
         std::vector<ObserverNode> &value) {
         for (auto it = value.begin(); it != value.end(); it++) {
             if (it->firstCallerTokenId != context->callerTokenId) {
@@ -231,14 +232,13 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
             isChanged = true;
             metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
             if (it->isNotifyOnEnabled) {
-                std::vector<ObserverNode> node;
-                node.emplace_back(it->observer, context->callerTokenId);
-                Notify(key, context->visitedUserId, node, metaData);
+                observers.emplace_back(it->observer, context->callerTokenId);
             }
         }
         return true;
     });
     if (isChanged) {
+        Notify(key, context->visitedUserId, observers, metaData);
         SchedulerManager::GetInstance().Enable(key, context->visitedUserId, metaData);
     }
     if (!result) {
@@ -258,14 +258,18 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
         loadDataInfo(context);
     }
     DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
-    rdbCache_.ForEach([&uri, &context, &metaData, this](const Key &key, std::vector<ObserverNode> &val) {
+    std::map<Key, std::vector<ObserverNode>> obsMap;
+    rdbCache_.ForEach([&uri, &context, &metaData, &obsMap, this](const Key &key, std::vector<ObserverNode> &val) {
         if (key.uri != uri) {
             return false;
         }
-        Notify(key, context->visitedUserId, val, metaData);
+        obsMap.emplace(key, val);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
+    for (const auto &observers : obsMap) {
+        Notify(observers.first, context->visitedUserId, observers.second, metaData);
+    }
     SchedulerManager::GetInstance().Execute(
         uri, context->visitedUserId, metaData);
 }
@@ -277,17 +281,22 @@ void RdbSubscriberManager::Emit(const std::string &uri, int32_t userId,
         return;
     }
     bool hasObserver = false;
-    rdbCache_.ForEach([&uri, &userId, &metaData, &hasObserver, this](const Key &key, std::vector<ObserverNode> &val) {
+    std::map<Key, std::vector<ObserverNode>> obsMap;
+    rdbCache_.ForEach([&uri, &userId, &metaData, &hasObserver, &obsMap, this](const Key &key,
+        std::vector<ObserverNode> &val) {
         if (key.uri != uri) {
             return false;
         }
         hasObserver = true;
-        Notify(key, userId, val, metaData);
+        obsMap.emplace(key, val);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
     if (!hasObserver) {
         return;
+    }
+    for (const auto &observers : obsMap) {
+        Notify(observers.first, userId, observers.second, metaData);
     }
     SchedulerManager::GetInstance().Execute(
         uri, userId, metaData);
@@ -320,11 +329,15 @@ void RdbSubscriberManager::EmitByKey(const Key &key, int32_t userId, const Distr
     if (!URIUtils::IsDataProxyURI(key.uri)) {
         return;
     }
-    rdbCache_.ComputeIfPresent(key, [&userId, &metaData, this](const Key &key, auto &val) {
-        Notify(key, userId, val, metaData);
+    std::vector<ObserverNode> observers;
+    rdbCache_.ComputeIfPresent(key, [&userId, &metaData, &observers, this](const Key &key, auto &val) {
+        observers.insert(observers.end(), val.begin(), val.end());
         SetObserverNotifyOnEnabled(val);
         return true;
     });
+    if (!observers.empty()) {
+        Notify(key, userId, observers, metaData);
+    }
 }
 
 int RdbSubscriberManager::GetEnableObserverCount(const Key &key)
@@ -410,14 +423,19 @@ void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId,
         loadDataInfo(context);
     }
     DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
-    rdbCache_.ForEach([&uri, &context, &subscriberId, &metaData, this](const Key &key, std::vector<ObserverNode> &val) {
+    std::map<Key, std::vector<ObserverNode>> obsMap;
+    rdbCache_.ForEach([&uri, &context, &subscriberId, &metaData, &obsMap, this](const Key &key,
+        std::vector<ObserverNode> &val) {
         if (key.uri != uri || key.subscriberId != subscriberId) {
             return false;
         }
-        Notify(key, context->visitedUserId, val, metaData);
+        obsMap.emplace(key, val);
         SetObserverNotifyOnEnabled(val);
         return false;
     });
+    for (const auto &observers : obsMap) {
+        Notify(observers.first, context->visitedUserId, observers.second, metaData);
+    }
     Key executeKey(uri, subscriberId, bundleName);
     SchedulerManager::GetInstance().Start(executeKey, context->visitedUserId, metaData);
 }
