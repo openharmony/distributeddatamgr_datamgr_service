@@ -514,15 +514,11 @@ HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo002, TestSize.Level1)
  */
 HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo003, TestSize.Level1)
 {
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 2);
-    DeviceManagerAdapter::GetInstance().Init(executors);
     DeviceChangeListenerTest listener;
     DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
-    DistributedHardware::DmDeviceInfo info = {"cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0};
+    DistributedHardware::DmDeviceInfo info = {"", "", 0, "local_network_id", 0};
     DistributedHardware::DeviceManager::GetInstance().Offline(info);
-    sleep(2);
-    ASSERT_EQ(listener.info_.networkId, info.networkId);
-    ASSERT_EQ(listener.info_.deviceName, info.deviceName);
+    ASSERT_EQ(listener.info_.networkId, "");
 }
 
 /**

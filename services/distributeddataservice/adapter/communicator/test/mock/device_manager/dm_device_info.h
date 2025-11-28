@@ -71,5 +71,13 @@ struct DmAccessCallee {
 enum DmNotifyEvent {
     DM_NOTIFY_EVENT_ONDEVICEREADY,
 };
+
+enum DmDeviceType {
+    DEVICE_TYPE_UNKNOWN = 0x00,
+    DEVICE_TYPE_PC = 0x0C,
+    DEVICE_TYPE_PAD = 0x11,
+    DEVICE_TYPE_CAR = 0x83,
+    DEVICE_TYPE_2IN1 = 0xA2F,
+};
 } // namespace OHOS::DistributedHardware
 #endif // MOCK_DM_DEVICE_INFO_H

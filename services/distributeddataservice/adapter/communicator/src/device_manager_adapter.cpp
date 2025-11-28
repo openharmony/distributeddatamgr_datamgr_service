@@ -66,7 +66,23 @@ std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
     deviceInfo.udid = std::move(udid);
     deviceInfo.networkId = std::move(networkId);
     deviceInfo.deviceName = std::string(dmInfo.deviceName);
-    deviceInfo.deviceType = dmInfo.deviceTypeId;
+    switch(dmInfo.deviceTypeId) {
+        case OHOS::DistributedHardware::DEVICE_TYPE_PC:
+            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PC;
+            break;
+        case OHOS::DistributedHardware::DEVICE_TYPE_PAD:
+            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PAD;
+            break;
+        case OHOS::DistributedHardware::DEVICE_TYPE_CAR:
+            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_CAR;
+            break;
+        case OHOS::DistributedHardware::DEVICE_TYPE_2IN1:
+            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_2IN1;
+            break;
+        default:
+            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_UNKNOWN;
+            break;
+    }
     deviceInfo.authForm = static_cast<int32_t>(dmInfo.authForm);
     if (deviceInfo.uuid == DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         deviceInfo.osType = DeviceExtraInfo::OH_OS_TYPE;

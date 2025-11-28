@@ -36,21 +36,10 @@ public:
         DEVICE_BUTT
     };
     enum DmDeviceType {
-        /**
-         * Indicates a smart pc.
-         */
+        DEVICE_TYPE_UNKNOWN = 0x00,
         DEVICE_TYPE_PC = 0x0C,
-        /**
-         * Indicates a smart pad.
-         */
         DEVICE_TYPE_PAD = 0x11,
-        /**
-         * Indicates a car.
-         */
         DEVICE_TYPE_CAR = 0x83,
-        /**
-         * Indicates 2in1
-         */
         DEVICE_TYPE_2IN1 = 0xA2F,
     };
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
