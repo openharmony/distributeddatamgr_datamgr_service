@@ -66,7 +66,7 @@ std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
     deviceInfo.udid = std::move(udid);
     deviceInfo.networkId = std::move(networkId);
     deviceInfo.deviceName = std::string(dmInfo.deviceName);
-    switch(dmInfo.deviceTypeId) {
+    switch (dmInfo.deviceTypeId) {
         case OHOS::DistributedHardware::DEVICE_TYPE_PC:
             deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PC;
             break;
