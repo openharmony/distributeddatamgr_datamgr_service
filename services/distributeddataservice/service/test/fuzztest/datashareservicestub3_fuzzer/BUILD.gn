@@ -90,6 +90,7 @@ ohos_fuzztest("DataShareServiceStub3FuzzTest") {
     "${data_service_path}/service/data_share/strategies/publish_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/rdb_notify_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/subscribe_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/unsubscribe_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/template_strategy.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/proxy_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",

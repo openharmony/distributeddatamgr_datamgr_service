@@ -38,6 +38,7 @@
 #include "publish_strategy.h"
 #include "rdb_notify_strategy.h"
 #include "subscribe_strategy.h"
+#include "unsubscribe_strategy.h"
 #include "template_strategy.h"
 #include "utils.h"
 #include "visibility.h"
@@ -166,6 +167,7 @@ private:
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;
+    UnsubscribeStrategy unsubscribeStrategy_;
     TemplateStrategy templateStrategy_;
     RdbNotifyStrategy rdbNotifyStrategy_;
     static BindInfo binderInfo_;

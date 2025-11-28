@@ -403,7 +403,7 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribeRdbData(
     std::vector<OperationResult> results;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
-        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &context]() {
+        results.emplace_back(uri, unsubscribeStrategy_.Execute(context, [&id, &context]() {
             return RdbSubscriberManager::GetInstance().Delete(
                 Key(context->uri, id.subscriberId_, id.bundleName_), context->callerTokenId);
         }));
@@ -493,7 +493,7 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&subscriberId, &context, this]() {
+        results.emplace_back(uri, unsubscribeStrategy_.Execute(context, [&subscriberId, &context, this]() {
             auto result = PublishedDataSubscriberManager::GetInstance().Delete(
                 PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
             if (result == E_OK && binderInfo_.executors != nullptr) {
