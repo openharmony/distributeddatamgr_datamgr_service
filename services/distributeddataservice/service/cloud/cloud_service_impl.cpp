@@ -364,6 +364,12 @@ void CloudServiceImpl::ExecuteTableLevelClean(const StoreMetaData &meta, const D
 void CloudServiceImpl::ExecuteDatabaseClean(const StoreMetaData &meta, int32_t action,
     const std::vector<std::string> &tableList)
 {
+    auto store = AutoCache::GetInstance().GetStore(meta, {});
+    if (store == nullptr) {
+        ZLOGW("get store failed, user:%{public}s, bundleName:%{public}s, storeId:%{public}s", meta.user.c_str(),
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return;
+    }
     DistributedData::StoreInfo storeInfo;
     storeInfo.bundleName = meta.bundleName;
     storeInfo.user = atoi(meta.user.c_str());
@@ -371,12 +377,6 @@ void CloudServiceImpl::ExecuteDatabaseClean(const StoreMetaData &meta, int32_t a
     storeInfo.path = meta.dataDir;
     if (action != GeneralStore::CLEAN_WATER) {
         EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
-    }
-    auto store = AutoCache::GetInstance().GetStore(meta, {});
-    if (store == nullptr) {
-        ZLOGW("get store failed, user:%{public}s, bundleName:%{public}s, storeId:%{public}s", meta.user.c_str(),
-            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-        return;
     }
     auto status = store->Clean("", action, tableList);
     if (status != E_OK) {
@@ -2076,7 +2076,7 @@ bool CloudServiceImpl::UpdateCloudDbSyncConfig(int32_t user, const std::string &
     CloudDbSyncConfig syncConfig;
     bool isMetaExist = MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true);
     auto *appConfig = GetOrCreateAppConfig(syncConfig, bundleName, isMetaExist);
-    if (!appConfig) {
+    if (appConfig == nullptr) {
         ZLOGW("Failed to get or create app config for bundleName:%{public}s", bundleName.c_str());
         return false;
     }
