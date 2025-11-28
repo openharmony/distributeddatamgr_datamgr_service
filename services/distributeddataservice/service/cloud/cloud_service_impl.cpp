@@ -250,10 +250,17 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
 }
 
 int32_t CloudServiceImpl::DoClean(const CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions,
-    std::map<std::string, ClearConfig> &configs)
+    const std::map<std::string, ClearConfig> &configs)
 {
     syncManager_.StopCloudSync(cloudInfo.user);
-    for (const auto &[bundle, appAction] : actions) {
+    std::set<std::string> allBundles;
+    for (const auto &[bundle, _] : actions) {
+        allBundles.insert(bundle);
+    }
+    for (const auto &[bundle, _] : configs) {
+        allBundles.insert(bundle);
+    }
+    for (const auto &bundle : allBundles) {
         if (!cloudInfo.Exist(bundle)) {
             ZLOGW("user:%{public}d, bundleName:%{public}s is not exist", cloudInfo.user, bundle.c_str());
             continue;
@@ -264,33 +271,27 @@ int32_t CloudServiceImpl::DoClean(const CloudInfo &cloudInfo, const std::map<std
             Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, bundle, "get schema failed");
             continue;
         }
-        DoAppLevelClean(cloudInfo.user, schemaMeta, appAction);
-    }
-
-    for (const auto &[bundle, config] : configs) {
-        if (actions.find(bundle) != actions.end()) {
-            ZLOGD("bundle:%{public}s already processed by app level, skip", bundle.c_str());
-            continue;
+        int32_t appDefaultAction = GeneralStore::CleanMode::CLOUD_NONE;
+        auto appActionIter = actions.find(bundle);
+        if (appActionIter != actions.end()) {
+            appDefaultAction = appActionIter->second;
         }
 
-        if (!cloudInfo.Exist(bundle)) {
-            ZLOGW("user:%{public}d, bundleName:%{public}s is not exist", cloudInfo.user, bundle.c_str());
-            continue;
+        auto configIter = configs.find(bundle);
+        if (configIter != configs.end()) {
+            DoDbTableLevelClean(cloudInfo.user, schemaMeta, configIter->second, appDefaultAction);
+        } else {
+            DoAppLevelClean(cloudInfo.user, schemaMeta, appDefaultAction);
         }
-
-        SchemaMeta schemaMeta;
-        if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(bundle), schemaMeta, true)) {
-            ZLOGW("failed, no schema meta:bundleName:%{public}s", bundle.c_str());
-            Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, bundle, "get schema failed");
-            continue;
-        }
-        DoDbTableLevelClean(cloudInfo.user, schemaMeta, config);
     }
     return SUCCESS;
 }
 
 void CloudServiceImpl::DoAppLevelClean(int32_t user, const SchemaMeta &schemaMeta, int32_t appAction)
 {
+    if (appAction == GeneralStore::CleanMode::CLOUD_NONE) {
+        return;
+    }
     StoreMetaData meta;
     meta.bundleName = schemaMeta.bundleName;
     meta.user = std::to_string(user);
@@ -301,43 +302,67 @@ void CloudServiceImpl::DoAppLevelClean(int32_t user, const SchemaMeta &schemaMet
         if (!GetStoreMetaData(meta)) {
             continue;
         }
-        ExecuteDatabaseClean(user, meta, appAction);
+        ExecuteDatabaseClean(meta, appAction);
     }
 }
 
-void CloudServiceImpl::DoDbTableLevelClean(int32_t user, const SchemaMeta &schemaMeta, const ClearConfig &config)
+void CloudServiceImpl::DoDbTableLevelClean(int32_t user, const SchemaMeta &schemaMeta, const ClearConfig &config,
+    int32_t appDefaultAction)
 {
     StoreMetaData meta;
     meta.bundleName = schemaMeta.bundleName;
     meta.user = std::to_string(user);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     meta.instanceId = 0;
-
     for (const auto &database : schemaMeta.databases) {
         meta.storeId = database.name;
         if (!GetStoreMetaData(meta)) {
             continue;
         }
-
-        auto store = AutoCache::GetInstance().GetStore(meta, {});
-        if (store == nullptr) {
-            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+        auto dbIter = config.dbInfo.find(database.name);
+        if (dbIter == config.dbInfo.end()) {
+            if (appDefaultAction != GeneralStore::CleanMode::CLOUD_NONE) {
+                ExecuteDatabaseClean(meta, appDefaultAction);
+            }
             continue;
         }
-
-        auto dbIter = config.dbInfo.find(database.name);
-        if (dbIter != config.dbInfo.end() && dbIter->second.action != GeneralStore::CleanMode::CLOUD_NONE) {
-            ZLOGD("db level clean - database:%{public}s, action:%{public}d", database.name.c_str(),
-                dbIter->second.action);
-            ExecuteDatabaseClean(user, meta, dbIter->second.action);
-        } else if (dbIter != config.dbInfo.end() && !dbIter->second.tableInfo.empty()) {
-            ZLOGD("table level clean - database:%{public}s", database.name.c_str());
-            ExecuteTableLevelClean(user, meta, database, dbIter->second.tableInfo);
+        const auto &dbActionInfo = dbIter->second;
+        if (!dbActionInfo.tableInfo.empty()) {
+            ExecuteTableLevelClean(meta, database, dbActionInfo.tableInfo, dbActionInfo.action, appDefaultAction);
+        } else if (dbActionInfo.action != GeneralStore::CleanMode::CLOUD_NONE) {
+            ExecuteDatabaseClean(meta, dbActionInfo.action);
+        } else if (appDefaultAction != GeneralStore::CleanMode::CLOUD_NONE) {
+            ExecuteDatabaseClean(meta, appDefaultAction);
         }
     }
 }
 
-void CloudServiceImpl::ExecuteDatabaseClean(int32_t user, const StoreMetaData &meta, int32_t action,
+void CloudServiceImpl::ExecuteTableLevelClean(const StoreMetaData &meta, const Database &database,
+    const std::map<std::string, int32_t> &tableActions, int32_t dbDefaultAction, int32_t appDefaultAction)
+{
+    const auto &cloudTables = database.GetCloudTables();
+    std::map<int32_t, std::vector<std::string>> actionToTablesMap;
+    for (const auto &tableName : cloudTables) {
+        auto tableIter = tableActions.find(tableName);
+        if (tableIter != tableActions.end()) {
+            if (tableIter->second != GeneralStore::CleanMode::CLOUD_NONE) {
+                actionToTablesMap[tableIter->second].push_back(tableName);
+            }
+        } else if (dbDefaultAction != GeneralStore::CleanMode::CLOUD_NONE) {
+            actionToTablesMap[dbDefaultAction].push_back(tableName);
+        } else if (appDefaultAction != GeneralStore::CleanMode::CLOUD_NONE) {
+            actionToTablesMap[appDefaultAction].push_back(tableName);
+        }
+    }
+
+    for (const auto &[action, tables] : actionToTablesMap) {
+        if (!tables.empty()) {
+            ExecuteDatabaseClean(meta, action, tables);
+        }
+    }
+}
+
+void CloudServiceImpl::ExecuteDatabaseClean(const StoreMetaData &meta, int32_t action,
     const std::vector<std::string> &tableList)
 {
     DistributedData::StoreInfo storeInfo;
@@ -351,37 +376,11 @@ void CloudServiceImpl::ExecuteDatabaseClean(int32_t user, const StoreMetaData &m
     auto store = AutoCache::GetInstance().GetStore(meta, {});
     auto status = store->Clean("", action, tableList);
     if (status != E_OK) {
-        ZLOGW("clean data status:%{public}d, user:%{public}d, bundleName:%{public}s, storeId:%{public}s", status,
-            static_cast<int>(user), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        ZLOGW("clean data status:%{public}d, user:%{public}s, bundleName:%{public}s, storeId:%{public}s", status,
+            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, meta.bundleName,
             "Clean:" + std::to_string(status) + ", storeId=" + meta.GetStoreAlias() +
                 ", action=" + std::to_string(action));
-    }
-}
-
-void CloudServiceImpl::ExecuteTableLevelClean(int32_t user, const StoreMetaData &meta, const Database &database,
-    const std::map<std::string, int32_t> &tableActions)
-{
-    const auto &cloudTables = database.GetCloudTables();
-    std::map<int32_t, std::vector<std::string>> actionToTablesMap;
-    for (const auto &[tableName, tableAction] : tableActions) {
-        if (std::find(cloudTables.begin(), cloudTables.end(), tableName) == cloudTables.end()) {
-            ZLOGW("table:%{public}s not in cloud tables for database:%{public}s", tableName.c_str(),
-                database.name.c_str());
-            continue;
-        }
-
-        if (tableAction == GeneralStore::CleanMode::CLOUD_NONE) {
-            ZLOGW("not handle table action for table:%{public}s, skip", tableName.c_str());
-            continue;
-        }
-
-        ZLOGD("table level clean - table:%{public}s, action:%{public}d", tableName.c_str(), tableAction);
-        auto &list = actionToTablesMap[tableAction];
-        list.push_back(tableName);
-    }
-    for (const auto &[tableAction, tables] : actionToTablesMap) {
-        ExecuteDatabaseClean(user, meta, tableAction, tables);
     }
 }
 
@@ -434,7 +433,7 @@ int32_t CloudServiceImpl::Clean(const std::string &id, const std::map<std::strin
         Report(FT_CLOUD_CLEAN, Fault::CSF_GS_CLOUD_CLEAN, "", "convert action failed");
         return ERROR;
     }
-    return DoClean(cloudInfo, dbActions, configs);
+    return DoClean(cloudInfo, dbActions, ConvertConfig(configs));
 }
 
 int32_t CloudServiceImpl::CheckNotifyConditions(const std::string &id, const std::string &bundleName,
@@ -988,8 +987,7 @@ bool CloudServiceImpl::UpdateCloudInfo(int32_t user, CloudSyncScene scene)
             MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundle), true);
             actions[bundle] = GeneralStore::CleanMode::CLOUD_INFO;
         }
-        std::map<std::string, ClearConfig> configs;
-        DoClean(oldInfo, actions, configs);
+        DoClean(oldInfo, actions);
         Report(GetDfxFaultType(scene), Fault::CSF_CLOUD_INFO, "",
             "Clean: different id, new:" + Anonymous::Change(cloudInfo.id) + ", old:" + Anonymous::Change(oldInfo.id));
     }
@@ -1607,26 +1605,50 @@ void CloudServiceImpl::Execute(Task task)
     executor->Execute(std::move(task));
 }
 
+int32_t CloudServiceImpl::ConvertActionType(int32_t cloudAction)
+{
+    switch (cloudAction) {
+        case CloudService::Action::CLEAR_CLOUD_INFO:
+            return GeneralStore::CleanMode::CLOUD_INFO;
+        case CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO:
+            return GeneralStore::CleanMode::CLOUD_DATA;
+        case CloudService::Action::CLEAR_CLOUD_NONE:
+            return GeneralStore::CleanMode::CLOUD_NONE;
+        default:
+            ZLOGE("invalid action. action:%{public}d", cloudAction);
+            return GeneralStore::CleanMode::CLEAN_MODE_BUTT;
+    }
+}
+
 std::map<std::string, int32_t> CloudServiceImpl::ConvertAction(const std::map<std::string, int32_t> &actions)
 {
     std::map<std::string, int32_t> genActions;
     for (const auto &[bundleName, action] : actions) {
-        switch (action) {
-            case CloudService::Action::CLEAR_CLOUD_INFO:
-                genActions.emplace(bundleName, GeneralStore::CleanMode::CLOUD_INFO);
-                break;
-            case CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO:
-                genActions.emplace(bundleName, GeneralStore::CleanMode::CLOUD_DATA);
-                break;
-            case CloudService::Action::CLEAR_CLOUD_NONE:
-                genActions.emplace(bundleName, GeneralStore::CleanMode::CLOUD_NONE);
-                break;
-            default:
-                ZLOGE("invalid action. action:%{public}d, bundleName:%{public}s", action, bundleName.c_str());
-                return {};
+        int32_t genAction = ConvertActionType(action);
+        if (genAction != GeneralStore::CleanMode::CLEAN_MODE_BUTT) {
+            genActions.emplace(bundleName, genAction);
         }
     }
     return genActions;
+}
+
+std::map<std::string, ClearConfig> CloudServiceImpl::ConvertConfig(const std::map<std::string, ClearConfig> &configs)
+{
+    std::map<std::string, ClearConfig> genConfigs;
+    for (const auto &[bundleName, config] : configs) {
+        ClearConfig genConfig;
+        for (const auto &[dbName, dbActionInfo] : config.dbInfo) {
+            DBActionInfo genDbActionInfo;
+            genDbActionInfo.action = ConvertActionType(dbActionInfo.action);
+            for (const auto &[tableName, tableAction] : dbActionInfo.tableInfo) {
+                int32_t genTableAction = ConvertActionType(tableAction);
+                genDbActionInfo.tableInfo.emplace(tableName, genTableAction);
+            }
+            genConfig.dbInfo.emplace(dbName, std::move(genDbActionInfo));
+        }
+        genConfigs.emplace(bundleName, std::move(genConfig));
+    }
+    return genConfigs;
 }
 
 std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> CloudServiceImpl::AllocResourceAndShare(

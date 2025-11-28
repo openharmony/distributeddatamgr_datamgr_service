@@ -143,6 +143,8 @@ private:
     };
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
+    static std::map<std::string, ClearConfig> ConvertConfig(const std::map<std::string, ClearConfig> &configs);
+    static int32_t ConvertActionType(int32_t cloudAction);
     static HapInfo GetHapInfo(uint32_t tokenId);
     static std::string GetDfxFaultType(CloudSyncScene scene);
 
@@ -189,13 +191,14 @@ private:
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
     int32_t DoClean(const CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions,
-        std::map<std::string, ClearConfig> &configs);
+        const std::map<std::string, ClearConfig> &configs = {});
     void DoAppLevelClean(int32_t user, const SchemaMeta &schemaMeta, int32_t action);
-    void DoDbTableLevelClean(int32_t user, const SchemaMeta &schemaMeta, const ClearConfig &config);
-    void ExecuteDatabaseClean(int32_t user, const StoreMetaData &meta, int32_t action,
+    void DoDbTableLevelClean(int32_t user, const SchemaMeta &schemaMeta, const ClearConfig &config,
+        int32_t appDefaultAction);
+    void ExecuteDatabaseClean(const StoreMetaData &meta, int32_t action,
         const std::vector<std::string> &tableList = {});
-    void ExecuteTableLevelClean(int32_t user, const StoreMetaData &meta, const Database &database,
-        const std::map<std::string, int32_t> &tableActions);
+    void ExecuteTableLevelClean(const StoreMetaData &meta, const Database &database,
+        const std::map<std::string, int32_t> &tableActions, int32_t dbDefaultAction, int32_t appDefaultAction);
     std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(
         const StoreInfo &storeInfo, DistributedData::GenQuery &query);
     std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;
