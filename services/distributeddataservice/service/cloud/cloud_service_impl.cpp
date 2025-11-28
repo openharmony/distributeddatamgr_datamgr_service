@@ -370,12 +370,12 @@ void CloudServiceImpl::ExecuteDatabaseClean(const StoreMetaData &meta, int32_t a
             meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         return;
     }
-    DistributedData::StoreInfo storeInfo;
-    storeInfo.bundleName = meta.bundleName;
-    storeInfo.user = atoi(meta.user.c_str());
-    storeInfo.storeName = meta.storeId;
-    storeInfo.path = meta.dataDir;
     if (action != GeneralStore::CLEAN_WATER) {
+        DistributedData::StoreInfo storeInfo;
+        storeInfo.bundleName = meta.bundleName;
+        storeInfo.user = atoi(meta.user.c_str());
+        storeInfo.storeName = meta.storeId;
+        storeInfo.path = meta.dataDir;
         EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
     }
     auto status = store->Clean("", action, tableList);
