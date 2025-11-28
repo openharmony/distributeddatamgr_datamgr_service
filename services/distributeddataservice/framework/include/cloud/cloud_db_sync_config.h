@@ -24,7 +24,7 @@ class API_EXPORT CloudDbSyncConfig final : public Serializable {
 public:
     struct API_EXPORT TableSyncConfig final : public Serializable {
         std::string tableName = "";
-        bool cloudSyncEnabled = false;
+        bool cloudSyncEnabled = true;
 
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
@@ -34,7 +34,7 @@ public:
 
     struct API_EXPORT DbSyncConfig final : public Serializable {
         std::string dbName = "";
-        bool cloudSyncEnabled = false;
+        bool cloudSyncEnabled = true;
         std::vector<TableSyncConfig> tableConfigs;
 
         bool Marshal(json &node) const override;
