@@ -36,6 +36,7 @@ using namespace OHOS::DataShare;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 std::string DATA_SHARE_URI_TEST = "datashare://com.acts.ohos.data.subscribermanagertest/test";
+std::string DATA_SHARE_SUBSCRIBE_TEST_URI = "datashareproxy://com.acts.ohos.data.subscribermanagertest/test";
 std::string BUNDLE_NAME_TEST = "ohos.subscribermanagertest.demo";
 namespace OHOS::Test {
 class DataShareSubscriberManagersTest : public testing::Test {
@@ -194,6 +195,39 @@ HWTEST_F(DataShareSubscriberManagersTest, Emit, TestSize.Level1)
     DataShare::Key keys("", 0, "");
     auto result = RdbSubscriberManager::GetInstance().GetEnableObserverCount(keys);
     EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name: EmitByKeyWithSubscribers
+* @tc.desc: use storageManager to get a remote object and create a observer by it, use the observer to subscribe
+            DATA_SHARE_SUBSCRIBE_TEST_URI , then call EmitByKey to emit by the key DATA_SHARE_SUBSCRIBE_TEST_URI
+* @tc.type: FUNC
+* @tc.require: None
+*/
+HWTEST_F(DataShareSubscriberManagersTest, EmitByKeyWithSubscribers, TestSize.Level1)
+{
+    auto context = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
+    context->visitedUserId = USER_TEST;
+    context->callerTokenId = GetSelfTokenID();
+    DataShare::Key key(context->uri, TEST_SUB_ID, BUNDLE_NAME_TEST);
+    std::string dataDir = "/data/service/el1/public/database/distributeddata/kvdb";
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 1);
+    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(saManager, nullptr);
+    int storageManagerSAId = 5003;
+    auto remoteObj = saManager->GetSystemAbility(storageManagerSAId);
+    ASSERT_NE(remoteObj, nullptr);
+    sptr<IDataProxyRdbObserver> observer = new (std::nothrow)RdbObserverProxy(remoteObj);
+    ASSERT_NE(observer, nullptr);
+    auto ret1 = RdbSubscriberManager::GetInstance().Add(key, observer, context, executors);
+    EXPECT_EQ(ret1, DataShare::E_OK);
+
+    DistributedData::StoreMetaData metaData;
+    RdbSubscriberManager::GetInstance().EmitByKey(key, USER_TEST, metaData);
+
+    auto ret2 = RdbSubscriberManager::GetInstance().Delete(key, context->callerTokenId);
+    EXPECT_EQ(ret2, DataShare::E_OK);
+    RdbSubscriberManager::GetInstance().EmitByKey(key, USER_TEST, metaData);
 }
 
 /**
