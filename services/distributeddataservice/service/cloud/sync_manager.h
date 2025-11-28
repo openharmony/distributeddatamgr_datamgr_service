@@ -79,9 +79,9 @@ public:
         void SetCompensation(bool isCompensation);
         void SetTriggerMode(int32_t triggerMode);
         void SetPrepareTraceId(const std::string &prepareTraceId);
-        std::shared_ptr<GenQuery> GenerateQuery(const std::string &store, const Tables &tables);
+        std::shared_ptr<GenQuery> GenerateQuery(const Tables &tables);
         bool Contains(const std::string &storeName);
-        std::shared_ptr<GenQuery> GetQuery();
+        std::vector<std::string> GetTables(const Database &database);
         static constexpr const char *DEFAULT_ID = "default";
 
     private:
@@ -218,11 +218,6 @@ private:
         int32_t errorCode;
         std::string reason;
         std::string traceId;
-        ErrorContext(const CloudInfo &c, const std::string &bn, const std::string &dn, int32_t sid, int32_t ec,
-            const std::string &r, const std::string &tid)
-            : cloud(c), bundleName(bn), dbName(dn), syncId(sid), errorCode(ec), reason(r), traceId(tid)
-        {
-        }
     };
     void HandleSyncError(const ErrorContext &context);
     bool GetDataBaseCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName);

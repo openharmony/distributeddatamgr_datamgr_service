@@ -107,9 +107,16 @@ void SyncManager::SyncInfo::SetQuery(std::shared_ptr<GenQuery> query)
     query_ = query;
 }
 
-std::shared_ptr<GenQuery> SyncManager::SyncInfo::GetQuery()
+std::vector<std::string> SyncManager::SyncInfo::GetTables(const Database &database)
 {
-    return query_;
+    if (query_ != nullptr) {
+        return query_->GetTables();
+    }
+    auto it = tables_.find(database.name);
+    if (it != tables_.end() && !it->second.empty()) {
+        return it->second;
+    } 
+    return database.GetTableNames();
 }
 
 void SyncManager::SyncInfo::SetCompensation(bool isCompensation)
@@ -133,9 +140,9 @@ void SyncManager::SyncInfo::SetError(int32_t code) const
     }
 }
 
-std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string &store, const Tables &tables)
+std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const Tables &tables)
 {
-    if (query_ != nullptr) {
+    if (query_ != nullptr && query_->GetTables().size() == 1) {
         return query_;
     }
     class SyncQuery final : public GenQuery {
@@ -155,8 +162,7 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     private:
         std::vector<std::string> tables_;
     };
-    auto it = tables_.find(store);
-    return std::make_shared<SyncQuery>(it == tables_.end() || it->second.empty() ? tables : it->second);
+    return std::make_shared<SyncQuery>(tables);
 }
 
 bool SyncManager::SyncInfo::Contains(const std::string &storeName)
@@ -334,14 +340,14 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                     continue;
                 }
 
-                auto tables = (info.GetQuery() != nullptr) ? info.GetQuery()->GetTables() : database.GetTableNames();
+                auto tables = info.GetTables(database);
                 if (!GetTableCloudEnable(info.user_, bundleName, database.name, tables)) {
                     HandleSyncError(
                         { cloud, bundleName, database.name, syncId, E_CLOUD_DISABLED, "tableDisable", traceId });
                     info.SetError(E_CLOUD_DISABLED);
                     continue;
                 }
-                auto query = info.GenerateQuery(database.name, tables);
+                auto query = info.GenerateQuery(tables);
                 SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_, traceId,
                     info.user_ };
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),

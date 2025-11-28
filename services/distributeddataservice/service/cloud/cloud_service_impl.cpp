@@ -339,7 +339,7 @@ void CloudServiceImpl::DoDbTableLevelClean(int32_t user, const SchemaMeta &schem
 void CloudServiceImpl::ExecuteTableLevelClean(const StoreMetaData &meta, const Database &database,
     const std::map<std::string, int32_t> &tableActions, int32_t dbDefaultAction, int32_t appDefaultAction)
 {
-    const auto &cloudTables = database.GetCloudTables();
+    const auto &cloudTables = database.GetTableNames();
     std::map<int32_t, std::vector<std::string>> actionToTablesMap;
     for (const auto &tableName : cloudTables) {
         auto tableIter = tableActions.find(tableName);
@@ -373,6 +373,11 @@ void CloudServiceImpl::ExecuteDatabaseClean(const StoreMetaData &meta, int32_t a
         EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
     }
     auto store = AutoCache::GetInstance().GetStore(meta, {});
+    if (store == nullptr) {
+        ZLOGW("get store failed, user:%{public}s, bundleName:%{public}s, storeId:%{public}s", meta.user.c_str(),
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return;
+    }
     auto status = store->Clean("", action, tableList);
     if (status != E_OK) {
         ZLOGW("clean data status:%{public}d, user:%{public}s, bundleName:%{public}s, storeId:%{public}s", status,
