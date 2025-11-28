@@ -74,9 +74,9 @@ std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
     }
     DeviceExtraInfo deviceExtraInfo;
     if (!DistributedData::Serializable::Unmarshall(dmInfo.extraData, deviceExtraInfo)) {
-         ZLOGE("Unmarshall extraData failed. uuid:%{public}s", KvStoreUtils::ToBeAnonymous(deviceInfo.uuid).c_str());
-         return result;
-     }
+        ZLOGE("Unmarshall extraData failed. uuid:%{public}s", KvStoreUtils::ToBeAnonymous(deviceInfo.uuid).c_str());
+        return result;
+    }
     deviceInfo.osType = deviceExtraInfo.OS_TYPE;
     return {true, deviceInfo};
 }
