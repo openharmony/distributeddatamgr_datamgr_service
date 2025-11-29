@@ -115,7 +115,7 @@ std::vector<std::string> SyncManager::SyncInfo::GetTables(const Database &databa
     auto it = tables_.find(database.name);
     if (it != tables_.end() && !it->second.empty()) {
         return it->second;
-    } 
+    }
     return database.GetTableNames();
 }
 

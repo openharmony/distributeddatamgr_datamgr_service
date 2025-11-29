@@ -910,6 +910,7 @@ int32_t RdbGeneralStore::Clean(const std::string &device, int32_t mode, const st
     (void)delegate_->RemoveDeviceData(option);
     return GeneralError::E_ERROR;
 }
+
 int32_t RdbGeneralStore::Watch(int32_t origin, Watcher &watcher)
 {
     if (origin != Watcher::Origin::ORIGIN_ALL || observer_.watcher_ != nullptr) {
