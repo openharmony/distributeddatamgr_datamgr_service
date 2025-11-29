@@ -2073,7 +2073,6 @@ bool CloudServiceImpl::UpdateCloudDbSyncConfig(int32_t user, const std::string &
         ZLOGW("dbInfo is empty for bundleName:%{public}s", bundleName.c_str());
         return false;
     }
-    std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     CloudDbSyncConfig syncConfig;
     bool isMetaExist = MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true);
     auto *appConfig = GetOrCreateAppConfig(syncConfig, bundleName, isMetaExist);
