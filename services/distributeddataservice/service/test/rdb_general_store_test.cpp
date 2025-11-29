@@ -2407,9 +2407,9 @@ HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Clean_ReturnDatabaseClosed, TestSize.Level1)
 {
-    std::shared_ptr store = std::make_shared(metaData_);
+    std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
     std::string device = "device1";
-    std::vectorstd::string tableList = { "tableName1", "tableName2" };
+    std::vector<std::string> tableList = { "tableName1", "tableName2" };
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
     auto result = store->Clean(device, -1, tableList);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
@@ -2422,9 +2422,9 @@ HWTEST_F(RdbGeneralStoreTest, Clean_ReturnDatabaseClosed, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Clean_ReturnInvalidArgs, TestSize.Level1)
 {
-    std::shared_ptr store = std::make_shared(metaData_);
+    std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
     std::string device = "device1";
-    std::vectorstd::string tableList = { "tableName1", "tableName2" };
+    std::vector<std::string> tableList = { "tableName1", "tableName2" };
     auto result = store->Clean(device, GeneralStore::CLEAN_MODE_BUTT + 1, tableList);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 }
@@ -2436,9 +2436,9 @@ HWTEST_F(RdbGeneralStoreTest, Clean_ReturnInvalidArgs, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Clean_DelegateIsNull, TestSize.Level1)
 {
-    std::shared_ptr store = std::make_shared(metaData_);
+    std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
     std::string device = "device1";
-    std::vectorstd::string tableList = { "tableName1", "tableName2" };
+    std::vector<std::string> tableList = { "tableName1", "tableName2" };
     auto result = store->Clean(device, GeneralStore::CLOUD_INFO, tableList);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
@@ -2450,9 +2450,9 @@ HWTEST_F(RdbGeneralStoreTest, Clean_DelegateIsNull, TestSize.Level1)
 */
 HWTEST_F(RdbGeneralStoreTest, Clean_ReturnOk, TestSize.Level1)
 {
-    std::shared_ptr store = std::make_shared(metaData_);
+    std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
     std::string device = "device1";
-    std::vectorstd::string tableList = { "tableName1", "tableName2" };
+    std::vector<std::string> tableList = { "tableName1", "tableName2" };
     store->Init();
     auto result = store->Clean(device, GeneralStore::CLOUD_INFO, tableList);
     EXPECT_EQ(result, GeneralError::E_OK);
