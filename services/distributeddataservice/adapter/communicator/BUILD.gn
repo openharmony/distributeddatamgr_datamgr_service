@@ -26,25 +26,35 @@ ohos_source_set("distributeddata_communicator") {
     boundary_sanitize = true
     ubsan = true
   }
-  sources = [
-    "src/app_pipe_handler.cpp",
-    "src/app_pipe_handler.h",
-    "src/app_pipe_mgr.cpp",
-    "src/app_pipe_mgr.h",
-    "src/ark_communication_provider.cpp",
-    "src/ark_communication_provider.h",
-    "src/communication_provider.cpp",
-    "src/communication_provider_impl.cpp",
-    "src/communication_provider_impl.h",
-    "src/communicator_context.cpp",
-    "src/data_buffer.cpp",
-    "src/device_manager_adapter.cpp",
-    "src/process_communicator_impl.cpp",
-    "src/softbus_adapter.h",
-    "src/softbus_adapter_standard.cpp",
-    "src/softbus_client.cpp",
-    "src/softbus_client.h",
-  ]
+
+  sources = ["src/communicator_context.cpp",]
+ 
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    sources += [
+      "src/app_pipe_handler.cpp",
+      "src/app_pipe_handler.h",
+      "src/app_pipe_mgr.cpp",
+      "src/app_pipe_mgr.h",
+      "src/ark_communication_provider.cpp",
+      "src/ark_communication_provider.h",
+      "src/communication_provider.cpp",
+      "src/communication_provider_impl.cpp",
+      "src/communication_provider_impl.h",
+      "src/data_buffer.cpp",
+      "src/device_manager_adapter.cpp",
+      "src/process_communicator_impl.cpp",
+      "src/softbus_adapter.h",
+      "src/softbus_adapter_standard.cpp",
+      "src/softbus_client.cpp",
+      "src/softbus_client.h",
+    ]
+  } else {
+    sources += [
+      "src/communication_provider_mock.cpp",
+      "src/device_manager_adapter_mock.cpp",
+      "src/process_communicator_impl_mock.cpp",
+    ]
+  }
 
   include_dirs = [
     "${data_service_path}/adapter/include/utils",
@@ -61,14 +71,19 @@ ohos_source_set("distributeddata_communicator") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
-    "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [
+      "device_manager:devicemanagersdk",
+      "dsoftbus:softbus_client",
+    ]
+  }
 
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

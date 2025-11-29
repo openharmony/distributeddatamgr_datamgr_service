@@ -27,7 +27,6 @@ ohos_unittest("CommunicationProviderTest") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
@@ -59,8 +58,6 @@ ohos_unittest("CommunicatorContextTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
-    "dsoftbus:softbus_client",
     "googletest:gtest_main",
     "hilog:libhilog",
     "json:nlohmann_json_static",
@@ -86,8 +83,6 @@ ohos_unittest("CommunicatorDataBufferTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
-    "dsoftbus:softbus_client",
     "googletest:gtest_main",
     "hilog:libhilog",
     "json:nlohmann_json_static",
@@ -318,14 +313,19 @@ group("unittest") {
   deps = []
 
   deps += [
-    ":AppPipeMgrServiceTest",
-    ":CommunicationProviderTest",
     ":CommunicatorContextTest",
-    ":CommunicatorDataBufferTest",
-    ":DeviceManagerAdapterTest",
-    ":ProcessCommunicatorImplTest",
-    ":SoftbusAdapterStandardTest",
     ":SoftbusClientTest",
   ]
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    deps += [
+      ":ProcessCommunicatorImplTest",
+      ":DeviceManagerAdapterTest",
+      ":CommunicatorDataBufferTest",
+      ":CommunicationProviderTest",
+      ":SoftbusAdapterStandardTest",
+      ":AppPipeMgrServiceTest",
+    ]
+  }
 }
 ###############################################################################

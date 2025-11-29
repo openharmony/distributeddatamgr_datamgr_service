@@ -94,7 +94,6 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "dataclassification:data_transit_mgr",
-    "device_manager:devicemanagersdk",
     "file_api:securitylabel",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -115,6 +114,9 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
 group("fuzztest") {
   testonly = true
 
-  deps = [ ":DataServiceStubFuzzTest" ]
+  deps = []
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    deps += [ ":DataServiceStubFuzzTest" ]
+  }
 }
 ###############################################################################

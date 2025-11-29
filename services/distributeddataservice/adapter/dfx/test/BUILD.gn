@@ -69,7 +69,6 @@ ohos_unittest("HiViewAdapterDfxTest") {
   external_deps = [
     "c_utils:utils",
     "datamgr_service:distributeddatasvcfwk",
-    "device_manager:devicemanagersdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",

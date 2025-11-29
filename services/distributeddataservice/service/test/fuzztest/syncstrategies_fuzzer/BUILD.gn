@@ -54,7 +54,6 @@ ohos_fuzztest("SyncStrategiesFuzzTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",

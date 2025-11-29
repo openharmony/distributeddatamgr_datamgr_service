@@ -22,10 +22,7 @@
 #include "app_device_change_listener.h"
 #include "commu_types.h"
 #include "concurrent_map.h"
-#include "device_manager.h"
-#include "device_manager_callback.h"
 #include "device_manager/device_manager_delegate.h"
-#include "dm_device_info.h"
 #include "executor_pool.h"
 #include "lru_bucket.h"
 
@@ -38,7 +35,13 @@ public:
         DEVICE_ONREADY,
         DEVICE_BUTT
     };
-    using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
+    enum DmDeviceType {
+        DEVICE_TYPE_UNKNOWN = 0x00,
+        DEVICE_TYPE_PC = 0x0C,
+        DEVICE_TYPE_PAD = 0x11,
+        DEVICE_TYPE_CAR = 0x83,
+        DEVICE_TYPE_2IN1 = 0xA2F,
+    };
     using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
     using PipeInfo = OHOS::AppDistributedKv::PipeInfo;
     using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
@@ -74,8 +77,8 @@ public:
     bool IsSameAccount(const std::string &id);
     bool IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
     bool CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
-    void Offline(const DmDeviceInfo &info);
-    void OnReady(const DmDeviceInfo &info);
+    void Offline(const DeviceInfo &dvInfo);
+    void OnReady(const DeviceInfo &dvInfo);
     friend class DataMgrDmStateCall;
     friend class NetConnCallbackObserver;
 
@@ -83,13 +86,12 @@ private:
     DeviceManagerAdapter();
     ~DeviceManagerAdapter();
     std::function<void()> RegDevCallback();
-    bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo);
     void SaveDeviceInfo(const DeviceInfo &deviceInfo, const AppDistributedKv::DeviceChangeType &type);
     void InitDeviceInfo(bool onlyCache = true);
     DeviceInfo GetLocalDeviceInfo();
     DeviceInfo GetDeviceInfoFromCache(const std::string &id);
-    void Online(const DmDeviceInfo &info);
-    void OnChanged(const DmDeviceInfo &info);
+    void Online(const DeviceInfo &dvInfo);
+    void OnChanged(const DeviceInfo &dvInfo);
     std::vector<const AppDeviceChangeListener *> GetObservers();
     void ResetLocalDeviceInfo();
     static inline uint64_t GetTimeStamp()
@@ -101,7 +103,7 @@ private:
 
     std::mutex devInfoMutex_ {};
     DeviceInfo localInfo_ {};
-    const DmDeviceInfo cloudDmInfo;
+    const DeviceInfo cloudDeviceInfo;
     ConcurrentMap<const AppDeviceChangeListener *, const AppDeviceChangeListener *> observers_ {};
     LRUBucket<std::string, DeviceInfo> deviceInfos_ {64};
     LRUBucket<std::string, DeviceInfo> otherDeviceInfos_ {64};

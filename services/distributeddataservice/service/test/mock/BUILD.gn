@@ -54,7 +54,6 @@ ohos_static_library("distributeddata_mock_static") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   external_deps = [
-    "device_manager:devicemanagersdk",
     "googletest:gmock",
     "googletest:gtest",
     "json:nlohmann_json_static",

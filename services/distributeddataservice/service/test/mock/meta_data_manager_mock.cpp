@@ -37,6 +37,9 @@ OHOS::DistributedData::MetaDataManager::~MetaDataManager()
 
 bool OHOS::DistributedData::MetaDataManager::LoadMeta(const std::string &key, Serializable &value, bool isLocal)
 {
+    if (BMetaDataManager::metaDataManager == nullptr) {
+        return false;
+    }
     return BMetaDataManager::metaDataManager->LoadMeta(key, value, isLocal);
 }
 

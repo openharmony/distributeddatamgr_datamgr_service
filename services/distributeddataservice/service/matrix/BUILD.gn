@@ -56,7 +56,6 @@ ohos_source_set("distributeddata_matrix") {
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
   ]
   external_deps = [
-    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "json:nlohmann_json_static",
     "c_utils:utils",

@@ -25,7 +25,6 @@
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
 namespace OHOS::Test {
-constexpr const char *PKG_NAME = "ohos.distributeddata.service";
 class ObjectDmsHandlerTest : public testing::Test {
 public:
     void SetUp() {}
@@ -40,8 +39,8 @@ public:
 HWTEST_F(ObjectDmsHandlerTest, IsContinue_001, TestSize.Level0)
 {
     ObjectDmsHandler::GetInstance().RegisterDmsEvent();
-    DistributedHardware::DmDeviceInfo localDeviceInfo;
-    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, localDeviceInfo);
+    DistributedData::DeviceInfo localDeviceInfo =
+        DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
     std::string localNetworkId = localDeviceInfo.networkId;
     DistributedSchedule::EventNotify notify;
     notify.dSchedEventType_ = DistributedSchedule::DSchedEventType::DMS_CONTINUE;
@@ -66,8 +65,8 @@ HWTEST_F(ObjectDmsHandlerTest, IsContinue_001, TestSize.Level0)
 HWTEST_F(ObjectDmsHandlerTest, IsContinue_002, TestSize.Level0)
 {
     ObjectDmsHandler::GetInstance().RegisterDmsEvent();
-    DistributedHardware::DmDeviceInfo localDeviceInfo;
-    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, localDeviceInfo);
+    DistributedData::DeviceInfo localDeviceInfo =
+        DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
     std::string localNetworkId = localDeviceInfo.networkId;
     DistributedSchedule::EventNotify notify;
     notify.dSchedEventType_ = DistributedSchedule::DSchedEventType::DMS_CONTINUE;
@@ -115,8 +114,8 @@ HWTEST_F(ObjectDmsHandlerTest, ReceiveDmsEvent_001, TestSize.Level0)
 */
 HWTEST_F(ObjectDmsHandlerTest, GetDstBundleName_001, TestSize.Level0)
 {
-    DistributedHardware::DmDeviceInfo localDeviceInfo;
-    DistributedHardware::DeviceManager::GetInstance().GetLocalDeviceInfo(PKG_NAME, localDeviceInfo);
+    DistributedData::DeviceInfo localDeviceInfo =
+        DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice();
     std::string localNetworkId = localDeviceInfo.networkId;
     
     std::string srcNetworkId = localNetworkId;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,15 +16,21 @@
 #include "sensitive.h"
 #include <utility>
 #include <vector>
-#include "dev_slinfo_mgr.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
 #undef LOG_TAG
-#define LOG_TAG "Sensitive"
+#define LOG_TAG "SensitiveMock"
 
 namespace OHOS {
 namespace DistributedKv {
 using Anonymous = DistributedData::Anonymous;
+static constexpr uint32_t DATA_SEC_LEVEL1 = 1;
+static constexpr uint32_t MAX_UDID_LENGTH = 64;
+
+struct DEVSLQueryParams {
+    uint8_t udid[MAX_UDID_LENGTH];
+    uint32_t udidLen;
+};
 Sensitive::Sensitive(std::string deviceId)
     : deviceId(std::move(deviceId)), securityLevel(DATA_SEC_LEVEL1)
 {
@@ -37,44 +43,22 @@ Sensitive::Sensitive()
 
 uint32_t Sensitive::GetDeviceSecurityLevel()
 {
-    if (securityLevel > DATA_SEC_LEVEL1) {
-        ZLOGI("the device security level had gotten");
-        return securityLevel;
-    }
-    return GetSensitiveLevel(deviceId);
+    return 0;
 }
 
 bool InitDEVSLQueryParams(DEVSLQueryParams *params, const std::string &udid)
 {
-    ZLOGI("udid is [%{public}s]", Anonymous::Change(udid).c_str());
-    if (params == nullptr || udid.empty()) {
-        return false;
-    }
-    std::vector<uint8_t> vec(udid.begin(), udid.end());
-    for (size_t i = 0; i < MAX_UDID_LENGTH && i < vec.size(); i++) {
-        params->udid[i] = vec[i];
-    }
-    params->udidLen = uint32_t(udid.size());
     return true;
 }
 
 Sensitive::operator bool() const
 {
-    return (!deviceId.empty()) && (securityLevel > DATA_SEC_LEVEL1);
+    return true;
 }
 
 bool Sensitive::operator >= (const DistributedDB::SecurityOption &option)
 {
-    if (option.securityLabel == DistributedDB::NOT_SET) {
-        return true;
-    }
-
-    uint32_t level = securityLevel;
-    if (level <= DATA_SEC_LEVEL1 && static_cast<uint32_t>(option.securityLabel - 1) > level) {
-        ZLOGI("the device security level hadn't gotten");
-        level = GetSensitiveLevel(deviceId);
-    }
-    return (level >= static_cast<uint32_t>(option.securityLabel - 1));
+    return true;
 }
 
 Sensitive::Sensitive(const Sensitive &sensitive)
@@ -109,23 +93,7 @@ Sensitive &Sensitive::operator=(Sensitive &&sensitive) noexcept
 
 uint32_t Sensitive::GetSensitiveLevel(const std::string &udid)
 {
-    DEVSLQueryParams query;
-    if (!InitDEVSLQueryParams(&query, udid)) {
-        ZLOGE("init query params failed! udid:[%{public}s]", Anonymous::Change(udid).c_str());
-        return DATA_SEC_LEVEL1;
-    }
-
-    uint32_t level = DATA_SEC_LEVEL1;
-    int32_t result = DATASL_GetHighestSecLevel(&query, &level);
-    if (result != DEVSL_SUCCESS) {
-        ZLOGE("get highest level failed(%{public}s)! level: %{public}d, error: %d",
-            Anonymous::Change(udid).c_str(), securityLevel, result);
-        return DATA_SEC_LEVEL1;
-    }
-    securityLevel = level;
-    ZLOGI("get highest level success(%{public}s)! level: %{public}d, error: %d",
-        Anonymous::Change(udid).c_str(), securityLevel, result);
-    return securityLevel;
+    return 0;
 }
 } // namespace DistributedKv
 } // namespace OHOS

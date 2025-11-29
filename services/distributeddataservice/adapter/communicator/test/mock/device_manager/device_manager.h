@@ -41,10 +41,15 @@ public:
     bool IsSameAccount(const std::string &networkId);
     bool CheckAccessControl(const DmAccessCaller &caller, const DmAccessCallee &callee);
     bool CheckIsSameAccount(const DmAccessCaller &caller, const DmAccessCallee &callee);
+    void Online(const DmDeviceInfo &info);
+    void Offline(const DmDeviceInfo &info);
+    void OnChanged(const DmDeviceInfo &info);
+    void OnReady(const DmDeviceInfo &info);
 
 private:
     DeviceManager() = default;
     ~DeviceManager() = default;
+    std::shared_ptr<DeviceStateCallback> callback_;
 };
 } // namespace OHOS::DistributedHardware
 #endif // MOCK_DEVICE_MANAGER_H

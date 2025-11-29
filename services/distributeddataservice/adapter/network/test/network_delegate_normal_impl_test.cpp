@@ -23,7 +23,6 @@ using namespace testing::ext;
 using namespace std;
 using namespace OHOS::DistributedData;
 using namespace OHOS::NetManagerStandard;
-using DmDeviceInfo = OHOS::DistributedHardware::DmDeviceInfo;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 class NetworkDelegateNormalImplTest : public testing::Test {
@@ -92,11 +91,14 @@ HWTEST_F(NetworkDelegateNormalImplTest, GetNetworkType002, TestSize.Level1)
 HWTEST_F(NetworkDelegateNormalImplTest, IsNetworkAvailable, TestSize.Level1)
 {
     NetworkDelegateNormalImpl delegate;
+    auto executors = std::make_shared<OHOS::ExecutorPool>(12, 5);
+    DeviceManagerAdapter::GetInstance().Init(executors);
     bool ret = delegate.IsNetworkAvailable(); // false false
     EXPECT_FALSE(ret);
 
-    DmDeviceInfo& info = const_cast<DmDeviceInfo &>(delegate.cloudDmInfo_);
-    std::fill(info.networkId, info.networkId + sizeof(info.networkId), '\0');
+    DeviceInfo& info = const_cast<DeviceInfo &>(delegate.cloudDeviceInfo_);
+    info.networkId.resize(sizeof(info.networkId));
+    std::fill(info.networkId.data(), info.networkId.data() + info.networkId.size(), '\0');
     NetworkDelegateNormalImpl::NetworkType netWorkType = NetworkDelegate::NetworkType::NONE;
     NetworkDelegateNormalImpl::NetworkType status = delegate.SetNet(netWorkType);
     EXPECT_EQ(status, NetworkDelegate::NONE);
@@ -158,8 +160,9 @@ HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange001, TestSize.Level
 HWTEST_F(NetworkDelegateNormalImplTest, NetCapabilitiesChange002, TestSize.Level1)
 {
     NetworkDelegateNormalImpl delegate;
-    DmDeviceInfo& info = const_cast<DmDeviceInfo &>(delegate.cloudDmInfo_);
-    std::fill(info.networkId, info.networkId + sizeof(info.networkId), '\0');
+    DeviceInfo& info = const_cast<DeviceInfo &>(delegate.cloudDeviceInfo_);
+    info.networkId.resize(sizeof(info.networkId));
+    std::fill(info.networkId.data(), info.networkId.data() + info.networkId.size(), '\0');
     sptr<NetConnCallbackObserver> observer = new (std::nothrow) NetConnCallbackObserver(delegate);
     sptr<NetManagerStandard::NetHandle> netHandle = new (std::nothrow) NetHandle();
     sptr<NetManagerStandard::NetAllCapabilities> netAllCap = new (std::nothrow) NetAllCapabilities();

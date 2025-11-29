@@ -30,6 +30,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "nativetoken_kit.h"
+#include "securec.h"
 #include "session_manager/route_head_handler_impl.h"
 #include "session_manager/upgrade_manager.h"
 #include "token_setproc.h"

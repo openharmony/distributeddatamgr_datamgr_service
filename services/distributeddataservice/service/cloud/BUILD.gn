@@ -68,7 +68,6 @@ ohos_source_set("distributeddata_cloud") {
 
   external_deps = [
     "access_token:libtokenid_sdk",
-    "device_manager:devicemanagersdk",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "ipc:ipc_single",

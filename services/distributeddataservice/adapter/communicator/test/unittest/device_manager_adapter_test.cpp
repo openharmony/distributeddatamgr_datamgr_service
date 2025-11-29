@@ -25,9 +25,7 @@ namespace {
 using namespace testing::ext;
 using namespace OHOS::AppDistributedKv;
 using namespace OHOS::DistributedData;
-using namespace OHOS::DistributedHardware;
 using namespace OHOS::Security::AccessToken;
-using DmDeviceInfo =  OHOS::DistributedHardware::DmDeviceInfo;
 class DeviceChangerListener final : public AppDeviceChangeListener {
 public:
     void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override
@@ -397,62 +395,6 @@ HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo, TestSize.Level0)
 
 /**
 * @tc.name: GetDeviceInfo
-* @tc.desc: get device info
-* @tc.type: FUNC
-* @tc.author: nhj
- */
-HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo01, TestSize.Level0)
-{
-    auto executors = std::make_shared<OHOS::ExecutorPool>(0, 0);
-    DeviceManagerAdapter::GetInstance().Init(executors);
-    OHOS::DistributedHardware::DmDeviceInfo deviceInfo = {
-        .deviceId = "123",
-        .deviceName = "asda",
-        .deviceTypeId = 1,
-        .networkId = "",
-    };
-    DeviceInfo info;
-    info.uuid = "ohos.test.uuid";
-    info.udid = "ohos.test.udid";
-    info.networkId = "ohos.test.networkId";
-    info.deviceName = "ohos.test.deviceName";
-    info.deviceType = 1;
-    info.osType = 1;
-    info.authForm = 1;
-    auto dvInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(deviceInfo, info);
-    EXPECT_EQ(dvInfo, false);
-}
-
-/**
-* @tc.name: GetDeviceInfo
-* @tc.desc: get device info
-* @tc.type: FUNC
-* @tc.author: nhj
- */
-HWTEST_F(DeviceManagerAdapterTest, GetDeviceInfo02, TestSize.Level0)
-{
-    auto executors = std::make_shared<OHOS::ExecutorPool>(0, 0);
-    DeviceManagerAdapter::GetInstance().Init(executors);
-    OHOS::DistributedHardware::DmDeviceInfo deviceInfo = {
-        .deviceId = "123",
-        .deviceName = "asda",
-        .deviceTypeId = 1,
-        .networkId = "14569",
-    };
-    DeviceInfo info;
-    info.uuid = "";
-    info.udid = "";
-    info.networkId = "ohos.test.networkId";
-    info.deviceName = "ohos.test.deviceName";
-    info.deviceType = 1;
-    info.osType = 1;
-    info.authForm = 1;
-    auto dvInfo = DeviceManagerAdapter::GetInstance().GetDeviceInfo(deviceInfo, info);
-    EXPECT_EQ(dvInfo, false);
-}
-
-/**
-* @tc.name: GetDeviceInfo
 * @tc.desc: get device info, the id is invalid
 * @tc.type: FUNC
 * @tc.author: nhj
@@ -485,8 +427,7 @@ HWTEST_F(DeviceManagerAdapterTest, GetOnlineDevices, TestSize.Level0)
 HWTEST_F(DeviceManagerAdapterTest, Online, TestSize.Level0)
 {
     DeviceManagerAdapter DeviceManagerAdapterTest;
-    OHOS::DistributedHardware::DmDeviceInfo deviceInfo({ "cloudDeviceId",
-        "cloudDeviceName", 0, "cloudNetworkId", 0 });
+    DeviceInfo deviceInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 });
     EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.Online(deviceInfo));
 }
 
@@ -500,11 +441,13 @@ HWTEST_F(DeviceManagerAdapterTest, Online, TestSize.Level0)
 HWTEST_F(DeviceManagerAdapterTest, Offline, TestSize.Level0)
 {
     DeviceManagerAdapter DeviceManagerAdapterTest;
-    OHOS::DistributedHardware::DmDeviceInfo info01 = {
-        .deviceId = "123",
-        .deviceName = "asda",
-        .deviceTypeId = 1,
+    auto executors = std::make_shared<OHOS::ExecutorPool>(12, 5);
+    DeviceManagerAdapterTest.Init(executors);
+    DeviceInfo info01 = {
+        .uuid = "123",
+        .udid = "123",
         .networkId = "14569",
+        .deviceName = "asda",
     };
     EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.Offline(info01));
 }
@@ -519,8 +462,7 @@ HWTEST_F(DeviceManagerAdapterTest, Offline, TestSize.Level0)
 HWTEST_F(DeviceManagerAdapterTest, OnChanged, TestSize.Level0)
 {
     DeviceManagerAdapter DeviceManagerAdapterTest;
-    OHOS::DistributedHardware::DmDeviceInfo deviceInfo({ "cloudDeviceId",
-        "cloudDeviceName", 1, "cloudNetworkId", 1 });
+    DeviceInfo deviceInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 });
     EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.OnChanged(deviceInfo));
 }
 
@@ -534,11 +476,11 @@ HWTEST_F(DeviceManagerAdapterTest, OnChanged, TestSize.Level0)
 HWTEST_F(DeviceManagerAdapterTest, OnReady, TestSize.Level0)
 {
     DeviceManagerAdapter DeviceManagerAdapterTest;
-    OHOS::DistributedHardware::DmDeviceInfo info = {
-        .deviceId = "111",
-        .deviceName = "device",
-        .deviceTypeId = 1,
-        .networkId = "12345",
+    DeviceInfo info = {
+        .uuid = "123",
+        .udid = "123",
+        .networkId = "14569",
+        .deviceName = "asda",
     };
     EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.OnReady(info));
 }

@@ -1168,8 +1168,8 @@ bool KVDBServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vecto
         auto capKey = CapMetaRow::GetKeyFor(uuid);
         auto devInfo = DMAdapter::GetInstance().GetDeviceInfo(uuid);
         if ((!MetaDataManager::GetInstance().LoadMeta(std::string(capKey.begin(), capKey.end()), capMeta) &&
-            !(devInfo.osType != OH_OS_TYPE &&
-            devInfo.deviceType == static_cast<uint32_t>(DistributedHardware::DmDeviceType::DEVICE_TYPE_CAR))) ||
+             !(devInfo.osType != OH_OS_TYPE &&
+               devInfo.deviceType == static_cast<uint32_t>(DMAdapter::DmDeviceType::DEVICE_TYPE_CAR))) ||
             !MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData)) {
             isAfterMeta = true;
             break;

@@ -59,7 +59,6 @@ ohos_source_set("distributeddata_permit") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "device_auth:deviceauth_sdk",
-    "device_manager:devicemanagersdk",
     "hilog:libhilog",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",

@@ -45,7 +45,7 @@ int32_t DeviceManager::RegisterDevStateCallback(const std::string &pkgName, cons
 {
     (void)pkgName;
     (void)extra;
-    (void)callback;
+    callback_ = callback;
     return 0;
 }
 
@@ -141,5 +141,33 @@ bool DeviceManager::CheckIsSameAccount(const DmAccessCaller &caller, const DmAcc
     (void)caller;
     (void)callee;
     return true;
+}
+
+void DeviceManager::Online(const DmDeviceInfo &info)
+{
+    if (callback_) {
+        callback_->OnDeviceOnline(info);
+    }
+}
+ 
+void DeviceManager::Offline(const DmDeviceInfo &info)
+{
+    if (callback_) {
+        callback_->OnDeviceOffline(info);
+    }
+}
+ 
+void DeviceManager::OnChanged(const DmDeviceInfo &info)
+{
+    if (callback_) {
+        callback_->OnDeviceChanged(info);
+    }
+}
+ 
+void DeviceManager::OnReady(const DmDeviceInfo &info)
+{
+    if (callback_) {
+        callback_->OnDeviceReady(info);
+    }
 }
 } // namespace OHOS::DistributedHardware
