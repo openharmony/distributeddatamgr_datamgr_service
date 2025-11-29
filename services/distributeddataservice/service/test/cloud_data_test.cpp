@@ -1486,24 +1486,22 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
 }
 
 /**
-* @tc.name: ChangeAppSwitch03
-* @tc.desc:
+* @tc.name: ChangeAppSwitch_ReverseSwitchStatus_Success
+* @tc.desc: Test reversing app switch status (ON to OFF or OFF to ON) and verify operation success
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(CloudDataTest, ChangeAppSwitch03, TestSize.Level0)
+HWTEST_F(CloudDataTest, ChangeAppSwitch_ReverseSwitchStatus_Success, TestSize.Level0)
 {
     CloudInfo info;
     MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
     auto cloudSwitch = !info.apps[TEST_CLOUD_BUNDLE].cloudSwitch ? CloudData::CloudService::SWITCH_ON
                                                                  : CloudData::CloudService::SWITCH_OFF;
-
     OHOS::CloudData::DBSwitchInfo dbSwitchInfo1;
     OHOS::CloudData::SwitchConfig switchConfig;
     switchConfig.dbInfo["db1"] = dbSwitchInfo1;
     auto ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, cloudSwitch, switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
-
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF,
         switchConfig);
@@ -1511,12 +1509,12 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch03, TestSize.Level0)
 }
 
 /**
-* @tc.name: ChangeAppSwitch04
-* @tc.desc:
+* @tc.name: ChangeAppSwitch_OffWithDbTableConfig_SaveSuccess
+* @tc.desc: Test turning off app switch with specific DB and table configurations, verify config persistence
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(CloudDataTest, ChangeAppSwitch04, TestSize.Level0)
+HWTEST_F(CloudDataTest, ChangeAppSwitch_OffWithDbTableConfig_SaveSuccess, TestSize.Level0)
 {
     OHOS::CloudData::DBSwitchInfo dbSwitchInfo1;
     dbSwitchInfo1.enable = false;
@@ -1525,22 +1523,44 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch04, TestSize.Level0)
     OHOS::CloudData::SwitchConfig switchConfig;
     switchConfig.dbInfo[TEST_CLOUD_BUNDLE] = dbSwitchInfo1;
     int32_t user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
-    CloudDbSyncConfig syncConfig;
-    CloudDbSyncConfig::AppSyncConfig newAppConfig;
-    CloudDbSyncConfig::DbSyncConfig dbSyncConfig;
-    CloudDbSyncConfig::TableSyncConfig tableSyncConfig;
-    tableSyncConfig.tableName = "table1";
-    tableSyncConfig.cloudSyncEnabled = true;
-    dbSyncConfig.dbName = TEST_CLOUD_BUNDLE;
-    dbSyncConfig.cloudSyncEnabled = true;
-    dbSyncConfig.tableConfigs.push_back(tableSyncConfig);
-    newAppConfig.bundleName = TEST_CLOUD_BUNDLE;
-    newAppConfig.dbConfigs.push_back(dbSyncConfig);
-    syncConfig.appConfigs.emplace(TEST_CLOUD_BUNDLE, std::move(newAppConfig));
-    MetaDataManager::GetInstance().SaveMeta(syncConfig.GetKey(user), syncConfig, true);
     auto ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE,
         CloudData::CloudService::SWITCH_OFF, switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    CloudDbSyncConfig syncConfig;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true));
+    auto iter = syncConfig.appConfigs.find(TEST_CLOUD_BUNDLE);
+    EXPECT_TRUE(iter != syncConfig.appConfigs.end());
+    EXPECT_TRUE(iter->second.bundleName == TEST_CLOUD_BUNDLE);
+}
+
+/**
+* @tc.name: ChangeAppSwitch_OffWithDbConfig_PersistConsistency
+* @tc.desc: Test app switch off operation with DB configuration and verify data persistence and consistency
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, ChangeAppSwitch_OffWithDbConfig_PersistConsistency, TestSize.Level0)
+{
+    OHOS::CloudData::DBSwitchInfo dbSwitchInfo;
+    dbSwitchInfo.enable = true;
+    dbSwitchInfo.tableInfo["table1"] = true;
+    OHOS::CloudData::SwitchConfig switchConfig;
+    switchConfig.dbInfo[TEST_CLOUD_BUNDLE] = dbSwitchInfo;
+
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE,
+        CloudData::CloudService::SWITCH_OFF, switchConfig);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    CloudDbSyncConfig syncConfig;
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true));
+    auto iter = syncConfig.appConfigs.find(TEST_CLOUD_BUNDLE);
+    EXPECT_TRUE(iter != syncConfig.appConfigs.end());
+    EXPECT_TRUE(iter->second.bundleName == TEST_CLOUD_BUNDLE);
+    EXPECT_TRUE(!iter->second.dbConfigs.empty());
+    auto dnInfo = iter->second.dbConfigs[1];
+    EXPECT_TRUE(dnInfo.cloudSyncEnabled);
+    cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF,
+        switchConfig);
     CloudDbSyncConfig syncConfig1;
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(syncConfig1.GetKey(user), syncConfig1, true));
     EXPECT_TRUE(syncConfig1 == syncConfig);

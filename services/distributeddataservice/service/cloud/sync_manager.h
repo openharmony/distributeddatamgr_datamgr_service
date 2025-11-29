@@ -214,7 +214,7 @@ private:
         const CloudInfo &cloud;
         std::string bundleName;
         std::string dbName;
-        int32_t syncId;
+        uint64_t syncId;
         int32_t errorCode;
         std::string reason;
         std::string traceId;

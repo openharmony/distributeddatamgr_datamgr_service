@@ -1088,6 +1088,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest001, TestSize.Level0)
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.find(TEST_CLOUD_STORE) != result.end());
 }
 
 /**
@@ -1115,6 +1116,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest002, TestSize.Level0)
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result.find(TEST_CLOUD_STORE) != result.end());
 }
 
 /**
