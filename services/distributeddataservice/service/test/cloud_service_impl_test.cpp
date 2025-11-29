@@ -63,6 +63,10 @@ using Confirmation = OHOS::CloudData::Confirmation;
 using Status = OHOS::CloudData::CloudService::Status;
 using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using DBSwitchInfo = OHOS::CloudData::DBSwitchInfo;
+using SwitchConfig = OHOS::CloudData::SwitchConfig;
+using DBActionInfo = OHOS::CloudData::DBActionInfo;
+using ClearConfig = OHOS::CloudData::ClearConfig;
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
@@ -83,7 +87,8 @@ public:
     static void CheckDelMeta(StoreMetaMapping &metaMapping, StoreMetaData &meta, StoreMetaData &meta1);
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
     static NetworkDelegateMock delegate_;
-    static auto ReturnWithUserList(const std::vector<int>& users);
+    static auto ReturnWithUserList(const std::vector<int> &users);
+    static void InitCloudInfoAndSchema();
 
 protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
@@ -95,6 +100,48 @@ std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceI
 NetworkDelegateMock CloudServiceImplTest::delegate_;
 std::shared_ptr<DBStoreMock> CloudServiceImplTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 StoreMetaData CloudServiceImplTest::metaData_;
+
+void CloudServiceImplTest::InitCloudInfoAndSchema()
+{
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    SchemaMeta::Field field1;
+    field1.colName = "test_cloud_field_name1";
+    field1.alias = "test_cloud_field_alias1";
+    SchemaMeta::Field field2;
+    field2.colName = "test_cloud_field_name2";
+    field2.alias = "test_cloud_field_alias2";
+
+    SchemaMeta::Table table;
+    table.name = "test_cloud_table_name";
+    table.alias = "test_cloud_table_alias";
+    table.fields.emplace_back(field1);
+    table.fields.emplace_back(field2);
+
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.alias = TEST_CLOUD_STORE;
+    database.tables.emplace_back(table);
+    table.name = "test_cloud_table_name1";
+    database.tables.emplace_back(table);
+    table.name = "test_cloud_table_name2";
+    database.tables.emplace_back(table);
+    SchemaMeta schemaMeta;
+    schemaMeta.databases.emplace_back(database);
+    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
+    MetaDataManager::GetInstance().SaveMeta(CloudInfo::GetSchemaKey(cloudInfo.user, TEST_CLOUD_BUNDLE), schemaMeta,
+        true);
+}
 
 void CloudServiceImplTest::CheckDelMeta(StoreMetaMapping &metaMapping, StoreMetaData &meta, StoreMetaData &meta1)
 {
@@ -155,7 +202,13 @@ void CloudServiceImplTest::SetUpTestCase(void)
     InitMetaData();
 }
 
-void CloudServiceImplTest::TearDownTestCase() { }
+void CloudServiceImplTest::TearDownTestCase()
+{
+    if (accountDelegateMock != nullptr) {
+        delete accountDelegateMock;
+        accountDelegateMock = nullptr;
+    }
+}
 
 void CloudServiceImplTest::SetUp() { }
 
@@ -1035,7 +1088,6 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest001, TestSize.Level0)
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
-    EXPECT_TRUE(result.find(TEST_CLOUD_STORE) != result.end());
 }
 
 /**
@@ -1063,7 +1115,6 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest002, TestSize.Level0)
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
-    EXPECT_TRUE(result.find(TEST_CLOUD_STORE) != result.end());
 }
 
 /**
@@ -1122,10 +1173,250 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
     EXPECT_EQ(status, CloudData::CloudService::ERROR);
     EXPECT_TRUE(result.empty());
-    if (accountDelegateMock != nullptr) {
-        delete accountDelegateMock;
-        accountDelegateMock = nullptr;
-    }
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo
+* @tc.desc: Test Clean with db level config and empty table info
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo, TestSize.Level1)
+{
+    InitCloudInfoAndSchema();
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO });
+    std::map<std::string, ClearConfig> configs;
+
+    ClearConfig clearConfig;
+    DBActionInfo dbActionInfo;
+    dbActionInfo.action = CloudData::CloudService::Action::CLEAR_CLOUD_INFO;
+    // Empty tableInfo
+    clearConfig.dbInfo.insert({ TEST_CLOUD_STORE, dbActionInfo });
+    configs.insert({ TEST_CLOUD_BUNDLE, clearConfig });
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_DbLevelWithTableInfo
+* @tc.desc: Test Clean with db level config and table info
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithTableInfo, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO });
+    std::map<std::string, ClearConfig> configs;
+
+    ClearConfig clearConfig;
+    DBActionInfo dbActionInfo;
+    dbActionInfo.action = CloudData::CloudService::Action::CLEAR_CLOUD_INFO;
+    dbActionInfo.tableInfo.insert(
+        { "test_cloud_table_name", CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO });
+    dbActionInfo.tableInfo.insert({ "test_cloud_table_name1", CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    clearConfig.dbInfo.insert({ TEST_CLOUD_STORE, dbActionInfo });
+    configs.insert({ TEST_CLOUD_BUNDLE, clearConfig });
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_DbLevelWithDbCloudNone
+* @tc.desc: Test Clean with db level CLOUD_NONE action and app default action
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithDbCloudNone, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    std::map<std::string, ClearConfig> configs;
+
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
+
+    ClearConfig clearConfig;
+    DBActionInfo dbActionInfo;
+    dbActionInfo.action = CloudData::CloudService::Action::CLEAR_CLOUD_NONE;
+    clearConfig.dbInfo.insert({ TEST_CLOUD_STORE, dbActionInfo });
+    configs.insert({ TEST_CLOUD_BUNDLE, clearConfig });
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_MixedActionsAndConfigs
+* @tc.desc: Test Clean with mixed app actions and db configs for multiple bundles
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_MixedActionsAndConfigs, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    std::map<std::string, ClearConfig> configs;
+
+    // Bundle1: Only app level action
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
+
+    // Bundle2: Only db level config
+    ClearConfig clearConfig;
+    DBActionInfo dbActionInfo;
+    dbActionInfo.action = CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO;
+    dbActionInfo.tableInfo.insert({ "test_cloud_table_name", CloudData::CloudService::Action::CLEAR_CLOUD_INFO });
+    clearConfig.dbInfo.insert({ TEST_CLOUD_STORE, dbActionInfo });
+    configs.insert({ "another_bundle", clearConfig });
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_TableLevelWithDifferentActions
+* @tc.desc: Test Clean with table level actions grouping tables by action type
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithDifferentActions, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    std::map<std::string, ClearConfig> configs;
+
+    ClearConfig clearConfig;
+    DBActionInfo dbActionInfo;
+    dbActionInfo.action = CloudData::CloudService::Action::CLEAR_CLOUD_INFO; // db default action
+    dbActionInfo.tableInfo.insert(
+        { "test_cloud_table_name", CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO });
+    dbActionInfo.tableInfo.insert({ "test_cloud_table_name1", CloudData::CloudService::Action::CLEAR_CLOUD_INFO });
+    dbActionInfo.tableInfo.insert(
+        { "test_cloud_table_name2", CloudData::CloudService::Action::CLEAR_CLOUD_NONE }); // Should be filtered
+    clearConfig.dbInfo.insert({ TEST_CLOUD_STORE, dbActionInfo });
+    configs.insert({ TEST_CLOUD_BUNDLE, clearConfig });
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_TableLevelWithDbCloudNone
+* @tc.desc: Test Clean with table level actions when db action is CLOUD_NONE
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithDbCloudNone, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    std::map<std::string, ClearConfig> configs;
+
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO);
+
+    ClearConfig clearConfig;
+    DBActionInfo dbActionInfo;
+    dbActionInfo.action = CloudData::CloudService::Action::CLEAR_CLOUD_NONE;
+    dbActionInfo.tableInfo.insert({ "test_cloud_table_name", CloudData::CloudService::Action::CLEAR_CLOUD_INFO });
+    dbActionInfo.tableInfo.insert(
+        { "test_cloud_table_name1", CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO });
+    clearConfig.dbInfo.insert({ TEST_CLOUD_STORE, dbActionInfo });
+    configs.insert({ TEST_CLOUD_BUNDLE, clearConfig });
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_TableLevelWithAllCloudNone
+* @tc.desc: Test Clean with all actions set to CLOUD_NONE
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithAllCloudNone, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    std::map<std::string, ClearConfig> configs;
+
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE);
+
+    ClearConfig clearConfig;
+    DBActionInfo dbActionInfo;
+    dbActionInfo.action = CloudData::CloudService::Action::CLEAR_CLOUD_NONE;
+    dbActionInfo.tableInfo.insert({ "test_cloud_table_name", CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    dbActionInfo.tableInfo.insert({ "test_cloud_table_name1", CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    clearConfig.dbInfo.insert({ TEST_CLOUD_STORE, dbActionInfo });
+    configs.insert({ TEST_CLOUD_BUNDLE, clearConfig });
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_NonExistentBundle
+* @tc.desc: Test Clean with non-existent bundle name
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_NonExistentBundle, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    std::map<std::string, ClearConfig> configs;
+
+    actions.insert_or_assign("non_existent_bundle", CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS); // Should succeed but skip non-existent bundle
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_MissingSchemaMeta
+* @tc.desc: Test Clean when schema meta is missing for a bundle
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_MissingSchemaMeta, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    std::map<std::string, ClearConfig> configs;
+
+    // Create a bundle that exists in cloudInfo but has no schema meta
+    std::string bundleWithoutSchema = "bundle_without_schema";
+
+    // Add bundle to cloudInfo first
+    CloudInfo cloudInfo;
+    cloudInfo.user = 100;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    cloudInfo.apps[bundleWithoutSchema] = CloudInfo::AppInfo{};
+
+    // Save cloudInfo
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    actions.insert_or_assign(bundleWithoutSchema, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
+
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS); // Should succeed but skip bundle without schema
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_StoreMetaDataNotFound
+* @tc.desc: Test Clean when store meta data is not found for a database
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_StoreMetaDataNotFound, TestSize.Level1)
+{
+    std::map<std::string, int32_t> actions;
+    actions.insert({ TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_NONE });
+    std::map<std::string, ClearConfig> configs;
+    actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

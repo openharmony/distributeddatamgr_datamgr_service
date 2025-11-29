@@ -123,11 +123,6 @@ bool Unmarshalling(Option &output, MessageParcel &data)
 }
 
 template<>
-bool Marshalling(const SwitchConfig &input, MessageParcel &data)
-{
-    return Marshal(data, input.dbInfo);
-}
-template<>
 bool Unmarshalling(SwitchConfig &output, MessageParcel &data)
 {
     return Unmarshal(data, output.dbInfo);

@@ -2399,5 +2399,65 @@ HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
     result = store_->SetCloudConflictHandler(handler);
     EXPECT_EQ(result, E_OK);
 }
+
+/**
+* @tc.name: Clean_ReturnDatabaseClosed
+* @tc.desc: Test that the Clean function should return E_ALREADY_CLOSED when the database is already closed.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, Clean_ReturnDatabaseClosed, TestSize.Level1)
+{
+    std::shared_ptr store = std::make_shared(metaData_);
+    std::string device = "device1";
+    std::vectorstd::string tableList = { "tableName1", "tableName2" };
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    auto result = store->Clean(device, -1, tableList);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+}
+
+/**
+* @tc.name: Clean_ReturnInvalidArgs
+* @tc.desc: Test that the Clean function should return E_INVALID_ARGS when the mode parameter is invalid.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, Clean_ReturnInvalidArgs, TestSize.Level1)
+{
+    std::shared_ptr store = std::make_shared(metaData_);
+    std::string device = "device1";
+    std::vectorstd::string tableList = { "tableName1", "tableName2" };
+    auto result = store->Clean(device, GeneralStore::CLEAN_MODE_BUTT + 1, tableList);
+    EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
+}
+
+/**
+* @tc.name: Clean_DelegateIsNull
+* @tc.desc: Test that the Clean function should return E_ALREADY_CLOSED when the delegate is a null pointer.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, Clean_DelegateIsNull, TestSize.Level1)
+{
+    std::shared_ptr store = std::make_shared(metaData_);
+    std::string device = "device1";
+    std::vectorstd::string tableList = { "tableName1", "tableName2" };
+    auto result = store->Clean(device, GeneralStore::CLOUD_INFO, tableList);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+}
+
+/**
+* @tc.name: Clean_ReturnOk
+* @tc.desc: Test that the Clean function should return E_OK when all conditions are met.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, Clean_ReturnOk, TestSize.Level1)
+{
+    std::shared_ptr store = std::make_shared(metaData_);
+    std::string device = "device1";
+    std::vectorstd::string tableList = { "tableName1", "tableName2" };
+    store->Init();
+    auto result = store->Clean(device, GeneralStore::CLOUD_INFO, tableList);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    result = store->Clean(device, GeneralStore::CLOUD_DATA, tableList);
+    EXPECT_EQ(result, GeneralError::E_OK);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
