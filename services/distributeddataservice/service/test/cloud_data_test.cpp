@@ -1543,7 +1543,8 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch_OffWithDbConfig_PersistConsistency, Test
 {
     OHOS::CloudData::DBSwitchInfo dbSwitchInfo;
     dbSwitchInfo.enable = true;
-    dbSwitchInfo.tableInfo["table1"] = true;
+    dbSwitchInfo.tableInfo["table1"] = false;
+    dbSwitchInfo.tableInfo["table3"] = true;
     OHOS::CloudData::SwitchConfig switchConfig;
     switchConfig.dbInfo[TEST_CLOUD_BUNDLE] = dbSwitchInfo;
 
@@ -1564,6 +1565,7 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch_OffWithDbConfig_PersistConsistency, Test
     CloudDbSyncConfig syncConfig1;
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(syncConfig1.GetKey(user), syncConfig1, true));
     EXPECT_TRUE(syncConfig1 == syncConfig);
+    EXPECT_TRUE(MetaDataManager::GetInstance().DelMeta(syncConfig1.GetKey(user), true));
 }
 
 /**

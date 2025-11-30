@@ -138,9 +138,23 @@ void CloudServiceImplTest::InitCloudInfoAndSchema()
     database.tables.emplace_back(table);
     SchemaMeta schemaMeta;
     schemaMeta.databases.emplace_back(database);
+    database.name = "TEST_CLOUD_STORE2";
+    schemaMeta.databases.emplace_back(database);
     schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
     MetaDataManager::GetInstance().SaveMeta(CloudInfo::GetSchemaKey(cloudInfo.user, TEST_CLOUD_BUNDLE), schemaMeta,
         true);
+    StoreMetaData meta;
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta.user = "0";
+    meta.bundleName = TEST_CLOUD_BUNDLE;
+    meta.storeId = TEST_CLOUD_STORE;
+    meta.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + meta.storeId;
+    MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+    StoreMetaMapping metaMapping(meta);
+    MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
+    StoreMetaDataLocal metaLocal;
+    metaLocal.isPublic = true;
+    MetaDataManager::GetInstance().SaveMeta(meta.GetKeyLocal(), metaLocal, true);
 }
 
 void CloudServiceImplTest::CheckDelMeta(StoreMetaMapping &metaMapping, StoreMetaData &meta, StoreMetaData &meta1)
