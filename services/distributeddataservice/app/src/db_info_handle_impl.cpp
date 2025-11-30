@@ -17,6 +17,8 @@
 namespace OHOS::DistributedKv {
 bool DBInfoHandleImpl::IsSupport()
 {
+
+    
     return true;
 }
 bool DBInfoHandleImpl::IsNeedAutoSync(const std::string& userId, const std::string& appId,
