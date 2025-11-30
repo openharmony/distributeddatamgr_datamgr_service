@@ -66,6 +66,10 @@ using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
 using GenErr = OHOS::DistributedData::GeneralError;
 using RdbGeneralStore = OHOS::DistributedRdb::RdbGeneralStore;
 using RdbQuery = OHOS::CloudData::RdbQuery;
+using DBSwitchInfo = OHOS::CloudData::DBSwitchInfo;
+using SwitchConfig = OHOS::CloudData::SwitchConfig;
+using DBActionInfo = OHOS::CloudData::DBActionInfo;
+using ClearConfig = OHOS::CloudData::ClearConfig;
 uint64_t g_selfTokenID = 0;
 
 void AllocHapToken(const HapPolicyParams &policy)
@@ -80,7 +84,31 @@ void AllocHapToken(const HapPolicyParams &policy)
     auto token = AccessTokenKit::AllocHapToken(info, policy);
     SetSelfTokenID(token.tokenIDEx);
 }
+namespace OHOS::ITypesUtil {
+template<>
+bool Marshalling(const SwitchConfig &input, MessageParcel &data)
+{
+    return Marshal(data, input.dbInfo);
+}
 
+template<>
+bool Marshalling(const DBSwitchInfo &input, MessageParcel &data)
+{
+    return Marshal(data, input.enable, input.tableInfo);
+}
+
+template<>
+bool Marshalling(const ClearConfig &input, MessageParcel &data)
+{
+    return Marshal(data, input.dbInfo);
+}
+
+template<>
+bool Marshalling(const DBActionInfo &input, MessageParcel &data)
+{
+    return Marshal(data, input.action, input.tableInfo);
+}
+} // namespace OHOS::ITypesUtil
 namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const int32_t SCHEMA_VERSION = 101;
@@ -1246,13 +1274,14 @@ HWTEST_F(CloudDataTest, Clean001, TestSize.Level0)
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_BUTT);
     std::string id = "testId";
     std::string bundleName = "testBundleName";
-    auto ret = cloudServiceImpl_->Clean(id, actions);
+    std::map<std::string, OHOS::CloudData::ClearConfig> configs;
+    auto ret = cloudServiceImpl_->Clean(id, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::ERROR);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::ERROR);
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
     actions.insert_or_assign(bundleName, CloudData::CloudService::Action::CLEAR_CLOUD_DATA_AND_INFO);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
@@ -1267,20 +1296,21 @@ HWTEST_F(CloudDataTest, Clean002, TestSize.Level0)
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
     std::map<std::string, int32_t> actions;
     actions.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::Action::CLEAR_CLOUD_INFO);
-    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    std::map<std::string, OHOS::CloudData::ClearConfig> configs;
+    auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     StoreMetaDataLocal localMeta;
     localMeta.isPublic = false;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     localMeta.isPublic = true;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyLocal(), localMeta, true);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     metaData_.user = "0";
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
-    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions);
+    ret = cloudServiceImpl_->Clean(TEST_CLOUD_ID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
     metaData_.user = std::to_string(AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId));
@@ -1444,12 +1474,98 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
 {
     std::string id = "testId";
     std::string bundleName = "testName";
-    auto ret = cloudServiceImpl_->ChangeAppSwitch(id, bundleName, CloudData::CloudService::SWITCH_ON);
+    OHOS::CloudData::SwitchConfig switchConfig;
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(id, bundleName, CloudData::CloudService::SWITCH_ON, switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, bundleName, CloudData::CloudService::SWITCH_ON);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, bundleName, CloudData::CloudService::SWITCH_ON,
+        switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF,
+        switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: ChangeAppSwitch_ReverseSwitchStatus_Success
+* @tc.desc: Test reversing app switch status (ON to OFF or OFF to ON) and verify operation success
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, ChangeAppSwitch_ReverseSwitchStatus_Success, TestSize.Level0)
+{
+    CloudInfo info;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
+    auto cloudSwitch = !info.apps[TEST_CLOUD_BUNDLE].cloudSwitch ? CloudData::CloudService::SWITCH_ON
+                                                                 : CloudData::CloudService::SWITCH_OFF;
+    OHOS::CloudData::DBSwitchInfo dbSwitchInfo1;
+    OHOS::CloudData::SwitchConfig switchConfig;
+    switchConfig.dbInfo["db1"] = dbSwitchInfo1;
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, cloudSwitch, switchConfig);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF,
+        switchConfig);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: ChangeAppSwitch_OffWithDbTableConfig_SaveSuccess
+* @tc.desc: Test turning off app switch with specific DB and table configurations, verify config persistence
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, ChangeAppSwitch_OffWithDbTableConfig_SaveSuccess, TestSize.Level0)
+{
+    OHOS::CloudData::DBSwitchInfo dbSwitchInfo1;
+    dbSwitchInfo1.enable = false;
+    dbSwitchInfo1.tableInfo["table1"] = true;
+    dbSwitchInfo1.tableInfo["table2"] = false;
+    OHOS::CloudData::SwitchConfig switchConfig;
+    switchConfig.dbInfo[TEST_CLOUD_BUNDLE] = dbSwitchInfo1;
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE,
+        CloudData::CloudService::SWITCH_OFF, switchConfig);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    CloudDbSyncConfig syncConfig;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true));
+    auto iter = syncConfig.appConfigs.find(TEST_CLOUD_BUNDLE);
+    EXPECT_TRUE(iter != syncConfig.appConfigs.end());
+    EXPECT_TRUE(iter->second.bundleName == TEST_CLOUD_BUNDLE);
+}
+
+/**
+* @tc.name: ChangeAppSwitch_OffWithDbConfig_PersistConsistency
+* @tc.desc: Test app switch off operation with DB configuration and verify data persistence and consistency
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, ChangeAppSwitch_OffWithDbConfig_PersistConsistency, TestSize.Level0)
+{
+    OHOS::CloudData::DBSwitchInfo dbSwitchInfo;
+    dbSwitchInfo.enable = true;
+    dbSwitchInfo.tableInfo["table1"] = false;
+    dbSwitchInfo.tableInfo["table3"] = true;
+    OHOS::CloudData::SwitchConfig switchConfig;
+    switchConfig.dbInfo[TEST_CLOUD_BUNDLE] = dbSwitchInfo;
+
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE,
+        CloudData::CloudService::SWITCH_OFF, switchConfig);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    CloudDbSyncConfig syncConfig;
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true));
+    auto iter = syncConfig.appConfigs.find(TEST_CLOUD_BUNDLE);
+    EXPECT_TRUE(iter != syncConfig.appConfigs.end());
+    EXPECT_TRUE(iter->second.bundleName == TEST_CLOUD_BUNDLE);
+    EXPECT_TRUE(!iter->second.dbConfigs.empty());
+    auto dnInfo = iter->second.dbConfigs[1];
+    EXPECT_TRUE(dnInfo.cloudSyncEnabled);
+    cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF,
+        switchConfig);
+    CloudDbSyncConfig syncConfig1;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(syncConfig1.GetKey(user), syncConfig1, true));
+    EXPECT_TRUE(syncConfig1 == syncConfig);
+    EXPECT_TRUE(MetaDataManager::GetInstance().DelMeta(syncConfig1.GetKey(user), true));
 }
 
 /**
@@ -1536,9 +1652,9 @@ HWTEST_F(CloudDataTest, OnChangeAppSwitch, TestSize.Level1)
     auto ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CHANGE_APP_SWITCH, data, reply);
     EXPECT_EQ(ret, IPC_STUB_INVALID_DATA_ERR);
     data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
-    data.WriteString(TEST_CLOUD_ID);
-    data.WriteString(TEST_CLOUD_BUNDLE);
-    data.WriteInt32(CloudData::CloudService::SWITCH_ON);
+    SwitchConfig config;
+    ITypesUtil::Marshal(data, std::string(TEST_CLOUD_ID), std::string(TEST_CLOUD_BUNDLE),
+        static_cast<int32_t>(CloudData::CloudService::SWITCH_ON), config);
     ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CHANGE_APP_SWITCH, data, reply);
     EXPECT_EQ(ret, ERR_NONE);
 }
@@ -1559,7 +1675,8 @@ HWTEST_F(CloudDataTest, OnClean, TestSize.Level1)
     data.WriteInterfaceToken(cloudServiceImpl_->GetDescriptor());
     std::string id = TEST_CLOUD_ID;
     std::map<std::string, int32_t> actions;
-    ITypesUtil::Marshal(data, id, actions);
+    std::map<std::string, ClearConfig> configs;
+    ITypesUtil::Marshal(data, id, actions, configs);
     ret = cloudServiceImpl_->OnRemoteRequest(CloudData::CloudService::TRANS_CLEAN, data, reply);
     EXPECT_EQ(ret, ERR_NONE);
 }

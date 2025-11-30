@@ -93,6 +93,11 @@ int32_t GeneralStoreMock::Clean(const std::vector<std::string> &devices, int32_t
     return 0;
 }
 
+int32_t GeneralStoreMock::Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList)
+{
+    return 0;
+}
+
 int32_t GeneralStoreMock::Watch(int32_t origin, Watcher &watcher)
 {
     return 0;

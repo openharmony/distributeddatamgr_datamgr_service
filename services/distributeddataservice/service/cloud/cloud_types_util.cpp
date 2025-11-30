@@ -121,4 +121,28 @@ bool Unmarshalling(Option &output, MessageParcel &data)
 {
     return Unmarshal(data, output.syncMode, output.seqNum);
 }
+
+template<>
+bool Unmarshalling(SwitchConfig &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.dbInfo);
+}
+
+template<>
+bool Unmarshalling(DBSwitchInfo &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.enable, output.tableInfo);
+}
+
+template<>
+bool Unmarshalling(ClearConfig &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.dbInfo);
+}
+
+template<>
+bool Unmarshalling(DBActionInfo &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.action, output.tableInfo);
+}
 } // namespace OHOS::ITypesUtil

@@ -34,6 +34,10 @@ using StatisticInfo = OHOS::CloudData::StatisticInfo;
 using Strategy = OHOS::CloudData::Strategy;
 using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
 using Option = OHOS::CloudData::CloudService::Option;
+using SwitchConfig = OHOS::CloudData::SwitchConfig;
+using DBSwitchInfo = OHOS::CloudData::DBSwitchInfo;
+using ClearConfig = OHOS::CloudData::ClearConfig;
+using DBActionInfo = OHOS::CloudData::DBActionInfo;
 
 template<>
 bool Marshalling(const Participant &input, MessageParcel &data);
@@ -75,5 +79,17 @@ template<>
 bool Marshalling(const Option &input, MessageParcel &data);
 template<>
 bool Unmarshalling(Option &output, MessageParcel &data);
+
+template<>
+bool Unmarshalling(SwitchConfig &output, MessageParcel &data);
+
+template<>
+bool Unmarshalling(DBSwitchInfo &output, MessageParcel &data);
+
+template<>
+bool Unmarshalling(ClearConfig &output, MessageParcel &data);
+
+template<>
+bool Unmarshalling(DBActionInfo &output, MessageParcel &data);
 } // namespace OHOS::ITypesUtil
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H

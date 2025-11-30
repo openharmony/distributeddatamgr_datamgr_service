@@ -65,6 +65,7 @@ public:
         const SyncParam &syncParam) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
+    int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t RegisterDetailProgressObserver(DetailAsync async) override;

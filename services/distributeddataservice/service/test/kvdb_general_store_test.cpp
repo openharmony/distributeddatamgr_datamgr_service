@@ -755,7 +755,7 @@ HWTEST_F(KVDBGeneralStoreTest, Clean, TestSize.Level0)
     std::string tableName = "tableName";
     auto ret = store->Clean(devices, -1, tableName);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
-    ret = store->Clean(devices, 6, tableName);
+    ret = store->Clean(devices, GeneralStore::CleanMode::CLEAN_MODE_BUTT + 1, tableName);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
     ret = store->Clean(devices, GeneralStore::CleanMode::NEARBY_DATA, tableName);
     EXPECT_EQ(ret, GeneralError::E_ALREADY_CLOSED);

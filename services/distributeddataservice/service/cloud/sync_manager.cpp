@@ -107,6 +107,18 @@ void SyncManager::SyncInfo::SetQuery(std::shared_ptr<GenQuery> query)
     query_ = query;
 }
 
+std::vector<std::string> SyncManager::SyncInfo::GetTables(const Database &database)
+{
+    if (query_ != nullptr) {
+        return query_->GetTables();
+    }
+    auto it = tables_.find(database.name);
+    if (it != tables_.end() && !it->second.empty()) {
+        return it->second;
+    }
+    return database.GetTableNames();
+}
+
 void SyncManager::SyncInfo::SetCompensation(bool isCompensation)
 {
     isCompensation_ = isCompensation;
@@ -128,9 +140,9 @@ void SyncManager::SyncInfo::SetError(int32_t code) const
     }
 }
 
-std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string &store, const Tables &tables)
+std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const Tables &tables)
 {
-    if (query_ != nullptr) {
+    if (query_ != nullptr && query_->GetTables().size() == 1) {
         return query_;
     }
     class SyncQuery final : public GenQuery {
@@ -150,8 +162,7 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const std::string
     private:
         std::vector<std::string> tables_;
     };
-    auto it = tables_.find(store);
-    return std::make_shared<SyncQuery>(it == tables_.end() || it->second.empty() ? tables : it->second);
+    return std::make_shared<SyncQuery>(tables);
 }
 
 bool SyncManager::SyncInfo::Contains(const std::string &storeName)
@@ -306,35 +317,39 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
         bool isPostEvent = false;
         auto syncId = info.syncId_;
         for (auto &schema : schemas) {
-            auto it = traceIds.find(schema.bundleName);
-            if (!cloud.IsOn(schema.bundleName)) {
-                UpdateFinishSyncInfo({ cloud.user, cloud.id, schema.bundleName, "" }, syncId, E_ERROR);
-                SyncManager::Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second,
-                    SyncStage::END, E_ERROR, "!IsOn:" + schema.bundleName });
+            std::string bundleName = schema.bundleName;
+            std::string traceId = traceIds.count(bundleName) ? traceIds.at(bundleName) : "";
+            if (!cloud.IsOn(bundleName)) {
+                HandleSyncError({ cloud, bundleName, "", syncId, E_ERROR, "!IsOn:" + bundleName, traceId });
                 continue;
             }
             for (const auto &database : schema.databases) {
-                if (!info.Contains(database.name)) {
-                    UpdateFinishSyncInfo({ cloud.user, cloud.id, schema.bundleName, database.name }, syncId, E_ERROR);
-                    SyncManager::Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second,
-                        SyncStage::END, E_ERROR, "!Contains:" + database.name });
+                if (!info.Contains(database.name) && GetDataBaseCloudEnable(info.user_, bundleName, database.name)) {
+                    HandleSyncError(
+                        { cloud, bundleName, database.name, syncId, E_ERROR, "!Contains:" + database.name, traceId });
                     continue;
                 }
-                StoreInfo storeInfo = { 0, schema.bundleName, database.name, cloud.apps[schema.bundleName].instanceId,
-                    info.user_, "", syncId };
+                StoreInfo storeInfo = { 0, bundleName, database.name, cloud.apps[bundleName].instanceId, info.user_,
+                    "", syncId };
                 auto status = syncStrategy_->CheckSyncAction(storeInfo);
                 if (status != SUCCESS) {
                     ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
                         storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
-                    UpdateFinishSyncInfo({ cloud.user, cloud.id, schema.bundleName, database.name }, syncId, status);
-                    SyncManager::Report({ cloud.user, schema.bundleName, it == traceIds.end() ? "" : it->second,
-                        SyncStage::END, status, "CheckSyncAction" });
+                    HandleSyncError({ cloud, bundleName, database.name, syncId, status, "CheckSyncAction", traceId });
                     info.SetError(status);
                     continue;
                 }
-                auto query = info.GenerateQuery(database.name, database.GetTableNames());
-                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_,
-                    it == traceIds.end() ? "" : it->second, cloud.user };
+
+                auto tables = info.GetTables(database);
+                if (!GetTableCloudEnable(info.user_, bundleName, database.name, tables)) {
+                    HandleSyncError(
+                        { cloud, bundleName, database.name, syncId, E_CLOUD_DISABLED, "tableDisable", traceId });
+                    info.SetError(E_CLOUD_DISABLED);
+                    continue;
+                }
+                auto query = info.GenerateQuery(tables);
+                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_, traceId,
+                    info.user_ };
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo{ syncParam, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
@@ -1250,5 +1265,62 @@ int32_t SyncManager::SetCloudConflictHandler(const AutoCache::Store &store)
     }
 
     return store->SetCloudConflictHandler(handler);
+}
+
+void SyncManager::HandleSyncError(const ErrorContext &context)
+{
+    UpdateFinishSyncInfo({ context.cloud.user, context.cloud.id, context.bundleName, context.dbName }, context.syncId,
+        context.errorCode);
+    SyncManager::Report(
+        { context.cloud.user, context.bundleName, context.traceId, SyncStage::END, context.errorCode, context.reason });
+}
+
+bool SyncManager::GetDataBaseCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName)
+{
+    CloudDbSyncConfig syncConfig;
+    if (!MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true)) {
+        return true;
+    }
+
+    auto dbConfig = FindDbConfig(syncConfig, bundleName, dbName);
+    return dbConfig.has_value() ? dbConfig->cloudSyncEnabled : true;
+}
+
+bool SyncManager::GetTableCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName,
+    std::vector<std::string> &tables)
+{
+    CloudDbSyncConfig syncConfig;
+    if (!MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true)) {
+        return true;
+    }
+
+    auto dbConfig = FindDbConfig(syncConfig, bundleName, dbName);
+    if (!dbConfig.has_value()) {
+        return true;
+    }
+    auto isTableDisabled = [&dbConfig](const std::string &table) {
+        const auto &tableConfigs = dbConfig.value().tableConfigs;
+        auto tableIter = std::find_if(tableConfigs.begin(), tableConfigs.end(),
+            [&table](const TableSyncConfig &config) { return config.tableName == table; });
+        return (tableIter != tableConfigs.end()) ? !tableIter->cloudSyncEnabled : false;
+    };
+    tables.erase(std::remove_if(tables.begin(), tables.end(), isTableDisabled), tables.end());
+
+    return !tables.empty();
+}
+
+std::optional<SyncManager::DbSyncConfig> SyncManager::FindDbConfig(const CloudDbSyncConfig &syncConfig,
+    const std::string &bundleName, const std::string &dbName) const
+{
+    auto appIter = syncConfig.appConfigs.find(bundleName);
+    if (appIter == syncConfig.appConfigs.end()) {
+        return std::nullopt;
+    }
+
+    const auto &dbConfigs = appIter->second.dbConfigs;
+    auto dbIter = std::find_if(dbConfigs.begin(), dbConfigs.end(),
+        [&dbName](const DbSyncConfig &config) { return config.dbName == dbName; });
+
+    return (dbIter != dbConfigs.end()) ? std::make_optional(*dbIter) : std::nullopt;
 }
 } // namespace OHOS::CloudData

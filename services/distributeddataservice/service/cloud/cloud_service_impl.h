@@ -40,12 +40,15 @@ public:
     using CloudLastSyncInfo = DistributedData::CloudLastSyncInfo;
     using StoreMetaData = DistributedData::StoreMetaData;
     using StoreInfo = DistributedData::StoreInfo;
+    using CloudDbSyncConfig = DistributedData::CloudDbSyncConfig;
     CloudServiceImpl();
     ~CloudServiceImpl() = default;
     int32_t EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches) override;
     int32_t DisableCloud(const std::string &id) override;
-    int32_t ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch) override;
-    int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions) override;
+    int32_t ChangeAppSwitch(const std::string &id, const std::string &bundleName, int32_t appSwitch,
+        const SwitchConfig &config) override;
+    int32_t Clean(const std::string &id, const std::map<std::string, int32_t> &actions,
+        std::map<std::string, ClearConfig> &configs) override;
     int32_t NotifyDataChange(const std::string &id, const std::string &bundleName) override;
     int32_t NotifyDataChange(const std::string &eventId, const std::string &extraData, int32_t userId) override;
     std::pair<int32_t, std::map<std::string, StatisticInfos>> QueryStatistics(
@@ -140,6 +143,8 @@ private:
     };
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
+    static std::map<std::string, ClearConfig> ConvertConfig(const std::map<std::string, ClearConfig> &configs);
+    static int32_t ConvertActionType(int32_t cloudAction);
     static HapInfo GetHapInfo(uint32_t tokenId);
     static std::string GetDfxFaultType(CloudSyncScene scene);
 
@@ -185,8 +190,15 @@ private:
     void InitSubTask(const Subscription &sub, uint64_t minInterval = 0);
     void Execute(Task task);
     void CleanSubscription(Subscription &sub);
-    int32_t DoClean(const CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions);
-    void DoClean(int32_t user, const SchemaMeta &schemaMeta, int32_t action);
+    int32_t DoClean(const CloudInfo &cloudInfo, const std::map<std::string, int32_t> &actions,
+        const std::map<std::string, ClearConfig> &configs = {});
+    void DoAppLevelClean(int32_t user, const SchemaMeta &schemaMeta, int32_t action);
+    void DoDbTableLevelClean(int32_t user, const SchemaMeta &schemaMeta, const ClearConfig &config,
+        int32_t appDefaultAction);
+    void ExecuteDatabaseClean(const StoreMetaData &meta, int32_t action,
+        const std::vector<std::string> &tableList = {});
+    void ExecuteTableLevelClean(const StoreMetaData &meta, const Database &database,
+        const std::map<std::string, int32_t> &tableActions, int32_t dbDefaultAction, int32_t appDefaultAction);
     std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> PreShare(
         const StoreInfo &storeInfo, DistributedData::GenQuery &query);
     std::vector<NativeRdb::ValuesBucket> ConvertCursor(std::shared_ptr<DistributedData::Cursor> cursor) const;
@@ -212,6 +224,15 @@ private:
     static void UpdateE2eeEnable(const std::string &schemaKey, bool newE2eeEnable, const std::string &bundleName);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
+    bool UpdateCloudDbSyncConfig(int32_t user, const std::string &bundleName, const SwitchConfig &config);
+    CloudDbSyncConfig::AppSyncConfig *GetOrCreateAppConfig(CloudDbSyncConfig &syncConfig,
+        const std::string &bundleName, bool isMetaExist);
+    bool UpdateDbConfigurations(CloudDbSyncConfig::AppSyncConfig &appConfig, const SwitchConfig &config,
+        const std::string &bundleName);
+    bool UpdateExistingDbConfig(CloudDbSyncConfig::DbSyncConfig &dbConfig, const DBSwitchInfo &dbSwitch,
+        const std::string &bundleName, const std::string &dbName);
+    bool UpdateTableConfigs(CloudDbSyncConfig::DbSyncConfig &dbConfig, const std::map<std::string, bool> &tableInfo,
+        const std::string &bundleName, const std::string &dbName);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

@@ -67,6 +67,7 @@ public:
         CLOUD_INFO,
         LOCAL_DATA,
         CLEAN_WATER,
+        CLOUD_NONE,
         CLEAN_MODE_BUTT
     };
 
@@ -198,6 +199,8 @@ public:
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) = 0;
 
     virtual int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) = 0;
+
+    virtual int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) = 0;
 
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;
 

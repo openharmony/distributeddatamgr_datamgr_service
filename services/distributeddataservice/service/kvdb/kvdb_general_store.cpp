@@ -576,6 +576,11 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
     return ConvertStatus(status);
 }
 
+int32_t KVDBGeneralStore::Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList)
+{
+    return GeneralError::E_NOT_SUPPORT;
+}
+
 int32_t KVDBGeneralStore::Watch(int32_t origin, Watcher &watcher)
 {
     if (observer_ == nullptr) {
