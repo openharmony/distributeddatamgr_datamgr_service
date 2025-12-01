@@ -91,6 +91,7 @@ ohos_source_set("data_share_service") {
     "strategies/publish_strategy.cpp",
     "strategies/rdb_notify_strategy.cpp",
     "strategies/subscribe_strategy.cpp",
+    "strategies/unsubscribe_strategy.cpp",
     "strategies/template_strategy.cpp",
     "subscriber_managers/proxy_data_subscriber_manager.cpp",
     "subscriber_managers/published_data_subscriber_manager.cpp",
