@@ -578,7 +578,7 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
 
 int32_t KVDBGeneralStore::Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList)
 {
-    return GeneralError::E_NOT_SUPPORT;
+    return Clean({}, mode, "");
 }
 
 int32_t KVDBGeneralStore::Watch(int32_t origin, Watcher &watcher)
