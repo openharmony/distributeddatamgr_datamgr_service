@@ -2454,10 +2454,12 @@ HWTEST_F(RdbGeneralStoreTest, Clean_ReturnOk, TestSize.Level1)
     std::string device = "device1";
     std::vector<std::string> tableList = { "tableName1", "tableName2" };
     store->Init();
+    MockRelationalStoreDelegate::gTestResult = false;
     auto result = store->Clean(device, GeneralStore::CLOUD_INFO, tableList);
     EXPECT_EQ(result, GeneralError::E_OK);
     result = store->Clean(device, GeneralStore::CLOUD_DATA, tableList);
     EXPECT_EQ(result, GeneralError::E_OK);
+    MockRelationalStoreDelegate::gTestResult = true;
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
