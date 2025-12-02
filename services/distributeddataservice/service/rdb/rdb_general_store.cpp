@@ -903,11 +903,10 @@ int32_t RdbGeneralStore::Clean(const std::string &device, int32_t mode, const st
     ClearDeviceDataOption option{ static_cast<ClearMode>(mode), device, std::move(tableList) };
     DBStatus status = delegate_->RemoveDeviceData(option);
     if (status == DistributedDB::OK) {
-        option.mode = ClearMode::CLEAR_SHARED_TABLE;
-        status = delegate_->RemoveDeviceData(option);
+        status = delegate_->RemoveDeviceData("", ClearMode::CLEAR_SHARED_TABLE);
         return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
     }
-    (void)delegate_->RemoveDeviceData(option);
+    (void)delegate_->RemoveDeviceData("", ClearMode::CLEAR_SHARED_TABLE);
     return GeneralError::E_ERROR;
 }
 
