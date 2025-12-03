@@ -2176,7 +2176,7 @@ HWTEST_F(CloudDataTest, DoCloudSync001, TestSize.Level0)
     metaData.autoSyncSwitch = false;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
 
-    sync.executor_ = std::make_shared(max, min);
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
     sleep(3);
     EXPECT_EQ(ret, GenErr::E_OK);
@@ -2225,7 +2225,7 @@ HWTEST_F(CloudDataTest, DoCloudSync002, TestSize.Level0)
     metaData.autoSyncSwitch = false;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
 
-    sync.executor_ = std::make_shared(max, min);
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
     sleep(3);
     EXPECT_EQ(ret, GenErr::E_OK);
@@ -2274,7 +2274,7 @@ HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level0)
     metaData.autoSyncSwitch = false;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
 
-    sync.executor_ = std::make_shared(max, min);
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
     sleep(3);
     EXPECT_EQ(ret, GenErr::E_OK);
@@ -2323,7 +2323,7 @@ HWTEST_F(CloudDataTest, DoCloudSync004, TestSize.Level0)
     metaData.autoSyncSwitch = false;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
 
-    sync.executor_ = std::make_shared(max, min);
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
     sleep(3);
     EXPECT_EQ(ret, GenErr::E_OK);
@@ -2372,11 +2372,12 @@ HWTEST_F(CloudDataTest, DoCloudSync005, TestSize.Level0)
     metaData.autoSyncSwitch = true;
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
 
-    sync.executor_ = std::make_shared(max, min);
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
     sleep(3);
     EXPECT_EQ(ret, GenErr::E_OK);
 }
+
 
 /**
 * @tc.name: DoCloudSync006
@@ -2384,7 +2385,7 @@ HWTEST_F(CloudDataTest, DoCloudSync005, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author:
- */
+*/
 HWTEST_F(CloudDataTest, DoCloudSync006, TestSize.Level1)
 {
     int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
@@ -2398,7 +2399,7 @@ HWTEST_F(CloudDataTest, DoCloudSync006, TestSize.Level1)
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author:
- */
+*/
 HWTEST_F(CloudDataTest, DoCloudSync007, TestSize.Level1)
 {
     int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
@@ -3737,34 +3738,6 @@ HWTEST_F(CloudDataTest, ConflictHandler003, TestSize.Level1)
     EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
     ret = handler1.HandleConflict("OTHER", data, data, data);
     EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
-}
-
-/**
-* @tc.name: DoCloudSync002
-* @tc.desc: Test the DoCloudSync function CloudSyncScene is SERVICE_INIT
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(CloudDataTest, DoCloudSync002, TestSize.Level1)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    auto ret = cloudServiceImpl_->DoCloudSync(user, CloudSyncScene::SERVICE_INIT);
-    EXPECT_TRUE(ret);
-}
-
-/**
-* @tc.name: DoCloudSync003
-* @tc.desc: Test the DoCloudSync function CloudSyncScene is not SERVICE_INIT
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level1)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    auto ret = cloudServiceImpl_->DoCloudSync(user, CloudSyncScene::SWITCH_ON);
-    EXPECT_TRUE(ret);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

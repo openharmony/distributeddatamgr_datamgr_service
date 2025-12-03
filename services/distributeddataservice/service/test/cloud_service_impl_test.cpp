@@ -1213,7 +1213,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest005, TestSize.Level0)
     cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     recoveryManager.currentEvent_->disconnectTime -= std::chrono::hours(DISCONNECT_TIME);
 
-    StoreMetadata metaData;
+    StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
     StoreInfo storeInfo;
     storeInfo.bundleName = metaData.bundleName;
@@ -1224,7 +1224,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest005, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true), true);
     std::string key = storeInfo.bundleName + storeInfo.storeName + std::to_string(storeInfo.user);
     cloudServiceImpl_->syncManager_.syncTriggerMap_.Insert(key, storeInfo);
-    
+
     cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
     auto [status, result] =
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
