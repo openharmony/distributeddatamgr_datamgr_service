@@ -306,19 +306,17 @@ int32_t RdbServiceImpl::SetDeviceDistributedTables(const RdbSyncerParam &param, 
     MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
     SaveSyncMeta(metaData);
     auto isAutoSyncApp = SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId);
-    if (param.distributedTableMode_ == DistributedRdb::DistributedTableMode::SINGLE_VERSION || isAutoSyncApp) {
+    if (param.distributedTableVersion_ == DistributedRdb::DistributedTableVersion::SINGLE_VERSION || isAutoSyncApp) {
         if (!IsCollaboration(metaData)) {
             ZLOGE("Singleversion is no schema! bundle:%{public}s, %{public}s.",
                 metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
-            RdbHiViewAdapter::GetInstance().ReportStatistic(
-                {RDB_DEVICE_DISTRIBUTED, metaData.bundleName, metaData.storeId, 0, 0, SETDEVICETABLE_NOSCHEMA});
+            RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_NOSCHEMA,
+                metaData.bundleName, "SINGLE_VERSION distributedtable no Schema"});
             return RDB_ERROR;
         }
         if (store->SetConfig({false, GeneralStore::DistributedTableMode::COLLABORATION}) != RDB_OK) {
-            ZLOGE("SetSingleTable fail! bundle:%{public}s, %{public}s.",
-                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
-            RdbHiViewAdapter::GetInstance().ReportStatistic(
-                {RDB_DEVICE_DISTRIBUTED, metaData.bundleName, metaData.storeId, 0, 0, SETDEVICETABLE_SETCONFIG_FAIL});
+            RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_SETCONFIG_FAIL,
+                metaData.bundleName, Anonymous::Change(metaData.storeId) + " SINGLE_VERSION setconfig fail"});
             return RDB_ERROR;
         }
     }
@@ -547,10 +545,6 @@ int RdbServiceImpl::DoSync(const StoreMetaData &meta, const RdbService::Option &
     };
     if (IsNeedMetaSync(meta, devices)) {
         auto result = MetaDataManager::GetInstance().Sync(devices, complete);
-        if (!result) {
-            RdbHiViewAdapter::GetInstance().ReportStatistic(
-                {RDB_DEVICE_DISTRIBUTED, meta.bundleName, meta.storeId, 0, 0, DEVICESYNC_FAIL});
-        }
         return result ? GeneralError::E_OK : GeneralError::E_ERROR;
     }
     auto [ret, _] = store->Sync(devices, rdbQuery, notify, syncParam);
@@ -1307,10 +1301,7 @@ std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::s
         AppDistributedKv::DeviceId deviceId = { .deviceId = device };
         if (instance->ReuseConnect(deviceId, extraInfo) == Status::SUCCESS) {
             onDevices.push_back(device);
-            continue;
         }
-        RdbHiViewAdapter::GetInstance().ReportStatistic(
-            {RDB_DEVICE_DISTRIBUTED, metaData.bundleName, metaData.storeId, 0, 0, DEVICESYNC_FAIL_REUSE});
     }
     return onDevices;
 }
@@ -1339,11 +1330,7 @@ int RdbServiceImpl::DoAutoSync(const std::vector<std::string> &devices, const St
             store->Sync(ret.first, rdbQuery, DetailAsync(), { 0, 0 });
         };
         if (IsNeedMetaSync(metaData, onDevices)) {
-            auto result = MetaDataManager::GetInstance().Sync(onDevices, complete);
-            if (!result) {
-                RdbHiViewAdapter::GetInstance().ReportStatistic(
-                    {RDB_DEVICE_DISTRIBUTED, metaData.bundleName, metaData.storeId, 0, 0, DEVICESYNC_AUTO_FAIL});
-            }
+            MetaDataManager::GetInstance().Sync(onDevices, complete);
             return;
         }
         store->Sync(onDevices, rdbQuery, DetailAsync(), { 0, 0 });
@@ -1592,7 +1579,9 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
         return RDB_ERROR;
     }
 
-    OnCollaborationChange(meta, rdbChangedData);
+    if (SyncManager::GetInstance().IsAutoSyncApp(meta.bundleName, meta.appId)) {
+        OnCollaborationChange(meta, rdbChangedData);
+    }
 
     OnSearchableChange(meta, rdbNotifyConfig, rdbChangedData);
     return RDB_OK;

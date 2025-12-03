@@ -1568,7 +1568,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
     param.area_ = meta.area;
     param.level_ = meta.securityLevel;
     param.isEncrypt_ = meta.isEncrypt;
-    param.distributedTableMode_ = DistributedRdb::DistributedTableMode::SINGLE_VERSION;
+    param.distributedTableVersion_ = DistributedRdb::DistributedTableVersion::SINGLE_VERSION;
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     Database database;
     database.bundleName = meta.bundleName;

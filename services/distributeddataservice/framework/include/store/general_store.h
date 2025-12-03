@@ -224,7 +224,10 @@ public:
 
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId, std::string account = "") {};
 
-    virtual int32_t SetConfig(const StoreConfig &storeConfig) {};
+    virtual int32_t SetConfig(const StoreConfig &storeConfig)
+    {
+        return 0;
+    }
 
     virtual std::pair<int32_t, uint32_t> LockCloudDB() = 0;
 

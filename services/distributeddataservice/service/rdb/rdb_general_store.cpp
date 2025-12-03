@@ -57,8 +57,7 @@ using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DBStatus = DistributedDB::DBStatus;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-
-constexpr const char *INSERTINTO = "INSERT INTO ";
+constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";
 constexpr const char *VALUES = " VALUES ";
 constexpr const char *LOGOUT_DELETE_FLAG = "DELETE#ALL_CLOUDDATA";
@@ -117,9 +116,9 @@ static bool IsExistence(const std::string &col, const std::vector<std::string> &
     return false;
 }
 
-static std::pair<bool, DistributedSchema> GetGaussDistributedSchema(const Database &database)
+std::pair<bool, DistributedDB::DistributedSchema> RdbGeneralStore::GetGaussDistributedSchema(const Database &database)
 {
-    DistributedSchema distributedSchema;
+    DistributedDB::DistributedSchema distributedSchema;
     distributedSchema.version = database.version;
     distributedSchema.tables.resize(database.tables.size());
     for (size_t i = 0; i < database.tables.size(); i++) {
@@ -145,8 +144,9 @@ static std::pair<bool, DistributedSchema> GetGaussDistributedSchema(const Databa
             ZLOGE("SyncAutoIncrement! BundeleName: %{public}s, store: %{public}s, table: %{public}s.",
                 database.bundleName.c_str(), Anonymous::Change(database.name).c_str(),
                 Anonymous::Change(table.name).c_str());
-            RdbHiViewAdapter::GetInstance().ReportStatistic({RDB_DEVICE_DISTRIBUTED,
-                database.bundleName, database.name, 0, 0, SETDEVICETABLE_SUNC_FIELD_IS_AUTOINCREMENT});
+            RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE,
+                SETDEVICETABLE_SUNC_FIELD_IS_AUTOINCREMENT, database.bundleName,
+                Anonymous::Change(table.name) + " syncAutoIncrement"});
             return {false, distributedSchema};
         }
         if (syncSpecifiedCount != 1 && !table.deviceSyncFields.empty()) {
@@ -154,8 +154,9 @@ static std::pair<bool, DistributedSchema> GetGaussDistributedSchema(const Databa
                   "SpecifiedCount: %{public}d.",
                 database.bundleName.c_str(), Anonymous::Change(database.name).c_str(),
                 Anonymous::Change(table.name).c_str(), syncSpecifiedCount);
-            RdbHiViewAdapter::GetInstance().ReportStatistic({RDB_DEVICE_DISTRIBUTED,
-                database.bundleName, database.name, 0, 0, SETDEVICETABLE_SCHEMA_PRIMARYKEY_COUNT_IS_WRONG});
+            RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE,
+                SETDEVICETABLE_SCHEMA_PRIMARYKEY_COUNT_IS_WRONG, database.bundleName,
+                Anonymous::Change(table.name) + " has " + std::to_string(syncSpecifiedCount) + " specified"});
             return {false, distributedSchema};
         }
     }
@@ -169,7 +170,6 @@ static std::pair<bool, Database> GetDistributedSchema(const StoreMetaData &meta)
     database.name = meta.storeId;
     database.user = meta.user;
     database.deviceId = meta.deviceId;
-    ZLOGE("GetDistributedSchema database.GetKey():%{public}s.", database.GetKey().c_str());
     return { MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true), database };
 }
 
@@ -511,7 +511,7 @@ int32_t RdbGeneralStore::Insert(const std::string &table, VBuckets &&values)
         strValueSql += strRowValueSql + ",";
     }
     strValueSql.pop_back();
-    std::string sql = INSERTINTO + table + strColumnSql + VALUES + strValueSql;
+    std::string sql = INSERT + table + strColumnSql + VALUES + strValueSql;
 
     std::vector<DistributedDB::VBucket> changedData;
     std::vector<DistributedDB::Type> bindArgs = ValueProxy::Convert(std::move(args));
@@ -777,10 +777,6 @@ std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQue
     auto dbStatus = DistributedDB::INVALID_ARGS;
     if (syncMode < NEARBY_END) {
         dbStatus = delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0);
-        if (dbStatus != DBStatus::OK) {
-            RdbHiViewAdapter::GetInstance().ReportStatistic(
-                {RDB_DEVICE_DISTRIBUTED, meta_.bundleName, meta_.storeId, 0, 0, DEVICESYNC_FAIL});
-        }
     } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
         return DoCloudSync(devices, dbQuery, syncParam, isPriority, async);
     }
@@ -966,24 +962,18 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
     if (!async) {
         return [](auto &) {};
     }
-    return [async = std::move(async), bundleName = meta_.bundleName, storId = meta_.storeId](
+    return [async = std::move(async)](
         const std::map<std::string, std::vector<TableStatus>> &result) {
         DistributedData::GenDetails details;
-        bool syncResult = true;
         for (auto &[key, tables] : result) {
             auto &value = details[key];
             value.progress = FINISHED;
             value.code = GeneralError::E_OK;
             for (auto &table : tables) {
                 if (table.status != DBStatus::OK) {
-                    syncResult = false;
                     value.code = GeneralError::E_ERROR;
                 }
             }
-        }
-        if (!syncResult) {
-            RdbHiViewAdapter::GetInstance().ReportStatistic(
-                {RDB_DEVICE_DISTRIBUTED, bundleName, storId, 0, 0, DEVICESYNC_FAIL});
         }
         async(details);
     };
@@ -1109,8 +1099,8 @@ int32_t RdbGeneralStore::SetDeviceDistributedTables()
     }
     auto status = delegate_->SetDistributedSchema(schema, force);
     if (status != DBStatus::OK) {
-        RdbHiViewAdapter::GetInstance().ReportStatistic(
-            {RDB_DEVICE_DISTRIBUTED, database.bundleName, database.name, 0, 0, SETDEVICETABLE_SETSCHEMA_FAIL});
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_SETSCHEMA_FAIL,
+                meta_.bundleName, Anonymous::Change(meta_.storeId) + " setDisSchema fail"});
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -1177,11 +1167,11 @@ int32_t RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed! tableMode is :%{public}d", meta_.GetStoreAlias().c_str(),
             storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
-        return GeneralError::E_ERROR;
+        return GeneralError::E_ALREADY_CLOSED;
     }
     std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        return GeneralError::E_ERROR;
+        return GeneralError::E_ALREADY_CLOSED;
     }
     if (storeConfig.tableMode.has_value()) {
         RelationalStoreDelegate::StoreConfig config;
@@ -1192,7 +1182,8 @@ int32_t RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
         }
         auto status = delegate_->SetStoreConfig(config);
         if (status != DBStatus::OK) {
-            ZLOGE("SetStoreConfig failed, err:%{public}d", status);
+            ZLOGE("SetStoreConfig failed, bundleName: %{public}s, storeName: %{public}s, err:%{public}d",
+                meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str(), status);
             return GeneralError::E_ERROR;
         }
     }

@@ -18,9 +18,12 @@
 #include "log_print.h"
 #include <string>
 #include <vector>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
   
 namespace OHOS::DistributedRdb {
-  
+static constexpr const char *FAULT_EVENT = "DISTRIBUTED_DATA_RDB_FAULT";
 static constexpr const char *DISTRIBUTED_DATAMGR = "DISTDATAMGR";
 static constexpr const char *STATISTIC_EVENT = "RDB_STATISTIC";
 constexpr int32_t WAIT_TIME = 60 * 60 * 24; // 24h
@@ -57,18 +60,13 @@ void RdbHiViewAdapter::InvokeSync()
     uint32_t costTimes[count];
     uint32_t occurTimes[count];
     uint32_t index = 0;
+
     statEvents.ForEach([&statTypes, &bundleNames, &storeNames, &subTypes, &costTimes, &occurTimes, &index](
         const RdbStatEvent &key, uint32_t &value) {
         statTypes[index] = key.statType;
         bundleNames[index] = key.bundleName.c_str();
         storeNames[index] = key.storeName.c_str();
         subTypes[index] = key.subType;
-        if (key.statType == RDB_PERF) {
-            costTimes[index] = key.costTime;
-        }
-        if (key.statType == RDB_DEVICE_DISTRIBUTED) {
-            costTimes[index] = key.distributedStatType;
-        }
         costTimes[index] = key.costTime;
         occurTimes[index] = value;
         index++;
@@ -108,4 +106,36 @@ void RdbHiViewAdapter::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
     StartTimerThread();
 }
 
+void RdbHiViewAdapter::ReportRdbFault(const RdbFaultEvent &rdbFaultEvent)
+{
+    auto now = std::chrono::system_clock::now();
+    std::time_t time = std::chrono::system_clock::to_time_t(now);
+    std::chrono::nanoseconds nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch());
+    std::stringstream oss;
+    char buffer[MAX_TIME_BUF_LEN] = {0};
+    std::tm local_time;
+    localtime_r(&time, &local_time);
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &local_time);
+    oss << buffer << '.' << std::setfill('0') << std::setw(MILLISECONDS_LEN)
+        << (nsec.count() / NANO_TO_MILLI) % MILLI_PRE_SEC;
+    std::string occurTime = oss.str();
+    std::string bundleName = rdbFaultEvent.bundleName;
+    std::string faultType = rdbFaultEvent.faultType;
+    std::string appendInfo = rdbFaultEvent.custLog;
+    if (bundleName.empty()) {
+        return;
+    }
+    HiSysEventParam params[] = {
+        {.name = "FAULT_TIME", .t = HISYSEVENT_STRING, .v = {.s = occurTime.data()}, .arraySize = 0},
+        {.name = "FAULT_TYPE", .t = HISYSEVENT_STRING, .v = {.s = faultType.data()}, .arraySize = 0},
+        {.name = "BUNDLE_NAME", .t = HISYSEVENT_STRING, .v = {.s = bundleName.data()}, .arraySize = 0},
+        {.name = "ERROR_CODE",
+            .t = HISYSEVENT_INT32,
+            .v = {.ui32 = static_cast<uint32_t>(rdbFaultEvent.errorCode)},
+            .arraySize = 0},
+        {.name = "APPENDIX", .t = HISYSEVENT_STRING, .v = {.s = appendInfo.data()}, .arraySize = 0},
+    };
+    auto size = sizeof(params) / sizeof(params[0]);
+    OH_HiSysEvent_Write(DISTRIBUTED_DATAMGR, FAULT_EVENT, HISYSEVENT_FAULT, params, size);
+}
 } // namespace OHOS::DistributedRdb
