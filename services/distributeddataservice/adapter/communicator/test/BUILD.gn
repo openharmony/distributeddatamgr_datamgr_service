@@ -212,9 +212,17 @@ ohos_unittest("SoftbusAdapterStandardTest") {
     "${data_service_path}/adapter/communicator/test/mock/softbus/inner_socket.cpp",
     "${data_service_path}/adapter/communicator/test/mock/softbus/socket.cpp",
     "${data_service_path}/adapter/communicator/test/unittest/softbus_adapter_standard_test.cpp",
-    "${data_service_path}/service/test/mock/db_store_mock.cpp",
     "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
+    "${data_service_path}/service/test/mock/db_store_mock.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
@@ -259,9 +267,7 @@ ohos_unittest("SoftbusClientTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-  ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -288,6 +294,14 @@ ohos_unittest("AppPipeMgrServiceTest") {
     "${data_service_path}/adapter/communicator/test/mock/softbus/socket.cpp",
     "${data_service_path}/adapter/communicator/test/unittest/app_pipe_mgr_service_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",

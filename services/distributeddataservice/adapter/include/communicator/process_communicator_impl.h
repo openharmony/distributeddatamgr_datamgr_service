@@ -61,6 +61,7 @@ public:
     bool IsSameProcessLabelStartedOnPeerDevice(const DeviceInfos &peerDevInfo) override;
     void OnDeviceChanged(const DeviceInfo &info, const DeviceChangeType &type) const override;
     void OnSessionReady(const DeviceInfo &info, int32_t errCode) const override;
+    void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size, const PipeInfo &pipeInfo) const override;
 
     API_EXPORT std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
         const DistributedDB::ExtendInfo &info) override;
@@ -70,8 +71,6 @@ public:
     Status ReuseConnect(const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
 
 private:
-    void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size,
-                   const PipeInfo &pipeInfo) const override;
     ProcessCommunicatorImpl();
     std::string thisProcessLabel_;
     OnDeviceChange onDeviceChangeHandler_;

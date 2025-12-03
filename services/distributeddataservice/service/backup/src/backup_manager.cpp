@@ -94,6 +94,10 @@ void BackupManager::RegisterExporter(int32_t type, Exporter exporter)
 
 void BackupManager::BackSchedule(std::shared_ptr<ExecutorPool> executors)
 {
+    if (executors == nullptr && executors_ == nullptr) {
+        ZLOGE("executors and executors_ is empty.");
+        return;
+    }
     if (!executors_) {
         executors_ = std::move(executors);
     }

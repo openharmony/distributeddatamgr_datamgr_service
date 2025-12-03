@@ -982,6 +982,11 @@ HWTEST_F(KvdbServiceImplTest, UnsubscribeTest001, TestSize.Level0)
     syncAgent.switchesObserverCount_ = 1; // test
     syncAgent.appId_ = { "ohos.OnAsyncCompleteTest001.kvdb" };
     syncAgent.notifier_ = notifier;
+
+    StoreMetaData metaData = kvdbServiceImpl_->LoadStoreMetaData(appId, storeId, 0);
+    std::string key = "";
+    key.append(metaData.user).append("###").append(storeId.storeId);
+    syncAgent.watchers_[key].insert(nullptr);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     kvdbServiceImpl_->syncAgents_.Insert(tokenId, syncAgent);
     sptr<OHOS::DistributedKv::IKvStoreObserver> observer;

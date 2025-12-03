@@ -172,7 +172,9 @@ void AccountDelegateNormalImpl::SubscribeAccountEvent()
             NotifyAccountChanged(account, timeout);
         });
     }
-    executors_->Execute(GetTask(0));
+    if (executors_ != nullptr) {
+        executors_->Execute(GetTask(0));
+    }
 }
 
 void AccountDelegateNormalImpl::UpdateUserStatus(const AccountEventInfo &account)
@@ -209,17 +211,16 @@ ExecutorPool::Task AccountDelegateNormalImpl::GetTask(uint32_t retry)
             ZLOGE("fail to register subscriber!");
             return;
         }
-        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+        if (executors_ != nullptr) {
+            executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+        }
     };
 }
 
 AccountDelegateNormalImpl::~AccountDelegateNormalImpl()
 {
     ZLOGD("destruct");
-    auto res = OsAccountManager::UnsubscribeOsAccount(accountSubscriber_);
-    if (res != ERR_OK) {
-        ZLOGW("unregister account event fail res:%d", res);
-    }
+    UnsubscribeAccountEvent();
 }
 
 void AccountDelegateNormalImpl::UnsubscribeAccountEvent()

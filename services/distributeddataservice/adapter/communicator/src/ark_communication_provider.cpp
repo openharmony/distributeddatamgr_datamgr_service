@@ -42,35 +42,5 @@ ArkCommunicationProvider::ArkCommunicationProvider()
     : CommunicationProviderImpl(appPipeMgrImpl_)
 {
 }
-
-DeviceInfo ArkCommunicationProvider::GetLocalDevice() const
-{
-    if (deviceQuery_ == nullptr) {
-        return DmAdapter::GetInstance().GetLocalDevice();
-    }
-    return deviceQuery_->GetLocalDevice();
-}
-
-std::vector<DeviceInfo> ArkCommunicationProvider::GetRemoteDevices() const
-{
-    if (deviceQuery_ == nullptr) {
-        return DmAdapter::GetInstance().GetRemoteDevices();
-    }
-    return deviceQuery_->GetRemoteDevices();
-}
-
-DeviceInfo ArkCommunicationProvider::GetDeviceInfo(const std::string &networkId) const
-{
-    if (deviceQuery_ == nullptr) {
-        return DmAdapter::GetInstance().GetDeviceInfo(networkId);
-    }
-    return deviceQuery_->GetDeviceInfo(networkId);
-}
-
-void ArkCommunicationProvider::SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery)
-{
-    ZLOGI("set device query");
-    deviceQuery_ = deviceQuery;
-}
 }  // namespace AppDistributedKv
 }  // namespace OHOS

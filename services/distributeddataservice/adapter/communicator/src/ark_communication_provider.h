@@ -17,7 +17,6 @@
 #define DISTRIBUTEDDATAFWK_ARK_COMMUNICATION_PROVIDER_H
 
 #include "communication_provider_impl.h"
-#include "idevice_query.h"
 #include "app_pipe_mgr.h"
 #include "nocopyable.h"
 
@@ -26,19 +25,10 @@ namespace AppDistributedKv {
 class ArkCommunicationProvider : public CommunicationProviderImpl {
 public:
     static CommunicationProvider &Init();
-    void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) override;
-    // Get online deviceList
-    std::vector<DeviceInfo> GetRemoteDevices() const;
-    // Get deviceInfo by Id
-    DeviceInfo GetDeviceInfo(const std::string &networkId) const;
-    // Get local device information
-    DeviceInfo GetLocalDevice() const;
-
     ~ArkCommunicationProvider() override {};
 private:
     DISALLOW_COPY_AND_MOVE(ArkCommunicationProvider);
     ArkCommunicationProvider();
-    std::shared_ptr<IDeviceQuery> deviceQuery_ {};
     AppPipeMgr appPipeMgrImpl_ {};
     bool isInited = false;
 };

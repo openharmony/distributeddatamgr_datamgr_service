@@ -88,7 +88,7 @@ void DumpHelper::ParseCommand(const std::vector<std::string> &args, std::vector<
             commands.emplace_back(command);
             tmpDumpNames.emplace_back(command->dumpName);
         } else {
-            if (commands.empty()) {
+            if (commands.empty() || commands.back() == nullptr) {
                 ZLOGE("Invalid Format");
                 return;
             }
@@ -320,7 +320,7 @@ void DumpHelper::AddErrorInfo(int32_t errorCode, const std::string &errorInfo)
         error.errorTime = errorTime;
     }
     std::lock_guard<std::mutex> lock(hidumperMutex_);
-    if (errorInfo_.size() + 1 > MAX_RECORED_ERROR) {
+    if (errorInfo_.size() + 1 > MAX_RECORD_ERROR) {
         errorInfo_.pop_front();
         errorInfo_.push_back(error);
     } else {

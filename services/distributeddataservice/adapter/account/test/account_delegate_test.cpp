@@ -273,6 +273,7 @@ HWTEST_F(AccountDelegateTest, UnsubscribeAccountEvent, TestSize.Level0)
 {
     auto account = AccountDelegate::GetInstance();
     auto observer = std::make_shared<AccountObserver>();
+    ASSERT_NE(observer, nullptr);
     account->Subscribe(observer);
     auto executor = std::make_shared<OHOS::ExecutorPool>(12, 5);
     AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
@@ -308,5 +309,22 @@ HWTEST_F(AccountDelegateTest, QueryForegroundUsers, TestSize.Level0)
 HWTEST_F(AccountDelegateTest, IsOsAccountConstraintEnabled, TestSize.Level0)
 {
     EXPECT_FALSE(AccountDelegate::GetInstance()->IsOsAccountConstraintEnabled());
+}
+
+/**
+* @tc.name: SubscribeAccountEvent
+* @tc.desc: SubscribeAccountEvent test
+* @tc.type: FUNC
+*/
+HWTEST_F(AccountDelegateTest, SubscribeAccountEvent, TestSize.Level0)
+{
+    auto account = std::make_unique<AccountDelegateNormalImpl>();
+    ASSERT_NE(account, nullptr);
+    EXPECT_EQ(account->executors_, nullptr);
+    EXPECT_EQ(account->accountSubscriber_, nullptr);
+    account->SubscribeAccountEvent();
+    account->executors_ = std::make_shared<OHOS::ExecutorPool>(12, 5);
+    account->SubscribeAccountEvent();
+    EXPECT_NE(account->accountSubscriber_, nullptr);
 }
 } // namespace

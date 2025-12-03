@@ -19,9 +19,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
-#include <set>
 
-#include "concurrent_map.h"
 #include "dump/dump_manager.h"
 #include "metadata/store_meta_data.h"
 #include "types.h"
@@ -77,7 +75,7 @@ private:
         const std::string &info, uint32_t &formatMaxSize);
     mutable std::mutex hidumperMutex_;
     static constexpr int32_t MAX_FILTER_COUNT = 3;
-    static constexpr int32_t MAX_RECORED_ERROR = 10;
+    static constexpr int32_t MAX_RECORD_ERROR = 10;
     static constexpr int32_t DUMP_SYSTEM_START_YEAR = 1900;
     static constexpr int32_t FORMAT_BLANK_SIZE = 32;
     static constexpr int32_t FORMAT_FILL_SIZE = 6;
