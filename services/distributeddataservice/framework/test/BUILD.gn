@@ -81,6 +81,25 @@ ohos_unittest("EventCenterTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
 
+ohos_unittest("FlowMangerTest") {
+  module_out_path = module_output_path
+
+  sources = [
+    "${data_service_path}/framework/flow_manager/flow_manager.cpp",
+    "flow_manager_test.cpp",
+  ]
+  sources = [ "flow_manager_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+  ]
+}
+
 ohos_unittest("SerializableTest") {
   module_out_path = module_output_path
 
