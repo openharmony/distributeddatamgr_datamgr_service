@@ -286,18 +286,71 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
     if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
         return true;
     }
-
-    auto isAutoSyncApp = SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId);
-    if (!isAutoSyncApp) {
-        return false;
-    }
-
     auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
     if (success && !database.name.empty() && !database.bundleName.empty()) {
         MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true);
         return true;
     }
     return false;
+}
+
+int32_t RdbServiceImpl::SetDeviceDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData,
+    const std::vector<std::string> &tables, const std::vector<Reference> &references, int32_t type)
+{
+    auto store = GetStore(metaData);
+    if (store == nullptr) {
+        ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    StoreMetaMapping metaMapping(metaData);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+    SaveSyncMeta(metaData);
+    auto isAutoSyncApp = SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId);
+    if (param.distributedTableMode_ == DistributedRdb::DistributedTableMode::SINGLE_VERSION || isAutoSyncApp) {
+        if (!IsCollaboration(metaData)) {
+            ZLOGE("Singleversion is no schema! bundle:%{public}s, %{public}s.",
+                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
+            RdbHiViewAdapter::GetInstance().ReportStatistic(
+                {RDB_DEVICE_DISTRIBUTED, metaData.bundleName, metaData.storeId, 0, 0, SETDEVICETABLE_NOSCHEMA});
+            return RDB_ERROR;
+        }
+        if (store->SetConfig({false, GeneralStore::DistributedTableMode::COLLABORATION}) != RDB_OK) {
+            ZLOGE("SetSingleTable fail! bundle:%{public}s, %{public}s.",
+                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
+            RdbHiViewAdapter::GetInstance().ReportStatistic(
+                {RDB_DEVICE_DISTRIBUTED, metaData.bundleName, metaData.storeId, 0, 0, SETDEVICETABLE_SETCONFIG_FAIL});
+            return RDB_ERROR;
+        }
+    }
+    metaMapping.devicePath = metaData.dataDir;
+    metaMapping = metaData;
+    MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
+    return store->SetDistributedTables(tables, type, RdbTypesUtils::Convert(references));
+}
+
+int32_t RdbServiceImpl::SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData,
+    const std::vector<std::string> &tables, const std::vector<Reference> &references, int32_t type)
+{
+    auto store = GetStore(metaData);
+    if (store == nullptr) {
+        ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    StoreMetaMapping metaMapping(metaData);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+    if (metaData.asyncDownloadAsset != param.asyncDownloadAsset_ || metaData.enableCloud != param.enableCloud_) {
+        ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
+              "%{public}d],enableCloud? [%{public}d -> %{public}d]",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset,
+            param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_);
+        metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
+        metaData.enableCloud = param.enableCloud_;
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+    }
+    metaMapping.cloudPath = metaData.dataDir;
+    metaMapping = metaData;
+    MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
+    return store->SetDistributedTables(tables, type, RdbTypesUtils::Convert(references));
 }
 
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
@@ -319,39 +372,15 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         DistributedData::SetSearchableEvent::EventInfo eventInfo{ .isRebuild = isRebuild };
         return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, metaData, eventInfo);
     }
-
-    auto store = GetStore(metaData);
-    if (store == nullptr) {
-        ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
-        return RDB_ERROR;
-    }
-
-    StoreMetaMapping metaMapping(metaData);
-    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        SaveSyncMeta(metaData);
-        if (IsCollaboration(metaData)) {
-            store->SetConfig({false, GeneralStore::DistributedTableMode::COLLABORATION});
-        }
-        metaMapping.devicePath = metaData.dataDir;
-    } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
-        if ((metaData.asyncDownloadAsset != param.asyncDownloadAsset_) ||
-            (metaData.enableCloud != param.enableCloud_) || (metaData.autoSyncSwitch != param.autoSyncSwitch_)) {
-            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
-                  "%{public}d],enableCloud? [%{public}d -> %{public}d],autoSyncSwitch? [%{public}d -> %{public}d]",
-                param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset,
-                param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_, metaData.autoSyncSwitch,
-                param.autoSyncSwitch_);
-            metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
-            metaData.enableCloud = param.enableCloud_;
-            metaData.autoSyncSwitch = param.autoSyncSwitch_;
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-        }
-        metaMapping.cloudPath = metaData.dataDir;
+        return SetDeviceDistributedTables(param, metaData, tables, references, type);
     }
-    metaMapping = metaData;
-    MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
-    return store->SetDistributedTables(tables, type, RdbTypesUtils::Convert(references));
+    if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
+        return SetCloudDistributedTables(param, metaData, tables, references, type);
+    }
+    ZLOGE("bundleName:%{public}s, storeName:%{public}s. DistributedTableType is invalid! type: %{public}d.",
+        param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), type);
+    return RDB_ERROR;
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
@@ -495,16 +524,16 @@ int RdbServiceImpl::DoSync(const StoreMetaData &meta, const RdbService::Option &
 {
     auto store = GetStore(meta);
     if (store == nullptr) {
+        ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
         return RDB_ERROR;
     }
-
     RdbQuery rdbQuery(predicates);
     auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
                                                  : DmAdapter::ToUUID(rdbQuery.GetDevices());
     if (!rdbQuery.GetDevices().empty() && !devices.empty()) {
         SaveAutoSyncInfo(meta, devices);
     }
-
     auto pid = IPCSkeleton::GetCallingPid();
     SyncParam syncParam = { option.mode, 0, option.isCompensation };
     auto tokenId = meta.tokenId;
@@ -518,6 +547,10 @@ int RdbServiceImpl::DoSync(const StoreMetaData &meta, const RdbService::Option &
     };
     if (IsNeedMetaSync(meta, devices)) {
         auto result = MetaDataManager::GetInstance().Sync(devices, complete);
+        if (!result) {
+            RdbHiViewAdapter::GetInstance().ReportStatistic(
+                {RDB_DEVICE_DISTRIBUTED, meta.bundleName, meta.storeId, 0, 0, DEVICESYNC_FAIL});
+        }
         return result ? GeneralError::E_OK : GeneralError::E_ERROR;
     }
     auto [ret, _] = store->Sync(devices, rdbQuery, notify, syncParam);
@@ -1274,7 +1307,10 @@ std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::s
         AppDistributedKv::DeviceId deviceId = { .deviceId = device };
         if (instance->ReuseConnect(deviceId, extraInfo) == Status::SUCCESS) {
             onDevices.push_back(device);
+            continue;
         }
+        RdbHiViewAdapter::GetInstance().ReportStatistic(
+            {RDB_DEVICE_DISTRIBUTED, metaData.bundleName, metaData.storeId, 0, 0, DEVICESYNC_FAIL_REUSE});
     }
     return onDevices;
 }
@@ -1303,7 +1339,11 @@ int RdbServiceImpl::DoAutoSync(const std::vector<std::string> &devices, const St
             store->Sync(ret.first, rdbQuery, DetailAsync(), { 0, 0 });
         };
         if (IsNeedMetaSync(metaData, onDevices)) {
-            MetaDataManager::GetInstance().Sync(onDevices, complete);
+            auto result = MetaDataManager::GetInstance().Sync(onDevices, complete);
+            if (!result) {
+                RdbHiViewAdapter::GetInstance().ReportStatistic(
+                    {RDB_DEVICE_DISTRIBUTED, metaData.bundleName, metaData.storeId, 0, 0, DEVICESYNC_AUTO_FAIL});
+            }
             return;
         }
         store->Sync(onDevices, rdbQuery, DetailAsync(), { 0, 0 });

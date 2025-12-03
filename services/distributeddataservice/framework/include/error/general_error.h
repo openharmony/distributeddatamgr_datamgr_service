@@ -15,6 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_ERROR_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_ERROR_H
+#include <stdint.h>
 namespace OHOS::DistributedData {
 enum GeneralError : int32_t {
     E_OK = 0,

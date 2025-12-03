@@ -841,9 +841,10 @@ std::vector<uint8_t> KVDBGeneralStore::GetNewKey(std::vector<uint8_t> &key, cons
     return out;
 }
 
-void KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
+int32_t KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
 {
     enableCloud_ = storeConfig.enableCloud_;
+    return GeneralError::E_OK;
 }
 
 std::pair<int32_t, uint32_t> KVDBGeneralStore::LockCloudDB()

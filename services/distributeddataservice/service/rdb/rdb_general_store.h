@@ -79,7 +79,7 @@ public:
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const std::vector<std::string> &columns = {},
         bool preCount = false) override;
 
-    void SetConfig(const StoreConfig &storeConfig) override;
+    int32_t SetConfig(const StoreConfig &storeConfig) override;
     int32_t AddRef() override;
     int32_t Release() override;
     int32_t Close(bool isForce = false) override;
@@ -191,6 +191,8 @@ private:
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
     std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> InitRdbStore();
+    int32_t SetDeviceDistributedTables();
+    int32_t SetCloudDistributedTables(const std::vector<Reference> &references);
     int32_t InitDelegate();
     DistributedData::StoreInfo GetStoreInfo() const;
     DetailAsync GetAsync() const;

@@ -77,12 +77,14 @@ protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
     static CheckerMock systemChecker_;
+    static int32_t dbStatus_;
     static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
 };
 
 std::shared_ptr<DBStoreMock> RdbServiceImplTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 StoreMetaData RdbServiceImplTest::metaData_;
 CheckerMock RdbServiceImplTest::systemChecker_;
+int32_t RdbServiceImplTest::dbStatus_ = E_OK;
 
 void RdbServiceImplTest::InitMetaData()
 {
@@ -141,11 +143,16 @@ void RdbServiceImplTest::SetUpTestCase()
     CryptoManager::GetInstance().GenerateRootKey();
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
 
-    auto creator = [](const StoreMetaData &metaData,
-                       const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
-        return { GeneralError::E_OK, new (std::nothrow) GeneralStoreMock() };
-    };
-    AutoCache::GetInstance().RegCreator(DistributedRdb::RDB_DEVICE_COLLABORATION, creator);
+    // Construct the statisticInfo data
+    AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION,
+        [](const StoreMetaData &metaData, const AutoCache::StoreOption &option) -> std::pair<int32_t, GeneralStore *> {
+            auto store = new (std::nothrow) GeneralStoreMock();
+            if (store != nullptr) {
+                store->SetMockDBStatus(dbStatus_);
+                return { GeneralError::E_OK, store };
+            }
+            return { GeneralError::E_ERROR, nullptr };
+        });
     SyncManager::AutoSyncInfo syncInfo = { 3, TEST_APPID, TEST_BUNDLE };
     SyncManager::GetInstance().Initialize({ syncInfo });
 }
@@ -1499,7 +1506,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
     param.isEncrypt_ = metaData_.isEncrypt;
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
     auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
-    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(result, RDB_ERROR);
     Database database;
     database.bundleName = metaData_.bundleName;
     database.name = metaData_.storeId;
@@ -1513,6 +1520,71 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables006
+ * @tc.desc: Test SetDistributedTables when type is invalid.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: ZD
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, 200);
+    EXPECT_EQ(result, RDB_ERROR);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables007
+ * @tc.desc: Test SetDistributedTables when type is device & setconfig is false.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: ZD
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    StoreMetaData meta = metaData_;
+    meta.storeId = "SetDistributedTables009";
+    meta.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + meta.storeId;
+    param.bundleName_ = meta.bundleName;
+    param.storeName_ = meta.storeId;
+    param.type_ = meta.storeType;
+    param.area_ = meta.area;
+    param.level_ = meta.securityLevel;
+    param.isEncrypt_ = meta.isEncrypt;
+    param.distributedTableMode_ = DistributedRdb::DistributedTableMode::SINGLE_VERSION;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    Database database;
+    database.bundleName = meta.bundleName;
+    database.name = meta.storeId;
+    database.user = meta.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    dbStatus_ = E_ERROR;
+    auto result =
+        service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
+    EXPECT_EQ(result, RDB_ERROR);
+    dbStatus_ = E_OK;
+    StoreMetaMapping metaMapping(meta);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
 }
 
 /**

@@ -207,6 +207,10 @@ private:
 
     void OnSearchableChange(const StoreMetaData &metaData, const RdbNotifyConfig &config,
         const RdbChangedData &changedData);
+    int32_t SetDeviceDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData,
+        const std::vector<std::string> &tables, const std::vector<Reference> &references, int32_t type);
+    int32_t SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData,
+        const std::vector<std::string> &tables, const std::vector<Reference> &references, int32_t type);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 
@@ -215,7 +219,7 @@ private:
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const StoreMetaData &storeMetaData);
 
     void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
-
+    
     int32_t Upgrade(const StoreMetaData &metaData, const StoreMetaData &old);
 
     void GetCloudSchema(const StoreMetaData &metaData);

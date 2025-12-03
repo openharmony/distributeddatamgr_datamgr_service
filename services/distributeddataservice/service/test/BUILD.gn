@@ -577,6 +577,8 @@ ohos_unittest("RdbServiceTest") {
   sources = [
     "anonymous_test.cpp",
     "cache_cursor_test.cpp",
+    "mock/db_change_data_mock.cpp",
+    "mock/db_store_mock.cpp",
     "mock/general_watcher_mock.cpp",
     "mock/relational_store_manager_mock.cpp",
     "rdb_cloud_test.cpp",
@@ -587,6 +589,12 @@ ohos_unittest("RdbServiceTest") {
     "relational_store_cursor_test.cpp",
     "rdb_store_utils_test.cpp",
     "rdb_service_stub_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/test/mock",
   ]
 
   configs = [ ":module_private_config" ]

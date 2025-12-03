@@ -183,6 +183,7 @@ bool Field::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(alias)], alias);
     SetValue(node[GET_NAME(type)], type);
     SetValue(node[GET_NAME(primary)], primary);
+    SetValue(node[GET_NAME(autoIncrement)], autoIncrement);
     SetValue(node[GET_NAME(nullable)], nullable);
     SetValue(node[GET_NAME(dupCheckCol)], dupCheckCol);
     return true;
@@ -195,6 +196,7 @@ bool Field::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(type), type);
     GetValue(node, GET_NAME(primary), primary);
     GetValue(node, GET_NAME(primaryKey), primary);
+    GetValue(node, GET_NAME(autoIncrement), autoIncrement);
     GetValue(node, GET_NAME(nullable), nullable);
     GetValue(node, GET_NAME(columnName), colName);
     GetValue(node, GET_NAME(notNull), nullable);

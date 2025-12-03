@@ -57,13 +57,18 @@ void RdbHiViewAdapter::InvokeSync()
     uint32_t costTimes[count];
     uint32_t occurTimes[count];
     uint32_t index = 0;
-
     statEvents.ForEach([&statTypes, &bundleNames, &storeNames, &subTypes, &costTimes, &occurTimes, &index](
         const RdbStatEvent &key, uint32_t &value) {
         statTypes[index] = key.statType;
         bundleNames[index] = key.bundleName.c_str();
         storeNames[index] = key.storeName.c_str();
         subTypes[index] = key.subType;
+        if (key.statType == RDB_PERF) {
+            costTimes[index] = key.costTime;
+        }
+        if (key.statType == RDB_DEVICE_DISTRIBUTED) {
+            costTimes[index] = key.distributedStatType;
+        }
         costTimes[index] = key.costTime;
         occurTimes[index] = value;
         index++;

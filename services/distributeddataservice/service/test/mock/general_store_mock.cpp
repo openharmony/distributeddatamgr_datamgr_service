@@ -227,5 +227,10 @@ int32_t GeneralStoreMock::OnSyncTrigger(const std::string &storeId, int32_t trig
 {
     return E_OK;
 }
+
+int32_t GeneralStoreMock::SetConfig(const StoreConfig &storeConfig)
+{
+    return dbStatus_;
+}
 } // namespace DistributedData
 } // namespace OHOS
