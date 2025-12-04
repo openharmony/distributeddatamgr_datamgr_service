@@ -5,16 +5,6 @@
   "features": ["kvdb", "rdb", "object", "backup", "data_sync"],
   "components": [
     {
-      "description": "3rd party adapter",
-      "lib": "libconfigdemo.z.so",
-      "constructor": "",
-      "destructor": "",
-      "params": {
-        "key": "value",
-        "count": 1
-      }
-    },
-    {
       "lib": "libopencloudextension.z.so"
     }
   ],
