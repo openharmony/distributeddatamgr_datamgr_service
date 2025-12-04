@@ -31,7 +31,7 @@ public:
     public:
         virtual bool IsValid(const std::vector<Privilege> &privileges, const CheckInfo &info) = 0;
     protected:
-        ~Checker() = default;
+        virtual ~Checker() = default;
     };
 
     static CheckerManager &GetInstance();
