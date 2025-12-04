@@ -78,7 +78,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "eventcenter/event_center.cpp",
     "feature/feature_system.cpp",
     "feature/static_acts.cpp",
-    "flow_manager/flow_manager.cpp",
+    "flow_control_manager/flow_control_manager.cpp",
     "metadata/appid_meta_data.cpp",
     "metadata/auto_launch_meta_data.cpp",
     "metadata/capability_meta_data.cpp",

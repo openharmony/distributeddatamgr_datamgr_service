@@ -81,14 +81,13 @@ ohos_unittest("EventCenterTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
 
-ohos_unittest("FlowMangerTest") {
+ohos_unittest("FlowControlMangerTest") {
   module_out_path = module_output_path
 
   sources = [
-    "${data_service_path}/framework/flow_manager/flow_manager.cpp",
-    "flow_manager_test.cpp",
+    "${data_service_path}/framework/flow_control_manager/flow_control_manager.cpp",
+    "flow_control_manager_test.cpp",
   ]
-  sources = [ "flow_manager_test.cpp" ]
 
   configs = [ ":module_private_config" ]
 

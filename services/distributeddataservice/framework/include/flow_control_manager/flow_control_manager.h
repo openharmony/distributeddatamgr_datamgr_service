@@ -12,8 +12,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_FLOW_MANAGER_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_FLOW_MANAGER_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_FLOW_CONTROL_MANAGER_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_FLOW_CONTROL_MANAGER_H
 
 #include <chrono>
 #include <functional>
@@ -24,7 +24,7 @@
 #include "visibility.h"
 namespace OHOS {
 namespace DistributedData {
-class API_EXPORT FlowManager {
+class API_EXPORT FlowControlManager {
 public:
     using Task = std::function<void()>;
     using Tp = std::chrono::steady_clock::time_point;
@@ -34,8 +34,8 @@ public:
         virtual Tp GetExecuteTime(Task task, uint32_t type) = 0;
     };
 
-    FlowManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy);
-    ~FlowManager();
+    FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy);
+    ~FlowControlManager();
     void Execute(Task task, uint32_t type = 0);
     void Remove(uint32_t type = 0);
 
@@ -79,4 +79,4 @@ private:
 
 } // namespace DistributedData
 } // namespace OHOS
-#endif //OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_FLOW_MANAGER_H
+#endif //OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_FLOW_CONTROL_MANAGER_H

@@ -13,18 +13,17 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "flow_manager"
-#include "flow_manager/flow_manager.h"
+#include "flow_control_manager/flow_control_manager.h"
 
 #include <list>
 
 namespace OHOS::DistributedData {
-FlowManager::FlowManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy)
+FlowControlManager::FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy)
     : pool_(std::move(pool)), strategy_(std::move(strategy))
 {
 }
 
-FlowManager::~FlowManager()
+FlowControlManager::~FlowControlManager()
 {
     isDestroyed_ = true;
     ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
@@ -37,7 +36,7 @@ FlowManager::~FlowManager()
     pool_->Remove(taskId, true);
 }
 
-void FlowManager::Execute(Task task, uint32_t type)
+void FlowControlManager::Execute(Task task, uint32_t type)
 {
     Tp executeTime = std::chrono::steady_clock::now();
     if (strategy_ != nullptr) {
@@ -56,7 +55,7 @@ void FlowManager::Execute(Task task, uint32_t type)
     Schedule();
 }
 
-void FlowManager::ExecuteTask()
+void FlowControlManager::ExecuteTask()
 {
     if (isDestroyed_) {
         return;
@@ -87,7 +86,7 @@ void FlowManager::ExecuteTask()
     taskId_ = ExecutorPool::INVALID_TASK_ID;
 }
 
-void FlowManager::Schedule()
+void FlowControlManager::Schedule()
 {
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (tasks_.empty()) {
@@ -109,7 +108,7 @@ void FlowManager::Schedule()
     });
 }
 
-void FlowManager::Remove(uint32_t type)
+void FlowControlManager::Remove(uint32_t type)
 {
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);
