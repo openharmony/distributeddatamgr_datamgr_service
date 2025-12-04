@@ -17,7 +17,6 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 
 #include "cloud/cloud_conflict_handler.h"
-#include "cloud/cloud_db_sync_config.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
 #include "cloud/cloud_last_sync_info.h"
@@ -48,9 +47,6 @@ public:
     using TraceIds = std::map<std::string, std::string>;
     using SyncStage = DistributedData::SyncStage;
     using ReportParam = DistributedData::ReportParam;
-    using CloudDbSyncConfig = DistributedData::CloudDbSyncConfig;
-    using DbSyncConfig = DistributedData::CloudDbSyncConfig::DbSyncConfig;
-    using TableSyncConfig = DistributedData::CloudDbSyncConfig::TableSyncConfig;
     using Database = DistributedData::Database;
     class SyncInfo final {
     public:
@@ -220,11 +216,6 @@ private:
         std::string traceId;
     };
     void HandleSyncError(const ErrorContext &context);
-    bool GetDataBaseCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName);
-    bool GetTableCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName,
-        std::vector<std::string> &tables);
-    std::optional<DbSyncConfig> FindDbConfig(const CloudDbSyncConfig &syncConfig, const std::string &bundleName,
-        const std::string &dbName) const;
     static std::atomic<uint32_t> genId_;
     std::shared_ptr<ExecutorPool> executor_;
     ConcurrentMap<uint64_t, TaskId> actives_;
