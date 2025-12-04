@@ -16,6 +16,8 @@
 #define LOG_TAG "flow_manager"
 #include "flow_manager/flow_manager.h"
 
+#include <list>
+
 namespace OHOS::DistributedData {
 FlowManager::FlowManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy)
     : pool_(std::move(pool)), strategy_(std::move(strategy))
@@ -24,9 +26,15 @@ FlowManager::FlowManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Str
 
 FlowManager::~FlowManager()
 {
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    auto tasks = std::move(tasks_);
-    pool_->Remove(taskId_, true);
+    isDestroyed_ = true;
+    ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        taskId = taskId_;
+        taskId_ = ExecutorPool::INVALID_TASK_ID;
+        auto tasks = std::move(tasks_);
+    }
+    pool_->Remove(taskId, true);
 }
 
 void FlowManager::Execute(Task task, uint32_t type)
@@ -50,6 +58,9 @@ void FlowManager::Execute(Task task, uint32_t type)
 
 void FlowManager::ExecuteTask()
 {
+    if (isDestroyed_) {
+        return;
+    }
     std::list<Task> tasks;
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     Tp now = std::chrono::steady_clock::now();

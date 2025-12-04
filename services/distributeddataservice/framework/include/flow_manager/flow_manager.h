@@ -15,16 +15,16 @@
 #ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_FLOW_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_FLOW_MANAGER_H
 
-#include <functional>
-#include <string>
-#include <priority_queue.h>
 #include <chrono>
-#include <list>
+#include <functional>
+#include <priority_queue.h>
+#include <string>
 
-#include "task_executor.h"
+#include "executor_pool.h"
+#include "visibility.h"
 namespace OHOS {
 namespace DistributedData {
-class FlowManager {
+class API_EXPORT FlowManager {
 public:
     using Task = std::function<void()>;
     using Tp = std::chrono::steady_clock::time_point;
@@ -70,6 +70,7 @@ private:
 
     const std::shared_ptr<ExecutorPool> pool_;
     const std::shared_ptr<Strategy> strategy_;
+    bool isDestroyed_ = false;
     std::mutex mutex_;
     std::priority_queue<InnerTask> tasks_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;

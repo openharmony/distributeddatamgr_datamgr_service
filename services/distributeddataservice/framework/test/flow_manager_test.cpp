@@ -484,4 +484,103 @@ HWTEST_F(FlowManagerTest, FlowManager_PriorityPreemption_Test, TestSize.Level1)
 
     flowManager.Remove();
 }
+
+class PriorityCancellationStrategy : public FlowManager::Strategy {
+public:
+    FlowManager::Tp GetExecuteTime(FlowManager::Task task, uint32_t type) override
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+
+        // Type 0: High priority, execute with 100ms delay
+        // Type 1: Medium priority, execute with 500ms delay
+        // Type 2: Low priority, execute with 300ms delay
+        std::chrono::milliseconds delay(0);
+        switch (type) {
+            case 0:
+                delay = std::chrono::milliseconds(100);
+                break;
+            case 1:
+                delay = std::chrono::milliseconds(500);
+                break;
+            case 2:
+                delay = std::chrono::milliseconds(300);
+                break;
+            default:
+                delay = std::chrono::milliseconds(1000);
+        }
+        return now + delay;
+    }
+
+private:
+    std::mutex mutex_;
+};
+/**
+* @tc.name: FlowManager_CancelSpecificPriorityTask_Test
+* @tc.desc: Test cancellation of specific priority tasks does not affect other priority tasks execution
+* @tc.type: FUNC
+* @tc.step: 1. Create a strategy that assigns different delays based on task priority
+* @tc.step: 2. Initialize FlowManager with the strategy and an executor pool
+* @tc.step: 3. Submit tasks with different priorities (priority 0, 1, and 2)
+* @tc.step: 4. Cancel tasks with priority 1 before they execute
+* @tc.step: 5. Verify that priority 0 and 2 tasks still execute normally
+* @tc.step: 6. Confirm that priority 1 tasks are not executed after cancellation
+* @tc.step: 7. Clean up resources by removing the FlowManager
+* @tc.expected: Priority 1 tasks should be cancelled and not executed, while priority 0 and 2 tasks should execute normally
+*/
+HWTEST_F(FlowManagerTest, FlowManager_CancelSpecificPriorityTask_Test, TestSize.Level1)
+{
+    auto pool = std::make_shared<ExecutorPool>(2, 3);
+    FlowManager flowManager(pool, std::make_shared<PriorityCancellationStrategy>());
+
+    auto priority0Flag = std::make_shared<std::atomic_uint32_t>(0);
+    auto priority1Flag = std::make_shared<std::atomic_uint32_t>(0);
+    auto priority2Flag = std::make_shared<std::atomic_uint32_t>(0);
+
+    auto priority0Task = [priority0Flag]() mutable {
+        (*priority0Flag)++;
+    };
+    auto priority1Task = [priority1Flag]() mutable {
+        (*priority1Flag)++;
+    };
+    auto priority2Task = [priority2Flag]() mutable {
+        (*priority2Flag)++;
+    };
+
+    // Submit tasks with different priorities
+    flowManager.Execute(priority0Task, 0);  // Should execute after 100ms
+    flowManager.Execute(priority1Task, 1);  // Should execute after 500ms - will be cancelled
+    flowManager.Execute(priority2Task, 2);  // Should execute after 300ms
+
+    // Cancel priority 1 tasks before they execute
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    flowManager.Remove(1);  // Remove all tasks with priority 1
+
+    // After 100ms, priority 0 task should execute
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_EQ(priority0Flag->load(), 1);
+    EXPECT_EQ(priority1Flag->load(), 0);
+    EXPECT_EQ(priority2Flag->load(), 0);
+
+    // After 300ms total, priority 2 task should execute
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    EXPECT_EQ(priority0Flag->load(), 1);
+    EXPECT_EQ(priority1Flag->load(), 0);
+    EXPECT_EQ(priority2Flag->load(), 1);
+
+    // After 500ms total, priority 1 task should still not execute because it was cancelled
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    EXPECT_EQ(priority0Flag->load(), 1);
+    EXPECT_EQ(priority1Flag->load(), 0);  // Still 0 because it was cancelled
+    EXPECT_EQ(priority2Flag->load(), 1);
+
+    // Submit a new priority 1 task to verify that the flow manager is still functional for that priority
+    flowManager.Execute(priority1Task, 1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(550));  // Wait for it to execute
+    EXPECT_EQ(priority0Flag->load(), 1);
+    EXPECT_EQ(priority1Flag->load(), 1);  // This should now be 1 as it's a new task
+    EXPECT_EQ(priority2Flag->load(), 1);
+
+    flowManager.Remove();
+}
 } // namespace OHOS::Test
