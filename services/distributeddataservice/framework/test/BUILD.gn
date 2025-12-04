@@ -497,6 +497,7 @@ group("unittest") {
     ":EventCenterTest",
     ":EventTest",
     ":FeatureTest",
+    ":FlowControlMangerTest",
     ":GeneralStoreTest",
     ":MetaDataManagerTest",
     ":ScreenManagerTest",

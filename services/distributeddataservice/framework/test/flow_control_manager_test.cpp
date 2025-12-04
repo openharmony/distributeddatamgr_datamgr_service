@@ -48,21 +48,25 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithDelayStrategy_Tes
             if (!flag_.exchange(true)) {
                 return std::chrono::steady_clock::now();
             }
+            // Delay subsequent tasks by 10 seconds
             return std::chrono::steady_clock::now() + std::chrono::seconds(10);
         }
 
     private:
         std::atomic_bool flag_ = false;
     };
+    // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, std::make_shared<StrategyMockImpl>());
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
         (*flag)++;
     };
+    // Submit 10 tasks
     for (int32_t i = 0; i < 10; i++) {
         flowControlManager.Execute(task);
     }
+    // Wait for 1 second - only first task should execute
     std::this_thread::sleep_for(std::chrono::seconds(1));
     EXPECT_EQ(flag->load(), 1);
     flowControlManager.Remove();
@@ -91,6 +95,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithIntervalStrategy_
                 lastExecuteTime_ = now;
                 return lastExecuteTime_;
             }
+            // Increase interval by 500ms for each task
             auto earliestExecutionTime = lastExecuteTime_ + std::chrono::milliseconds(500 * count_++);
             lastExecuteTime_ = earliestExecutionTime > now ? earliestExecutionTime : now;
             return lastExecuteTime_;
@@ -101,18 +106,21 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithIntervalStrategy_
         int32_t count_ = 1;
         FlowControlManager::Tp lastExecuteTime_ = FlowControlManager::Tp();
     };
+    // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, std::make_shared<StrategyMockImpl>());
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
         (*flag)++;
     };
-    // [0, 500ms, 1500ms, 3000ms, 5000ms]
+    // Execution times: [0ms, 500ms, 1500ms, 3000ms, 5000ms]
     for (int32_t i = 0; i < 5; i++) {
         flowControlManager.Execute(task);
     }
+    // After 1 second, 2 tasks should have executed (0ms and 500ms)
     std::this_thread::sleep_for(std::chrono::seconds(1));
     EXPECT_EQ(flag->load(), 2);
+    // After additional 1.5 seconds (total 2.5s), 3 tasks should have executed (0ms, 500ms, 1500ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(1500));
     EXPECT_EQ(flag->load(), 3);
     flowControlManager.Remove();
@@ -131,6 +139,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithIntervalStrategy_
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithoutStrategy_Test, TestSize.Level1)
 {
+    // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, nullptr); // No strategy
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
@@ -143,6 +152,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithoutStrategy_Test,
         flowControlManager.Execute(task);
     }
 
+    // Wait briefly for all tasks to execute immediately
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(flag->load(), taskCount); // All tasks should be executed immediately
     flowControlManager.Remove();
@@ -166,12 +176,14 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PeakLimitStrategy_Test, Test
 {
     class PeakLimitStrategy : public FlowControlManager::Strategy {
     public:
+        // Constructor with default limit of 2 tasks per second
         explicit PeakLimitStrategy(size_t maxTasksPerSecond = 2) : maxTasksPerSecond_(maxTasksPerSecond) {}
 
         FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
         {
             std::lock_guard<std::mutex> lock(mutex_);
             auto now = std::chrono::steady_clock::now();
+            // Calculate time point one second ago
             auto oneSecondLater = now - std::chrono::seconds(1);
 
             // Clear expired execution records (older than 1 second)
@@ -195,11 +207,13 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PeakLimitStrategy_Test, Test
     private:
         std::mutex mutex_;
         std::deque<FlowControlManager::Tp> executionTimes_;
-        size_t maxTasksPerSecond_;
+        size_t maxTasksPerSecond_; // Maximum tasks allowed per second
     };
 
+    // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
-    FlowControlManager flowControlManager(pool, std::make_shared<PeakLimitStrategy>(2)); // Max 2 tasks per second
+    // Initialize with peak limit strategy allowing max 2 tasks per second
+    FlowControlManager flowControlManager(pool, std::make_shared<PeakLimitStrategy>(2));
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
         (*flag)++;
@@ -210,16 +224,16 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PeakLimitStrategy_Test, Test
         flowControlManager.Execute(task, i);
     }
 
-    // In first second, only 2 tasks should be executed
+    // In first half second, only 2 tasks should be executed
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     EXPECT_EQ(flag->load(), 2);
 
-    // Shortly after 1 second, additional tasks may be executed based on sliding window
+    // Shortly after 1.1 seconds, additional tasks may be executed based on sliding window
     std::this_thread::sleep_for(std::chrono::milliseconds(600));
     // With sliding window approach, we might have executed more than 2 but less than 5 tasks
     EXPECT_GE(flag->load(), 4);
 
-    // After sufficient time, all tasks should be executed
+    // After sufficient time (about 3 seconds total), all tasks should be executed
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     EXPECT_EQ(flag->load(), 5);
 
@@ -257,6 +271,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityStrategy_Test, TestS
         std::mutex mutex_;
     };
 
+    // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityStrategy>());
 
@@ -275,9 +290,9 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityStrategy_Test, TestS
     };
 
     // Submit tasks with different priorities
-    flowControlManager.Execute(lowPriorityTask, 2);    // Execute last
+    flowControlManager.Execute(lowPriorityTask, 2);    // Execute last (500ms delay)
     flowControlManager.Execute(highPriorityTask, 0);   // Execute immediately
-    flowControlManager.Execute(mediumPriorityTask, 1); // Execute with delay
+    flowControlManager.Execute(mediumPriorityTask, 1); // Execute with delay (100ms delay)
 
     // Check immediately, only high priority task should be executed
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -320,11 +335,12 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelScheduledTask_Test, Te
     public:
         FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
         {
-            // All tasks delayed by 1 seconds
+            // All tasks delayed by 1 second
             return std::chrono::steady_clock::now() + std::chrono::seconds(1);
         }
     };
 
+    // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, std::make_shared<DelayStrategy>());
 
@@ -333,24 +349,25 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelScheduledTask_Test, Te
         (*flag)++;
     };
 
-    // Submit tasks
+    // Submit 5 tasks
     for (int32_t i = 0; i < 5; i++) {
         flowControlManager.Execute(task);
     }
 
-    // Wait for some time but not enough for tasks to execute
+    // Wait for some time (500ms) but not enough for tasks to execute (1000ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     EXPECT_EQ(flag->load(), 0); // Tasks not yet executed
 
     // Remove all tasks
     flowControlManager.Remove();
 
-    // Even after waiting long enough, tasks should not execute
+    // Even after waiting long enough (1000ms), tasks should not execute
     std::this_thread::sleep_for(std::chrono::seconds(1));
     EXPECT_EQ(flag->load(), 0); // Tasks successfully cancelled
 
     // Submit new task to verify FlowControlManager is still functional
     flowControlManager.Execute(task);
+    // Wait for new task to execute (1100ms > 1000ms delay)
     std::this_thread::sleep_for(std::chrono::milliseconds(1100));
     EXPECT_EQ(flag->load(), 1); // New task executes normally
 
@@ -389,7 +406,8 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentTaskSubmission_Tes
         FlowControlManager::Tp lastExecuteTime_;
     };
 
-    auto pool = std::make_shared<ExecutorPool>(3, 5); // Enlarged thread pool
+    // Create enlarged executor pool with 3 initial threads and 5 max threads
+    auto pool = std::make_shared<ExecutorPool>(3, 5);
     FlowControlManager flowControlManager(pool, std::make_shared<ConcurrentStrategy>());
 
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
@@ -400,9 +418,10 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentTaskSubmission_Tes
     const int taskCount = 100;
     std::vector<std::thread> threads;
 
-    // Multi-threads concurrent task submission
+    // Multi-threads concurrent task submission using 10 threads
     for (int t = 0; t < 10; t++) {
         threads.emplace_back([&]() {
+            // Each thread submits 10 tasks (100 total / 10 threads)
             for (int i = 0; i < taskCount / 10; i++) {
                 flowControlManager.Execute(task);
             }
@@ -414,7 +433,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentTaskSubmission_Tes
         thread.join();
     }
 
-    // Wait for all tasks to complete execution
+    // Wait for all tasks to complete execution (1500ms > 100 tasks * 10ms = 1000ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(1500));
     EXPECT_EQ(flag->load(), taskCount);
 
@@ -441,6 +460,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityPreemption_Test, Tes
             auto now = std::chrono::steady_clock::now();
 
             // Higher type value means lower priority, thus longer delay
+            // Delay is 500ms multiplied by task type value
             return now + std::chrono::milliseconds(500 * type);
         }
 
@@ -448,6 +468,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityPreemption_Test, Tes
         std::mutex mutex_;
     };
 
+    // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityPreemptionStrategy>());
 
@@ -464,7 +485,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityPreemption_Test, Tes
     // Submit low priority task first (type 3, will be delayed 1500ms)
     flowControlManager.Execute(lowPriorityTask, 3);
 
-    // Submit high priority task after short delay but before low priority task would execute
+    // Submit high priority task after short delay (100ms) but before low priority task would execute
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     flowControlManager.Execute(highPriorityTask, 1);
 
@@ -472,12 +493,13 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityPreemption_Test, Tes
     EXPECT_EQ(highPriorityFlag->load(), 0);
     EXPECT_EQ(lowPriorityFlag->load(), 0);
 
-    // After 500ms, only high priority task should have executed (low priority still has 1000ms remaining)
+    // After 1000ms, only high priority task should have executed
+    // (low priority still has 500ms remaining from its 1500ms total delay)
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXPECT_EQ(highPriorityFlag->load(), 1);
     EXPECT_EQ(lowPriorityFlag->load(), 0);
 
-    // After another 1000ms, low priority task should also have executed
+    // After another 1000ms (total 2100ms), low priority task should also have executed
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     EXPECT_EQ(highPriorityFlag->load(), 1);
     EXPECT_EQ(lowPriorityFlag->load(), 1);
@@ -492,21 +514,18 @@ public:
         std::lock_guard<std::mutex> lock(mutex_);
         auto now = std::chrono::steady_clock::now();
 
-        // Type 0: High priority, execute with 100ms delay
-        // Type 1: Medium priority, execute with 500ms delay
-        // Type 2: Low priority, execute with 300ms delay
         std::chrono::milliseconds delay(0);
         switch (type) {
-            case 0:
+            case 0: // Type 0: High priority, execute with 100ms delay
                 delay = std::chrono::milliseconds(100);
                 break;
-            case 1:
+            case 1: // Type 1: Medium priority, execute with 500ms delay
                 delay = std::chrono::milliseconds(500);
                 break;
-            case 2:
+            case 2: // Type 2: Low priority, execute with 300ms delay
                 delay = std::chrono::milliseconds(300);
                 break;
-            default:
+            default: // Default - 1000ms delay
                 delay = std::chrono::milliseconds(1000);
         }
         return now + delay;
@@ -526,10 +545,12 @@ private:
 * @tc.step: 5. Verify that priority 0 and 2 tasks still execute normally
 * @tc.step: 6. Confirm that priority 1 tasks are not executed after cancellation
 * @tc.step: 7. Clean up resources by removing the FlowControlManager
-* @tc.expected: Priority 1 tasks should be cancelled and not executed, while priority 0 and 2 tasks should execute normally
+* @tc.expected: Priority 1 tasks should be cancelled and not executed,
+* while priority 0 and 2 tasks should execute normally
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelSpecificPriorityTask_Test, TestSize.Level1)
 {
+    // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityCancellationStrategy>());
 
@@ -552,23 +573,23 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelSpecificPriorityTask_T
     flowControlManager.Execute(priority1Task, 1); // Should execute after 500ms - will be cancelled
     flowControlManager.Execute(priority2Task, 2); // Should execute after 300ms
 
-    // Cancel priority 1 tasks before they execute
+    // Cancel priority 1 tasks before they execute (after 50ms, before 500ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     flowControlManager.Remove(1); // Remove all tasks with priority 1
 
-    // After 100ms, priority 0 task should execute
+    // After 100ms total, priority 0 task should execute
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(priority0Flag->load(), 1);
     EXPECT_EQ(priority1Flag->load(), 0);
     EXPECT_EQ(priority2Flag->load(), 0);
 
-    // After 300ms total, priority 2 task should execute
+    // After 300ms total (200ms more), priority 2 task should execute
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     EXPECT_EQ(priority0Flag->load(), 1);
     EXPECT_EQ(priority1Flag->load(), 0);
     EXPECT_EQ(priority2Flag->load(), 1);
 
-    // After 500ms total, priority 1 task should still not execute because it was cancelled
+    // After 500ms total (200ms more), priority 1 task should still not execute because it was cancelled
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     EXPECT_EQ(priority0Flag->load(), 1);
     EXPECT_EQ(priority1Flag->load(), 0); // Still 0 because it was cancelled
@@ -576,7 +597,8 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelSpecificPriorityTask_T
 
     // Submit a new priority 1 task to verify that the flow manager is still functional for that priority
     flowControlManager.Execute(priority1Task, 1);
-    std::this_thread::sleep_for(std::chrono::milliseconds(550)); // Wait for it to execute
+    // Wait for it to execute (550ms > 500ms delay)
+    std::this_thread::sleep_for(std::chrono::milliseconds(550));
     EXPECT_EQ(priority0Flag->load(), 1);
     EXPECT_EQ(priority1Flag->load(), 1); // This should now be 1 as it's a new task
     EXPECT_EQ(priority2Flag->load(), 1);
