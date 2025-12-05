@@ -1454,7 +1454,7 @@ HWTEST_F(CloudInfoTest, ConcurrentAccess_ShouldBeThreadSafe, TestSize.Level1)
         threads.emplace_back([&, threadId]() {
             for (int i = 0; i < operationsPerThread; ++i) {
                 int32_t currentUserId = TEST_USER_ID + threadId * 1000 + i;
-                std::string currentBundleName = TEST_APP_ID + "_thread" + std::to_string(threadId);
+                std::string currentBundleName = std::string(TEST_APP_ID) + "_thread" + std::to_string(threadId);
 
                 bool result = syncConfig_.UpdateConfig(currentUserId, currentBundleName, dbInfo);
                 results[threadId * operationsPerThread + i] = result;
@@ -1470,7 +1470,7 @@ HWTEST_F(CloudInfoTest, ConcurrentAccess_ShouldBeThreadSafe, TestSize.Level1)
     for (int threadId = 0; threadId < threadCount; ++threadId) {
         for (int i = 0; i < operationsPerThread; ++i) {
             int32_t currentUserId = TEST_USER_ID + threadId * 1000 + i;
-            std::string currentBundleName = TEST_APP_ID + "_thread" + std::to_string(threadId);
+            std::string currentBundleName = std::string(TEST_APP_ID) + "_thread" + std::to_string(threadId);
 
             bool dbEnabled = syncConfig_.IsDbEnable(currentUserId, currentBundleName, "database1");
             EXPECT_TRUE(dbEnabled);
