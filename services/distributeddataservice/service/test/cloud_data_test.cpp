@@ -2153,7 +2153,7 @@ HWTEST_F(CloudDataTest, SharingUtil004, TestSize.Level0)
 /**
 * @tc.name: DoCloudSync001
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_SWITCHON,
-            Expected: not sync any data and callback to notify the media library
+            Expected: not sync any data and callback to notify
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2187,14 +2187,16 @@ HWTEST_F(CloudDataTest, DoCloudSync001, TestSize.Level0)
 
     sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
-    sleep(3);
+    sleep(2);
     EXPECT_EQ(ret, GenErr::E_OK);
+    EXPECT_EQ(GeneralStoreMock::mode_, 1);
+    GeneralStoreMock::mode_ = 0;
 }
 
 /**
 * @tc.name: DoCloudSync002
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_PUSH
-            Expected: not sync any data and callback to notify the media library
+            Expected: not sync any data and callback to notify
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2228,14 +2230,16 @@ HWTEST_F(CloudDataTest, DoCloudSync002, TestSize.Level0)
 
     sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
-    sleep(3);
+    sleep(2);
     EXPECT_EQ(ret, GenErr::E_OK);
+    EXPECT_EQ(GeneralStoreMock::mode_, 1);
+    GeneralStoreMock::mode_ = 0;
 }
 
 /**
 * @tc.name: DoCloudSync003
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_PROCESSSTART
-            Expected: not sync any data and callback to notify the media library
+            Expected: not sync any data and callback to notify
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2269,8 +2273,10 @@ HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level0)
 
     sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
-    sleep(3);
+    sleep(2);
     EXPECT_EQ(ret, GenErr::E_OK);
+    EXPECT_EQ(GeneralStoreMock::mode_, 1);
+    GeneralStoreMock::mode_ = 0;
 }
 
 /**
@@ -2310,8 +2316,10 @@ HWTEST_F(CloudDataTest, DoCloudSync004, TestSize.Level0)
 
     sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
-    sleep(3);
+    sleep(2);
     EXPECT_EQ(ret, GenErr::E_OK);
+    EXPECT_EQ(GeneralStoreMock::mode_, 0);
+    GeneralStoreMock::mode_ = 0;
 }
 
 /**
@@ -2351,8 +2359,10 @@ HWTEST_F(CloudDataTest, DoCloudSync005, TestSize.Level0)
 
     sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
-    sleep(3);
-    EXPECT_EQ(ret, GenErr::E_OK);
+    sleep(2);
+    EXPECT_EQ(ret, GenErr::E_OK)
+    EXPECT_EQ(GeneralStoreMock::mode_, 0);
+    GeneralStoreMock::mode_ = 0;
 }
 
 /**

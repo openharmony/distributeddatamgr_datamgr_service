@@ -15,6 +15,7 @@
 #include "general_store_mock.h"
 namespace OHOS {
 namespace DistributedData {
+int32_t GeneralStoreMock::mode_ = 0;
 int32_t GeneralStoreMock::Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
     const CloudConfig &config)
 {
@@ -225,6 +226,7 @@ int32_t GeneralStoreMock::StopCloudSync()
 
 int32_t GeneralStoreMock::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
 {
+    mode_ = 1;
     return E_OK;
 }
 } // namespace DistributedData
