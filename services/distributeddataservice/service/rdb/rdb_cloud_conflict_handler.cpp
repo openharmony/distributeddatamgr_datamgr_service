@@ -23,6 +23,7 @@ constexpr const int32_t INSERT = 0;
 constexpr const int32_t UPDATE = 1;
 constexpr const int32_t DELETE = 2;
 constexpr const int32_t NOT_HANDLE = 3;
+constexpr const int32_t INTEGRATE = 4;
 RdbCloudConflictHandler::RdbCloudConflictHandler(std::shared_ptr<CloudConflictHandler> handler) : handler_(handler)
 {
 }
@@ -45,6 +46,8 @@ ConflictRet RdbCloudConflictHandler::HandleConflict(const std::string &table, co
             return ConflictRet::DELETE;
         case NOT_HANDLE:
             return ConflictRet::NOT_HANDLE;
+        case INTEGRATE:
+            return ConflictRet::INTEGRATE;
         default:
             return ConflictRet::NOT_HANDLE;
     }

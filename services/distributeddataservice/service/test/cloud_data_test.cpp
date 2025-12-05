@@ -117,6 +117,7 @@ static constexpr const int32_t INSERT = 0;
 static constexpr const int32_t UPDATE = 1;
 static constexpr const int32_t DELETE = 2;
 static constexpr const int32_t NOT_HANDLE = 3;
+static constexpr const int32_t INTEGRATE = 4;
 static constexpr const int32_t OTHER_ERROR = -1;
 
 static constexpr const char *TEST_TRACE_ID = "123456789";
@@ -263,6 +264,8 @@ int32_t CloudDataTest::CloudConflictHandlerMock::HandleConflict(const std::strin
         return DELETE;
     } else if (table == "NOT_HANDLE") {
         return NOT_HANDLE;
+    } else if (table == "INTEGRATE") {
+        return INTEGRATE;
     }
     return OTHER_ERROR;
 }
@@ -3736,6 +3739,8 @@ HWTEST_F(CloudDataTest, ConflictHandler003, TestSize.Level1)
     EXPECT_EQ(ret, DistributedDB::ConflictRet::DELETE);
     ret = handler1.HandleConflict("NOT_HANDLE", data, data, data);
     EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
+    ret = handler1.HandleConflict("INTEGRATE", data, data, data);
+    EXPECT_EQ(ret, DistributedDB::ConflictRet::INTEGRATE);
     ret = handler1.HandleConflict("OTHER", data, data, data);
     EXPECT_EQ(ret, DistributedDB::ConflictRet::NOT_HANDLE);
 }
