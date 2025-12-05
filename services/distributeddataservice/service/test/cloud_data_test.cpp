@@ -270,6 +270,19 @@ int32_t CloudDataTest::CloudConflictHandlerMock::HandleConflict(const std::strin
     return OTHER_ERROR;
 }
 
+void CloudDataTest::SetCloudSchemaMeta()
+{
+    SchemaMeta schemaMeta;
+    std::string schemaKey = CloudInfo::GetSchemaKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, 0);
+    MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true);
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
+    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
+    schemaMeta.databases.emplace_back(database);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
+}
+
 std::shared_ptr<DBStoreMock> CloudDataTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 SchemaMeta CloudDataTest::schemaMeta_;
 StoreMetaData CloudDataTest::metaData_;
@@ -606,10 +619,10 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level1)
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == E_OK);
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime != 0);
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime != 0);
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
+    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].code, E_OK);
+    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime, 0);
+    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime, 0);
+    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus, 1);
 }
 
 /**
@@ -635,10 +648,10 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level1)
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == E_OK);
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime != 0);
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime != 0);
-    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
+    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].code, E_OK);
+    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime, 0);
+    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime, 0);
+    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus, 1);
 }
 
 /**
@@ -2138,7 +2151,8 @@ HWTEST_F(CloudDataTest, SharingUtil004, TestSize.Level0)
 
 /**
 * @tc.name: DoCloudSync001
-* @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_SWITCHON
+* @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_SWITCHON,
+            Expected: not sync any data and callback to notify the media library
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2163,16 +2177,7 @@ HWTEST_F(CloudDataTest, DoCloudSync001, TestSize.Level0)
     cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
 
-    SchemaMeta schemaMeta;
-    std::string schemaKey = CloudInfo::GetSchemaKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, 0);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
-    SchemaMeta::Database database;
-    database.name = TEST_CLOUD_STORE;
-    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
-    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
-    schemaMeta.databases.emplace_back(database);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
-
+    SetCloudSchemaMeta();
     StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
     metaData.enableCloud = true;
@@ -2188,6 +2193,7 @@ HWTEST_F(CloudDataTest, DoCloudSync001, TestSize.Level0)
 /**
 * @tc.name: DoCloudSync002
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_PUSH
+            Expected: not sync any data and callback to notify the media library
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2212,16 +2218,7 @@ HWTEST_F(CloudDataTest, DoCloudSync002, TestSize.Level0)
     cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
 
-    SchemaMeta schemaMeta;
-    std::string schemaKey = CloudInfo::GetSchemaKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, 0);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
-    SchemaMeta::Database database;
-    database.name = TEST_CLOUD_STORE;
-    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
-    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
-    schemaMeta.databases.emplace_back(database);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
-
+    SetCloudSchemaMeta();
     StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
     metaData.enableCloud = true;
@@ -2237,6 +2234,7 @@ HWTEST_F(CloudDataTest, DoCloudSync002, TestSize.Level0)
 /**
 * @tc.name: DoCloudSync003
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_PROCESSSTART
+            Expected: not sync any data and callback to notify the media library
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2261,16 +2259,7 @@ HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level0)
     cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
 
-    SchemaMeta schemaMeta;
-    std::string schemaKey = CloudInfo::GetSchemaKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, 0);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
-    SchemaMeta::Database database;
-    database.name = TEST_CLOUD_STORE;
-    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
-    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
-    schemaMeta.databases.emplace_back(database);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
-
+    SetCloudSchemaMeta();
     StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
     metaData.enableCloud = true;
@@ -2286,6 +2275,7 @@ HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level0)
 /**
 * @tc.name: DoCloudSync004
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_DEFAULT
+            Expected: not notify the media library
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2310,16 +2300,7 @@ HWTEST_F(CloudDataTest, DoCloudSync004, TestSize.Level0)
     cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
 
-    SchemaMeta schemaMeta;
-    std::string schemaKey = CloudInfo::GetSchemaKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, 0);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
-    SchemaMeta::Database database;
-    database.name = TEST_CLOUD_STORE;
-    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
-    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
-    schemaMeta.databases.emplace_back(database);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
-
+    SetCloudSchemaMeta();
     StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
     metaData.enableCloud = true;
@@ -2335,6 +2316,7 @@ HWTEST_F(CloudDataTest, DoCloudSync004, TestSize.Level0)
 /**
 * @tc.name: DoCloudSync005
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is true
+            Expected: not notify the media library
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2359,16 +2341,7 @@ HWTEST_F(CloudDataTest, DoCloudSync005, TestSize.Level0)
     cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
 
-    SchemaMeta schemaMeta;
-    std::string schemaKey = CloudInfo::GetSchemaKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, 0);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
-    SchemaMeta::Database database;
-    database.name = TEST_CLOUD_STORE;
-    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
-    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
-    schemaMeta.databases.emplace_back(database);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true);
-
+    SetCloudSchemaMeta();
     StoreMetaData metaData;
     MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
     metaData.enableCloud = true;
@@ -2380,7 +2353,6 @@ HWTEST_F(CloudDataTest, DoCloudSync005, TestSize.Level0)
     sleep(3);
     EXPECT_EQ(ret, GenErr::E_OK);
 }
-
 
 /**
 * @tc.name: DoCloudSync006
