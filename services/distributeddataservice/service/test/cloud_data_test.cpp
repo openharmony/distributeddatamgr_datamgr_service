@@ -2360,7 +2360,7 @@ HWTEST_F(CloudDataTest, DoCloudSync005, TestSize.Level0)
     sync.executor_ = std::make_shared<ExecutorPool>(max, min);
     auto ret = sync.DoCloudSync(info);
     sleep(2);
-    EXPECT_EQ(ret, GenErr::E_OK)
+    EXPECT_EQ(ret, GenErr::E_OK);
     EXPECT_EQ(GeneralStoreMock::mode_, 0);
     GeneralStoreMock::mode_ = 0;
 }
