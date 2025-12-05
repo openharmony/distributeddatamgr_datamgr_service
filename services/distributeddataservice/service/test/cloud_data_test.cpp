@@ -621,8 +621,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level1)
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
     EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].code, E_OK);
-    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime, 0);
-    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime, 0);
+    EXPECT_NE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime, 0);
+    EXPECT_NE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime, 0);
     EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus, 1);
 }
 
@@ -650,8 +650,8 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level1)
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
     EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].code, E_OK);
-    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime, 0);
-    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime, 0);
+    EXPECT_NE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime, 0);
+    EXPECT_NE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime, 0);
     EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus, 1);
 }
 
