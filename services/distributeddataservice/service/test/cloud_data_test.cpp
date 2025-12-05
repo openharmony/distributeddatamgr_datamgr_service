@@ -195,6 +195,7 @@ protected:
     static void InitMetaData();
     static void InitSchemaMeta();
     static void InitCloudInfo();
+    static void SetCloudSchemaMeta();
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
     static CloudInfo cloudInfo_;
