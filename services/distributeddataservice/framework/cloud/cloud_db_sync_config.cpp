@@ -137,7 +137,6 @@ bool CloudDbSyncConfig::IsDbEnable(int32_t userId, const std::string &bundleName
     }
     auto dbIter = std::find_if(config.dbConfigs.begin(), config.dbConfigs.end(),
         [&dbName](const DbSyncConfig &dbConfig) { return dbConfig.dbName == dbName; });
-
     if (dbIter != config.dbConfigs.end()) {
         return dbIter->cloudSyncEnabled;
     }
@@ -154,7 +153,6 @@ bool CloudDbSyncConfig::FilterCloudEnabledTables(int32_t userId, const std::stri
     }
     auto dbIter = std::find_if(config.dbConfigs.begin(), config.dbConfigs.end(),
         [&dbName](const DbSyncConfig &dbConfig) { return dbConfig.dbName == dbName; });
-
     if (dbIter == config.dbConfigs.end()) {
         return true;
     }
@@ -177,7 +175,6 @@ bool CloudDbSyncConfig::UpdateTableConfigs(std::vector<TableSyncConfig> &tableCo
         bool tableEnable = pair.second;
         auto tableIter = std::find_if(tableConfigs.begin(), tableConfigs.end(),
             [&tableName](const TableSyncConfig &config) { return config.tableName == tableName; });
-
         if (tableIter == tableConfigs.end()) {
             TableSyncConfig tableConfig;
             tableConfig.tableName = tableName;
@@ -197,7 +194,6 @@ bool CloudDbSyncConfig::UpdateSingleDbConfig(CloudDbSyncConfig &config, const st
 {
     auto dbIter = std::find_if(config.dbConfigs.begin(), config.dbConfigs.end(),
         [&dbName](const CloudDbSyncConfig::DbSyncConfig &dbConfig) { return dbConfig.dbName == dbName; });
-
     if (dbIter == config.dbConfigs.end()) {
         CloudDbSyncConfig::DbSyncConfig newDbConfig;
         newDbConfig.dbName = dbName;

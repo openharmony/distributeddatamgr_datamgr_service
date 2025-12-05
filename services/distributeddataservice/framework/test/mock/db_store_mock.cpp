@@ -273,11 +273,21 @@ DBStatus DBStoreMock::GetEntries(ConcurrentMap<Key, Value> &store, const Key &ke
 
 DBStatus DBStoreMock::PutBatch(ConcurrentMap<Key, Value> &store, const std::vector<Entry> &entries)
 {
+    for (auto &entry : entries) {
+        store.InsertOrAssign(entry.key, entry.value);
+    }
     return OK;
 }
 
 DBStatus DBStoreMock::DeleteBatch(ConcurrentMap<Key, Value> &store, const std::vector<Key> &keys)
 {
+    for (auto &key : keys) {
+        auto it = store.Find(key);
+        if (!it.first) {
+            continue;
+        }
+        store.Erase(key);
+    }
     return OK;
 }
 

@@ -29,23 +29,28 @@
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
+#include "metadata/meta_data_manager.h"
+#include "mock/db_store_mock.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
+constexpr const int32_t TEST_USER_ID = 1001;
+const char *TEST_APP_ID = "com.example.app";
 class CloudInfoTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {};
+    static void SetUpTestCase(void);
     static void TearDownTestCase(void) {};
-    void SetUp() {
-        userId_ = 1001;
-        bundleName_ = "com.example.app";
-    }
-    void TearDown() {}
-    int32_t userId_;
-    std::string bundleName_;
+    void SetUp() {};
+    void TearDown() {};
     CloudDbSyncConfig syncConfig_;
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
 };
+std::shared_ptr<DBStoreMock> CloudInfoTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
+void CloudInfoTest::SetUpTestCase(void)
+{
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+}
 
 class ServicesCloudServerTest : public testing::Test {
 public:
@@ -1104,33 +1109,33 @@ HWTEST_F(CloudInfoTest, UpdateConfig_WithValidInput_ShouldSuccess, TestSize.Leve
     db1.enable = true;
     db1.tableInfo = { { "table1", true }, { "table2", false } };
     dbInfo["database1"] = db1;
-    bool result = syncConfig_.UpdateConfig(userId_, bundleName_, dbInfo);
+    bool result = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, dbInfo);
     EXPECT_TRUE(result);
-    bool dbEnabled = syncConfig_.IsDbEnable(userId_, bundleName_, "database1");
+    bool dbEnabled = syncConfig_.IsDbEnable(TEST_USER_ID, TEST_APP_ID, "database1");
     EXPECT_TRUE(dbEnabled);
 }
 
 /**
-  * @tc.name: UpdateConfig_WithEmptyDbInfo_ShouldReturnFalse
-  * @tc.desc: Test UpdateConfig function when dbInfo map is empty
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: UpdateConfig_WithEmptyDbInfo_ShouldReturnFalse
+ * @tc.desc: Test UpdateConfig function when dbInfo map is empty
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, UpdateConfig_WithEmptyDbInfo_ShouldReturnFalse, TestSize.Level0)
 {
     std::map<std::string, DbInfo> emptyDbInfo;
-    bool result = syncConfig_.UpdateConfig(userId_, bundleName_, emptyDbInfo);
+    bool result = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, emptyDbInfo);
     EXPECT_FALSE(result);
 }
 
 /**
-  * @tc.name: UpdateConfig_UpdateExistingConfig_ShouldSuccess
-  * @tc.desc: Test UpdateConfig function when updating existing configuration
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: UpdateConfig_UpdateExistingConfig_ShouldSuccess
+ * @tc.desc: Test UpdateConfig function when updating existing configuration
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, UpdateConfig_UpdateExistingConfig_ShouldSuccess, TestSize.Level0)
 {
     std::map<std::string, DbInfo> dbInfo1;
@@ -1138,26 +1143,26 @@ HWTEST_F(CloudInfoTest, UpdateConfig_UpdateExistingConfig_ShouldSuccess, TestSiz
     db1.enable = true;
     db1.tableInfo = { { "table1", true } };
     dbInfo1["database1"] = db1;
-    bool result1 = syncConfig_.UpdateConfig(userId_, bundleName_, dbInfo1);
+    bool result1 = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, dbInfo1);
     EXPECT_TRUE(result1);
     std::map<std::string, DbInfo> dbInfo2;
     DbInfo db2;
     db2.enable = false;
     db2.tableInfo = { { "table1", false }, { "table2", true } };
     dbInfo2["database1"] = db2;
-    bool result2 = syncConfig_.UpdateConfig(userId_, bundleName_, dbInfo2);
+    bool result2 = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, dbInfo2);
     EXPECT_TRUE(result2);
-    bool dbEnabled = syncConfig_.IsDbEnable(userId_, bundleName_, "database1");
+    bool dbEnabled = syncConfig_.IsDbEnable(TEST_USER_ID, TEST_APP_ID, "database1");
     EXPECT_FALSE(dbEnabled);
 }
 
 /**
-  * @tc.name: UpdateConfig_MultipleDatabases_ShouldHandleAll
-  * @tc.desc: Test UpdateConfig function with multiple database configurations
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: UpdateConfig_MultipleDatabases_ShouldHandleAll
+ * @tc.desc: Test UpdateConfig function with multiple database configurations
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, UpdateConfig_MultipleDatabases_ShouldHandleAll, TestSize.Level0)
 {
     std::map<std::string, DbInfo> dbInfo;
@@ -1169,19 +1174,19 @@ HWTEST_F(CloudInfoTest, UpdateConfig_MultipleDatabases_ShouldHandleAll, TestSize
     db2.enable = false;
     db2.tableInfo = { { "cache", true } };
     dbInfo["cache_db"] = db2;
-    bool result = syncConfig_.UpdateConfig(userId_, bundleName_, dbInfo);
+    bool result = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, dbInfo);
     EXPECT_TRUE(result);
-    EXPECT_TRUE(syncConfig_.IsDbEnable(userId_, bundleName_, "main_db"));
-    EXPECT_FALSE(syncConfig_.IsDbEnable(userId_, bundleName_, "cache_db"));
+    EXPECT_TRUE(syncConfig_.IsDbEnable(TEST_USER_ID, TEST_APP_ID, "main_db"));
+    EXPECT_FALSE(syncConfig_.IsDbEnable(TEST_USER_ID, TEST_APP_ID, "cache_db"));
 }
 
 /**
-  * @tc.name: UpdateConfig_NoChanges_ShouldReturnTrueWithoutSaving
-  * @tc.desc: Test UpdateConfig function when configuration has no changes
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: UpdateConfig_NoChanges_ShouldReturnTrueWithoutSaving
+ * @tc.desc: Test UpdateConfig function when configuration has no changes
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, UpdateConfig_NoChanges_ShouldReturnTrueWithoutSaving, TestSize.Level0)
 {
     std::map<std::string, DbInfo> dbInfo;
@@ -1189,19 +1194,19 @@ HWTEST_F(CloudInfoTest, UpdateConfig_NoChanges_ShouldReturnTrueWithoutSaving, Te
     db1.enable = true;
     db1.tableInfo = { { "table1", true } };
     dbInfo["database1"] = db1;
-    bool result1 = syncConfig_.UpdateConfig(userId_, bundleName_, dbInfo);
+    bool result1 = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, dbInfo);
     EXPECT_TRUE(result1);
-    bool result2 = syncConfig_.UpdateConfig(userId_, bundleName_, dbInfo);
+    bool result2 = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, dbInfo);
     EXPECT_TRUE(result2);
 }
 
 /**
-  * @tc.name: UpdateConfig_WithLongNames_ShouldHandle
-  * @tc.desc: Test UpdateConfig function with long bundle name, database name and table name
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: UpdateConfig_WithLongNames_ShouldHandle
+ * @tc.desc: Test UpdateConfig function with long bundle name, database name and table name
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, UpdateConfig_WithLongNames_ShouldHandle, TestSize.Level1)
 {
     std::string longBundleName(1000, 'a');
@@ -1212,19 +1217,19 @@ HWTEST_F(CloudInfoTest, UpdateConfig_WithLongNames_ShouldHandle, TestSize.Level1
     db1.enable = true;
     db1.tableInfo = { { longTableName, true } };
     dbInfo[longDbName] = db1;
-    bool result = syncConfig_.UpdateConfig(userId_, longBundleName, dbInfo);
+    bool result = syncConfig_.UpdateConfig(TEST_USER_ID, longBundleName, dbInfo);
     EXPECT_TRUE(result);
-    bool dbEnabled = syncConfig_.IsDbEnable(userId_, longBundleName, longDbName);
+    bool dbEnabled = syncConfig_.IsDbEnable(TEST_USER_ID, longBundleName, longDbName);
     EXPECT_TRUE(dbEnabled);
 }
 
 /**
-  * @tc.name: UpdateConfig_WithSpecialCharacters_ShouldHandle
-  * @tc.desc: Test UpdateConfig function with special characters in names
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: UpdateConfig_WithSpecialCharacters_ShouldHandle
+ * @tc.desc: Test UpdateConfig function with special characters in names
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, UpdateConfig_WithSpecialCharacters_ShouldHandle, TestSize.Level1)
 {
     std::string specialBundleName = "com.example.app-v2.0@test";
@@ -1236,43 +1241,43 @@ HWTEST_F(CloudInfoTest, UpdateConfig_WithSpecialCharacters_ShouldHandle, TestSiz
     db1.enable = true;
     db1.tableInfo = { { specialTableName, true } };
     dbInfo[specialDbName] = db1;
-    bool result = syncConfig_.UpdateConfig(userId_, specialBundleName, dbInfo);
+    bool result = syncConfig_.UpdateConfig(TEST_USER_ID, specialBundleName, dbInfo);
     EXPECT_TRUE(result);
 }
 
 /**
-  * @tc.name: IsDbEnable_DatabaseNotExist_ShouldReturnTrue
-  * @tc.desc: Test IsDbEnable function when database does not exist
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: IsDbEnable_DatabaseNotExist_ShouldReturnTrue
+ * @tc.desc: Test IsDbEnable function when database does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, IsDbEnable_DatabaseNotExist_ShouldReturnTrue, TestSize.Level0)
 {
-    bool result = syncConfig_.IsDbEnable(userId_, bundleName_, "non_existent_db");
+    bool result = syncConfig_.IsDbEnable(TEST_USER_ID, TEST_APP_ID, "non_existent_db");
     EXPECT_TRUE(result);
 }
 
 /**
-  * @tc.name: IsDbEnable_ConfigNotExist_ShouldReturnTrue
-  * @tc.desc: Test IsDbEnable function when configuration does not exist
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: IsDbEnable_ConfigNotExist_ShouldReturnTrue
+ * @tc.desc: Test IsDbEnable function when configuration does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, IsDbEnable_ConfigNotExist_ShouldReturnTrue, TestSize.Level0)
 {
-    bool result = syncConfig_.IsDbEnable(userId_, "com.other.app", "database1");
+    bool result = syncConfig_.IsDbEnable(TEST_USER_ID, "com.other.app", "database1");
     EXPECT_TRUE(result);
 }
 
 /**
-  * @tc.name: FilterCloudEnabledTables_FilterDisabledTables_ShouldWork
-  * @tc.desc: Test FilterCloudEnabledTables function to filter disabled tables
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: FilterCloudEnabledTables_FilterDisabledTables_ShouldWork
+ * @tc.desc: Test FilterCloudEnabledTables function to filter disabled tables
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, FilterCloudEnabledTables_FilterDisabledTables_ShouldWork, TestSize.Level0)
 {
     std::map<std::string, DbInfo> dbInfo;
@@ -1280,9 +1285,9 @@ HWTEST_F(CloudInfoTest, FilterCloudEnabledTables_FilterDisabledTables_ShouldWork
     db1.enable = true;
     db1.tableInfo = { { "table1", true }, { "table2", false }, { "table3", true } };
     dbInfo["database1"] = db1;
-    syncConfig_.UpdateConfig(userId_, bundleName_, dbInfo);
+    syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, dbInfo);
     std::vector<std::string> tables = { "table1", "table2", "table3", "table4" };
-    bool result = syncConfig_.FilterCloudEnabledTables(userId_, bundleName_, "database1", tables);
+    bool result = syncConfig_.FilterCloudEnabledTables(TEST_USER_ID, TEST_APP_ID, "database1", tables);
 
     EXPECT_TRUE(result);
     EXPECT_EQ(tables.size(), 3);
@@ -1293,42 +1298,42 @@ HWTEST_F(CloudInfoTest, FilterCloudEnabledTables_FilterDisabledTables_ShouldWork
 }
 
 /**
-  * @tc.name: FilterCloudEnabledTables_DatabaseNotExist_ShouldReturnTrue
-  * @tc.desc: Test FilterCloudEnabledTables function when database does not exist
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: FilterCloudEnabledTables_DatabaseNotExist_ShouldReturnTrue
+ * @tc.desc: Test FilterCloudEnabledTables function when database does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, FilterCloudEnabledTables_DatabaseNotExist_ShouldReturnTrue, TestSize.Level0)
 {
     std::vector<std::string> tables = { "table1", "table2" };
-    bool result = syncConfig_.FilterCloudEnabledTables(userId_, bundleName_, "non_existent_db", tables);
+    bool result = syncConfig_.FilterCloudEnabledTables(TEST_USER_ID, TEST_APP_ID, "non_existent_db", tables);
     EXPECT_TRUE(result);
     EXPECT_EQ(tables.size(), 2);
 }
 
 /**
-  * @tc.name: FilterCloudEnabledTables_ConfigNotExist_ShouldReturnTrue
-  * @tc.desc: Test FilterCloudEnabledTables function when configuration does not exist
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: FilterCloudEnabledTables_ConfigNotExist_ShouldReturnTrue
+ * @tc.desc: Test FilterCloudEnabledTables function when configuration does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, FilterCloudEnabledTables_ConfigNotExist_ShouldReturnTrue, TestSize.Level0)
 {
     std::vector<std::string> tables = { "table1", "table2" };
-    bool result = syncConfig_.FilterCloudEnabledTables(userId_, "com.other.app", "database1", tables);
+    bool result = syncConfig_.FilterCloudEnabledTables(TEST_USER_ID, "com.other.app", "database1", tables);
     EXPECT_TRUE(result);
     EXPECT_EQ(tables.size(), 2);
 }
 
 /**
-  * @tc.name: FilterCloudEnabledTables_AllTablesDisabled_ShouldReturnFalse
-  * @tc.desc: Test FilterCloudEnabledTables function when all tables are disabled
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: FilterCloudEnabledTables_AllTablesDisabled_ShouldReturnFalse
+ * @tc.desc: Test FilterCloudEnabledTables function when all tables are disabled
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, FilterCloudEnabledTables_AllTablesDisabled_ShouldReturnFalse, TestSize.Level0)
 {
     std::map<std::string, DbInfo> dbInfo;
@@ -1336,20 +1341,20 @@ HWTEST_F(CloudInfoTest, FilterCloudEnabledTables_AllTablesDisabled_ShouldReturnF
     db1.enable = true;
     db1.tableInfo = { { "table1", false }, { "table2", false } };
     dbInfo["database1"] = db1;
-    syncConfig_.UpdateConfig(userId_, bundleName_, dbInfo);
+    syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, dbInfo);
     std::vector<std::string> tables = { "table1", "table2" };
-    bool result = syncConfig_.FilterCloudEnabledTables(userId_, bundleName_, "database1", tables);
+    bool result = syncConfig_.FilterCloudEnabledTables(TEST_USER_ID, TEST_APP_ID, "database1", tables);
     EXPECT_FALSE(result);
     EXPECT_TRUE(tables.empty());
 }
 
 /**
-  * @tc.name: CompleteWorkflow_ShouldWorkCorrectly
-  * @tc.desc: Test complete workflow including configuration, query and filtering
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: CompleteWorkflow_ShouldWorkCorrectly
+ * @tc.desc: Test complete workflow including configuration, query and filtering
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, CompleteWorkflow_ShouldWorkCorrectly, TestSize.Level1)
 {
     std::map<std::string, DbInfo> initialConfig;
@@ -1362,12 +1367,12 @@ HWTEST_F(CloudInfoTest, CompleteWorkflow_ShouldWorkCorrectly, TestSize.Level1)
     tempDb.enable = false;
     tempDb.tableInfo = { { "cache", true } };
     initialConfig["temp"] = tempDb;
-    bool configResult = syncConfig_.UpdateConfig(userId_, bundleName_, initialConfig);
+    bool configResult = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, initialConfig);
     EXPECT_TRUE(configResult);
-    EXPECT_TRUE(syncConfig_.IsDbEnable(userId_, bundleName_, "main"));
-    EXPECT_FALSE(syncConfig_.IsDbEnable(userId_, bundleName_, "temp"));
+    EXPECT_TRUE(syncConfig_.IsDbEnable(TEST_USER_ID, TEST_APP_ID, "main"));
+    EXPECT_FALSE(syncConfig_.IsDbEnable(TEST_USER_ID, TEST_APP_ID, "temp"));
     std::vector<std::string> mainTables = { "users", "logs", "settings", "non_existent" };
-    bool filterResult = syncConfig_.FilterCloudEnabledTables(userId_, bundleName_, "main", mainTables);
+    bool filterResult = syncConfig_.FilterCloudEnabledTables(TEST_USER_ID, TEST_APP_ID, "main", mainTables);
     EXPECT_TRUE(filterResult);
     EXPECT_EQ(mainTables.size(), 3);
     EXPECT_NE(std::find(mainTables.begin(), mainTables.end(), "users"), mainTables.end());
@@ -1379,10 +1384,10 @@ HWTEST_F(CloudInfoTest, CompleteWorkflow_ShouldWorkCorrectly, TestSize.Level1)
     updatedMainDb.enable = true;
     updatedMainDb.tableInfo = { { "users", false }, { "logs", true }, { "settings", true }, { "new_table", true } };
     updateConfig["main"] = updatedMainDb;
-    bool updateResult = syncConfig_.UpdateConfig(userId_, bundleName_, updateConfig);
+    bool updateResult = syncConfig_.UpdateConfig(TEST_USER_ID, TEST_APP_ID, updateConfig);
     EXPECT_TRUE(updateResult);
     std::vector<std::string> updatedTables = { "users", "logs", "settings", "new_table" };
-    bool updatedFilterResult = syncConfig_.FilterCloudEnabledTables(userId_, bundleName_, "main", updatedTables);
+    bool updatedFilterResult = syncConfig_.FilterCloudEnabledTables(TEST_USER_ID, TEST_APP_ID, "main", updatedTables);
     EXPECT_TRUE(updatedFilterResult);
     EXPECT_EQ(updatedTables.size(), 3);
     EXPECT_EQ(std::find(updatedTables.begin(), updatedTables.end(), "users"), updatedTables.end());
@@ -1392,30 +1397,30 @@ HWTEST_F(CloudInfoTest, CompleteWorkflow_ShouldWorkCorrectly, TestSize.Level1)
 }
 
 /**
-  * @tc.name: UpdateConfig_WithInvalidUserId_ShouldHandle
-  * @tc.desc: Test UpdateConfig function with invalid user ID
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
-HWTEST_F(CloudInfoTest, UpdateConfig_WithInvalidUserId_ShouldHandle, TestSize.Level1)
+ * @tc.name: UpdateConfig_WithInvalidTEST_USER_IDShouldHandle
+ * @tc.desc: Test UpdateConfig function with invalid user ID
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(CloudInfoTest, UpdateConfig_WithInvalidTEST_USER_IDShouldHandle, TestSize.Level1)
 {
     std::map<std::string, DbInfo> dbInfo;
     DbInfo db1;
     db1.enable = true;
     db1.tableInfo = { { "table1", true } };
     dbInfo["database1"] = db1;
-    bool result = syncConfig_.UpdateConfig(-1, bundleName_, dbInfo);
+    bool result = syncConfig_.UpdateConfig(-1, TEST_APP_ID, dbInfo);
     EXPECT_TRUE(result || !result);
 }
 
 /**
-  * @tc.name: UpdateConfig_WithEmptyStrings_ShouldHandle
-  * @tc.desc: Test UpdateConfig function with empty strings in parameters
-  * @tc.type: FUNC
-  * @tc.require:
-  * @tc.author:
-  */
+ * @tc.name: UpdateConfig_WithEmptyStrings_ShouldHandle
+ * @tc.desc: Test UpdateConfig function with empty strings in parameters
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
 HWTEST_F(CloudInfoTest, UpdateConfig_WithEmptyStrings_ShouldHandle, TestSize.Level1)
 {
     std::map<std::string, DbInfo> dbInfo;
@@ -1423,7 +1428,7 @@ HWTEST_F(CloudInfoTest, UpdateConfig_WithEmptyStrings_ShouldHandle, TestSize.Lev
     db1.enable = true;
     db1.tableInfo = { { "", true } };
     dbInfo[""] = db1;
-    bool result = syncConfig_.UpdateConfig(userId_, "", dbInfo);
+    bool result = syncConfig_.UpdateConfig(TEST_USER_ID, "", dbInfo);
     EXPECT_TRUE(result || !result);
 }
 
@@ -1448,8 +1453,8 @@ HWTEST_F(CloudInfoTest, ConcurrentAccess_ShouldBeThreadSafe, TestSize.Level1)
     for (int threadId = 0; threadId < threadCount; ++threadId) {
         threads.emplace_back([&, threadId]() {
             for (int i = 0; i < operationsPerThread; ++i) {
-                int32_t currentUserId = userId_ + threadId * 1000 + i;
-                std::string currentBundleName = bundleName_ + "_thread" + std::to_string(threadId);
+                int32_t currentUserId = TEST_USER_ID + threadId * 1000 + i;
+                std::string currentBundleName = TEST_APP_ID + "_thread" + std::to_string(threadId);
 
                 bool result = syncConfig_.UpdateConfig(currentUserId, currentBundleName, dbInfo);
                 results[threadId * operationsPerThread + i] = result;
@@ -1464,8 +1469,8 @@ HWTEST_F(CloudInfoTest, ConcurrentAccess_ShouldBeThreadSafe, TestSize.Level1)
     }
     for (int threadId = 0; threadId < threadCount; ++threadId) {
         for (int i = 0; i < operationsPerThread; ++i) {
-            int32_t currentUserId = userId_ + threadId * 1000 + i;
-            std::string currentBundleName = bundleName_ + "_thread" + std::to_string(threadId);
+            int32_t currentUserId = TEST_USER_ID + threadId * 1000 + i;
+            std::string currentBundleName = TEST_APP_ID + "_thread" + std::to_string(threadId);
 
             bool dbEnabled = syncConfig_.IsDbEnable(currentUserId, currentBundleName, "database1");
             EXPECT_TRUE(dbEnabled);
