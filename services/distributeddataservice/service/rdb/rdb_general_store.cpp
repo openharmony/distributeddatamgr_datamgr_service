@@ -1085,8 +1085,12 @@ int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
     return GeneralError::E_OK;
 }
 
-int32_t RdbGeneralStore::SetDeviceDistributedTables()
+int32_t RdbGeneralStore::SetDeviceDistributedTables(int32_t tableType)
 {
+    auto isAutoSyncApp = SyncManager::GetInstance().IsAutoSyncApp(meta_.bundleName, meta_.appId);
+    if (tableType == DistributedRdb::DistributedTableVersion::DEVICE_COLLABORATION && !isAutoSyncApp) {
+        return GeneralError::E_OK;
+    }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
     if (!exist) {
         return GeneralError::E_OK;
@@ -1095,12 +1099,18 @@ int32_t RdbGeneralStore::SetDeviceDistributedTables()
         {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
     auto [res, schema] = GetGaussDistributedSchema(database);
     if (!res) {
+        ZLOGE("GetGaussDistributedSchema failed, bundleName:%{public}s, store:%{publis}s",
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
         return GeneralError::E_ERROR;
     }
     auto status = delegate_->SetDistributedSchema(schema, force);
     if (status != DBStatus::OK) {
-        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_SETSCHEMA_FAIL,
-                meta_.bundleName, Anonymous::Change(meta_.storeId) + " setDisSchema fail"});
+        ZLOGE("SetDistributedSchema failed, status:%{public}d, bundleName:%{public}s, store:%{publis}s",
+            status, meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE,
+            SETDEVICETABLE_SETSCHEMA_FAIL,
+            meta_.bundleName,
+            Anonymous::Change(meta_.storeId) + " setDisSchema fail"});
         return GeneralError::E_ERROR;
     }
     return GeneralError::E_OK;
@@ -1130,7 +1140,7 @@ int32_t RdbGeneralStore::SetCloudDistributedTables(const std::vector<Reference> 
 }
 
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
-    const std::vector<Reference> &references)
+    const std::vector<Reference> &references, int32_t tableType)
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed! tables size:%{public}zu, type:%{public}d",
@@ -1157,7 +1167,7 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         return SetCloudDistributedTables(references);
     }
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        return SetDeviceDistributedTables();
+        return SetDeviceDistributedTables(tableType);
     }
     return GeneralError::E_OK;
 }

@@ -634,7 +634,7 @@ int32_t KVDBGeneralStore::AddRef()
 }
 
 int32_t KVDBGeneralStore::SetDistributedTables(
-    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references)
+    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references, int32_t tableType)
 {
     return GeneralError::E_OK;
 }

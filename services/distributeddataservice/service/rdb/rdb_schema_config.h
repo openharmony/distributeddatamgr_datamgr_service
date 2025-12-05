@@ -31,8 +31,8 @@ public:
 
 private:
     static bool InitBundleInfo(const std::string &bundleName, int32_t userId, OHOS::AppExecFwk::BundleInfo &bundleInfo);
-    static bool GetSchemaFromHap(
-        const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName, Database &database);
+    static bool GetSchemaFromHap(const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName,
+        const std::string &bundleName, Database &database);
 };
 }  // namespace OHOS::DistributedRdb
 #endif  // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_SCHEMA_CONFIG_H

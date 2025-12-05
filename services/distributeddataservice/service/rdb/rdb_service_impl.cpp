@@ -320,10 +320,18 @@ int32_t RdbServiceImpl::SetDeviceDistributedTables(const RdbSyncerParam &param, 
             return RDB_ERROR;
         }
     }
+    if (param.distributedTableVersion_ == DistributedRdb::DistributedTableVersion::DEVICE_COLLABORATION) {
+        if (store->SetConfig({false, GeneralStore::DistributedTableMode::SPLIT_BY_DEVICE}) != RDB_OK) {
+            RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_SETCONFIG_FAIL,
+                metaData.bundleName, Anonymous::Change(metaData.storeId) + " DEVICE_COLLABORATION setconfig fail"});
+            return RDB_ERROR;
+        }
+    }
     metaMapping.devicePath = metaData.dataDir;
     metaMapping = metaData;
     MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
-    return store->SetDistributedTables(tables, type, RdbTypesUtils::Convert(references));
+    return store->SetDistributedTables(
+        tables, type, RdbTypesUtils::Convert(references), param.distributedTableVersion_);
 }
 
 int32_t RdbServiceImpl::SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData,
@@ -348,7 +356,8 @@ int32_t RdbServiceImpl::SetCloudDistributedTables(const RdbSyncerParam &param, S
     metaMapping.cloudPath = metaData.dataDir;
     metaMapping = metaData;
     MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
-    return store->SetDistributedTables(tables, type, RdbTypesUtils::Convert(references));
+    return store->SetDistributedTables(
+        tables, type, RdbTypesUtils::Convert(references), param.distributedTableVersion_);
 }
 
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
@@ -777,12 +786,18 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeMeta = GetStoreMetaData(param);
+    Database database;
+    database.bundleName = storeMeta.bundleName;
+    database.name = storeMeta.storeId;
+    database.user = storeMeta.user;
+    database.deviceId = storeMeta.deviceId;
     StoreMetaMapping storeMetaMapping(storeMeta);
     MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
     if (!MetaDataManager::GetInstance().LoadMeta(storeMeta.GetKey(), storeMeta, true)) {
         storeMeta.dataDir = storeMetaMapping.dataDir;
     }
     AutoCache::GetInstance().CloseStore(tokenId, storeMeta.dataDir, RemoveSuffix(param.storeName_));
+    MetaDataManager::GetInstance().DelMeta(database.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyWithoutPath());
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);

@@ -85,7 +85,7 @@ public:
     int32_t Close(bool isForce = false) override;
 
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
-        const std::vector<Reference> &references) override;
+        const std::vector<Reference> &references, int32_t tableType) override;
     int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
         const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
     std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
@@ -192,7 +192,7 @@ private:
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
     std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> InitRdbStore();
-    int32_t SetDeviceDistributedTables();
+    int32_t SetDeviceDistributedTables(int32_t tableType);
     int32_t SetCloudDistributedTables(const std::vector<Reference> &references);
     int32_t InitDelegate();
     DistributedData::StoreInfo GetStoreInfo() const;

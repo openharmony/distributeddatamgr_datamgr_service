@@ -219,7 +219,7 @@ private:
     std::shared_ptr<DistributedData::GeneralStore> GetStore(const StoreMetaData &storeMetaData);
 
     void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
-    
+
     int32_t Upgrade(const StoreMetaData &metaData, const StoreMetaData &old);
 
     void GetCloudSchema(const StoreMetaData &metaData);
