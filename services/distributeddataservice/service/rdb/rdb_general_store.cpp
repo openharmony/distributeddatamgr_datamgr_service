@@ -1087,22 +1087,21 @@ int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
 
 int32_t RdbGeneralStore::SetDeviceDistributedTables(int32_t tableType)
 {
-    auto isAutoSyncApp = SyncManager::GetInstance().IsAutoSyncApp(meta_.bundleName, meta_.appId);
-    if (tableType == DistributedRdb::DistributedTableVersion::DEVICE_COLLABORATION && !isAutoSyncApp) {
+    if (tableType == DistributedRdb::DistributedTableMode::DEVICE_COLLABORATION) {
         return GeneralError::E_OK;
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
     if (!exist) {
         return GeneralError::E_OK;
     }
-    auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
-        {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
     auto [res, schema] = GetGaussDistributedSchema(database);
     if (!res) {
         ZLOGE("GetGaussDistributedSchema failed, bundleName:%{public}s, store:%{publis}s",
             meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
         return GeneralError::E_ERROR;
     }
+    auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
+        {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
     auto status = delegate_->SetDistributedSchema(schema, force);
     if (status != DBStatus::OK) {
         ZLOGE("SetDistributedSchema failed, status:%{public}d, bundleName:%{public}s, store:%{publis}s",
