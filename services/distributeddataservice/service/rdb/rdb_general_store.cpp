@@ -1092,7 +1092,11 @@ int32_t RdbGeneralStore::SetDeviceDistributedTables(int32_t tableType)
     }
     auto [exist, database] = GetDistributedSchema(observer_.meta_);
     if (!exist) {
-        return GeneralError::E_OK;
+        ZLOGE("NoSchemMeta!, bundleName:%{public}s, store:%{publis}s",
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_NOSCHEMA,
+			meta_.bundleName, "SINGLE_VERSION distributedtable no Schema"});
+        return GeneralError::E_ERROR;
     }
     auto [res, schema] = GetGaussDistributedSchema(database);
     if (!res) {
