@@ -962,8 +962,7 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
     if (!async) {
         return [](auto &) {};
     }
-    return [async = std::move(async)](
-        const std::map<std::string, std::vector<TableStatus>> &result) {
+    return [async = std::move(async)](const std::map<std::string, std::vector<TableStatus>> &result) {
         DistributedData::GenDetails details;
         for (auto &[key, tables] : result) {
             auto &value = details[key];

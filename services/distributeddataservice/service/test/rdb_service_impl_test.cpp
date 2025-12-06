@@ -1524,38 +1524,12 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
 
 /**
  * @tc.name: SetDistributedTables006
- * @tc.desc: Test SetDistributedTables when type is invalid.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: ZD
- */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    param.bundleName_ = metaData_.bundleName;
-    param.storeName_ = metaData_.storeId;
-    param.type_ = metaData_.storeType;
-    param.area_ = metaData_.area;
-    param.level_ = metaData_.securityLevel;
-    param.isEncrypt_ = metaData_.isEncrypt;
-    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
-    auto result = service.SetDistributedTables(param, {}, {}, false, 200);
-    EXPECT_EQ(result, RDB_ERROR);
-    StoreMetaMapping metaMapping(metaData_);
-    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
-    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
-    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
-}
-
-/**
- * @tc.name: SetDistributedTables007
  * @tc.desc: Test SetDistributedTables when type is device & setconfig is false.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: ZD
  */
-HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
+HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
@@ -1568,7 +1542,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
     param.area_ = meta.area;
     param.level_ = meta.securityLevel;
     param.isEncrypt_ = meta.isEncrypt;
-    param.distributedTableMode_ = DistributedRdb::DistributedTableVersion::SINGLE_VERSION;
+    param.distributedTableMode_ = DistributedRdb::DistributedTableMode::SINGLE_VERSION;
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     Database database;
     database.bundleName = meta.bundleName;

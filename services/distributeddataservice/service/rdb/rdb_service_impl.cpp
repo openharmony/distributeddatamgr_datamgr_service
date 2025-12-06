@@ -300,11 +300,11 @@ int32_t RdbServiceImpl::SetDeviceDistributedTables(int32_t tableType, StoreMetaD
 {
     SaveSyncMeta(metaData);
     if ((tableType == DistributedTableMode::SINGLE_VERSION) && !IsCollaboration(metaData)) {
-		ZLOGE("Singleversion is no schema! bundle:%{public}s, %{public}s.",
-			metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
-		RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_NOSCHEMA,
-			metaData.bundleName, "SINGLE_VERSION distributedtable no Schema"});
-		return RDB_ERROR;
+        ZLOGE("Singleversion is no schema! bundle:%{public}s, %{public}s.",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_NOSCHEMA,
+            metaData.bundleName, "SINGLE_VERSION distributedtable no Schema"});
+        return RDB_ERROR;
     }
     GeneralStore::StoreConfig config;
     config.tableMode = tableType == DistributedTableMode::DEVICE_COLLABORATION

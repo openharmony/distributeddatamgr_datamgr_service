@@ -1575,6 +1575,23 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables010, TestSize.Level1)
 }
 
 /**
+* @tc.name: SetDistributedTables011
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema fail
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables011, TestSize.Level1)
+{
+    std::vector<std::string> tables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(tables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase_.GetKey(), true), true);
+}
+
+/**
 * @tc.name: SetConfig001
 * @tc.desc: RdbGeneralStore SetConfig001 setsuccess
 * @tc.type: FUNC
@@ -1596,11 +1613,11 @@ HWTEST_F(RdbGeneralStoreTest, SetConfig001, TestSize.Level1)
     MockRelationalStoreDelegate::SetResSetStoreConfig(DBStatus::OK);
     store_->isClosed_ = true;
     result = store_->SetConfig(storeConfig);
-    EXPECT_EQ(result, GeneralError::E_ERROR);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
     store_->isClosed_ = false;
     store_->delegate_ = nullptr;
     result = store_->SetConfig(storeConfig);
-    EXPECT_EQ(result, GeneralError::E_ERROR);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
 
 /**
