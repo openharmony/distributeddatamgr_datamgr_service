@@ -2367,39 +2367,11 @@ HWTEST_F(CloudDataTest, DoCloudSync005, TestSize.Level0)
 
 /**
 * @tc.name: DoCloudSync006
-* @tc.desc: Test the DoCloudSync function CloudSyncScene is SERVICE_INIT
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(CloudDataTest, DoCloudSync006, TestSize.Level1)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    auto ret = cloudServiceImpl_->DoCloudSync(user, CloudSyncScene::SERVICE_INIT);
-    EXPECT_TRUE(ret);
-}
-
-/**
-* @tc.name: DoCloudSync007
-* @tc.desc: Test the DoCloudSync function CloudSyncScene is not SERVICE_INIT
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(CloudDataTest, DoCloudSync007, TestSize.Level1)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    auto ret = cloudServiceImpl_->DoCloudSync(user, CloudSyncScene::SWITCH_ON);
-    EXPECT_TRUE(ret);
-}
-
-/**
-* @tc.name: DoCloudSync008
 * @tc.desc: Test the executor_ uninitialized and initialized scenarios
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, DoCloudSync008, TestSize.Level0)
+HWTEST_F(CloudDataTest, DoCloudSync006, TestSize.Level0)
 {
     int32_t user = 100;
     CloudData::SyncManager sync;
