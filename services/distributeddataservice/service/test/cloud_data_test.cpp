@@ -2282,7 +2282,7 @@ HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level0)
 /**
 * @tc.name: DoCloudSync004
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_DEFAULT
-            Expected: not notify the media library
+            Expected: not callback notify
 * @tc.type: FUNC
 * @tc.require:
  */
@@ -2325,7 +2325,7 @@ HWTEST_F(CloudDataTest, DoCloudSync004, TestSize.Level0)
 /**
 * @tc.name: DoCloudSync005
 * @tc.desc: Test the DoCloudSync autoSyncSwitch is true
-            Expected: not notify the media library
+            Expected: not callback notify
 * @tc.type: FUNC
 * @tc.require:
  */
