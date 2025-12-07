@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "rdb_flow_manager"
+#define LOG_TAG "rdb_flow_control_manager"
 #include "rdb_flow_control_manager.h"
 #include "rdb_hiview_adapter.h"
 #include "log_print.h"
@@ -57,6 +57,8 @@ RdbFlowControlManager::Tp RdbFlowControlStrategy::GetExecuteTime(RdbFlowControlM
     switch (info.type) {
         case RdbFlowControlManager::TASK_TYPE_SYNC:
             return GetDeviceSyncExecuteTime(info.label);
+        default:
+            return std::chrono::steady_clock::now();
     }
     return std::chrono::steady_clock::now();
 }
@@ -76,8 +78,8 @@ std::chrono::steady_clock::time_point RdbFlowControlStrategy::GetDeviceSyncExecu
         uint64_t delaytime =
             std::chrono::duration_cast<std::chrono::milliseconds>(executeTime - std::chrono::steady_clock::now())
                 .count();
-        ZLOGE("Sync delay %{public}" PRIu64 "ms! Bundelname:%{public}s.", delaytime, label.c_str());
-        RdbHiViewAdapter::GetInstance().ReportRdbFault({DECIVE_SYNC,
+        ZLOGE("Sync delay %{public}" PRIu64 "ms! Bundlename:%{public}s.", delaytime, label.c_str());
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({DEVICE_SYNC,
             DEVICE_SYNC_LIMIT, label, "device sync delay " + std::to_string(delaytime) + " ms"});
     }
     queue.push(executeTime);

@@ -524,61 +524,56 @@ bool RdbServiceImpl::IsSyncLimitApp(const StoreMetaData &meta)
     database.name = meta.storeId;
     database.user = meta.user;
     database.deviceId = meta.deviceId;
-    if (!MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
-        return false;
-    }
-    return true;
+    return MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true);
 }
 
-int RdbServiceImpl::DoAsyncSync(const StoreMetaData &meta, const RdbService::Option &option,
+std::function<int()> RdbServiceImpl::GetSyncTask(const StoreMetaData &metaData, const RdbService::Option &option,
     const PredicatesMemo &predicates, const AsyncDetail &async)
 {
-    auto syncTask = [this, meta, option, predicates, async]() mutable {
-        DoSync(meta, option, predicates, async, true);
+    auto pid = IPCSkeleton::GetCallingPid();
+    return [metaData, option, predicates, async, pid, this]() -> int {
+        auto store = GetStore(metaData);
+        if (store == nullptr) {
+            return RDB_ERROR;
+        }
+
+        RdbQuery rdbQuery(predicates);
+        auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
+                                                     : DmAdapter::ToUUID(rdbQuery.GetDevices());
+        if (!rdbQuery.GetDevices().empty() && !devices.empty()) {
+            SaveAutoSyncInfo(metaData, devices);
+        }
+
+        SyncParam syncParam = { option.mode, 0, option.isCompensation };
+        auto tokenId = metaData.tokenId;
+        ZLOGD("seqNum=%{public}u", option.seqNum);
+        auto notify = [this, tokenId, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
+            OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
+        };
+        auto complete = [rdbQuery, store, syncParam, notify](const auto &results) mutable {
+            auto ret = ProcessResult(results);
+            store->Sync(ret.first, rdbQuery, notify, syncParam);
+        };
+        if (IsNeedMetaSync(metaData, devices)) {
+            auto result = MetaDataManager::GetInstance().Sync(devices, complete);
+            return result ? GeneralError::E_OK : GeneralError::E_ERROR;
+        }
+        auto [ret, _] = store->Sync(devices, rdbQuery, notify, syncParam);
+        return ret;
     };
-    if (rdbFlowControlManager_ == nullptr) {
-        ZLOGE("RdbFlowControlManager is null! Bundelname:%{public}s.", meta.bundleName.c_str());
-        return RDB_ERROR;
-    }
-    rdbFlowControlManager_->Execute(syncTask, {0, meta.bundleName});
-    return RDB_OK;
 }
 
 int RdbServiceImpl::DoSync(const StoreMetaData &meta, const RdbService::Option &option,
-    const PredicatesMemo &predicates, const AsyncDetail &async, bool immediately)
+    const PredicatesMemo &predicates, const AsyncDetail &async)
 {
-    if (!immediately && IsSyncLimitApp(meta)) {
-        return DoAsyncSync(meta, option, predicates, async);
-    }
-    auto store = GetStore(meta);
-    if (store == nullptr) {
-        ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s",
-            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
+    auto task = GetSyncTask(meta, option, predicates, async);
+    if (task == nullptr) {
         return RDB_ERROR;
     }
-    RdbQuery rdbQuery(predicates);
-    auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
-                                                 : DmAdapter::ToUUID(rdbQuery.GetDevices());
-    if (!rdbQuery.GetDevices().empty() && !devices.empty()) {
-        SaveAutoSyncInfo(meta, devices);
+    if (rdbFlowControlManager_ == nullptr || !IsSyncLimitApp(meta)) {
+        return task();
     }
-    auto pid = IPCSkeleton::GetCallingPid();
-    SyncParam syncParam = { option.mode, 0, option.isCompensation };
-    auto tokenId = meta.tokenId;
-    ZLOGD("seqNum=%{public}u", option.seqNum);
-    auto notify = [this, tokenId, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
-        OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
-    };
-    auto complete = [rdbQuery, store, syncParam, notify](const auto &results) mutable {
-        auto ret = ProcessResult(results);
-        store->Sync(ret.first, rdbQuery, notify, syncParam);
-    };
-    if (IsNeedMetaSync(meta, devices)) {
-        auto result = MetaDataManager::GetInstance().Sync(devices, complete);
-        return result ? GeneralError::E_OK : GeneralError::E_ERROR;
-    }
-    auto [ret, _] = store->Sync(devices, rdbQuery, notify, syncParam);
-    return ret;
+    return rdbFlowControlManager_->Execute(task,  {0, meta.bundleName});
 }
 
 bool RdbServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)

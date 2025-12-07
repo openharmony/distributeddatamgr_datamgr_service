@@ -196,12 +196,11 @@ private:
         const AsyncDetail &async);
 
     void DoCompensateSync(const DistributedData::BindEvent& event);
-
-    int DoSync(const StoreMetaData &meta, const Option &option, const PredicatesMemo &predicates,
-        const AsyncDetail &async, bool immediately = false);
-    bool IsSyncLimitApp(const StoreMetaData &meta);
-    int DoAsyncSync(const StoreMetaData &meta, const RdbService::Option &option, const PredicatesMemo &predicates,
+    std::function<int()> GetSyncTask(const StoreMetaData &metaData, const RdbService::Option &option,
+        const PredicatesMemo &predicates, const AsyncDetail &async);
+    int DoSync(const StoreMetaData &meta, const RdbService::Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
+    bool IsSyncLimitApp(const StoreMetaData &meta);
 
     int DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &metaData,
         const std::vector<std::string> &tables);

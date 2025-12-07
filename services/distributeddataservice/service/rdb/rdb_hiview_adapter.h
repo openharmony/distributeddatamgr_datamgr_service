@@ -36,7 +36,7 @@ constexpr int MILLISECONDS_LEN = 3;
 constexpr int NANO_TO_MILLI = 1000000;
 constexpr int MILLI_PRE_SEC = 1000;
 constexpr const char *SET_DEVICE_DIS_TABLE = "SET_RDB_DEVICE_DISTRIBUTED_TABLE";
-constexpr const char *DECIVE_SYNC = "DECIVE_SYNC";
+constexpr const char *DEVICE_SYNC = "DEVICE_SYNC";
 
 struct RdbFaultEvent {
     std::string faultType;

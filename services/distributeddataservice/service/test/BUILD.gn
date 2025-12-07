@@ -740,7 +740,6 @@ ohos_unittest("RdbServiceImplTokenTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "mock/access_token_mock.cpp",
     "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
@@ -750,7 +749,6 @@ ohos_unittest("RdbServiceImplTokenTest") {
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/framework/include",
     "${data_service_path}/service/test/mock",
   ]
 
