@@ -46,7 +46,8 @@ class RdbFlowControlStrategy : public RdbFlowControlManager::Strategy {
 public:
     RdbFlowControlStrategy();
     RdbFlowControlStrategy(uint32_t appLimit, uint32_t deviceLimit, uint32_t duration);
-    RdbFlowControlManager::Tp GetExecuteTime(RdbFlowControlManager::Task task, const RdbFlowControlManager::TaskInfo &info) override;
+    RdbFlowControlManager::Tp GetExecuteTime(
+        RdbFlowControlManager::Task task, const RdbFlowControlManager::TaskInfo &info) override;
 private:
     static constexpr uint32_t APP_LIMIT = 5;
     static constexpr uint32_t DEVICE_LIMIT = 20;

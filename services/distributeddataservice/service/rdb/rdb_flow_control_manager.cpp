@@ -15,6 +15,8 @@
 
 #define LOG_TAG "rdb_flow_manager"
 #include "rdb_flow_control_manager.h"
+#include "rdb_hiview_adapter.h"
+#include "log_print.h"
 
 namespace OHOS::DistributedRdb {
 
@@ -74,7 +76,7 @@ std::chrono::steady_clock::time_point RdbFlowControlStrategy::GetDeviceSyncExecu
         uint64_t delaytime =
             std::chrono::duration_cast<std::chrono::milliseconds>(executeTime - std::chrono::steady_clock::now())
                 .count();
-        ZLOGE("Sync delay %{public}lu ms! Bundelname:%{public}s.", delaytime, label.c_str());
+        ZLOGE("Sync delay %{public}" PRIu64 "ms! Bundelname:%{public}s.", delaytime, label.c_str());
         RdbHiViewAdapter::GetInstance().ReportRdbFault({DECIVE_SYNC,
             DEVICE_SYNC_LIMIT, label, "device sync delay " + std::to_string(delaytime) + " ms"});
     }

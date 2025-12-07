@@ -540,7 +540,6 @@ int RdbServiceImpl::DoAsyncSync(const StoreMetaData &meta, const RdbService::Opt
         ZLOGE("RdbFlowControlManager is null! Bundelname:%{public}s.", meta.bundleName.c_str());
         return RDB_ERROR;
     }
-    ZLOGE("DoAsyncSync! Bundelname:%{public}s, store:%{public}s.", meta.bundleName.c_str(), meta.storeId.c_str());
     rdbFlowControlManager_->Execute(syncTask, {0, meta.bundleName});
     return RDB_OK;
 }
