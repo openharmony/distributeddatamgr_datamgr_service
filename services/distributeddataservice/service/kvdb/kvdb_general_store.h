@@ -49,8 +49,8 @@ public:
     bool IsBound(uint32_t user) override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
-    int32_t SetDistributedTables(
-        const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references) override;
+    int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
+        const std::vector<Reference> &references, int32_t tableType) override;
     int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
         const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
     int32_t Insert(const std::string &table, VBuckets &&values) override;
@@ -77,7 +77,7 @@ public:
     int32_t MergeMigratedData(const std::string &tableName, VBuckets &&values) override;
     int32_t CleanTrackerData(const std::string &tableName, int64_t cursor) override;
     void SetEqualIdentifier(const std::string &appId, const std::string &storeId, std::string account = "") override;
-    void SetConfig(const StoreConfig &storeConfig) override;
+    int32_t SetConfig(const StoreConfig &storeConfig) override;
     void SetExecutor(std::shared_ptr<Executor> executor) override;
     static DBPassword GetDBPassword(const StoreMetaData &data);
     static DBOption GetDBOption(const StoreMetaData &data, const DBPassword &password);

@@ -34,6 +34,7 @@
 #include "metadata/meta_data_manager.h"
 #include "rdb_cursor.h"
 #include "rdb_helper.h"
+#include "rdb_hiview_adapter.h"
 #include "rdb_query.h"
 #include "rdb_store_utils.h"
 #include "relational_store_manager.h"
@@ -56,7 +57,6 @@ using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DBStatus = DistributedDB::DBStatus;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
-
 constexpr const char *INSERT = "INSERT INTO ";
 constexpr const char *REPLACE = "REPLACE INTO ";
 constexpr const char *VALUES = " VALUES ";
@@ -116,12 +116,14 @@ static bool IsExistence(const std::string &col, const std::vector<std::string> &
     return false;
 }
 
-static DistributedSchema GetGaussDistributedSchema(const Database &database)
+std::pair<bool, DistributedDB::DistributedSchema> RdbGeneralStore::GetGaussDistributedSchema(const Database &database)
 {
-    DistributedSchema distributedSchema;
+    DistributedDB::DistributedSchema distributedSchema;
     distributedSchema.version = database.version;
     distributedSchema.tables.resize(database.tables.size());
     for (size_t i = 0; i < database.tables.size(); i++) {
+        bool isSyncAutoIncrement = false;
+        uint32_t syncSpecifiedCount = 0;
         const Table &table = database.tables[i];
         DistributedTable &dbTable = distributedSchema.tables[i];
         dbTable.tableName = table.name;
@@ -130,10 +132,35 @@ static DistributedSchema GetGaussDistributedSchema(const Database &database)
             dbField.colName = field.colName;
             dbField.isP2pSync = IsExistence(field.colName, table.deviceSyncFields);
             dbField.isSpecified = field.primary;
+            if (dbField.isSpecified && dbField.isP2pSync) {
+                syncSpecifiedCount++;
+            }
+            if (dbField.isP2pSync && field.autoIncrement) {
+                isSyncAutoIncrement = true;
+            }
             dbTable.fields.push_back(std::move(dbField));
         }
+        if (isSyncAutoIncrement) {
+            ZLOGE("SyncAutoIncrement! BundeleName: %{public}s, store: %{public}s, table: %{public}s.",
+                database.bundleName.c_str(), Anonymous::Change(database.name).c_str(),
+                Anonymous::Change(table.name).c_str());
+            RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE,
+                SETDEVICETABLE_SUNC_FIELD_IS_AUTOINCREMENT, database.bundleName,
+                Anonymous::Change(table.name) + " syncAutoIncrement"});
+            return {false, distributedSchema};
+        }
+        if (syncSpecifiedCount != 1 && !table.deviceSyncFields.empty()) {
+            ZLOGE("SpecifiedCount is invaild! BundeleName: %{public}s, store: %{public}s, table: %{public}s, "
+                  "SpecifiedCount: %{public}d.",
+                database.bundleName.c_str(), Anonymous::Change(database.name).c_str(),
+                Anonymous::Change(table.name).c_str(), syncSpecifiedCount);
+            RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE,
+                SETDEVICETABLE_SCHEMA_PRIMARYKEY_COUNT_IS_WRONG, database.bundleName,
+                Anonymous::Change(table.name) + " has " + std::to_string(syncSpecifiedCount) + " specified"});
+            return {false, distributedSchema};
+        }
     }
-    return distributedSchema;
+    return {true, distributedSchema};
 }
 
 static std::pair<bool, Database> GetDistributedSchema(const StoreMetaData &meta)
@@ -1057,8 +1084,65 @@ int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
     return GeneralError::E_OK;
 }
 
+int32_t RdbGeneralStore::SetDeviceDistributedTables(int32_t tableType)
+{
+    if (tableType == DistributedRdb::DistributedTableMode::DEVICE_COLLABORATION) {
+        return GeneralError::E_OK;
+    }
+    auto [exist, database] = GetDistributedSchema(observer_.meta_);
+    if (!exist) {
+        ZLOGE("NoSchemMeta!, bundleName:%{public}s, store:%{publis}s",
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_NOSCHEMA,
+			meta_.bundleName, "SINGLE_VERSION distributedtable no Schema"});
+        return GeneralError::E_ERROR;
+    }
+    auto [res, schema] = GetGaussDistributedSchema(database);
+    if (!res) {
+        ZLOGE("GetGaussDistributedSchema failed, bundleName:%{public}s, store:%{publis}s",
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ERROR;
+    }
+    auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
+        {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
+    auto status = delegate_->SetDistributedSchema(schema, force);
+    if (status != DBStatus::OK) {
+        ZLOGE("SetDistributedSchema failed, status:%{public}d, bundleName:%{public}s, store:%{publis}s",
+            status, meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE,
+            SETDEVICETABLE_SETSCHEMA_FAIL,
+            meta_.bundleName,
+            Anonymous::Change(meta_.storeId) + " setDisSchema fail"});
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
+int32_t RdbGeneralStore::SetCloudDistributedTables(const std::vector<Reference> &references)
+{
+    auto status = SetReference(references);
+    if (status != GeneralError::E_OK) {
+        return status;
+    }
+    CloudMark metaData(meta_);
+    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {
+        DistributedDB::ClearMetaDataOption option{.mode = DistributedDB::ClearMetaDataMode::CLOUD_WATERMARK};
+        auto ret = delegate_->ClearMetaData(option);
+        if (ret != DBStatus::OK) {
+            ZLOGE("clear watermark failed, err:%{public}d", ret);
+            return GeneralError::E_ERROR;
+        }
+        MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
+        auto event = std::make_unique<CloudEvent>(CloudEvent::UPGRADE_SCHEMA, GetStoreInfo());
+        EventCenter::GetInstance().PostEvent(std::move(event));
+        ZLOGI("clear watermark success, bundleName:%{public}s, storeName:%{public}s",
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
+    }
+    return GeneralError::E_OK;
+}
+
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
-    const std::vector<Reference> &references)
+    const std::vector<Reference> &references, int32_t tableType)
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed! tables size:%{public}zu, type:%{public}d",
@@ -1082,44 +1166,24 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         }
     }
     if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
-        auto status = SetReference(references);
-        if (status != GeneralError::E_OK) {
-            return status;
-        }
+        return SetCloudDistributedTables(references);
     }
-    auto [exist, database] = GetDistributedSchema(observer_.meta_);
-    if (exist && type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
-            { database.version, observer_.meta_.appId, observer_.meta_.bundleName, {} });
-        delegate_->SetDistributedSchema(GetGaussDistributedSchema(database), force);
-    }
-    CloudMark metaData(meta_);
-    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {
-        DistributedDB::ClearMetaDataOption option{ .mode = DistributedDB::ClearMetaDataMode::CLOUD_WATERMARK };
-        auto ret = delegate_->ClearMetaData(option);
-        if (ret != DBStatus::OK) {
-            ZLOGE("clear watermark failed, err:%{public}d", ret);
-            return GeneralError::E_ERROR;
-        }
-        MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
-        auto event = std::make_unique<CloudEvent>(CloudEvent::UPGRADE_SCHEMA, GetStoreInfo());
-        EventCenter::GetInstance().PostEvent(std::move(event));
-        ZLOGI("clear watermark success, bundleName:%{public}s, storeName:%{public}s", meta_.bundleName.c_str(),
-            meta_.GetStoreAlias().c_str());
+    if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
+        return SetDeviceDistributedTables(tableType);
     }
     return GeneralError::E_OK;
 }
 
-void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
+int32_t RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed! tableMode is :%{public}d", meta_.GetStoreAlias().c_str(),
             storeConfig.tableMode.has_value() ? static_cast<int32_t>(storeConfig.tableMode.value()) : -1);
-        return;
+        return GeneralError::E_ALREADY_CLOSED;
     }
     std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        return;
+        return GeneralError::E_ALREADY_CLOSED;
     }
     if (storeConfig.tableMode.has_value()) {
         RelationalStoreDelegate::StoreConfig config;
@@ -1128,8 +1192,14 @@ void RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
         } else if (storeConfig.tableMode == DistributedTableMode::SPLIT_BY_DEVICE) {
             config.tableMode = DistributedDB::DistributedTableMode::SPLIT_BY_DEVICE;
         }
-        delegate_->SetStoreConfig(config);
+        auto status = delegate_->SetStoreConfig(config);
+        if (status != DBStatus::OK) {
+            ZLOGE("SetStoreConfig failed, bundleName: %{public}s, storeName: %{public}s, err:%{public}d",
+                meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str(), status);
+            return GeneralError::E_ERROR;
+        }
     }
+    return GeneralError::E_OK;
 }
 
 int32_t RdbGeneralStore::SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,

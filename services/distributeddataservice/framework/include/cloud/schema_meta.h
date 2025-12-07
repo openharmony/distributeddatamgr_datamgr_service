@@ -22,6 +22,7 @@ struct API_EXPORT Field final : public Serializable {
     std::string alias;
     int32_t type = 0;
     bool primary = false;
+    bool autoIncrement = false;
     bool nullable = true;
     bool dupCheckCol = false;
     bool Marshal(json &node) const override;

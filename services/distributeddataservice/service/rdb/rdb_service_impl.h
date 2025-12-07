@@ -207,6 +207,9 @@ private:
 
     void OnSearchableChange(const StoreMetaData &metaData, const RdbNotifyConfig &config,
         const RdbChangedData &changedData);
+    int32_t SetDeviceDistributedTables(int32_t tableType, StoreMetaData &metaData,
+        std::shared_ptr<DistributedData::GeneralStore> store);
+    void SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 
