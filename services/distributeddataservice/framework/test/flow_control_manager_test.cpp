@@ -28,6 +28,21 @@ public:
     void TearDown(){};
 };
 
+class ExecuteWithDelayStrategyImpl : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        if (!flag_.exchange(true)) {
+            return std::chrono::steady_clock::now();
+        }
+        // Delay subsequent tasks by 10 seconds
+        return std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    }
+
+private:
+    std::atomic_bool flag_ = false;
+};
 /**
 * @tc.name: FlowControlManager_ExecuteWithDelayStrategy_Test
 * @tc.desc: Test that tasks are executed with delay strategy applied
@@ -41,23 +56,9 @@ public:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithDelayStrategy_Test, TestSize.Level1)
 {
-    class StrategyMockImpl : public FlowControlManager::Strategy {
-    public:
-        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
-        {
-            if (!flag_.exchange(true)) {
-                return std::chrono::steady_clock::now();
-            }
-            // Delay subsequent tasks by 10 seconds
-            return std::chrono::steady_clock::now() + std::chrono::seconds(10);
-        }
-
-    private:
-        std::atomic_bool flag_ = false;
-    };
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
-    FlowControlManager flowControlManager(pool, std::make_shared<StrategyMockImpl>());
+    FlowControlManager flowControlManager(pool, std::make_shared<ExecuteWithDelayStrategyImpl>());
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
         (*flag)++;
@@ -72,6 +73,28 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithDelayStrategy_Tes
     flowControlManager.Remove();
 }
 
+class ExecuteWithIntervalStrategyImpl : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+        if (lastExecuteTime_ == FlowControlManager::Tp()) {
+            lastExecuteTime_ = now;
+            return lastExecuteTime_;
+        }
+        // Increase interval by 500ms for each task
+        auto earliestExecutionTime = lastExecuteTime_ + std::chrono::milliseconds(500 * count_++);
+        lastExecuteTime_ = earliestExecutionTime > now ? earliestExecutionTime : now;
+        return lastExecuteTime_;
+    }
+
+private:
+    std::mutex mutex_;
+    int32_t count_ = 1;
+    FlowControlManager::Tp lastExecuteTime_ = FlowControlManager::Tp();
+};
 /**
 * @tc.name: FlowControlManager_ExecuteWithIntervalStrategy_Test
 * @tc.desc: Test that tasks are executed with interval strategy applied
@@ -85,30 +108,9 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithDelayStrategy_Tes
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithIntervalStrategy_Test, TestSize.Level1)
 {
-    class StrategyMockImpl : public FlowControlManager::Strategy {
-    public:
-        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto now = std::chrono::steady_clock::now();
-            if (lastExecuteTime_ == FlowControlManager::Tp()) {
-                lastExecuteTime_ = now;
-                return lastExecuteTime_;
-            }
-            // Increase interval by 500ms for each task
-            auto earliestExecutionTime = lastExecuteTime_ + std::chrono::milliseconds(500 * count_++);
-            lastExecuteTime_ = earliestExecutionTime > now ? earliestExecutionTime : now;
-            return lastExecuteTime_;
-        }
-
-    private:
-        std::mutex mutex_;
-        int32_t count_ = 1;
-        FlowControlManager::Tp lastExecuteTime_ = FlowControlManager::Tp();
-    };
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
-    FlowControlManager flowControlManager(pool, std::make_shared<StrategyMockImpl>());
+    FlowControlManager flowControlManager(pool, std::make_shared<ExecuteWithIntervalStrategyImpl>());
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
         (*flag)++;
@@ -158,6 +160,42 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithoutStrategy_Test,
     flowControlManager.Remove();
 }
 
+class PeakLimitStrategy : public FlowControlManager::Strategy {
+public:
+    // Constructor with default limit of 2 tasks per second
+    explicit PeakLimitStrategy(size_t maxTasksPerSecond = 2) : maxTasksPerSecond_(maxTasksPerSecond) {}
+
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+        // Calculate time point one second ago
+        auto oneSecondLater = now - std::chrono::seconds(1);
+
+        // Clear expired execution records (older than 1 second)
+        while (!executionTimes_.empty() && executionTimes_.front() <= oneSecondLater) {
+            executionTimes_.pop_front();
+        }
+
+        // If maximum tasks per second reached, postpone to next available slot
+        if (executionTimes_.size() >= maxTasksPerSecond_) {
+            // Find the earliest time we can schedule a new task
+            auto earliestSlot = executionTimes_.front() + std::chrono::seconds(1);
+            executionTimes_.push_back(earliestSlot);
+            executionTimes_.pop_front();
+            return earliestSlot;
+        } else {
+            executionTimes_.push_back(now);
+            return now;
+        }
+    }
+
+private:
+    std::mutex mutex_;
+    std::deque<FlowControlManager::Tp> executionTimes_;
+    size_t maxTasksPerSecond_; // Maximum tasks allowed per second
+};
 /**
 * @tc.name: FlowControlManager_PeakLimitStrategy_Test
 * @tc.desc: Test peak limit strategy that restricts number of tasks executed per time unit
@@ -174,42 +212,6 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithoutStrategy_Test,
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_PeakLimitStrategy_Test, TestSize.Level1)
 {
-    class PeakLimitStrategy : public FlowControlManager::Strategy {
-    public:
-        // Constructor with default limit of 2 tasks per second
-        explicit PeakLimitStrategy(size_t maxTasksPerSecond = 2) : maxTasksPerSecond_(maxTasksPerSecond) {}
-
-        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto now = std::chrono::steady_clock::now();
-            // Calculate time point one second ago
-            auto oneSecondLater = now - std::chrono::seconds(1);
-
-            // Clear expired execution records (older than 1 second)
-            while (!executionTimes_.empty() && executionTimes_.front() <= oneSecondLater) {
-                executionTimes_.pop_front();
-            }
-
-            // If maximum tasks per second reached, postpone to next available slot
-            if (executionTimes_.size() >= maxTasksPerSecond_) {
-                // Find the earliest time we can schedule a new task
-                auto earliestSlot = executionTimes_.front() + std::chrono::seconds(1);
-                executionTimes_.push_back(earliestSlot);
-                executionTimes_.pop_front();
-                return earliestSlot;
-            } else {
-                executionTimes_.push_back(now);
-                return now;
-            }
-        }
-
-    private:
-        std::mutex mutex_;
-        std::deque<FlowControlManager::Tp> executionTimes_;
-        size_t maxTasksPerSecond_; // Maximum tasks allowed per second
-    };
-
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     // Initialize with peak limit strategy allowing max 2 tasks per second
@@ -240,6 +242,23 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PeakLimitStrategy_Test, Test
     flowControlManager.Remove();
 }
 
+class PriorityStrategy : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+
+        // Type 0: High priority, execute immediately
+        // Type 1: Medium priority, delay 100ms to execute
+        // Type 2: Low priority, delay 500ms to execute
+        return now + std::chrono::milliseconds(info.type == 0 ? 0 : info.type == 1 ? 100 : 500);
+    }
+
+private:
+    std::mutex mutex_;
+};
 /**
 * @tc.name: FlowControlManager_PriorityStrategy_Test
 * @tc.desc: Test priority strategy for different types of tasks
@@ -254,23 +273,6 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PeakLimitStrategy_Test, Test
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityStrategy_Test, TestSize.Level1)
 {
-    class PriorityStrategy : public FlowControlManager::Strategy {
-    public:
-        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto now = std::chrono::steady_clock::now();
-
-            // Type 0: High priority, execute immediately
-            // Type 1: Medium priority, delay 100ms to execute
-            // Type 2: Low priority, delay 500ms to execute
-            return now + std::chrono::milliseconds(type == 0 ? 0 : type == 1 ? 100 : 500);
-        }
-
-    private:
-        std::mutex mutex_;
-    };
-
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityStrategy>());
@@ -333,7 +335,8 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelScheduledTask_Test, Te
 {
     class DelayStrategy : public FlowControlManager::Strategy {
     public:
-        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
+        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+            const FlowControlManager::TaskInfo &info) override
         {
             // All tasks delayed by 1 second
             return std::chrono::steady_clock::now() + std::chrono::seconds(1);
@@ -391,7 +394,8 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentTaskSubmission_Tes
 {
     class ConcurrentStrategy : public FlowControlManager::Strategy {
     public:
-        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
+        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+            const FlowControlManager::TaskInfo &info) override
         {
             std::lock_guard<std::mutex> lock(mutex_);
             auto now = std::chrono::steady_clock::now();
@@ -439,6 +443,23 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentTaskSubmission_Tes
 
     flowControlManager.Remove();
 }
+
+class PriorityPreemptionStrategy : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+
+        // Higher type value means lower priority, thus longer delay
+        // Delay is 500ms multiplied by task type value
+        return now + std::chrono::milliseconds(500 * info.type);
+    }
+
+private:
+    std::mutex mutex_;
+};
 /**
 * @tc.name: FlowControlManager_PriorityPreemption_Test
 * @tc.desc: Test priority preemption where high priority tasks execute before low priority despite submission order
@@ -452,22 +473,6 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentTaskSubmission_Tes
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityPreemption_Test, TestSize.Level1)
 {
-    class PriorityPreemptionStrategy : public FlowControlManager::Strategy {
-    public:
-        FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            auto now = std::chrono::steady_clock::now();
-
-            // Higher type value means lower priority, thus longer delay
-            // Delay is 500ms multiplied by task type value
-            return now + std::chrono::milliseconds(500 * type);
-        }
-
-    private:
-        std::mutex mutex_;
-    };
-
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(2, 3);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityPreemptionStrategy>());
@@ -509,13 +514,14 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityPreemption_Test, Tes
 
 class PriorityCancellationStrategy : public FlowControlManager::Strategy {
 public:
-    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task, uint32_t type) override
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto now = std::chrono::steady_clock::now();
 
         std::chrono::milliseconds delay(0);
-        switch (type) {
+        switch (info.type) {
             case 0: // Type 0: High priority, execute with 100ms delay
                 delay = std::chrono::milliseconds(100);
                 break;
@@ -605,4 +611,364 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelSpecificPriorityTask_T
 
     flowControlManager.Remove();
 }
+
+class DelayStrategy : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        // All tasks delayed by 500ms
+        return std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+    }
+};
+/**
+* @tc.name: FlowControlManager_ExecuteAfterDestruction_Test
+* @tc.desc: Test that tasks are not executed after FlowControlManager has been destroyed
+* @tc.type: FUNC
+* @tc.step: 1. Create a delay strategy that postpones all task executions
+* @tc.step: 2. Initialize FlowControlManager with the delay strategy and an executor pool
+* @tc.step: 3. Submit multiple tasks to the FlowControlManager
+* @tc.step: 4. Destroy the FlowControlManager instance before tasks execute
+* @tc.step: 5. Verify that none of the scheduled tasks execute after destruction
+* @tc.step: 6. Confirm that attempt to submit new tasks after destruction are handled gracefully
+* @tc.expected: No tasks should execute after FlowControlManager destruction and new submissions should be safe
+*/
+HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteAfterDestruction_Test, TestSize.Level1)
+{
+    // Create executor pool with 2 initial threads and 3 max threads
+    auto pool = std::make_shared<ExecutorPool>(2, 3);
+    auto flowControlManager = std::make_unique<FlowControlManager>(pool, std::make_shared<DelayStrategy>());
+
+    auto flag = std::make_shared<std::atomic_uint32_t>(0);
+    auto task = [flag]() mutable {
+        (*flag)++;
+    };
+
+    // Submit 5 tasks
+    for (int32_t i = 0; i < 5; i++) {
+        flowControlManager->Execute(task);
+    }
+
+    // Wait for some time (100ms) but not enough for tasks to execute (500ms)
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_EQ(flag->load(), 0); // Tasks not yet executed
+
+    // Destroy the FlowControlManager
+    flowControlManager.reset();
+
+    // Even after waiting long enough (1000ms), tasks should not execute because manager was destroyed
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    EXPECT_EQ(flag->load(), 0); // Tasks successfully cancelled due to manager destruction
+
+    // Note: Cannot test submitting new tasks as the object has been destroyed
+    // The test confirms that destruction properly cancels pending tasks
+}
+
+class LabelBasedStrategy : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto now = std::chrono::steady_clock::now();
+
+        // Based on label, apply different flow control
+        if (info.label == "HIGH_PRIORITY") {
+            // High priority tasks execute immediately
+            return now;
+        } else if (info.label == "MEDIUM_PRIORITY") {
+            // Medium priority tasks have 200ms delay
+            return now + std::chrono::milliseconds(200);
+        } else if (info.label == "LOW_PRIORITY") {
+            // Low priority tasks have 500ms delay
+            return now + std::chrono::milliseconds(500);
+        }
+        // Default: execute immediately
+        return now;
+    }
+
+private:
+    std::mutex mutex_;
+};
+
+/**
+* @tc.name: FlowControlManager_LabelBasedFlowControl_Test
+* @tc.desc: Test flow control based on task labels
+* @tc.type: FUNC
+* @tc.step: 1. Create a label-based strategy that applies different delays based on task labels
+* @tc.step: 2. Initialize FlowControlManager with the label strategy and an executor pool
+* @tc.step: 3. Submit tasks with different labels (HIGH_PRIORITY, MEDIUM_PRIORITY, LOW_PRIORITY)
+* @tc.step: 4. Verify that tasks are executed according to their label-based delays
+* @tc.step: 5. Clean up resources by removing the FlowControlManager
+* @tc.expected: Tasks with different labels should be executed with corresponding delays
+*/
+HWTEST_F(FlowControlManagerTest, FlowControlManager_LabelBasedFlowControl_Test, TestSize.Level1)
+{
+    // Create executor pool with 2 initial threads and 3 max threads
+    auto pool = std::make_shared<ExecutorPool>(2, 3);
+    FlowControlManager flowControlManager(pool, std::make_shared<LabelBasedStrategy>());
+
+    auto highPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
+    auto mediumPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
+    auto lowPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
+
+    auto highPriorityTask = [highPriorityFlag]() mutable {
+        (*highPriorityFlag)++;
+    };
+    auto mediumPriorityTask = [mediumPriorityFlag]() mutable {
+        (*mediumPriorityFlag)++;
+    };
+    auto lowPriorityTask = [lowPriorityFlag]() mutable {
+        (*lowPriorityFlag)++;
+    };
+
+    // Submit tasks with different labels
+    FlowControlManager::TaskInfo highInfo;
+    highInfo.label = "HIGH_PRIORITY";
+    flowControlManager.Execute(highPriorityTask, highInfo);
+
+    FlowControlManager::TaskInfo mediumInfo;
+    mediumInfo.label = "MEDIUM_PRIORITY";
+    flowControlManager.Execute(mediumPriorityTask, mediumInfo);
+
+    FlowControlManager::TaskInfo lowInfo;
+    lowInfo.label = "LOW_PRIORITY";
+    flowControlManager.Execute(lowPriorityTask, lowInfo);
+
+    // Immediately check - only high priority task should be executed
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    EXPECT_EQ(highPriorityFlag->load(), 1);
+    EXPECT_EQ(mediumPriorityFlag->load(), 0);
+    EXPECT_EQ(lowPriorityFlag->load(), 0);
+
+    // After 250ms, medium priority task should be executed
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    EXPECT_EQ(highPriorityFlag->load(), 1);
+    EXPECT_EQ(mediumPriorityFlag->load(), 1);
+    EXPECT_EQ(lowPriorityFlag->load(), 0);
+
+    // After 500ms, low priority task should be executed
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    EXPECT_EQ(highPriorityFlag->load(), 1);
+    EXPECT_EQ(mediumPriorityFlag->load(), 1);
+    EXPECT_EQ(lowPriorityFlag->load(), 1);
+
+    flowControlManager.Remove();
+}
+
+class RemoveByTypeRangeFilterStrategy : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        // All tasks delayed by 500ms
+        return std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+    }
+};
+/**
+* @tc.name: FlowControlManager_RemoveByTypeRangeFilter_Test
+* @tc.desc: Test removing tasks using a custom filter based on task type ranges
+* @tc.type: FUNC
+* @tc.step: 1. Create tasks with different types spanning a range of values
+* @tc.step: 2. Submit all tasks to FlowControlManager with a delay strategy
+* @tc.step: 3. Use a custom filter to remove tasks within a specific type range
+* @tc.step: 4. Verify only tasks outside the filtered range execute
+* @tc.step: 5. Confirm tasks within the filtered range are cancelled
+* @tc.expected: Only tasks with types outside the specified range should execute
+*/
+HWTEST_F(FlowControlManagerTest, FlowControlManager_RemoveByTypeRangeFilter_Test, TestSize.Level1)
+{
+    auto pool = std::make_shared<ExecutorPool>(2, 3);
+    FlowControlManager flowControlManager(pool, std::make_shared<RemoveByTypeRangeFilterStrategy>());
+
+    std::vector<std::shared_ptr<std::atomic_uint32_t>> flags(10);
+    for (int i = 0; i < 10; i++) {
+        flags[i] = std::make_shared<std::atomic_uint32_t>(0);
+    }
+
+    // Submit tasks with types 0-9
+    for (int i = 0; i < 10; i++) {
+        auto task = [flag = flags[i]]() mutable {
+            (*flag)++;
+        };
+        flowControlManager.Execute(task, i);
+    }
+
+    // Remove tasks with types between 3 and 6 (inclusive)
+    flowControlManager.Remove([](const FlowControlManager::TaskInfo &info) {
+        return info.type >= 3 && info.type <= 6;
+    });
+
+    // Wait for remaining tasks to execute
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
+
+    // Check that only tasks with types 0-2 and 7-9 executed
+    for (int i = 0; i < 10; i++) {
+        if (i >= 3 && i <= 6) {
+            EXPECT_EQ(flags[i]->load(), 0) << "Task with type " << i << " should not have executed";
+        } else {
+            EXPECT_EQ(flags[i]->load(), 1) << "Task with type " << i << " should have executed";
+        }
+    }
+
+    flowControlManager.Remove();
+}
+
+class RemoveByComplexFilterStrategy : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        return std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
+    }
+};
+/**
+* @tc.name: FlowControlManager_RemoveByComplexFilter_Test
+* @tc.desc: Test removing tasks using a complex custom filter with multiple conditions
+* @tc.type: FUNC
+* @tc.step: 1. Create tasks with various combinations of type and label properties
+* @tc.step: 2. Submit all tasks to FlowControlManager with a delay strategy
+* @tc.step: 3. Use a complex filter to remove tasks matching multiple criteria
+* @tc.step: 4. Verify only tasks not matching all filter conditions execute
+* @tc.step: 5. Confirm tasks matching all filter conditions are cancelled
+* @tc.expected: Only tasks that don't satisfy all filter conditions should execute
+*/
+HWTEST_F(FlowControlManagerTest, FlowControlManager_RemoveByComplexFilter_Test, TestSize.Level1)
+{
+    auto pool = std::make_shared<ExecutorPool>(2, 3);
+    FlowControlManager flowControlManager(pool, std::make_shared<RemoveByComplexFilterStrategy>());
+
+    auto flag1 = std::make_shared<std::atomic_uint32_t>(0); // type=1, label="A"
+    auto flag2 = std::make_shared<std::atomic_uint32_t>(0); // type=1, label="B"
+    auto flag3 = std::make_shared<std::atomic_uint32_t>(0); // type=2, label="A"
+    auto flag4 = std::make_shared<std::atomic_uint32_t>(0); // type=2, label="B"
+
+    auto task1 = [flag1]() mutable {
+        (*flag1)++;
+    };
+    auto task2 = [flag2]() mutable {
+        (*flag2)++;
+    };
+    auto task3 = [flag3]() mutable {
+        (*flag3)++;
+    };
+    auto task4 = [flag4]() mutable {
+        (*flag4)++;
+    };
+
+    // Submit tasks with different type/label combinations
+    FlowControlManager::TaskInfo info1(1);
+    info1.label = "A";
+    flowControlManager.Execute(task1, info1);
+
+    FlowControlManager::TaskInfo info2(1);
+    info2.label = "B";
+    flowControlManager.Execute(task2, info2);
+
+    FlowControlManager::TaskInfo info3(2);
+    info3.label = "A";
+    flowControlManager.Execute(task3, info3);
+
+    FlowControlManager::TaskInfo info4(2);
+    info4.label = "B";
+    flowControlManager.Execute(task4, info4);
+
+    // Remove tasks that are type 1 AND label "A" (only task1)
+    flowControlManager.Remove([](const FlowControlManager::TaskInfo &info) {
+        return info.type == 1 && info.label == "A";
+    });
+
+    // Wait for remaining tasks to execute
+    std::this_thread::sleep_for(std::chrono::milliseconds(400));
+
+    // Check results
+    EXPECT_EQ(flag1->load(), 0); // Removed
+    EXPECT_EQ(flag2->load(), 1); // Executed
+    EXPECT_EQ(flag3->load(), 1); // Executed
+    EXPECT_EQ(flag4->load(), 1); // Executed
+
+    flowControlManager.Remove();
+}
+
+class RemoveWithEmptyFilterStrategy : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        return std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
+    }
+};
+/**
+* @tc.name: FlowControlManager_RemoveWithEmptyFilter_Test
+* @tc.desc: Test removing tasks with an empty filter that matches nothing
+* @tc.type: FUNC
+* @tc.step: 1. Create and submit several tasks to FlowControlManager
+* @tc.step: 2. Use an empty filter that returns false for all tasks
+* @tc.step: 3. Verify all tasks still execute normally
+* @tc.step: 4. Test with a filter that matches everything
+* @tc.step: 5. Verify all tasks are cancelled when matching everything
+* @tc.expected: Empty filter should not remove any tasks; universal filter should remove all
+*/
+HWTEST_F(FlowControlManagerTest, FlowControlManager_RemoveWithEmptyFilter_Test, TestSize.Level1)
+{
+    auto pool = std::make_shared<ExecutorPool>(2, 3);
+    FlowControlManager flowControlManager(pool, std::make_shared<RemoveWithEmptyFilterStrategy>());
+
+    auto flag1 = std::make_shared<std::atomic_uint32_t>(0);
+    auto flag2 = std::make_shared<std::atomic_uint32_t>(0);
+    auto flag3 = std::make_shared<std::atomic_uint32_t>(0);
+
+    auto task1 = [flag1]() mutable {
+        (*flag1)++;
+    };
+    auto task2 = [flag2]() mutable {
+        (*flag2)++;
+    };
+    auto task3 = [flag3]() mutable {
+        (*flag3)++;
+    };
+
+    flowControlManager.Execute(task1, 1);
+    flowControlManager.Execute(task2, 2);
+    flowControlManager.Execute(task3, 3);
+
+    // Use empty filter (matches nothing)
+    flowControlManager.Remove([](const FlowControlManager::TaskInfo &info) {
+        return false; // Never match
+    });
+
+    // Wait for all tasks to execute
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+    // All tasks should execute since nothing was removed
+    EXPECT_EQ(flag1->load(), 1);
+    EXPECT_EQ(flag2->load(), 1);
+    EXPECT_EQ(flag3->load(), 1);
+
+    // Reset flags
+    flag1->store(0);
+    flag2->store(0);
+    flag3->store(0);
+
+    // Submit new tasks
+    flowControlManager.Execute(task1, 4);
+    flowControlManager.Execute(task2, 5);
+    flowControlManager.Execute(task3, 6);
+
+    // Use universal filter (matches everything)
+    flowControlManager.Remove([](const FlowControlManager::TaskInfo &info) {
+        return true; // Match everything
+    });
+
+    // Wait to see if tasks execute
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+    // No tasks should execute since all were removed
+    EXPECT_EQ(flag1->load(), 0);
+    EXPECT_EQ(flag2->load(), 0);
+    EXPECT_EQ(flag3->load(), 0);
+
+    flowControlManager.Remove();
+}
+
 } // namespace OHOS::Test

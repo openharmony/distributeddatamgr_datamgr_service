@@ -21,11 +21,18 @@ namespace DistributedDB {
 class MockRelationalStoreDelegate : public DistributedDB::RelationalStoreDelegate {
 public:
     ~MockRelationalStoreDelegate() = default;
+    
+    static inline DBStatus resSync = DBStatus::OK;
+    static bool SetResSync(DBStatus res)
+    {
+        resSync = res;
+        return true;
+    }
 
     DBStatus Sync(const std::vector<std::string> &devices, DistributedDB::SyncMode mode, const Query &query,
         const SyncStatusCallback &onComplete, bool wait) override
     {
-        return DBStatus::OK;
+        return resSync;
     }
     static inline int32_t cloudSyncTask = 0;
     static bool SetCloudSyncTaskCount(int32_t task)
@@ -45,6 +52,29 @@ public:
         downloadingAssetsCount = task;
         return true;
     }
+    static inline DBStatus resSetStoreConfig = DB_ERROR;
+    static bool SetResSetStoreConfig(DBStatus res)
+    {
+        resSetStoreConfig = res;
+        return true;
+    }
+    DBStatus SetStoreConfig(const StoreConfig &config) override
+    {
+        return resSetStoreConfig;
+    }
+
+    static inline DBStatus resSetDbSchema = DB_ERROR;
+    static bool SetResSetDbSchema(DBStatus res)
+    {
+        resSetDbSchema = res;
+        return true;
+    }
+
+    DBStatus SetDistributedSchema(const DistributedSchema &schema, bool isForceUpgrade = false) override
+    {
+        return resSetDbSchema;
+    }
+    
     int32_t GetCloudSyncTaskCount() override
     {
         return cloudSyncTask;
@@ -84,7 +114,7 @@ public:
     DBStatus Sync(const std::vector<std::string> &devices, DistributedDB::SyncMode mode, const Query &query,
         const SyncProcessCallback &onProcess, int64_t waitTime) override
     {
-        return DBStatus::OK;
+        return resSync;
     }
 
     DBStatus SetCloudDB(const std::shared_ptr<ICloudDb> &cloudDb) override
@@ -119,7 +149,7 @@ public:
 
     DBStatus Sync(const CloudSyncOption &option, const SyncProcessCallback &onProcess) override
     {
-        return DBStatus::OK;
+        return resSync;
     }
 
     DBStatus SetTrackerTable(const TrackerSchema &schema) override

@@ -79,13 +79,13 @@ public:
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const std::vector<std::string> &columns = {},
         bool preCount = false) override;
 
-    void SetConfig(const StoreConfig &storeConfig) override;
+    int32_t SetConfig(const StoreConfig &storeConfig) override;
     int32_t AddRef() override;
     int32_t Release() override;
     int32_t Close(bool isForce = false) override;
 
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
-        const std::vector<Reference> &references) override;
+        const std::vector<Reference> &references, int32_t tableType) override;
     int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
         const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
     std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
@@ -174,7 +174,6 @@ private:
         uint32_t highMode = AUTO_SYNC_MODE);
 
     Executor::Task GetFinishTask(SyncId syncId);
-    int32_t SetReference(const std::vector<Reference> &references);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
     std::string BuildSql(const std::string& table, const std::string& statement,
@@ -184,6 +183,7 @@ private:
     VBuckets ExtractExtend(VBuckets& values) const;
     size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
     bool IsPrintLog(DistributedDB::DBStatus status);
+    std::pair<bool, DistributedDB::DistributedSchema> GetGaussDistributedSchema(const Database &database);
     std::shared_ptr<RdbCloud> GetRdbCloud() const;
     bool IsFinished(uint64_t syncId) const;
     void RemoveTasks();
@@ -191,6 +191,8 @@ private:
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
     std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> InitRdbStore();
+    int32_t SetDeviceDistributedSchema(int32_t tableType);
+    int32_t SetCloudReference(const std::vector<Reference> &references);
     int32_t InitDelegate();
     DistributedData::StoreInfo GetStoreInfo() const;
     DetailAsync GetAsync() const;

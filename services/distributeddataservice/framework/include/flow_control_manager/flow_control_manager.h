@@ -28,25 +28,34 @@ class API_EXPORT FlowControlManager {
 public:
     using Task = std::function<void()>;
     using Tp = std::chrono::steady_clock::time_point;
+    struct TaskInfo {
+        TaskInfo(uint32_t type = 0, std::string label = "") : type(type), label(std::move(label)) {}
+        uint32_t type = 0;
+        std::string label;
+    };
     class Strategy {
     public:
         virtual ~Strategy() = default;
-        virtual Tp GetExecuteTime(Task task, uint32_t type) = 0;
+        virtual Tp GetExecuteTime(Task task, const TaskInfo &info) = 0;
     };
+    using Filter = std::function<bool(const TaskInfo &)>;
 
     FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy);
     ~FlowControlManager();
     void Execute(Task task, uint32_t type = 0);
-    void Remove(uint32_t type = 0);
+    void Execute(Task task, TaskInfo info);
+    void Remove(uint32_t type);
+    void Remove(Filter filter = nullptr);
 
 private:
     static constexpr uint32_t INVALID_INNER_TASK_ID = 0;
     struct InnerTask {
-        InnerTask(Task task, uint32_t type, Tp time, uint64_t taskId) : task(task), type(type), time(time), id(taskId)
+        InnerTask(Task task, TaskInfo taskInfo, Tp tp, uint64_t taskId)
+            : task(std::move(task)), info(std::move(taskInfo)), time(tp), id(taskId)
         {
         }
         Task task;
-        uint32_t type;
+        TaskInfo info;
         Tp time;
         uint64_t id;
         bool operator<(const InnerTask &other) const

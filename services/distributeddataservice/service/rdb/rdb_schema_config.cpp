@@ -39,7 +39,7 @@ bool RdbSchemaConfig::GetDistributedSchema(const StoreMetaData &meta, Database &
     if (!InitBundleInfo(meta.bundleName, std::atoi(meta.user.c_str()), bundleInfo)) {
         return false;
     }
-    auto ret = GetSchemaFromHap(bundleInfo, meta.storeId, database);
+    auto ret = GetSchemaFromHap(bundleInfo, meta.storeId, meta.bundleName, database);
     if (ret) {
         database.user = meta.user;
         database.deviceId = meta.deviceId;
@@ -79,8 +79,8 @@ bool RdbSchemaConfig::InitBundleInfo(
     return true;
 }
 
-bool RdbSchemaConfig::GetSchemaFromHap(
-    const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName, Database &database)
+bool RdbSchemaConfig::GetSchemaFromHap(const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName,
+    const std::string &bundleName, Database &database)
 {
     for (auto &hapInfo : bundleInfo.hapModuleInfos) {
         std::shared_ptr<ResourceManager> resMgr(CreateResourceManager());
@@ -99,7 +99,7 @@ bool RdbSchemaConfig::GetSchemaFromHap(
         DbSchema databases;
         databases.Unmarshall(jsonData);
         for (const auto &schema : databases.databases) {
-            if (schema.name == storeName) {
+            if (schema.name == storeName && schema.bundleName == bundleName) {
                 database = schema;
                 return true;
             }

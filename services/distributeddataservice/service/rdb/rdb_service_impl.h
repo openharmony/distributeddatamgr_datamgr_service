@@ -27,6 +27,7 @@
 #include "concurrent_map.h"
 #include "crypto/crypto_manager.h"
 #include "feature/static_acts.h"
+#include "rdb_flow_control_manager.h"
 #include "lru_bucket.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -135,6 +136,7 @@ private:
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     using AutoCache = DistributedData::AutoCache;
     using CryptoManager = DistributedData::CryptoManager;
+    using FlowControlManager = OHOS::DistributedData::FlowControlManager;
     struct SyncAgent {
         SyncAgent() = default;
         explicit SyncAgent(const std::string &bundleName);
@@ -196,6 +198,9 @@ private:
     void DoCompensateSync(const DistributedData::BindEvent& event);
 
     int DoSync(const StoreMetaData &meta, const Option &option, const PredicatesMemo &predicates,
+        const AsyncDetail &async, bool immediately = false);
+    bool IsSyncLimitApp(const StoreMetaData &meta);
+    int DoAsyncSync(const StoreMetaData &meta, const RdbService::Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
 
     int DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &metaData,
@@ -207,6 +212,9 @@ private:
 
     void OnSearchableChange(const StoreMetaData &metaData, const RdbNotifyConfig &config,
         const RdbChangedData &changedData);
+    int32_t SetDeviceDistributedTables(int32_t tableType, StoreMetaData &metaData,
+        std::shared_ptr<DistributedData::GeneralStore> store);
+    void SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData);
 
     Watchers GetWatchers(uint32_t tokenId, const std::string &storeName);
 
@@ -291,6 +299,7 @@ private:
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
+    static std::shared_ptr<RdbFlowControlManager> rdbFlowControlManager_;
     std::shared_ptr<ExecutorPool> executors_;
     std::shared_ptr<GlobalEvent> eventContainer_;
     ConcurrentMap<int32_t, std::map<std::string, ExecutorPool::TaskId>> heartbeatTaskIds_;

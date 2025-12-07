@@ -22,19 +22,42 @@
 #include "rdb_types.h"
 
 namespace OHOS::DistributedRdb {
+enum SetDeviceDisTableErrorCode : int32_t {
+    SETDEVICETABLE_SUCCESS = 0,
+    SETDEVICETABLE_NOSCHEMA = 1,
+    SETDEVICETABLE_SETCONFIG_FAIL,
+    SETDEVICETABLE_SUNC_FIELD_IS_AUTOINCREMENT,
+    SETDEVICETABLE_SCHEMA_PRIMARYKEY_COUNT_IS_WRONG,
+    SETDEVICETABLE_SETSCHEMA_FAIL,
+    DEVICE_SYNC_LIMIT,
+};
+constexpr int MAX_TIME_BUF_LEN = 32;
+constexpr int MILLISECONDS_LEN = 3;
+constexpr int NANO_TO_MILLI = 1000000;
+constexpr int MILLI_PRE_SEC = 1000;
+constexpr const char *SET_DEVICE_DIS_TABLE = "SET_RDB_DEVICE_DISTRIBUTED_TABLE";
+constexpr const char *DECIVE_SYNC = "DECIVE_SYNC";
+
+struct RdbFaultEvent {
+    std::string faultType;
+    int32_t errorCode;
+    std::string bundleName;
+    std::string custLog;
+};
 
 class RdbHiViewAdapter {
 public:
-  static RdbHiViewAdapter &GetInstance();
-  void ReportStatistic(const RdbStatEvent &stat);
-  void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
+    static RdbHiViewAdapter &GetInstance();
+    void ReportStatistic(const RdbStatEvent &stat);
+    void ReportRdbFault(const RdbFaultEvent &stat);
+    void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
 
 private:
-  std::shared_ptr<ExecutorPool> executors_ = nullptr;
-  ConcurrentMap<RdbStatEvent, uint32_t> statEvents_;
-  void InvokeSync();
-  void StartTimerThread();
-  std::atomic<bool> running_ = false;
+    std::shared_ptr<ExecutorPool> executors_ = nullptr;
+    ConcurrentMap<RdbStatEvent, uint32_t> statEvents_;
+    void InvokeSync();
+    void StartTimerThread();
+    std::atomic<bool> running_ = false;
 };
 } // namespace OHOS::DistributedRdb
 #endif // DATAMGR_SERVICE_RDB_HIVIEW_ADAPTER_H

@@ -578,16 +578,25 @@ ohos_unittest("RdbServiceTest") {
   sources = [
     "anonymous_test.cpp",
     "cache_cursor_test.cpp",
+    "mock/db_change_data_mock.cpp",
+    "mock/db_store_mock.cpp",
     "mock/general_watcher_mock.cpp",
     "mock/relational_store_manager_mock.cpp",
     "rdb_cloud_test.cpp",
     "rdb_cursor_test.cpp",
+    "rdb_flow_control_manager_test.cpp",
     "rdb_general_store_test.cpp",
     "rdb_query_test.cpp",
     "rdb_result_set_stub_test.cpp",
     "relational_store_cursor_test.cpp",
     "rdb_store_utils_test.cpp",
     "rdb_service_stub_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/test/mock",
   ]
 
   configs = [ ":module_private_config" ]
@@ -731,6 +740,7 @@ ohos_unittest("RdbServiceImplTokenTest") {
   }
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "mock/access_token_mock.cpp",
     "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
@@ -740,6 +750,7 @@ ohos_unittest("RdbServiceImplTokenTest") {
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include",
     "${data_service_path}/service/test/mock",
   ]
 

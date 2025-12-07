@@ -33,7 +33,7 @@ int32_t GeneralStoreMock::Execute(const std::string &table, const std::string &s
 }
 
 int32_t GeneralStoreMock::SetDistributedTables(
-    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references)
+    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references, int32_t tableType)
 {
     return 0;
 }
@@ -228,6 +228,11 @@ int32_t GeneralStoreMock::OnSyncTrigger(const std::string &storeId, int32_t trig
 {
     mode_ = 1;
     return E_OK;
+}
+
+int32_t GeneralStoreMock::SetConfig(const StoreConfig &storeConfig)
+{
+    return dbStatus_;
 }
 } // namespace DistributedData
 } // namespace OHOS
