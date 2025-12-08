@@ -1068,33 +1068,17 @@ void RdbGeneralStore::Report(const std::string &faultType, int32_t errCode, cons
     Reporter::GetInstance()->CloudSyncFault()->Report(msg);
 }
 
-int32_t RdbGeneralStore::SetReference(const std::vector<Reference> &references)
-{
-    std::vector<DistributedDB::TableReferenceProperty> properties;
-    for (const auto &reference : references) {
-        properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
-    }
-    auto status = delegate_->SetReference(properties);
-    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
-        ZLOGE("distributed table set reference failed, err:%{public}d", status);
-        Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
-            "SetDistributedTables: set reference=" + std::to_string(static_cast<int32_t>(status)));
-        return GeneralError::E_ERROR;
-    }
-    return GeneralError::E_OK;
-}
-
-int32_t RdbGeneralStore::SetDeviceDistributedTables(int32_t tableType)
+int32_t RdbGeneralStore::SetDeviceDistributedSchema(int32_t tableType)
 {
     if (tableType == DistributedRdb::DistributedTableMode::DEVICE_COLLABORATION) {
         return GeneralError::E_OK;
     }
-    auto [exist, database] = GetDistributedSchema(observer_.meta_);
+    auto [exist, database] = GetDistributedSchema(meta_);
     if (!exist) {
-        ZLOGE("NoSchemMeta!, bundleName:%{public}s, store:%{publis}s",
+        ZLOGE("NoSchemaMeta! BundelName:%{public}s, store:%{public}s.",
             meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
         RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_NOSCHEMA,
-			meta_.bundleName, "SINGLE_VERSION distributedtable no Schema"});
+            meta_.bundleName, "SINGLE_VERSION distributedtable no Schema"});
         return GeneralError::E_ERROR;
     }
     auto [res, schema] = GetGaussDistributedSchema(database);
@@ -1103,8 +1087,8 @@ int32_t RdbGeneralStore::SetDeviceDistributedTables(int32_t tableType)
             meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
         return GeneralError::E_ERROR;
     }
-    auto force = SyncManager::GetInstance().NeedForceReplaceSchema(
-        {database.version, observer_.meta_.appId, observer_.meta_.bundleName, {}});
+    auto force =
+        SyncManager::GetInstance().NeedForceReplaceSchema({database.version, meta_.appId, meta_.bundleName, {}});
     auto status = delegate_->SetDistributedSchema(schema, force);
     if (status != DBStatus::OK) {
         ZLOGE("SetDistributedSchema failed, status:%{public}d, bundleName:%{public}s, store:%{publis}s",
@@ -1118,11 +1102,18 @@ int32_t RdbGeneralStore::SetDeviceDistributedTables(int32_t tableType)
     return GeneralError::E_OK;
 }
 
-int32_t RdbGeneralStore::SetCloudDistributedTables(const std::vector<Reference> &references)
+int32_t RdbGeneralStore::SetCloudReference(const std::vector<Reference> &references)
 {
-    auto status = SetReference(references);
-    if (status != GeneralError::E_OK) {
-        return status;
+    std::vector<DistributedDB::TableReferenceProperty> properties;
+    for (const auto &reference : references) {
+        properties.push_back({ reference.sourceTable, reference.targetTable, reference.refFields });
+    }
+    auto status = delegate_->SetReference(properties);
+    if (status != DistributedDB::DBStatus::OK && status != DistributedDB::DBStatus::PROPERTY_CHANGED) {
+        ZLOGE("distributed table set reference failed, err:%{public}d", status);
+        Report(FT_OPEN_STORE, static_cast<int32_t>(Fault::CSF_GS_CREATE_DISTRIBUTED_TABLE),
+            "SetDistributedTables: set reference=" + std::to_string(static_cast<int32_t>(status)));
+        return GeneralError::E_ERROR;
     }
     CloudMark metaData(meta_);
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetKey(), metaData, true) && metaData.isClearWaterMark) {
@@ -1166,10 +1157,10 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
         }
     }
     if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
-        return SetCloudDistributedTables(references);
+        return SetCloudReference(references);
     }
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        return SetDeviceDistributedTables(tableType);
+        return SetDeviceDistributedSchema(tableType);
     }
     return GeneralError::E_OK;
 }

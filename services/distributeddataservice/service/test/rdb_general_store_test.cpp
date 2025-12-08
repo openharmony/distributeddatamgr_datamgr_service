@@ -1587,7 +1587,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables011, TestSize.Level1)
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
     auto result = store_->SetDistributedTables(tables, type, references, 1);
-    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(result, GeneralError::E_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase_.GetKey(), true), true);
 }
 

@@ -46,6 +46,7 @@ ohos_source_set("distributeddata_rdb") {
     "rdb_cloud_conflict_handler.cpp",
     "rdb_cloud.cpp",
     "rdb_cursor.cpp",
+    "rdb_flow_control_manager.cpp",
     "rdb_general_store.cpp",
     "rdb_hiview_adapter.cpp",
     "rdb_notifier_proxy.cpp",

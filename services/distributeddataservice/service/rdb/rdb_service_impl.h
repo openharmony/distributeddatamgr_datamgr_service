@@ -27,6 +27,7 @@
 #include "concurrent_map.h"
 #include "crypto/crypto_manager.h"
 #include "feature/static_acts.h"
+#include "rdb_flow_control_manager.h"
 #include "lru_bucket.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -135,6 +136,7 @@ private:
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     using AutoCache = DistributedData::AutoCache;
     using CryptoManager = DistributedData::CryptoManager;
+    using FlowControlManager = OHOS::DistributedData::FlowControlManager;
     struct SyncAgent {
         SyncAgent() = default;
         explicit SyncAgent(const std::string &bundleName);
@@ -194,9 +196,11 @@ private:
         const AsyncDetail &async);
 
     void DoCompensateSync(const DistributedData::BindEvent& event);
-
-    int DoSync(const StoreMetaData &meta, const Option &option, const PredicatesMemo &predicates,
+    std::function<int()> GetSyncTask(const StoreMetaData &metaData, const RdbService::Option &option,
+        const PredicatesMemo &predicates, const AsyncDetail &async);
+    int DoSync(const StoreMetaData &meta, const RdbService::Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
+    bool IsSyncLimitApp(const StoreMetaData &meta);
 
     int DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &metaData,
         const std::vector<std::string> &tables);
@@ -294,6 +298,7 @@ private:
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
+    static std::shared_ptr<RdbFlowControlManager> rdbFlowControlManager_;
     std::shared_ptr<ExecutorPool> executors_;
     std::shared_ptr<GlobalEvent> eventContainer_;
     ConcurrentMap<int32_t, std::map<std::string, ExecutorPool::TaskId>> heartbeatTaskIds_;

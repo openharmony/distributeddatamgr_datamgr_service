@@ -174,7 +174,6 @@ private:
         uint32_t highMode = AUTO_SYNC_MODE);
 
     Executor::Task GetFinishTask(SyncId syncId);
-    int32_t SetReference(const std::vector<Reference> &references);
     std::shared_ptr<Cursor> RemoteQuery(const std::string &device,
         const DistributedDB::RemoteCondition &remoteCondition);
     std::string BuildSql(const std::string& table, const std::string& statement,
@@ -192,8 +191,8 @@ private:
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
     std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> InitRdbStore();
-    int32_t SetDeviceDistributedTables(int32_t tableType);
-    int32_t SetCloudDistributedTables(const std::vector<Reference> &references);
+    int32_t SetDeviceDistributedSchema(int32_t tableType);
+    int32_t SetCloudReference(const std::vector<Reference> &references);
     int32_t InitDelegate();
     DistributedData::StoreInfo GetStoreInfo() const;
     DetailAsync GetAsync() const;
