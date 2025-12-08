@@ -32,8 +32,8 @@ int32_t GeneralStoreMock::Execute(const std::string &table, const std::string &s
     return 0;
 }
 
-int32_t GeneralStoreMock::SetDistributedTables(
-    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references, int32_t tableType)
+int32_t GeneralStoreMock::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
+    const std::vector<Reference> &references, int32_t tableType, bool isAsync)
 {
     return 0;
 }
