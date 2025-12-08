@@ -1083,7 +1083,7 @@ int32_t RdbGeneralStore::SetDeviceDistributedSchema(int32_t tableType)
     }
     auto [res, schema] = GetGaussDistributedSchema(database);
     if (!res) {
-        ZLOGE("GetGaussDistributedSchema failed, bundleName:%{public}s, store:%{publis}s",
+        ZLOGE("GetGaussDistributedSchema failed, bundleName:%{public}s, store:%{public}s",
             meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
         return GeneralError::E_ERROR;
     }
@@ -1091,7 +1091,7 @@ int32_t RdbGeneralStore::SetDeviceDistributedSchema(int32_t tableType)
         SyncManager::GetInstance().NeedForceReplaceSchema({database.version, meta_.appId, meta_.bundleName, {}});
     auto status = delegate_->SetDistributedSchema(schema, force);
     if (status != DBStatus::OK) {
-        ZLOGE("SetDistributedSchema failed, status:%{public}d, bundleName:%{public}s, store:%{publis}s",
+        ZLOGE("SetDistributedSchema failed, status:%{public}d, bundleName:%{public}s, store:%{public}s",
             status, meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
         RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE,
             SETDEVICETABLE_SETSCHEMA_FAIL,
