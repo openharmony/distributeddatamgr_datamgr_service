@@ -179,14 +179,15 @@ void DeviceMatrix::UpdateMask(Mask &mask)
     mask.statics = Merge(meta.statics, mask.statics);
 }
 
-std::pair<uint16_t, uint16_t> DeviceMatrix::OnBroadcast(const std::string &device, const DataLevel &dataLevel)
+std::pair<uint16_t, uint16_t> DeviceMatrix::OnBroadcast(const std::string &device, const std::string &networkId,
+    const DataLevel &dataLevel)
 {
-    if (device.empty() || !dataLevel.IsValid()) {
-        ZLOGE("invalid args, device:%{public}s, dataLevel valid:%{public}d",
-            Anonymous::Change(device).c_str(), dataLevel.IsValid());
+    if (device.empty() || networkId.empty() || !dataLevel.IsValid()) {
+        ZLOGE("invalid args, device:%{public}s, networkId:%{public}s dataLevel valid:%{public}d",
+            Anonymous::Change(device).c_str(), Anonymous::Change(networkId).c_str(), dataLevel.IsValid());
         return { INVALID_LEVEL, INVALID_LEVEL };
     }
-    SaveSwitches(device, dataLevel);
+    SaveSwitches(device, networkId, dataLevel);
     auto result = ConvertMask(device, dataLevel);
     Mask mask;
     if (dataLevel.dynamic != INVALID_LEVEL) {
@@ -332,15 +333,17 @@ void DeviceMatrix::UpdateRemoteMeta(const std::string &device, Mask &mask, Matri
     MetaDataManager::GetInstance().SaveMeta(newMeta.GetKey(), newMeta, true);
 }
 
-void DeviceMatrix::SaveSwitches(const std::string &device, const DataLevel &dataLevel)
+void DeviceMatrix::SaveSwitches(const std::string &device, const std::string &networkId, const DataLevel &dataLevel)
 {
-    if (device.empty() || dataLevel.switches == INVALID_VALUE ||
+    if (device.empty() || networkId.empty() || dataLevel.switches == INVALID_VALUE ||
         dataLevel.switchesLen == INVALID_LENGTH) {
-        ZLOGW("switches data invalid, device:%{public}s", Anonymous::Change(device).c_str());
+        ZLOGW("switches data invalid, device:%{public}s, networkId:%{public}s", Anonymous::Change(device).c_str(),
+            Anonymous::Change(networkId).c_str());
         return;
     }
     SwitchesMetaData newMeta;
     newMeta.deviceId = device;
+    newMeta.networkId = networkId;
     newMeta.value = dataLevel.switches;
     newMeta.length = dataLevel.switchesLen;
     SwitchesMetaData oldMeta;

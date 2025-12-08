@@ -115,13 +115,13 @@ void KvStoreMetaManager::InitBroadcast()
 {
     auto pipe = Bootstrap::GetInstance().GetProcessLabel() + "-" + "default";
     auto result = Commu::GetInstance().ListenBroadcastMsg({ pipe },
-        [](const std::string &device, const AppDistributedKv::LevelInfo &levelInfo) {
+        [](const std::string &device, const std::string &networkId, const AppDistributedKv::LevelInfo &levelInfo) {
             DistributedData::DeviceMatrix::DataLevel level;
             level.dynamic = levelInfo.dynamic;
             level.statics = levelInfo.statics;
             level.switches = levelInfo.switches;
             level.switchesLen = levelInfo.switchesLen;
-            DeviceMatrix::GetInstance().OnBroadcast(device, std::move(level));
+            DeviceMatrix::GetInstance().OnBroadcast(device, networkId, std::move(level));
         });
 
     EventCenter::GetInstance().Subscribe(DeviceMatrix::MATRIX_BROADCAST, [pipe](const Event &event) {

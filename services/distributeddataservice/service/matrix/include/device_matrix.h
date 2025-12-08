@@ -66,7 +66,8 @@ public:
     bool Initialize(uint32_t token, std::string storeId);
     void Online(const std::string &device, RefCount refCount = {});
     void Offline(const std::string &device);
-    std::pair<uint16_t, uint16_t> OnBroadcast(const std::string &device, const DataLevel &dataLevel);
+    std::pair<uint16_t, uint16_t> OnBroadcast(const std::string &device, const std::string &networkId,
+        const DataLevel &dataLevel);
     void Broadcast(const DataLevel &dataLevel);
     void OnChanged(uint16_t code, LevelType type = LevelType::DYNAMIC);
     void OnChanged(const StoreMetaData &metaData);
@@ -133,7 +134,7 @@ private:
 
     void UpdateMask(Mask &mask);
     void UpdateConsistentMeta(const std::string &device, const Mask &remote);
-    void SaveSwitches(const std::string &device, const DataLevel &dataLevel);
+    void SaveSwitches(const std::string &device, const std::string &networkId, const DataLevel &dataLevel);
     void UpdateRemoteMeta(const std::string &device, Mask &mask, MatrixMetaData &newMeta);
     Task GenResetTask();
     std::pair<uint16_t, uint16_t> ConvertMask(const std::string &device, const DataLevel &dataLevel);

@@ -89,7 +89,7 @@ void OnDataLevelChanged(const char* networkId, const DataLevel dataLevel)
         .switchesLen = dataLevel.switchLength,
     };
     auto uuid = DeviceManagerAdapter::GetInstance().GetUuidByNetworkId(networkId);
-    SoftBusAdapter::GetInstance()->OnBroadcast({ uuid }, std::move(level));
+    SoftBusAdapter::GetInstance()->OnBroadcast({ uuid }, std::string(networkId), std::move(level));
 }
 
 IDataLevelCb g_callback = {
@@ -516,18 +516,20 @@ Status SoftBusAdapter::Broadcast(const PipeInfo &pipeInfo, const LevelInfo &leve
     return status != SOFTBUS_OK ? Status::ERROR : Status::SUCCESS;
 }
 
-void SoftBusAdapter::OnBroadcast(const DeviceId &device, const LevelInfo &levelInfo)
+void SoftBusAdapter::OnBroadcast(const DeviceId &device, const std::string &networkId, const LevelInfo &levelInfo)
 {
-    ZLOGI("device:%{public}s", Anonymous::Change(device.deviceId).c_str());
+    ZLOGI("device:%{public}s, networkId:%{public}s", Anonymous::Change(device.deviceId).c_str(),
+        Anonymous::Change(networkId).c_str());
     if (!onBroadcast_) {
-        ZLOGW("no listener device:%{public}s", Anonymous::Change(device.deviceId).c_str());
+        ZLOGW("no listener device:%{public}s, networkId:%{public}s", Anonymous::Change(device.deviceId).c_str(),
+            Anonymous::Change(networkId).c_str());
         return;
     }
-    onBroadcast_(device.deviceId, levelInfo);
+    onBroadcast_(device.deviceId, networkId, levelInfo);
 }
 
 int32_t SoftBusAdapter::ListenBroadcastMsg(const PipeInfo &pipeInfo,
-    std::function<void(const std::string &, const LevelInfo &)> listener)
+    std::function<void(const std::string &, const std::string &, const LevelInfo &)> listener)
 {
     if (onBroadcast_) {
         return SOFTBUS_ALREADY_EXISTED;

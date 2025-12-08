@@ -76,9 +76,9 @@ public:
     bool GetPeerSocketInfo(int32_t socket, ServerSocketInfo &info);
 
     Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo);
-    void OnBroadcast(const DeviceId &device, const LevelInfo &levelInfo);
+    void OnBroadcast(const DeviceId &device, const std::string &networkId, const LevelInfo &levelInfo);
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
-        std::function<void(const std::string &, const LevelInfo &)> listener);
+        std::function<void(const std::string &, const std::string &, const LevelInfo &)> listener);
 
     uint32_t GetMtuSize(const DeviceId &deviceId);
     uint32_t GetTimeout(const DeviceId &deviceId);
@@ -105,7 +105,7 @@ private:
     ConcurrentMap<std::string, const AppDataChangeListener *> dataChangeListeners_{};
     ConcurrentMap<std::string, std::vector<std::shared_ptr<SoftBusClient>>> connects_;
     bool flag_ = true; // only for br flag
-    std::function<void(const std::string &, const LevelInfo &)> onBroadcast_;
+    std::function<void(const std::string &, const std::string &, const LevelInfo &)> onBroadcast_;
     std::mutex taskMutex_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
     Time next_ = INVALID_NEXT;

@@ -89,7 +89,7 @@ public:
     void SetUp() {}
     void TearDown();
 
-    void ProcessBroadcastMsg(const std::string &device, const LevelInfo &levelInfo);
+    void ProcessBroadcastMsg(const std::string &device, const std::string &networkId, const LevelInfo &levelInfo);
     static void ConfigSendParameters(bool isCancel);
 
     mutable bool dataLevelResult_ = false;
@@ -202,9 +202,11 @@ void SoftBusAdapterStandardTest::ConfigSendParameters(bool isCancel)
     }
 }
 
-void SoftBusAdapterStandardTest::ProcessBroadcastMsg(const std::string &device, const LevelInfo &levelInfo)
+void SoftBusAdapterStandardTest::ProcessBroadcastMsg(const std::string &device, const std::string &networkId,
+    const LevelInfo &levelInfo)
 {
     (void)device;
+    (void)networkId;
     receiveLevelInfo_ = levelInfo;
     dataLevelResult_ = true;
 }
@@ -422,8 +424,9 @@ HWTEST_F(SoftBusAdapterStandardTest, ListenBroadcastTest001, TestSize.Level1)
     ASSERT_NE(status, 0);
 
     ConfigReturnCode(SoftBusErrNo::SOFTBUS_OK);
-    auto dataLevelListener = [this](const std::string &device, const LevelInfo &levelInfo) {
-        ProcessBroadcastMsg(device, levelInfo);
+    auto dataLevelListener = [this](const std::string &device, const std::string &networkId,
+        const LevelInfo &levelInfo) {
+        ProcessBroadcastMsg(device, networkId, levelInfo);
     };
     status = softBusAdapter_->ListenBroadcastMsg(pipeInfo_, dataLevelListener);
     ASSERT_EQ(status, 0);
@@ -455,8 +458,9 @@ HWTEST_F(SoftBusAdapterStandardTest, BroadcastTest001, TestSize.Level1)
 */
 HWTEST_F(SoftBusAdapterStandardTest, BroadcastTest002, TestSize.Level1)
 {
-    auto dataLevelListener = [this](const std::string &device, const LevelInfo &levelInfo) {
-        ProcessBroadcastMsg(device, levelInfo);
+    auto dataLevelListener = [this](const std::string &device, const std::string &networkId,
+        const LevelInfo &levelInfo) {
+        ProcessBroadcastMsg(device, networkId, levelInfo);
     };
     ConfigReturnCode(SoftBusErrNo::SOFTBUS_OK);
     (void)softBusAdapter_->ListenBroadcastMsg(pipeInfo_, dataLevelListener);

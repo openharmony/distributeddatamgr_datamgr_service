@@ -212,7 +212,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastMeta, TestSize.Level0)
     DeviceMatrix::DataLevel level = {
         .dynamic = DeviceMatrix::META_STORE_MASK,
     };
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
 }
 
@@ -233,7 +233,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastFirst, TestSize.Level0)
     DeviceMatrix::DataLevel level = {
         .dynamic = code,
     };
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, code);
 }
 
@@ -251,7 +251,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastOthers, TestSize.Level0)
     DeviceMatrix::DataLevel level = {
         .dynamic = code,
     };
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, 0);
 }
 
@@ -267,7 +267,7 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
     DeviceMatrix::DataLevel level = {
         .dynamic = DeviceMatrix::META_STORE_MASK,
     };
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
     StoreMetaData meta = metaData_;
     for (size_t i = 0; i < dynamicStores_.size(); ++i) {
@@ -275,18 +275,18 @@ HWTEST_F(DeviceMatrixTest, BroadcastAll, TestSize.Level0)
         meta.bundleName = dynamicStores_[i].first;
         auto code = DeviceMatrix::GetInstance().GetCode(meta);
         level.dynamic = code;
-        mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+        mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
         ASSERT_EQ(mask.first, (0x1 << (i + 1)) + 1);
         DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, code);
     }
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
     level.dynamic = DeviceMatrix::GetInstance().GetCode(metaData_);
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, 0);
 
     level.dynamic = 0xFFFF;
     level.statics = 0x000D;
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, 0x0);
 }
 
@@ -326,19 +326,19 @@ HWTEST_F(DeviceMatrixTest, UpdateMatrixMeta, TestSize.Level0)
     DeviceMatrix::DataLevel level = {
         .dynamic = 0x2,
     };
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, 0);
     level.dynamic = DeviceMatrix::META_STORE_MASK;
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
     level.dynamic = 0x4;
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, 0x3);
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, DeviceMatrix::META_STORE_MASK);
     DeviceMatrix::GetInstance().OnExchanged(TEST_DEVICE, 0x2);
     level.dynamic = 0xFFFF;
     level.statics = 0x000D;
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, level);
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, level);
     ASSERT_EQ(mask.first, 0x0);
     MetaDataManager::GetInstance().Unsubscribe(MatrixMetaData::GetPrefix({ TEST_DEVICE }));
 }
@@ -389,24 +389,28 @@ HWTEST_F(DeviceMatrixTest, OnBroadcast, TestSize.Level1)
     std::string device;
     DeviceMatrix::DataLevel dataLevel;
     EXPECT_TRUE(!dataLevel.IsValid());
-    auto mask = DeviceMatrix::GetInstance().OnBroadcast(device, dataLevel);
-    EXPECT_EQ(mask.first, DeviceMatrix::INVALID_LEVEL); // true true
+    auto mask = DeviceMatrix::GetInstance().OnBroadcast(device, device, dataLevel);
+    EXPECT_EQ(mask.first, DeviceMatrix::INVALID_LEVEL);
 
     dataLevel = {
         .dynamic = DeviceMatrix::META_STORE_MASK,
     };
     EXPECT_FALSE(!dataLevel.IsValid());
-    mask = DeviceMatrix::GetInstance().OnBroadcast(device, dataLevel);
-    EXPECT_EQ(mask.first, DeviceMatrix::INVALID_LEVEL); // true false
+    mask = DeviceMatrix::GetInstance().OnBroadcast(device, device, dataLevel);
+    EXPECT_EQ(mask.first, DeviceMatrix::INVALID_LEVEL);
 
     EXPECT_FALSE(!dataLevel.IsValid());
-    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, dataLevel);
-    EXPECT_EQ(mask.first, DeviceMatrix::META_STORE_MASK); // false false
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, device, dataLevel);
+    EXPECT_EQ(mask.first, DeviceMatrix::INVALID_LEVEL);
+
+    EXPECT_FALSE(!dataLevel.IsValid());
+    mask = DeviceMatrix::GetInstance().OnBroadcast(TEST_DEVICE, TEST_DEVICE, dataLevel);
+    EXPECT_EQ(mask.first, DeviceMatrix::META_STORE_MASK);
 
     DeviceMatrix::DataLevel dataLevels;
     EXPECT_TRUE(!dataLevels.IsValid());
-    mask = DeviceMatrix::GetInstance().OnBroadcast(device, dataLevels);
-    EXPECT_EQ(mask.first, DeviceMatrix::INVALID_LEVEL); // false true
+    mask = DeviceMatrix::GetInstance().OnBroadcast(device, device, dataLevels);
+    EXPECT_EQ(mask.first, DeviceMatrix::INVALID_LEVEL);
 }
 
 /**
@@ -451,16 +455,18 @@ HWTEST_F(DeviceMatrixTest, SaveSwitches, TestSize.Level1)
     DeviceMatrix::DataLevel dataLevel;
     dataLevel.switches = DeviceMatrix::INVALID_VALUE;
     dataLevel.switchesLen = DeviceMatrix::INVALID_LENGTH;
-    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, dataLevel));
+    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, device, dataLevel));
 
     device = "SaveSwitches";
-    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, dataLevel));
+    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, "", dataLevel));
+
+    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, device, dataLevel));
 
     dataLevel.switches = 0;
-    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, dataLevel));
+    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, device, dataLevel));
 
     dataLevel.switchesLen = 0;
-    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, dataLevel));
+    EXPECT_NO_FATAL_FAILURE(deviceMatrix.SaveSwitches(device, device, dataLevel));
 }
 
 /**
@@ -731,7 +737,7 @@ HWTEST_F(DeviceMatrixTest, GetRemoteMask002, TestSize.Level1)
     DeviceMatrix::DataLevel level = {
         .dynamic = code,
     };
-    DeviceMatrix::GetInstance().OnBroadcast(device, level);
+    DeviceMatrix::GetInstance().OnBroadcast(device, device, level);
 
     DeviceMatrix::LevelType type = DeviceMatrix::LevelType::STATICS;
     std::pair<bool, uint16_t> mask = DeviceMatrix::GetInstance().GetRemoteMask(device, type);
