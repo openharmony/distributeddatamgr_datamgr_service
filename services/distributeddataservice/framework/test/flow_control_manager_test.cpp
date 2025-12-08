@@ -253,6 +253,7 @@ public:
         // Type 0: High priority, execute immediately
         // Type 1: Medium priority, delay 100ms to execute
         // Type 2: Low priority, delay 500ms to execute
+        // '100' for medium priority, '500' for low priority
         return now + std::chrono::milliseconds(info.type == 0 ? 0 : info.type == 1 ? 100 : 500);
     }
 
@@ -819,6 +820,7 @@ public:
     FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
         const FlowControlManager::TaskInfo &info) override
     {
+        // '300' All tasks delayed by 300ms
         return std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
     }
 };
@@ -895,6 +897,7 @@ public:
     FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
         const FlowControlManager::TaskInfo &info) override
     {
+        // '200' All tasks delayed by 200ms
         return std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
     }
 };
