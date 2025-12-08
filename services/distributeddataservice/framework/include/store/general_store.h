@@ -161,8 +161,8 @@ public:
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
-    virtual int32_t SetDistributedTables(
-        const std::vector<std::string> &tables, int type, const std::vector<Reference> &references) = 0;
+    virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type,
+        const std::vector<Reference> &references, int32_t tableType = 0) = 0;
 
     virtual int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
         const std::set<std::string> &extendColNames, bool isForceUpgrade) = 0;
@@ -224,7 +224,10 @@ public:
 
     virtual void SetEqualIdentifier(const std::string &appId, const std::string &storeId, std::string account = "") {};
 
-    virtual void SetConfig(const StoreConfig &storeConfig) {};
+    virtual int32_t SetConfig(const StoreConfig &storeConfig)
+    {
+        return 0;
+    }
 
     virtual std::pair<int32_t, uint32_t> LockCloudDB() = 0;
 

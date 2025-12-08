@@ -634,7 +634,7 @@ int32_t KVDBGeneralStore::AddRef()
 }
 
 int32_t KVDBGeneralStore::SetDistributedTables(
-    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references)
+    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references, int32_t tableType)
 {
     return GeneralError::E_OK;
 }
@@ -841,9 +841,10 @@ std::vector<uint8_t> KVDBGeneralStore::GetNewKey(std::vector<uint8_t> &key, cons
     return out;
 }
 
-void KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
+int32_t KVDBGeneralStore::SetConfig(const GeneralStore::StoreConfig &storeConfig)
 {
     enableCloud_ = storeConfig.enableCloud_;
+    return GeneralError::E_OK;
 }
 
 std::pair<int32_t, uint32_t> KVDBGeneralStore::LockCloudDB()

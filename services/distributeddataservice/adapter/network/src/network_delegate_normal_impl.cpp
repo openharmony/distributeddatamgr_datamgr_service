@@ -104,7 +104,9 @@ int32_t NetConnCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHandle
 }
 
 NetworkDelegateNormalImpl::NetworkDelegateNormalImpl()
-    : cloudDeviceInfo_({ "", "", "cloudNetworkId", "cloudDeviceName", 0 })
+    : cloudDeviceInfo_({DeviceManagerAdapter::CLOUD_DEVICE_UUID,
+                        DeviceManagerAdapter::CLOUD_DEVICE_UUID,
+                        "cloudNetworkId", "cloudDeviceName", 0})
 {
 }
 

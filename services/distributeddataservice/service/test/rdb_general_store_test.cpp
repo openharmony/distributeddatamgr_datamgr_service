@@ -21,11 +21,14 @@
 
 #include "bootstrap.h"
 #include "cloud/schema_meta.h"
+#include "device_matrix.h"
 #include "error/general_error.h"
 #include "errors.h"
 #include "eventcenter/event_center.h"
 #include "gtest/gtest.h"
+#include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
+#include "mock/db_store_mock.h"
 #include "mock/general_watcher_mock.h"
 #include "rdb_query.h"
 #include "rdb_helper.h"
@@ -62,11 +65,16 @@ public:
     {
         Bootstrap::GetInstance().LoadDirectory();
         InitMetaData();
+        InitDataBase();
+        InitMetaDataManager();
         mkdir(metaData_.dataDir.c_str(), (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
         store_ = std::make_shared<RdbGeneralStore>(metaData_);
         MockRelationalStoreDelegate::SetCloudSyncTaskCount(0);
         MockRelationalStoreDelegate::SetDownloadingAssetsCount(0);
         MockRelationalStoreDelegate::SetDeviceTaskCount(0);
+        MockRelationalStoreDelegate::SetResSetStoreConfig(DBStatus::OK);
+        MockRelationalStoreDelegate::SetResSetDbSchema(DBStatus::OK);
+        MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
     };
     void TearDown()
     {
@@ -74,6 +82,8 @@ public:
 
 protected:
     void InitMetaData();
+    void InitDataBase();
+    static void InitMetaDataManager();
     static StoreMetaData GetStoreMeta(const std::string &storeName, int32_t area = 1, int32_t user = 0);
     static int32_t CreateTable(std::shared_ptr<RdbGeneralStore> store, const std::string &tableName = "employee");
     static bool Equal(const Value &left, const Value &right);
@@ -84,8 +94,11 @@ protected:
     static void CorruptDatabasePager(std::shared_ptr<RdbGeneralStore> store, const std::string &filePath,
         const std::string &tableName);
     StoreMetaData metaData_;
+    DistributedData::Database dataBase_;
     std::shared_ptr<RdbGeneralStore> store_;
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
 };
+std::shared_ptr<DBStoreMock> RdbGeneralStoreTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 
 class RdbGeneralQuery : public GenQuery {
 public:
@@ -135,6 +148,38 @@ int32_t CloudConflictHandlerMock::HandleConflict(const std::string &table,
     OHOS::DistributedData::VBucket &upsert)
 {
     return 0;
+}
+
+void RdbGeneralStoreTest::InitMetaDataManager()
+{
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+    MetaDataManager::GetInstance().SetSyncer([](const auto &, auto) {
+        DeviceMatrix::GetInstance().OnChanged(DeviceMatrix::META_STORE_MASK);
+    });
+}
+ 
+void RdbGeneralStoreTest::InitDataBase()
+{
+    DistributedData::Field field;
+    field.colName = "field_name";
+    field.type = 0;
+    field.primary= true;
+    field.autoIncrement = false;
+    std::vector<DistributedData::Field> fields;
+    std::vector<std::string> deviceSyncFields;
+    deviceSyncFields.push_back("field_name");
+    fields.push_back(field);
+    DistributedData::Table table;
+    table.name = "table_name";
+    table.deviceSyncFields = deviceSyncFields;
+    table.fields = fields;
+    std::vector<DistributedData::Table> tables;
+    tables.push_back(table);
+    dataBase_.bundleName = BUNDLE_NAME;
+    dataBase_.user = "0";
+    dataBase_.deviceId = "deviceId";
+    dataBase_.name = STORE_NAME;
+    dataBase_.tables = tables;
 }
 
 void RdbGeneralStoreTest::InitMetaData()
@@ -886,6 +931,30 @@ HWTEST_F(RdbGeneralStoreTest, Sync001, TestSize.Level1)
 * @tc.desc: RdbGeneralStore Sync DistributedTable test
 * @tc.type: FUNC
 */
+HWTEST_F(RdbGeneralStoreTest, Sync003, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    ASSERT_NE(store_, nullptr);
+ 
+    GeneralStore::Devices devices;
+    std::vector<std::string> tables;
+    tables.push_back("table");
+    OHOS::DistributedRdb::RdbQuery query(tables);
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+    MockRelationalStoreDelegate::SetResSync(DBStatus::DB_ERROR);
+    auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: Sync
+* @tc.desc: RdbGeneralStore Sync DistributedTable test
+* @tc.type: FUNC
+*/
 HWTEST_F(RdbGeneralStoreTest, Sync002, TestSize.Level1)
 {
     metaData_.storeId = "mock";
@@ -1136,33 +1205,419 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
 }
 
 /**
-* @tc.name: SetDistributedTables
+* @tc.name: SetDistributedTables001
 * @tc.desc: RdbGeneralStore SetDistributedTables function test
 * @tc.type: FUNC
 */
-HWTEST_F(RdbGeneralStoreTest, SetDistributedTables, TestSize.Level1)
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables001, TestSize.Level1)
 {
     std::vector<std::string> tables = { "table1", "table2" };
     int32_t type = DistributedTableType::DISTRIBUTED_DEVICE;
     std::vector<DistributedData::Reference> references;
-    auto result = store_->SetDistributedTables(tables, type, references);
+    auto result = store_->SetDistributedTables(tables, type, references, 0);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
     store_->Init();
-    result = store_->SetDistributedTables(tables, type, references);
+    result = store_->SetDistributedTables(tables, type, references, 0);
     EXPECT_EQ(result, GeneralError::E_OK);
 
     std::vector<std::string> test = { "test" };
-    result = store_->SetDistributedTables(test, type, references);
+    result = store_->SetDistributedTables(test, type, references, 0);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     MockRelationalStoreDelegate::gTestResult = true;
-    result = store_->SetDistributedTables(tables, type, references);
+    result = store_->SetDistributedTables(tables, type, references, 0);
     EXPECT_EQ(result, GeneralError::E_OK);
     type = DistributedTableType::DISTRIBUTED_CLOUD;
-    result = store_->SetDistributedTables(tables, type, references);
+    result = store_->SetDistributedTables(tables, type, references, 0);
     EXPECT_EQ(result, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: SetDistributedTables002
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & schema is valid
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables002, TestSize.Level1)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase_.GetKey(), dataBase_, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase_.GetKey(), dataBase_, true), true);
+    std::vector<std::string> tables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(tables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase_.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables003
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & schema is invalid syncAutoIncrement
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables003, TestSize.Level1)
+{
+    DistributedData::Field field;
+    field.colName = "field_name";
+    field.type = 0;
+    field.primary= true;
+    field.autoIncrement = true;
+    std::vector<DistributedData::Field> fields;
+    std::vector<std::string> deviceSyncFields;
+    deviceSyncFields.push_back("field_name");
+    fields.push_back(field);
+    DistributedData::Table table;
+    table.name = "table_name";
+    table.deviceSyncFields = deviceSyncFields;
+    table.fields = fields;
+    std::vector<DistributedData::Table> tables;
+    tables.push_back(table);
+    DistributedData::Database dataBase;
+    dataBase.bundleName = BUNDLE_NAME;
+    dataBase.user = "0";
+    dataBase.deviceId = "deviceId";
+    dataBase.name = STORE_NAME;
+    dataBase.tables = tables;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true), true);
+    std::vector<std::string> dbtables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables004
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & schema is invalid syncSpecifiedCount
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables004, TestSize.Level1)
+{
+    DistributedData::Field field;
+    field.colName = "field_name";
+    field.type = 0;
+    field.primary= false;
+    field.autoIncrement = false;
+    std::vector<DistributedData::Field> fields;
+    std::vector<std::string> deviceSyncFields;
+    deviceSyncFields.push_back("field_name");
+    fields.push_back(field);
+    DistributedData::Table table;
+    table.name = "table_name";
+    table.deviceSyncFields = deviceSyncFields;
+    table.fields = fields;
+    std::vector<DistributedData::Table> tables;
+    tables.push_back(table);
+    DistributedData::Database dataBase;
+    dataBase.bundleName = BUNDLE_NAME;
+    dataBase.user = "0";
+    dataBase.deviceId = "deviceId";
+    dataBase.name = STORE_NAME;
+    dataBase.tables = tables;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true), true);
+    std::vector<std::string> dbtables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables005
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & schema is invalid syncSpecifiedCount
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables005, TestSize.Level1)
+{
+    DistributedData::Field field;
+    field.colName = "field_name";
+    field.type = 0;
+    field.primary= true;
+    field.autoIncrement = false;
+    DistributedData::Field field1;
+    field1.colName = "field_name1";
+    field1.type = 0;
+    field1.primary= true;
+    field1.autoIncrement = false;
+    std::vector<DistributedData::Field> fields;
+    std::vector<std::string> deviceSyncFields;
+    deviceSyncFields.push_back("field_name");
+    deviceSyncFields.push_back("field_name1");
+    fields.push_back(field);
+    fields.push_back(field1);
+    DistributedData::Table table;
+    table.name = "table_name";
+    table.deviceSyncFields = deviceSyncFields;
+    table.fields = fields;
+    std::vector<DistributedData::Table> tables;
+    tables.push_back(table);
+    DistributedData::Database dataBase;
+    dataBase.bundleName = BUNDLE_NAME;
+    dataBase.user = "0";
+    dataBase.deviceId = "deviceId";
+    dataBase.name = STORE_NAME;
+    dataBase.tables = tables;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true), true);
+    std::vector<std::string> dbtables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables006
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & schema is valid setdbSchema fail
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables006, TestSize.Level1)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase_.GetKey(), dataBase_, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase_.GetKey(), dataBase_, true), true);
+    std::vector<std::string> tables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    MockRelationalStoreDelegate::SetResSetDbSchema(DBStatus::DB_ERROR);
+    auto result = store_->SetDistributedTables(tables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase_.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables007
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & syncSpecifiedCount is 0 & table unsync
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables007, TestSize.Level1)
+{
+    DistributedData::Field field;
+    field.colName = "field_name";
+    field.type = 0;
+    field.primary= false;
+    field.autoIncrement = false;
+    std::vector<DistributedData::Field> fields;
+    fields.push_back(field);
+    DistributedData::Table table;
+    table.name = "table_name";
+    table.fields = fields;
+    std::vector<DistributedData::Table> tables;
+    tables.push_back(table);
+    DistributedData::Database dataBase;
+    dataBase.bundleName = BUNDLE_NAME;
+    dataBase.user = "0";
+    dataBase.deviceId = "deviceId";
+    dataBase.name = STORE_NAME;
+    dataBase.tables = tables;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true), true);
+    std::vector<std::string> dbtables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables008
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & unsync field is autoIncrement
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables008, TestSize.Level1)
+{
+    DistributedData::Field field;
+    field.colName = "field_name";
+    field.type = 0;
+    field.primary= true;
+    field.autoIncrement = false;
+    DistributedData::Field field1;
+    field1.colName = "field_name1";
+    field1.type = 0;
+    field1.primary= false;
+    field1.autoIncrement = true;
+    std::vector<DistributedData::Field> fields;
+    std::vector<std::string> deviceSyncFields;
+    deviceSyncFields.push_back("field_name");
+    fields.push_back(field);
+    fields.push_back(field1);
+    DistributedData::Table table;
+    table.name = "table_name";
+    table.deviceSyncFields = deviceSyncFields;
+    table.fields = fields;
+    std::vector<DistributedData::Table> tables;
+    tables.push_back(table);
+    DistributedData::Database dataBase;
+    dataBase.bundleName = BUNDLE_NAME;
+    dataBase.user = "0";
+    dataBase.deviceId = "deviceId";
+    dataBase.name = STORE_NAME;
+    dataBase.tables = tables;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true), true);
+    std::vector<std::string> dbtables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables009
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & unsync feild is primary
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables009, TestSize.Level1)
+{
+    DistributedData::Field field;
+    field.colName = "field_name";
+    field.type = 0;
+    field.primary= true;
+    field.autoIncrement = false;
+    DistributedData::Field field1;
+    field1.colName = "field_name1";
+    field1.type = 0;
+    field1.primary= true;
+    field1.autoIncrement = false;
+    std::vector<DistributedData::Field> fields;
+    std::vector<std::string> deviceSyncFields;
+    deviceSyncFields.push_back("field_name");
+    fields.push_back(field);
+    fields.push_back(field1);
+    DistributedData::Table table;
+    table.name = "table_name";
+    table.deviceSyncFields = deviceSyncFields;
+    table.fields = fields;
+    std::vector<DistributedData::Table> tables;
+    tables.push_back(table);
+    DistributedData::Database dataBase;
+    dataBase.bundleName = BUNDLE_NAME;
+    dataBase.user = "0";
+    dataBase.deviceId = "deviceId";
+    dataBase.name = STORE_NAME;
+    dataBase.tables = tables;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true), true);
+    std::vector<std::string> dbtables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables010
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema success & unsync feild is primary
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables010, TestSize.Level1)
+{
+    DistributedData::Field field;
+    field.colName = "field_name";
+    field.type = 0;
+    field.primary= true;
+    field.autoIncrement = false;
+    std::vector<DistributedData::Field> fields;
+    std::vector<std::string> deviceSyncFields;
+    deviceSyncFields.push_back("field_name");
+    fields.push_back(field);
+    DistributedData::Table table;
+    table.name = "table_name";
+    table.deviceSyncFields = deviceSyncFields;
+    table.fields = fields;
+    DistributedData::Table table1;
+    table1.name = "table_name1";
+    table1.deviceSyncFields = deviceSyncFields;
+    table1.fields = fields;
+    std::vector<DistributedData::Table> tables;
+    tables.push_back(table);
+    tables.push_back(table1);
+    DistributedData::Database dataBase;
+    dataBase.bundleName = BUNDLE_NAME;
+    dataBase.user = "0";
+    dataBase.deviceId = "deviceId";
+    dataBase.name = STORE_NAME;
+    dataBase.tables = tables;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(dataBase.GetKey(), dataBase, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(dataBase.GetKey(), dataBase, true), true);
+    std::vector<std::string> dbtables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetDistributedTables011
+* @tc.desc: RdbGeneralStore SetDistributedTables getschema fail
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetDistributedTables011, TestSize.Level1)
+{
+    std::vector<std::string> tables = { "table1", "table2" };
+    int32_t type = OHOS::DistributedRdb::DistributedTableType::DISTRIBUTED_DEVICE;
+    std::vector<DistributedData::Reference> references;
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    auto result = store_->SetDistributedTables(tables, type, references, 1);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase_.GetKey(), true), true);
+}
+
+/**
+* @tc.name: SetConfig001
+* @tc.desc: RdbGeneralStore SetConfig001 setsuccess
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetConfig001, TestSize.Level1)
+{
+    store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
+    store_->Init();
+    GeneralStore::StoreConfig storeConfig;
+    storeConfig.tableMode = GeneralStore::DistributedTableMode::COLLABORATION;
+    auto result = store_->SetConfig(storeConfig);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    storeConfig.tableMode = GeneralStore::DistributedTableMode::SPLIT_BY_DEVICE;
+    result = store_->SetConfig(storeConfig);
+    EXPECT_EQ(result, GeneralError::E_OK);
+    MockRelationalStoreDelegate::SetResSetStoreConfig(DBStatus::DB_ERROR);
+    result = store_->SetConfig(storeConfig);
+    EXPECT_EQ(result, GeneralError::E_ERROR);
+    MockRelationalStoreDelegate::SetResSetStoreConfig(DBStatus::OK);
+    store_->isClosed_ = true;
+    result = store_->SetConfig(storeConfig);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    store_->isClosed_ = false;
+    store_->delegate_ = nullptr;
+    result = store_->SetConfig(storeConfig);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
 
 /**
@@ -1406,7 +1861,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_DBOperationAfterClose, TestSize.Le
     std::vector<std::string> tables = { "table1", "table2" };
     int32_t type = DistributedTableType::DISTRIBUTED_DEVICE;
     std::vector<DistributedData::Reference> references;
-    code = store->SetDistributedTables(tables, type, references);
+    code = store->SetDistributedTables(tables, type, references, 0);
     EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
 
     // Cleanup test environment
