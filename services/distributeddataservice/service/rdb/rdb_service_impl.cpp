@@ -1311,7 +1311,10 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
     RdbHiViewAdapter::GetInstance().SetThreadPool(executors_);
-    rdbFlowControlManager_->Init(executors_, std::make_shared<RdbFlowControlStrategy>());
+    rdbFlowControlManager_ = std::make_shared<RdbFlowControlManager>();
+    if (rdbFlowControlManager_ != nullptr) {
+        rdbFlowControlManager_->Init(executors_, std::make_shared<RdbFlowControlStrategy>());
+    }
     return 0;
 }
 
