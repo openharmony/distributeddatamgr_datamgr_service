@@ -1314,6 +1314,9 @@ std::pair<int32_t, int32_t> RdbServiceImpl::GetInstIndexAndUser(uint32_t tokenId
 int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
+    if (executors_ == nullptr) {
+        return 0;
+    }
     RdbHiViewAdapter::GetInstance().SetThreadPool(executors_);
     rdbFlowControlManager_ = std::make_shared<RdbFlowControlManager>();
     if (rdbFlowControlManager_ != nullptr) {
