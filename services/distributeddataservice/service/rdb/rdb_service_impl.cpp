@@ -261,11 +261,15 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
         return RDB_ERROR;
     }
     if (notifier == nullptr) {
-        ZLOGE("notifier is null");
+        ZLOGE("notifier is nullptr");
         return RDB_ERROR;
     }
 
-    auto notifierProxy = iface_cast<RdbNotifierProxy>(notifier);
+    sptr<RdbNotifierProxy> notifierProxy = new (std::nothrow) RdbNotifierProxy(notifier);
+    if (notifierProxy == nullptr) {
+        ZLOGE("notifierProxy is null");
+        return RDB_ERROR;
+    }
     pid_t pid = IPCSkeleton::GetCallingPid();
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     syncAgents_.Compute(tokenId, [bundleName = param.bundleName_, notifierProxy, pid](auto, SyncAgents &agents) {
