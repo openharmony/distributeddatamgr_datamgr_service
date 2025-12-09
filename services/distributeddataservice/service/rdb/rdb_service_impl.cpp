@@ -258,7 +258,7 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
         return RDB_ERROR;
     }
     if (notifier == nullptr) {
-        ZLOGE("notifier is null");
+        ZLOGE("notifier is nullptr");
         return RDB_ERROR;
     }
 
