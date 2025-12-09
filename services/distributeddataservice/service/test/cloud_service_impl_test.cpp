@@ -1192,11 +1192,52 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
 }
 
 /**
- * @tc.name: CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo
- * @tc.desc: Test Clean with db level config and empty table info
+ * @tc.name: NetworkRecoveryTest005
+ * @tc.desc: test the compensatory sync strategy for network recovery callback
  * @tc.type: FUNC
  * @tc.require:
+ * @tc.author:
  */
+HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest005, TestSize.Level0)
+{
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(ReturnWithUserList({ MOCK_USER }));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_)).WillOnce(ReturnWithUserList({ MOCK_USER }));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    CloudInfo cloudInfo;
+    cloudInfo.user = MOCK_USER;
+    MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+    auto &recoveryManager = cloudServiceImpl_->syncManager_.networkRecoveryManager_;
+    cloudServiceImpl_->Offline(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    recoveryManager.currentEvent_->disconnectTime -= std::chrono::hours(DISCONNECT_TIME);
+
+    StoreMetaData metaData;
+    MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
+    StoreInfo storeInfo;
+    storeInfo.bundleName = metaData.bundleName;
+    storeInfo.storeName = metaData.storeId;
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(metaData.tokenId);
+    storeInfo.deviceId = metaData.deviceId;
+    storeInfo.path = metaData.dataDir;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true), true);
+    std::string key = storeInfo.bundleName + storeInfo.storeName + std::to_string(storeInfo.user);
+    cloudServiceImpl_->syncManager_.syncTriggerMap_.Insert(key, storeInfo);
+
+    cloudServiceImpl_->OnReady(DeviceManagerAdapter::CLOUD_DEVICE_UUID);
+    auto [status, result] =
+        cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+* @tc.name: CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo
+* @tc.desc: Test Clean with db level config and empty table info
+* @tc.type: FUNC
+* @tc.require:
+*/
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo, TestSize.Level1)
 {
     InitCloudInfoAndSchema();

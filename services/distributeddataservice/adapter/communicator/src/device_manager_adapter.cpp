@@ -168,7 +168,8 @@ void DataMgrDmInitCall::OnRemoteDied()
 }
 
 DeviceManagerAdapter::DeviceManagerAdapter()
-    : cloudDeviceInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 })
+    : cloudDeviceInfo({CLOUD_DEVICE_UUID, CLOUD_DEVICE_UUID, "cloudNetworkId",
+                       "cloudDeviceName", 0})
 {
     ZLOGI("construct");
 }

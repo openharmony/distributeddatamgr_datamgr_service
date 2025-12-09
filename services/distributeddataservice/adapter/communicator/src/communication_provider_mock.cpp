@@ -50,10 +50,6 @@ public:
         return false;
     }
 
-    void SetDeviceQuery(std::shared_ptr<IDeviceQuery> deviceQuery) override
-    {
-    }
-
     void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) override
     {
     }

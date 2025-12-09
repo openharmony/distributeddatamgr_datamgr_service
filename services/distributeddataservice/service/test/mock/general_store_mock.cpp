@@ -15,6 +15,7 @@
 #include "general_store_mock.h"
 namespace OHOS {
 namespace DistributedData {
+int32_t GeneralStoreMock::mode_ = 0;
 int32_t GeneralStoreMock::Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
     const CloudConfig &config)
 {
@@ -32,7 +33,7 @@ int32_t GeneralStoreMock::Execute(const std::string &table, const std::string &s
 }
 
 int32_t GeneralStoreMock::SetDistributedTables(
-    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references)
+    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references, int32_t tableType)
 {
     return 0;
 }
@@ -225,7 +226,13 @@ int32_t GeneralStoreMock::StopCloudSync()
 
 int32_t GeneralStoreMock::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
 {
+    mode_ = 1;
     return E_OK;
+}
+
+int32_t GeneralStoreMock::SetConfig(const StoreConfig &storeConfig)
+{
+    return dbStatus_;
 }
 } // namespace DistributedData
 } // namespace OHOS

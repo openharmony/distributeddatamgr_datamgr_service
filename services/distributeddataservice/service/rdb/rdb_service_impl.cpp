@@ -68,6 +68,7 @@ using OHOS::DistributedData::StoreMetaData;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using DistributedDB::RelationalStoreManager;
+using DistributedTableMode = OHOS::DistributedRdb::DistributedTableMode;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using RdbSchemaConfig = OHOS::DistributedRdb::RdbSchemaConfig;
 using DumpManager = OHOS::DistributedData::DumpManager;
@@ -286,18 +287,50 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
     if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
         return true;
     }
-
-    auto isAutoSyncApp = SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId);
-    if (!isAutoSyncApp) {
-        return false;
-    }
-
     auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
     if (success && !database.name.empty() && !database.bundleName.empty()) {
         MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true);
         return true;
     }
     return false;
+}
+
+int32_t RdbServiceImpl::SetDeviceDistributedTables(int32_t tableType, StoreMetaData &metaData,
+    std::shared_ptr<DistributedData::GeneralStore> store)
+{
+    SaveSyncMeta(metaData);
+    if ((tableType == DistributedTableMode::SINGLE_VERSION) && !IsCollaboration(metaData)) {
+        ZLOGE("Singleversion is no schema! bundle:%{public}s, %{public}s.",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE, SETDEVICETABLE_NOSCHEMA,
+            metaData.bundleName, "SINGLE_VERSION distributedtable no Schema"});
+        return RDB_ERROR;
+    }
+    GeneralStore::StoreConfig config;
+    config.tableMode = tableType == DistributedTableMode::DEVICE_COLLABORATION
+                           ? GeneralStore::DistributedTableMode::SPLIT_BY_DEVICE
+                           : GeneralStore::DistributedTableMode::COLLABORATION;
+    if (store->SetConfig(config) != RDB_OK) {
+        RdbHiViewAdapter::GetInstance().ReportRdbFault({SET_DEVICE_DIS_TABLE,
+            SETDEVICETABLE_SETCONFIG_FAIL,
+            metaData.bundleName,
+            Anonymous::Change(metaData.storeId) + " setconfig fail:" + std::to_string(tableType)});
+        return RDB_ERROR;
+    }
+    return RDB_OK;
+}
+
+void RdbServiceImpl::SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData)
+{
+    if (metaData.asyncDownloadAsset != param.asyncDownloadAsset_ || metaData.enableCloud != param.enableCloud_) {
+        ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
+              "%{public}d],enableCloud? [%{public}d -> %{public}d]",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset,
+            param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_);
+        metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
+        metaData.enableCloud = param.enableCloud_;
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+    }
 }
 
 int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
@@ -308,50 +341,39 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
             Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-
     auto [exists, metaData] = LoadStoreMetaData(param);
     if (!exists || metaData.instanceId != 0) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
             metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), metaData.instanceId);
     }
-
     if (type == DistributedTableType::DISTRIBUTED_SEARCH) {
         DistributedData::SetSearchableEvent::EventInfo eventInfo{ .isRebuild = isRebuild };
         return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, metaData, eventInfo);
     }
-
     auto store = GetStore(metaData);
     if (store == nullptr) {
         ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
         return RDB_ERROR;
     }
-
+    int32_t tableType = param.distributedTableMode_;
     StoreMetaMapping metaMapping(metaData);
     MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
     if (type == DistributedTableType::DISTRIBUTED_DEVICE) {
-        SaveSyncMeta(metaData);
-        if (IsCollaboration(metaData)) {
-            store->SetConfig({false, GeneralStore::DistributedTableMode::COLLABORATION});
+        tableType = SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)
+                        ? DistributedTableMode::SINGLE_VERSION : tableType;
+        if (SetDeviceDistributedTables(tableType, metaData, store) != RDB_OK) {
+            return RDB_ERROR;
         }
         metaMapping.devicePath = metaData.dataDir;
-    } else if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
-        if ((metaData.asyncDownloadAsset != param.asyncDownloadAsset_) ||
-            (metaData.enableCloud != param.enableCloud_) || (metaData.autoSyncSwitch != param.autoSyncSwitch_)) {
-            ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
-                  "%{public}d],enableCloud? [%{public}d -> %{public}d],autoSyncSwitch? [%{public}d -> %{public}d]",
-                param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset,
-                param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_, metaData.autoSyncSwitch,
-                param.autoSyncSwitch_);
-            metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
-            metaData.enableCloud = param.enableCloud_;
-            metaData.autoSyncSwitch = param.autoSyncSwitch_;
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-        }
+    }
+    if (type == DistributedTableType::DISTRIBUTED_CLOUD) {
+        SetCloudDistributedTables(param, metaData);
         metaMapping.cloudPath = metaData.dataDir;
     }
     metaMapping = metaData;
     MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
-    return store->SetDistributedTables(tables, type, RdbTypesUtils::Convert(references));
+    return store->SetDistributedTables(
+        tables, type, RdbTypesUtils::Convert(references), tableType);
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
@@ -495,16 +517,16 @@ int RdbServiceImpl::DoSync(const StoreMetaData &meta, const RdbService::Option &
 {
     auto store = GetStore(meta);
     if (store == nullptr) {
+        ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
         return RDB_ERROR;
     }
-
     RdbQuery rdbQuery(predicates);
     auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
                                                  : DmAdapter::ToUUID(rdbQuery.GetDevices());
     if (!rdbQuery.GetDevices().empty() && !devices.empty()) {
         SaveAutoSyncInfo(meta, devices);
     }
-
     auto pid = IPCSkeleton::GetCallingPid();
     SyncParam syncParam = { option.mode, 0, option.isCompensation };
     auto tokenId = meta.tokenId;
@@ -750,12 +772,18 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto storeMeta = GetStoreMetaData(param);
+    Database database;
+    database.bundleName = storeMeta.bundleName;
+    database.name = storeMeta.storeId;
+    database.user = storeMeta.user;
+    database.deviceId = storeMeta.deviceId;
     StoreMetaMapping storeMetaMapping(storeMeta);
     MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
     if (!MetaDataManager::GetInstance().LoadMeta(storeMeta.GetKey(), storeMeta, true)) {
         storeMeta.dataDir = storeMetaMapping.dataDir;
     }
     AutoCache::GetInstance().CloseStore(tokenId, storeMeta.dataDir, RemoveSuffix(param.storeName_));
+    MetaDataManager::GetInstance().DelMeta(database.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyWithoutPath());
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(storeMeta.GetKeyLocal(), true);
@@ -1552,7 +1580,9 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
         return RDB_ERROR;
     }
 
-    OnCollaborationChange(meta, rdbChangedData);
+    if (SyncManager::GetInstance().IsAutoSyncApp(meta.bundleName, meta.appId)) {
+        OnCollaborationChange(meta, rdbChangedData);
+    }
 
     OnSearchableChange(meta, rdbNotifyConfig, rdbChangedData);
     return RDB_OK;

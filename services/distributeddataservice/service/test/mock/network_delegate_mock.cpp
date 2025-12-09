@@ -23,7 +23,7 @@ bool NetworkDelegateMock::IsNetworkAvailable()
 
 NetworkDelegate::NetworkType NetworkDelegateMock::GetNetworkType(bool retrieve)
 {
-    return NetworkDelegate::NONE;
+    return NetworkDelegate::WIFI;
 }
 
 void NetworkDelegateMock::RegOnNetworkChange()
