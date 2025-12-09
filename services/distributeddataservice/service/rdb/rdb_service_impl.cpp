@@ -32,6 +32,7 @@
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
 #include "eventcenter/event_center.h"
+#include "rdb_flow_control_manager.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -80,6 +81,7 @@ constexpr int32_t VALID_PARAM_LENGTH = 2;
 const size_t KEY_COUNT = 2;
 namespace OHOS::DistributedRdb {
 __attribute__((used)) RdbServiceImpl::Factory RdbServiceImpl::factory_;
+__attribute__((used)) std::shared_ptr<RdbFlowControlManager> RdbServiceImpl::rdbFlowControlManager_;
 RdbServiceImpl::Factory::Factory()
 {
     FeatureSystem::GetInstance().RegisterCreator(RdbServiceImpl::SERVICE_NAME, [this]() {
@@ -512,38 +514,66 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
     return DoSync(syncMeta, option, predicates, async);
 }
 
+bool RdbServiceImpl::IsSyncLimitApp(const StoreMetaData &meta)
+{
+    if (SyncManager::GetInstance().IsAutoSyncApp(meta.bundleName, meta.appId)) {
+        return false;
+    }
+    Database database;
+    database.bundleName = meta.bundleName;
+    database.name = meta.storeId;
+    database.user = meta.user;
+    database.deviceId = meta.deviceId;
+    return MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true);
+}
+
+std::function<int()> RdbServiceImpl::GetSyncTask(const StoreMetaData &metaData, const RdbService::Option &option,
+    const PredicatesMemo &predicates, const AsyncDetail &async)
+{
+    auto pid = IPCSkeleton::GetCallingPid();
+    return [metaData, option, predicates, async, pid, this]() -> int {
+        auto store = GetStore(metaData);
+        if (store == nullptr) {
+            return RDB_ERROR;
+        }
+
+        RdbQuery rdbQuery(predicates);
+        auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
+                                                     : DmAdapter::ToUUID(rdbQuery.GetDevices());
+        if (!rdbQuery.GetDevices().empty() && !devices.empty()) {
+            SaveAutoSyncInfo(metaData, devices);
+        }
+
+        SyncParam syncParam = { option.mode, 0, option.isCompensation };
+        auto tokenId = metaData.tokenId;
+        ZLOGD("seqNum=%{public}u", option.seqNum);
+        auto notify = [this, tokenId, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
+            OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
+        };
+        auto complete = [rdbQuery, store, syncParam, notify](const auto &results) mutable {
+            auto ret = ProcessResult(results);
+            store->Sync(ret.first, rdbQuery, notify, syncParam);
+        };
+        if (IsNeedMetaSync(metaData, devices)) {
+            auto result = MetaDataManager::GetInstance().Sync(devices, complete);
+            return result ? GeneralError::E_OK : GeneralError::E_ERROR;
+        }
+        auto [ret, _] = store->Sync(devices, rdbQuery, notify, syncParam);
+        return ret;
+    };
+}
+
 int RdbServiceImpl::DoSync(const StoreMetaData &meta, const RdbService::Option &option,
     const PredicatesMemo &predicates, const AsyncDetail &async)
 {
-    auto store = GetStore(meta);
-    if (store == nullptr) {
-        ZLOGE("store is null, bundleName:%{public}s storeName:%{public}s",
-            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
+    auto task = GetSyncTask(meta, option, predicates, async);
+    if (task == nullptr) {
         return RDB_ERROR;
     }
-    RdbQuery rdbQuery(predicates);
-    auto devices = rdbQuery.GetDevices().empty() ? DmAdapter::ToUUID(DmAdapter::GetInstance().GetRemoteDevices())
-                                                 : DmAdapter::ToUUID(rdbQuery.GetDevices());
-    if (!rdbQuery.GetDevices().empty() && !devices.empty()) {
-        SaveAutoSyncInfo(meta, devices);
+    if (rdbFlowControlManager_ == nullptr || !IsSyncLimitApp(meta)) {
+        return task();
     }
-    auto pid = IPCSkeleton::GetCallingPid();
-    SyncParam syncParam = { option.mode, 0, option.isCompensation };
-    auto tokenId = meta.tokenId;
-    ZLOGD("seqNum=%{public}u", option.seqNum);
-    auto notify = [this, tokenId, seqNum = option.seqNum, pid](const GenDetails &result) mutable {
-        OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
-    };
-    auto complete = [rdbQuery, store, syncParam, notify](const auto &results) mutable {
-        auto ret = ProcessResult(results);
-        store->Sync(ret.first, rdbQuery, notify, syncParam);
-    };
-    if (IsNeedMetaSync(meta, devices)) {
-        auto result = MetaDataManager::GetInstance().Sync(devices, complete);
-        return result ? GeneralError::E_OK : GeneralError::E_ERROR;
-    }
-    auto [ret, _] = store->Sync(devices, rdbQuery, notify, syncParam);
-    return ret;
+    return rdbFlowControlManager_->Execute(task,  {0, meta.bundleName});
 }
 
 bool RdbServiceImpl::IsNeedMetaSync(const StoreMetaData &meta, const std::vector<std::string> &uuids)
@@ -1281,6 +1311,10 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
 {
     executors_ = bindInfo.executors;
     RdbHiViewAdapter::GetInstance().SetThreadPool(executors_);
+    rdbFlowControlManager_ = std::make_shared<RdbFlowControlManager>();
+    if (rdbFlowControlManager_ != nullptr) {
+        rdbFlowControlManager_->Init(executors_, std::make_shared<RdbFlowControlStrategy>());
+    }
     return 0;
 }
 
@@ -1435,6 +1469,9 @@ int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int
 int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user,
     int32_t index, int32_t tokenId)
 {
+    if (rdbFlowControlManager_ != nullptr) {
+        rdbFlowControlManager_->Remove(bundleName);
+    }
     std::string prefix = Database::GetPrefix({ std::to_string(user), "default", bundleName });
     std::vector<Database> dataBase;
     if (MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {
@@ -1447,6 +1484,9 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName,
 
 int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
+    if (rdbFlowControlManager_ != nullptr) {
+        rdbFlowControlManager_->Remove(bundleName);
+    }
     std::string prefix = Database::GetPrefix({ std::to_string(user), "default", bundleName });
     std::vector<Database> dataBase;
     if (MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {

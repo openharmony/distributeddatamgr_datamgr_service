@@ -38,12 +38,19 @@ FlowControlManager::~FlowControlManager()
 
 void FlowControlManager::Execute(Task task, uint32_t type)
 {
+    TaskInfo info;
+    info.type = type;
+    Execute(std::move(task), std::move(info));
+}
+
+void FlowControlManager::Execute(Task task, TaskInfo info)
+{
     Tp executeTime = std::chrono::steady_clock::now();
     if (strategy_ != nullptr) {
-        executeTime = strategy_->GetExecuteTime(task, type);
+        executeTime = strategy_->GetExecuteTime(task, info);
     }
     auto id = GenTaskId();
-    InnerTask innerTask{ std::move(task), type, executeTime, id };
+    InnerTask innerTask{ std::move(task), std::move(info), executeTime, id };
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         tasks_.push(std::move(innerTask));
@@ -110,11 +117,18 @@ void FlowControlManager::Schedule()
 
 void FlowControlManager::Remove(uint32_t type)
 {
+    Remove([type](const TaskInfo &info) {
+        return info.type == type;
+    });
+}
+
+void FlowControlManager::Remove(Filter filter)
+{
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         auto tasks = std::move(tasks_);
         while (!tasks.empty()) {
-            if (tasks.top().type == type) {
+            if (!filter || filter(tasks.top().info)) {
                 tasks.pop();
                 continue;
             }

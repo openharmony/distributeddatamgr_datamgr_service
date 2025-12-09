@@ -29,12 +29,14 @@ enum SetDeviceDisTableErrorCode : int32_t {
     SETDEVICETABLE_SUNC_FIELD_IS_AUTOINCREMENT,
     SETDEVICETABLE_SCHEMA_PRIMARYKEY_COUNT_IS_WRONG,
     SETDEVICETABLE_SETSCHEMA_FAIL,
+    DEVICE_SYNC_LIMIT,
 };
 constexpr int MAX_TIME_BUF_LEN = 32;
 constexpr int MILLISECONDS_LEN = 3;
 constexpr int NANO_TO_MILLI = 1000000;
 constexpr int MILLI_PRE_SEC = 1000;
 constexpr const char *SET_DEVICE_DIS_TABLE = "SET_RDB_DEVICE_DISTRIBUTED_TABLE";
+constexpr const char *DEVICE_SYNC = "DEVICE_SYNC";
 
 struct RdbFaultEvent {
     std::string faultType;
