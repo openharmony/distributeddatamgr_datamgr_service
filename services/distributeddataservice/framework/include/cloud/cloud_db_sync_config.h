@@ -17,7 +17,7 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_SYNC_CONFIG_H
 
 #include <map>
-#include <mutex>
+#include <shared_mutex>
 #include "serializable/serializable.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
@@ -68,7 +68,7 @@ private:
         const std::map<std::string, bool> &tableInfo);
     static bool UpdateSingleDbConfig(CloudDbSyncConfig &config, const std::string &dbName, const DbInfo &dbSwitch);
     static constexpr const char *KEY_PREFIX = "CLOUD_DB_SYNC_CONFIG";
-    static std::mutex metaMutex_;
+    static std::shared_mutex metaMutex_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_SYNC_CONFIG_H

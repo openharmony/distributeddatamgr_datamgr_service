@@ -21,7 +21,7 @@
 #include "utils/constant.h"
 
 namespace OHOS::DistributedData {
-std::mutex CloudDbSyncConfig::metaMutex_;
+std::shared_mutex CloudDbSyncConfig::metaMutex_;
 bool CloudDbSyncConfig::TableSyncConfig::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(tableName)], tableName);
@@ -105,21 +105,23 @@ std::string CloudDbSyncConfig::GetKey(int32_t userId, const std::string &bundleN
 bool CloudDbSyncConfig::UpdateConfig(int32_t userId, const std::string &bundleName,
     const std::map<std::string, DbInfo> &dbInfo)
 {
-    std::lock_guard<decltype(metaMutex_)> lock(metaMutex_);
     if (dbInfo.empty()) {
         ZLOGW("dbInfo is empty for bundleName:%{public}s", bundleName.c_str());
         return false;
     }
     CloudDbSyncConfig config;
-    bool configExists = MetaDataManager::GetInstance().LoadMeta(config.GetKey(userId, bundleName), config, true);
-    if (!configExists) {
-        config.bundleName = bundleName;
+    {
+        std::shared_lock<decltype(metaMutex_)> lock(metaMutex_);
+        if (!MetaDataManager::GetInstance().LoadMeta(config.GetKey(userId, bundleName), config, true)) {
+            config.bundleName = bundleName;
+        }
     }
     bool hasChanges = false;
     for (const auto &[dbName, dbSwitch] : dbInfo) {
         hasChanges |= UpdateSingleDbConfig(config, dbName, dbSwitch);
     }
     if (hasChanges) {
+        std::unique_lock<decltype(metaMutex_)> lock(metaMutex_);
         bool result = MetaDataManager::GetInstance().SaveMeta(config.GetKey(userId, bundleName), config, true);
         ZLOGI("Save config for %{public}s, result:%{public}d", bundleName.c_str(), result);
         return result;
@@ -130,7 +132,7 @@ bool CloudDbSyncConfig::UpdateConfig(int32_t userId, const std::string &bundleNa
 
 bool CloudDbSyncConfig::IsDbEnable(int32_t userId, const std::string &bundleName, const std::string &dbName)
 {
-    std::lock_guard<decltype(metaMutex_)> lock(metaMutex_);
+    std::shared_lock<decltype(metaMutex_)> lock(metaMutex_);
     CloudDbSyncConfig config;
     if (!MetaDataManager::GetInstance().LoadMeta(config.GetKey(userId, bundleName), config, true)) {
         return true;
@@ -146,7 +148,7 @@ bool CloudDbSyncConfig::IsDbEnable(int32_t userId, const std::string &bundleName
 bool CloudDbSyncConfig::FilterCloudEnabledTables(int32_t userId, const std::string &bundleName,
     const std::string &dbName, std::vector<std::string> &tables)
 {
-    std::lock_guard<decltype(metaMutex_)> lock(metaMutex_);
+    std::shared_lock<decltype(metaMutex_)> lock(metaMutex_);
     CloudDbSyncConfig config;
     if (!MetaDataManager::GetInstance().LoadMeta(config.GetKey(userId, bundleName), config, true)) {
         return true;
@@ -206,16 +208,15 @@ bool CloudDbSyncConfig::UpdateSingleDbConfig(CloudDbSyncConfig &config, const st
         }
         config.dbConfigs.push_back(std::move(newDbConfig));
         return true;
-    } else {
-        bool hasChanges = false;
-        if (dbIter->cloudSyncEnabled != dbSwitch.enable) {
-            dbIter->cloudSyncEnabled = dbSwitch.enable;
-            hasChanges = true;
-        }
-        if (!dbSwitch.tableInfo.empty()) {
-            hasChanges |= UpdateTableConfigs(dbIter->tableConfigs, dbSwitch.tableInfo);
-        }
-        return hasChanges;
     }
+    bool hasChanges = false;
+    if (dbIter->cloudSyncEnabled != dbSwitch.enable) {
+        dbIter->cloudSyncEnabled = dbSwitch.enable;
+        hasChanges = true;
+    }
+    if (!dbSwitch.tableInfo.empty()) {
+        hasChanges |= UpdateTableConfigs(dbIter->tableConfigs, dbSwitch.tableInfo);
+    }
+    return hasChanges;
 }
 } // namespace OHOS::DistributedData
