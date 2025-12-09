@@ -1214,23 +1214,23 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables001, TestSize.Level1)
     std::vector<std::string> tables = { "table1", "table2" };
     int32_t type = DistributedTableType::DISTRIBUTED_DEVICE;
     std::vector<DistributedData::Reference> references;
-    auto result = store_->SetDistributedTables(tables, type, references, 0);
+    auto result = store_->SetDistributedTables(tables, type, references, 0, false);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
     store_->Init();
-    result = store_->SetDistributedTables(tables, type, references, 0);
+    result = store_->SetDistributedTables(tables, type, references, 0, false);
     EXPECT_EQ(result, GeneralError::E_OK);
 
     std::vector<std::string> test = { "test" };
-    result = store_->SetDistributedTables(test, type, references, 0);
+    result = store_->SetDistributedTables(test, type, references, 0, false);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     MockRelationalStoreDelegate::gTestResult = true;
-    result = store_->SetDistributedTables(tables, type, references, 0);
+    result = store_->SetDistributedTables(tables, type, references, 0, false);
     EXPECT_EQ(result, GeneralError::E_OK);
     type = DistributedTableType::DISTRIBUTED_CLOUD;
-    result = store_->SetDistributedTables(tables, type, references, 0);
+    result = store_->SetDistributedTables(tables, type, references, 0, false);
     EXPECT_EQ(result, GeneralError::E_ERROR);
 }
 
@@ -1248,7 +1248,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables002, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(tables, type, references, 1);
+    auto result = store_->SetDistributedTables(tables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase_.GetKey(), true), true);
 }
@@ -1288,7 +1288,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables003, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
 }
@@ -1328,7 +1328,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables004, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
 }
@@ -1375,7 +1375,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables005, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
 }
@@ -1395,7 +1395,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables006, TestSize.Level1)
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
     MockRelationalStoreDelegate::SetResSetDbSchema(DBStatus::DB_ERROR);
-    auto result = store_->SetDistributedTables(tables, type, references, 1);
+    auto result = store_->SetDistributedTables(tables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase_.GetKey(), true), true);
 }
@@ -1432,7 +1432,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables007, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
 }
@@ -1478,7 +1478,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables008, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
 }
@@ -1524,7 +1524,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables009, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
 }
@@ -1569,7 +1569,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables010, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(dbtables, type, references, 1);
+    auto result = store_->SetDistributedTables(dbtables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true), true);
 }
@@ -1586,7 +1586,7 @@ HWTEST_F(RdbGeneralStoreTest, SetDistributedTables011, TestSize.Level1)
     std::vector<DistributedData::Reference> references;
     store_ = std::make_shared<OHOS::DistributedRdb::RdbGeneralStore>(metaData_);
     store_->Init();
-    auto result = store_->SetDistributedTables(tables, type, references, 1);
+    auto result = store_->SetDistributedTables(tables, type, references, 1, false);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(dataBase_.GetKey(), true), true);
 }
@@ -1861,7 +1861,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_DBOperationAfterClose, TestSize.Le
     std::vector<std::string> tables = { "table1", "table2" };
     int32_t type = DistributedTableType::DISTRIBUTED_DEVICE;
     std::vector<DistributedData::Reference> references;
-    code = store->SetDistributedTables(tables, type, references, 0);
+    code = store->SetDistributedTables(tables, type, references, 0, false);
     EXPECT_EQ(code, GeneralError::E_ALREADY_CLOSED);
 
     // Cleanup test environment

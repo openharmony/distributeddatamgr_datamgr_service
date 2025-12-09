@@ -1133,7 +1133,7 @@ int32_t RdbGeneralStore::SetCloudReference(const std::vector<Reference> &referen
 }
 
 int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
-    const std::vector<Reference> &references, int32_t tableType)
+    const std::vector<Reference> &references, int32_t tableType, bool isAsync)
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed! tables size:%{public}zu, type:%{public}d",
@@ -1146,7 +1146,9 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     }
     for (const auto &table : tables) {
         ZLOGD("tableName:%{public}s, type:%{public}d", Anonymous::Change(table).c_str(), type);
-        auto dBStatus = delegate_->CreateDistributedTable(table, static_cast<DistributedDB::TableSyncType>(type));
+        RelationalStoreDelegate::CreateDistributedTableConfig config = { .isAsync = isAsync };
+        auto dBStatus = delegate_->CreateDistributedTable(
+            table, static_cast<DistributedDB::TableSyncType>(type), config);
         if (dBStatus != DistributedDB::DBStatus::OK) {
             ZLOGE("create distributed table failed, table:%{public}s, err:%{public}d",
                 Anonymous::Change(table).c_str(), dBStatus);
