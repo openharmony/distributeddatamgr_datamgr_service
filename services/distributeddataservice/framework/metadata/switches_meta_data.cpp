@@ -23,6 +23,7 @@ bool SwitchesMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(value)], value);
     SetValue(node[GET_NAME(length)], length);
     SetValue(node[GET_NAME(deviceId)], deviceId);
+    SetValue(node[GET_NAME(networkId)], networkId);
     return true;
 }
 
@@ -32,6 +33,7 @@ bool SwitchesMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(value), value);
     GetValue(node, GET_NAME(length), length);
     GetValue(node, GET_NAME(deviceId), deviceId);
+    GetValue(node, GET_NAME(networkId), networkId);
     return true;
 }
 

@@ -22,13 +22,14 @@
 namespace OHOS::DistributedData {
 class API_EXPORT SwitchesMetaData final : public Serializable {
 public:
-    static constexpr uint32_t DEFAULT_VERSION = 0;
+    static constexpr uint32_t DEFAULT_VERSION = 1;
     static constexpr uint32_t INVALID_VALUE = 0xFFFFFFFF;
     static constexpr uint16_t INVALID_LENGTH = 0;
     uint32_t version = DEFAULT_VERSION;
     uint32_t value = INVALID_VALUE;
     uint16_t length = INVALID_LENGTH;
     std::string deviceId;
+    std::string networkId;
 
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

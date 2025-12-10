@@ -40,7 +40,7 @@ using namespace OHOS::DistributedData;
                 __status = IPC_PARCEL_ERROR;                                    \
                 break;                                                          \
             }                                                                   \
-            MessageOption option;                                               \
+            MessageOption option(MessageOption::TF_ASYNC);                      \
             if (remote_ == nullptr) {                                           \
                 __status = IPC_ERROR;                                           \
                 break;                                                          \

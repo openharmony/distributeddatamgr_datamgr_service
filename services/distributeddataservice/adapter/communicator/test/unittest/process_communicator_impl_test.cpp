@@ -57,7 +57,7 @@ public:
     MOCK_METHOD(void, SetMessageTransFlag, (const PipeInfo &, bool), (override));
     MOCK_METHOD(Status, Broadcast, (const PipeInfo &, const LevelInfo &), (override));
     MOCK_METHOD(int32_t, ListenBroadcastMsg, (const PipeInfo &,
-        std::function<void(const std::string &, const LevelInfo &)>), (override));
+        std::function<void(const std::string &, const std::string &, const LevelInfo &)>), (override));
 };
 
 CommunicationProvider& CommunicationProvider::GetInstance()

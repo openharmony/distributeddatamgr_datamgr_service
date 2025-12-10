@@ -61,7 +61,7 @@ public:
 
     virtual Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo) = 0;
     virtual int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
-        std::function<void(const std::string &, const LevelInfo &)> listener) = 0;
+        std::function<void(const std::string &, const std::string &, const LevelInfo &)> listener) = 0;
 
     virtual Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo) = 0;
 };

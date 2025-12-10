@@ -80,7 +80,7 @@ Status CommunicationProviderImpl::Broadcast(const PipeInfo &pipeInfo, const Leve
 }
 
 int32_t CommunicationProviderImpl::ListenBroadcastMsg(const PipeInfo &pipeInfo,
-    std::function<void(const std::string &, const LevelInfo &)> listener)
+    std::function<void(const std::string &, const std::string &, const LevelInfo &)> listener)
 {
     return SoftBusAdapter::GetInstance()->ListenBroadcastMsg(pipeInfo, std::move(listener));
 }

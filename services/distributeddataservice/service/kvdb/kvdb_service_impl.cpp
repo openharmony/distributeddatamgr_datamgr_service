@@ -306,14 +306,15 @@ Status KVDBServiceImpl::PutSwitch(const AppId &appId, const SwitchData &data)
     if (data.value == DeviceMatrix::INVALID_VALUE || data.length == DeviceMatrix::INVALID_LENGTH) {
         return Status::INVALID_ARGUMENT;
     }
-    auto deviceId = DMAdapter::GetInstance().GetLocalDevice().uuid;
+    auto localDeviceInfo = DMAdapter::GetInstance().GetLocalDevice();
     SwitchesMetaData oldMeta;
-    oldMeta.deviceId = deviceId;
+    oldMeta.deviceId = localDeviceInfo.uuid;
     bool exist = MetaDataManager::GetInstance().LoadMeta(oldMeta.GetKey(), oldMeta, true);
     SwitchesMetaData newMeta;
     newMeta.value = data.value;
     newMeta.length = data.length;
-    newMeta.deviceId = deviceId;
+    newMeta.deviceId = localDeviceInfo.uuid;
+    newMeta.networkId = localDeviceInfo.networkId;
     if (!exist || newMeta != oldMeta) {
         bool success = MetaDataManager::GetInstance().SaveMeta(newMeta.GetKey(), newMeta, true);
         if (success) {
@@ -400,9 +401,8 @@ Status KVDBServiceImpl::SubscribeSwitchData(const AppId &appId)
                 ZLOGE("unmarshall matrix meta failed, action:%{public}d", action);
                 return true;
             }
-            auto networkId = DMAdapter::GetInstance().ToNetworkID(metaData.deviceId);
             SwitchNotification notification;
-            notification.deviceId = std::move(networkId);
+            notification.deviceId = metaData.networkId;
             notification.data.value = metaData.value;
             notification.data.length = metaData.length;
             notification.state = ConvertAction(static_cast<Action>(action));
