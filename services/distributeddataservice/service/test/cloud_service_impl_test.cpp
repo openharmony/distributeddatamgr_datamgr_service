@@ -1475,26 +1475,5 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_StoreMetaDataNotFound, Tes
     auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
-
-/**
- * @tc.name: CloudServiceImpl_UpdateCloudDbSyncConfig
- * @tc.desc: Test SwitchConfig with cloud db sync config
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableMetaDataNotFound, TestSize.Level1)
-{
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    SwitchConfig switchConfig;
-    int32_t userId = 100;
-    auto ret = cloudServiceImpl_->UpdateCloudDbSyncConfig(userId, TEST_CLOUD_APPID, switchConfig);
-    EXPECT_FALSE(ret);
-    DBSwitchInfo switchInfo;
-    switchInfo.enable = true;
-    switchInfo.tableInfo.insert({ "test_cloud_table_name", true });
-    switchConfig.dbInfo.insert({ TEST_CLOUD_STORE, switchInfo });
-    ret = cloudServiceImpl_->UpdateCloudDbSyncConfig(userId, TEST_CLOUD_APPID, switchConfig);
-    EXPECT_TRUE(ret);
-}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

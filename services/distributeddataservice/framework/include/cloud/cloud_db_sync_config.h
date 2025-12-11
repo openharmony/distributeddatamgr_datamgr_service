@@ -17,15 +17,11 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_SYNC_CONFIG_H
 
 #include <map>
-#include <shared_mutex>
+
 #include "serializable/serializable.h"
 #include "visibility.h"
-namespace OHOS::DistributedData {
-struct DbInfo {
-    bool enable = true;
-    std::map<std::string, bool> tableInfo;
-};
 
+namespace OHOS::DistributedData {
 class API_EXPORT CloudDbSyncConfig final : public Serializable {
 public:
     struct API_EXPORT TableSyncConfig final : public Serializable {
@@ -57,18 +53,10 @@ public:
     bool operator==(const CloudDbSyncConfig &config) const;
     bool operator!=(const CloudDbSyncConfig &config) const;
 
-    static bool UpdateConfig(int32_t userId, const std::string &bundleName,
-        const std::map<std::string, DbInfo> &dbInfo);
-    static bool IsDbEnable(int32_t userId, const std::string &bundleName, const std::string &dbName);
-    static bool FilterCloudEnabledTables(int32_t userId, const std::string &bundleName, const std::string &dbName,
-        std::vector<std::string> &tables);
-    static std::string GetKey(int32_t userId, const std::string &bundleName);
+    std::string GetKey(int32_t userId, const std::string &bundleName);
+
 private:
-    static bool UpdateTableConfigs(std::vector<TableSyncConfig> &tableConfigs,
-        const std::map<std::string, bool> &tableInfo);
-    static bool UpdateSingleDbConfig(CloudDbSyncConfig &config, const std::string &dbName, const DbInfo &dbSwitch);
     static constexpr const char *KEY_PREFIX = "CLOUD_DB_SYNC_CONFIG";
-    static std::shared_mutex metaMutex_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_SYNC_CONFIG_H

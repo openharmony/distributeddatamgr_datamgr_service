@@ -23,7 +23,6 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "checker/checker_manager.h"
-#include "cloud/cloud_db_sync_config.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_last_sync_info.h"
 #include "cloud/cloud_mark.h"
@@ -48,6 +47,7 @@
 #include "relational_store_manager.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
+#include "sync_config.h"
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
@@ -239,7 +239,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
             return ERROR;
         }
     }
-    UpdateCloudDbSyncConfig(user, bundleName, config);
+    SyncConfig::UpdateConfig(user, bundleName, config.dbInfo);
     Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
         syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName, "", {}, MODE_SWITCHON));
@@ -2066,21 +2066,5 @@ QueryLastResults CloudServiceImpl::AssembleLastResults(const std::vector<Databas
         }
     }
     return results;
-}
-
-bool CloudServiceImpl::UpdateCloudDbSyncConfig(int32_t user, const std::string &bundleName, const SwitchConfig &config)
-{
-    if (config.dbInfo.empty()) {
-        ZLOGW("dbInfo is empty for bundleName:%{public}s", bundleName.c_str());
-        return false;
-    }
-    std::map<std::string, DbInfo> dbInfos;
-    for (const auto &[dbName, dbSwitchInfo] : config.dbInfo) {
-        DbInfo dbInfo;
-        dbInfo.enable = dbSwitchInfo.enable;
-        dbInfo.tableInfo = dbSwitchInfo.tableInfo;
-        dbInfos.emplace(dbName, std::move(dbInfo));
-    }
-    return CloudDbSyncConfig::UpdateConfig(user, bundleName, dbInfos);
 }
 } // namespace OHOS::CloudData

@@ -223,7 +223,6 @@ private:
     static void UpdateE2eeEnable(const std::string &schemaKey, bool newE2eeEnable, const std::string &bundleName);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
-    bool UpdateCloudDbSyncConfig(int32_t user, const std::string &bundleName, const SwitchConfig &config);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

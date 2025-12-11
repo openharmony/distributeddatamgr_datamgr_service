@@ -21,7 +21,6 @@
 #include "account/account_delegate.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
-#include "cloud/cloud_db_sync_config.h"
 #include "cloud/cloud_lock_event.h"
 #include "cloud/cloud_report.h"
 #include "cloud/cloud_server.h"
@@ -35,6 +34,7 @@
 #include "metadata/meta_data_manager.h"
 #include "network/network_delegate.h"
 #include "screen/screen_manager.h"
+#include "sync_config.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
@@ -326,7 +326,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                 continue;
             }
             for (const auto &database : schema.databases) {
-                if (!info.Contains(database.name) && DbConfig::IsDbEnable(info.user_, bundleName, database.name)) {
+                if (!info.Contains(database.name) && SyncConfig::IsDbEnable(info.user_, bundleName, database.name)) {
                     HandleSyncError(
                         { cloud, bundleName, database.name, syncId, E_ERROR, "!Contains:" + database.name, traceId });
                     continue;
@@ -343,7 +343,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                 }
 
                 auto tables = info.GetTables(database);
-                if (!DbConfig::FilterCloudEnabledTables(info.user_, bundleName, database.name, tables)) {
+                if (!SyncConfig::FilterCloudEnabledTables(info.user_, bundleName, database.name, tables)) {
                     HandleSyncError(
                         { cloud, bundleName, database.name, syncId, E_CLOUD_DISABLED, "tableDisable", traceId });
                     info.SetError(E_CLOUD_DISABLED);

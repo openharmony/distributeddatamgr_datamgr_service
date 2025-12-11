@@ -66,6 +66,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
     "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_config.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
@@ -127,6 +128,7 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
     "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_config.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
@@ -182,6 +184,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/cloud/cloud_service_stub.cpp",
     "${data_service_path}/service/cloud/cloud_types_util.cpp",
     "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_config.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
@@ -227,7 +230,10 @@ ohos_unittest("CloudServiceImplTest") {
 
 ohos_unittest("CloudTest") {
   module_out_path = module_output_path
-  sources = [ "cloud_test.cpp" ]
+  sources = [
+    "${data_service_path}/service/cloud/sync_config.cpp",
+    "cloud_test.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
@@ -240,6 +246,7 @@ ohos_unittest("CloudTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "relational_store:cloud_data_inner",
   ]
 
   deps = [
