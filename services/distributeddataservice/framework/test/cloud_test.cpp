@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "cloud/cloud_conflict_handler.h"
+#include "cloud/cloud_db_sync_config.h"
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
@@ -28,17 +29,25 @@
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
+#include "metadata/meta_data_manager.h"
+#include "mock/db_store_mock.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
 class CloudInfoTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {};
+    static void SetUpTestCase(void);
     static void TearDownTestCase(void) {};
     void SetUp() {};
     void TearDown() {};
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
 };
+std::shared_ptr<DBStoreMock> CloudInfoTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
+void CloudInfoTest::SetUpTestCase(void)
+{
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+}
 
 class ServicesCloudServerTest : public testing::Test {
 public:

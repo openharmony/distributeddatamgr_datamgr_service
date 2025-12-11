@@ -16,6 +16,8 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_SYNC_CONFIG_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_SYNC_CONFIG_H
 
+#include <map>
+
 #include "serializable/serializable.h"
 #include "visibility.h"
 
@@ -43,24 +45,15 @@ public:
         bool operator!=(const DbSyncConfig &config) const;
     };
 
-    struct API_EXPORT AppSyncConfig final : public Serializable {
-        std::string bundleName = "";
-        std::vector<DbSyncConfig> dbConfigs;
-
-        bool Marshal(json &node) const override;
-        bool Unmarshal(const json &node) override;
-        bool operator==(const AppSyncConfig &config) const;
-        bool operator!=(const AppSyncConfig &config) const;
-    };
-
-    std::map<std::string, AppSyncConfig> appConfigs;
+    std::string bundleName = "";
+    std::vector<DbSyncConfig> dbConfigs;
 
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     bool operator==(const CloudDbSyncConfig &config) const;
     bool operator!=(const CloudDbSyncConfig &config) const;
 
-    static std::string GetKey(int32_t userId);
+    std::string GetKey(int32_t userId, const std::string &bundleName);
 
 private:
     static constexpr const char *KEY_PREFIX = "CLOUD_DB_SYNC_CONFIG";

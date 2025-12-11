@@ -34,6 +34,7 @@
 #include "metadata/meta_data_manager.h"
 #include "network/network_delegate.h"
 #include "screen/screen_manager.h"
+#include "sync_config.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
@@ -46,6 +47,7 @@ using namespace std::chrono;
 using Account = OHOS::DistributedData::AccountDelegate;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using Defer = EventCenter::Defer;
+using DbConfig = DistributedData::CloudDbSyncConfig;
 std::atomic<uint32_t> SyncManager::genId_ = 0;
 constexpr int32_t SYSTEM_USER_ID = 0;
 constexpr int32_t NETWORK_DISCONNECT_TIMEOUT_HOURS = 20;
@@ -324,7 +326,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                 continue;
             }
             for (const auto &database : schema.databases) {
-                if (!info.Contains(database.name) && GetDataBaseCloudEnable(info.user_, bundleName, database.name)) {
+                if (!info.Contains(database.name) || !SyncConfig::IsDbEnable(info.user_, bundleName, database.name)) {
                     HandleSyncError(
                         { cloud, bundleName, database.name, syncId, E_ERROR, "!Contains:" + database.name, traceId });
                     continue;
@@ -341,7 +343,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                 }
 
                 auto tables = info.GetTables(database);
-                if (!GetTableCloudEnable(info.user_, bundleName, database.name, tables)) {
+                if (!SyncConfig::FilterCloudEnabledTables(info.user_, bundleName, database.name, tables)) {
                     HandleSyncError(
                         { cloud, bundleName, database.name, syncId, E_CLOUD_DISABLED, "tableDisable", traceId });
                     info.SetError(E_CLOUD_DISABLED);
@@ -1273,54 +1275,5 @@ void SyncManager::HandleSyncError(const ErrorContext &context)
         context.errorCode);
     SyncManager::Report(
         { context.cloud.user, context.bundleName, context.traceId, SyncStage::END, context.errorCode, context.reason });
-}
-
-bool SyncManager::GetDataBaseCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName)
-{
-    CloudDbSyncConfig syncConfig;
-    if (!MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true)) {
-        return true;
-    }
-
-    auto dbConfig = FindDbConfig(syncConfig, bundleName, dbName);
-    return dbConfig.has_value() ? dbConfig->cloudSyncEnabled : true;
-}
-
-bool SyncManager::GetTableCloudEnable(int32_t user, const std::string &bundleName, const std::string &dbName,
-    std::vector<std::string> &tables)
-{
-    CloudDbSyncConfig syncConfig;
-    if (!MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true)) {
-        return true;
-    }
-
-    auto dbConfig = FindDbConfig(syncConfig, bundleName, dbName);
-    if (!dbConfig.has_value()) {
-        return true;
-    }
-    auto isTableDisabled = [&dbConfig](const std::string &table) {
-        const auto &tableConfigs = dbConfig.value().tableConfigs;
-        auto tableIter = std::find_if(tableConfigs.begin(), tableConfigs.end(),
-            [&table](const TableSyncConfig &config) { return config.tableName == table; });
-        return (tableIter != tableConfigs.end()) ? !tableIter->cloudSyncEnabled : false;
-    };
-    tables.erase(std::remove_if(tables.begin(), tables.end(), isTableDisabled), tables.end());
-
-    return !tables.empty();
-}
-
-std::optional<SyncManager::DbSyncConfig> SyncManager::FindDbConfig(const CloudDbSyncConfig &syncConfig,
-    const std::string &bundleName, const std::string &dbName) const
-{
-    auto appIter = syncConfig.appConfigs.find(bundleName);
-    if (appIter == syncConfig.appConfigs.end()) {
-        return std::nullopt;
-    }
-
-    const auto &dbConfigs = appIter->second.dbConfigs;
-    auto dbIter = std::find_if(dbConfigs.begin(), dbConfigs.end(),
-        [&dbName](const DbSyncConfig &config) { return config.dbName == dbName; });
-
-    return (dbIter != dbConfigs.end()) ? std::make_optional(*dbIter) : std::nullopt;
 }
 } // namespace OHOS::CloudData

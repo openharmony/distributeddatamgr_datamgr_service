@@ -33,6 +33,7 @@ ohos_source_set("distributeddata_cloud") {
     "cloud_service_stub.cpp",
     "cloud_types_util.cpp",
     "cloud_value_util.cpp",
+    "sync_config.cpp",
     "sync_manager.cpp",
     "sync_strategies/network_sync_strategy.cpp",
   ]

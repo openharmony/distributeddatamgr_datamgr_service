@@ -47,6 +47,7 @@
 #include "relational_store_manager.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
+#include "sync_config.h"
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
 #include "utils/anonymous.h"
@@ -238,7 +239,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
             return ERROR;
         }
     }
-    UpdateCloudDbSyncConfig(user, bundleName, config);
+    SyncConfig::UpdateConfig(user, bundleName, config.dbInfo);
     Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
         syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName, "", {}, MODE_SWITCHON));
@@ -2066,115 +2067,4 @@ QueryLastResults CloudServiceImpl::AssembleLastResults(const std::vector<Databas
     }
     return results;
 }
-
-bool CloudServiceImpl::UpdateCloudDbSyncConfig(int32_t user, const std::string &bundleName, const SwitchConfig &config)
-{
-    if (config.dbInfo.empty()) {
-        ZLOGW("dbInfo is empty for bundleName:%{public}s", bundleName.c_str());
-        return false;
-    }
-    CloudDbSyncConfig syncConfig;
-    bool isMetaExist = MetaDataManager::GetInstance().LoadMeta(syncConfig.GetKey(user), syncConfig, true);
-    auto *appConfig = GetOrCreateAppConfig(syncConfig, bundleName, isMetaExist);
-    if (appConfig == nullptr) {
-        ZLOGW("Failed to get or create app config for bundleName:%{public}s", bundleName.c_str());
-        return false;
-    }
-
-    bool hasChanges = UpdateDbConfigurations(*appConfig, config, bundleName);
-    if (hasChanges) {
-        bool result = MetaDataManager::GetInstance().SaveMeta(syncConfig.GetKey(user), syncConfig, true);
-        ZLOGI("Save CloudDbSyncConfig for bundleName:%{public}s, result:%{public}d", bundleName.c_str(), result);
-        return result;
-    }
-    ZLOGI("CloudDbSyncConfig for bundleName:%{public}s is unchanged, skip saving", bundleName.c_str());
-    return true;
-}
-
-CloudDbSyncConfig::AppSyncConfig *CloudServiceImpl::GetOrCreateAppConfig(CloudDbSyncConfig &syncConfig,
-    const std::string &bundleName, bool isMetaExist)
-{
-    if (isMetaExist) {
-        auto iter = syncConfig.appConfigs.find(bundleName);
-        if (iter != syncConfig.appConfigs.end()) {
-            return &iter->second;
-        }
-    }
-
-    CloudDbSyncConfig::AppSyncConfig newAppConfig;
-    newAppConfig.bundleName = bundleName;
-    auto [newIter, inserted] = syncConfig.appConfigs.emplace(bundleName, std::move(newAppConfig));
-    return &newIter->second;
-}
-
-bool CloudServiceImpl::UpdateDbConfigurations(CloudDbSyncConfig::AppSyncConfig &appConfig, const SwitchConfig &config,
-    const std::string &bundleName)
-{
-    bool hasChanges = false;
-    for (const auto &dbEntry : config.dbInfo) {
-        const std::string &dbName = dbEntry.first;
-        const DBSwitchInfo &dbSwitch = dbEntry.second;
-        auto dbIter = std::find_if(appConfig.dbConfigs.begin(), appConfig.dbConfigs.end(),
-            [&dbName](const CloudDbSyncConfig::DbSyncConfig &config) { return config.dbName == dbName; });
-        if (dbIter == appConfig.dbConfigs.end()) {
-            CloudDbSyncConfig::DbSyncConfig newDbConfig;
-            newDbConfig.dbName = dbName;
-            newDbConfig.cloudSyncEnabled = dbSwitch.enable;
-
-            for (const auto &tableEntry : dbSwitch.tableInfo) {
-                CloudDbSyncConfig::TableSyncConfig tableConfig;
-                tableConfig.tableName = tableEntry.first;
-                tableConfig.cloudSyncEnabled = tableEntry.second;
-                newDbConfig.tableConfigs.push_back(std::move(tableConfig));
-            }
-
-            appConfig.dbConfigs.push_back(std::move(newDbConfig));
-            hasChanges = true;
-        } else {
-            hasChanges |= UpdateExistingDbConfig(*dbIter, dbSwitch, bundleName, dbName);
-        }
-    }
-    return hasChanges;
-}
-
-bool CloudServiceImpl::UpdateExistingDbConfig(CloudDbSyncConfig::DbSyncConfig &dbConfig, const DBSwitchInfo &dbSwitch,
-    const std::string &bundleName, const std::string &dbName)
-{
-    bool hasChanges = false;
-    if (dbConfig.cloudSyncEnabled != dbSwitch.enable) {
-        dbConfig.cloudSyncEnabled = dbSwitch.enable;
-        hasChanges = true;
-    }
-
-    if (!dbSwitch.tableInfo.empty()) {
-        hasChanges |= UpdateTableConfigs(dbConfig, dbSwitch.tableInfo, bundleName, dbName);
-    }
-    return hasChanges;
-}
-
-bool CloudServiceImpl::UpdateTableConfigs(CloudDbSyncConfig::DbSyncConfig &dbConfig,
-    const std::map<std::string, bool> &tableInfo, const std::string &bundleName, const std::string &dbName)
-{
-    bool hasChanges = false;
-    for (const auto &tableEntry : tableInfo) {
-        const std::string &tableName = tableEntry.first;
-        bool tableEnable = tableEntry.second;
-        auto tableIter = std::find_if(dbConfig.tableConfigs.begin(), dbConfig.tableConfigs.end(),
-            [&tableName](const CloudDbSyncConfig::TableSyncConfig &config) { return config.tableName == tableName; });
-        if (tableIter == dbConfig.tableConfigs.end()) {
-            CloudDbSyncConfig::TableSyncConfig newTableConfig;
-            newTableConfig.tableName = tableName;
-            newTableConfig.cloudSyncEnabled = tableEnable;
-            dbConfig.tableConfigs.push_back(std::move(newTableConfig));
-            hasChanges = true;
-        } else {
-            if (tableIter->cloudSyncEnabled != tableEnable) {
-                tableIter->cloudSyncEnabled = tableEnable;
-                hasChanges = true;
-            }
-        }
-    }
-    return hasChanges;
-}
-
 } // namespace OHOS::CloudData

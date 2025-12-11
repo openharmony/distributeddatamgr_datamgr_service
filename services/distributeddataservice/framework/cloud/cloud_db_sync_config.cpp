@@ -69,45 +69,23 @@ bool CloudDbSyncConfig::DbSyncConfig::operator!=(const DbSyncConfig &config) con
     return !(*this == config);
 }
 
-bool CloudDbSyncConfig::AppSyncConfig::Marshal(json &node) const
+bool CloudDbSyncConfig::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(bundleName)], bundleName);
     SetValue(node[GET_NAME(dbConfigs)], dbConfigs);
     return true;
 }
 
-bool CloudDbSyncConfig::AppSyncConfig::Unmarshal(const json &node)
+bool CloudDbSyncConfig::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(dbConfigs), dbConfigs);
     return true;
 }
 
-bool CloudDbSyncConfig::AppSyncConfig::operator==(const AppSyncConfig &config) const
-{
-    return std::tie(bundleName, dbConfigs) == std::tie(config.bundleName, config.dbConfigs);
-}
-
-bool CloudDbSyncConfig::AppSyncConfig::operator!=(const AppSyncConfig &config) const
-{
-    return !(*this == config);
-}
-
-bool CloudDbSyncConfig::Marshal(json &node) const
-{
-    SetValue(node[GET_NAME(appConfigs)], appConfigs);
-    return true;
-}
-
-bool CloudDbSyncConfig::Unmarshal(const json &node)
-{
-    GetValue(node, GET_NAME(appConfigs), appConfigs);
-    return true;
-}
-
 bool CloudDbSyncConfig::operator==(const CloudDbSyncConfig &config) const
 {
-    return appConfigs == config.appConfigs;
+    return std::tie(bundleName, dbConfigs) == std::tie(config.bundleName, config.dbConfigs);
 }
 
 bool CloudDbSyncConfig::operator!=(const CloudDbSyncConfig &config) const
@@ -115,8 +93,8 @@ bool CloudDbSyncConfig::operator!=(const CloudDbSyncConfig &config) const
     return !(*this == config);
 }
 
-std::string CloudDbSyncConfig::GetKey(int32_t userId)
+std::string CloudDbSyncConfig::GetKey(int32_t userId, const std::string &bundleName)
 {
-    return Constant::Join(KEY_PREFIX, Constant::KEY_SEPARATOR, { std::to_string(userId) });
+    return Constant::Join(KEY_PREFIX, Constant::KEY_SEPARATOR, { std::to_string(userId), bundleName });
 }
 } // namespace OHOS::DistributedData

@@ -40,7 +40,6 @@ public:
     using CloudLastSyncInfo = DistributedData::CloudLastSyncInfo;
     using StoreMetaData = DistributedData::StoreMetaData;
     using StoreInfo = DistributedData::StoreInfo;
-    using CloudDbSyncConfig = DistributedData::CloudDbSyncConfig;
     CloudServiceImpl();
     ~CloudServiceImpl() = default;
     int32_t EnableCloud(const std::string &id, const std::map<std::string, int32_t> &switches) override;
@@ -224,15 +223,6 @@ private:
     static void UpdateE2eeEnable(const std::string &schemaKey, bool newE2eeEnable, const std::string &bundleName);
     static void UpdateClearWaterMark(
         const HapInfo &hapInfo, const SchemaMeta &newSchemaMeta, const SchemaMeta &schemaMeta);
-    bool UpdateCloudDbSyncConfig(int32_t user, const std::string &bundleName, const SwitchConfig &config);
-    CloudDbSyncConfig::AppSyncConfig *GetOrCreateAppConfig(CloudDbSyncConfig &syncConfig,
-        const std::string &bundleName, bool isMetaExist);
-    bool UpdateDbConfigurations(CloudDbSyncConfig::AppSyncConfig &appConfig, const SwitchConfig &config,
-        const std::string &bundleName);
-    bool UpdateExistingDbConfig(CloudDbSyncConfig::DbSyncConfig &dbConfig, const DBSwitchInfo &dbSwitch,
-        const std::string &bundleName, const std::string &dbName);
-    bool UpdateTableConfigs(CloudDbSyncConfig::DbSyncConfig &dbConfig, const std::map<std::string, bool> &tableInfo,
-        const std::string &bundleName, const std::string &dbName);
 
     std::shared_ptr<ExecutorPool> executor_;
     SyncManager syncManager_;

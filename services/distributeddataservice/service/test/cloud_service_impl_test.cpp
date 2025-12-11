@@ -1257,11 +1257,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo,
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_DbLevelWithTableInfo
-* @tc.desc: Test Clean with db level config and table info
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_DbLevelWithTableInfo
+ * @tc.desc: Test Clean with db level config and table info
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithTableInfo, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
@@ -1282,11 +1282,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithTableInfo, Test
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_DbLevelWithDbCloudNone
-* @tc.desc: Test Clean with db level CLOUD_NONE action and app default action
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_DbLevelWithDbCloudNone
+ * @tc.desc: Test Clean with db level CLOUD_NONE action and app default action
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithDbCloudNone, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
@@ -1306,11 +1306,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithDbCloudNone, Te
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_MixedActionsAndConfigs
-* @tc.desc: Test Clean with mixed app actions and db configs for multiple bundles
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_MixedActionsAndConfigs
+ * @tc.desc: Test Clean with mixed app actions and db configs for multiple bundles
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_MixedActionsAndConfigs, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
@@ -1333,11 +1333,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_MixedActionsAndConfigs, Te
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_TableLevelWithDifferentActions
-* @tc.desc: Test Clean with table level actions grouping tables by action type
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_TableLevelWithDifferentActions
+ * @tc.desc: Test Clean with table level actions grouping tables by action type
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithDifferentActions, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
@@ -1360,11 +1360,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithDifferentAct
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_TableLevelWithDbCloudNone
-* @tc.desc: Test Clean with table level actions when db action is CLOUD_NONE
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_TableLevelWithDbCloudNone
+ * @tc.desc: Test Clean with table level actions when db action is CLOUD_NONE
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithDbCloudNone, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
@@ -1387,11 +1387,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithDbCloudNone,
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_TableLevelWithAllCloudNone
-* @tc.desc: Test Clean with all actions set to CLOUD_NONE
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_TableLevelWithAllCloudNone
+ * @tc.desc: Test Clean with all actions set to CLOUD_NONE
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithAllCloudNone, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
@@ -1413,11 +1413,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_TableLevelWithAllCloudNone
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_NonExistentBundle
-* @tc.desc: Test Clean with non-existent bundle name
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_NonExistentBundle
+ * @tc.desc: Test Clean with non-existent bundle name
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_NonExistentBundle, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
@@ -1431,11 +1431,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_NonExistentBundle, TestSiz
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_MissingSchemaMeta
-* @tc.desc: Test Clean when schema meta is missing for a bundle
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_MissingSchemaMeta
+ * @tc.desc: Test Clean when schema meta is missing for a bundle
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_MissingSchemaMeta, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
@@ -1461,11 +1461,11 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_MissingSchemaMeta, TestSiz
 }
 
 /**
-* @tc.name: CloudServiceImpl_Clean_StoreMetaDataNotFound
-* @tc.desc: Test Clean when store meta data is not found for a database
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_StoreMetaDataNotFound
+ * @tc.desc: Test Clean when store meta data is not found for a database
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_StoreMetaDataNotFound, TestSize.Level1)
 {
     std::map<std::string, int32_t> actions;
