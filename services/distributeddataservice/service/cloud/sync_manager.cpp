@@ -326,7 +326,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                 continue;
             }
             for (const auto &database : schema.databases) {
-                if (!info.Contains(database.name) && SyncConfig::IsDbEnable(info.user_, bundleName, database.name)) {
+                if (!info.Contains(database.name) || !SyncConfig::IsDbEnable(info.user_, bundleName, database.name)) {
                     HandleSyncError(
                         { cloud, bundleName, database.name, syncId, E_ERROR, "!Contains:" + database.name, traceId });
                     continue;
