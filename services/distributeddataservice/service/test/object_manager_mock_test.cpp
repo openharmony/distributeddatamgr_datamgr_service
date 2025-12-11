@@ -518,5 +518,74 @@ HWTEST_F(ObjectManagerMockTest, IsContinue002, TestSize.Level1)
     auto ret = objectServiceImpl->IsContinue(isContinue);
     EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
 }
+
+/**
+* @tc.name: IsContinue003
+* @tc.desc: Test IsContinue function when GetHapTokenInfo fail.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, IsContinue003, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    bool isContinue = false;
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(_, _))
+        .Times(1)
+        .WillRepeatedly(Return(1));
+    auto ret = objectServiceImpl->IsContinue(isContinue);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_DBSTATUS_ERROR);
+}
+
+/**
+* @tc.name: ResolveAutoLaunch001
+* @tc.desc: Test ResolveAutoLaunch LoadMeta fail.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, ResolveAutoLaunch001, TestSize.Level1)
+{
+    DistributedDB::AutoLaunchParam param {
+        .userId = "userId",
+        .appId = "appId",
+        .storeId = "storeId",
+    };
+    std::string identifier = "identifier";
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    auto ret = objectServiceImpl->ResolveAutoLaunch(identifier, param);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_STORE_NOT_FOUND);
+}
+
+/**
+* @tc.name: ResolveAutoLaunch002
+* @tc.desc: Test ResolveAutoLaunch LoadMeta succ.
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerMockTest, ResolveAutoLaunch002, TestSize.Level1)
+{
+    DistributedDB::AutoLaunchParam param {
+        .userId = "userId",
+        .appId = "appId",
+        .storeId = "storeId",
+    };
+    std::string identifier = "identifier";
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    StoreMetaData data1;
+    data1.storeType = StoreMetaData::StoreType::STORE_OBJECT_BEGIN - 1;
+    StoreMetaData data2;
+    data2.storeType = StoreMetaData::StoreType::STORE_OBJECT_END + 1;
+    StoreMetaData data3;
+    data3.storeType = 25;
+    data3.appId = "appId";
+    data3.storeId = "storeId";
+    std::vector<StoreMetaData> expectData;
+    expectData.emplace_back(data1);
+    expectData.emplace_back(data2);
+    expectData.emplace_back(data3);
+    EXPECT_CALL(*metaDataMock, LoadMeta(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<1>(expectData), Return(true)));
+    auto ret = objectServiceImpl->ResolveAutoLaunch(identifier, param);
+    EXPECT_EQ(ret, DistributedObject::OBJECT_SUCCESS);
+}
 }; // namespace DistributedDataTest
 } // namespace OHOS::Test
