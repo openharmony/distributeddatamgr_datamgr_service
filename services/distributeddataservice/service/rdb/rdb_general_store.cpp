@@ -927,7 +927,9 @@ int32_t RdbGeneralStore::Clean(const std::string &device, int32_t mode, const st
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
     }
-    ClearDeviceDataOption option{ static_cast<ClearMode>(mode), device, std::move(tableList) };
+    auto tables = tableList;
+    ClearDeviceDataOption option{ static_cast<ClearMode>(mode), device,
+        GetIntersection(std::move(tables), GetTables()) };
     DBStatus status = delegate_->RemoveDeviceData(option);
     if (status == DistributedDB::OK) {
         status = delegate_->RemoveDeviceData("", ClearMode::CLEAR_SHARED_TABLE);

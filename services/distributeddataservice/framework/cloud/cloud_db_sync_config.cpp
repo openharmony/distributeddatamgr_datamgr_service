@@ -17,7 +17,6 @@
 
 #include "utils/constant.h"
 
-
 namespace OHOS::DistributedData {
 bool CloudDbSyncConfig::TableSyncConfig::Marshal(json &node) const
 {
