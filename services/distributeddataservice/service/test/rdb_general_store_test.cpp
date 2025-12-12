@@ -77,7 +77,8 @@ public:
         MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
     };
     void TearDown()
-    {};
+    {
+    };
 
 protected:
     void InitMetaData();
