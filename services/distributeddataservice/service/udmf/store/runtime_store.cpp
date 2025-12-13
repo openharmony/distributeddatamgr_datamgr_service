@@ -325,18 +325,17 @@ Status RuntimeStore::Delete(const std::string &key)
 Status RuntimeStore::DeleteBatch(const std::vector<std::string> &unifiedKeys)
 {
     UpdateTime();
-    ZLOGD("called!");
     if (unifiedKeys.empty()) {
-        ZLOGD("No need to delete!");
         return E_OK;
     }
+    auto res = E_OK;
     for (const std::string &unifiedKey : unifiedKeys) {
         if (Delete(unifiedKey) != E_OK) {
             ZLOGE("Delete failed, key: %{public}s.", unifiedKey.c_str());
-            return E_DB_ERROR;
+            res = E_DB_ERROR;
         }
     }
-    return E_OK;
+    return res;
 }
 
 Status RuntimeStore::Sync(const std::vector<std::string> &devices)

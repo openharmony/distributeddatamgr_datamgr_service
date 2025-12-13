@@ -131,7 +131,8 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
             continue;
         }
         for (const auto &type : record->GetUtdIds()) {
-            types.append("-").append(type);
+            types.push_back('-');
+            types.append(type);
         }
     }
     msg.dataType = types;

@@ -51,7 +51,7 @@ Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &readUris
     ZLOGI("GrantUriPermission begin, url size:%{public}zu, instIndex:%{public}d.",
         readUris.size() + writeUris.size(), instIndex);
     GrantUriOptions readOptions {
-        .uris = std::move(readUris),
+        .uris = readUris,
         .bundleName = bundleName,
         .index = instIndex,
         .tokenId = srcTokenId,
@@ -64,7 +64,7 @@ Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &readUris
     }
     ZLOGI("GrantUriPermission with read-write.");
     GrantUriOptions writeOptions {
-        .uris = std::move(writeUris),
+        .uris = writeUris,
         .bundleName = bundleName,
         .index = instIndex,
         .tokenId = srcTokenId,

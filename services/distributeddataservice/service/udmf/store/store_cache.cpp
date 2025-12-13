@@ -27,7 +27,7 @@ StoreCache &StoreCache::GetInstance()
     return instance;
 }
 
-std::shared_ptr<Store> StoreCache::GetStore(std::string intention)
+std::shared_ptr<Store> StoreCache::GetStore(const std::string &intention)
 {
     std::shared_ptr<Store> store;
     int foregroundUserId = 0;
