@@ -86,7 +86,7 @@ bool RdbSchemaConfig::GetSchemaFromHap(const OHOS::AppExecFwk::BundleInfo &bundl
         std::shared_ptr<ResourceManager> resMgr(CreateResourceManager());
         if (resMgr == nullptr) {
             ZLOGE("Create resourceManager failed");
-            return {};
+            return false;
         }
         resMgr->AddResource(hapInfo.hapPath.c_str());
         size_t length = 0;
