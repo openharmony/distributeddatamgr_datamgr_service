@@ -87,7 +87,7 @@ std::pair<int32_t, DBCloudInfo> CloudServerImpl::GetServerInfo(int32_t userId, b
         OhCloudExtHashMapFree(briefInfo);
     });
     GetAppInfo(pBriefInfo, result);
-    return { DBErr::E_ERROR, result };
+    return { DBErr::E_OK, result };
 }
 
 void CloudServerImpl::GetAppInfo(std::shared_ptr<OhCloudExtHashMap> briefInfo, DBCloudInfo &cloudInfo)
