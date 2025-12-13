@@ -34,11 +34,12 @@ constexpr uint32_t CODE_MAX = static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
+static std::shared_ptr<RdbServiceImpl> g_rdbServiceImpl = nullptr;
+
 bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr<RdbServiceImpl> rdbServiceImpl = std::make_shared<RdbServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    rdbServiceImpl->OnBind(
+    g_rdbServiceImpl->OnBind(
         { "RdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
 
     uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
@@ -48,11 +49,18 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
     request.RewindRead(0);
     MessageParcel reply;
-    std::shared_ptr<RdbServiceStub> rdbServiceStub = rdbServiceImpl;
+    std::shared_ptr<RdbServiceStub> rdbServiceStub = g_rdbServiceImpl;
     rdbServiceStub->OnRemoteRequest(code, request, reply);
     return true;
 }
 } // namespace OHOS
+
+/* Fuzzer entry point */
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+    OHOS::g_rdbServiceImpl = std::make_shared<RdbServiceImpl>();
+    return 0;
+}
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
