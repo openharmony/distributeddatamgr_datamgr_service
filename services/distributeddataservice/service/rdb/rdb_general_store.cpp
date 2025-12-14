@@ -314,7 +314,7 @@ int32_t RdbGeneralStore::Init()
     if (ret == GenErr::E_OK) {
         ret = InitDelegate();
     }
-    if (ret != GenErr::E_OK && access(meta_.dataDir.c_str(), F_OK) != 0) {
+    if (ret != GenErr::E_OK && !createRequired_ && access(meta_.dataDir.c_str(), F_OK) != 0) {
         ZLOGE("store[%{public}s,%{public}s,%{public}u,%{public}s], cfg[%{public}d,%{public}d,%{public}d], not exist!",
             meta_.user.c_str(), meta_.bundleName.c_str(), meta_.tokenId, Anonymous::Change(meta_.storeId).c_str(),
             meta_.isEncrypt, meta_.isManualClean, meta_.isSearchable);
