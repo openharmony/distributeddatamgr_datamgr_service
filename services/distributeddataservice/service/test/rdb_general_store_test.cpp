@@ -1888,7 +1888,7 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_InitWithCreateRequired, TestSize.L
     // Test scenario 1: createRequired set to false
     auto store = std::make_shared<RdbGeneralStore>(meta, false);
     auto code = store->Init();
-    EXPECT_EQ(code, GeneralError::E_ERROR);
+    EXPECT_EQ(code, GeneralError::E_FILE_NOT_EXIST);
 
     // Test scenario 2: createRequired set to true
     store = std::make_shared<RdbGeneralStore>(meta, true);

@@ -66,6 +66,7 @@ enum GeneralError : int32_t {
     E_SKIP_ASSET,
     E_DB_CORRUPT,
     E_MOVE_DONE,
+    E_DB_IS_FULL,
     E_BUTT,
 };
 }
