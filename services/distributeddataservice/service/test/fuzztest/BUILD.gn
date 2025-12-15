@@ -41,6 +41,7 @@ group("fuzztest") {
     deps += [
       "rdbresultsetstub_fuzzer:fuzztest",
       "rdbservicestub_fuzzer:fuzztest",
+      "rdbservicestubconcurrency_fuzzer:fuzztest",
     ]
   }
 
