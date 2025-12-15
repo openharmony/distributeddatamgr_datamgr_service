@@ -38,10 +38,6 @@ static std::shared_ptr<RdbServiceImpl> g_rdbServiceImpl = nullptr;
 
 bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    g_rdbServiceImpl->OnBind(
-        { "RdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-
     uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
@@ -50,6 +46,9 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     request.RewindRead(0);
     MessageParcel reply;
     std::shared_ptr<RdbServiceStub> rdbServiceStub = g_rdbServiceImpl;
+    if (rdbServiceStub == nullptr) {
+        return false;
+    }
     rdbServiceStub->OnRemoteRequest(code, request, reply);
     return true;
 }
@@ -59,6 +58,9 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::g_rdbServiceImpl = std::make_shared<RdbServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    g_rdbServiceImpl->OnBind(
+        { "RdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     return 0;
 }
 
