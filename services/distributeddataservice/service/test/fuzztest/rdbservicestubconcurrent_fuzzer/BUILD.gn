@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("RdbServiceStubConcurrencyFuzzTest") {
+ohos_fuzztest("RdbServiceStubConcurrentFuzzTest") {
   module_out_path = "datamgr_service/datamgr_service/concurrent"
 
   include_dirs = [
@@ -39,7 +39,7 @@ ohos_fuzztest("RdbServiceStubConcurrencyFuzzTest") {
   ]
 
   fuzz_config_file =
-      "${data_service_path}/service/test/fuzztest/rdbservicestubconcurrency_fuzzer"
+      "${data_service_path}/service/test/fuzztest/rdbservicestubconcurrent_fuzzer"
 
   cflags = [
     "-g",
@@ -51,7 +51,7 @@ ohos_fuzztest("RdbServiceStubConcurrencyFuzzTest") {
   sources = [
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
-    "rdbservicestubconcurrency_fuzzer.cpp",
+    "rdbservicestubconcurrent_fuzzer.cpp",
   ]
 
   deps = [
@@ -94,6 +94,6 @@ ohos_fuzztest("RdbServiceStubConcurrencyFuzzTest") {
 group("fuzztest") {
   testonly = true
 
-  deps = [ ":RdbServiceStubConcurrencyFuzzTest" ]
+  deps = [ ":RdbServiceStubConcurrentFuzzTest" ]
 }
 ###############################################################################

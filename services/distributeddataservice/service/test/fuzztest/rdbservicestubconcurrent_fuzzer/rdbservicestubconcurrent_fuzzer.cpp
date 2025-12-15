@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "rdbservicestubconcurrency_fuzzer.h"
+#include "rdbservicestubconcurrent_fuzzer.h"
 
 #include <cstddef>
 #include <cstdint>
