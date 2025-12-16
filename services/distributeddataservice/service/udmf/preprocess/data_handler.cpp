@@ -151,7 +151,7 @@ Status DataHandler::BuildEntries(const std::vector<std::shared_ptr<UnifiedRecord
         std::vector<uint8_t> recordBytes;
         auto recordTlv = TLVObject(recordBytes);
         if (!TLVUtil::Writing(record, recordTlv, TAG::TAG_UNIFIED_RECORD)) {
-            ZLOGI("Marshall unified record failed.");
+            ZLOGE("Marshall unified record failed.");
             return E_WRITE_PARCEL_ERROR;
         }
         std::vector<uint8_t> keyBytes = { recordKey.begin(), recordKey.end() };

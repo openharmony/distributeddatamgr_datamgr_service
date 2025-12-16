@@ -34,7 +34,7 @@ private:
     UriPermissionManager &operator=(const UriPermissionManager &mgr) = delete;
 
     struct GrantUriOptions {
-        const std::vector<Uri> uris;
+        const std::vector<Uri> &uris;
         const std::string bundleName;
         int32_t index {0};
         uint32_t tokenId {0};

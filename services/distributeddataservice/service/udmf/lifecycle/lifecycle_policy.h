@@ -22,7 +22,7 @@ namespace UDMF {
 class LifeCyclePolicy {
 public:
     using Duration = std::chrono::steady_clock::duration;
-    static constexpr Duration INTERVAL = std::chrono::milliseconds(60 * 60 * 1000);
+    static constexpr Duration INTERVAL = std::chrono::hours(1);
     virtual ~LifeCyclePolicy() = default;
     virtual Status OnGot(const UnifiedKey &key, bool isNeedPush);
     virtual Status OnStart(const std::string &intention);

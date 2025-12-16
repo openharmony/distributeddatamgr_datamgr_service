@@ -180,7 +180,7 @@ bool PreProcessUtils::GetHapBundleNameByToken(uint32_t tokenId, std::string &bun
         bundleName = hapInfo.bundleName;
         return true;
     }
-    ZLOGE("Get bundle name faild");
+    ZLOGE("Get bundle name failed, tokenId = %{public}u", tokenId);
     return false;
 }
 
@@ -677,7 +677,7 @@ std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
     }
     Security::AccessToken::HapTokenInfo hapTokenInfo;
     auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
-    if (ret != 0) {
+    if (ret != Security::AccessToken::RET_SUCCESS) {
         ZLOGE("GetHapTokenInfo fail, tokenid is %{public}u, ret is %{public}d.", tokenId, ret);
         return "";
     }
@@ -702,7 +702,7 @@ bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::stri
         bundleName = hapInfo.bundleName;
         return GetSpecificBundleName(hapInfo.bundleName, hapInfo.instIndex, specificBundleName);
     }
-    ZLOGE("Get bundle name faild, tokenid:%{public}u", tokenId);
+    ZLOGE("Get bundle name failed, tokenId:%{public}u", tokenId);
     return false;
 }
 

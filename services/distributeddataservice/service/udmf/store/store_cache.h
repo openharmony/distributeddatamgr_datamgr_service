@@ -24,7 +24,7 @@ namespace OHOS {
 namespace UDMF {
 class StoreCache {
 public:
-    std::shared_ptr<Store> GetStore(std::string intention);
+    std::shared_ptr<Store> GetStore(const std::string &intention);
     static StoreCache &GetInstance();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     void CloseStores();
