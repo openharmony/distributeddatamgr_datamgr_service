@@ -189,6 +189,8 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::CLOUD_DISABLED;
         case GeneralError::E_SKIP_ASSET:
             return DBStatus::SKIP_ASSET;
+        case GeneralError::E_CLOUD_ASSET_NOT_FOUND:
+            return DBStatus::CLOUD_ASSET_NOT_FOUND;
         default:
             ZLOGI("error:0x%{public}x", error);
             break;

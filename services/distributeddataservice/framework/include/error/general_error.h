@@ -67,6 +67,7 @@ enum GeneralError : int32_t {
     E_DB_CORRUPT,
     E_MOVE_DONE,
     E_DB_IS_FULL,
+    E_CLOUD_ASSET_NOT_FOUND,
     E_BUTT,
 };
 }
