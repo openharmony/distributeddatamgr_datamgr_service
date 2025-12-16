@@ -59,7 +59,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::g_rdbServiceImpl = std::make_shared<RdbServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    g_rdbServiceImpl->OnBind(
+    OHOS::g_rdbServiceImpl->OnBind(
         { "RdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     return 0;
 }
