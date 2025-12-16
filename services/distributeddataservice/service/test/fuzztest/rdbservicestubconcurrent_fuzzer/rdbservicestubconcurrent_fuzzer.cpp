@@ -58,9 +58,9 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::g_rdbServiceImpl = std::make_shared<RdbServiceImpl>();
-    std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(NUM_MAX, NUM_MIN);
+    std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
     OHOS::g_rdbServiceImpl->OnBind(
-        { "RdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+        { "RdbServiceStubFuzz", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     return 0;
 }
 
