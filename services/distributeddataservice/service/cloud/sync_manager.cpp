@@ -596,7 +596,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
         if (code == E_OK || code == E_SYNC_TASK_MERGED) {
             return true;
         }
-        if (code != E_NETWORK_ERROR) 
+        if (code != E_NETWORK_ERROR) {
             info.SetError(code);
             RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
                                     dbCode },
