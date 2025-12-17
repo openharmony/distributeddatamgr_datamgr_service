@@ -815,7 +815,7 @@ void DataShareServiceImpl::OnConnectDone()
 }
 
 int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string &bundleName, int32_t user,
-    int32_t index, int32_t tokenId2)
+    int32_t index, int32_t tokenId)
 {
     ZLOGI("%{public}s uninstalled", bundleName.c_str());
     PublishedData::Delete(bundleName, user);
@@ -823,7 +823,6 @@ int32_t DataShareServiceImpl::DataShareStatic::OnAppUninstall(const std::string 
     TemplateData::Delete(bundleName, user);
     NativeRdb::RdbHelper::ClearCache();
     BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
-    uint32_t tokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(user, bundleName, index);
     DBDelegate::EraseStoreCache(tokenId);
     return E_OK;
 }
