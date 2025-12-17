@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "kvdbservicestub_fuzzer.h"
+#include "kvdbstubconcurrent_fuzzer.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -28,6 +28,7 @@
 
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
+
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.KVFeature";
 constexpr uint32_t CODE_MIN = 0;
@@ -35,13 +36,10 @@ constexpr uint32_t CODE_MAX = static_cast<uint32_t>(KVDBServiceInterfaceCode::TR
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
+static std::shared_ptr<KVDBServiceImpl> kvdbServiceImpl = nullptr;
+
 bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr<KVDBServiceImpl> kvdbServiceImpl = std::make_shared<KVDBServiceImpl>();
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    kvdbServiceImpl->OnBind(
-        { "KvdbServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-
     Bootstrap::GetInstance().LoadComponents();
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
@@ -55,10 +53,23 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     request.RewindRead(0);
     MessageParcel reply;
     std::shared_ptr<KVDBServiceStub> kvdbServiceStub = kvdbServiceImpl;
+    if (kvdbServiceStub == nullptr) {
+        return false;
+    }
     kvdbServiceStub->OnRemoteRequest(code, request, reply);
     return true;
 }
 } // namespace OHOS
+
+/* Fuzzer entry point */
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+    OHOS::kvdbServiceImpl = std::make_shared<KVDBServiceImpl>();
+    std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
+    OHOS::kvdbServiceImpl->OnBind(
+        { "KvdbServiceStubFuzz", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    return 0;
+}
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
