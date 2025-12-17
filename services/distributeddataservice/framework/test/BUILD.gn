@@ -81,7 +81,7 @@ ohos_unittest("EventCenterTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
 
-ohos_unittest("FlowControlMangerTest") {
+ohos_unittest("FlowControlManagerTest") {
   module_out_path = module_output_path
 
   sources = [
@@ -500,7 +500,7 @@ group("unittest") {
     ":EventCenterTest",
     ":EventTest",
     ":FeatureTest",
-    ":FlowControlMangerTest",
+    ":FlowControlManagerTest",
     ":GeneralStoreTest",
     ":MetaDataManagerTest",
     ":ScreenManagerTest",

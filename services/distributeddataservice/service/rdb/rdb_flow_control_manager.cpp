@@ -15,81 +15,98 @@
 
 #define LOG_TAG "rdb_flow_control_manager"
 #include "rdb_flow_control_manager.h"
+
 #include "rdb_hiview_adapter.h"
 #include "log_print.h"
 
 namespace OHOS::DistributedRdb {
 
-void RdbFlowControlManager::Init(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy)
+void RdbFlowControlManager::Init(std::shared_ptr<ExecutorPool> pool)
 {
-    manager_ = std::make_shared<DistributedData::FlowControlManager>(std::move(pool), std::move(strategy));
+    if (pool == nullptr) {
+        return;
+    }
+    pool_ = pool;
+    auto strategy = std::make_shared<RdbFlowControlStrategy>(globalLimit_, duration_);
+    globalManager_ = std::make_shared<DistributedData::FlowControlManager>(std::move(pool), std::move(strategy));
 }
 
-int32_t RdbFlowControlManager::Execute(Task task, TaskInfo info)
+int32_t RdbFlowControlManager::Execute(Task task, TaskInfo taskInfo)
 {
-    if (manager_ == nullptr) {
+    if (globalManager_ == nullptr || pool_ == nullptr) {
         return -1;
     }
-    manager_->Execute(std::move(task), std::move(info));
+    std::shared_ptr<DistributedData::FlowControlManager> manager;
+    managers_.Compute(taskInfo.label,
+        [this, &manager](const auto &key, std::shared_ptr<DistributedData::FlowControlManager> &value) {
+            if (value == nullptr) {
+                auto strategy = std::make_shared<RdbFlowControlStrategy>(appLimit_, duration_);
+                value = std::make_shared<DistributedData::FlowControlManager>(pool_, std::move(strategy));
+            }
+            manager = value;
+            return true;
+        });
+    if (manager == nullptr) {
+        return -1;
+    }
+    manager->Execute(
+        [this, task, taskInfo]() mutable { globalManager_->Execute(task, taskInfo); }, std::move(taskInfo));
     return 0;
 }
 
 int32_t RdbFlowControlManager::Remove(const std::string &label)
 {
-    if (manager_ == nullptr) {
+    if (globalManager_ == nullptr) {
         return 0;
     }
-    manager_->Remove([&label](const TaskInfo &info) {
+    globalManager_->Remove([&label](const TaskInfo &info) {
         return info.label == label;
+    });
+    managers_.ComputeIfPresent(label, [](const auto &key, auto &value) {
+        if (value != nullptr) {
+            value->Remove([&key](const TaskInfo &info) {
+                return info.label == key;
+            });
+        }
+        return false;
     });
     return 0;
 }
-
-RdbFlowControlStrategy::RdbFlowControlStrategy() : RdbFlowControlStrategy(APP_LIMIT, DEVICE_LIMIT, DURATION) {}
-RdbFlowControlStrategy::RdbFlowControlStrategy(uint32_t appLimit, uint32_t deviceLimit, uint32_t duration)
-    : appLimit_(appLimit), deviceLimit_(deviceLimit), duration_(duration)
+RdbFlowControlManager::RdbFlowControlManager(uint32_t appLimit, uint32_t globalLimit, uint32_t duration)
+    : appLimit_(appLimit), globalLimit_(globalLimit), duration_(duration)
 {
 }
 
+RdbFlowControlStrategy::RdbFlowControlStrategy(uint32_t limit, uint32_t duration) : limit_(limit), duration_(duration)
+{
+}
 RdbFlowControlManager::Tp RdbFlowControlStrategy::GetExecuteTime(RdbFlowControlManager::Task task,
     const RdbFlowControlManager::TaskInfo &info)
 {
-    switch (info.type) {
-        case RdbFlowControlManager::TASK_TYPE_SYNC:
-            return GetDeviceSyncExecuteTime(info.label);
-        default:
-            return std::chrono::steady_clock::now();
-    }
-    return std::chrono::steady_clock::now();
-}
-
-std::chrono::steady_clock::time_point RdbFlowControlStrategy::GetDeviceSyncExecuteTime(const std::string &label)
-{
     auto executeTime = std::chrono::steady_clock::now();
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto &queue = requestAppQueue_[label];
-    if (queue.size() >= appLimit_) {
-        executeTime = std::max(executeTime, queue.front() + std::chrono::milliseconds(duration_));
+    if (limit_ == 0) {
+        return executeTime;
     }
-    if (requestDeviceQueue_.size() >= deviceLimit_) {
-        executeTime = std::max(executeTime, requestDeviceQueue_.front() + std::chrono::milliseconds(duration_));
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
+    while (!queue_.empty()) {
+        if (queue_.size() > limit_ || executeTime > queue_.front() + std::chrono::milliseconds(duration_)) {
+            queue_.pop_front();
+        } else {
+            break;
+        }
+    }
+    if (queue_.size() >= limit_) {
+        executeTime = std::max(executeTime, queue_.front() + std::chrono::milliseconds(duration_));
     }
     if (executeTime > std::chrono::steady_clock::now()) {
         uint64_t delaytime =
             std::chrono::duration_cast<std::chrono::milliseconds>(executeTime - std::chrono::steady_clock::now())
                 .count();
-        ZLOGE("Sync delay %{public}" PRIu64 "ms! Bundlename:%{public}s.", delaytime, label.c_str());
+        ZLOGE("Sync delay %{public}" PRIu64 "ms! Bundlename:%{public}s.", delaytime, info.label.c_str());
         RdbHiViewAdapter::GetInstance().ReportRdbFault({DEVICE_SYNC,
-            DEVICE_SYNC_LIMIT, label, "device sync delay " + std::to_string(delaytime) + " ms"});
+            DEVICE_SYNC_LIMIT, info.label, "device sync delay " + std::to_string(delaytime) + " ms"});
     }
-    queue.push(executeTime);
-    requestDeviceQueue_.push(executeTime);
-    while (requestDeviceQueue_.size() > deviceLimit_) {
-        requestDeviceQueue_.pop();
-    }
-    while (queue.size() > appLimit_) {
-        queue.pop();
-    }
+    queue_.push_back(executeTime);
     return executeTime;
 }
 } // namespace OHOS::DistributedRdb

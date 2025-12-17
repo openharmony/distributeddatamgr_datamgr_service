@@ -18,6 +18,7 @@
 #include <functional>
 #include <string>
 
+#include "concurrent_map.h"
 #include "executor_pool.h"
 #include "flow_control_manager/flow_control_manager.h"
 namespace OHOS {
@@ -32,33 +33,33 @@ public:
     using Strategy = DistributedData::FlowControlManager::Strategy;
     using Tp = DistributedData::FlowControlManager::Tp;
 
-    RdbFlowControlManager() = default;
+    RdbFlowControlManager(uint32_t appLimit, uint32_t globalLimit, uint32_t duration);
     // execute once
-    void Init(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy);
-    int32_t Execute(Task task, TaskInfo info);
+    void Init(std::shared_ptr<ExecutorPool> pool);
+    int32_t Execute(Task task, TaskInfo taskInfo);
     int32_t Remove(const std::string &label);
 
 private:
-    std::shared_ptr<DistributedData::FlowControlManager> manager_;
+    std::shared_ptr<ExecutorPool> pool_;
+    const uint32_t appLimit_ = 0;
+    const uint32_t globalLimit_ = 0;
+    const uint32_t duration_ = 0;
+    std::shared_ptr<DistributedData::FlowControlManager> globalManager_;
+    ConcurrentMap<std::string, std::shared_ptr<DistributedData::FlowControlManager>> managers_;
 };
 
 class RdbFlowControlStrategy : public RdbFlowControlManager::Strategy {
 public:
-    RdbFlowControlStrategy();
-    RdbFlowControlStrategy(uint32_t appLimit, uint32_t deviceLimit, uint32_t duration);
-    RdbFlowControlManager::Tp GetExecuteTime(
-        RdbFlowControlManager::Task task, const RdbFlowControlManager::TaskInfo &info) override;
+    RdbFlowControlStrategy(uint32_t limit, uint32_t duration);
+    RdbFlowControlManager::Tp GetExecuteTime(RdbFlowControlManager::Task task,
+        const RdbFlowControlManager::TaskInfo &info) override;
+
 private:
-    static constexpr uint32_t APP_LIMIT = 5;
-    static constexpr uint32_t DEVICE_LIMIT = 20;
-    static constexpr uint32_t DURATION = 60 * 1000; // 1min
-    uint32_t appLimit_ = APP_LIMIT;
-    uint32_t deviceLimit_ = DEVICE_LIMIT;
-    uint32_t duration_ = DURATION;
-    std::chrono::steady_clock::time_point GetDeviceSyncExecuteTime(const std::string &label);
+    using Tp = RdbFlowControlManager::Tp;
     std::mutex mutex_;
-    std::queue<std::chrono::steady_clock::time_point> requestDeviceQueue_;
-    std::map<std::string, std::queue<std::chrono::steady_clock::time_point>> requestAppQueue_;
+    std::deque<Tp> queue_;
+    const uint32_t limit_ = 0;
+    const uint32_t duration_;
 };
 } // namespace DistributedRdb
 } // namespace OHOS
