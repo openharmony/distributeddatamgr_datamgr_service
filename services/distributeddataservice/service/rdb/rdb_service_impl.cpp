@@ -335,6 +335,7 @@ void RdbServiceImpl::SetCloudDistributedTables(const RdbSyncerParam &param, Stor
             param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_);
         metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
         metaData.enableCloud = param.enableCloud_;
+        metaData.autoSyncSwitch = param.autoSyncSwitch_;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
     }
 }
@@ -1318,9 +1319,10 @@ int32_t RdbServiceImpl::OnBind(const BindInfo &bindInfo)
         return 0;
     }
     RdbHiViewAdapter::GetInstance().SetThreadPool(executors_);
-    rdbFlowControlManager_ = std::make_shared<RdbFlowControlManager>();
+    rdbFlowControlManager_ =
+        std::make_shared<RdbFlowControlManager>(SYNC_APP_LIMIT_TIMES, SYNC_GLOBAL_LIMIT_TIMES, SYNC_DURATION);
     if (rdbFlowControlManager_ != nullptr) {
-        rdbFlowControlManager_->Init(executors_, std::make_shared<RdbFlowControlStrategy>());
+        rdbFlowControlManager_->Init(executors_);
     }
     return 0;
 }

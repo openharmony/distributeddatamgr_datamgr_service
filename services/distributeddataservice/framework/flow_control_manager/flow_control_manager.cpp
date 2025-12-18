@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "flow_control_manager/flow_control_manager.h"
 
 #include <list>
@@ -33,7 +32,9 @@ FlowControlManager::~FlowControlManager()
         taskId_ = ExecutorPool::INVALID_TASK_ID;
         auto tasks = std::move(tasks_);
     }
-    pool_->Remove(taskId, true);
+    if (pool_ != nullptr) {
+        pool_->Remove(taskId);
+    }
 }
 
 void FlowControlManager::Execute(Task task, uint32_t type)
@@ -45,6 +46,9 @@ void FlowControlManager::Execute(Task task, uint32_t type)
 
 void FlowControlManager::Execute(Task task, TaskInfo info)
 {
+    if (isDestroyed_ || pool_ == nullptr) {
+        return;
+    }
     Tp executeTime = std::chrono::steady_clock::now();
     if (strategy_ != nullptr) {
         executeTime = strategy_->GetExecuteTime(task, info);
@@ -64,7 +68,7 @@ void FlowControlManager::Execute(Task task, TaskInfo info)
 
 void FlowControlManager::ExecuteTask()
 {
-    if (isDestroyed_) {
+    if (isDestroyed_ || pool_ == nullptr) {
         return;
     }
     std::list<Task> tasks;
@@ -95,6 +99,9 @@ void FlowControlManager::ExecuteTask()
 
 void FlowControlManager::Schedule()
 {
+    if (isDestroyed_ || pool_ == nullptr) {
+        return;
+    }
     std::lock_guard<decltype(mutex_)> lock(mutex_);
     if (tasks_.empty()) {
         pool_->Remove(taskId_);

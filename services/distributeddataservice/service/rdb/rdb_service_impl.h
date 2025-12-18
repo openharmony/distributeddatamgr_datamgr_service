@@ -183,6 +183,9 @@ private:
     static constexpr uint32_t WAIT_TIME = 30 * 1000;
     static constexpr uint32_t SHARE_WAIT_TIME = 60; // seconds
     static constexpr uint32_t SAVE_CHANNEL_INTERVAL = 5; // minutes
+    static constexpr uint32_t SYNC_DURATION = 60 * 1000; // 1min
+    static constexpr uint32_t SYNC_APP_LIMIT_TIMES = 5;
+    static constexpr uint32_t SYNC_GLOBAL_LIMIT_TIMES = 20;
 
     void RegisterRdbServiceInfo();
 

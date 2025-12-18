@@ -253,7 +253,7 @@ public:
         // Type 0: High priority, execute immediately
         // Type 1: Medium priority, delay 100ms to execute
         // Type 2: Low priority, delay 500ms to execute
-        // '100' for medium priority, '500' for low priority
+        // All Medium tasks delayed by 100ms, all Low tasks delayed by 500ms
         return now + std::chrono::milliseconds(info.type == 0 ? 0 : info.type == 1 ? 100 : 500);
     }
 
@@ -742,13 +742,13 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_LabelBasedFlowControl_Test, 
     EXPECT_EQ(mediumPriorityFlag->load(), 0);
     EXPECT_EQ(lowPriorityFlag->load(), 0);
 
-    // After 200ms, medium priority task should be executed
+    // After 250ms, medium priority task should be executed
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     EXPECT_EQ(highPriorityFlag->load(), 1);
     EXPECT_EQ(mediumPriorityFlag->load(), 1);
     EXPECT_EQ(lowPriorityFlag->load(), 0);
 
-    // After 250ms, low priority task should be executed
+    // After 500ms, low priority task should be executed
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
     EXPECT_EQ(highPriorityFlag->load(), 1);
     EXPECT_EQ(mediumPriorityFlag->load(), 1);
@@ -820,7 +820,6 @@ public:
     FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
         const FlowControlManager::TaskInfo &info) override
     {
-        // '300' All tasks delayed by 300ms
         return std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
     }
 };
@@ -897,7 +896,7 @@ public:
     FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
         const FlowControlManager::TaskInfo &info) override
     {
-        // '200' All tasks delayed by 200ms
+        // All tasks delayed by 200ms
         return std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
     }
 };
@@ -974,4 +973,43 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_RemoveWithEmptyFilter_Test, 
     flowControlManager.Remove();
 }
 
+class NullPoolOnInitStrategy : public FlowControlManager::Strategy {
+public:
+    FlowControlManager::Tp GetExecuteTime(FlowControlManager::Task task,
+        const FlowControlManager::TaskInfo &info) override
+    {
+        return std::chrono::steady_clock::now();
+    }
+};
+
+/**
+* @tc.name: FlowControlManager_NullPoolOnInit_Test
+* @tc.desc: Test behavior when FlowControlManager is initialized with null executor pool
+* @tc.type: FUNC
+* @tc.step: 1. Initialize FlowControlManager with null executor pool and a valid strategy
+* @tc.step: 2. Submit multiple tasks to the FlowControlManager
+* @tc.step: 3. Verify that no tasks are executed due to null executor pool
+* @tc.step: 4. Clean up resources by removing the FlowControlManager
+* @tc.expected: No tasks should be executed since the executor pool is null
+*/
+HWTEST_F(FlowControlManagerTest, FlowControlManager_NullPoolOnInit_Test, TestSize.Level1)
+{
+    // Create null executor pool
+    std::shared_ptr<ExecutorPool> pool = nullptr;
+    FlowControlManager flowControlManager(pool, std::make_shared<NullPoolOnInitStrategy>()); // Null pool
+    auto flag = std::make_shared<std::atomic_uint32_t>(0);
+    auto task = [flag]() mutable {
+        (*flag)++;
+    };
+    // submit 5 tasks
+    const int taskCount = 5;
+    for (int32_t i = 0; i < taskCount; i++) {
+        flowControlManager.Execute(task);
+    }
+
+    // Wait briefly to ensure no tasks execute
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_EQ(flag->load(), 0); // No tasks should be executed due to null pool
+    flowControlManager.Remove();
+}
 } // namespace OHOS::Test
