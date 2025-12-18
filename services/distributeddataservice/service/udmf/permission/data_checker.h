@@ -23,7 +23,7 @@ namespace UDMF {
 class DataChecker : public CheckerManager::Checker {
 public:
     DataChecker() noexcept;
-    ~DataChecker();
+    ~DataChecker() override;
 
     bool IsValid(const std::vector<Privilege> &privileges, const CheckerManager::CheckInfo &info) override;
 
