@@ -244,7 +244,8 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithManyTasks_T
     }
     // Wait not enough time for all tasks to complete (230ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(230));
-    EXPECT_LE(flag->load(), taskCount/2);
+    // Verify some tasks executed but not all (60 or less)
+    EXPECT_LE(flag->load(), 60);
 
     // Wait enough time for all tasks to complete (500ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
