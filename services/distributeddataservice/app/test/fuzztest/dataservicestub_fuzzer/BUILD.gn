@@ -93,7 +93,6 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
     "file_api:securitylabel",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -108,6 +107,10 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 }
 
 ###############################################################################

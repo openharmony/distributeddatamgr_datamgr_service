@@ -817,7 +817,6 @@ ohos_unittest("ObjectAssetLoaderTest") {
 
   external_deps = [
     "c_utils:utils",
-    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -828,6 +827,10 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
+
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -854,7 +857,6 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
 
   external_deps = [
     "c_utils:utils",
-    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gmock_main",
@@ -866,6 +868,10 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
+
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -890,7 +896,6 @@ ohos_unittest("ObjectAssetMachineTest") {
 
   external_deps = [
     "c_utils:utils",
-    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -901,6 +906,10 @@ ohos_unittest("ObjectAssetMachineTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
+
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -927,12 +936,15 @@ ohos_unittest("ObjectDmsHandlerTest") {
 
   external_deps = [
     "c_utils:utils",
-    "dmsfwk:distributed_sdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dmsfwk:distributed_sdk", ]
+  }
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
@@ -982,11 +994,8 @@ ohos_unittest("ObjectManagerTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
-    "data_object:data_object_inner",
-    "data_object:distributeddataobject_impl",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
-    "dmsfwk:distributed_sdk",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "googletest:gtest_main",
@@ -1000,6 +1009,17 @@ ohos_unittest("ObjectManagerTest") {
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
   ]
+
+  if (datamgr_service_object) {
+    external_deps += [
+      "data_object:distributeddataobject_impl",
+      "data_object:data_object_inner",
+    ]
+  }
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dmsfwk:distributed_sdk", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -1053,11 +1073,8 @@ ohos_unittest("ObjectManagerMockTest") {
     "access_token:libtokenid_sdk",
     "cJSON:cjson",
     "c_utils:utils",
-    "data_object:data_object_inner",
-    "data_object:distributeddataobject_impl",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
-    "dmsfwk:distributed_sdk",
     "googletest:gmock_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -1068,6 +1085,17 @@ ohos_unittest("ObjectManagerMockTest") {
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
   ]
+
+  if (datamgr_service_object) {
+    external_deps += [
+      "data_object:distributeddataobject_impl",
+      "data_object:data_object_inner",
+    ]
+  }
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dmsfwk:distributed_sdk", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -1093,7 +1121,6 @@ ohos_unittest("ObjectSnapshotTest") {
 
   external_deps = [
     "c_utils:utils",
-    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -1105,6 +1132,10 @@ ohos_unittest("ObjectSnapshotTest") {
     "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
+
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -2052,8 +2083,6 @@ ohos_unittest("UdmfCheckerManagerTest") {
     "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
-    "dsoftbus:softbus_client",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -2064,6 +2093,14 @@ ohos_unittest("UdmfCheckerManagerTest") {
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dsoftbus:softbus_client", ]
+  }
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 }
 
 ohos_unittest("LifeCycleManagerTest") {
@@ -2517,7 +2554,6 @@ ohos_unittest("BackupManagerServiceTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -2527,6 +2563,10 @@ ohos_unittest("BackupManagerServiceTest") {
     "kv_store:distributeddb",
     "safwk:system_ability_fwk",
   ]
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr",  ]
+  }
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
@@ -2689,10 +2729,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
-    "device_manager:devicemanagersdk",
     "dfs_service:distributed_file_daemon_kit_inner",
-    "dsoftbus:softbus_client",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -2709,6 +2746,17 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [
+      "device_manager:devicemanagersdk",
+      "dsoftbus:softbus_client",
+    ]
+  }
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -2783,10 +2831,7 @@ ohos_unittest("UdmfObserverTest") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
-    "device_manager:devicemanagersdk",
     "dfs_service:distributed_file_daemon_kit_inner",
-    "dsoftbus:softbus_client",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -2803,6 +2848,17 @@ ohos_unittest("UdmfObserverTest") {
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [
+      "device_manager:devicemanagersdk",
+      "dsoftbus:softbus_client",
+    ]
+  }
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -2881,8 +2937,6 @@ ohos_unittest("UtdServiceImplTest") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
-    "dsoftbus:softbus_client",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -2895,6 +2949,13 @@ ohos_unittest("UtdServiceImplTest") {
     "samgr:samgr_proxy",
     "udmf:utd_client",
   ]
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr",  ]
+  }
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dsoftbus:softbus_client", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",

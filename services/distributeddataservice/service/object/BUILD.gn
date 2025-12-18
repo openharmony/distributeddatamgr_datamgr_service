@@ -75,15 +75,20 @@ ohos_source_set("distributeddata_object") {
 
   external_deps = [
     "access_token:libtokenid_sdk",
-    "data_object:data_object_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
-    "dmsfwk:distributed_sdk",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
   ]
+
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dmsfwk:distributed_sdk", ]
+  }
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner", ]
+  }
 
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

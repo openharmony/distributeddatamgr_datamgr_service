@@ -111,7 +111,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
-    "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
     "googletest:gtest_main",
@@ -129,6 +128,10 @@ ohos_unittest("KvStoreDataServiceTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 
   if (datamgr_service_power) {
     external_deps += [
@@ -193,7 +196,6 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
-    "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
     "googletest:gtest_main",
@@ -211,6 +213,10 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 
   if (datamgr_service_power) {
     external_deps += [
@@ -268,7 +274,6 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
-    "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
     "googletest:gmock",
@@ -286,6 +291,10 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 
   if (datamgr_service_power) {
     external_deps += [
@@ -399,7 +408,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
-    "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
     "googletest:gtest_main",
@@ -418,6 +426,10 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 
   if (datamgr_service_power) {
     external_deps += [
@@ -699,7 +711,6 @@ ohos_unittest("DDMSDumpTest") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
-    "dataclassification:data_transit_mgr",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
     "googletest:gmock",
@@ -716,6 +727,10 @@ ohos_unittest("DDMSDumpTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [ "dataclassification:data_transit_mgr", ]
+  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
