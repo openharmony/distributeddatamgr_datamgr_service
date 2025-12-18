@@ -131,16 +131,24 @@ class MockGeneralWatcher : public DistributedData::GeneralWatcher {
 public:
     int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override
     {
+        (void)origin;
+        (void)primaryFields;
+        (void)values;
         return GeneralError::E_OK;
     }
 
     int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override
     {
+        (void)origin;
+        (void)fields;
+        (void)datas;
         return GeneralError::E_OK;
     }
-    
+
     int32_t OnChange(const std::string &storeId, int32_t triggerMode) override
     {
+        (void)storeId;
+        (void)triggerMode;
         return GeneralError::E_OK;
     }
 };
