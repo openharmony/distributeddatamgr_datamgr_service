@@ -17,7 +17,7 @@
 #define UDMF_SERVICE_IMPL_H
 
 #include "block_data.h"
-#include "checker_manager.h"
+#include "permission/checker_manager.h"
 #include "kv_store_delegate_manager.h"
 #include "metadata/store_meta_data.h"
 #include "store_cache.h"
