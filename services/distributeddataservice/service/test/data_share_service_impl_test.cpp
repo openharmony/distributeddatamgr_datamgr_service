@@ -150,6 +150,260 @@ HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: VERIFY_PREDICATES_Test_001
+ * @tc.desc: Verify predicates for normal, invalid, and illegal predicates
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify normal predicates
+ *     2. Create and verify invalid predicates
+ *     3. Create and verify illegal predicates
+ * @tc.experct:
+ *     1. Normal predicates validation returns true
+ *     2. Invalid predicates validation returns true
+ *     3. Illegal predicates validation returns false
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify normal predciates
+    DataSharePredicates dp1;
+    dp1.EqualTo("name", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.EqualTo(" name ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify invalid predsicates
+    DataSharePredicates dp3;
+    dp3.EqualTo("name1 and name", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    // verify illegal predsicates
+    DataSharePredicates dp4;
+    dp4.NotEqualTo("true as name", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp5;
+    dp5.NotEqualTo("(1 = 1) or name", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates001 end");
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_002
+ * @tc.desc: Verify predicates for colName, (colName), [colName], and "colName" with leading/trailing spaces
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify predicates with colName format
+ *     2. Create and verify predicates with (colName) format
+ *     3. Create and verify predicates with [colName] format
+ *     4. Create and verify predicates with "colName" format
+ * @tc.experct:
+ *     1. Predicates with normal spaces pass validation
+ *     2. Predicates with abnormal spaces fail validation
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates002, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates002 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify predciates field case (colName) with normal/abnormal spaces
+    DataSharePredicates dp1;
+    dp1.NotEqualTo(" (name) ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.NotEqualTo("(name )", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case [colName] with normal/abnormal spaces
+    DataSharePredicates dp3;
+    dp3.NotEqualTo("[name]  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp4;
+    dp4.NotEqualTo("[na me]", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case "colName" with normal/abnormal spaces
+    DataSharePredicates dp5;
+    dp5.NotEqualTo(" \"name\" ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp6;
+    dp6.NotEqualTo("\" name\"", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp6, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates002 end");
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_003
+ * @tc.desc: Verify predicates for (table.colName), [table.colName], and "table.colName" with leading/trailing spaces
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify predicates with (table.colName) format
+ *     2. Create and verify predicates with [table.colName] format
+ *     3. Create and verify predicates with "table.colName" format
+ * @tc.experct:
+ *     1. Predicates with normal spaces pass validation
+ *     2. Predicates with abnormal spaces fail validation
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates003, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates003 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify predciates field case (table.colName) with normal/abnormal spaces
+    DataSharePredicates dp1;
+    dp1.LessThan(" (table1.name)", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.LessThan("(table1 . name)", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case [table.colName] with normal/abnormal spaces
+    DataSharePredicates dp3;
+    dp3.LessThan("   [table1.name]  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp4;
+    dp4.LessThan("[ table1 . name ]", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case "table.colName" with normal/abnormal spaces
+    DataSharePredicates dp5;
+    dp5.LessThan("   \"table1.name\"  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp6;
+    dp6.LessThan("\" table 1. name\"", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp6, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates003 end");
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_004
+ * @tc.desc: Verify predicates validation for ($.colName), [$.colName], and "$.colName" with leading/trailing spaces
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify predicates with ($.colName) format
+ *     2. Create and verify predicates with [$.colName] format
+ *     3. Create and verify predicates with "$.colName" format
+ * @tc.experct:
+ *     1. Predicates with normal spaces pass validation
+ *     2. Predicates with abnormal spaces fail validation
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates004, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates004 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify predciates field case ($.colName) with normal/abnormal spaces
+    DataSharePredicates dp1;
+    dp1.GreaterThan(" ($.name)", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.GreaterThan("($ . name)", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case [$.colName] with normal/abnormal spaces
+    DataSharePredicates dp3;
+    dp3.GreaterThan("   [$.name]  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp4;
+    dp4.GreaterThan("[ $ . name ]", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case "$.colName" with normal/abnormal spaces
+    DataSharePredicates dp5;
+    dp5.GreaterThan("   \"$.name\"  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp6;
+    dp6.GreaterThan("\" $. name\"", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp6, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates004 end");
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_005
+ * @tc.desc: Verify predicates for (store.table.colName), [store.table.colName], and "store.table.colName" with
+ *     leading/trailing spaces
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify predicates with (store.table.colName) format
+ *     2. Create and verify predicates with [store.table.colName] format
+ *     3. Create and verify predicates with "store.table.colName" format
+ * @tc.experct:
+ *     1. Predicates with normal spaces pass validation
+ *     2. Predicates with abnormal spaces fail validation
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates005, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates005 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify predciates field case (store.table.colName) with normal/abnormal spaces
+    DataSharePredicates dp1;
+    dp1.Like(" (store.table.name)", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.Like("(store.table . name)", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case [store.table.colName] with normal/abnormal spaces
+    DataSharePredicates dp3;
+    dp3.Like("   [store.table.name]  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp4;
+    dp4.Like("[ store .table . name ]", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case "store.table.colName" with normal/abnormal spaces
+    DataSharePredicates dp5;
+    dp5.Like("   \"store.table.name\"  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp6;
+    dp6.Like("\" store.table. name\"", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp6, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates005 end");
+}
+
+/**
 * @tc.name: NotifyChange001
 * @tc.desc: test NotifyChange function and abnormal scene
 * @tc.type: FUNC
