@@ -34,12 +34,18 @@ public:
     void SetUp();
     void TearDown();
 public:
-    static inline shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
-    static inline shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
-    static inline AuthHandler *authHandler = nullptr;
+    shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
+    shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
+    AuthHandler *authHandler = nullptr;
 };
 
 void AuthDelegateMockTest::SetUpTestCase(void)
+{}
+
+void AuthDelegateMockTest::TearDownTestCase(void)
+{}
+
+void AuthDelegateMockTest::SetUp(void)
 {
     authHandler = AuthDelegate::GetInstance();
     devMgrAdapterMock = make_shared<DeviceManagerAdapterMock>();
@@ -48,7 +54,7 @@ void AuthDelegateMockTest::SetUpTestCase(void)
     BUserDelegate::userDelegate = userDelegateMock;
 }
 
-void AuthDelegateMockTest::TearDownTestCase(void)
+void AuthDelegateMockTest::TearDown(void)
 {
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
     devMgrAdapterMock = nullptr;
@@ -56,12 +62,6 @@ void AuthDelegateMockTest::TearDownTestCase(void)
     BUserDelegate::userDelegate = nullptr;
     authHandler = nullptr;
 }
-
-void AuthDelegateMockTest::SetUp(void)
-{}
-
-void AuthDelegateMockTest::TearDown(void)
-{}
 
 /**
 * @tc.name: CheckAccess001
@@ -89,7 +89,6 @@ HWTEST_F(AuthDelegateMockTest, CheckAccess001, testing::ext::TestSize.Level0)
     peerUsers.push_back(remote);
     EXPECT_CALL(*userDelegateMock, GetLocalUserStatus()).WillOnce(Return(localUsers));
     EXPECT_CALL(*userDelegateMock, GetRemoteUserStatus(_)).WillOnce(Return(peerUsers));
-    EXPECT_CALL(*devMgrAdapterMock, IsOHOSType(_)).WillOnce(Return(false));
     auto result = authHandler->CheckAccess(localUserId, peerUserId, peerDevId, aclParams);
     EXPECT_FALSE(result.first);
 }
@@ -116,14 +115,12 @@ HWTEST_F(AuthDelegateMockTest, CheckAccess002, testing::ext::TestSize.Level0)
     std::vector<UserStatus> peerUsers(localUsers);
     EXPECT_CALL(*userDelegateMock, GetLocalUserStatus()).WillOnce(Return(localUsers));
     EXPECT_CALL(*userDelegateMock, GetRemoteUserStatus(_)).WillOnce(Return(peerUsers));
-    EXPECT_CALL(*devMgrAdapterMock, IsOHOSType(_)).WillOnce(Return(true));
     EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_, _)).WillOnce(Return(true));
     auto result = authHandler->CheckAccess(localUserId, peerUserId, peerDevId, aclParams);
     EXPECT_TRUE(result.first);
 
     EXPECT_CALL(*userDelegateMock, GetLocalUserStatus()).WillOnce(Return(localUsers));
     EXPECT_CALL(*userDelegateMock, GetRemoteUserStatus(_)).WillOnce(Return(peerUsers));
-    EXPECT_CALL(*devMgrAdapterMock, IsOHOSType(_)).WillOnce(Return(true));
     EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_, _)).WillOnce(Return(false));
     EXPECT_CALL(*devMgrAdapterMock, CheckAccessControl(_, _)).WillOnce(Return(true));
     result = authHandler->CheckAccess(localUserId, peerUserId, peerDevId, aclParams);
@@ -132,7 +129,6 @@ HWTEST_F(AuthDelegateMockTest, CheckAccess002, testing::ext::TestSize.Level0)
     aclParams.accCaller.bundleName = "com.AuthDelegateMockTest.app";
     EXPECT_CALL(*userDelegateMock, GetLocalUserStatus()).WillOnce(Return(localUsers));
     EXPECT_CALL(*userDelegateMock, GetRemoteUserStatus(_)).WillOnce(Return(peerUsers));
-    EXPECT_CALL(*devMgrAdapterMock, IsOHOSType(_)).WillOnce(Return(true));
     EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_, _)).WillOnce(Return(false));
     EXPECT_CALL(*devMgrAdapterMock, CheckAccessControl(_, _)).WillOnce(Return(false));
     result = authHandler->CheckAccess(localUserId, peerUserId, peerDevId, aclParams);
@@ -161,7 +157,6 @@ HWTEST_F(AuthDelegateMockTest, CheckAccess003, testing::ext::TestSize.Level0)
     std::vector<UserStatus> peerUsers(localUsers);
     EXPECT_CALL(*userDelegateMock, GetLocalUserStatus()).WillOnce(Return(localUsers));
     EXPECT_CALL(*userDelegateMock, GetRemoteUserStatus(_)).WillOnce(Return(peerUsers));
-    EXPECT_CALL(*devMgrAdapterMock, IsOHOSType(_)).WillOnce(Return(true));
     EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_, _)).WillOnce(Return(true));
     auto result = authHandler->CheckAccess(localUserId, peerUserId, peerDevId, aclParams);
     EXPECT_TRUE(result.first);
@@ -170,7 +165,6 @@ HWTEST_F(AuthDelegateMockTest, CheckAccess003, testing::ext::TestSize.Level0)
     aclParams.accCaller.bundleName = "com.AuthDelegateTest.app";
     EXPECT_CALL(*userDelegateMock, GetLocalUserStatus()).WillOnce(Return(localUsers));
     EXPECT_CALL(*userDelegateMock, GetRemoteUserStatus(_)).WillOnce(Return(peerUsers));
-    EXPECT_CALL(*devMgrAdapterMock, IsOHOSType(_)).WillOnce(Return(true));
     result = authHandler->CheckAccess(localUserId, peerUserId, peerDevId, aclParams);
     EXPECT_FALSE(result.second);
 }
