@@ -23,7 +23,7 @@ namespace OHOS::DistributedRdb {
 
 void RdbFlowControlManager::Init(std::shared_ptr<ExecutorPool> pool)
 {
-    if (pool == nullptr) {
+    if (pool == nullptr || pool_ != nullptr) {
         return;
     }
     pool_ = pool;
@@ -102,7 +102,7 @@ RdbFlowControlManager::Tp RdbFlowControlStrategy::GetExecuteTime(RdbFlowControlM
         uint64_t delaytime =
             std::chrono::duration_cast<std::chrono::milliseconds>(executeTime - std::chrono::steady_clock::now())
                 .count();
-        ZLOGE("Sync delay %{public}" PRIu64 "ms! Bundlename:%{public}s.", delaytime, info.label.c_str());
+        ZLOGW("Sync delay %{public}" PRIu64 "ms! bundleName:%{public}s.", delaytime, info.label.c_str());
         RdbHiViewAdapter::GetInstance().ReportRdbFault({DEVICE_SYNC,
             DEVICE_SYNC_LIMIT, info.label, "device sync delay " + std::to_string(delaytime) + " ms"});
     }
