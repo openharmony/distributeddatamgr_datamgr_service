@@ -749,7 +749,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_LabelBasedFlowControl_Test, 
     EXPECT_EQ(lowPriorityFlag->load(), 0);
 
     // After 500ms, low priority task should be executed
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     EXPECT_EQ(highPriorityFlag->load(), 1);
     EXPECT_EQ(mediumPriorityFlag->load(), 1);
     EXPECT_EQ(lowPriorityFlag->load(), 1);
