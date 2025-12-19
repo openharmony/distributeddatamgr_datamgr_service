@@ -51,14 +51,18 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "datamgr_service:distributeddatasvcfwk",
-    "device_manager:devicemanagersdk",
-    "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_single",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [
+      "device_manager:devicemanagersdk",
+      "dsoftbus:softbus_client",
+    ]
+  }
 }
 
 ###############################################################################

@@ -112,13 +112,17 @@ ohos_unittest("DeviceManagerAdapterTest") {
     "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
-    "dsoftbus:softbus_client",
     "hilog:libhilog",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
   ]
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [
+      "device_manager:devicemanagersdk",
+      "dsoftbus:softbus_client",
+    ]
+  }
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
@@ -163,8 +167,6 @@ ohos_unittest("ProcessCommunicatorImplTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "device_manager:devicemanagersdk",
-    "dsoftbus:softbus_client",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -174,6 +176,12 @@ ohos_unittest("ProcessCommunicatorImplTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
+  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+    external_deps += [
+      "device_manager:devicemanagersdk",
+      "dsoftbus:softbus_client",
+    ]
+  }
 
   cflags = [
     "-Dprivate=public",
