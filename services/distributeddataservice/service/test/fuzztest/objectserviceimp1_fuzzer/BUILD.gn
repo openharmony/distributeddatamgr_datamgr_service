@@ -60,10 +60,6 @@ ohos_fuzztest("ObjectServiceImp1FuzzTest") {
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
   ]
-
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [ "dmsfwk:distributed_sdk", ]
-  }
   if (datamgr_service_object) {
     external_deps += [
       "data_object:distributeddataobject_impl",

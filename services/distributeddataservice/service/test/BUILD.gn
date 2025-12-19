@@ -2093,14 +2093,6 @@ ohos_unittest("UdmfCheckerManagerTest") {
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
-
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [ "dsoftbus:softbus_client", ]
-  }
-
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [ "dataclassification:data_transit_mgr", ]
-  }
 }
 
 ohos_unittest("LifeCycleManagerTest") {
@@ -2564,10 +2556,6 @@ ohos_unittest("BackupManagerServiceTest") {
     "safwk:system_ability_fwk",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [ "dataclassification:data_transit_mgr",  ]
-  }
-
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
@@ -2747,17 +2735,6 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "udmf:utd_client",
   ]
 
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [
-      "device_manager:devicemanagersdk",
-      "dsoftbus:softbus_client",
-    ]
-  }
-
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [ "dataclassification:data_transit_mgr", ]
-  }
-
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
@@ -2849,17 +2826,6 @@ ohos_unittest("UdmfObserverTest") {
     "udmf:utd_client",
   ]
 
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [
-      "device_manager:devicemanagersdk",
-      "dsoftbus:softbus_client",
-    ]
-  }
-
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [ "dataclassification:data_transit_mgr", ]
-  }
-
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
@@ -2949,13 +2915,6 @@ ohos_unittest("UtdServiceImplTest") {
     "samgr:samgr_proxy",
     "udmf:utd_client",
   ]
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [ "dataclassification:data_transit_mgr",  ]
-  }
-
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
-    external_deps += [ "dsoftbus:softbus_client", ]
-  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
