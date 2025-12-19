@@ -34,18 +34,12 @@ public:
     void SetUp();
     void TearDown();
 public:
-    shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
-    shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
-    AuthHandler *authHandler = nullptr;
+    static inline shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
+    static inline shared_ptr<UserDelegateMock> userDelegateMock = nullptr;
+    static inline AuthHandler *authHandler = nullptr;
 };
 
 void AuthDelegateMockTest::SetUpTestCase(void)
-{}
-
-void AuthDelegateMockTest::TearDownTestCase(void)
-{}
-
-void AuthDelegateMockTest::SetUp(void)
 {
     authHandler = AuthDelegate::GetInstance();
     devMgrAdapterMock = make_shared<DeviceManagerAdapterMock>();
@@ -54,7 +48,7 @@ void AuthDelegateMockTest::SetUp(void)
     BUserDelegate::userDelegate = userDelegateMock;
 }
 
-void AuthDelegateMockTest::TearDown(void)
+void AuthDelegateMockTest::TearDownTestCase(void)
 {
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
     devMgrAdapterMock = nullptr;
@@ -62,6 +56,12 @@ void AuthDelegateMockTest::TearDown(void)
     BUserDelegate::userDelegate = nullptr;
     authHandler = nullptr;
 }
+
+void AuthDelegateMockTest::SetUp(void)
+{}
+
+void AuthDelegateMockTest::TearDown(void)
+{}
 
 /**
 * @tc.name: CheckAccess001
