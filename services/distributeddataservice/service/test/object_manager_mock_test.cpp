@@ -85,7 +85,7 @@ public:
         accTokenMock = nullptr;
         BAccessTokenKit::accessTokenkit = nullptr;
     }
-    
+
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
     static inline std::shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
