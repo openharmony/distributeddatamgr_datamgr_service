@@ -108,7 +108,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "samgr:samgr_proxy",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dataclassification:data_transit_mgr", ]
   }
 }
@@ -118,7 +118,7 @@ group("fuzztest") {
   testonly = true
 
   deps = []
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed) {
     deps += [ ":DataServiceStubFuzzTest" ]
   }
 }

@@ -129,7 +129,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "samgr:samgr_proxy",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dataclassification:data_transit_mgr", ]
   }
 
@@ -214,7 +214,7 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "samgr:samgr_proxy",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dataclassification:data_transit_mgr", ]
   }
 
@@ -292,7 +292,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "samgr:samgr_proxy",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dataclassification:data_transit_mgr", ]
   }
 
@@ -427,7 +427,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "samgr:samgr_proxy",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dataclassification:data_transit_mgr", ]
   }
 
@@ -728,7 +728,7 @@ ohos_unittest("DDMSDumpTest") {
     "samgr:samgr_proxy",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dataclassification:data_transit_mgr", ]
   }
 
@@ -751,7 +751,7 @@ group("unittest") {
     ":RouteHeadHandlerImplTest",
   ]
 
-  if (dataclassification_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dataclassification_part_is_enabled && datamgr_service_distributed) {
     deps += [
       ":KvStoreDataServiceMockTest",
       ":KvStoreDataServiceTest",
