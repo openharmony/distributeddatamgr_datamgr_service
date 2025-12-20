@@ -91,11 +91,17 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::PreSharing(GenQuer
 
 int32_t GeneralStoreMock::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
 {
+    (void)devices;
+    (void)mode;
+    (void)tableName;
     return 0;
 }
 
 int32_t GeneralStoreMock::Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList)
 {
+    (void)device;
+    (void)mode;
+    (void)tableList;
     return 0;
 }
 

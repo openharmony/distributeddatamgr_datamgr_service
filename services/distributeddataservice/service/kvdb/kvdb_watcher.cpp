@@ -68,6 +68,8 @@ int32_t KVDBWatcher::OnChange(const Origin &origin, const Fields &fields, Change
 }
 int32_t KVDBWatcher::OnChange(const std::string &storeId, int32_t triggerMode)
 {
+    (void)storeId;
+    (void)triggerMode;
     return GeneralError::E_NOT_SUPPORT;
 }
 sptr<IKvStoreObserver> KVDBWatcher::GetObserver() const

@@ -147,6 +147,10 @@ int32_t CloudConflictHandlerMock::HandleConflict(const std::string &table,
     const OHOS::DistributedData::VBucket &oldData, const OHOS::DistributedData::VBucket &newData,
     OHOS::DistributedData::VBucket &upsert)
 {
+    (void)table;
+    (void)oldData;
+    (void)newData;
+    (void)upsert;
     return 0;
 }
 

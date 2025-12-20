@@ -1224,6 +1224,7 @@ std::pair<int32_t, CloudInfo> CloudServiceImpl::GetCloudInfo(int32_t userId)
 int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
     int32_t tokenId)
 {
+    (void)tokenId;
     Subscription sub;
     if (MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(user), sub, true) &&
         sub.expiresTime.find(bundleName) != sub.expiresTime.end()) {

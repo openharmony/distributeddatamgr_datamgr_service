@@ -207,6 +207,7 @@ protected:
 
 std::pair<int32_t, CloudInfo> CloudDataTest::CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
+    (void)needSpaceInfo;
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     cloudInfo.id = TEST_CLOUD_ID;
@@ -245,12 +246,18 @@ std::shared_ptr<CloudConflictHandler> CloudDataTest::CloudServerMock::GetConflic
 std::shared_ptr<AssetLoader> CloudDataTest::CloudServerMock::ConnectAssetLoader(const std::string &bundleName,
     int user, const Database &dbMeta)
 {
+    (void)bundleName;
+    (void)user;
+    (void)dbMeta;
     return std::make_shared<AssetLoader>();
 }
 
 std::shared_ptr<CloudDB> CloudDataTest::CloudServerMock::ConnectCloudDB(const std::string &bundleName, int user,
     const Database &dbMeta)
 {
+    (void)bundleName;
+    (void)user;
+    (void)dbMeta;
     return std::make_shared<CloudDB>();
 }
 
