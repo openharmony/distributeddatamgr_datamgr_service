@@ -117,7 +117,7 @@ ohos_unittest("DeviceManagerAdapterTest") {
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
   ]
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     external_deps += [
       "device_manager:devicemanagersdk",
       "dsoftbus:softbus_client",
@@ -176,7 +176,7 @@ ohos_unittest("ProcessCommunicatorImplTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     external_deps += [
       "device_manager:devicemanagersdk",
       "dsoftbus:softbus_client",
@@ -339,7 +339,7 @@ group("unittest") {
     ":SoftbusClientTest",
   ]
 
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     deps += [
       ":ProcessCommunicatorImplTest",
       ":DeviceManagerAdapterTest",

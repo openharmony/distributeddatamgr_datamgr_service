@@ -83,7 +83,7 @@ ohos_source_set("distributeddata_object") {
     "kv_store:distributeddb",
   ]
 
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dmsfwk:distributed_sdk", ]
   }
   if (datamgr_service_object) {

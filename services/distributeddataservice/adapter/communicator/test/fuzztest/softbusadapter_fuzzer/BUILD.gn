@@ -57,7 +57,7 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
   ]
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     external_deps += [
       "device_manager:devicemanagersdk",
       "dsoftbus:softbus_client",
@@ -70,7 +70,7 @@ group("fuzztest") {
   testonly = true
 
   deps = []
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     deps += [ ":SoftBusAdapterFuzzTest" ]
   }
 }

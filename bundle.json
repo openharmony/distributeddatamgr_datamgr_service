@@ -46,7 +46,7 @@
             "datamgr_service_kvdb",
             "datamgr_service_object",
             "datamgr_service_data_share",
-            "datamgr_service_distributed_capability"
+            "datamgr_service_distributed"
         ],
         "adapted_system_type": [
             "standard"

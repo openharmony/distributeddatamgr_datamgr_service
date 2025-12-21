@@ -942,7 +942,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
     "kv_store:distributeddata_inner",
   ]
 
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dmsfwk:distributed_sdk", ]
   }
 
@@ -1017,7 +1017,7 @@ ohos_unittest("ObjectManagerTest") {
     ]
   }
 
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dmsfwk:distributed_sdk", ]
   }
 
@@ -1093,7 +1093,7 @@ ohos_unittest("ObjectManagerMockTest") {
     ]
   }
 
-  if (dm_part_is_enabled && datamgr_service_distributed_capability) {
+  if (dm_part_is_enabled && datamgr_service_distributed) {
     external_deps += [ "dmsfwk:distributed_sdk", ]
   }
 
