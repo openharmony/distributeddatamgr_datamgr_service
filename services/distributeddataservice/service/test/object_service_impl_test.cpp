@@ -340,4 +340,57 @@ HWTEST_F(ObjectServiceImplTest, SaveMeta003, TestSize.Level1)
     EXPECT_EQ(exist, true);
     EXPECT_EQ(testAppIdMeta3, testAppIdMeta2);
 }
+
+/**
+ * @tc.name: OnInitialize002
+ * @tc.desc: OnInitialize test. localDeviceId is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, OnInitialize002, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    DeviceInfo devInfo = { .uuid = "" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillOnce(Return(devInfo));
+    auto ret = objectServiceImpl->OnInitialize();
+    EXPECT_EQ(ret, OBJECT_INNER_ERROR);
+}
+
+/**
+ * @tc.name: SaveMetaData001
+ * @tc.desc: SaveMetaData test. localDeviceId is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, SaveMetaData001, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    DeviceInfo devInfo = { .uuid = "" };
+    EXPECT_CALL(*devMgrAdapterMock, GetLocalDevice()).WillOnce(Return(devInfo));
+    uint32_t code = static_cast<uint32_t>(DistributedData::AccountStatus::DEVICE_ACCOUNT_SWITCHED);
+    std::string user = "OH_USER_test";
+    std::string account = "OH_ACCOUNT_test";
+    auto ret = objectServiceImpl->OnUserChange(code, user, account);
+    EXPECT_EQ(ret, OBJECT_SUCCESS);
+}
+
+/**
+ * @tc.name: ObjectStoreSave001
+ * @tc.desc: test. IsBundleNameEqualTokenId fail
+ * @tc.type: FUNC
+ */
+HWTEST_F(ObjectServiceImplTest, ObjectStoreSave001, TestSize.Level1)
+{
+    std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    std::map<std::string, std::vector<uint8_t>> data;
+    sptr<IRemoteObject> callback;
+    auto ret = objectServiceImpl->ObjectStoreSave(bundleName_, sessionId_, deviceId_, data, callback);
+    EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+    ret = objectServiceImpl->ObjectStoreRevokeSave(bundleName_, sessionId_, callback);
+    EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+    ret = objectServiceImpl->ObjectStoreRetrieve(bundleName_, sessionId_, callback);
+    EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+    ret = objectServiceImpl->RegisterDataObserver(bundleName_, sessionId_, callback);
+    EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+    ret = objectServiceImpl->UnregisterDataChangeObserver(bundleName_, sessionId_);
+    EXPECT_EQ(ret, OBJECT_PERMISSION_DENIED);
+}
 }

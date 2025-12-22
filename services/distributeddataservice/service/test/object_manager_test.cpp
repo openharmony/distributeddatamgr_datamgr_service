@@ -1513,4 +1513,41 @@ HWTEST_F(ObjectManagerTest, SaveUserToMeta001, TestSize.Level1)
     manager.SaveUserToMeta();
     EXPECT_EQ(ret, true);
 }
+
+/**
+* @tc.name: AutoLaunchStore001
+* @tc.desc: AutoLaunchStore test Open fail and succ
+* @tc.type: FUNC
+*/
+HWTEST_F(ObjectManagerTest, AutoLaunchStore001, TestSize.Level0)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    manager.kvStoreDelegateManager_ = nullptr;
+    manager.ForceClose();
+    manager.OpenObjectKvStore();
+    auto result = manager.Open();
+    EXPECT_EQ(result, DistributedObject::OBJECT_INNER_ERROR);
+    result = manager.AutoLaunchStore();
+    EXPECT_EQ(result, DistributedObject::OBJECT_INNER_ERROR);
+    std::string dataDir = "/data/app/el2/100/database";
+    manager.SetData(dataDir, userId_);
+    manager.delegate_ = nullptr;
+    ObjectRecord data;
+    result = manager.RetrieveFromStore(appId_, sessionId_, data);
+    EXPECT_EQ(result, E_DB_ERROR);
+    result = manager.Open();
+    EXPECT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+    std::string prefix = "ObjectManagerTest";
+    std::function<void(const std::map<std::string, int32_t> &results)> func;
+    func = [](const std::map<std::string, int32_t> &results) { return results; };
+    std::vector<std::string> localDeviceList;
+    manager.delegate_ = manager.OpenObjectKvStore();
+    result = manager.SyncOnStore(prefix, localDeviceList, func);
+    EXPECT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+    localDeviceList.emplace_back("local");
+    result = manager.DoSync(prefix, localDeviceList, sequenceId_);
+    EXPECT_NE(result, DistributedObject::OBJECT_SUCCESS);
+    result = manager.AutoLaunchStore();
+    EXPECT_EQ(result, DistributedObject::OBJECT_SUCCESS);
+}
 } // namespace OHOS::Test
