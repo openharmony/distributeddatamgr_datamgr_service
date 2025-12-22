@@ -141,6 +141,8 @@ public:
     
     int32_t OnChange(const std::string &storeId, int32_t triggerMode) override
     {
+        (void)storeId;
+        (void)triggerMode;
         return GeneralError::E_OK;
     }
 };

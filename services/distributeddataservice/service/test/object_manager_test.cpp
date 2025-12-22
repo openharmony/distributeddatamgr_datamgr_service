@@ -210,7 +210,6 @@ protected:
     pid_t pid_ = 10;
     uint32_t tokenId_ = 100;
     AssetValue assetValue_;
-    static inline std::shared_ptr<DeviceManagerAdapterMock> devMgrAdapterMock = nullptr;
 };
 
 void ObjectManagerTest::SetUp()
@@ -252,8 +251,6 @@ void ObjectManagerTest::SetUp()
 
 void ObjectManagerTest::SetUpTestCase(void)
 {
-    devMgrAdapterMock = make_shared<DeviceManagerAdapterMock>();
-    BDeviceManagerAdapter::deviceManagerAdapter = devMgrAdapterMock;
     std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
     Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
@@ -265,7 +262,6 @@ void ObjectManagerTest::SetUpTestCase(void)
 void ObjectManagerTest::TearDownTestCase(void)
 {
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
-    devMgrAdapterMock = nullptr;
 }
 
 void ObjectManagerTest::TearDown()
@@ -556,7 +552,6 @@ HWTEST_F(ObjectManagerTest, NotifyChange002, TestSize.Level0)
     data.insert_or_assign(assetPrefix + ObjectStore::MODIFY_TIME_SUFFIX, value);
     data.insert_or_assign(assetPrefix + ObjectStore::SIZE_SUFFIX, value);
     data.insert_or_assign("testkey", value);
-    EXPECT_CALL(*devMgrAdapterMock, IsSameAccount(_)).WillOnce(Return(true));
     manager.NotifyChange(data);
     EXPECT_TRUE(manager.restoreStatus_.Contains(bundleName + sessionId));
     auto [has, taskId] = manager.objectTimer_.Find(bundleName + sessionId);

@@ -42,7 +42,10 @@ namespace OHOS::Test {
 namespace DistributedDataTest {
 class ObjectManagerMockTest : public testing::Test {
 public:
-    static void SetUpTestCase(void)
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+
+    void SetUp()
     {
         metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
         BMetaDataManager::metaDataManager = metaDataManagerMock;
@@ -62,7 +65,8 @@ public:
         accTokenMock = std::make_shared<AccessTokenKitMock>();
         BAccessTokenKit::accessTokenkit = accTokenMock;
     }
-    static void TearDownTestCase(void)
+
+    void TearDown()
     {
         metaDataManagerMock = nullptr;
         BMetaDataManager::metaDataManager = nullptr;
@@ -89,8 +93,6 @@ public:
     static inline std::shared_ptr<DistributedFileDaemonManagerMock> fileDaemonMgrMock = nullptr;
     static inline AccountDelegateMock *accountDelegateMock = nullptr;
     static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
-    void SetUp() {};
-    void TearDown() {};
 
 protected:
     std::string sessionId_ = "123";
@@ -510,7 +512,7 @@ HWTEST_F(ObjectManagerMockTest, IsContinue002, TestSize.Level1)
     std::shared_ptr<ObjectServiceImpl> objectServiceImpl = std::make_shared<ObjectServiceImpl>();
     bool isContinue = false;
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
-        .Times(2)
+        .Times(1)
         .WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accTokenMock, GetHapTokenInfo(_, _))
         .Times(1)

@@ -83,6 +83,7 @@ protected:
 
 std::pair<int32_t, CloudInfo> CloudDataMockTest::CloudServerMock::GetServerInfo(int32_t userId, bool needSpaceInfo)
 {
+    (void)needSpaceInfo;
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     cloudInfo.id = TEST_CLOUD_ID;

@@ -50,6 +50,10 @@ public:
     int32_t DownloadFile(const int32_t userId, const std::string &bundleName, const std::string &networkId,
         AssetInfo &assetInfo, ResultCallback resultCallback) override
     {
+        (void)userId;
+        (void)bundleName;
+        (void)networkId;
+        (void)assetInfo;
         switch (callbackType_) {
             case CallbackType::SUCCESS:
                 resultCallback("", OBJECT_SUCCESS);

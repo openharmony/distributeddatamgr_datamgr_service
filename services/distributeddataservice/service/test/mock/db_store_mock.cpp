@@ -110,6 +110,7 @@ DBStatus DBStoreMock::UnpublishToLocal(const Key &key, bool deletePublic, bool u
 DBStatus DBStoreMock::RegisterObserver(const Key &key, unsigned int mode,
     std::shared_ptr<KvStoreObserver> observer)
 {
+    (void)mode;
     observers_.Compute(observer, [key](auto &, std::set<Key> &prefixes) {
         prefixes.insert(key);
         return !prefixes.empty();
