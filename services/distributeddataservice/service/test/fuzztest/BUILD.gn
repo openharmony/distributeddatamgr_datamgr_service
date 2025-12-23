@@ -48,7 +48,7 @@ group("fuzztest") {
   if (datamgr_service_kvdb) {
     deps += [
       "kvdbservicestub_fuzzer:fuzztest",
-      "kvdbstubconcurrent_fuzzer:fuzztest",
+      "kvdbservicestubconcurrent_fuzzer:fuzztest",
     ]
   }
 

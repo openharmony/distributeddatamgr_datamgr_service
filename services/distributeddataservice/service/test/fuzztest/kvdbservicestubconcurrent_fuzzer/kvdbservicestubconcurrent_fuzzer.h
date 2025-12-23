@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#ifndef KVDBSTUBCONCURRENT_FUZZER_H
-#define KVDBSTUBCONCURRENT_FUZZER_H
+#ifndef KVDBSERVICESTUBCONCURRENT_FUZZER_H
+#define KVDBSERVICESTUBCONCURRENT_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "kvdbstubconcurrent_fuzzer"
+#define FUZZ_PROJECT_NAME "kvdbservicestubconcurrent_fuzzer"
 
-#endif // KVDBSTUBCONCURRENT_FUZZER_H
+#endif // KVDBSERVICESTUBCONCURRENT_FUZZER_H

@@ -28,6 +28,7 @@
 
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedKv;
+
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.KVFeature";
 constexpr uint32_t CODE_MIN = 0;

@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "kvdbstubconcurrent_fuzzer.h"
+#include "kvdbservicestubconcurrent_fuzzer.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -40,11 +40,6 @@ static std::shared_ptr<KVDBServiceImpl> kvdbServiceImpl = nullptr;
 
 bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
-    Bootstrap::GetInstance().LoadComponents();
-    Bootstrap::GetInstance().LoadDirectory();
-    Bootstrap::GetInstance().LoadCheckers();
-    Bootstrap::GetInstance().LoadNetworks();
-
     uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     MessageParcel request;
@@ -68,6 +63,11 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
     OHOS::kvdbServiceImpl->OnBind(
         { "KvdbServiceStubFuzz", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+
+    Bootstrap::GetInstance().LoadComponents();
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    Bootstrap::GetInstance().LoadNetworks();
     return 0;
 }
 
