@@ -267,7 +267,7 @@ int32_t RdbGeneralStore::InitDelegate()
             meta_.bundleName.c_str(), meta_.tokenId, Anonymous::Change(meta_.storeId).c_str(), ret);
     }
     if (delegate_ == nullptr) {
-        return GenErr::E_ERROR;
+        return ret != DBStatus::OK ? ConvertStatus(ret) : GenErr::E_ERROR;
     }
     auto res = delegate_->SetProperty({ { Constant::TOKEN_ID, meta_.tokenId } });
     if (res != DBStatus::OK) {
@@ -1264,6 +1264,8 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GeneralError::E_CLOUD_DISABLED;
         case DBStatus::TASK_INTERRUPTED:
             return GeneralError::E_CLOUD_TASK_INTERRUPTED;
+        case DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB:
+            return GeneralError::E_DB_CORRUPT;
         default:
             ZLOGI("status:0x%{public}x", status);
             break;
