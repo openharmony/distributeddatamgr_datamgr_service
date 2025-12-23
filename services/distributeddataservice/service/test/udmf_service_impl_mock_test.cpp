@@ -37,30 +37,29 @@ namespace OHOS::Test {
 namespace DistributedDataTest {
 class UdmfServiceImplMockTest : public testing::Test {
 public:
-    static void SetUpTestCase(void)
-    {
-        accTokenMock = std::make_shared<AccessTokenKitMock>();
-        BAccessTokenKit::accessTokenkit = accTokenMock;
-        metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
-        BMetaDataManager::metaDataManager = metaDataManagerMock;
-        metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
-        BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
-    }
-    static void TearDownTestCase(void)
-    {
-        accTokenMock = nullptr;
-        BAccessTokenKit::accessTokenkit = nullptr;
-        metaDataManagerMock = nullptr;
-        BMetaDataManager::metaDataManager = nullptr;
-        metaDataMock = nullptr;
-        BMetaData<StoreMetaData>::metaDataManager = nullptr;
-    }
-    static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
+    void SetUp();
+    void TearDown();
+    static void SetUpTestCase(void) {}
+    static void TearDownTestCase(void) {};
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
-    void SetUp() {};
-    void TearDown() {};
 };
+
+void UdmfServiceImplMockTest::SetUp()
+{
+    metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
+    BMetaDataManager::metaDataManager = metaDataManagerMock;
+    metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
+    BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
+}
+
+void UdmfServiceImplMockTest::TearDown()
+{
+    metaDataManagerMock = nullptr;
+    BMetaDataManager::metaDataManager = nullptr;
+    metaDataMock = nullptr;
+    BMetaData<StoreMetaData>::metaDataManager = nullptr;
+}
 
 /**
 * @tc.name: IsNeedMetaSyncTest001
@@ -74,28 +73,21 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest001, TestSize.Level0)
     std::vector<std::string> devices = {"remote_device"};
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false))
         .WillOnce(testing::Return(false));
     auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
-    EXPECT_EQ(isNeedSync, true);
-
-    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false))
-        .WillOnce(testing::Return(true));
-    isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
-    EXPECT_EQ(isNeedSync, true);
+    EXPECT_TRUE(isNeedSync);
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
         .WillOnce(testing::Return(true))
         .WillOnce(testing::Return(false));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
-    EXPECT_EQ(isNeedSync, true);
+    EXPECT_TRUE(isNeedSync);
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
         .WillOnce(testing::Return(true))
         .WillOnce(testing::Return(true));
     isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
-    EXPECT_EQ(isNeedSync, true);
+    EXPECT_FALSE(isNeedSync);
 }
 
 /**
@@ -114,10 +106,9 @@ HWTEST_F(UdmfServiceImplMockTest, IsNeedMetaSyncTest002, TestSize.Level0)
     std::vector<std::string> devices = {"remote_device"};
 
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
-        .WillOnce(testing::Return(false))
         .WillOnce(testing::Return(false));
     auto isNeedSync = udmfServiceImpl.IsNeedMetaSync(meta, devices);
-    EXPECT_EQ(isNeedSync, true);
+    EXPECT_TRUE(isNeedSync);
     // mock mask
 }
 
@@ -135,6 +126,8 @@ HWTEST_F(UdmfServiceImplMockTest, ResolveAutoLaunchTest001, TestSize.Level0)
     };
     std::string identifier = "identifier";
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    EXPECT_CALL(*metaDataMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false));
     auto ret = udmfServiceImpl->ResolveAutoLaunch(identifier, param);
     EXPECT_EQ(ret, UDMF::E_NOT_FOUND);
 }
