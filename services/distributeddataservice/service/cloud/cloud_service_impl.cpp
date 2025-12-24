@@ -294,10 +294,10 @@ void CloudServiceImpl::DoAppLevelClean(int32_t user, const SchemaMeta &schemaMet
     }
     StoreMetaData meta;
     meta.bundleName = schemaMeta.bundleName;
-    meta.user = std::to_string(user);
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     meta.instanceId = 0;
     for (const auto &database : schemaMeta.databases) {
+        meta.user = std::to_string(user); // GetStoreMetaData changes the user
         meta.storeId = database.name;
         if (!GetStoreMetaData(meta)) {
             continue;
