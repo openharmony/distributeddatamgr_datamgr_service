@@ -58,6 +58,7 @@ group("fuzztest") {
       "datashareservicestub3_fuzzer:fuzztest",
       "datashareserviceimpl_fuzzer:fuzztest",
       "datasharesubscriber_fuzzer:fuzztest",
+      "datashareservicestubconcurrent_fuzzer:fuzztest",
     ]
   }
 

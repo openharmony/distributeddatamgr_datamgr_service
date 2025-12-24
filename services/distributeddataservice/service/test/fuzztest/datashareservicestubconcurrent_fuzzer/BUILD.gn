@@ -1,0 +1,153 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################hydra-fuzz########################################
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+##############################fuzztest##########################################
+ohos_fuzztest("DataShareServiceStubConcurrentFuzzTest") {
+  module_out_path = "datamgr_service/datamgr_service/concurrent"
+
+  include_dirs = [
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/data_share/common",
+    "${data_service_path}/service/data_share/data",
+    "${data_service_path}/service/data_share/dfx",
+    "${data_service_path}/service/data_share/strategies",
+    "${data_service_path}/service/data_share/subscriber_managers",
+    "${data_service_path}/service/data_share",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  fuzz_config_file =
+      "${data_service_path}/service/test/fuzztest/datashareservicestubconcurrent_fuzzer"
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+
+  sources = [
+    "${data_service_path}/service/common/bundle_utils.cpp",
+    "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
+    "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
+    "${data_service_path}/service/data_share/common/common_utils.cpp",
+    "${data_service_path}/service/data_share/common/db_delegate.cpp",
+    "${data_service_path}/service/data_share/common/div_strategy.cpp",
+    "${data_service_path}/service/data_share/common/extension_ability_manager.cpp",
+    "${data_service_path}/service/data_share/common/extension_connect_adaptor.cpp",
+    "${data_service_path}/service/data_share/common/extension_mgr_proxy.cpp",
+    "${data_service_path}/service/data_share/common/kv_delegate.cpp",
+    "${data_service_path}/service/data_share/common/proxy_data_manager.cpp",
+    "${data_service_path}/service/data_share/common/rdb_delegate.cpp",
+    "${data_service_path}/service/data_share/common/scheduler_manager.cpp",
+    "${data_service_path}/service/data_share/common/seq_strategy.cpp",
+    "${data_service_path}/service/data_share/common/utils.cpp",
+    "${data_service_path}/service/data_share/data/published_data.cpp",
+    "${data_service_path}/service/data_share/data/resultset_json_formatter.cpp",
+    "${data_service_path}/service/data_share/data/template_data.cpp",
+    "${data_service_path}/service/data_share/data_provider_config.cpp",
+    "${data_service_path}/service/data_share/data_share_db_config.cpp",
+    "${data_service_path}/service/data_share/data_share_obs_proxy.cpp",
+    "${data_service_path}/service/data_share/data_share_profile_config.cpp",
+    "${data_service_path}/service/data_share/data_share_service_impl.cpp",
+    "${data_service_path}/service/data_share/data_share_service_stub.cpp",
+    "${data_service_path}/service/data_share/data_share_silent_config.cpp",
+    "${data_service_path}/service/data_share/data_share_types_util.cpp",
+    "${data_service_path}/service/data_share/dfx/hiview_adapter.cpp",
+    "${data_service_path}/service/data_share/dfx/hiview_fault_adapter.cpp",
+    "${data_service_path}/service/data_share/strategies/data_proxy/load_config_from_data_proxy_node_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/data_share/load_config_from_data_share_bundle_info_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/general/check_is_data_proxy_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/general/check_is_single_app_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/general/cross_permission_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/general/load_config_common_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/general/load_config_data_info_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/general/load_config_from_bundle_info_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/general/permission_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/get_data_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/publish_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/rdb_notify_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/subscribe_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/unsubscribe_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/template_strategy.cpp",
+    "${data_service_path}/service/data_share/subscriber_managers/proxy_data_subscriber_manager.cpp",
+    "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",
+    "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
+    "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
+    "${data_service_path}/service/kvdb/user_delegate.cpp",
+    "${data_service_path}/service/permission/src/permit_delegate.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
+    "datashareservicestubconcurrent_fuzzer.cpp",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/config:distributeddata_config",
+  ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:configuration",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "huks:libhukssdk",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "memmgr:memmgrclient",
+    "qos_manager:concurrent_task_client",
+    "qos_manager:qos",
+    "relational_store:native_rdb",
+    "relational_store:rdb_data_share_adapter",
+    "resource_management:global_resmgr",
+    "samgr:samgr_proxy",
+    "time_service:time_client",
+  ]
+}
+
+###############################################################################
+group("fuzztest") {
+  testonly = true
+
+  deps = [ ":DataShareServiceStubConcurrentFuzzTest" ]
+}
+###############################################################################
