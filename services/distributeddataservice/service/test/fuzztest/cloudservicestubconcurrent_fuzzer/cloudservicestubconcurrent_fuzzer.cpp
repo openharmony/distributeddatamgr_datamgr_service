@@ -66,7 +66,10 @@ void AllocAndSetHapToken()
         }
     };
     auto tokenID = AccessTokenKit::AllocHapToken(info, policy);
-    SetSelfTokenID(tokenID.tokenIDEx);
+    auto ret = SetSelfTokenID(tokenID.tokenIDEx);
+    if (ret != 0) {
+        return;
+    }
 }
 
 bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
