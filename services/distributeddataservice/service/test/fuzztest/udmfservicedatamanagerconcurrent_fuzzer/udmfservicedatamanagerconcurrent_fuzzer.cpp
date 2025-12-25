@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "udmfservicedataconcurrent_fuzzer.h"
+#include "udmfservicedatamanagerconcurrent_fuzzer.h"
 
 #include "accesstoken_kit.h"
 #include "distributeddata_udmf_ipc_interface_code.h"
@@ -53,21 +53,30 @@ QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
     return query;
 }
 
-void GetBatchDataFuzz(FuzzedDataProvider &provider)
+void SetDataFuzz(FuzzedDataProvider &provider)
 {
-    QueryOption query = GenerateFuzzQueryOption(provider);
+    CustomOption option1 = {.intention = Intention::UD_INTENTION_DRAG};
+
+    std::string svalue = provider.ConsumeRandomLengthString();
+    UnifiedData data1;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = svalue;
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data1.AddRecord(record);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(request, query);
+    ITypesUtil::Marshal(request, option1, data1);
     MessageParcel reply;
     std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
     if (udmfServiceStub == nullptr) {
         return;
     }
-    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_BATCH_DATA), request, reply);
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DATA), request, reply);
 }
 
-void GetSummaryFuzz(FuzzedDataProvider &provider)
+void GetDataFuzz(FuzzedDataProvider &provider)
 {
     QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
@@ -78,7 +87,53 @@ void GetSummaryFuzz(FuzzedDataProvider &provider)
     if (udmfServiceStub == nullptr) {
         return;
     }
-    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_SUMMARY), request, reply);
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_DATA), request, reply);
+}
+
+void UpdateDataFuzz(FuzzedDataProvider &provider)
+{
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("DataHub", "com.test.demo", groupIdStr);
+    udKey.intention = Intention::UD_INTENTION_DATA_HUB;
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();\
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.tokenId = provider.ConsumeIntegral<uint32_t>();
+    std::string svalue = provider.ConsumeRandomLengthString();
+    UnifiedData data1;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = svalue;
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data1.AddRecord(record);
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    ITypesUtil::Marshal(request, query, data1);
+    MessageParcel reply;
+    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
+    if (udmfServiceStub == nullptr) {
+        return;
+    }
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::UPDATE_DATA), request, reply);
+}
+
+void DeleteDataFuzz(FuzzedDataProvider &provider)
+{
+    QueryOption query = GenerateFuzzQueryOption(provider);
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    ITypesUtil::Marshal(request, query);
+    MessageParcel reply;
+    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
+    if (udmfServiceStub == nullptr) {
+        return;
+    }
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::DELETE_DATA), request, reply);
 }
 }
 
@@ -91,7 +146,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     SetSelfTokenID(tokenId);
     std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
     OHOS::g_udmfServiceImpl->OnBind(
-        { "UdmfServiceDataConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
+        { "UdmfServiceDataManagerConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
         std::move(executor) });
     return 0;
 }
@@ -100,7 +155,9 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
-    OHOS::GetBatchDataFuzz(provider);
-    OHOS::GetSummaryFuzz(provider);
+    OHOS::SetDataFuzz(provider);
+    OHOS::GetDataFuzz(provider);
+    OHOS::UpdateDataFuzz(provider);
+    OHOS::DeleteDataFuzz(provider);
     return 0;
 }

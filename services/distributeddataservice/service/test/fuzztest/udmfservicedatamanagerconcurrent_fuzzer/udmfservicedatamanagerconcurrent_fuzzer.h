@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#ifndef UDMF_SERVICE_REMOTE_INTERACTION_FUZZER_H
-#define UDMF_SERVICE_REMOTE_INTERACTION_FUZZER_H
+#ifndef UDMF_SERVICE_DATA_MANAGER_CONCURRENT_FUZZER_H
+#define UDMF_SERVICE_DATA_MANAGER_CONCURRENT_FUZZER_H
 
-#define FUZZ_PROJECT_NAME "udmfserviceremoteinteractionconcurrent_fuzzer"
+#define FUZZ_PROJECT_NAME "udmfservicedatamanagerconcurrent_fuzzer"
 
-#endif // UDMF_SERVICE_REMOTE_INTERACTION_FUZZER_H
+#endif // UDMF_SERVICE_DATA_MANAGER_FUZZER_H

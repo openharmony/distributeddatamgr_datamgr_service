@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ##############################fuzztest##########################################
-ohos_fuzztest("UdmfServiceDataConcurrentFuzzTest") {
+ohos_fuzztest("UdmfServiceDataManagerConcurrentFuzzTest") {
   module_out_path = "datamgr_service/datamgr_service/concurrent"
 
   include_dirs = [
@@ -30,7 +30,7 @@ ohos_fuzztest("UdmfServiceDataConcurrentFuzzTest") {
   ]
 
   fuzz_config_file =
-      "${data_service_path}/service/test/fuzztest/udmfservicedataconcurrent_fuzzer"
+      "${data_service_path}/service/test/fuzztest/udmfservicedatamanagerconcurrent_fuzzer"
 
   cflags = [
     "-g",
@@ -40,7 +40,7 @@ ohos_fuzztest("UdmfServiceDataConcurrentFuzzTest") {
     "-fno-access-control"
   ]
 
-  sources = [ "udmfservicedataconcurrent_fuzzer.cpp" ]
+  sources = [ "udmfservicedatamanagerconcurrent_fuzzer.cpp" ]
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
@@ -75,6 +75,6 @@ ohos_fuzztest("UdmfServiceDataConcurrentFuzzTest") {
 group("fuzztest") {
   testonly = true
 
-  deps = [ ":UdmfServiceDataConcurrentFuzzTest" ]
+  deps = [ ":UdmfServiceDataManagerConcurrentFuzzTest" ]
 }
 ###############################################################################

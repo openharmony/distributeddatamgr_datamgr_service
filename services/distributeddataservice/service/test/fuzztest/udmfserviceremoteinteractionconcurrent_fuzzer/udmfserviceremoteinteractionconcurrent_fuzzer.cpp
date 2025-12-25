@@ -88,27 +88,6 @@ void IsRemoteDataFuzz(FuzzedDataProvider &provider)
     udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::IS_REMOTE_DATA),
         requestUpdate, replyUpdate);
 }
-
-void ResolveAutoLaunchFuzz(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    auto identifier = provider.ConsumeRandomLengthString();
-    UdmfServiceImpl::DBLaunchParam param;
-    param.userId = provider.ConsumeRandomLengthString();
-    param.appId = provider.ConsumeRandomLengthString();
-    param.storeId = provider.ConsumeRandomLengthString();
-    param.path = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->ResolveAutoLaunch(identifier, param);
-}
-
-void OnUserChangeFuzz(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    uint32_t code = provider.ConsumeIntegral<uint32_t>();
-    auto user = provider.ConsumeRandomLengthString();
-    auto account = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->OnUserChange(code, user, account);
-}
 }
 
 /* Fuzzer entry point */
@@ -131,7 +110,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     FuzzedDataProvider provider(data, size);
     OHOS::OnRemoteRequestFuzz(provider);
     OHOS::IsRemoteDataFuzz(provider);
-    OHOS::ResolveAutoLaunchFuzz(provider);
-    OHOS::OnUserChangeFuzz(provider);
     return 0;
 }

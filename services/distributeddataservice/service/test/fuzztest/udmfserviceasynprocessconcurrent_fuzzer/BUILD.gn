@@ -17,7 +17,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 ##############################fuzztest##########################################
 ohos_fuzztest("UdmfServiceAsynProcessConcurrentFuzzTest") {
-  module_out_path = "datamgr_service/datamgr_service"
+  module_out_path = "datamgr_service/datamgr_service/concurrent"
 
   include_dirs = [
     "${data_service_path}/framework/include",

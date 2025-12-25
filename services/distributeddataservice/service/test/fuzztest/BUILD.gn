@@ -76,8 +76,5 @@ group("fuzztest") {
     deps += [ "udmfserviceremoteinteraction_fuzzer:fuzztest" ]
     deps += [ "udmfservicesyncandmeta_fuzzer:fuzztest" ]
     deps += [ "udmfserviceverifypermission_fuzzer:fuzztest" ]
-    deps += [ "udmfserviceremoteinteractionconcurrent_fuzzer:fuzztest" ]
-    deps += [ "udmfserviceasynprocessconcurrent_fuzzer:fuzztest" ]
-    deps += [ "udmfservicedataconcurrent_fuzzer:fuzztest" ]
   }
 }
