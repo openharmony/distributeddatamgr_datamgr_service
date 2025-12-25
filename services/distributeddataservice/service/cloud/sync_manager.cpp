@@ -597,7 +597,7 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
             return true;
         }
         if (code != E_NETWORK_ERROR) {
-            info.SetError(code);
+            info.SetError(ConvertValidGeneralCode(code));
             RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
                                     dbCode },
                 "GetRetryer", BizState::END);
