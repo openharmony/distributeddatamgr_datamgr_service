@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "udmfserviceremoteinteractionconcurrent_fuzzer.h"
+#include "udmfserviceprivilegeconcurrent_fuzzer.h"
 
 #include "accesstoken_kit.h"
 #include "distributeddata_udmf_ipc_interface_code.h"
@@ -31,15 +31,12 @@ using namespace OHOS::UDMF;
 
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
-constexpr uint32_t CODE_MIN = 0;
-constexpr uint32_t CODE_MAX = static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT) + 1;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
 static std::shared_ptr<UdmfServiceImpl> g_udmfServiceImpl = nullptr;
-
 
 QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
@@ -56,36 +53,25 @@ QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
     return query;
 }
 
-bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
-{
-    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
-    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
-    MessageParcel request;
-    request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
-    request.RewindRead(0);
-    MessageParcel reply;
-    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
-    if (udmfServiceStub == nullptr) {
-        return false;
-    }
-    udmfServiceStub->OnRemoteRequest(code, request, reply);
-    return true;
-}
-
-void IsRemoteDataFuzz(FuzzedDataProvider &provider)
+void AddPrivilegeDataFuzz(FuzzedDataProvider &provider)
 {
     QueryOption query = GenerateFuzzQueryOption(provider);
-    MessageParcel requestUpdate;
-    requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(requestUpdate, query);
+
+    Privilege privilege;
+    privilege.tokenId = 1;
+    privilege.readPermission = "read";
+    privilege.writePermission = "write";
+
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    ITypesUtil::Marshal(request, query, privilege);
     MessageParcel replyUpdate;
     std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
     if (udmfServiceStub == nullptr) {
         return;
     }
-    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::IS_REMOTE_DATA),
-        requestUpdate, replyUpdate);
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::ADD_PRIVILEGE),
+        request, replyUpdate);
 }
 }
 
@@ -98,7 +84,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     SetSelfTokenID(tokenId);
     std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
     OHOS::g_udmfServiceImpl->OnBind(
-        { "UdmfServiceRemoteInteractionConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
+        { "UdmfServicePrivilegeConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
         std::move(executor) });
     return 0;
 }
@@ -107,7 +93,6 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
-    OHOS::OnRemoteRequestFuzz(provider);
-    OHOS::IsRemoteDataFuzz(provider);
+    OHOS::AddPrivilegeDataFuzz(provider);
     return 0;
 }

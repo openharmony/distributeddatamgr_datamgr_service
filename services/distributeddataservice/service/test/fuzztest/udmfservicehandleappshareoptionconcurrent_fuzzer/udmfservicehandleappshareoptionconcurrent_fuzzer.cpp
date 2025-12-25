@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "udmfserviceremoteinteractionconcurrent_fuzzer.h"
+#include "udmfservicehandleappshareoptionconcurrent_fuzzer.h"
 
 #include "accesstoken_kit.h"
 #include "distributeddata_udmf_ipc_interface_code.h"
@@ -31,60 +31,68 @@ using namespace OHOS::UDMF;
 
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
-constexpr uint32_t CODE_MIN = 0;
-constexpr uint32_t CODE_MAX = static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT) + 1;
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
-static constexpr int ID_LEN = 32;
-static constexpr int MINIMUM = 48;
-static constexpr int MAXIMUM = 121;
 static std::shared_ptr<UdmfServiceImpl> g_udmfServiceImpl = nullptr;
 
-
-QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
+void OnGetAppShareOptionFuzz(FuzzedDataProvider &provider)
 {
-    std::vector<uint8_t> groupId(ID_LEN, '0');
-    for (size_t i = 0; i < groupId.size(); ++i) {
-        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
-    }
-    std::string groupIdStr(groupId.begin(), groupId.end());
-    UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
-    QueryOption query;
-    query.key = udKey.GetUnifiedKey();
-    query.intention = Intention::UD_INTENTION_DRAG;
-    query.tokenId = provider.ConsumeIntegral<uint32_t>();
-    return query;
-}
-
-bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
-{
-    uint32_t code = provider.ConsumeIntegralInRange<uint32_t>(CODE_MIN, CODE_MAX);
-    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
-    MessageParcel request;
-    request.WriteInterfaceToken(INTERFACE_TOKEN);
-    request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
-    request.RewindRead(0);
-    MessageParcel reply;
-    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
-    if (udmfServiceStub == nullptr) {
-        return false;
-    }
-    udmfServiceStub->OnRemoteRequest(code, request, reply);
-    return true;
-}
-
-void IsRemoteDataFuzz(FuzzedDataProvider &provider)
-{
-    QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel requestUpdate;
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
     requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(requestUpdate, query);
+    requestUpdate.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    requestUpdate.RewindRead(0);
+    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
+    std::string intention = UD_INTENTION_MAP.at(option.intention);
+    ITypesUtil::Marshal(requestUpdate, intention);
+
     MessageParcel replyUpdate;
     std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
     if (udmfServiceStub == nullptr) {
         return;
     }
-    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::IS_REMOTE_DATA),
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_APP_SHARE_OPTION),
+        requestUpdate, replyUpdate);
+}
+
+void SetAppShareOptionFuzz(FuzzedDataProvider &provider)
+{
+    MessageParcel requestUpdate;
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
+    requestUpdate.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    requestUpdate.RewindRead(0);
+    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
+    std::string intention = UD_INTENTION_MAP.at(option.intention);
+    int32_t shareOption = provider.ConsumeIntegral<int32_t>();
+    ITypesUtil::Marshal(requestUpdate, intention, shareOption);
+
+    MessageParcel replyUpdate;
+    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
+    if (udmfServiceStub == nullptr) {
+        return;
+    }
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_APP_SHARE_OPTION),
+        requestUpdate, replyUpdate);
+}
+
+void RemoveAppShareOptionFuzz(FuzzedDataProvider &provider)
+{
+    MessageParcel requestUpdate;
+    std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
+    requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
+    requestUpdate.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
+    requestUpdate.RewindRead(0);
+    CustomOption option = {.intention = Intention::UD_INTENTION_DRAG};
+    std::string intention = UD_INTENTION_MAP.at(option.intention);
+    ITypesUtil::Marshal(requestUpdate, intention);
+
+    MessageParcel replyUpdate;
+    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
+    if (udmfServiceStub == nullptr) {
+        return;
+    }
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::REMOVE_APP_SHARE_OPTION),
         requestUpdate, replyUpdate);
 }
 }
@@ -107,7 +115,8 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
-    OHOS::OnRemoteRequestFuzz(provider);
-    OHOS::IsRemoteDataFuzz(provider);
+    OHOS::OnGetAppShareOptionFuzz(provider);
+    OHOS::SetAppShareOptionFuzz(provider);
+    OHOS::RemoveAppShareOptionFuzz(provider);
     return 0;
 }

@@ -109,7 +109,7 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     UnifiedKey udKey = UnifiedKey("DataHub", "com.test.demo", groupIdStr);
     udKey.intention = Intention::UD_INTENTION_DATA_HUB;
     QueryOption query;
-    query.key = udKey.GetUnifiedKey();\
+    query.key = udKey.GetUnifiedKey();
     query.intention = Intention::UD_INTENTION_DATA_HUB;
     query.tokenId = provider.ConsumeIntegral<uint32_t>();
     std::string svalue = provider.ConsumeRandomLengthString();
