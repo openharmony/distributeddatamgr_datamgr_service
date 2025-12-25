@@ -24,6 +24,7 @@ group("fuzztest") {
     deps += [ 
       "cloudservicestub_fuzzer:fuzztest",
       "syncstrategies_fuzzer:fuzztest",
+      "cloudservicestubconcurrent_fuzzer:fuzztest",
     ]
   }
 
@@ -34,6 +35,7 @@ group("fuzztest") {
       "objectserviceimp2_fuzzer:fuzztest",
       "objectserviceimp3_fuzzer:fuzztest",
       "objectservicelistener_fuzzer:fuzztest",
+      "objectservicestubconcurrent_fuzzer:fuzztest",
     ]
   }
 
