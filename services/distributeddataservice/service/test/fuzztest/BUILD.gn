@@ -48,9 +48,11 @@ group("fuzztest") {
   }
 
   if (datamgr_service_kvdb) {
-    deps += [ "kvdbservicestub_fuzzer:fuzztest" ]
+    deps += [
+      "kvdbservicestub_fuzzer:fuzztest",
+      "kvdbservicestubconcurrent_fuzzer:fuzztest",
+    ]
   }
-
 
   if (datamgr_service_data_share) {
     deps += [
