@@ -87,6 +87,7 @@ group("fuzztest") {
       "udmfserviceremoteinteraction_fuzzer:fuzztest",
       "udmfserviceremoteinteractionconcurrent_fuzzer:fuzztest",
       "udmfservicesyncandmeta_fuzzer:fuzztest",
+      "udmfservicesyncandmetaconcurrent_fuzzer:fuzztest",
       "udmfserviceverifypermission_fuzzer:fuzztest",
     ]
   }
