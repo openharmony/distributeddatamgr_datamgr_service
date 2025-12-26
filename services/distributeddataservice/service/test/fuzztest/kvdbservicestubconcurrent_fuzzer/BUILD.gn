@@ -1,0 +1,126 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+##############################hydra-fuzz########################################
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+##############################fuzztest##########################################
+ohos_fuzztest("KvdbServiceStubConcurrentFuzzTest") {
+  module_out_path = "datamgr_service/datamgr_service/concurrent"
+
+  include_dirs = [
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/app/src/checker",
+    "${data_service_path}/app/src",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/backup/include",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/rdb",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/utils",
+  ]
+
+  fuzz_config_file = "${data_service_path}/service/test/fuzztest/kvdbservicestubconcurrent_fuzzer"
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+
+  sources = [
+    "${data_service_path}/app/src/checker/bundle_checker.cpp",
+    "${data_service_path}/app/src/checker/system_checker.cpp",
+    "${data_service_path}/service/backup/src/backup_manager.cpp",
+    "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
+    "${data_service_path}/service/config/src/config_factory.cpp",
+    "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
+    "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
+    "${data_service_path}/service/config/src/model/auto_sync_app_config.cpp",
+    "${data_service_path}/service/config/src/model/backup_config.cpp",
+    "${data_service_path}/service/config/src/model/checker_config.cpp",
+    "${data_service_path}/service/config/src/model/cloud_config.cpp",
+    "${data_service_path}/service/config/src/model/component_config.cpp",
+    "${data_service_path}/service/config/src/model/datashare_config.cpp",
+    "${data_service_path}/service/config/src/model/directory_config.cpp",
+    "${data_service_path}/service/config/src/model/double_sync_config.cpp",
+    "${data_service_path}/service/config/src/model/global_config.cpp",
+    "${data_service_path}/service/config/src/model/network_config.cpp",
+    "${data_service_path}/service/config/src/model/protocol_config.cpp",
+    "${data_service_path}/service/config/src/model/thread_config.cpp",
+    "${data_service_path}/service/kvdb/auth_delegate.cpp",
+    "${data_service_path}/service/kvdb/kvdb_exporter.cpp",
+    "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
+    "${data_service_path}/service/kvdb/kvdb_notifier_proxy.cpp",
+    "${data_service_path}/service/kvdb/kvdb_service_impl.cpp",
+    "${data_service_path}/service/kvdb/kvdb_service_stub.cpp",
+    "${data_service_path}/service/kvdb/kvdb_watcher.cpp",
+    "${data_service_path}/service/kvdb/kvstore_sync_manager.cpp",
+    "${data_service_path}/service/kvdb/query_helper.cpp",
+    "${data_service_path}/service/kvdb/upgrade.cpp",
+    "${data_service_path}/service/kvdb/user_delegate.cpp",
+    "${data_service_path}/service/matrix/src/device_matrix.cpp",
+    "${data_service_path}/service/matrix/src/matrix_event.cpp",
+    "${data_service_path}/service/permission/src/permission_validator.cpp",
+    "${data_service_path}/service/permission/src/permit_delegate.cpp",
+    "${data_service_path}/service/rdb/rdb_cloud.cpp",
+    "${data_service_path}/service/rdb/rdb_query.cpp",
+    "kvdbservicestubconcurrent_fuzzer.cpp",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_manager",
+    "ability_runtime:dataobs_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "device_auth:deviceauth_sdk",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "huks:libhukssdk",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
+    "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+###############################################################################
+group("fuzztest") {
+  testonly = true
+
+  deps = [ ":KvdbServiceStubConcurrentFuzzTest" ]
+}
+###############################################################################

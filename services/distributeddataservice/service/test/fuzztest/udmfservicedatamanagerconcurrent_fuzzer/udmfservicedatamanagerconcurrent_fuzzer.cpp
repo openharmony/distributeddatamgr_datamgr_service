@@ -15,7 +15,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-#include "udmfservicedatamanager_fuzzer.h"
+#include "udmfservicedatamanagerconcurrent_fuzzer.h"
 
 #include "accesstoken_kit.h"
 #include "distributeddata_udmf_ipc_interface_code.h"
@@ -36,6 +36,7 @@ constexpr size_t NUM_MAX = 12;
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
+static std::shared_ptr<UdmfServiceImpl> g_udmfServiceImpl = nullptr;
 
 QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
@@ -54,10 +55,6 @@ QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 
 void SetDataFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind({ "UdmfServiceDataManagerFuzzTest",
-        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     CustomOption option1 = {.intention = Intention::UD_INTENTION_DRAG};
 
     std::string svalue = provider.ConsumeRandomLengthString();
@@ -72,35 +69,29 @@ void SetDataFuzz(FuzzedDataProvider &provider)
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(request, option1, data1);
     MessageParcel reply;
-    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DATA), request, reply);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceDataManagerFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
-    executor = nullptr;
+    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
+    if (udmfServiceStub == nullptr) {
+        return;
+    }
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DATA), request, reply);
 }
 
 void GetDataFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind({ "UdmfServiceDataManagerFuzzTest",
-        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(request, query);
     MessageParcel reply;
-    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_DATA), request, reply);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceDataManagerFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
-    executor = nullptr;
+    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
+    if (udmfServiceStub == nullptr) {
+        return;
+    }
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::GET_DATA), request, reply);
 }
 
 void UpdateDataFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind({ "UdmfServiceDataManagerFuzzTest",
-        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     std::vector<uint8_t> groupId(ID_LEN, '0');
     for (size_t i = 0; i < groupId.size(); ++i) {
         groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
@@ -124,36 +115,39 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(request, query, data1);
     MessageParcel reply;
-    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::UPDATE_DATA), request, reply);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceDataManagerFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
-    executor = nullptr;
+    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
+    if (udmfServiceStub == nullptr) {
+        return;
+    }
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::UPDATE_DATA), request, reply);
 }
 
 void DeleteDataFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    udmfServiceImpl->OnBind({ "UdmfServiceDataManagerFuzzTest",
-        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
     QueryOption query = GenerateFuzzQueryOption(provider);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
     ITypesUtil::Marshal(request, query);
     MessageParcel reply;
-    udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::DELETE_DATA), request, reply);
-    udmfServiceImpl->OnBind(
-        { "UdmfServiceDataManagerFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
-    executor = nullptr;
+    std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
+    if (udmfServiceStub == nullptr) {
+        return;
+    }
+    udmfServiceStub->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::DELETE_DATA), request, reply);
 }
 }
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
+    OHOS::g_udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     OHOS::Security::AccessToken::AccessTokenID tokenId =
         OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
     SetSelfTokenID(tokenId);
+    std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
+    OHOS::g_udmfServiceImpl->OnBind(
+        { "UdmfServiceDataManagerConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
+        std::move(executor) });
     return 0;
 }
 
