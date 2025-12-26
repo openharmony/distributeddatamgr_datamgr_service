@@ -66,19 +66,28 @@ group("fuzztest") {
   }
 
   if (datamgr_service_udmf) {
-    deps += [ "udmfserviceasynprocess_fuzzer:fuzztest" ]
-    deps += [ "udmfservicecheckkeyandintention_fuzzer:fuzztest" ]
-    deps += [ "udmfservicecheckpermission_fuzzer:fuzztest" ]
-    deps += [ "udmfservicechecktransferparams_fuzzer:fuzztest" ]
-    deps += [ "udmfservicedata_fuzzer:fuzztest" ]
-    deps += [ "udmfservicedatamanager_fuzzer:fuzztest" ]
-    deps += [ "udmfservicedelaydata_fuzzer:fuzztest" ]
-    deps += [ "udmfservicehandleappshareoption_fuzzer:fuzztest" ]
-    deps += [ "udmfservicehandledbstatus_fuzzer:fuzztest" ]
-    deps += [ "udmfserviceprivilege_fuzzer:fuzztest" ]
-    deps += [ "udmfserviceprocessdata_fuzzer:fuzztest" ]
-    deps += [ "udmfserviceremoteinteraction_fuzzer:fuzztest" ]
-    deps += [ "udmfservicesyncandmeta_fuzzer:fuzztest" ]
-    deps += [ "udmfserviceverifypermission_fuzzer:fuzztest" ]
+    deps += [
+      "udmfserviceasynprocess_fuzzer:fuzztest" ,
+      "udmfserviceasynprocessconcurrent_fuzzer:fuzztest",
+      "udmfservicecheckkeyandintention_fuzzer:fuzztest" ,
+      "udmfservicecheckpermission_fuzzer:fuzztest",
+      "udmfservicechecktransferparams_fuzzer:fuzztest",
+      "udmfservicedata_fuzzer:fuzztest",
+      "udmfservicedataconcurrent_fuzzer:fuzztest",
+      "udmfservicedatamanager_fuzzer:fuzztest",
+      "udmfservicedatamanagerconcurrent_fuzzer:fuzztest",
+      "udmfservicedelaydata_fuzzer:fuzztest",
+      "udmfservicedelaydataconcurrent_fuzzer:fuzztest",
+      "udmfservicehandleappshareoption_fuzzer:fuzztest",
+      "udmfservicehandleappshareoptionconcurrent_fuzzer:fuzztest",
+      "udmfservicehandledbstatus_fuzzer:fuzztest",
+      "udmfserviceprivilege_fuzzer:fuzztest",
+      "udmfserviceprivilegeconcurrent_fuzzer:fuzztest",
+      "udmfserviceprocessdata_fuzzer:fuzztest",
+      "udmfserviceremoteinteraction_fuzzer:fuzztest",
+      "udmfserviceremoteinteractionconcurrent_fuzzer:fuzztest",
+      "udmfservicesyncandmeta_fuzzer:fuzztest",
+      "udmfserviceverifypermission_fuzzer:fuzztest",
+    ]
   }
 }
