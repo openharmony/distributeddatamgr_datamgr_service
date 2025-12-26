@@ -2358,6 +2358,8 @@ HWTEST_F(CloudDataTest, GetRetryer001, TestSize.Level0)
     EXPECT_TRUE(ret);
     ret = sync.GetRetryer(0, info, user)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
     EXPECT_TRUE(ret);
+    ret = sync.GetRetryer(0, info, user)(duration, E_CLOUD_DISABLED, E_CLOUD_DISABLED, prepareTraceId);
+    EXPECT_TRUE(ret);
 }
 
 /**
