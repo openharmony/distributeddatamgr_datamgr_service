@@ -29,6 +29,10 @@ __attribute__((used)) static bool g_delegateInit =
 
 bool GetDeviceInfo(const DmDeviceInfo &dmInfo, DeviceInfo &dvInfo, std::string uuid, std::string udid)
 {
+    (void)dmInfo;
+    (void)dvInfo;
+    (void)uuid;
+    (void)udid;
     return true;
 }
 
@@ -51,6 +55,7 @@ DeviceManagerAdapter &DeviceManagerAdapter::GetInstance()
 
 void DeviceManagerAdapter::Init(std::shared_ptr<ExecutorPool> executors)
 {
+    (void)executors;
     return;
 }
 
@@ -89,11 +94,13 @@ Status DeviceManagerAdapter::StopWatchDeviceChange(const AppDeviceChangeListener
 
 void DeviceManagerAdapter::Online(const DeviceInfo &info)
 {
+    (void)info;
     return;
 }
 
 void DeviceManagerAdapter::NotifyReadyEvent(const std::string &uuid)
 {
+    (void)uuid;
     return;
 }
 
@@ -104,21 +111,26 @@ std::vector<const AppDeviceChangeListener *> DeviceManagerAdapter::GetObservers(
 
 void DeviceManagerAdapter::Offline(const DeviceInfo &info)
 {
+    (void)info;
     return;
 }
 
 void DeviceManagerAdapter::OnChanged(const DeviceInfo &info)
 {
+    (void)info;
     return;
 }
 
 void DeviceManagerAdapter::OnReady(const DeviceInfo &info)
 {
+    (void)info;
     return;
 }
 
 void DeviceManagerAdapter::SaveDeviceInfo(const DeviceInfo &dvInfo, const DeviceChangeType &type)
 {
+    (void)dvInfo;
+    (void)type;
     return;
 }
 
@@ -139,16 +151,19 @@ std::vector<DeviceInfo> DeviceManagerAdapter::GetOnlineDevices()
 
 bool DeviceManagerAdapter::IsDeviceReady(const std::string& id)
 {
+    (void)id;
     return true;
 }
 
 bool DeviceManagerAdapter::IsOHOSType(const std::string &id)
 {
+    (void)id;
     return true;
 }
 
 int32_t DeviceManagerAdapter::GetAuthType(const std::string &id)
 {
+    (void)id;
     return 0;
 }
 
@@ -159,16 +174,19 @@ size_t DeviceManagerAdapter::GetOnlineSize()
 
 DeviceInfo DeviceManagerAdapter::GetDeviceInfo(const std::string &id)
 {
+    (void)id;
     return {};
 }
 
 DeviceInfo DeviceManagerAdapter::GetDeviceInfoFromCache(const std::string &id)
 {
+    (void)id;
     return {};
 }
 
 void DeviceManagerAdapter::InitDeviceInfo(bool onlyCache)
 {
+    (void)onlyCache;
     return;
 }
 
@@ -179,61 +197,76 @@ DeviceInfo DeviceManagerAdapter::GetLocalDeviceInfo()
 
 std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkId)
 {
+    (void)networkId;
     return "";
 }
 
 std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkId)
 {
+    (void)networkId;
     return "";
 }
 
 std::string DeviceManagerAdapter::ToUUID(const std::string &id)
 {
+    (void)id;
     return "";
 }
 
 std::string DeviceManagerAdapter::ToUDID(const std::string &id)
 {
+    (void)id;
     return "";
 }
 
 std::vector<std::string> DeviceManagerAdapter::ToUUID(const std::vector<std::string> &devices)
 {
+    (void)devices;
     return {};
 }
 
 std::vector<std::string> DeviceManagerAdapter::ToUUID(std::vector<DeviceInfo> devices)
 {
+    (void)devices;
     return {};
 }
 
 std::string DeviceManagerAdapter::ToNetworkID(const std::string &id)
 {
+    (void)id;
     return "";
 }
 
 std::string DeviceManagerAdapter::CalcClientUuid(const std::string &appId, const std::string &uuid)
 {
+    (void)appId;
+    (void)uuid;
     return "";
 }
 
 std::string DeviceManagerAdapter::GetEncryptedUuidByNetworkId(const std::string &networkId)
 {
+    (void)networkId;
     return "";
 }
 
 bool DeviceManagerAdapter::IsSameAccount(const std::string &id)
 {
+    (void)id;
     return true;
 }
 
 bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee)
 {
+    (void)accCaller;
+    (void)accCallee;
     return true;
 }
 
 bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee)
 {
+    (void)accCaller;
+    (void)accCallee;
     return true;
 }
 

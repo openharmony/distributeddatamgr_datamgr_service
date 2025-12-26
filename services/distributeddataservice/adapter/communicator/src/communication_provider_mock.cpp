@@ -21,52 +21,74 @@ class MockCommunicationProvider : public CommunicationProvider {
 public:
     Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) override
     {
+        (void)observer;
+        (void)pipeInfo;
         return Status::SUCCESS;
     }
 
     Status StopWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) override
     {
+        (void)observer;
+        (void)pipeInfo;
         return Status::SUCCESS;
     }
 
     std::pair<Status, int32_t> SendData(const PipeInfo &pipeInfo, const DeviceId &deviceId,
         const DataInfo &dataInfo, uint32_t totalLength, const MessageInfo &info) override
     {
+        (void)pipeInfo;
+        (void)deviceId;
+        (void)dataInfo;
+        (void)totalLength;
+        (void)info;
         return {Status::SUCCESS, 0};
     }
 
     Status Start(const PipeInfo &pipeInfo) override
     {
+        (void)pipeInfo;
         return Status::SUCCESS;
     }
 
     Status Stop(const PipeInfo &pipeInfo) override
     {
+        (void)pipeInfo;
         return Status::SUCCESS;
     }
 
     bool IsSameStartedOnPeer(const PipeInfo &pipeInfo, const DeviceId &peer) const override
     {
+        (void)pipeInfo;
+        (void)peer;
         return false;
     }
 
     void SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag) override
     {
+        (void)pipeInfo;
+        (void)flag;
     }
 
     Status Broadcast(const PipeInfo &pipeInfo, const LevelInfo &levelInfo) override
     {
+        (void)pipeInfo;
+        (void)levelInfo;
         return Status::SUCCESS;
     }
 
     int32_t ListenBroadcastMsg(const PipeInfo &pipeInfo,
         std::function<void(const std::string &, const std::string &, const LevelInfo &)> listener) override
     {
+        (void)pipeInfo;
+        (void)listener;
         return 0;
     }
 
     Status ReuseConnect(const PipeInfo &pipeInfo, const DeviceId &deviceId, const ExtraDataInfo &extraInfo) override
     {
+        (void)pipeInfo;
+        (void)deviceId;
+        (void)extraInfo;
         return Status::ERROR;
     }
 };
