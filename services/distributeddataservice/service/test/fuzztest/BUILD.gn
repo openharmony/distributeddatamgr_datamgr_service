@@ -39,6 +39,7 @@ group("fuzztest") {
 
   if (datamgr_service_rdb) {
     deps += [
+      "rdbflowcontrolmanager_fuzzer:fuzztest",
       "rdbresultsetstub_fuzzer:fuzztest",
       "rdbservicestub_fuzzer:fuzztest",
       "rdbservicestubconcurrent_fuzzer:fuzztest",
