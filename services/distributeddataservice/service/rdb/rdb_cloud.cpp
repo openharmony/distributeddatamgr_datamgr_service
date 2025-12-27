@@ -189,6 +189,8 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::CLOUD_DISABLED;
         case GeneralError::E_SKIP_ASSET:
             return DBStatus::SKIP_ASSET;
+        case GeneralError::E_SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT:
+            return DBStatus::SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT;
         default:
             ZLOGI("error:0x%{public}x", error);
             break;
