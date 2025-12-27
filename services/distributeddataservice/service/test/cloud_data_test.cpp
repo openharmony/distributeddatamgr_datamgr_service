@@ -2365,6 +2365,8 @@ HWTEST_F(CloudDataTest, GetRetryer001, TestSize.Level0)
     EXPECT_TRUE(ret);
     ret = sync.GetRetryer(0, info, user)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
     EXPECT_TRUE(ret);
+    ret = sync.GetRetryer(0, info, user)(duration, E_CLOUD_DISABLED, E_CLOUD_DISABLED, prepareTraceId);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -2385,7 +2387,7 @@ HWTEST_F(CloudDataTest, GetRetryer002, TestSize.Level0)
     handler(*event);
     CloudData::SyncManager::Duration duration;
     CloudData::SyncManager::SyncInfo info(user);
-    auto ret = sync.GetRetryer(0, info, user)(duration, E_CLOUD_DISABLED, E_CLOUD_DISABLED, prepareTraceId);
+    auto ret = sync.GetRetryer(0, info, user)(duration, E_NETWORK_ERROR, E_NETWORK_ERROR, prepareTraceId);
     EXPECT_FALSE(ret);
 }
 

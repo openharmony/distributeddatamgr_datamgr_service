@@ -111,6 +111,8 @@ DBStatus RdbAssetLoader::ConvertStatus(AssetStatus error)
             return DBStatus::OK;
         case AssetStatus::STATUS_SKIP_ASSET:
             return DBStatus::SKIP_ASSET;
+        case AssetStatus::STATUS_NOT_FOUND:
+            return DBStatus::CLOUD_ASSET_NOT_FOUND;
         default:
             ZLOGE("error:0x%{public}x", error);
             break;
