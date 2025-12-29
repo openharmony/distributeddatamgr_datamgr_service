@@ -79,7 +79,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     SetSelfTokenID(tokenId);
     std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
     OHOS::g_udmfServiceImpl->OnBind(
-        { "UdmfServiceRemoteInteractionConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
+        { "UdmfServiceSyncAndMetaConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
         std::move(executor) });
     return 0;
 }
