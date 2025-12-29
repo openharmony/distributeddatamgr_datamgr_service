@@ -30,10 +30,7 @@ void OnRdbFlowControlManagerPoolNullFuzz(FuzzedDataProvider &provider)
     int valueRangeGlobal = provider.ConsumeIntegralInRange<int>(15, 20);
     RdbFlowControlManager flowControlManagerNull(valueRangeApp, valueRangeGlobal, valueRangeDuration);
     flowControlManagerNull.Init(poolNull);
-    auto flag = std::make_shared<std::atomic_uint32_t>(0);
-    auto task = [flag]() mutable {
-        (*flag)++;
-    };
+    auto task = [flag]() mutable {};
     const int taskCount = provider.ConsumeIntegralInRange<int>(100, 200);
     for (int i = 0; i < taskCount; i++) {
         flowControlManagerNull.Execute(task, { 0, "bulkTask" });

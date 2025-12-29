@@ -74,19 +74,9 @@ void FlowControlManagerPoolNullFuzz(FuzzedDataProvider &provider)
 {
     auto poolNull = nullptr;
     FlowControlManager flowControlManagerNull(poolNull, std::make_shared<PriorityStrategy>());
-
-    auto highPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
-    auto mediumPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
-    auto lowPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
-    auto highPriorityTask = [highPriorityFlag]() mutable {
-        (*highPriorityFlag)++;
-    };
-    auto mediumPriorityTask = [mediumPriorityFlag]() mutable {
-        (*mediumPriorityFlag)++;
-    };
-    auto lowPriorityTask = [lowPriorityFlag]() mutable {
-        (*lowPriorityFlag)++;
-    };
+    auto highPriorityTask = [highPriorityFlag]() mutable {};
+    auto mediumPriorityTask = [mediumPriorityFlag]() mutable {};
+    auto lowPriorityTask = [lowPriorityFlag]() mutable {};
 
     // Submit tasks with different priorities
     int taskType1 = provider.ConsumeIntegralInRange<int>(0, 2);
