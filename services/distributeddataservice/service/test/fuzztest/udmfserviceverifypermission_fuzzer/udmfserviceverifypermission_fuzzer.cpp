@@ -35,6 +35,9 @@ constexpr size_t NUM_MAX = 12;
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
+static constexpr int USERID = 100;
+static constexpr int INSTINDEX = 0;
+static constexpr const char *BUNDLENAME = "com.test.demo";
 
 QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
@@ -137,11 +140,29 @@ void VerifyPermissionFuzz(FuzzedDataProvider &provider)
 
 void VerifySavedTokenIdFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr udmfServiceImpl = std::make_shared();
-    std::shared_ptr runtime = std::make_shared();
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
     runtime->tokenId = provider.ConsumeIntegral<uint32_t>();
     runtime->sourcePackage = provider.ConsumeRandomLengthString();
     udmfServiceImpl->VerifySavedTokenId(runtime);
+}
+
+void IsValidInputFuzz(FuzzedDataProvider &provider)
+{
+    QueryOption query = GenerateFuzzQueryOption(provider);
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("drag", "com.test.demo", groupIdStr);
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
+    obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    udmfServiceImpl->IsValidInput(query, data, udKey);
 }
 }
 
@@ -149,7 +170,7 @@ void VerifySavedTokenIdFuzz(FuzzedDataProvider &provider)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Security::AccessToken::AccessTokenID tokenId =
-        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(OHOS::USERID, OHOS::BUNDLENAME, OHOS::INSTINDEX);
     SetSelfTokenID(tokenId);
     return 0;
 }
@@ -163,5 +184,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::VerifyUpdatePermissionFuzz(provider);
     OHOS::VerifyPermissionFuzz(provider);
     OHOS::VerifySavedTokenIdFuzz(provider);
+    OHOS::IsValidInputFuzz(provider);
     return 0;
 }

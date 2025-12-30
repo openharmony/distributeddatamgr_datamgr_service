@@ -33,6 +33,9 @@ namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
+static constexpr int USERID = 100;
+static constexpr int INSTINDEX = 0;
+static constexpr const char *BUNDLENAME = "com.test.demo";
 static std::shared_ptr<UdmfServiceImpl> g_udmfServiceImpl = nullptr;
 
 void OnGetAppShareOptionFuzz(FuzzedDataProvider &provider)
@@ -102,11 +105,11 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::g_udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     OHOS::Security::AccessToken::AccessTokenID tokenId =
-        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(OHOS::USERID, OHOS::BUNDLENAME, OHOS::INSTINDEX);
     SetSelfTokenID(tokenId);
     std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
-    OHOS::g_udmfServiceImpl->OnBind(
-        { "UdmfServiceHandleAppShareOptionConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
+    OHOS::g_udmfServiceImpl->OnBind({
+        "UdmfServiceHandleAppShareOptionConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
         std::move(executor) });
     return 0;
 }

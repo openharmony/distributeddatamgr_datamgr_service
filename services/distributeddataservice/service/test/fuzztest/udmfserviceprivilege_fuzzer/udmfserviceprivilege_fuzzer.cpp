@@ -36,6 +36,9 @@ constexpr size_t NUM_MAX = 12;
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
+static constexpr int USERID = 100;
+static constexpr int INSTINDEX = 0;
+static constexpr const char *BUNDLENAME = "com.test.demo";
 
 QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
@@ -103,13 +106,13 @@ void HasDatahubPriviledgeFuzz(FuzzedDataProvider &provider)
 
 void AddPrivilegeFuzz(FuzzedDataProvider &provider)
 {
-    std::shared_ptr udmfServiceImpl = std::make_shared();
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     QueryOption query = GenerateFuzzQueryOption(provider);
     query.tokenId = OHOS::Security::AccessToken::AccessTokenKit::GetNativeTokenId("msdp");
     Privilege privilege;
     privilege.tokenId = 1;
-    privilege.readPermission = "read";
-    privilege.writePermission = "write";
+    privilege.readPermission = provider.ConsumeRandomLengthString();
+    privilege.writePermission = provider.ConsumeRandomLengthString();
     udmfServiceImpl->AddPrivilege(query, privilege);
 }
 }
@@ -118,7 +121,7 @@ void AddPrivilegeFuzz(FuzzedDataProvider &provider)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Security::AccessToken::AccessTokenID tokenId =
-        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(OHOS::USERID, OHOS::BUNDLENAME, OHOS::INSTINDEX);
     SetSelfTokenID(tokenId);
     return 0;
 }

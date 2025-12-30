@@ -38,6 +38,9 @@ constexpr size_t NUM_MAX = 12;
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
+static constexpr int USERID = 100;
+static constexpr int INSTINDEX = 0;
+static constexpr const char *BUNDLENAME = "com.test.demo";
 
 QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
@@ -119,13 +122,20 @@ void OnUserChangeFuzz(FuzzedDataProvider &provider)
     auto account = provider.ConsumeRandomLengthString();
     udmfServiceImpl->OnUserChange(code, user, account);
 }
+
+void RegisterRemotePullObserverFuzz(FuzzedDataProvider &provider)
+{
+    std::string key = provider.ConsumeRandomLengthString();
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    udmfServiceImpl->RegisterRemotePullObserver(key);
+}
 }
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Security::AccessToken::AccessTokenID tokenId =
-        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(OHOS::USERID, OHOS::BUNDLENAME, OHOS::INSTINDEX);
     SetSelfTokenID(tokenId);
     return 0;
 }
@@ -138,5 +148,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::IsRemoteDataFuzz(provider);
     OHOS::ResolveAutoLaunchFuzz(provider);
     OHOS::OnUserChangeFuzz(provider);
+    OHOS::RegisterRemotePullObserverFuzz(provider);
     return 0;
 }
