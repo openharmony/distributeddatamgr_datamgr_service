@@ -100,6 +100,18 @@ void HasDatahubPriviledgeFuzz(FuzzedDataProvider &provider)
     auto bundleName = provider.ConsumeRandomLengthString();
     udmfServiceImpl->HasDatahubPriviledge(bundleName);
 }
+
+void AddPrivilegeFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr udmfServiceImpl = std::make_shared();
+    QueryOption query = GenerateFuzzQueryOption(provider);
+    query.tokenId = OHOS::Security::AccessToken::AccessTokenKit::GetNativeTokenId("msdp");
+    Privilege privilege;
+    privilege.tokenId = 1;
+    privilege.readPermission = "read";
+    privilege.writePermission = "write";
+    udmfServiceImpl->AddPrivilege(query, privilege);
+}
 }
 
 /* Fuzzer entry point */
@@ -118,5 +130,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::AddPrivilegeDataFuzz(provider);
     OHOS::IsReadAndKeepFuzz(provider);
     OHOS::HasDatahubPriviledgeFuzz(provider);
+    OHOS::AddPrivilegeFuzz(provider);
     return 0;
 }

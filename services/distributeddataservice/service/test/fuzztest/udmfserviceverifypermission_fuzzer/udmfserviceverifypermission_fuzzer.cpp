@@ -134,6 +134,15 @@ void VerifyPermissionFuzz(FuzzedDataProvider &provider)
     uint32_t callerTokenId = provider.ConsumeIntegral<uint32_t>();
     udmfServiceImpl->VerifyPermission(permission, callerTokenId);
 }
+
+void VerifySavedTokenIdFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr udmfServiceImpl = std::make_shared();
+    std::shared_ptr runtime = std::make_shared();
+    runtime->tokenId = provider.ConsumeIntegral<uint32_t>();
+    runtime->sourcePackage = provider.ConsumeRandomLengthString();
+    udmfServiceImpl->VerifySavedTokenId(runtime);
+}
 }
 
 /* Fuzzer entry point */
@@ -153,5 +162,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::VerifyDataAccessPermissionFuzz(provider);
     OHOS::VerifyUpdatePermissionFuzz(provider);
     OHOS::VerifyPermissionFuzz(provider);
+    OHOS::VerifySavedTokenIdFuzz(provider);
     return 0;
 }

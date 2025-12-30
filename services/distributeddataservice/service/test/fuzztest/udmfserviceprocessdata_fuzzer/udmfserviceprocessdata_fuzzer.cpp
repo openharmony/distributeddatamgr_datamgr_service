@@ -107,6 +107,49 @@ void ProcessResultFuzz(FuzzedDataProvider &provider)
     results.emplace(std::make_pair(key, value));
     udmfServiceImpl->ProcessResult(results);
 }
+
+void UpdateDataFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr udmfServiceImpl = std::make_shared();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+    groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("DataHub", "com.ohos.dlpmanager", groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.tokenId =
+    OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+
+    UnifiedData data;
+    std::shared_ptr record = std::make_shared();
+    data.AddRecord(record);
+    udmfServiceImpl->UpdateData(query, data);
+}
+
+void DeleteDataFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr udmfServiceImpl = std::make_shared();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+    groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("DataHub", "com.ohos.dlpmanager", groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.tokenId =
+    OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+
+    std::vector dataList;
+    udmfServiceImpl->IsFileMangerSa();
+    udmfServiceImpl->DeleteData(query, dataList);
+}
 }
 
 /* Fuzzer entry point */
@@ -126,5 +169,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::ProcessCrossDeviceDataFuzz(provider);
     OHOS::ProcessDataFuzz(provider);
     OHOS::ProcessResultFuzz(provider);
+    OHOS::UpdateDataFuzz(provider);
+    OHOS::DeleteDataFuzz(provider);
     return 0;
 }
