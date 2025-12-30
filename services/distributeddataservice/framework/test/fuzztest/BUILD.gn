@@ -18,5 +18,8 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 group("fuzztest") {
   testonly = true
 
-  deps = [ "storedebuginfo_fuzzer:fuzztest" ]
+  deps = [
+    "flowcontrolmanager_fuzzer:fuzztest",
+    "storedebuginfo_fuzzer:fuzztest",
+  ]
 }

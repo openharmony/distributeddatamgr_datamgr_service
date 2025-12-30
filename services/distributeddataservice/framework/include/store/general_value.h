@@ -72,6 +72,7 @@ struct Asset {
         STATUS_ABNORMAL,
         STATUS_DOWNLOADING,
         STATUS_SKIP_ASSET,
+        STATUS_NOT_FOUND,
         STATUS_BUTT
     };
 

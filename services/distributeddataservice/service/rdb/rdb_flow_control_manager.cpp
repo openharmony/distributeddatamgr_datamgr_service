@@ -99,10 +99,10 @@ RdbFlowControlManager::Tp RdbFlowControlStrategy::GetExecuteTime(RdbFlowControlM
         executeTime = std::max(executeTime, queue_.front() + std::chrono::milliseconds(duration_));
     }
     if (executeTime > std::chrono::steady_clock::now()) {
-        uint64_t delaytime =
+        int64_t delaytime =
             std::chrono::duration_cast<std::chrono::milliseconds>(executeTime - std::chrono::steady_clock::now())
                 .count();
-        ZLOGW("Sync delay %{public}" PRIu64 "ms! bundleName:%{public}s.", delaytime, info.label.c_str());
+        ZLOGW("Sync delay %{public}" PRId64 "ms! bundleName:%{public}s.", delaytime, info.label.c_str());
         RdbHiViewAdapter::GetInstance().ReportRdbFault({DEVICE_SYNC,
             DEVICE_SYNC_LIMIT, info.label, "device sync delay " + std::to_string(delaytime) + " ms"});
     }
