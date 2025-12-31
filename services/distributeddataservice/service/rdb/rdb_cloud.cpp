@@ -104,6 +104,8 @@ DBStatus RdbCloud::QueryAllGID(const std::string &tableName, DBVBucket &extend, 
     int32_t code = E_OK;
     std::tie(code, cursor) = cloudDB_->QueryAllGID(tableName, ValueProxy::Convert(std::move(extend)));
     if (cursor == nullptr || code != E_OK) {
+        ZLOGE("code:%{public}d, table:%{public}s, extend:%{public}s", code,
+            Anonymous::Change(tableName).c_str(), extend.size());
         return ConvertStatus(static_cast<GeneralError>(Convert(cursor, data, code)));
     }
     auto err = Convert(cursor, data, code);
