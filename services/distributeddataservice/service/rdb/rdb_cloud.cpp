@@ -98,6 +98,24 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
     return ConvertStatus(static_cast<GeneralError>(err));
 }
 
+DBStatus RdbCloud::QueryAllGID(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data)
+{
+    std::shared_ptr<Cursor> cursor = nullptr;
+    int32_t code = E_OK;
+    std::tie(code, cursor) = cloudDB_->QueryAllGID(tableName, ValueProxy::Convert(std::move(extend)));
+    if (cursor == nullptr || code != E_OK) {
+        return ConvertStatus(static_cast<GeneralError>(Convert(cursor, data, code)));
+    }
+    auto err = Convert(cursor, data, code);
+    DistributedData::Value cursorFlag;
+    cursor->Get(SchemaMeta::CURSOR_FIELD, cursorFlag);
+    extend[SchemaMeta::CURSOR_FIELD] = ValueProxy::Convert(std::move(cursorFlag));
+    if (cursor->IsEnd()) {
+        ZLOGD("query end, table:%{public}s", Anonymous::Change(tableName).c_str());
+        return DBStatus::QUERY_END;
+    }
+    return ConvertStatus(static_cast<GeneralError>(err));
+}
 DistributedData::GeneralError RdbCloud::PreSharing(const std::string& tableName, VBuckets& extend)
 {
     return static_cast<GeneralError>(cloudDB_->PreSharing(tableName, extend));
@@ -189,6 +207,8 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::CLOUD_DISABLED;
         case GeneralError::E_SKIP_ASSET:
             return DBStatus::SKIP_ASSET;
+        case GeneralError::E_EXPIRED_CURSOR:
+            return DBStatus::EXPIRED_CURSOR;
         default:
             ZLOGI("error:0x%{public}x", error);
             break;

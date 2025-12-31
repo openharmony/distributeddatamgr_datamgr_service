@@ -238,6 +238,8 @@ HWTEST_F(RdbCloudTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, DBStatus::TIME_OUT);
     result = rdbCloud.ConvertStatus(GeneralError::E_CLOUD_DISABLED);
     EXPECT_EQ(result, DBStatus::CLOUD_DISABLED);
+    result = rdbCloud.ConvertStatus(GeneralError::E_EXPIRED_CURSOR);
+    EXPECT_EQ(result, DBStatus::EXPIRED_CURSOR);
 }
 
 /**
