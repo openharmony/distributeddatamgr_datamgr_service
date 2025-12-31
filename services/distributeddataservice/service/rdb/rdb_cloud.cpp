@@ -104,7 +104,7 @@ DBStatus RdbCloud::QueryAllGID(const std::string &tableName, DBVBucket &extend, 
     int32_t code = E_OK;
     std::tie(code, cursor) = cloudDB_->QueryAllGID(tableName, ValueProxy::Convert(std::move(extend)));
     if (cursor == nullptr || code != E_OK) {
-        ZLOGE("code:%{public}d, table:%{public}s, extend:%{public}s", code,
+        ZLOGE("code:%{public}d, table:%{public}s, extend:%{public}zu", code,
             Anonymous::Change(tableName).c_str(), extend.size());
         return ConvertStatus(static_cast<GeneralError>(Convert(cursor, data, code)));
     }
@@ -118,6 +118,7 @@ DBStatus RdbCloud::QueryAllGID(const std::string &tableName, DBVBucket &extend, 
     }
     return ConvertStatus(static_cast<GeneralError>(err));
 }
+
 DistributedData::GeneralError RdbCloud::PreSharing(const std::string& tableName, VBuckets& extend)
 {
     return static_cast<GeneralError>(cloudDB_->PreSharing(tableName, extend));
