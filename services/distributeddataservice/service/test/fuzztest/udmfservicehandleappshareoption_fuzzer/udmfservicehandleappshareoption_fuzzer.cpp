@@ -33,6 +33,9 @@ namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
+static constexpr int USERID = 100;
+static constexpr int INSTINDEX = 0;
+static constexpr const char *BUNDLENAME = "com.test.demo";
 
 void OnGetAppShareOptionFuzz(FuzzedDataProvider &provider)
 {
@@ -112,7 +115,7 @@ void RemoveAppShareOptionFuzz(FuzzedDataProvider &provider)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Security::AccessToken::AccessTokenID tokenId =
-        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(OHOS::USERID, OHOS::BUNDLENAME, OHOS::INSTINDEX);
     SetSelfTokenID(tokenId);
     return 0;
 }
