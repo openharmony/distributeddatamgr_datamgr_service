@@ -245,6 +245,7 @@ private:
     ConcurrentMap<std::string, uint64_t> assetsRecvProgress_; // key:bundleName+sessionId
     std::map<std::string, int32_t> progressInfo_;
     std::mutex progressMutex_;
+    std::mutex assetsRecvMutex_;
 };
 } // namespace DistributedObject
 } // namespace OHOS
