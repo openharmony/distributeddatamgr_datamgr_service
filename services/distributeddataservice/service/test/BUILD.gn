@@ -70,6 +70,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "cloud_data_test.cpp",
   ]
 
@@ -84,9 +85,6 @@ ohos_unittest("CloudDataTest") {
     "googletest:gtest",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "googletest:gmock",
-    "googletest:gtest",
-    "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
@@ -202,11 +200,8 @@ ohos_unittest("CloudServiceImplTest") {
     "c_utils:utils",
     "googletest:gmock",
     "googletest:gtest",
-    "googletest:gmock_main",
-    "googletest:gtest_main",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
@@ -547,9 +542,7 @@ ohos_unittest("RdbResultSetImplTest") {
     "rdb_result_set_impl_test.cpp",
   ]
 
-  include_dirs = [
-    "${data_service_path}/service/rdb",
-  ]
+  include_dirs = [ "${data_service_path}/service/rdb" ]
 
   configs = [ ":module_private_config" ]
 
@@ -603,6 +596,7 @@ ohos_unittest("RdbServiceTest") {
     "rdb_result_set_stub_test.cpp",
     "relational_store_cursor_test.cpp",
     "rdb_store_utils_test.cpp",
+    "rdb_service_stub_test.cpp",
   ]
 
   include_dirs = [
@@ -637,12 +631,12 @@ ohos_unittest("RdbServiceTest") {
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
-    "${data_service_path}/service/config:distributeddata_config",
     "${data_service_path}/service/dumper:distributeddata_dumper",
     "${data_service_path}/service/matrix:distributeddata_matrix",
     "${data_service_path}/service/permission:distributeddata_permit",
@@ -864,6 +858,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -872,11 +867,8 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
-
-  if (datamgr_service_object) {
-    external_deps += [ "data_object:data_object_inner", ]
-  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -903,6 +895,7 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gmock_main",
@@ -912,11 +905,8 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
-
-  if (datamgr_service_object) {
-    external_deps += [ "data_object:data_object_inner", ]
-  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -941,6 +931,7 @@ ohos_unittest("ObjectAssetMachineTest") {
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -949,11 +940,8 @@ ohos_unittest("ObjectAssetMachineTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
-
-  if (datamgr_service_object) {
-    external_deps += [ "data_object:data_object_inner", ]
-  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -980,15 +968,12 @@ ohos_unittest("ObjectDmsHandlerTest") {
 
   external_deps = [
     "c_utils:utils",
+    "dmsfwk:distributed_sdk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
   ]
-
-  if (dm_part_is_enabled && datamgr_service_distributed) {
-    external_deps += [ "dmsfwk:distributed_sdk", ]
-  }
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
@@ -1038,8 +1023,11 @@ ohos_unittest("ObjectManagerTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "c_utils:utils",
+    "data_object:data_object_inner",
+    "data_object:distributeddataobject_impl",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
+    "dmsfwk:distributed_sdk",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "googletest:gtest_main",
@@ -1051,18 +1039,8 @@ ohos_unittest("ObjectManagerTest") {
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
   ]
-
-  if (datamgr_service_object) {
-    external_deps += [
-      "data_object:distributeddataobject_impl",
-      "data_object:data_object_inner",
-    ]
-  }
-
-  if (dm_part_is_enabled && datamgr_service_distributed) {
-    external_deps += [ "dmsfwk:distributed_sdk", ]
-  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -1116,30 +1094,21 @@ ohos_unittest("ObjectManagerMockTest") {
     "access_token:libtokenid_sdk",
     "cJSON:cjson",
     "c_utils:utils",
+    "data_object:data_object_inner",
+    "data_object:distributeddataobject_impl",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
+    "dmsfwk:distributed_sdk",
     "googletest:gmock_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
   ]
-
-  if (datamgr_service_object) {
-    external_deps += [
-      "data_object:distributeddataobject_impl",
-      "data_object:data_object_inner",
-    ]
-  }
-
-  if (dm_part_is_enabled && datamgr_service_distributed) {
-    external_deps += [ "dmsfwk:distributed_sdk", ]
-  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -1165,6 +1134,7 @@ ohos_unittest("ObjectSnapshotTest") {
 
   external_deps = [
     "c_utils:utils",
+    "data_object:data_object_inner",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gtest_main",
@@ -1173,12 +1143,9 @@ ohos_unittest("ObjectSnapshotTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
-
-  if (datamgr_service_object) {
-    external_deps += [ "data_object:data_object_inner", ]
-  }
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -1220,6 +1187,7 @@ ohos_unittest("MetaDataTest") {
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
@@ -1400,6 +1368,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "ability_base:configuration",
     "ability_base:want",
     "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",
@@ -1411,6 +1380,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
+    "data_share:datashare_common_lite",
     "data_share:datashare_consumer",
     "googletest:gmock_main",
     "googletest:gtest_main",
@@ -1536,6 +1506,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "ability_base:configuration",
     "ability_base:want",
     "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",
@@ -1681,9 +1652,9 @@ ohos_unittest("KvdbServiceImplTest") {
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
-    "kv_store:distributeddb",
-    "kv_store:distributeddata_mgr",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
@@ -1764,7 +1735,7 @@ ohos_unittest("UdmfServiceImplTest") {
     "ability_base:base",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
+    "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_base",
@@ -1799,27 +1770,7 @@ ohos_unittest("UdmfServiceImplTest") {
 ohos_unittest("UdmfServiceImplMockTest") {
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/framework/checker/checker_manager.cpp",
     "${data_service_path}/framework/feature/feature_system.cpp",
-    "${data_service_path}/service/backup/src/backup_manager.cpp",
-    "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
-    "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
-    "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
-    "${data_service_path}/service/udmf/lifecycle/drag_lifecycle_policy.cpp",
-    "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
-    "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
-    "${data_service_path}/service/test/mock/meta_data_manager_mock.cpp",
-    "${data_service_path}/service/udmf/permission/checker_manager.cpp",
-    "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
-    "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
-    "${data_service_path}/service/udmf/preprocess/udmf_notifier_proxy.cpp",
-    "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
-    "${data_service_path}/service/udmf/store/drag_observer.cpp",
-    "${data_service_path}/service/udmf/store/observer_factory.cpp",
-    "${data_service_path}/service/udmf/store/runtime_store.cpp",
-    "${data_service_path}/service/udmf/store/store_cache.cpp",
-    "${data_service_path}/service/udmf/udmf_service_impl.cpp",
-    "${data_service_path}/service/udmf/udmf_service_stub.cpp",
     "udmf_service_impl_mock_test.cpp",
   ]
 
@@ -1827,10 +1778,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "${data_service_path}/adapter/include/account",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/framework/include",
-    "${data_service_path}/framework/include/checker",
     "${data_service_path}/service/matrix/include",
-    "${data_service_path}/service/udmf/delay_data",
-    "${data_service_path}/service/udmf/lifecycle",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
@@ -1845,27 +1793,23 @@ ohos_unittest("UdmfServiceImplMockTest") {
 
   deps = [
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/udmf:udmf_server",
     "mock:distributeddata_mock_static",
   ]
 
   external_deps = [
-    "ability_base:zuri",
-    "access_token:libtokenid_sdk",
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
+    "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
     "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "dfs_service:distributed_file_daemon_kit_inner",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "hitrace:libhitracechain",
-    "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
@@ -1874,8 +1818,13 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:utd_client",
   ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
 }
 
 ohos_unittest("UdmfServiceStubTest") {
@@ -1907,6 +1856,7 @@ ohos_unittest("UdmfServiceStubTest") {
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
     "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "googletest:gtest_main",
@@ -1916,96 +1866,6 @@ ohos_unittest("UdmfServiceStubTest") {
     "relational_store:native_rdb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-  ]
-}
-
-ohos_unittest("UdmfPreProcessUtilsTest") {
-  module_out_path = module_output_path
-  sources = [ "udmf_preprocess_utils_test.cpp" ]
-
-  include_dirs = [
-    "${data_service_path}/service/udmf/permission",
-    "${data_service_path}/service/udmf/preprocess",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  deps = [
-    "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/rdb:distributeddata_rdb",
-    "${data_service_path}/service/udmf:udmf_server",
-  ]
-
-  external_deps = [
-    "ability_runtime:uri_permission_mgr",
-    "access_token:libaccesstoken_sdk",
-    "app_file_service:remote_file_share_native",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "hitrace:hitrace_meter",
-    "hitrace:libhitracechain",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-    "relational_store:native_rdb",
-    "udmf:udmf_client",
-  ]
-}
-
-ohos_unittest("UdmfPreProcessUtilsMockTest") {
-  module_out_path = module_output_path
-  sources = [
-    "${data_service_path}/service/test/mock/access_token_mock.cpp",
-    "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
-    "udmf_preprocess_utils_mock_test.cpp",
-  ]
-
-  include_dirs = [
-    "${data_service_path}/service/udmf/preprocess",
-    "${data_service_path}/service/test/mock",
-    "${data_service_path}/service/udmf/store",
-    "${data_service_path}/framework/include/account",
-    "${data_service_path}/adapter/include/communicator",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  deps = [
-    "${data_service_path}/service:distributeddatasvc",
-    "mock:distributeddata_mock_static",
-  ]
-
-  external_deps = [
-    "ability_base:zuri",
-    "ability_runtime:uri_permission_mgr",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
-    "access_token:libtokenid_sdk",
-    "app_file_service:remote_file_share_native",
-    "app_file_service:sandbox_helper_native",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "dfs_service:distributed_file_daemon_kit_inner",
-    "googletest:gmock_main",
-    "googletest:gtest_main",
-    "hisysevent:libhisysevent",
-    "hitrace:hitrace_meter",
-    "hitrace:libhitracechain",
-    "ipc:ipc_single",
-    "kv_store:datamgr_common",
-    "samgr:samgr_proxy",
-    "udmf:udmf_client",
-    "udmf:utd_client",
   ]
 }
 
@@ -2059,8 +1919,8 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/service/udmf",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/test/mock",
-    "${data_service_path}/service/udmf/delay_data",
     "${data_service_path}/service/udmf/lifecycle",
+    "${data_service_path}/service/udmf/delay_data",
     "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/adapter/include/communicator",
@@ -2096,6 +1956,97 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "samgr:samgr_proxy",
+    "udmf:udmf_client",
+    "udmf:utd_client",
+  ]
+}
+
+ohos_unittest("UdmfPreProcessUtilsTest") {
+  module_out_path = module_output_path
+  sources = [ "udmf_preprocess_utils_test.cpp" ]
+
+  include_dirs = [
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/service/udmf/preprocess",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/udmf:udmf_server",
+  ]
+
+  external_deps = [
+    "ability_runtime:uri_permission_mgr",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "app_file_service:remote_file_share_native",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+    "udmf:udmf_client",
+  ]
+}
+
+ohos_unittest("UdmfPreProcessUtilsMockTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/test/mock/access_token_mock.cpp",
+    "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
+    "udmf_preprocess_utils_mock_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf/preprocess",
+    "${data_service_path}/service/test/mock",
+    "${data_service_path}/service/udmf/store",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/service:distributeddatasvc",
+    "mock:distributeddata_mock_static",
+  ]
+
+  external_deps = [
+    "ability_runtime:uri_permission_mgr",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "app_file_service:remote_file_share_native",
+    "app_file_service:sandbox_helper_native",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "ipc:ipc_single",
+    "kv_store:datamgr_common",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
     "udmf:utd_client",
@@ -2142,6 +2093,8 @@ ohos_unittest("UdmfCheckerManagerTest") {
     "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "dsoftbus:softbus_client",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -2300,7 +2253,6 @@ ohos_unittest("PermitDelegateMockTest") {
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
-    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
     "mock/access_token_mock.cpp",
     "mock/meta_data_manager_mock.cpp",
     "permit_delegate_mock_test.cpp",
@@ -2379,6 +2331,7 @@ ohos_unittest("BootStrapMockTest") {
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/backup:distributeddata_backup",
   ]
@@ -2605,6 +2558,7 @@ ohos_unittest("BackupManagerServiceTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "c_utils:utils",
+    "dataclassification:data_transit_mgr",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -2683,7 +2637,6 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
-    "app_file_service:sandbox_helper_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -2702,103 +2655,11 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:utd_client",
   ]
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-  ]
-
-  defines = [
-    "private=public",
-    "protected=public",
-  ]
-}
-
-ohos_unittest("UtdServiceStubTest") {
-  module_out_path = module_output_path
-  sources = [ "utd_service_stub_test.cpp" ]
-
-  include_dirs = [
-    "${data_service_path}/service/utd",
-    "${data_service_path}/framework/include",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/utd:utd_server",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-    "samgr:samgr_proxy",
-    "udmf:utd_client",
-  ]
-}
-
-ohos_unittest("UtdServiceImplTest") {
-  module_out_path = module_output_path
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
-  }
-  sources = [
-    "${data_service_path}/framework/feature/feature_system.cpp",
-    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "utd_service_impl_test.cpp",
-  ]
-
-  include_dirs = [
-    "${data_service_path}/adapter/include/account",
-    "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/app/src",
-    "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/utd",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "ability_base:base",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
-    "access_token:libtoken_setproc",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-    "kv_store:distributeddata_mgr",
-    "openssl:libcrypto_shared",
-    "samgr:samgr_proxy",
-    "safwk:system_ability_fwk",
-    "udmf:utd_client",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/utd:utd_server",
   ]
 
   defines = [
@@ -2869,7 +2730,10 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
     "dfs_service:distributed_file_daemon_kit_inner",
+    "dsoftbus:softbus_client",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -2960,7 +2824,10 @@ ohos_unittest("UdmfObserverTest") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "device_manager:devicemanagersdk",
     "dfs_service:distributed_file_daemon_kit_inner",
+    "dsoftbus:softbus_client",
     "googletest:gmock_main",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -2989,6 +2856,98 @@ ohos_unittest("UdmfObserverTest") {
   ]
 }
 
+ohos_unittest("UtdServiceStubTest") {
+  module_out_path = module_output_path
+  sources = [ "utd_service_stub_test.cpp" ]
+
+  include_dirs = [
+    "${data_service_path}/service/utd",
+    "${data_service_path}/framework/include",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/utd:utd_server",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "samgr:samgr_proxy",
+    "udmf:utd_client",
+  ]
+}
+
+ohos_unittest("UtdServiceImplTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/framework/feature/feature_system.cpp",
+    "utd_service_impl_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/utd",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtoken_setproc",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "dataclassification:data_transit_mgr",
+    "dsoftbus:softbus_client",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "openssl:libcrypto_shared",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "udmf:utd_client",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/utd:utd_server",
+  ]
+
+  defines = [
+    "private=public",
+    "protected=public",
+  ]
+}
 
 ###############################################################################
 group("unittest") {
@@ -3012,7 +2971,6 @@ group("unittest") {
   if (datamgr_service_udmf) {
     deps += [
       ":UdmfCheckerManagerTest",
-      ":UdmfDelayDataContainerTest",
       ":UdmfObserverTest",
       ":UdmfPreProcessUtilsMockTest",
       ":UdmfPreProcessUtilsTest",
