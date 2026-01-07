@@ -199,8 +199,8 @@ std::vector<uint8_t> RdbGeneralStore::GetDBPassword(const StoreMetaData &data, b
 {
     SecretKeyMetaData secretKey;
     auto metaKey = data.GetSecretKey();
-    if (!createRequired &&
-        (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty())) {
+    if ((!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) &&
+        !createRequired) {
         return {};
     }
     if (secretKey.sKey.empty()) {
