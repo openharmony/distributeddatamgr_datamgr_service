@@ -2920,5 +2920,28 @@ HWTEST_F(RdbGeneralStoreTest, Clean_ReturnOk, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_OK);
     MockRelationalStoreDelegate::gTestResult = true;
 }
+
+/**
+* @tc.name: CreateAndOpenEncryptDB
+* @tc.desc: Test create and open encrypt RdbStore with different createRequired
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, CreateAndOpenEncryptDB, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and create test table
+    std::string storeId = "CreateAndOpenEncryptDB.db";
+    std::string tableName = "CreateAndOpenEncryptDB";
+    auto[store, meta] = InitRdbStore(storeId, tableName, true);
+    // Step 2: Close and reopen the database with createRequired is true
+    store = nullptr;
+    store = std::make_shared<RdbGeneralStore>(meta, true);
+    auto code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+    // Step 3: Close and reopen the database with createRequired is false
+    store = nullptr;
+    store = std::make_shared<RdbGeneralStore>(meta, false);
+    code = store->Init();
+    EXPECT_EQ(code, GeneralError::E_OK);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
