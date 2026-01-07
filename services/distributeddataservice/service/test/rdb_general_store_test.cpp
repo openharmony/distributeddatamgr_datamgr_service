@@ -1673,6 +1673,8 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_CLOUD_DISABLED);
     result = store_->ConvertStatus(DBStatus::CLOUD_SYNC_TASK_MERGED);
     EXPECT_EQ(result, GeneralError::E_SYNC_TASK_MERGED);
+    result = store_->ConvertStatus(DBStatus::SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT);
+    EXPECT_EQ(result, GeneralError::E_NO_SPACE_FOR_ASSET);
 }
 
 /**
