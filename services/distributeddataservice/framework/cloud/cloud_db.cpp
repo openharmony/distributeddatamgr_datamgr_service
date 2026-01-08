@@ -50,7 +50,7 @@ std::pair<int32_t, std::shared_ptr<Cursor>> CloudDB::Query(GenQuery &query, cons
     return { E_NOT_SUPPORT, nullptr };
 }
 
-std::pair<int32_t, std::shared_ptr<Cursor>> CloudDB::QueryAllGID(const std::string &table, const VBucket &extend)
+std::pair<int32_t, std::shared_ptr<Cursor>> CloudDB::QueryAllGid(const std::string &table, const VBucket &extend)
 {
     (void)table;
     (void)extend;

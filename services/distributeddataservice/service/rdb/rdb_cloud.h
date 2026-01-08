@@ -58,7 +58,7 @@ public:
     std::pair<GeneralError, uint32_t> LockCloudDB(FLAG flag);
     GeneralError UnLockCloudDB(FLAG flag);
     void SetPrepareTraceId(const std::string &traceId) override;
-    DBStatus QueryAllGID(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data) override;
+    DBStatus QueryAllGid(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data) override;
 
 private:
     static constexpr const char *TYPE_FIELD = "#_type";
