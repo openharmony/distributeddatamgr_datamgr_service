@@ -437,5 +437,79 @@ HWTEST_F(RdbCloudTest, Query004, TestSize.Level1) {
     auto result = rdbCloud.Query(tableName, g_DBVBucket, g_DBVBuckets);
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
 }
+
+/**
+* @tc.name: QueryAllGid_CursorIsNull
+* @tc.desc: RdbCloud QueryAllGidy test the cursor is nullptr.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, QueryAllGid_CursorIsNull, TestSize.Level1)
+{
+    std::shared_ptr<Cursor> cursor = nullptr;
+    std::string tableName = "testTable";
+    EXPECT_CALL(*mockCloudDB, QueryAllGid(tableName, _)).WillOnce(Return(std::make_pair(E_OK, cursor)));
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
+    auto result = rdbCloud.QueryAllGid(tableName, g_DBVBucket, g_DBVBuckets);
+    EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
+}
+
+/**
+* @tc.name: QueryAllGid_Abormal
+* @tc.desc: RdbCloud QueryAllGidy test the code is not E_OK.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, QueryAllGid_Abormal, TestSize.Level1)
+{
+    std::shared_ptr<MockCursor> mockCursor = std::make_shared<MockCursor>();
+    std::string tableName = "testTable";
+    EXPECT_CALL(*mockCloudDB, QueryAllGid(tableName, _)).WillOnce(Return(std::make_pair(E_NETWORK_ERROR, mockCursor)));
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
+    auto result = rdbCloud.QueryAllGid(tableName, g_DBVBucket, g_DBVBuckets);
+    EXPECT_EQ(result, DBStatus::CLOUD_NETWORK_ERROR);
+}
+
+/**
+* @tc.name: QueryAllGid_End
+* @tc.desc: RdbCloud QueryAllGid test code is QUERY_END.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, QueryAllGid_End, TestSize.Level1)
+{
+    std::shared_ptr<MockCursor> mockCursor = std::make_shared<MockCursor>();
+    std::string tableName = "testTable";
+    EXPECT_CALL(*mockCloudDB, QueryAllGid(tableName, _)).WillOnce(Return(std::make_pair(E_OK, mockCursor)));
+    EXPECT_CALL(*mockCursor, GetCount()).WillOnce(Return(COUNT));
+    EXPECT_CALL(*mockCursor, GetEntry(_)).WillOnce(Return(E_OK)).WillOnce(Return(E_ERROR));
+    EXPECT_CALL(*mockCursor, MoveToNext()).WillRepeatedly(Return(E_OK));
+    EXPECT_CALL(*mockCursor, IsEnd()).WillOnce(Return(true));
+
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
+    auto result = rdbCloud.QueryAllGid(tableName, g_DBVBucket, g_DBVBuckets);
+    EXPECT_EQ(result, DBStatus::QUERY_END);
+}
+
+/**
+* @tc.name: QueryAllGid_NotEnd
+* @tc.desc: RdbCloud QueryAllGid test code is not QUERY_END.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, QueryAllGid_NotEnd, TestSize.Level1)
+{
+    std::shared_ptr<MockCursor> mockCursor = std::make_shared<MockCursor>();
+    std::string tableName = "testTable";
+    EXPECT_CALL(*mockCloudDB, QueryAllGid(tableName, _)).WillOnce(Return(std::make_pair(E_OK, mockCursor)));
+    EXPECT_CALL(*mockCursor, GetCount()).WillOnce(Return(COUNT));
+    EXPECT_CALL(*mockCursor, GetEntry(_)).WillOnce(Return(E_OK)).WillOnce(Return(E_OK));
+    EXPECT_CALL(*mockCursor, MoveToNext()).WillRepeatedly(Return(E_OK));
+    EXPECT_CALL(*mockCursor, IsEnd()).WillOnce(Return(false));
+
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
+    auto result = rdbCloud.QueryAllGid(tableName, g_DBVBucket, g_DBVBuckets);
+    EXPECT_EQ(result, DBStatus::OK);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
