@@ -158,6 +158,8 @@ private:
         bool isFromExtension, const int32_t tokenId);
     bool GetCallerBundleInfo(BundleInfo &callerBundleInfo);
     void SetCriticalTask();
+    bool VerifyPredicates(const DataSharePredicates &predicates, uint32_t callingTokenId,
+        DataProviderConfig::ProviderInfo &providerInfo, std::string &func);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;

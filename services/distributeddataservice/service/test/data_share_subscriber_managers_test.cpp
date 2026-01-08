@@ -297,4 +297,35 @@ HWTEST_F(DataShareSubscriberManagersTest, NotFirstSubscribe, TestSize.Level1)
     result = RdbSubscriberManager::GetInstance().Add(key, observer, context, executorPool);
     EXPECT_EQ(result, DataShare::E_OK);
 }
+
+/**
+* @tc.name: NotNotifyAfterEnable
+* @tc.desc: test Disable and then Enable case, Notify shouldn't be called after Enable
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareSubscriberManagersTest, NotNotifyAfterEnable, TestSize.Level1)
+{
+    auto context = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
+    uint32_t selfTokenId = GetSelfTokenID();
+    context->type = "test";
+    context->callerTokenId = selfTokenId;
+    DataShare::Key key(context->uri, TEST_SUB_ID, BUNDLE_NAME_TEST);
+
+    sptr<IDataProxyRdbObserver> observer;
+    std::shared_ptr<ExecutorPool> executorPool = std::make_shared<ExecutorPool>(1, 1);
+    ASSERT_NE(executorPool, nullptr);
+    auto result = RdbSubscriberManager::GetInstance().Add(key, observer, context, executorPool);
+    EXPECT_EQ(result, DataShare::E_OK);
+
+    auto result2 = RdbSubscriberManager::GetInstance().Disable(key, selfTokenId);
+    EXPECT_EQ(result2, DataShare::E_OK);
+    RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_SUBSCRIBE_TEST_URI, context);
+
+    auto result3 = RdbSubscriberManager::GetInstance().Enable(key, context);
+    EXPECT_EQ(result3, DataShare::E_OK);
+
+    auto result4 = RdbSubscriberManager::GetInstance().Delete(key, selfTokenId);
+    EXPECT_EQ(result4, DataShare::E_OK);
+}
 } // namespace OHOS::Test

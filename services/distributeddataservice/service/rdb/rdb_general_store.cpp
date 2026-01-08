@@ -199,8 +199,8 @@ std::vector<uint8_t> RdbGeneralStore::GetDBPassword(const StoreMetaData &data, b
 {
     SecretKeyMetaData secretKey;
     auto metaKey = data.GetSecretKey();
-    if (!createRequired &&
-        (!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty())) {
+    if ((!MetaDataManager::GetInstance().LoadMeta(metaKey, secretKey, true) || secretKey.sKey.empty()) &&
+        !createRequired) {
         return {};
     }
     if (secretKey.sKey.empty()) {
@@ -1255,6 +1255,7 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
         case DBStatus::CLOUD_FULL_RECORDS:
             return GenErr::E_RECODE_LIMIT_EXCEEDED;
         case DBStatus::CLOUD_ASSET_SPACE_INSUFFICIENT:
+        case DBStatus::SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT:
             return GenErr::E_NO_SPACE_FOR_ASSET;
         case DBStatus::BUSY:
             return GenErr::E_BUSY;

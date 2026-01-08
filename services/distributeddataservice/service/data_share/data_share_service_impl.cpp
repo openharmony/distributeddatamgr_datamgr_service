@@ -69,6 +69,7 @@
 #include "datashare_observer.h"
 #include "subscriber_managers/proxy_data_subscriber_manager.h"
 #include "common_utils.h"
+#include "datashare_predicates_verify.h"
 
 namespace OHOS::DataShare {
 using FeatureSystem = DistributedData::FeatureSystem;
@@ -168,6 +169,27 @@ bool DataShareServiceImpl::NotifyChange(const std::string &uri, int32_t userId)
     return true;
 }
 
+bool DataShareServiceImpl::VerifyPredicates(const DataSharePredicates &predicates, uint32_t callingTokenId,
+    DataProviderConfig::ProviderInfo &providerInfo, std::string &func)
+{
+    DataSharePredicatesVerify predicatesVerify;
+    auto [predicatesType, errCode] = predicatesVerify.VerifyPredicates(predicates);
+    if (errCode != E_OK) {
+        std::string callingName = HiViewFaultAdapter::GetCallingName(callingTokenId).first;
+        std::string appendix = "callingName:" + callingName + " predicate:" + std::to_string(predicatesType);
+        DataShareFaultInfo faultInfo = {HiViewFaultAdapter::invalidPredicates, providerInfo.bundleName,
+            providerInfo.moduleName, providerInfo.storeName, func, errCode, appendix};
+        HiViewFaultAdapter::ReportDataFault(faultInfo);
+        ZLOGW("callingName:%{public}s %{public}s predicates:%{public}d, bundle:%{public}s invalid, err:%{public}d",
+            callingName.c_str(), func.c_str(), predicatesType, providerInfo.bundleName.c_str(), errCode);
+    }
+    // E_FIELD_INVALID only add HiviewReport
+    if (errCode == E_FIELD_INVALID || errCode == E_OK) {
+        return true;
+    }
+    return false;
+}
+
 std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &uri, const std::string &extUri,
     const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
 {
@@ -183,6 +205,9 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &ur
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
         TimeoutReport timeoutReport({providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName, func,
             callingTokenId}, true);
+        if (!VerifyPredicates(predicate, callingTokenId, providerInfo, func)) {
+            return std::make_pair(E_ERROR, 0);
+        }
         auto [errCode, ret] = dbDelegate->UpdateEx(providerInfo.tableName, predicate, valuesBucket);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri, providerInfo.visitedUserId);
@@ -212,6 +237,9 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::DeleteEx(const std::string &ur
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
         TimeoutReport timeoutReport({providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName, func,
             callingTokenId}, true);
+        if (!VerifyPredicates(predicate, callingTokenId, providerInfo, func)) {
+            return std::make_pair(E_ERROR, 0);
+        }
         auto [errCode, ret] = dbDelegate->DeleteEx(providerInfo.tableName, predicate);
         if (errCode == E_OK && ret > 0) {
             NotifyChange(uri, providerInfo.visitedUserId);
@@ -244,6 +272,9 @@ std::shared_ptr<DataShareResultSet> DataShareServiceImpl::Query(const std::strin
         std::shared_ptr<DBDelegate> dbDelegate) -> std::pair<int32_t, int32_t> {
         TimeoutReport timeoutReport({providerInfo.bundleName, providerInfo.moduleName, providerInfo.storeName, func,
             callingTokenId}, true);
+        if (!VerifyPredicates(predicates, callingTokenId, providerInfo, func)) {
+            return std::make_pair(E_ERROR, 0);
+        }
         auto [err, result] = dbDelegate->Query(providerInfo.tableName,
             predicates, columns, callingPid, callingTokenId);
         if (err != E_OK) {

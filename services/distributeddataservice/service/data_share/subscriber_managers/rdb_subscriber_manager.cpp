@@ -237,8 +237,10 @@ int RdbSubscriberManager::Enable(const Key &key, std::shared_ptr<Context> contex
         }
         return true;
     });
-    if (isChanged) {
+    if (!observers.empty()) {
         Notify(key, context->visitedUserId, observers, metaData);
+    }
+    if (isChanged) {
         SchedulerManager::GetInstance().Enable(key, context->visitedUserId, metaData);
     }
     if (!result) {

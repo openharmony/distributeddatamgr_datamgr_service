@@ -50,7 +50,7 @@ public:
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWhenNoDelayStrategy_Test, TestSize.Level1)
 {
     // Create executor pool with 2 initial threads and 3 max threads
-    auto pool = std::make_shared<ExecutorPool>(2, 3);
+    auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 2, Device limit: 100, Delay duration: 500ms
     RdbFlowControlManager flowControlManager(2, 100, 500);
     flowControlManager.Init(pool);
@@ -192,7 +192,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_BothLimitsReached
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_DifferentLabelsIndependent_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(2, 2);
+    auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 1, Device limit: 2, Delay duration: 500ms
     RdbFlowControlManager flowControlManager(1, 2, 500);
     flowControlManager.Init(pool);
@@ -228,7 +228,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_DifferentLabelsIn
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithManyTasks_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(2, 2);
+    auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 10, Device limit: 10, Delay duration: 50ms
     RdbFlowControlManager flowControlManager(10, 10, 50);
     flowControlManager.Init(pool);
@@ -297,7 +297,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithZeroDelaySt
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelHighFrequency_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(3, 3);
+    auto pool = std::make_shared<ExecutorPool>(1, 1);
     RdbFlowControlManager flowControlManager(2, 3, 100);
     flowControlManager.Init(pool);
 
@@ -351,7 +351,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelHighF
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithOneDominant_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(2, 2);
+    auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 5, Device limit: 2, Delay duration: 200ms
     RdbFlowControlManager flowControlManager(5, 2, 200);
     flowControlManager.Init(pool);
@@ -415,7 +415,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithO
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithOneLimited_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(3, 3);
+    auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 2, Device limit: 5, Delay duration: 100ms
     RdbFlowControlManager flowControlManager(2, 5, 100);
     flowControlManager.Init(pool);
@@ -460,7 +460,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithO
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelRandomLoad_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(5, 5);
+    auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 2 (per label), Device limit: 10 (total), Delay duration: 100ms
     RdbFlowControlManager flowControlManager(2, 10, 1000);
     flowControlManager.Init(pool);

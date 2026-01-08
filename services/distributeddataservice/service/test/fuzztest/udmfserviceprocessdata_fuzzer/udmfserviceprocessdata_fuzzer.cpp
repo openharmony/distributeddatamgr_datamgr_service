@@ -33,6 +33,9 @@ namespace OHOS {
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
+static constexpr int USERID = 100;
+static constexpr int INSTINDEX = 0;
+static constexpr const char *BUNDLENAME = "com.test.demo";
 
 QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
@@ -107,13 +110,54 @@ void ProcessResultFuzz(FuzzedDataProvider &provider)
     results.emplace(std::make_pair(key, value));
     udmfServiceImpl->ProcessResult(results);
 }
+
+void UpdateDataFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    std::string bundlename = provider.ConsumeRandomLengthString();
+    UnifiedKey udKey = UnifiedKey("DataHub", bundlename, groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.tokenId =
+    OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(OHOS::USERID, OHOS::BUNDLENAME, OHOS::INSTINDEX);
+    UnifiedData data;
+    std::shared_ptr<UnifiedRecord> record = std::make_shared<UnifiedRecord>();
+    data.AddRecord(record);
+    udmfServiceImpl->UpdateData(query, data);
+}
+
+void DeleteDataFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::vector<uint8_t> groupId(ID_LEN, '0');
+    for (size_t i = 0; i < groupId.size(); ++i) {
+        groupId[i] = provider.ConsumeIntegralInRange<uint8_t>(MINIMUM, MAXIMUM);
+    }
+    std::string groupIdStr(groupId.begin(), groupId.end());
+    UnifiedKey udKey = UnifiedKey("DataHub", BUNDLENAME, groupIdStr);
+    QueryOption query;
+    query.key = udKey.GetUnifiedKey();
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.tokenId =
+    OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(USERID, BUNDLENAME, INSTINDEX);
+
+    std::vector<UnifiedData> dataList;
+    udmfServiceImpl->IsFileMangerSa();
+    udmfServiceImpl->DeleteData(query, dataList);
+}
 }
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Security::AccessToken::AccessTokenID tokenId =
-        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(OHOS::USERID, OHOS::BUNDLENAME, OHOS::INSTINDEX);
     SetSelfTokenID(tokenId);
     return 0;
 }
@@ -126,5 +170,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::ProcessCrossDeviceDataFuzz(provider);
     OHOS::ProcessDataFuzz(provider);
     OHOS::ProcessResultFuzz(provider);
+    OHOS::UpdateDataFuzz(provider);
+    OHOS::DeleteDataFuzz(provider);
     return 0;
 }
