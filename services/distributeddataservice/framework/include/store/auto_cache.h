@@ -17,9 +17,11 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_AUTO_CACHE_H
 #include <list>
 #include <memory>
-#include <shared_mutex>
 #include <set>
+#include <shared_mutex>
+
 #include "concurrent_map.h"
+#include "concurrent_striped_map.h"
 #include "error/general_error.h"
 #include "executor_pool.h"
 #include "metadata/store_meta_data.h"
@@ -46,6 +48,8 @@ public:
     using Filter = std::function<bool(const StoreMetaData &)>;
 
     API_EXPORT static AutoCache &GetInstance();
+
+    API_EXPORT void Configure(uint32_t garbageInterval);
 
     API_EXPORT int32_t RegCreator(int32_t type, Creator creator);
 
@@ -78,16 +82,17 @@ private:
     void StartTimer();
     static int32_t CheckStatusBeforeOpen(const StoreMetaData &meta);
     struct Delegate : public GeneralWatcher {
-        Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user, const StoreMetaData &meta);
-        Delegate(const Delegate& delegate);
+        Delegate(GeneralStore *delegate, const Watchers &watchers,
+                 const StoreMetaData &meta,
+                 uint32_t garbageInterval = DEFAULT_INTERVAL);
+        Delegate(const Delegate &delegate);
         ~Delegate();
         operator Store();
         bool operator<(const Time &time) const;
         bool Close();
-        int32_t GetUser() const;
         int32_t GetArea() const;
-        const std::string& GetDataDir() const;
-        const StoreMetaData& GetMeta() const;
+        const std::string &GetDataDir() const;
+        const StoreMetaData &GetMeta() const;
         void SetObservers(const Watchers &watchers);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
         int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
@@ -98,20 +103,19 @@ private:
         mutable Time time_;
         GeneralStore *store_ = nullptr;
         Watchers watchers_;
-        int32_t user_;
         const StoreMetaData meta_;
+        const uint32_t garbageInterval_;
         std::shared_mutex mutex_;
     };
-
-    static constexpr int64_t INTERVAL = 1;
+    static constexpr uint32_t DEFAULT_INTERVAL = 1000;
     static constexpr int32_t MAX_CREATOR_NUM = 30;
 
+    uint32_t garbageInterval_ = DEFAULT_INTERVAL;
     std::shared_ptr<Executor> executor_;
     TaskId taskId_ = Executor::INVALID_TASK_ID;
-    ConcurrentMap<uint32_t, std::map<std::string, Delegate>> stores_;
+    ConcurrentStripedMap<uint32_t, std::map<std::string, Delegate>> stores_;
     ConcurrentMap<uint32_t, std::set<std::string>> disables_;
     Creator creators_[MAX_CREATOR_NUM];
-    std::set<std::string> disableStores_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_AUTO_CACHE_H
