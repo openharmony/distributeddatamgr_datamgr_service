@@ -108,8 +108,11 @@ bool ObjectStoreManager::RegisterAssetsLister()
     if (objectAssetsSendListener_ == nullptr) {
         objectAssetsSendListener_ = new ObjectAssetsSendListener();
     }
-    if (objectAssetsRecvListener_ == nullptr) {
-        objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
+    {
+        std::lock_guard<std::mutex> lock(assetsRecvMutex_);
+        if (objectAssetsRecvListener_ == nullptr) {
+            objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
+        }
     }
     auto status = DistributedFileDaemonManager::GetInstance().RegisterAssetCallback(objectAssetsRecvListener_);
     if (status != DistributedDB::DBStatus::OK) {
@@ -122,6 +125,7 @@ bool ObjectStoreManager::RegisterAssetsLister()
 bool ObjectStoreManager::UnRegisterAssetsLister()
 {
     ZLOGI("ObjectStoreManager UnRegisterAssetsLister");
+    std::lock_guard<std::mutex> lock(assetsRecvMutex_);
     if (objectAssetsRecvListener_ != nullptr) {
         auto status = DistributedFileDaemonManager::GetInstance().UnRegisterAssetCallback(objectAssetsRecvListener_);
         if (status != DistributedDB::DBStatus::OK) {
