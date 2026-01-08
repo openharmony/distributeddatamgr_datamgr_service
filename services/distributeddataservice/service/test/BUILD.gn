@@ -591,7 +591,6 @@ ohos_unittest("RdbServiceTest") {
     "mock/relational_store_manager_mock.cpp",
     "rdb_cloud_test.cpp",
     "rdb_cursor_test.cpp",
-    "rdb_flow_control_manager_test.cpp",
     "rdb_general_store_test.cpp",
     "rdb_query_test.cpp",
     "rdb_result_set_stub_test.cpp",
@@ -665,6 +664,48 @@ ohos_unittest("RdbServiceTest") {
     deps += [ "${data_service_path}/service/object:distributeddata_object" ]
     sources += [ "rdb_asset_loader_test.cpp", ]
   }
+}
+
+ohos_unittest("RdbFlowControlManagerTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  module_out_path = module_output_path
+  sources = [
+    "rdb_flow_control_manager_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/framework/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-fno-access-control",  # Ignore Private Member Access Control
+  ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/rdb:distributeddata_rdb",
+  ]
 }
 
 ohos_unittest("RdbServiceImplTest") {
@@ -3006,6 +3047,7 @@ group("unittest") {
 
   if (datamgr_service_rdb) {
     deps += [
+      ":RdbFlowControlManagerTest",
       ":RdbResultSetImplTest",
       ":RdbServiceImplTest",
       ":RdbServiceImplTokenTest",

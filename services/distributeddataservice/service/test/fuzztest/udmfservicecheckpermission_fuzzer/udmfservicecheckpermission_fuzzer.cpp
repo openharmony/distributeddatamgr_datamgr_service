@@ -33,6 +33,9 @@ namespace OHOS {
 static constexpr int ID_LEN = 32;
 static constexpr int MINIMUM = 48;
 static constexpr int MAXIMUM = 121;
+static constexpr int USERID = 100;
+static constexpr int INSTINDEX = 0;
+static constexpr const char *BUNDLENAME = "com.test.demo";
 
 QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
@@ -112,7 +115,7 @@ void CheckDeleteDataPermissionFuzz(FuzzedDataProvider &provider)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Security::AccessToken::AccessTokenID tokenId =
-        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(OHOS::USERID, OHOS::BUNDLENAME, OHOS::INSTINDEX);
     SetSelfTokenID(tokenId);
     return 0;
 }
