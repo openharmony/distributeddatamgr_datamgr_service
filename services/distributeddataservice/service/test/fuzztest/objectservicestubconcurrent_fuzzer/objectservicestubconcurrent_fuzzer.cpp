@@ -34,7 +34,7 @@ constexpr uint32_t CODE_MAX = static_cast<uint32_t>(ObjectCode::OBJECTSTORE_SERV
 constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 
-static std::shared_ptr<ObjectServiceImpl> g_objectServiceImpl = nullptr;
+static ObjectServiceImpl *g_objectServiceImpl = nullptr;
 
 bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 {
@@ -45,7 +45,7 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
     request.WriteBuffer(static_cast<void *>(remainingData.data()), remainingData.size());
     request.RewindRead(0);
     MessageParcel reply;
-    std::shared_ptr<ObjectServiceStub> objectServiceStub = g_objectServiceImpl;
+    ObjectServiceStub *objectServiceStub = g_objectServiceImpl;
     if (objectServiceStub == nullptr) {
         return false;
     }
@@ -59,7 +59,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     (void)argc;
     (void)argv;
-    OHOS::g_objectServiceImpl = std::make_shared<ObjectServiceImpl>();
+    OHOS::g_objectServiceImpl = new ObjectServiceImpl();
     std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
     OHOS::g_objectServiceImpl->OnBind(
         { "ObjectServiceStubFuzz", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()), std::move(executor) });
