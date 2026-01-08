@@ -63,6 +63,7 @@ ObjectStoreManager::ObjectStoreManager()
 
 ObjectStoreManager::~ObjectStoreManager()
 {
+    UnRegisterAssetsLister();
 }
 
 DistributedDB::KvStoreNbDelegate *ObjectStoreManager::OpenObjectKvStore()

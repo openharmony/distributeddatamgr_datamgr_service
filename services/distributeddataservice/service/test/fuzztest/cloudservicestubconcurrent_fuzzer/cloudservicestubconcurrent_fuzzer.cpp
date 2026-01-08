@@ -93,6 +93,8 @@ bool OnRemoteRequestFuzz(FuzzedDataProvider &provider)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
+    (void)argc;
+    (void)argv;
     OHOS::g_cloudServiceImpl = std::make_shared<CloudServiceImpl>();
     std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
     OHOS::g_cloudServiceImpl->OnBind(
