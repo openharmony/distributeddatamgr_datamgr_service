@@ -56,7 +56,7 @@ private:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithDelayStrategy_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, std::make_shared<ExecuteWithDelayStrategyImpl>());
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
@@ -108,7 +108,7 @@ private:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithIntervalStrategy_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, std::make_shared<ExecuteWithIntervalStrategyImpl>());
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
@@ -141,7 +141,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithIntervalStrategy_
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithoutStrategy_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, nullptr); // No strategy
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
@@ -212,7 +212,7 @@ private:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_PeakLimitStrategy_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     // Initialize with peak limit strategy allowing max 2 tasks per second
     FlowControlManager flowControlManager(pool, std::make_shared<PeakLimitStrategy>(2));
@@ -274,7 +274,7 @@ private:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityStrategy_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityStrategy>());
 
@@ -344,7 +344,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelScheduledTask_Test, Te
         }
     };
 
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, std::make_shared<DelayStrategy>());
 
@@ -411,7 +411,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentTaskSubmission_Tes
         FlowControlManager::Tp lastExecuteTime_;
     };
 
-    // Create enlarged executor pool with 3 initial threads and 5 max threads
+    // Create enlarged executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, std::make_shared<ConcurrentStrategy>());
 
@@ -474,7 +474,7 @@ private:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityPreemption_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityPreemptionStrategy>());
 
@@ -557,7 +557,7 @@ private:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelSpecificPriorityTask_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityCancellationStrategy>());
 
@@ -636,7 +636,7 @@ public:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteAfterDestruction_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     auto flowControlManager = std::make_unique<FlowControlManager>(pool, std::make_shared<DelayStrategy>());
 
@@ -705,7 +705,7 @@ private:
 */
 HWTEST_F(FlowControlManagerTest, FlowControlManager_LabelBasedFlowControl_Test, TestSize.Level1)
 {
-    // Create executor pool with 2 initial threads and 3 max threads
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     FlowControlManager flowControlManager(pool, std::make_shared<LabelBasedStrategy>());
 

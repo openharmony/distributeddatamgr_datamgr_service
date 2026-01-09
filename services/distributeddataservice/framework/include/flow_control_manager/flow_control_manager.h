@@ -79,7 +79,7 @@ private:
 
     const std::shared_ptr<ExecutorPool> pool_;
     const std::shared_ptr<Strategy> strategy_;
-    bool isDestroyed_ = false;
+    bool isRunning_ = true;
     std::mutex mutex_;
     std::priority_queue<InnerTask> tasks_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
