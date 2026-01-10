@@ -14,7 +14,6 @@
  */
 #include "flow_control_manager/flow_control_manager.h"
 
-#include <iostream>
 #include <list>
 
 namespace OHOS::DistributedData {
@@ -88,7 +87,7 @@ void FlowControlManager::ExecuteTask()
         }
         break;
     }
-    if (!tasks.empty() && !isRunning_) {
+    if (!tasks.empty() && isRunning_) {
         pool_->Execute([executeTasks = std::move(tasks)]() {
             for (auto &task : executeTasks) {
                 task();
