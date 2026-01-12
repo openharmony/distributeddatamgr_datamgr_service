@@ -957,16 +957,25 @@ void DataShareServiceImpl::NotifyObserver(const std::string &uri)
     }
 }
 
+std::shared_ptr<DataShareServiceImpl::TimerReceiver> DataShareServiceImpl::GetTimerReceiver()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (timerReceiver_ == nullptr) {
+        EventFwk::MatchingSkills matchingSkills;
+        matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED);
+        matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED);
+        EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+        subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
+        timerReceiver_ = std::make_shared<TimerReceiver>(subscribeInfo);
+    }
+    return timerReceiver_;
+}
+
 bool DataShareServiceImpl::SubscribeTimeChanged()
 {
     ZLOGD_MACRO("start");
-    EventFwk::MatchingSkills matchingSkills;
-    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIME_CHANGED);
-    matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_TIMEZONE_CHANGED);
-    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
-    subscribeInfo.SetThreadMode(EventFwk::CommonEventSubscribeInfo::COMMON);
-    timerReceiver_ = std::make_shared<TimerReceiver>(subscribeInfo);
-    auto result = EventFwk::CommonEventManager::SubscribeCommonEvent(timerReceiver_);
+    auto timerReceiver = GetTimerReceiver();
+    auto result = EventFwk::CommonEventManager::SubscribeCommonEvent(timerReceiver);
     if (!result) {
         ZLOGE("SubscribeCommonEvent err");
     }
