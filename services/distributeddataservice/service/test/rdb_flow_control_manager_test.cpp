@@ -38,7 +38,7 @@ public:
  * @tc.desc: Test the task execution function of RdbFlowControlManager under no delay strategy
  * @tc.type: FUNC
  * @tc.require:
- * @tc.step: 1. Create an executor pool with 1 initial threads and 1 maximum threads
+ * @tc.step: 1. Create an executor pool with 2 initial threads and 3 maximum threads
  * @tc.step: 2. Initialize RdbFlowControlManager and set sync flow control strategy with app limit 2, device limit 100,
  * delay 500ms
  * @tc.step: 3. Submit 5 tasks to the flow control manager
@@ -49,8 +49,8 @@ public:
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWhenNoDelayStrategy_Test, TestSize.Level1)
 {
-    // Create executor pool with 1 initial threads and 1 max threads
-    auto pool = std::make_shared<ExecutorPool>(1, 1);
+    // Create executor pool with 2 initial threads and 3 max threads
+    auto pool = std::make_shared<ExecutorPool>(3, 2);
     // App limit: 2, Device limit: 100, Delay duration: 500ms
     RdbFlowControlManager flowControlManager(2, 100, 500);
     flowControlManager.Init(pool);
@@ -88,6 +88,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWhenNoDelayStra
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_DeviceLimitTriggerDelay_Test, TestSize.Level1)
 {
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 5, Device limit: 1 (will trigger delay), Delay duration: 500ms
     RdbFlowControlManager flowControlManager(5, 1, 500);
@@ -123,6 +124,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_DeviceLimitTrigge
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_AppLimitTriggerDelay_Test, TestSize.Level1)
 {
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 1 (will trigger delay), Device limit: 5, Delay duration: 500ms
     RdbFlowControlManager flowControlManager(1, 5, 500);
@@ -158,6 +160,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_AppLimitTriggerDe
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_BothLimitsReached_Test, TestSize.Level1)
 {
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 1, Device limit: 1, Delay duration: 500ms
     RdbFlowControlManager flowControlManager(1, 1, 500);
@@ -184,7 +187,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_BothLimitsReached
  * @tc.desc: Tasks with different labels should have independent limits
  * @tc.type: FUNC
  * @tc.require:
- * @tc.step: 1. Create an executor pool with 1 initial threads and 1 maximum threads
+ * @tc.step: 1. Create an executor pool with 2 initial threads and 2 maximum threads
  * @tc.step: 2. Initialize RdbFlowControlManager with app limit 1, device limit 2, delay 500ms
  * @tc.step: 3. Submit one task each for two different labels
  * @tc.step: 4. Wait for 100ms, check that both tasks executed (independent limits)
@@ -192,7 +195,8 @@ HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_BothLimitsReached
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_DifferentLabelsIndependent_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(1, 1);
+    // Create executor pool with 2 initial threads and 2 max threads
+    auto pool = std::make_shared<ExecutorPool>(2, 2);
     // App limit: 1, Device limit: 2, Delay duration: 500ms
     RdbFlowControlManager flowControlManager(1, 2, 500);
     flowControlManager.Init(pool);
@@ -219,7 +223,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_DifferentLabelsIn
  * @tc.desc: Test executing large number of tasks simultaneously
  * @tc.type: FUNC
  * @tc.require:
- * @tc.step: 1. Create RdbFlowControlManager with limited thread pool (1 initial, 1 maximum)
+ * @tc.step: 1. Create RdbFlowControlManager with limited thread pool (2 initial, 2 maximum)
  * @tc.step: 2. Configure flow control with app limit 10, device limit 10, delay 50ms
  * @tc.step: 3. Submit 100 tasks rapidly
  * @tc.step: 4. Wait for 1000ms for all tasks to complete
@@ -228,7 +232,8 @@ HWTEST_F(RdbFlowControlManagerTest, RdbSyncFlowControlStrategy_DifferentLabelsIn
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithManyTasks_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(1, 1);
+    // Create executor pool with 2 initial threads and 2 max threads
+    auto pool = std::make_shared<ExecutorPool>(2, 2);
     // App limit: 10, Device limit: 10, Delay duration: 50ms
     RdbFlowControlManager flowControlManager(10, 10, 50);
     flowControlManager.Init(pool);
@@ -266,6 +271,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithManyTasks_T
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithZeroDelayStrategy_Test, TestSize.Level1)
 {
+    // Create executor pool with 1 initial threads and 1 max threads
     auto pool = std::make_shared<ExecutorPool>(1, 1);
     // App limit: 1, Device limit: 1, Delay duration: 0ms (no actual delay)
     RdbFlowControlManager flowControlManager(1, 1, 0);
@@ -288,7 +294,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithZeroDelaySt
  * @tc.desc: Test multi-label task execution under high frequency scenario with device and app limits
  * @tc.type: FUNC
  * @tc.require:
- * @tc.step: 1. Create RdbFlowControlManager with thread pool (1 initial, 1 maximum)
+ * @tc.step: 1. Create RdbFlowControlManager with thread pool (3 initial, 3 maximum)
  * @tc.step: 2. Configure flow control with app limit 2, device limit 3, delay 100ms
  * @tc.step: 3. Submit multiple tasks with different labels rapidly
  * @tc.step: 4. Check execution count at different time points to verify limits
@@ -297,7 +303,8 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithZeroDelaySt
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelHighFrequency_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(1, 1);
+    // Create executor pool with 3 initial threads and 3 max threads
+    auto pool = std::make_shared<ExecutorPool>(3, 3);
     RdbFlowControlManager flowControlManager(2, 3, 100);
     flowControlManager.Init(pool);
 
@@ -342,7 +349,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelHighF
  * @tc.desc: Test multi-label task execution where one label dominates and others are affected by device limit
  * @tc.type: FUNC
  * @tc.require:
- * @tc.step: 1. Create RdbFlowControlManager with thread pool (1 initial, 1 maximum)
+ * @tc.step: 1. Create RdbFlowControlManager with thread pool (2 initial, 2 maximum)
  * @tc.step: 2. Configure flow control with app limit 5, device limit 2, delay 200ms
  * @tc.step: 3. Submit multiple tasks where one label has more tasks than others
  * @tc.step: 4. Check execution count at different time points to verify limits
@@ -351,7 +358,8 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelHighF
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithOneDominant_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(1, 1);
+    // Create executor pool with 2 initial threads and 2 max threads
+    auto pool = std::make_shared<ExecutorPool>(2, 2);
     // App limit: 5, Device limit: 2, Delay duration: 200ms
     RdbFlowControlManager flowControlManager(5, 2, 200);
     flowControlManager.Init(pool);
@@ -406,7 +414,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithO
  * @tc.desc: Test multi-label task execution where one label is frequently limited by app limit while another isn't
  * @tc.type: FUNC
  * @tc.require:
- * @tc.step: 1. Create RdbFlowControlManager with thread pool (1 initial, 1 maximum)
+ * @tc.step: 1. Create RdbFlowControlManager with thread pool (3 initial, 3 maximum)
  * @tc.step: 2. Configure flow control with app limit 2, device limit 5, delay 100ms
  * @tc.step: 3. Submit frequent tasks for label1 which should hit app limit, and infrequent tasks for label2
  * @tc.step: 4. Check execution count at different time points to verify label1 is limited while label2 is not
@@ -415,7 +423,8 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithO
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithOneLimited_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(1, 1);
+    // Create executor pool with 3 initial threads and 3 max threads
+    auto pool = std::make_shared<ExecutorPool>(3, 3);
     // App limit: 2, Device limit: 5, Delay duration: 100ms
     RdbFlowControlManager flowControlManager(2, 5, 100);
     flowControlManager.Init(pool);
@@ -451,7 +460,7 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithO
  * @tc.desc: Test multi-label task execution with random load simulation
  * @tc.type: FUNC
  * @tc.require:
- * @tc.step: 1. Create RdbFlowControlManager with thread pool (1 initial, 1 maximum)
+ * @tc.step: 1. Create RdbFlowControlManager with thread pool (5 initial, 5 maximum)
  * @tc.step: 2. Configure flow control with app limit 2, device limit 10, delay 100ms
  * @tc.step: 3. Simulate random task generation for 3 labels over 5 seconds using separate threads for each label
  * @tc.step: 4. Check execution counts periodically to verify flow control
@@ -460,7 +469,8 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelWithO
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteMultiLabelRandomLoad_Test, TestSize.Level1)
 {
-    auto pool = std::make_shared<ExecutorPool>(1, 1);
+    // Create executor pool with 5 initial threads and 5 max threads
+    auto pool = std::make_shared<ExecutorPool>(5, 5);
     // App limit: 2 (per label), Device limit: 10 (total), Delay duration: 100ms
     RdbFlowControlManager flowControlManager(2, 10, 1000);
     flowControlManager.Init(pool);
