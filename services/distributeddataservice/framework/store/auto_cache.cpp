@@ -110,14 +110,10 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
     if (ret != E_OK) {
         return { ret, store };
     }
+    bool startTimer = false;
     stores_.Compute(meta.tokenId,
-        [this, &meta, &watchers, &store, &storeKey, &option, &ret](auto &,
+        [this, &meta, &watchers, &store, &storeKey, &option, &ret, &startTimer](auto &,
             std::map<std::string, Delegate> &stores) -> bool {
-            if (disableStores_.count(meta.dataDir) != 0) {
-                ZLOGW("store is closing,tokenId:0x%{public}x,user:%{public}s,bundleName:%{public}s,storeId:%{public}s",
-                    meta.tokenId, meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-                return !stores.empty();
-            }
             auto it = stores.find(storeKey);
             if (it != stores.end()) {
                 if (!watchers.empty()) {
@@ -134,11 +130,14 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
             }
             dbStore->SetExecutor(executor_);
             auto result = stores.emplace(std::piecewise_construct, std::forward_as_tuple(storeKey),
-                std::forward_as_tuple(dbStore, watchers, atoi(meta.user.c_str()), meta));
+                std::forward_as_tuple(dbStore, watchers, meta, garbageInterval_));
             store = result.first->second;
-            StartTimer();
+            startTimer = true;
             return !stores.empty();
         });
+    if (startTimer) {
+        StartTimer();
+    }
     return { ret == E_OK && store == nullptr ? E_ERROR : ret, store };
 }
 
@@ -168,55 +167,39 @@ AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::str
     return stores;
 }
 
-// Should be used within stores_'s thread safe methods
 void AutoCache::StartTimer()
 {
-    if (executor_ == nullptr || taskId_ != Executor::INVALID_TASK_ID) {
+    if (executor_ == nullptr) {
         return;
     }
-    taskId_ = executor_->Schedule(
-        [this]() {
+    stores_.DoAction([this]() {
+        if (taskId_ != Executor::INVALID_TASK_ID || stores_.Empty()) {
+            return true;
+        }
+        taskId_ = executor_->Schedule(std::chrono::milliseconds(garbageInterval_), [this]() {
             GarbageCollect(false);
-            stores_.DoActionIfEmpty([this]() {
-                if (executor_ == nullptr || taskId_ == Executor::INVALID_TASK_ID) {
-                    return;
-                }
-                executor_->Remove(taskId_);
-                ZLOGD("remove timer,taskId: %{public}" PRIu64, taskId_);
+            stores_.DoAction([this]() {
                 taskId_ = Executor::INVALID_TASK_ID;
+                return true;
             });
-        },
-        std::chrono::minutes(INTERVAL), std::chrono::minutes(INTERVAL));
-    ZLOGD("start timer,taskId: %{public}" PRIu64, taskId_);
+            StartTimer();
+        });
+        ZLOGD("start timer,taskId: %{public}" PRIu64, taskId_);
+        return true;
+    });
 }
 
 void AutoCache::CloseStore(uint32_t tokenId, const std::string &path, const std::string &storeId)
 {
     ZLOGD("close store start, store:%{public}s, token:%{public}u", Anonymous::Change(storeId).c_str(), tokenId);
-    std::set<std::string> storeIds;
-    std::list<Delegate> closeStores;
     bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
     auto storeKey = GenerateKey(path, storeId);
-    stores_.ComputeIfPresent(tokenId,
-        [this, &storeKey, isScreenLocked, &storeIds, &closeStores](auto &, auto &delegates) {
-            auto it = delegates.begin();
-            while (it != delegates.end()) {
-                if ((it->first == storeKey || storeKey.empty()) &&
-                    (!isScreenLocked || it->second.GetArea() != GeneralStore::EL4) &&
-                    disableStores_.count(it->second.GetDataDir()) == 0) {
-                    disableStores_.insert(it->second.GetDataDir());
-                    storeIds.insert(it->first);
-                    closeStores.emplace(closeStores.end(), it->second);
-                }
-                ++it;
-            }
-            return !delegates.empty();
-        });
-    closeStores.clear();
-    stores_.ComputeIfPresent(tokenId, [this, &storeIds](auto &key, auto &delegates) {
-        for (auto it = delegates.begin(); it != delegates.end();) {
-            if (storeIds.count(it->first) != 0) {
-                disableStores_.erase(it->second.GetDataDir());
+    stores_.ComputeIfPresent(tokenId, [&storeKey, isScreenLocked](auto &, auto &delegates) {
+        auto it = delegates.begin();
+        while (it != delegates.end()) {
+            if ((it->first == storeKey || storeKey.empty()) &&
+                (!isScreenLocked || it->second.GetArea() != GeneralStore::EL4)) {
+                it->second.Close();
                 it = delegates.erase(it);
             } else {
                 ++it;
@@ -231,27 +214,11 @@ void AutoCache::CloseStore(const AutoCache::Filter &filter)
     if (filter == nullptr) {
         return;
     }
-    std::map<uint32_t, std::set<std::string>> storeIds;
-    std::list<Delegate> closeStores;
-    stores_.ForEach(
-        [this, &filter, &storeIds, &closeStores](const auto &tokenId, std::map<std::string, Delegate> &delegates) {
-            auto it = delegates.begin();
-            while (it != delegates.end()) {
-                if (disableStores_.count(it->second.GetDataDir()) == 0 && filter(it->second.GetMeta())) {
-                    disableStores_.insert(it->second.GetDataDir());
-                    storeIds[tokenId].insert(it->first);
-                    closeStores.emplace(closeStores.end(), it->second);
-                }
-                ++it;
-            }
-            return false;
-        });
-    closeStores.clear();
-    stores_.EraseIf([this, &storeIds](auto &tokenId, auto &delegates) {
-        for (auto it = delegates.begin(); it != delegates.end();) {
-            auto ids = storeIds.find(tokenId);
-            if (ids != storeIds.end() && ids->second.count(it->first) != 0) {
-                disableStores_.erase(it->second.GetDataDir());
+    stores_.EraseIf([&filter](auto &tokenId, auto &delegates) {
+        auto it = delegates.begin();
+        while (it != delegates.end()) {
+            if (filter(it->second.GetMeta())) {
+                it->second.Close();
                 it = delegates.erase(it);
             } else {
                 ++it;
@@ -280,18 +247,24 @@ void AutoCache::GarbageCollect(bool isForce)
 {
     auto current = std::chrono::steady_clock::now();
     bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
-    stores_.EraseIf([&current, isForce, isScreenLocked](auto &key, std::map<std::string, Delegate> &delegates) {
+    uint32_t removeCount = 0;
+    uint32_t remainCount = 0;
+    stores_.EraseIf([&current, isForce, isScreenLocked, &removeCount, &remainCount](auto &key,
+                        std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the store is BUSY we wait more INTERVAL minutes again
             if ((!isScreenLocked || it->second.GetArea() != GeneralStore::EL4) && (isForce || it->second < current) &&
                 it->second.Close()) {
                 it = delegates.erase(it);
+                ++removeCount;
             } else {
                 ++it;
+                ++remainCount;
             }
         }
         return delegates.empty();
     });
+    ZLOGI("GarbageCollect end. remove count:%{public}d, remain count:%{public}d", removeCount, remainCount);
 }
 
 void AutoCache::Enable(uint32_t tokenId, const std::string &path, const std::string &storeId)
@@ -313,16 +286,26 @@ void AutoCache::Disable(uint32_t tokenId, const std::string &path, const std::st
     CloseStore(tokenId, path, storeId);
 }
 
-AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, int32_t user, const StoreMetaData &meta)
-    : store_(delegate), watchers_(watchers), user_(user), meta_(meta)
+void AutoCache::Configure(uint32_t garbageInterval)
 {
-    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+    garbageInterval_ = garbageInterval;
+    if (taskId_ != Executor::INVALID_TASK_ID && executor_ != nullptr) {
+        executor_->Reset(taskId_, std::chrono::milliseconds(garbageInterval_));
+    }
+}
+
+AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, const StoreMetaData &meta,
+    uint32_t garbageInterval)
+    : store_(delegate), watchers_(watchers), meta_(meta), garbageInterval_(garbageInterval)
+{
+    time_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(garbageInterval);
+
     if (store_ != nullptr) {
         store_->Watch(Origin::ORIGIN_ALL, *this);
     }
 }
 
-AutoCache::Delegate::Delegate(const Delegate& delegate)
+AutoCache::Delegate::Delegate(const Delegate &delegate) : garbageInterval_(delegate.garbageInterval_)
 {
     store_ = delegate.store_;
     if (store_ != nullptr) {
@@ -342,7 +325,7 @@ AutoCache::Delegate::~Delegate()
 
 AutoCache::Delegate::operator Store()
 {
-    time_ = std::chrono::steady_clock::now() + std::chrono::minutes(INTERVAL);
+    time_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(garbageInterval_);
     if (store_ != nullptr) {
         store_->AddRef();
         return Store(store_, [](GeneralStore *store) { store->Release(); });
@@ -373,17 +356,12 @@ void AutoCache::Delegate::SetObservers(const AutoCache::Watchers &watchers)
     watchers_ = watchers;
 }
 
-int32_t AutoCache::Delegate::GetUser() const
-{
-    return user_;
-}
-
 int32_t AutoCache::Delegate::GetArea() const
 {
     return meta_.area;
 }
 
-const std::string& AutoCache::Delegate::GetDataDir() const
+const std::string &AutoCache::Delegate::GetDataDir() const
 {
     return meta_.dataDir;
 }

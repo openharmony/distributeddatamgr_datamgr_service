@@ -21,7 +21,7 @@
 #include "device_matrix_mock.h"
 #include "gtest/gtest.h"
 #include "mock/access_token_mock.h"
-#include "mock/account_delegate_mock.h"
+#include "account_delegate_mock.h"
 #include "mock/distributed_file_daemon_manager_mock.h"
 #include "mock/meta_data_manager_mock.h"
 #include "object_manager.h"

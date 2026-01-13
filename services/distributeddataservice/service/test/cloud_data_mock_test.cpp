@@ -26,7 +26,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "mock/access_token_mock.h"
-#include "mock/account_delegate_mock.h"
+#include "account_delegate_mock.h"
 #include "mock/db_store_mock.h"
 #include "network_delegate_mock.h"
 

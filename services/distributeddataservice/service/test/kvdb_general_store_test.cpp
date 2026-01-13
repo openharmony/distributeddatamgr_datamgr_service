@@ -33,7 +33,7 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
-#include "mock/account_delegate_mock.h"
+#include "account_delegate_mock.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_watcher_mock.h"
 

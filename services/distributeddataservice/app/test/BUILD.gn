@@ -36,6 +36,7 @@ config("module_private_config") {
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/test/mock",
+    "${data_service_path}/framework/test/mock",
     "../include",
     "../src",
     "../src/security",
@@ -575,6 +576,7 @@ ohos_unittest("RouteHeadHandlerImplTest") {
     "../../../../interfaces/innerkits/distributeddata",
     "../../service/dumper/include",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/test/mock",
   ]
 
   sources = [
@@ -690,7 +692,7 @@ ohos_unittest("DDMSDumpTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/ddms_dump_test.cpp",
-    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/test/mock/db_store_mock.cpp",
     "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
     "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",

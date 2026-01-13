@@ -152,13 +152,14 @@ ohos_unittest("StoreTest") {
   include_dirs = [
     "${data_service_path}/service/test/mock",
     "${data_service_path}/framework/include/screen",
+    "./mock",
   ]
 
   sources = [
     "${data_service_path}/framework/metadata/store_meta_data.cpp",
     "${data_service_path}/framework/store/auto_cache.cpp",
     "${data_service_path}/service/rdb/rdb_query.cpp",
-    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
+    "./mock/account_delegate_mock.cpp",
     "store_test.cpp",
   ]
 
@@ -203,7 +204,7 @@ ohos_unittest("StoreMockTest") {
     "${data_service_path}/framework/metadata/store_meta_data.cpp",
     "${data_service_path}/framework/store/auto_cache.cpp",
     "${data_service_path}/service/rdb/rdb_query.cpp",
-    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
+    "./mock/account_delegate_mock.cpp",
     "store_mock_test.cpp",
   ]
 
@@ -481,6 +482,30 @@ ohos_unittest("SyncManagerTest") {
     "-Dprotected=public",
   ]
 }
+
+ohos_unittest("AutoCacheTest") {
+  module_out_path = module_output_path
+    include_dirs = [
+    "${data_service_path}/service/test/mock",
+  ]
+  sources = [
+    "auto_cache_test.cpp",
+    "./mock/account_delegate_mock_proxy.cpp",
+  ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [
+    "kv_store:datamgr_common",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "googletest:gmock",
+    "googletest:gtest_main",
+  ]
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -512,6 +537,7 @@ group("unittest") {
     ":StoreTest",
     ":SubscriptionTest",
     ":SyncManagerTest",
+    ":AutoCacheTest",
   ]
 }
 ###############################################################################

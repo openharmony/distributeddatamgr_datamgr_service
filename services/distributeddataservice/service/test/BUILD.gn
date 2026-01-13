@@ -43,6 +43,7 @@ config("module_private_config") {
     "${data_service_path}/service/rdb/",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/test/mock",
   ]
   cflags = [ "-Werror" ]
   defines = [
@@ -134,7 +135,7 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/service/test/mock/checker_mock.cpp",
     "cloud_data_mock_test.cpp",
     "mock/access_token_mock.cpp",
-    "mock/account_delegate_mock.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -189,7 +190,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
     "cloud_service_impl_test.cpp",
-    "mock/account_delegate_mock.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -423,7 +424,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   module_out_path = module_output_path
   sources = [
     "kvdb_general_store_test.cpp",
-    "mock/account_delegate_mock.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
     "mock/general_watcher_mock.cpp",
@@ -1090,7 +1091,7 @@ ohos_unittest("ObjectManagerMockTest") {
     "../object/src/object_snapshot.cpp",
     "../object/src/object_types_utils.cpp",
     "mock/access_token_mock.cpp",
-    "mock/account_delegate_mock.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "mock/device_manager_adapter_mock.cpp",
     "mock/device_matrix_mock.cpp",
     "mock/distributed_file_daemon_manager_mock.cpp",
@@ -1104,6 +1105,7 @@ ohos_unittest("ObjectManagerMockTest") {
     "${data_service_path}/app/src",
     "${data_service_path}/service/common",
     "${data_service_path}/service/test/mock",
+    "${data_service_path}/framework/test/mock",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1378,7 +1380,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_types_util_test.cpp",
     "data_share_uri_utils_test.cpp",
     "kv_dalegate_test.cpp",
-    "mock/account_delegate_mock.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1589,7 +1591,7 @@ ohos_unittest("KvdbServicePasswordTest") {
     blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   sources = [
-    "${data_service_path}/service/test/mock/account_delegate_mock.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "kvdb_service_password_test.cpp",
   ]
 
@@ -2550,11 +2552,12 @@ ohos_unittest("UserDelegateMockTest") {
     "${data_service_path}/framework/include/",
     "${data_service_path}/service/kvdb/",
     "${data_service_path}/service/test/mock",
+    "${data_service_path}/framework/test/mock",
   ]
 
   sources = [
     "${data_service_path}/service/kvdb/user_delegate.cpp",
-    "mock/account_delegate_mock.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "mock/device_manager_adapter_mock.cpp",
     "user_delegate_mock_test.cpp",
   ]

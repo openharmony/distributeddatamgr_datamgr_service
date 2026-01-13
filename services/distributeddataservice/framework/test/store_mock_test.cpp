@@ -21,7 +21,7 @@
 #include "rdb_types.h"
 #include "store/auto_cache.h"
 #include "store/general_watcher.h"
-#include "account_delegate_mock.h"
+#include "mock/account_delegate_mock.h"
 
 using namespace testing;
 using namespace testing::ext;
