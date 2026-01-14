@@ -42,7 +42,7 @@ void OnRdbFlowControlManagerFuzz(FuzzedDataProvider &provider)
 {
     int valueRangeMinPool = provider.ConsumeIntegralInRange<int>(1, 2);
     int valueRangeMaxPool = provider.ConsumeIntegralInRange<int>(3, 4);
-    auto pool = std::make_shared<ExecutorPool>(valueRangeMinPool, valueRangeMaxPool);
+    auto pool = std::make_shared<ExecutorPool>(valueRangeMaxPool, valueRangeMinPool);
     int valueRangeDuration = provider.ConsumeIntegralInRange<int>(100, 200);
     int valueRangeApp = provider.ConsumeIntegralInRange<int>(5, 20);
     int valueRangeGlobal = provider.ConsumeIntegralInRange<int>(15, 20);

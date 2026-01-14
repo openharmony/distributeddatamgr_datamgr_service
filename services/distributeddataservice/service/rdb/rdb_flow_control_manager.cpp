@@ -37,11 +37,15 @@ int32_t RdbFlowControlManager::Execute(Task task, TaskInfo taskInfo)
         return -1;
     }
     std::shared_ptr<DistributedData::FlowControlManager> manager;
+    uint32_t appLimit = appLimit_;
+    uint32_t duration = duration_;
+    std::shared_ptr<ExecutorPool> pool = pool_;
     managers_.Compute(taskInfo.label,
-        [this, &manager](const auto &key, std::shared_ptr<DistributedData::FlowControlManager> &value) {
-            if (value == nullptr) {
-                auto strategy = std::make_shared<RdbFlowControlStrategy>(appLimit_, duration_);
-                value = std::make_shared<DistributedData::FlowControlManager>(pool_, std::move(strategy));
+        [appLimit, duration, pool, &manager](
+            const auto &key, std::shared_ptr<DistributedData::FlowControlManager> &value) {
+            if (value == nullptr && pool != nullptr) {
+                auto strategy = std::make_shared<RdbFlowControlStrategy>(appLimit, duration);
+                value = std::make_shared<DistributedData::FlowControlManager>(pool, std::move(strategy));
             }
             manager = value;
             return true;
@@ -49,8 +53,15 @@ int32_t RdbFlowControlManager::Execute(Task task, TaskInfo taskInfo)
     if (manager == nullptr) {
         return -1;
     }
+    std::weak_ptr<DistributedData::FlowControlManager> globalManager = globalManager_;
     manager->Execute(
-        [this, task, taskInfo]() mutable { globalManager_->Execute(task, taskInfo); }, std::move(taskInfo));
+        [globalManager, task, taskInfo]() mutable {
+            auto realManager = globalManager.lock();
+            if (realManager != nullptr) {
+                realManager->Execute(task, taskInfo);
+            }
+        },
+        std::move(taskInfo));
     return 0;
 }
 

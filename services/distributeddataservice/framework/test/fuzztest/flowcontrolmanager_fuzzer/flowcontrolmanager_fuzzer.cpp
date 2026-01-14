@@ -44,7 +44,7 @@ void FlowControlManagerFuzz(FuzzedDataProvider &provider)
 {
     int valueRangeMinPool = provider.ConsumeIntegralInRange<int>(1, 2);
     int valueRangeMaxPool = provider.ConsumeIntegralInRange<int>(3, 4);
-    auto pool = std::make_shared<ExecutorPool>(valueRangeMinPool, valueRangeMaxPool);
+    auto pool = std::make_shared<ExecutorPool>(valueRangeMaxPool, valueRangeMinPool);
     FlowControlManager flowControlManager(pool, std::make_shared<PriorityStrategy>());
 
     auto highPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);

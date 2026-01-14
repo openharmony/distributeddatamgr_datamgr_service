@@ -24,7 +24,7 @@ FlowControlManager::FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::
 
 FlowControlManager::~FlowControlManager()
 {
-    isDestroyed_ = true;
+    isRunning_ = false;
     ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);
@@ -33,7 +33,7 @@ FlowControlManager::~FlowControlManager()
         auto tasks = std::move(tasks_);
     }
     if (pool_ != nullptr) {
-        pool_->Remove(taskId);
+        pool_->Remove(taskId, true);
     }
 }
 
@@ -46,7 +46,7 @@ void FlowControlManager::Execute(Task task, uint32_t type)
 
 void FlowControlManager::Execute(Task task, TaskInfo info)
 {
-    if (isDestroyed_ || pool_ == nullptr) {
+    if (!isRunning_ || pool_ == nullptr) {
         return;
     }
     Tp executeTime = std::chrono::steady_clock::now();
@@ -68,7 +68,7 @@ void FlowControlManager::Execute(Task task, TaskInfo info)
 
 void FlowControlManager::ExecuteTask()
 {
-    if (isDestroyed_ || pool_ == nullptr) {
+    if (!isRunning_ || pool_ == nullptr) {
         return;
     }
     std::list<Task> tasks;
@@ -76,7 +76,7 @@ void FlowControlManager::ExecuteTask()
     Tp now = std::chrono::steady_clock::now();
     while (!tasks_.empty()) {
         const InnerTask &task = tasks_.top();
-        if (task.task == nullptr) {
+        if (task.task == nullptr || !isRunning_) {
             tasks_.pop();
             continue;
         }
@@ -87,7 +87,7 @@ void FlowControlManager::ExecuteTask()
         }
         break;
     }
-    if (!tasks.empty()) {
+    if (!tasks.empty() && isRunning_) {
         pool_->Execute([executeTasks = std::move(tasks)]() {
             for (auto &task : executeTasks) {
                 task();
@@ -99,12 +99,14 @@ void FlowControlManager::ExecuteTask()
 
 void FlowControlManager::Schedule()
 {
-    if (isDestroyed_ || pool_ == nullptr) {
+    if (!isRunning_ || pool_ == nullptr) {
         return;
     }
     std::lock_guard<decltype(mutex_)> lock(mutex_);
-    if (tasks_.empty()) {
-        pool_->Remove(taskId_);
+    if (tasks_.empty() || !isRunning_) {
+        if (taskId_ != ExecutorPool::INVALID_TASK_ID && pool_ != nullptr) {
+            pool_->Remove(taskId_);
+        }
         taskId_ = ExecutorPool::INVALID_TASK_ID;
         return;
     }
