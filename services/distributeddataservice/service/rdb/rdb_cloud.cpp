@@ -84,18 +84,7 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
     } else {
         std::tie(code, cursor) = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     }
-    if (cursor == nullptr || code != E_OK) {
-        return ConvertStatus(static_cast<GeneralError>(Convert(cursor, data, code)));
-    }
-    auto err = Convert(cursor, data, code);
-    DistributedData::Value cursorFlag;
-    cursor->Get(SchemaMeta::CURSOR_FIELD, cursorFlag);
-    extend[SchemaMeta::CURSOR_FIELD] = ValueProxy::Convert(std::move(cursorFlag));
-    if (cursor->IsEnd()) {
-        ZLOGD("query end, table:%{public}s", Anonymous::Change(tableName).c_str());
-        return DBStatus::QUERY_END;
-    }
-    return ConvertStatus(static_cast<GeneralError>(err));
+    return QueryResult(code, cursor, tableName, extend, data);
 }
 
 DBStatus RdbCloud::QueryAllGid(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data)
@@ -103,6 +92,12 @@ DBStatus RdbCloud::QueryAllGid(const std::string &tableName, DBVBucket &extend, 
     std::shared_ptr<Cursor> cursor = nullptr;
     int32_t code = E_OK;
     std::tie(code, cursor) = cloudDB_->QueryAllGid(tableName, ValueProxy::Convert(std::move(extend)));
+    return QueryResult(code, cursor, tableName, extend, data);
+}
+
+DBStatus RdbCloud::QueryResult(int32_t code, std::shared_ptr<Cursor> cursor, const std::string &tableName,
+    DBVBucket &extend, std::vector<DBVBucket> &data)
+{
     if (cursor == nullptr || code != E_OK) {
         ZLOGE("code:%{public}d, table:%{public}s, extend:%{public}zu", code,
             Anonymous::Change(tableName).c_str(), extend.size());
