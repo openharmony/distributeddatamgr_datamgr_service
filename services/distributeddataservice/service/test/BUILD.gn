@@ -793,11 +793,13 @@ ohos_unittest("RdbServiceImplTokenTest") {
     "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
+    "mock/device_manager_adapter_mock.cpp",
     "rdb_service_impl_token_test.cpp",
   ]
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/framework/include",
     "${data_service_path}/service/test/mock",
   ]
 

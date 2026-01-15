@@ -127,6 +127,14 @@ std::string OHOS::DistributedData::DeviceManagerAdapter::GetUuidByNetworkId(cons
     return BDeviceManagerAdapter::deviceManagerAdapter->GetUuidByNetworkId(networkId);
 }
 
+uint32_t OHOS::DistributedData::DeviceManagerAdapter::GetDeviceTypeByUuid(const std::string &uuid)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return 0;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetDeviceTypeByUuid(uuid);
+}
+
 DeviceInfo OHOS::DistributedData::DeviceManagerAdapter::GetDeviceInfo(const std::string &id)
 {
     if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {

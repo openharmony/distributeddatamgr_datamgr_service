@@ -151,6 +151,8 @@ void SoftBusAdapterStandardTest::SetUpTestCase(void)
     int userId = 0;
     AccountDelegate::GetInstance()->QueryForegroundUserId(userId);
     foregroundUserId_ = std::to_string(userId);
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(2, 1);
+    DeviceManagerAdapter::GetInstance().Init(executors);
 }
 
 void SoftBusAdapterStandardTest::TearDownTestCase(void)
@@ -485,11 +487,9 @@ HWTEST_F(SoftBusAdapterStandardTest, BroadcastTest002, TestSize.Level1)
  */
 HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo001, TestSize.Level1)
 {
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 2);
-    DeviceManagerAdapter::GetInstance().Init(executors);
     DeviceChangeListenerTest listener;
     DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
-    DistributedHardware::DmDeviceInfo info = {"cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0};
+    DistributedHardware::DmDeviceInfo info = {"cloudDeviceId", "cloudDeviceName", 14, "cloudNetworkId", 0};
     DistributedHardware::DeviceManager::GetInstance().Online(info);
     ASSERT_EQ(listener.info_.networkId, info.networkId);
     ASSERT_EQ(listener.info_.deviceName, info.deviceName);
@@ -502,8 +502,6 @@ HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo001, TestSize.Level1)
  */
 HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo002, TestSize.Level1)
 {
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 2);
-    DeviceManagerAdapter::GetInstance().Init(executors);
     DeviceChangeListenerTest listener;
     DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
     DistributedHardware::DmDeviceInfo info = {"cloudDeviceId", "cloudDeviceName", 0, "", 0};
@@ -520,7 +518,7 @@ HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo003, TestSize.Level1)
 {
     DeviceChangeListenerTest listener;
     DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
-    DistributedHardware::DmDeviceInfo info = {"", "", 0, "local_network_id", 0};
+    DistributedHardware::DmDeviceInfo info = {"", "", 109, "local_network_id", 0};
     DistributedHardware::DeviceManager::GetInstance().Offline(info);
     ASSERT_EQ(listener.info_.networkId, "");
 }
@@ -532,11 +530,9 @@ HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo003, TestSize.Level1)
  */
 HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo004, TestSize.Level1)
 {
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 2);
-    DeviceManagerAdapter::GetInstance().Init(executors);
     DeviceChangeListenerTest listener;
     DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
-    DistributedHardware::DmDeviceInfo info = {"", "localDeviceName", 0, "local_network_id", 0};
+    DistributedHardware::DmDeviceInfo info = {"", "localDeviceName", 131, "local_network_id", 0};
     DistributedHardware::DeviceManager::GetInstance().Offline(info);
     ASSERT_EQ(listener.info_.networkId, "");
 }
@@ -548,11 +544,9 @@ HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo004, TestSize.Level1)
  */
 HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo005, TestSize.Level1)
 {
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 2);
-    DeviceManagerAdapter::GetInstance().Init(executors);
     DeviceChangeListenerTest listener;
     DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
-    DistributedHardware::DmDeviceInfo info = {"cloudDeviceId", "cloudDeviceName", 0, "cloudNetworkId", 0};
+    DistributedHardware::DmDeviceInfo info = {"cloudDeviceId", "cloudDeviceName", 2607, "cloudNetworkId", 0};
     DistributedHardware::DeviceManager::GetInstance().OnChanged(info);
     ASSERT_EQ(listener.info_.networkId, "");
 }
@@ -564,11 +558,9 @@ HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo005, TestSize.Level1)
  */
 HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo006, TestSize.Level1)
 {
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 2);
-    DeviceManagerAdapter::GetInstance().Init(executors);
     DeviceChangeListenerTest listener;
     DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
-    DistributedHardware::DmDeviceInfo info = {"localDeviceId", "", 0, "local_network_id", 0};
+    DistributedHardware::DmDeviceInfo info = {"localDeviceId", "", 17, "local_network_id", 0};
     DistributedHardware::DeviceManager::GetInstance().OnChanged(info);
     ASSERT_EQ(listener.info_.networkId, "");
 }
@@ -580,8 +572,6 @@ HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo006, TestSize.Level1)
  */
 HWTEST_F(SoftBusAdapterStandardTest, GetDeviceInfo007, TestSize.Level1)
 {
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 2);
-    DeviceManagerAdapter::GetInstance().Init(executors);
     DeviceChangeListenerTest listener;
     DeviceManagerAdapter::GetInstance().StartWatchDeviceChange(&listener, {});
     DistributedHardware::DmDeviceInfo info = {"", "", 0, "local_network_id", 0};

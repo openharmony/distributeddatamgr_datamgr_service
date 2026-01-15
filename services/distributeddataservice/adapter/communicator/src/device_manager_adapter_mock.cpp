@@ -201,6 +201,11 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
     return "";
 }
 
+uint32_t DeviceManagerAdapter::GetDeviceTypeByUuid(const std::string &uuid)
+{
+    return 0;
+}
+
 std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkId)
 {
     (void)networkId;

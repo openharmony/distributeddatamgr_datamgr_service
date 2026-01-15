@@ -254,6 +254,34 @@ HWTEST_F(DeviceManagerAdapterTest, GetUdidByNetworkIdLocal, TestSize.Level0)
 }
 
 /**
+* @tc.name: GetDeviceTypeByUuidInvalid
+* @tc.desc: get deviceType by Uuid, the Uuid is invalid
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: zd
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetDeviceTypeByUuidInvalid, TestSize.Level0)
+{
+    auto deviceType = DeviceManagerAdapter::GetInstance().GetDeviceTypeByUuid(EMPTY_DEVICE_ID);
+    EXPECT_EQ(deviceType, 0);
+    deviceType = DeviceManagerAdapter::GetInstance().GetDeviceTypeByUuid(INVALID_DEVICE_ID);
+    EXPECT_EQ(deviceType, 0);
+}
+
+/**
+* @tc.name: GetDeviceTypeByUuidLocal
+* @tc.desc: get deviceType by Uuid, the Uuid is local Uuid
+* @tc.require:
+* @tc.author: zd
+ */
+HWTEST_F(DeviceManagerAdapterTest, GetDeviceTypeByUuidLocal, TestSize.Level0)
+{
+    auto dvInfo = DeviceManagerAdapter::GetInstance().GetLocalDevice();
+    auto deviceType = DeviceManagerAdapter::GetInstance().GetDeviceTypeByUuid(dvInfo.uuid);
+    EXPECT_EQ(deviceType, dvInfo.deviceType);
+}
+
+/**
 * @tc.name: DeviceIdToUUID
 * @tc.desc: transfer deviceId to uuid, the deviceId is invalid
 * @tc.type: FUNC
@@ -426,9 +454,9 @@ HWTEST_F(DeviceManagerAdapterTest, GetOnlineDevices, TestSize.Level0)
 */
 HWTEST_F(DeviceManagerAdapterTest, Online, TestSize.Level0)
 {
-    DeviceManagerAdapter DeviceManagerAdapterTest;
+    DeviceManagerAdapter deviceManagerAdapter;
     DeviceInfo deviceInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 });
-    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.Online(deviceInfo));
+    EXPECT_NO_FATAL_FAILURE(deviceManagerAdapter.Online(deviceInfo));
 }
 
 /**
@@ -440,16 +468,16 @@ HWTEST_F(DeviceManagerAdapterTest, Online, TestSize.Level0)
 */
 HWTEST_F(DeviceManagerAdapterTest, Offline, TestSize.Level0)
 {
-    DeviceManagerAdapter DeviceManagerAdapterTest;
     auto executors = std::make_shared<OHOS::ExecutorPool>(12, 5);
-    DeviceManagerAdapterTest.Init(executors);
+    DeviceManagerAdapter::GetInstance().Init(executors);
+    executors = nullptr;
     DeviceInfo info01 = {
         .uuid = "123",
         .udid = "123",
         .networkId = "14569",
         .deviceName = "asda",
     };
-    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.Offline(info01));
+    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapter::GetInstance().Offline(info01));
 }
 
 /**
@@ -461,9 +489,9 @@ HWTEST_F(DeviceManagerAdapterTest, Offline, TestSize.Level0)
 */
 HWTEST_F(DeviceManagerAdapterTest, OnChanged, TestSize.Level0)
 {
-    DeviceManagerAdapter DeviceManagerAdapterTest;
+    DeviceManagerAdapter deviceManagerAdapter;
     DeviceInfo deviceInfo({ "", "", "cloudNetworkId", "cloudDeviceName", 0 });
-    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.OnChanged(deviceInfo));
+    EXPECT_NO_FATAL_FAILURE(deviceManagerAdapter.OnChanged(deviceInfo));
 }
 
 /**
@@ -475,14 +503,14 @@ HWTEST_F(DeviceManagerAdapterTest, OnChanged, TestSize.Level0)
 */
 HWTEST_F(DeviceManagerAdapterTest, OnReady, TestSize.Level0)
 {
-    DeviceManagerAdapter DeviceManagerAdapterTest;
+    DeviceManagerAdapter deviceManagerAdapter;
     DeviceInfo info = {
         .uuid = "123",
         .udid = "123",
         .networkId = "14569",
         .deviceName = "asda",
     };
-    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.OnReady(info));
+    EXPECT_NO_FATAL_FAILURE(deviceManagerAdapter.OnReady(info));
 }
 
 /**
@@ -494,10 +522,10 @@ HWTEST_F(DeviceManagerAdapterTest, OnReady, TestSize.Level0)
 */
 HWTEST_F(DeviceManagerAdapterTest, SaveDeviceInfo, TestSize.Level0)
 {
-    DeviceManagerAdapter DeviceManagerAdapterTest;
+    DeviceManagerAdapter deviceManagerAdapter;
     DeviceInfo info1;
     info1.uuid = "";
-    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.SaveDeviceInfo(info1, DeviceChangeType::DEVICE_OFFLINE));
+    EXPECT_NO_FATAL_FAILURE(deviceManagerAdapter.SaveDeviceInfo(info1, DeviceChangeType::DEVICE_OFFLINE));
 
     DeviceInfo info;
     info.uuid = "ohos.test.uuid";
@@ -507,7 +535,7 @@ HWTEST_F(DeviceManagerAdapterTest, SaveDeviceInfo, TestSize.Level0)
     info.deviceType = 1;
     info.osType = 1;
     info.authForm = 1;
-    EXPECT_NO_FATAL_FAILURE(DeviceManagerAdapterTest.SaveDeviceInfo(info, DeviceChangeType::DEVICE_ONLINE));
+    EXPECT_NO_FATAL_FAILURE(deviceManagerAdapter.SaveDeviceInfo(info, DeviceChangeType::DEVICE_ONLINE));
 }
 
 /**

@@ -27,6 +27,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/access_token_mock.h"
 #include "mock/db_store_mock.h"
+#include "mock/device_manager_adapter_mock.h"
 #include "rdb_service_impl.h"
 #include "rdb_types.h"
 #include "relational_store_manager.h"
@@ -60,6 +61,7 @@ protected:
     static CheckerMock checkerMock_;
     static void InitMetaDataManager();
     static void GetRdbSyncerParam(RdbSyncerParam &param);
+    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
 };
 std::shared_ptr<DBStoreMock> RdbServiceImplTokenTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 StoreMetaData RdbServiceImplTokenTest::metaData_;
@@ -91,6 +93,8 @@ void RdbServiceImplTokenTest::InitMetaDataManager()
 
 void RdbServiceImplTokenTest::SetUpTestCase()
 {
+    deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+    BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
     InitMetaData();
@@ -100,6 +104,8 @@ void RdbServiceImplTokenTest::SetUpTestCase()
 
 void RdbServiceImplTokenTest::TearDownTestCase()
 {
+    deviceManagerAdapterMock = nullptr;
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
     accTokenMock = nullptr;
     BAccessTokenKit::accessTokenkit = nullptr;
 }
@@ -342,6 +348,87 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo008, TestSize.Level0)
  
     EXPECT_EQ(result, RDB_OK);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyLocal(), true), true);
+}
+
+/**
+ * @tc.name: GetReuseDevice001
+ * @tc.desc: Test GetReuseDevice when all devices can reusable.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, GetReuseDevice001, TestSize.Level0)
+{
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(14)).WillOnce(Return(109));
+    RdbServiceImpl service;
+    std::vector<std::string> devices = { "device1" };
+    StoreMetaData metaData;
+    metaData.deviceId = "device";
+    auto result = service.GetReuseDevice(devices, metaData);
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name: GetReuseDevice002
+ * @tc.desc: Test GetReuseDevice when all devices can reusable.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, GetReuseDevice002, TestSize.Level0)
+{
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(14)).WillOnce(Return(14));
+    RdbServiceImpl service;
+    std::vector<std::string> devices = { "device1" };
+    StoreMetaData metaData;
+    metaData.deviceId = "device";
+    auto result = service.GetReuseDevice(devices, metaData);
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name: IsSupportAutoSyncDeviceType001
+ * @tc.desc: Test IsSupportAutoSyncDeviceType when local and remote device can reusable.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, IsSupportAutoSyncDeviceType001, TestSize.Level0)
+{
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(14)).WillOnce(Return(109));
+    RdbServiceImpl service;
+    auto result = service.IsSupportAutoSyncDeviceType("device", "device1");
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name: IsSupportAutoSyncDeviceType002
+ * @tc.desc: Test IsSupportAutoSyncDeviceType when local and remote device can not reusable.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, IsSupportAutoSyncDeviceType002, TestSize.Level0)
+{
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(14)).WillOnce(Return(14));
+    RdbServiceImpl service;
+    auto result = service.IsSupportAutoSyncDeviceType("device", "device1");
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: IsSupportAutoSyncDeviceType003
+ * @tc.desc: Test IsSupportAutoSyncDeviceType when local and remote device can reusable.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, IsSupportAutoSyncDeviceType003, TestSize.Level0)
+{
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(109)).WillOnce(Return(14));
+    RdbServiceImpl service;
+    auto result = service.IsSupportAutoSyncDeviceType("device", "device1");
+    EXPECT_EQ(result, true);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

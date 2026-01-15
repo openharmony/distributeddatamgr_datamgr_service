@@ -38,7 +38,9 @@ public:
     enum DmDeviceType {
         DEVICE_TYPE_UNKNOWN = 0x00,
         DEVICE_TYPE_PC = 0x0C,
+        DEVICE_TYPE_PHONE = 0x0E,
         DEVICE_TYPE_PAD = 0x11,
+        DEVICE_TYPE_WATCH = 0x6D,
         DEVICE_TYPE_CAR = 0x83,
         DEVICE_TYPE_2IN1 = 0xA2F,
     };
@@ -66,6 +68,7 @@ public:
     DeviceInfo GetDeviceInfo(const std::string &id);
     std::string GetUuidByNetworkId(const std::string &networkId);
     std::string GetUdidByNetworkId(const std::string &networkId);
+    uint32_t GetDeviceTypeByUuid(const std::string &uuid);
     std::string CalcClientUuid(const std::string &appId, const std::string &uuid);
     std::string ToUUID(const std::string &id);
     std::string ToUDID(const std::string &id);
