@@ -74,7 +74,6 @@ public:
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;
     int32_t dbStatus_ = 0;
-    static int32_t mode_;
 };
 } // namespace DistributedData
 } // namespace OHOS

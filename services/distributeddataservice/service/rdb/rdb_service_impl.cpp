@@ -335,7 +335,6 @@ void RdbServiceImpl::SetCloudDistributedTables(const RdbSyncerParam &param, Stor
             param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_);
         metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
         metaData.enableCloud = param.enableCloud_;
-        metaData.autoSyncSwitch = param.autoSyncSwitch_;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
     }
 }

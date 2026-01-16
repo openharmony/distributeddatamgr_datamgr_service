@@ -177,7 +177,6 @@ protected:
     static void InitMetaData();
     static void InitSchemaMeta();
     static void InitCloudInfo();
-    static void SetCloudSchemaMeta();
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
     static CloudInfo cloudInfo_;
@@ -241,7 +240,6 @@ void CloudDataTest::InitMetaData()
     metaData_.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
     metaData_.storeId = TEST_CLOUD_STORE;
     metaData_.dataDir = TEST_CLOUD_PATH;
-    metaData_.enableCloud = true;
     PolicyValue value;
     value.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
 }
@@ -555,10 +553,10 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo004, TestSize.Level1)
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
-    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].code, E_OK);
-    EXPECT_NE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime, 0);
-    EXPECT_NE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime, 0);
-    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus, 1);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == E_BLOCKED_BY_NETWORK_STRATEGY);	 
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime != 0);	 
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime != 0);	 
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
 }
 
 /**
@@ -584,10 +582,10 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo005, TestSize.Level1)
         cloudServiceImpl_->QueryLastSyncInfo(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(!result.empty());
-    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].code, E_OK);
-    EXPECT_NE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime, 0);
-    EXPECT_NE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime, 0);
-    EXPECT_EQ(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus, 1);
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].code == E_BLOCKED_BY_NETWORK_STRATEGY);	 
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].startTime != 0);	 
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].finishTime != 0);	 
+    EXPECT_TRUE(result[TEST_CLOUD_DATABASE_ALIAS_1].syncStatus == 1);
 }
 
 /**
@@ -2003,227 +2001,12 @@ HWTEST_F(CloudDataTest, SharingUtil004, TestSize.Level0)
 }
 
 /**
-* @tc.name: DoCloudSync001
-* @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_SWITCHON,
-            Expected: not sync any data and callback to notify
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, DoCloudSync001, TestSize.Level0)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    CloudData::SyncManager sync;
-    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, {}, MODE_SWITCHON);
-    size_t max = 12;
-    size_t min = 5;
-    delegate_.isNetworkAvailable_ = true;
-
-    CloudData::NetworkSyncStrategy::StrategyInfo strategyInfo;
-    MetaDataManager::GetInstance().LoadMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-    strategyInfo.strategy = CloudData::NetworkSyncStrategy::Strategy::WIFI;
-    MetaDataManager::GetInstance().SaveMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-
-    CloudInfo cloudInfo;
-    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
-
-    SetCloudSchemaMeta();
-    StoreMetaData metaData;
-    MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
-    metaData.enableCloud = true;
-    metaData.autoSyncSwitch = false;
-    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
-
-    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
-    auto ret = sync.DoCloudSync(info);
-    sleep(2);
-    EXPECT_EQ(ret, GenErr::E_OK);
-    EXPECT_EQ(GeneralStoreMock::mode_, 1);
-    GeneralStoreMock::mode_ = 0;
-}
-
-/**
-* @tc.name: DoCloudSync002
-* @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_PUSH
-            Expected: not sync any data and callback to notify
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, DoCloudSync002, TestSize.Level0)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    CloudData::SyncManager sync;
-    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, {}, MODE_PUSH);
-    size_t max = 12;
-    size_t min = 5;
-    delegate_.isNetworkAvailable_ = true;
-
-    CloudData::NetworkSyncStrategy::StrategyInfo strategyInfo;
-    MetaDataManager::GetInstance().LoadMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-    strategyInfo.strategy = CloudData::NetworkSyncStrategy::Strategy::WIFI;
-    MetaDataManager::GetInstance().SaveMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-
-    CloudInfo cloudInfo;
-    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
-
-    SetCloudSchemaMeta();
-    StoreMetaData metaData;
-    MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
-    metaData.enableCloud = true;
-    metaData.autoSyncSwitch = false;
-    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
-
-    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
-    auto ret = sync.DoCloudSync(info);
-    sleep(2);
-    EXPECT_EQ(ret, GenErr::E_OK);
-    EXPECT_EQ(GeneralStoreMock::mode_, 1);
-    GeneralStoreMock::mode_ = 0;
-}
-
-/**
-* @tc.name: DoCloudSync003
-* @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_PROCESSSTART
-            Expected: not sync any data and callback to notify
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, DoCloudSync003, TestSize.Level0)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    CloudData::SyncManager sync;
-    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, {}, MODE_PROCESSSTART);
-    size_t max = 12;
-    size_t min = 5;
-    delegate_.isNetworkAvailable_ = true;
-
-    CloudData::NetworkSyncStrategy::StrategyInfo strategyInfo;
-    MetaDataManager::GetInstance().LoadMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-    strategyInfo.strategy = CloudData::NetworkSyncStrategy::Strategy::WIFI;
-    MetaDataManager::GetInstance().SaveMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-
-    CloudInfo cloudInfo;
-    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
-
-    SetCloudSchemaMeta();
-    StoreMetaData metaData;
-    MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
-    metaData.enableCloud = true;
-    metaData.autoSyncSwitch = false;
-    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
-
-    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
-    auto ret = sync.DoCloudSync(info);
-    sleep(2);
-    EXPECT_EQ(ret, GenErr::E_OK);
-    EXPECT_EQ(GeneralStoreMock::mode_, 1);
-    GeneralStoreMock::mode_ = 0;
-}
-
-/**
-* @tc.name: DoCloudSync004
-* @tc.desc: Test the DoCloudSync autoSyncSwitch is false and mode is MODE_DEFAULT
-            Expected: not callback notify
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, DoCloudSync004, TestSize.Level0)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    CloudData::SyncManager sync;
-    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, {}, MODE_DEFAULT);
-    size_t max = 12;
-    size_t min = 5;
-    delegate_.isNetworkAvailable_ = true;
-
-    CloudData::NetworkSyncStrategy::StrategyInfo strategyInfo;
-    MetaDataManager::GetInstance().LoadMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-    strategyInfo.strategy = CloudData::NetworkSyncStrategy::Strategy::WIFI;
-    MetaDataManager::GetInstance().SaveMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-
-    CloudInfo cloudInfo;
-    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
-
-    SetCloudSchemaMeta();
-    StoreMetaData metaData;
-    MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
-    metaData.enableCloud = true;
-    metaData.autoSyncSwitch = false;
-    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
-
-    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
-    auto ret = sync.DoCloudSync(info);
-    sleep(2);
-    EXPECT_EQ(ret, GenErr::E_OK);
-    EXPECT_EQ(GeneralStoreMock::mode_, 0);
-    GeneralStoreMock::mode_ = 0;
-}
-
-/**
-* @tc.name: DoCloudSync005
-* @tc.desc: Test the DoCloudSync autoSyncSwitch is true
-            Expected: not callback notify
-* @tc.type: FUNC
-* @tc.require:
- */
-HWTEST_F(CloudDataTest, DoCloudSync005, TestSize.Level0)
-{
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
-    CloudData::SyncManager sync;
-    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, {}, MODE_DEFAULT);
-    size_t max = 12;
-    size_t min = 5;
-    delegate_.isNetworkAvailable_ = true;
-
-    CloudData::NetworkSyncStrategy::StrategyInfo strategyInfo;
-    MetaDataManager::GetInstance().LoadMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-    strategyInfo.strategy = CloudData::NetworkSyncStrategy::Strategy::WIFI;
-    MetaDataManager::GetInstance().SaveMeta(CloudData::NetworkSyncStrategy::GetKey(user, TEST_CLOUD_BUNDLE),
-        strategyInfo, true);
-
-    CloudInfo cloudInfo;
-    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    cloudInfo.apps[TEST_CLOUD_BUNDLE].cloudSwitch = true;
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
-
-    SetCloudSchemaMeta();
-    StoreMetaData metaData;
-    MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), metaData, true);
-    metaData.enableCloud = true;
-    metaData.autoSyncSwitch = true;
-    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData, true);
-
-    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
-    auto ret = sync.DoCloudSync(info);
-    sleep(2);
-    EXPECT_EQ(ret, GenErr::E_OK);
-    EXPECT_EQ(GeneralStoreMock::mode_, 0);
-    GeneralStoreMock::mode_ = 0;
-}
-
-/**
-* @tc.name: DoCloudSync006
+* @tc.name: DoCloudSync
 * @tc.desc: Test the executor_ uninitialized and initialized scenarios
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, DoCloudSync006, TestSize.Level0)
+HWTEST_F(CloudDataTest, DoCloudSync, TestSize.Level0)
 {
     int32_t user = 100;
     CloudData::SyncManager sync;
