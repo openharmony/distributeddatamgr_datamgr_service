@@ -1192,4 +1192,12 @@ std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const i
     }
     return appList;
 }
+
+void SyncManager::HandleSyncError(const ErrorContext &context)
+{
+    UpdateFinishSyncInfo({ context.cloud.user, context.cloud.id, context.bundleName, context.dbName }, context.syncId,
+        context.errorCode);
+    SyncManager::Report(
+        { context.cloud.user, context.bundleName, context.traceId, SyncStage::END, context.errorCode, context.reason });
+}
 } // namespace OHOS::CloudData

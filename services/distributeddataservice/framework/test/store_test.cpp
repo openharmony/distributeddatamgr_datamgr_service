@@ -18,7 +18,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "account/account_delegate.h"
-#include "account_delegate_mock.h"
+#include "mock/account_delegate_mock.h"
 #include "general_store_mock.h"
 #include "log_print.h"
 #include "metadata/store_meta_data.h"
