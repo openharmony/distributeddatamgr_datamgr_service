@@ -1191,7 +1191,7 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
     EXPECT_TRUE(result.empty());
 }
 
-/**
+/*
 * @tc.name: CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo
 * @tc.desc: Test Clean with db level config and empty table info
 * @tc.type: FUNC
