@@ -380,7 +380,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     metaMapping = metaData;
     MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
     return store->SetDistributedTables(
-        tables, type, RdbTypesUtils::Convert(references), tableType, param.isAsyncCreatedistTable_);
+        tables, type, RdbTypesUtils::Convert(references), tableType);
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)

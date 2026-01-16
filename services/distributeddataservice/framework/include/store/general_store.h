@@ -159,7 +159,7 @@ public:
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
     virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type,
-        const std::vector<Reference> &references, int32_t tableType = 0, bool isAsync = false) = 0;
+        const std::vector<Reference> &references, int32_t tableType = 0) = 0;
 
     virtual int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
         const std::set<std::string> &extendColNames, bool isForceUpgrade) = 0;
