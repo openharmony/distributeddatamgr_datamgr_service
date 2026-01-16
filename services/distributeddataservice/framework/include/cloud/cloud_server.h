@@ -16,14 +16,12 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_SERVER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_SERVER_H
 #include "cloud/asset_loader.h"
-#include "cloud/cloud_conflict_handler.h"
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_info.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sharing_center.h"
 #include "executor_pool.h"
 #include "visibility.h"
-
 namespace OHOS::DistributedData {
 class API_EXPORT CloudServer {
 public:
@@ -46,7 +44,6 @@ public:
     virtual void Bind(std::shared_ptr<ExecutorPool> executor);
     virtual bool IsSupportCloud(int32_t userId);
     virtual bool CloudDriverUpdated(const std::string &bundleName);
-    virtual std::shared_ptr<CloudConflictHandler> GetConflictHandler();
 
 private:
     static CloudServer *instance_;

@@ -36,8 +36,6 @@ public:
 
     int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
 
-    int32_t OnChange(const std::string &storeId, int32_t triggerMode) override;
-
 private:
     Origin origin_;
     PRIFields primaryFields_;

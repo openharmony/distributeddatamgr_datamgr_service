@@ -99,7 +99,6 @@ static DBSchema GetDBSchema(const Database &database)
             dbField.type = field.type;
             dbField.primary = field.primary;
             dbField.nullable = field.nullable;
-            dbField.dupCheckCol = field.dupCheckCol;
             dbTable.fields.push_back(std::move(dbField));
         }
     }
@@ -425,7 +424,6 @@ int32_t RdbGeneralStore::Close(bool isForce)
         }
         rdbStore_ = nullptr;
         isClosed_ = true;
-        conflictHandler_ = nullptr;
     }
     RemoveTasks();
     auto cloudDb = GetRdbCloud();
@@ -1263,8 +1261,6 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_SYNC_TASK_MERGED;
         case DBStatus::CLOUD_DISABLED:
             return GeneralError::E_CLOUD_DISABLED;
-        case DBStatus::TASK_INTERRUPTED:
-            return GeneralError::E_CLOUD_TASK_INTERRUPTED;
         case DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB:
             return GeneralError::E_DB_CORRUPT;
         default:
@@ -1462,18 +1458,6 @@ int32_t RdbGeneralStore::UnLockCloudDB()
         return GeneralError::E_ERROR;
     }
     return rdbCloud->UnLockCloudDB(RdbCloud::FLAG::APPLICATION);
-}
-
-int32_t RdbGeneralStore::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
-{
-    if (observer_.watcher_ == nullptr) {
-        ZLOGE("watcher_ is null store: %{public}s triggerMode:%{public}d",
-            Anonymous::Change(storeId).c_str(), triggerMode);
-        return GeneralError::E_ERROR;
-    }
-    ZLOGI("store: %{public}s OnSyncTrigger triggerMode:%{public}d", Anonymous::Change(storeId).c_str(), triggerMode);
-    observer_.watcher_->OnChange(storeId, triggerMode);
-    return GeneralError::E_OK;
 }
 
 std::shared_ptr<RdbCloud> RdbGeneralStore::GetRdbCloud() const
@@ -1802,43 +1786,5 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(GenQuery &que
         return { GenErr::E_ERROR, nullptr };
     }
     return { GenErr::E_OK, std::make_shared<DistributedRdb::RelationalStoreCursor>(*resultSet, resultSet) };
-}
-
-int32_t RdbGeneralStore::SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
-{
-    if (isClosed_) {
-        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
-        return GenErr::E_ALREADY_CLOSED;
-    }
-    std::unique_lock<decltype(dbMutex_)> lock(dbMutex_);
-    if (delegate_ == nullptr) {
-        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
-        return GenErr::E_ALREADY_CLOSED;
-    }
-    if (conflictHandler_ != nullptr) {
-        return GenErr::E_OK;
-    }
-    conflictHandler_ = std::make_shared<RdbCloudConflictHandler>(handler);
-    auto ret = delegate_->SetCloudConflictHandler(conflictHandler_);
-    return ConvertStatus(ret);
-}
-
-int32_t RdbGeneralStore::StopCloudSync()
-{
-    if (isClosed_) {
-        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
-        return GenErr::E_ALREADY_CLOSED;
-    }
-    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
-    if (delegate_ == nullptr) {
-        ZLOGE("Database already closed! database:%{public}s", meta_.GetStoreAlias().c_str());
-        return GeneralError::E_ALREADY_CLOSED;
-    }
-    auto status = delegate_->StopTask(DistributedDB::TaskType::BACKGROUND_TASK);
-    if (status != DBStatus::OK) {
-        ZLOGE("Failed to stop cloud data sync, bundleName:%{public}s, storeName:%{public}s",
-            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str());
-    }
-    return ConvertStatus(status);
 }
 } // namespace OHOS::DistributedRdb

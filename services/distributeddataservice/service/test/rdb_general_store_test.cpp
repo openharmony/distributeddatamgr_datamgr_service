@@ -137,23 +137,6 @@ public:
     }
 };
 
-class CloudConflictHandlerMock : public CloudConflictHandler {
-public:
-    int32_t HandleConflict(const std::string &table, const OHOS::DistributedData::VBucket &oldData,
-        const OHOS::DistributedData::VBucket &newData, OHOS::DistributedData::VBucket &upsert) override;
-};
-
-int32_t CloudConflictHandlerMock::HandleConflict(const std::string &table,
-    const OHOS::DistributedData::VBucket &oldData, const OHOS::DistributedData::VBucket &newData,
-    OHOS::DistributedData::VBucket &upsert)
-{
-    (void)table;
-    (void)oldData;
-    (void)newData;
-    (void)upsert;
-    return 0;
-}
-
 void RdbGeneralStoreTest::InitMetaDataManager()
 {
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
@@ -2799,66 +2782,6 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertConflictResolution002, 
 
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
     remove(meta.dataDir.c_str());
-}
-
-/**
-* @tc.name: StopCloudSync
-* @tc.desc: StopCloudSync test delegate_ == nullptr and delegate_ != nullptr
-* @tc.type: FUNC
-*/
-HWTEST_F(RdbGeneralStoreTest, StopCloudSync, TestSize.Level1)
-{
-    std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
-    auto result = store->StopCloudSync();
-    EXPECT_EQ(result, E_ALREADY_CLOSED);
-    metaData_.storeId = "mock";
-    store = std::make_shared<RdbGeneralStore>(metaData_);
-    store->Init();
-    result = store->StopCloudSync();
-    EXPECT_EQ(result, E_OK);
-    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
-    result = store->StopCloudSync();
-    EXPECT_EQ(result, E_ALREADY_CLOSED);
-}
-
-/**
-* @tc.name: OnSyncTrigger
-* @tc.desc: RdbGeneralStore OnSyncTrigger function test Watch and Unwatch
-* @tc.type: FUNC
-*/
-HWTEST_F(RdbGeneralStoreTest, OnSyncTrigger, TestSize.Level1)
-{
-    MockGeneralWatcher watcher;
-    std::string storeId = "testStoreId";
-    int32_t triggerMode = 1;
-    store_->Init();
-    auto result = store_->Watch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
-    EXPECT_EQ(result, GeneralError::E_OK);
-    result = store_->OnSyncTrigger(storeId, triggerMode);
-    EXPECT_EQ(result, GeneralError::E_OK);
-    result = store_->Unwatch(GeneralWatcher::Origin::ORIGIN_ALL, watcher);
-    EXPECT_EQ(result, GeneralError::E_OK);
-    result = store_->OnSyncTrigger(storeId, triggerMode);
-    EXPECT_EQ(result, GeneralError::E_ERROR);
-}
-
-/**
-* @tc.name: SetCloudConflictHandle
-* @tc.desc: SetCloudConflictHandle test
-* @tc.type: FUNC
-*/
-HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
-{
-    auto handler = std::make_shared<CloudConflictHandlerMock>();
-    auto result = store_->SetCloudConflictHandler(handler);
-    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
-    metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    store_->Init();
-    result = store_->SetCloudConflictHandler(handler);
-    EXPECT_EQ(result, E_OK);
-    result = store_->SetCloudConflictHandler(handler);
-    EXPECT_EQ(result, E_OK);
 }
 
 /**

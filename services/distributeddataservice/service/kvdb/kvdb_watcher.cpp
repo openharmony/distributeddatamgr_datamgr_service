@@ -66,12 +66,7 @@ int32_t KVDBWatcher::OnChange(const Origin &origin, const Fields &fields, Change
     }
     return E_OK;
 }
-int32_t KVDBWatcher::OnChange(const std::string &storeId, int32_t triggerMode)
-{
-    (void)storeId;
-    (void)triggerMode;
-    return GeneralError::E_NOT_SUPPORT;
-}
+
 sptr<IKvStoreObserver> KVDBWatcher::GetObserver() const
 {
     std::shared_lock<decltype(mutex_)> lock(mutex_);

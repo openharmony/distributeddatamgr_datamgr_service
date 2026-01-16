@@ -225,17 +225,6 @@ std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::Query(GenQuery &qu
     return { E_OK, nullptr };
 }
 
-int32_t GeneralStoreMock::StopCloudSync()
-{
-    return 0;
-}
-
-int32_t GeneralStoreMock::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
-{
-    mode_ = 1;
-    return E_OK;
-}
-
 int32_t GeneralStoreMock::SetConfig(const StoreConfig &storeConfig)
 {
     return dbStatus_;
