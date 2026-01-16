@@ -28,8 +28,7 @@ public:
     MOCK_METHOD(bool, IsBound, (uint32_t user), (override));
     MOCK_METHOD(int32_t, Execute, (const std::string &table, const std::string &sql), (override));
     MOCK_METHOD(int32_t, SetDistributedTables,
-        (const std::vector<std::string> &tables, int type, const std::vector<Reference> &references, int32_t tableType,
-            bool isAsync),
+        (const std::vector<std::string> &tables, int type, const std::vector<Reference> &references, int32_t tableType),
         (override));
     MOCK_METHOD(int32_t, SetTrackerTable,
         (const std::string &tableName, const std::set<std::string> &trackerColNames,
@@ -81,9 +80,6 @@ public:
     MOCK_METHOD((std::pair<int32_t, uint32_t>), LockCloudDB, (), (override));
     MOCK_METHOD(int32_t, UnLockCloudDB, (), (override));
     MOCK_METHOD(int32_t, UpdateDBStatus, (), (override));
-    MOCK_METHOD(int32_t, SetCloudConflictHandler, (const std::shared_ptr<CloudConflictHandler> &handler), (override));
-    MOCK_METHOD(int32_t, StopCloudSync, (), (override));
-    MOCK_METHOD(int32_t, OnSyncTrigger, (const std::string &storeId, int32_t triggerMode), (override));
 };
 
 } // namespace DistributedData
