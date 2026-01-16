@@ -139,4 +139,11 @@ ExecutorPool::Task ScreenLock::GetTask(uint32_t retry)
         }
     };
 }
+
+ScreenLock::~ScreenLock()
+{
+    // Assign the value of executors_ to nullptr here to ensure that ScreenLock is valid before the asynchronous
+    // task of GetTask ends.
+    executors_ = nullptr;
+}
 } // namespace OHOS::DistributedData

@@ -85,13 +85,11 @@ private:
         Delegate(GeneralStore *delegate, const Watchers &watchers,
                  const StoreMetaData &meta,
                  uint32_t garbageInterval = DEFAULT_INTERVAL);
-        Delegate(const Delegate &delegate);
         ~Delegate();
         operator Store();
         bool operator<(const Time &time) const;
         bool Close();
         int32_t GetArea() const;
-        const std::string &GetDataDir() const;
         const StoreMetaData &GetMeta() const;
         void SetObservers(const Watchers &watchers);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;

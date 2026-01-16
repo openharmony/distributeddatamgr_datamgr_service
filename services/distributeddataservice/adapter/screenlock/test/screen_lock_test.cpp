@@ -159,6 +159,7 @@ HWTEST_F(ScreenLockTest, GetTask001, TestSize.Level0)
     Task();
     auto executor = std::make_shared<OHOS::ExecutorPool>(12, 5);
     screenLock->BindExecutor(executor);
+    executor = nullptr;
     ASSERT_NE(screenLock->executors_, nullptr);
     Task = screenLock->GetTask(MAX_RETRY_TIME - 1);
     Task();
