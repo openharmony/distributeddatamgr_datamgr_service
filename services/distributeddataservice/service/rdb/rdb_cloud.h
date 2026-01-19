@@ -83,8 +83,8 @@ private:
     GeneralError InnerUnLock(FLAG flag);
     static int32_t Convert(std::shared_ptr<DistributedData::Cursor> cursor, std::vector<DBVBucket> &data,
         int32_t code);
-    DBStatus HandleQueryResult(int32_t code, std::shared_ptr<DistributedData::Cursor> cursor, const std::string &tableName,
-        DBVBucket &extend, std::vector<DBVBucket> &data);
+    DBStatus HandleQueryResult(int32_t code, std::shared_ptr<DistributedData::Cursor> cursor,
+        const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_H
