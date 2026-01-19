@@ -89,8 +89,6 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
 
 DBStatus RdbCloud::QueryAllGid(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data)
 {
-    std::shared_ptr<Cursor> cursor = nullptr;
-    int32_t code = E_OK;
     auto [code, cursor] = cloudDB_->QueryAllGid(tableName, ValueProxy::Convert(std::move(extend)));
     return QueryResult(code, cursor, tableName, extend, data);
 }
