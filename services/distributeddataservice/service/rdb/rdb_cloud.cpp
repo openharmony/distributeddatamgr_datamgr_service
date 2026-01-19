@@ -80,9 +80,9 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
     if (status == GeneralError::E_OK && !nodes.empty()) {
         RdbQuery query;
         query.SetQueryNodes(tableName, std::move(nodes));
-        auto [code, cursor] = cloudDB_->Query(query, ValueProxy::Convert(std::move(extend)));
+        std::tie(code, cursor) = cloudDB_->Query(query, ValueProxy::Convert(std::move(extend)));
     } else {
-        auto [code, cursor] = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
+        std::tie(code, cursor) = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     }
     return QueryResult(code, cursor, tableName, extend, data);
 }
