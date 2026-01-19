@@ -44,8 +44,6 @@ public:
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const VBucket &extend);
 
-    virtual std::pair<int32_t, std::shared_ptr<Cursor>> QueryAllGid(const std::string &table, const VBucket &extend);
-
     virtual int32_t PreSharing(const std::string &table, VBuckets &extend);
 
     virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait);
