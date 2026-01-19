@@ -793,6 +793,7 @@ ohos_unittest("RdbServiceImplTokenTest") {
     "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
+    "mock/device_manager_adapter_mock.cpp",
     "rdb_service_impl_token_test.cpp",
   ]
 

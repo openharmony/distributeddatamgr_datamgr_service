@@ -1334,6 +1334,16 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const St
     return store;
 }
 
+bool RdbServiceImpl::IsSupportAutoSyncDeviceType(const std::string &localDeviceId, const std::string &remoteDeviceId)
+{
+    uint32_t localDeviceType = DmAdapter::GetInstance().GetDeviceTypeByUuid(localDeviceId);
+    uint32_t remoteDeviceType = DmAdapter::GetInstance().GetDeviceTypeByUuid(remoteDeviceId);
+    return (localDeviceType == DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE &&
+               remoteDeviceType == DmAdapter::DmDeviceType::DEVICE_TYPE_WATCH) ||
+           (localDeviceType == DmAdapter::DmDeviceType::DEVICE_TYPE_WATCH &&
+               remoteDeviceType == DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE);
+}
+
 std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::string> &devices,
     const StoreMetaData &metaData)
 {
@@ -1342,6 +1352,11 @@ std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::s
     AppDistributedKv::ExtraDataInfo extraInfo = { .userId = metaData.user, .bundleName = metaData.bundleName,
         .storeId = metaData.storeId, .tokenId = metaData.tokenId };
     for (auto &device : devices) {
+        if (!IsSupportAutoSyncDeviceType(metaData.deviceId, device)) {
+            ZLOGW("bundleName:%{public}s, storeName:%{public}s. device type not support auto sync.",
+                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
+            continue;
+        }
         AppDistributedKv::DeviceId deviceId = { .deviceId = device };
         if (instance->ReuseConnect(deviceId, extraInfo) == Status::SUCCESS) {
             onDevices.push_back(device);
@@ -1407,14 +1422,10 @@ int32_t RdbServiceImpl::OnReady(const std::string &device)
         index--;
 
         auto [isCreated, metaData] = LoadSyncMeta(database);
-        if (!isCreated || metaData.instanceId != 0) {
+        if (!isCreated || metaData.instanceId != 0 ||
+            !SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId) || !isSpecialDevice) {
             continue;
         }
-
-        if (SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId) && !isSpecialDevice) {
-            continue;
-        }
-
         synced++;
         DoAutoSync({ device }, metaData, database.GetSyncTables());
     }
@@ -1586,7 +1597,6 @@ void RdbServiceImpl::OnCollaborationChange(const StoreMetaData &metaData, const 
         });
         devices.erase(begin, devices.end());
     }
-
     if (devices.empty()) {
         return;
     }

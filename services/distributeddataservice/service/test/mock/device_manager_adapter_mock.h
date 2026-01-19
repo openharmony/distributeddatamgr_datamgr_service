@@ -39,6 +39,7 @@ public:
     virtual bool IsSameAccount(const std::string &) = 0;
     virtual std::string GetUuidByNetworkId(const std::string &) = 0;
     virtual DeviceInfo GetDeviceInfo(const std::string &) = 0;
+    virtual uint32_t GetDeviceTypeByUuid(const std::string &uuid) = 0;
     virtual std::string ToNetworkID(const std::string &) = 0;
     virtual bool CheckAccessControl(const AccessCaller &, const AccessCallee &) = 0;
     virtual DeviceInfo GetLocalDevice() = 0;
@@ -65,6 +66,7 @@ public:
     MOCK_METHOD(bool, CheckAccessControl, (const AccessCaller &, const AccessCallee &));
     MOCK_METHOD(DeviceInfo, GetLocalDevice, ());
     MOCK_METHOD(std::string, CalcClientUuid, (const std::string &, const std::string &));
+    MOCK_METHOD(uint32_t, GetDeviceTypeByUuid, (const std::string &));
 };
 
 } // namespace DistributedData

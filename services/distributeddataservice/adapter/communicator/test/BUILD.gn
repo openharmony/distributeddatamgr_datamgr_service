@@ -196,7 +196,7 @@ ohos_unittest("ProcessCommunicatorImplTest") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
-ohos_unittest("SoftbusAdapterStandardTest") {
+ohos_unittest("SoftBusAdapterStandardTest") {
   module_out_path = module_output_path
   include_dirs = [
     "${data_service_path}/adapter/account/src",
@@ -345,7 +345,7 @@ group("unittest") {
       ":DeviceManagerAdapterTest",
       ":CommunicatorDataBufferTest",
       ":CommunicationProviderTest",
-      ":SoftbusAdapterStandardTest",
+      ":SoftBusAdapterStandardTest",
       ":AppPipeMgrServiceTest",
     ]
   }
