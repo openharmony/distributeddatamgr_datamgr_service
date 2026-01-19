@@ -79,6 +79,7 @@ public:
     static constexpr const char *CLOUD_PRIVILEGE = "cloud_privilege";
     static constexpr const char *SHARING_RESOURCE = "#_sharing_resource";
     static constexpr const char *HASH_KEY = "#_hash_key";
+    static constexpr const char *CURSOR_EXPIRE = "#_cursor_expire";
 
     static constexpr uint32_t CURRENT_VERSION = 0x10001;
     static constexpr uint32_t CLEAN_WATER_VERSION = 0x10001;
