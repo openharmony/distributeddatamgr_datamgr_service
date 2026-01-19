@@ -799,7 +799,6 @@ ohos_unittest("RdbServiceImplTokenTest") {
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/framework/include",
     "${data_service_path}/service/test/mock",
   ]
 

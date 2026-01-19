@@ -1353,6 +1353,8 @@ std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::s
         .storeId = metaData.storeId, .tokenId = metaData.tokenId };
     for (auto &device : devices) {
         if (!IsSupportAutoSyncDeviceType(metaData.deviceId, device)) {
+            ZLOGW("bundleName:%{public}s, storeName:%{public}s. device type not support auto sync.",
+                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
             continue;
         }
         AppDistributedKv::DeviceId deviceId = { .deviceId = device };

@@ -151,7 +151,9 @@ void SoftBusAdapterStandardTest::SetUpTestCase(void)
     int userId = 0;
     AccountDelegate::GetInstance()->QueryForegroundUserId(userId);
     foregroundUserId_ = std::to_string(userId);
-    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(2, 1);
+    size_t max = 2;
+    size_t min = 1;
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(max, min);
     DeviceManagerAdapter::GetInstance().Init(executors);
 }
 
