@@ -449,7 +449,7 @@ HWTEST_F(RdbCloudTest, QueryAllGid_CursorIsNull, TestSize.Level1)
 {
     std::shared_ptr<Cursor> cursor = nullptr;
     std::string tableName = "testTable";
-    EXPECT_CALL(*mockCloudDB, QueryAllGid(tableName, _)).WillOnce(Return(std::make_pair(E_OK, cursor)));
+    EXPECT_CALL(*mockCloudDB, Query(tableName, _)).WillOnce(Return(std::make_pair(E_OK, cursor)));
     BindAssets snapshots;
     RdbCloud rdbCloud(mockCloudDB, snapshots);
     auto result = rdbCloud.QueryAllGid(tableName, g_DBVBucket, g_DBVBuckets);
@@ -465,7 +465,7 @@ HWTEST_F(RdbCloudTest, QueryAllGid_Abormal, TestSize.Level1)
 {
     std::shared_ptr<MockCursor> mockCursor = std::make_shared<MockCursor>();
     std::string tableName = "testTable";
-    EXPECT_CALL(*mockCloudDB, QueryAllGid(tableName, _)).WillOnce(Return(std::make_pair(E_NETWORK_ERROR, mockCursor)));
+    EXPECT_CALL(*mockCloudDB, Query(tableName, _)).WillOnce(Return(std::make_pair(E_NETWORK_ERROR, mockCursor)));
     BindAssets snapshots;
     RdbCloud rdbCloud(mockCloudDB, snapshots);
     auto result = rdbCloud.QueryAllGid(tableName, g_DBVBucket, g_DBVBuckets);
@@ -481,7 +481,7 @@ HWTEST_F(RdbCloudTest, QueryAllGid_End, TestSize.Level1)
 {
     std::shared_ptr<MockCursor> mockCursor = std::make_shared<MockCursor>();
     std::string tableName = "testTable";
-    EXPECT_CALL(*mockCloudDB, QueryAllGid(tableName, _)).WillOnce(Return(std::make_pair(E_OK, mockCursor)));
+    EXPECT_CALL(*mockCloudDB, Query(tableName, _)).WillOnce(Return(std::make_pair(E_OK, mockCursor)));
     EXPECT_CALL(*mockCursor, GetCount()).WillOnce(Return(COUNT));
     EXPECT_CALL(*mockCursor, GetEntry(_)).WillOnce(Return(E_OK)).WillOnce(Return(E_ERROR));
     EXPECT_CALL(*mockCursor, MoveToNext()).WillRepeatedly(Return(E_OK));
@@ -502,7 +502,7 @@ HWTEST_F(RdbCloudTest, QueryAllGid_NotEnd, TestSize.Level1)
 {
     std::shared_ptr<MockCursor> mockCursor = std::make_shared<MockCursor>();
     std::string tableName = "testTable";
-    EXPECT_CALL(*mockCloudDB, QueryAllGid(tableName, _)).WillOnce(Return(std::make_pair(E_OK, mockCursor)));
+    EXPECT_CALL(*mockCloudDB, Query(tableName, _)).WillOnce(Return(std::make_pair(E_OK, mockCursor)));
     EXPECT_CALL(*mockCursor, GetCount()).WillOnce(Return(COUNT));
     EXPECT_CALL(*mockCursor, GetEntry(_)).WillOnce(Return(E_OK)).WillOnce(Return(E_OK));
     EXPECT_CALL(*mockCursor, MoveToNext()).WillRepeatedly(Return(E_OK));
