@@ -84,17 +84,17 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
     } else {
         std::tie(code, cursor) = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     }
-    return QueryResult(code, cursor, tableName, extend, data);
+    return HandleQueryResult(code, cursor, tableName, extend, data);
 }
 
 DBStatus RdbCloud::QueryAllGid(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data)
 {
     extend[SchemaMeta::CURSOR_EXPIRE] = true;
     auto [code, cursor] = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
-    return QueryResult(code, cursor, tableName, extend, data);
+    return HandleQueryResult(code, cursor, tableName, extend, data);
 }
 
-DBStatus RdbCloud::QueryResult(int32_t code, std::shared_ptr<Cursor> cursor, const std::string &tableName,
+DBStatus RdbCloud::HandleQueryResult(int32_t code, std::shared_ptr<Cursor> cursor, const std::string &tableName,
     DBVBucket &extend, std::vector<DBVBucket> &data)
 {
     if (cursor == nullptr || code != E_OK) {
