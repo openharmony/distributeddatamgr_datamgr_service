@@ -28,8 +28,6 @@
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
-#include "metadata/meta_data_manager.h"
-#include "mock/db_store_mock.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
