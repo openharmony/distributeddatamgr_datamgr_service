@@ -39,11 +39,6 @@ public:
     void SetUp(){};
     void TearDown(){};
 };
-std::shared_ptr<DBStoreMock> CloudInfoTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
-void CloudInfoTest::SetUpTestCase(void)
-{
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
-}
 
 class ServicesCloudServerTest : public testing::Test {
 public:
