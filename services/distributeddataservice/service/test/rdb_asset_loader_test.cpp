@@ -595,24 +595,5 @@ HWTEST_F(RdbWatcherTest, RdbWatcher, TestSize.Level0)
     auto result = watcher->OnChange(origin, primaryFields, std::move(values));
     EXPECT_EQ(result, GeneralError::E_NOT_INIT);
 }
-
-/**
-* @tc.name: OnChange
-* @tc.desc: RdbWatcher OnChange function test.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(RdbWatcherTest, OnChange, TestSize.Level0)
-{
-    std::string storeId = "testStoreId";
-    int32_t triggerMode = 1;
-    std::shared_ptr<RdbWatcher> watcher = std::make_shared<RdbWatcher>();
-    sptr<RdbNotifierProxy> notifier;
-    watcher->SetNotifier(notifier);
-    EXPECT_EQ(watcher->notifier_, nullptr);
-    auto result = watcher->OnChange(storeId, triggerMode);
-    EXPECT_EQ(result, GeneralError::E_NOT_INIT);
-}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

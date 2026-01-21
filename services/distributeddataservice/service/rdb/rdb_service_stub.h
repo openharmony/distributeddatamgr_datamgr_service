@@ -85,8 +85,6 @@ private:
 
     int32_t OnVerifyPromiseInfo(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnStopCloudSync(MessageParcel& data, MessageParcel& reply);
-
     using RequestHandle = int (RdbServiceStub::*)(MessageParcel &, MessageParcel &);
 RDB_UTILS_PUSH_WARNING
 RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
@@ -128,7 +126,6 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
             &RdbServiceStub::OnReportStatistic,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DFX_INFO)] = &RdbServiceStub::OnGetDfxInfo,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_ISSILENT)] = &RdbServiceStub::OnIsSupportSilent,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_STOP_CLOUD_SYNC)] = &RdbServiceStub::OnStopCloudSync,
     };
 RDB_UTILS_POP_WARNING
 };

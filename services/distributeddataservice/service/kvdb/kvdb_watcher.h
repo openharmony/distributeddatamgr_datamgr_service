@@ -29,7 +29,6 @@ public:
     KVDBWatcher();
     int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
     int32_t OnChange(const Origin &origin, const GeneralWatcher::Fields &fields, ChangeData &&datas) override;
-    int32_t OnChange(const std::string &storeId, int32_t triggerMode) override;
     sptr<IKvStoreObserver> GetObserver() const;
     void SetObserver(sptr<IKvStoreObserver> observer);
 

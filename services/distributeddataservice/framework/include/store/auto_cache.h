@@ -94,7 +94,6 @@ private:
         void SetObservers(const Watchers &watchers);
         int32_t OnChange(const Origin &origin, const PRIFields &primaryFields, ChangeInfo &&values) override;
         int32_t OnChange(const Origin &origin, const Fields &fields, ChangeData &&datas) override;
-        int32_t OnChange(const std::string &storeId, int32_t triggerMode) override;
         void PostDataChange(const StoreMetaData &meta, const std::vector<std::string> &tables);
 
     private:

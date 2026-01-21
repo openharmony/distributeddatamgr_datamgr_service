@@ -415,20 +415,4 @@ void AutoCache::Delegate::PostDataChange(const StoreMetaData &meta, const std::v
     auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
-
-int32_t AutoCache::Delegate::OnChange(const std::string &storeId, int32_t triggerMode)
-{
-    Watchers watchers;
-    {
-        std::unique_lock<decltype(mutex_)> lock(mutex_);
-        watchers = watchers_;
-    }
-    for (auto &watcher : watchers) {
-        if (watcher == nullptr) {
-            continue;
-        }
-        watcher->OnChange(storeId, triggerMode);
-    }
-    return Error::E_OK;
-}
 } // namespace OHOS::DistributedData

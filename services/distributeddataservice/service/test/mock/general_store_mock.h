@@ -26,7 +26,7 @@ public:
     bool IsBound(uint32_t user) override;
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
-        const std::vector<Reference> &references, int32_t tableType, bool isAsync) override;
+        const std::vector<Reference> &references, int32_t tableType) override;
     int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
         const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
     int32_t Insert(const std::string &table, VBuckets &&values) override;
@@ -69,14 +69,11 @@ public:
             bool preCount = false) override;
     void SetMockCursor(const std::map<std::string, Value> &entry);
     void SetMockDBStatus(int32_t dbStatus);
-    int32_t StopCloudSync() override;
-    int32_t OnSyncTrigger(const std::string &storeId, int32_t triggerMode) override;
     int32_t SetConfig(const StoreConfig &storeConfig) override;
 
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;
     int32_t dbStatus_ = 0;
-    static int32_t mode_;
 };
 } // namespace DistributedData
 } // namespace OHOS

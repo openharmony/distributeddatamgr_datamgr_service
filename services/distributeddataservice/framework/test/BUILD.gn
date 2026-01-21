@@ -272,10 +272,7 @@ ohos_unittest("BindEventTest") {
 
 ohos_unittest("CloudInfoTest") {
   module_out_path = module_output_path
-  sources = [
-    "cloud_test.cpp",
-    "mock/db_store_mock.cpp"
-  ]
+  sources = [ "cloud_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
@@ -283,7 +280,6 @@ ohos_unittest("CloudInfoTest") {
     "c_utils:utils",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
-    "kv_store:distributeddb",
   ]
 }
 
@@ -306,7 +302,6 @@ ohos_unittest("GeneralStoreTest") {
   external_deps = [
     "c_utils:utils",
     "kv_store:datamgr_common",
-    "kv_store:distributeddb",
   ]
 }
 

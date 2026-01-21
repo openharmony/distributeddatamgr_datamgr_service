@@ -69,28 +69,6 @@ int32_t RdbNotifierProxy::OnChange(const Origin &origin, const PrimaryFields &pr
     return RDB_OK;
 }
 
-int32_t RdbNotifierProxy::OnChange(const std::string &storeId, int32_t triggerMode)
-{
-    MessageParcel data;
-    if (!data.WriteInterfaceToken(GetDescriptor())) {
-        ZLOGE("write descriptor failed");
-        return RDB_ERROR;
-    }
-    if (!ITypesUtil::Marshal(data, storeId, triggerMode)) {
-        ZLOGE("write storeId or triggerMode failed");
-        return RDB_ERROR;
-    }
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_ASYNC);
-    if (Remote()->SendRequest(
-        static_cast<uint32_t>(NotifierIFCode::RDB_NOTIFIER_CMD_AUTO_SYNC_TRIGGER), data, reply, option) != 0) {
-        ZLOGE("storeId:%{public}s, triggerMode:%{public}d send request failed",
-            DistributedData::Anonymous::Change(storeId).c_str(), triggerMode);
-        return RDB_ERROR;
-    }
-    return RDB_OK;
-}
-
 int32_t RdbNotifierProxy::OnComplete(const std::string& storeName, Details&& result)
 {
     MessageParcel data;

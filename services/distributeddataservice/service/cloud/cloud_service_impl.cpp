@@ -242,7 +242,8 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     SyncConfig::UpdateConfig(user, bundleName, config.dbInfo);
     Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        syncManager_.DoCloudSync(SyncManager::SyncInfo(cloudInfo.user, bundleName, "", {}, MODE_SWITCHON));
+        SyncManager::SyncInfo info(cloudInfo.user, bundleName);
+        syncManager_.DoCloudSync(info);
     }
     ZLOGI("ChangeAppSwitch success, id:%{public}s app:%{public}s, switch:%{public}d", Anonymous::Change(id).c_str(),
         bundleName.c_str(), appSwitch);
@@ -1530,11 +1531,8 @@ bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
         return false;
     }
     for (const auto &appInfo : cloudInfo.apps) {
-        if (scene == CloudSyncScene::SERVICE_INIT) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, appInfo.first, "", {}, MODE_PROCESSSTART));
-        } else {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(user, appInfo.first));
-        }
+        SyncManager::SyncInfo info(user, appInfo.first);
+        syncManager_.DoCloudSync(info);
     }
     return true;
 }

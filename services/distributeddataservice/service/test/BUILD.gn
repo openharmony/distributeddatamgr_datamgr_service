@@ -71,7 +71,6 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
-    "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "cloud_data_test.cpp",
   ]
 
@@ -597,7 +596,6 @@ ohos_unittest("RdbServiceTest") {
     "rdb_result_set_stub_test.cpp",
     "relational_store_cursor_test.cpp",
     "rdb_store_utils_test.cpp",
-    "rdb_service_stub_test.cpp",
   ]
 
   include_dirs = [
@@ -868,7 +866,6 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
   ]
 
   if (datamgr_service_object) {
@@ -909,7 +906,6 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
   ]
 
   if (datamgr_service_object) {
@@ -947,7 +943,6 @@ ohos_unittest("ObjectAssetMachineTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
   ]
 
   if (datamgr_service_object) {
@@ -1173,7 +1168,6 @@ ohos_unittest("ObjectSnapshotTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
 

@@ -39,7 +39,6 @@ struct API_EXPORT StoreMetaData : public Serializable {
     bool isNeedCompress = false;
     bool enableCloud = false;
     bool cloudAutoSync = false;
-    bool autoSyncSwitch = true;
     int32_t dataType = -1;
     int32_t storeType = -1;
     int32_t securityLevel = 0;

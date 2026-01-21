@@ -56,7 +56,6 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(account)], account);
     SetValue(node[GET_NAME(dataType)], dataType);
     SetValue(node[GET_NAME(enableCloud)], enableCloud);
-    SetValue(node[GET_NAME(autoSyncSwitch)], autoSyncSwitch);
     SetValue(node[GET_NAME(cloudAutoSync)], cloudAutoSync);
     SetValue(node[GET_NAME(asyncDownloadAsset)], asyncDownloadAsset);
     SetValue(node[GET_NAME(isNeedUpdateDeviceId)], isNeedUpdateDeviceId);
@@ -99,7 +98,6 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(account), account);
     GetValue(node, GET_NAME(dataType), dataType);
     GetValue(node, GET_NAME(enableCloud), enableCloud);
-    GetValue(node, GET_NAME(autoSyncSwitch), autoSyncSwitch);
     GetValue(node, GET_NAME(cloudAutoSync), cloudAutoSync);
     GetValue(node, GET_NAME(asyncDownloadAsset), asyncDownloadAsset);
     GetValue(node, GET_NAME(isNeedUpdateDeviceId), isNeedUpdateDeviceId);
@@ -142,7 +140,6 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
         Constant::NotEqual(isSearchable, metaData.isSearchable) ||
         Constant::NotEqual(isNeedCompress, metaData.isNeedCompress) ||
         Constant::NotEqual(enableCloud, metaData.enableCloud) ||
-        Constant::NotEqual(autoSyncSwitch, metaData.autoSyncSwitch) ||
         Constant::NotEqual(cloudAutoSync, metaData.cloudAutoSync) ||
         Constant::NotEqual(isManualClean, metaData.isManualClean) ||
         Constant::NotEqual(isNeedUpdateDeviceId, metaData.isNeedUpdateDeviceId)) {

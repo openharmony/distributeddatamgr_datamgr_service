@@ -633,8 +633,8 @@ int32_t KVDBGeneralStore::AddRef()
     return ++ref_;
 }
 
-int32_t KVDBGeneralStore::SetDistributedTables(const std::vector<std::string> &tables,
-    int32_t type, const std::vector<Reference> &references, int32_t tableType, bool isAsync)
+int32_t KVDBGeneralStore::SetDistributedTables(
+    const std::vector<std::string> &tables, int32_t type, const std::vector<Reference> &references, int32_t tableType)
 {
     return GeneralError::E_OK;
 }
@@ -894,15 +894,5 @@ std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::Query(GenQuery &qu
     const std::vector<std::string> &columns, bool preCount)
 {
     return { GeneralError::E_NOT_SUPPORT, nullptr };
-}
-
-int32_t KVDBGeneralStore::StopCloudSync()
-{
-    return GeneralError::E_NOT_SUPPORT;
-}
-
-int32_t KVDBGeneralStore::OnSyncTrigger(const std::string &storeId, int32_t triggerMode)
-{
-    return GeneralError::E_NOT_SUPPORT;
 }
 } // namespace OHOS::DistributedKv
