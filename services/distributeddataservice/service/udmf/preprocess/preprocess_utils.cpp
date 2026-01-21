@@ -47,9 +47,6 @@ constexpr const char *FILE_SCHEME = "file";
 constexpr const char *TAG = "PreProcessUtils::";
 constexpr const char *FILE_SCHEME_PREFIX = "file://";
 constexpr const char *DOCS_LOCAL_TAG = "/docs/";
-constexpr const char *IMG_LOCAL_URI = "file:///";
-constexpr const char *DOC_LOCAL_URI = "file:///docs/";
-constexpr const char *DOC_URI_PREFIX = "file://docs/";
 constexpr const char *DOC_LEVEL_SEPERATOR = "/\\";
 static constexpr uint32_t DOCS_LOCAL_PATH_SUBSTR_START_INDEX = 1;
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
@@ -533,6 +530,7 @@ void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, b
         PreProcessUtils::ProcessRecord(record, tokenId, isLocal, strUris);
     }
     for (const auto &item : strUris) {
+        // If the value is PermissionPolicy::UNKNOW, it means the data comes from an earlier version.
         if (item.second == PermissionPolicy::READ_WRITE || item.second == PermissionPolicy::UNKNOW) {
             writeUris.emplace_back(item.first);
         } else if (item.second == PermissionPolicy::ONLY_READ) {
@@ -745,23 +743,6 @@ bool PreProcessUtils::GetSpecificBundleName(const std::string &bundleName, int32
 
 bool PreProcessUtils::JudgeFileUriExist(const std::string &uri, uint32_t tokenId)
 {
-    std::string oldUriStr = uri;
-    std::string newUriStr;
-    if (oldUriStr.find(IMG_LOCAL_URI) != 0) {
-        return false;
-    }
-    if (oldUriStr.find(DOC_LOCAL_URI) == 0) {
-        newUriStr = oldUriStr.replace(0, std::strlen(DOC_LOCAL_URI), DOC_URI_PREFIX);
-    } else {
-        std::string bundleName;
-        std::string specificBundleName;
-        if (!GetSpecificBundleNameByTokenId(tokenId, specificBundleName, bundleName)) {
-            ZLOGE("GetSpecificBundleNameByTokenId failed, tokenId:%{public}u", tokenId);
-            return false;
-        }
-        newUriStr = oldUriStr.replace(0, std::strlen(IMG_LOCAL_URI), FILE_SCHEME_PREFIX + specificBundleName + "/");
-    }
-
     int32_t userId = 0;
     if (GetHapUidByToken(tokenId, userId) != E_OK) {
         ZLOGE("GetHapUidByToken failed, tokenId:%{public}u", tokenId);
@@ -769,9 +750,9 @@ bool PreProcessUtils::JudgeFileUriExist(const std::string &uri, uint32_t tokenId
     }
 
     std::string physicalPath;
-    int32_t ret = AppFileService::SandboxHelper::GetPhysicalPath(newUriStr, std::to_string(userId), physicalPath);
+    int32_t ret = AppFileService::SandboxHelper::GetPhysicalPath(uri, std::to_string(userId), physicalPath);
     if (ret != 0) {
-        ZLOGE("get phy path fail, uri=%{private}s", newUriStr.c_str());
+        ZLOGE("get phy path fail, uri=%{private}s", uri.c_str());
         return false;
     }
 
@@ -783,16 +764,16 @@ bool PreProcessUtils::JudgeFileUriExist(const std::string &uri, uint32_t tokenId
             return true;
         }
         ZLOGE("stat fail, uri=%{private}s, path=%{private}s, err=%{public}d",
-            newUriStr.c_str(), physicalPath.c_str(), errno);
+            uri.c_str(), physicalPath.c_str(), errno);
         return false;
     }
 
     if ((buf.st_mode & S_IFMT) == S_IFDIR) {
-        ZLOGE("is dir, uri=%{private}s, path=%{private}s", newUriStr.c_str(), physicalPath.c_str());
+        ZLOGE("is dir, uri=%{private}s, path=%{private}s", uri.c_str(), physicalPath.c_str());
         return false;
     }
     ZLOGI("uri=%{private}s, path=%{private}s, size=%{public}zu",
-        newUriStr.c_str(), physicalPath.c_str(), static_cast<size_t>(buf.st_size));
+        uri.c_str(), physicalPath.c_str(), static_cast<size_t>(buf.st_size));
     return true;
 }
 
