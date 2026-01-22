@@ -20,12 +20,12 @@
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
-class API_EXPORT CloudReport {
+class CloudReport {
 public:
     using ReportParam = DistributedData::ReportParam;
     virtual ~CloudReport() = default;
     API_EXPORT static CloudReport *GetInstance();
-    API_EXPORT static bool RegisterCloudReportInstance(CloudReport *instance);
+    static bool RegisterCloudReportInstance(CloudReport *instance);
     virtual std::string GetPrepareTraceId(int32_t userId);
     virtual std::string GetRequestTraceId(int32_t userId);
     virtual bool Report(const ReportParam &reportParam);

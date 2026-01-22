@@ -23,12 +23,12 @@
 #include "store/general_watcher.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT CloudDB {
+class CloudDB {
 public:
     using Watcher = GeneralWatcher;
     using Async = std::function<void(std::map<std::string, std::map<std::string, int32_t>>)>;
     using Devices = std::vector<std::string>;
-    virtual ~CloudDB() = default;
+    API_EXPORT virtual ~CloudDB() = default;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql, const VBucket &extend);
 
@@ -42,15 +42,15 @@ public:
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, const VBucket &extend);
 
-    virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const VBucket &extend);
+    API_EXPORT virtual std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const VBucket &extend);
 
-    virtual int32_t PreSharing(const std::string &table, VBuckets &extend);
+    API_EXPORT virtual int32_t PreSharing(const std::string &table, VBuckets &extend);
 
-    virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait);
+    API_EXPORT virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait);
 
-    virtual int32_t Watch(int32_t origin, Watcher &watcher);
+    API_EXPORT virtual int32_t Watch(int32_t origin, Watcher &watcher);
 
-    virtual int32_t Unwatch(int32_t origin, Watcher &watcher);
+    API_EXPORT virtual int32_t Unwatch(int32_t origin, Watcher &watcher);
 
     virtual int32_t Lock();
 
@@ -62,9 +62,9 @@ public:
 
     virtual int32_t Close();
 
-    virtual std::pair<int32_t, std::string> GetEmptyCursor(const std::string &tableName);
+    API_EXPORT virtual std::pair<int32_t, std::string> GetEmptyCursor(const std::string &tableName);
 
-    virtual void SetPrepareTraceId(const std::string &prepareTraceId);
+    API_EXPORT virtual void SetPrepareTraceId(const std::string &prepareTraceId);
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_H

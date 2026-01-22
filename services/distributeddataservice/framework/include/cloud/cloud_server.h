@@ -23,7 +23,7 @@
 #include "executor_pool.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT CloudServer {
+class CloudServer {
 public:
     using Database = SchemaMeta::Database;
     API_EXPORT static CloudServer *GetInstance();
@@ -38,12 +38,12 @@ public:
     virtual std::shared_ptr<AssetLoader> ConnectAssetLoader(uint32_t tokenId, const Database &dbMeta);
     virtual std::shared_ptr<CloudDB> ConnectCloudDB(const std::string &bundleName, int user, const Database &dbMeta);
     virtual std::shared_ptr<CloudDB> ConnectCloudDB(uint32_t tokenId, const Database &dbMeta);
-    virtual std::shared_ptr<SharingCenter> ConnectSharingCenter(int32_t userId, const std::string &bunleName);
-    virtual void Clean(int32_t userId);
-    virtual void ReleaseUserInfo(int32_t userId);
-    virtual void Bind(std::shared_ptr<ExecutorPool> executor);
-    virtual bool IsSupportCloud(int32_t userId);
-    virtual bool CloudDriverUpdated(const std::string &bundleName);
+    API_EXPORT virtual std::shared_ptr<SharingCenter> ConnectSharingCenter(int32_t userId, const std::string &bunleName);
+    API_EXPORT virtual void Clean(int32_t userId);
+    API_EXPORT virtual void ReleaseUserInfo(int32_t userId);
+    API_EXPORT virtual void Bind(std::shared_ptr<ExecutorPool> executor);
+    API_EXPORT virtual bool IsSupportCloud(int32_t userId);
+    API_EXPORT virtual bool CloudDriverUpdated(const std::string &bundleName);
 
 private:
     static CloudServer *instance_;

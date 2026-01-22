@@ -33,12 +33,12 @@ public:
           index(meta.instanceId)
     {
     }
-    bool Marshal(json &node) const override;
-    bool Unmarshal(const json &node) override;
-    bool operator==(const CloudMark &cloudMark) const;
+    API_LOCAL bool Marshal(json &node) const override;
+    API_LOCAL bool Unmarshal(const json &node) override;
+    API_LOCAL bool operator==(const CloudMark &cloudMark) const;
     bool operator!=(const CloudMark &cloudMark) const;
     std::string GetKey();
-    std::string GetKey(const std::initializer_list<std::string> &fields);
+    API_LOCAL std::string GetKey(const std::initializer_list<std::string> &fields);
 };
 
 } // namespace OHOS::DistributedData

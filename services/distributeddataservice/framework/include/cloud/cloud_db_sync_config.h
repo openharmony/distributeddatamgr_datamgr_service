@@ -28,10 +28,10 @@ public:
         std::string tableName = "";
         bool cloudSyncEnabled = true;
 
-        bool Marshal(json &node) const override;
-        bool Unmarshal(const json &node) override;
-        bool operator==(const TableSyncConfig &config) const;
-        bool operator!=(const TableSyncConfig &config) const;
+        API_LOCAL bool Marshal(json &node) const override;
+        API_LOCAL bool Unmarshal(const json &node) override;
+        API_LOCAL bool operator==(const TableSyncConfig &config) const;
+        API_LOCAL bool operator!=(const TableSyncConfig &config) const;
     };
 
     struct API_EXPORT DbSyncConfig final : public Serializable {
@@ -39,19 +39,19 @@ public:
         bool cloudSyncEnabled = true;
         std::vector<TableSyncConfig> tableConfigs;
 
-        bool Marshal(json &node) const override;
-        bool Unmarshal(const json &node) override;
-        bool operator==(const DbSyncConfig &config) const;
-        bool operator!=(const DbSyncConfig &config) const;
+        API_LOCAL bool Marshal(json &node) const override;
+        API_LOCAL bool Unmarshal(const json &node) override;
+        API_LOCAL bool operator==(const DbSyncConfig &config) const;
+        API_LOCAL bool operator!=(const DbSyncConfig &config) const;
     };
 
     std::string bundleName = "";
     std::vector<DbSyncConfig> dbConfigs;
 
-    bool Marshal(json &node) const override;
-    bool Unmarshal(const json &node) override;
-    bool operator==(const CloudDbSyncConfig &config) const;
-    bool operator!=(const CloudDbSyncConfig &config) const;
+    API_LOCAL bool Marshal(json &node) const override;
+    API_LOCAL bool Unmarshal(const json &node) override;
+    API_LOCAL bool operator==(const CloudDbSyncConfig &config) const;
+    API_LOCAL bool operator!=(const CloudDbSyncConfig &config) const;
 
     std::string GetKey(int32_t userId, const std::string &bundleName);
 

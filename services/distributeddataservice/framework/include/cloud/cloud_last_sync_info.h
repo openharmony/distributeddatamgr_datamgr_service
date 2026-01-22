@@ -29,13 +29,13 @@ public:
     int32_t code = -1;
     int32_t syncStatus = 0;
     int32_t instanceId = 0;
-    bool Marshal(json &node) const override;
-    bool Unmarshal(const json &node) override;
+    API_LOCAL bool Marshal(json &node) const override;
+    API_LOCAL bool Unmarshal(const json &node) override;
     static std::string GetKey(const int32_t user, const std::string &bundleName,
                               const std::string &storeId, int32_t instanceId = 0);
 private:
     static constexpr const char *INFO_PREFIX = "CLOUD_LAST_SYNC_INFO";
-    static std::string GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields);
+    API_LOCAL static std::string GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields);
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_LAST_SYNC_INFO_H
