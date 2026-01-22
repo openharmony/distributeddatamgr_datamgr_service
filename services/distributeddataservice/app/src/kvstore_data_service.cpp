@@ -88,10 +88,10 @@ constexpr const char* CLONE_KEY_ALIAS = "distributed_db_backup_key";
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
 constexpr char FOUNDATION_PROCESS_NAME[] = "foundation";
-constexpr int MAX_DOWNLOAD_ASSETS_COUNT = 50;
-constexpr int MAX_DOWNLOAD_TASK = 5;
 constexpr int KEY_SIZE = 32;
 constexpr int AES_256_NONCE_SIZE = 32;
+constexpr int MAX_DOWNLOAD_ASSETS_COUNT = 50;
+constexpr int MAX_DOWNLOAD_TASK = 5;
 constexpr int MAX_CLIENT_DEATH_OBSERVER_SIZE = 16;
 
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
@@ -566,7 +566,7 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
 }
 
 std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
-    const StoreMetaData &metaData, const std::vector<uint8_t> &iv)
+    const std::vector<uint8_t> &iv, const StoreMetaData &metaData)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
         return {};
@@ -604,7 +604,7 @@ std::string KvStoreDataService::GetSecretKeyBackup(const std::vector<Distributed
             };
             auto key = storeMeta.GetSecretKey();
             SecretKeyMetaData secretKeyMeta;
-            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta, storeMeta, iv);
+            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta, iv, storeMeta);
             if (reEncryptedKey.size() == 0) {
                 continue;
             };
