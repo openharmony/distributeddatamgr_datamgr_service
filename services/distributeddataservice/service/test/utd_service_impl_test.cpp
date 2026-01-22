@@ -36,14 +36,14 @@ namespace OHOS::Test {
 namespace DistributedDataTest {
 constexpr const char *HAP_BUNDLE_NAME1 = "ohos.utd_service_test.demo1";
 constexpr const char *MANAGE_DYNAMIC_UTD_TYPE = "ohos.permission.MANAGE_DYNAMIC_UTD_TYPE";
-static constexpr size_t THREAD_MIN = 0;
-static constexpr size_t THREAD_MAX = 2;
 
 class UtdServiceImplTest : public testing::Test {
 public:
     static void SetUpTestCase(void)
     {
-        executors_ = std::make_shared<OHOS::ExecutorPool>(THREAD_MAX, THREAD_MIN);
+        size_t max = 2;
+        size_t min = 1;
+        executors_ = std::make_shared<OHOS::ExecutorPool>(max, min);
     }
     static void TearDownTestCase(void)
     {

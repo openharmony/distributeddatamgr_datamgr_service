@@ -20,6 +20,9 @@
 #include "utd_service_stub.h"
 namespace OHOS {
 namespace UDMF {
+/*
+ * UTD server implementation
+ */
 class UtdServiceImpl final : public UtdServiceStub {
 public:
     UtdServiceImpl() = default;

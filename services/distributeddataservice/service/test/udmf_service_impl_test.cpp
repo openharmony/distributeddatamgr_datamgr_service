@@ -951,6 +951,99 @@ HWTEST_F(UdmfServiceImplTest, PushDelayData002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetData001
+ * @tc.desc: test invalid parameter
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, GetData001, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = IPCSkeleton::GetSelfTokenID();
+    
+    UnifiedData data;
+    UdmfServiceImpl service;
+    auto status = service.GetData(query, data);
+    EXPECT_EQ(status, E_INVALID_PARAMETERS);
+}
+
+/**
+ * @tc.name: GetData004
+ * @tc.desc: test invalid tokenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, GetData004, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = "k1";
+    query.tokenId = 0;
+
+    UdmfServiceImpl service;
+    UnifiedData getData;
+    auto status = service.GetData(query, getData);
+    EXPECT_EQ(status, E_ERROR);
+}
+
+/**
+ * @tc.name: RetrieveData002
+ * @tc.desc: RetrieveData success
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, RetrieveData002, TestSize.Level1)
+{
+    QueryOption query;
+    query.tokenId = IPCSkeleton::GetSelfTokenID();
+
+    CustomOption option;
+    option.intention = UD_INTENTION_DRAG;
+    option.tokenId = IPCSkeleton::GetSelfTokenID();
+
+    UdmfServiceImpl service;
+    auto executors = std::make_shared<OHOS::ExecutorPool>(2, 1);
+    DistributedData::FeatureSystem::Feature::BindInfo bindInfo;
+    bindInfo.executors = executors;
+    service.OnBind(bindInfo);
+    UnifiedData insertedData;
+    insertedData.AddRecord(std::make_shared<PlainText>());
+    auto status = service.SaveData(option, insertedData, query.key);
+    EXPECT_EQ(status, E_OK);
+
+    UnifiedData getData;
+    status = service.RetrieveData(query, getData);
+    EXPECT_EQ(status, E_OK);
+}
+
+/**
+ * @tc.name: RetrieveData003
+ * @tc.desc: RetrieveData fail
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, RetrieveData003, TestSize.Level1)
+{
+    QueryOption query;
+    query.tokenId = IPCSkeleton::GetSelfTokenID();
+
+    CustomOption option;
+    option.intention = UD_INTENTION_DRAG;
+    option.tokenId = IPCSkeleton::GetSelfTokenID();
+
+    UdmfServiceImpl service;
+    auto executors = std::make_shared<OHOS::ExecutorPool>(2, 1);
+    DistributedData::FeatureSystem::Feature::BindInfo bindInfo;
+    bindInfo.executors = executors;
+    service.OnBind(bindInfo);
+    UnifiedData insertedData;
+    insertedData.AddRecord(std::make_shared<PlainText>());
+    auto status = service.SaveData(option, insertedData, query.key);
+    EXPECT_EQ(status, E_OK);
+
+    UnifiedData getData;
+    executors->poolStatus = Executor::Status::IS_STOPPING;
+    status = service.RetrieveData(query, getData);
+    EXPECT_EQ(status, E_DB_ERROR);
+}
+
+/**
  * @tc.name: SaveData005
  * @tc.desc: test no permission
  * @tc.type: FUNC

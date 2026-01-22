@@ -91,6 +91,8 @@ group("fuzztest") {
       "udmfservicesyncandmeta_fuzzer:fuzztest",
       "udmfservicesyncandmetaconcurrent_fuzzer:fuzztest",
       "udmfserviceverifypermission_fuzzer:fuzztest",
+      "utdservice_fuzzer:fuzztest",
+      "utdserviceconcurrent_fuzzer:fuzztest"
     ]
   }
 }
