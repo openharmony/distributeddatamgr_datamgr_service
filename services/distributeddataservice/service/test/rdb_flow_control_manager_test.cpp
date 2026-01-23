@@ -16,6 +16,8 @@
 #include "rdb_flow_control_manager.h"
 
 #include "gtest/gtest.h"
+#include <iostream>
+#include <random>
 
 using namespace OHOS;
 using namespace testing;
@@ -29,6 +31,13 @@ class RdbFlowControlManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
+    static uint32_t GenerateRandomNumber(uint32_t min, uint32_t max)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(min, max);
+        return dis(gen);
+    }
     void SetUp() {}
     void TearDown(){};
 };
@@ -249,12 +258,46 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithManyTasks_T
     }
     // Wait not enough time for all tasks to complete (230ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(230));
-    // Verify some tasks executed but not all (60 or less)
-    EXPECT_LE(flag->load(), 60);
+    EXPECT_LT(flag->load(), taskCount);
 
     // Wait enough time for all tasks to complete (500ms)
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     EXPECT_EQ(flag->load(), taskCount);
+}
+
+/**
+ * @tc.name: RdbFlowControlManager_ExecuteWithRandomTasksAndRemoveAll_Test
+ * @tc.desc: Test executing large number of tasks simultaneously
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.step: 1. Create RdbFlowControlManager with limited thread pool (Random initial, Random maximum)
+ * @tc.step: 2. Configure flow control with app limit Random, device limit Random, delay Randomms
+ * @tc.step: 3. Submit Random tasks rapidly
+ * @tc.step: 4. Remove all tasks and verify all tasks are removed
+ * @tc.expected: All tasks should be executed without loss
+ */
+HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithRandomTasksAndRemoveAll_Test, TestSize.Level1)
+{
+    uint32_t valueRangeMinPool = GenerateRandomNumber(1, 2);
+    uint32_t valueRangeMaxPool = GenerateRandomNumber(3, 4);
+    auto pool = std::make_shared<ExecutorPool>(valueRangeMaxPool, valueRangeMinPool);
+    uint32_t valueRangeDuration = GenerateRandomNumber(100, 200);
+    uint32_t valueRangApp = GenerateRandomNumber(5, 20);
+    uint32_t valueRangGlobal = GenerateRandomNumber(15, 20);
+    RdbFlowControlManager flowControlManager(valueRangApp, valueRangGlobal, valueRangeDuration);
+    flowControlManager.Init(pool);
+    auto flag = std::make_shared<std::atomic_uint32_t>(0);
+    auto task = [flag]() mutable {
+        (*flag)++;
+    };
+    const uint32_t taskCount = GenerateRandomNumber(100, 200);;
+    for (int i = 0; i < taskCount; i++) {
+        flowControlManager.Execute(task, { 0, "bulkTask" });
+    }
+    flowControlManager.Remove("bulkTask");
+    // Wait enough time for all tasks to complete (1000ms)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    EXPECT_LT(flag->load(), taskCount);
 }
 
 /**

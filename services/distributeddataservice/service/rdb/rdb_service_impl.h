@@ -206,7 +206,7 @@ private:
     int DoAutoSync(const std::vector<std::string> &devices, const StoreMetaData &metaData,
         const std::vector<std::string> &tables);
 
-    bool IsSupportAutoSyncDeviceType(const std::string &localDeviceId, const std::string &remoteDeviceId);
+    bool IsSupportAutoSync(const std::string &localDeviceId, const std::string &remoteDeviceId);
     
     std::vector<std::string> GetReuseDevice(const std::vector<std::string> &devices, const StoreMetaData &metaData);
 

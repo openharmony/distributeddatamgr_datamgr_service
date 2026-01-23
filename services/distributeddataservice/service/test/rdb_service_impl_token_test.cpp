@@ -359,7 +359,9 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo008, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, GetReuseDevice001, TestSize.Level0)
 {
-    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(14)).WillOnce(Return(109));
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_WATCH));
     RdbServiceImpl service;
     std::vector<std::string> devices = { "device1" };
     StoreMetaData metaData;
@@ -377,7 +379,9 @@ HWTEST_F(RdbServiceImplTokenTest, GetReuseDevice001, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, GetReuseDevice002, TestSize.Level0)
 {
-    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(14)).WillOnce(Return(14));
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE));
     RdbServiceImpl service;
     std::vector<std::string> devices = { "device1" };
     StoreMetaData metaData;
@@ -388,46 +392,52 @@ HWTEST_F(RdbServiceImplTokenTest, GetReuseDevice002, TestSize.Level0)
 
 /**
  * @tc.name: IsSupportAutoSyncDeviceType001
- * @tc.desc: Test IsSupportAutoSyncDeviceType when local and remote device can reusable.
+ * @tc.desc: Test IsSupportAutoSync when local and remote device can reusable.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTokenTest, IsSupportAutoSyncDeviceType001, TestSize.Level0)
 {
-    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(14)).WillOnce(Return(109));
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_WATCH));
     RdbServiceImpl service;
-    auto result = service.IsSupportAutoSyncDeviceType("device", "device1");
+    auto result = service.IsSupportAutoSync("device", "device1");
     EXPECT_EQ(result, true);
 }
 
 /**
  * @tc.name: IsSupportAutoSyncDeviceType002
- * @tc.desc: Test IsSupportAutoSyncDeviceType when local and remote device can not reusable.
+ * @tc.desc: Test IsSupportAutoSync when local and remote device can not reusable.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTokenTest, IsSupportAutoSyncDeviceType002, TestSize.Level0)
 {
-    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(14)).WillOnce(Return(14));
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE));
     RdbServiceImpl service;
-    auto result = service.IsSupportAutoSyncDeviceType("device", "device1");
+    auto result = service.IsSupportAutoSync("device", "device1");
     EXPECT_EQ(result, false);
 }
 
 /**
  * @tc.name: IsSupportAutoSyncDeviceType003
- * @tc.desc: Test IsSupportAutoSyncDeviceType when local and remote device can reusable.
+ * @tc.desc: Test IsSupportAutoSync when local and remote device can reusable.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
 HWTEST_F(RdbServiceImplTokenTest, IsSupportAutoSyncDeviceType003, TestSize.Level0)
 {
-    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_)).WillOnce(Return(109)).WillOnce(Return(14));
+    EXPECT_CALL(*deviceManagerAdapterMock, GetDeviceTypeByUuid(_))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_WATCH))
+        .WillOnce(Return(DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE));
     RdbServiceImpl service;
-    auto result = service.IsSupportAutoSyncDeviceType("device", "device1");
+    auto result = service.IsSupportAutoSync("device", "device1");
     EXPECT_EQ(result, true);
 }
 } // namespace DistributedRDBTest

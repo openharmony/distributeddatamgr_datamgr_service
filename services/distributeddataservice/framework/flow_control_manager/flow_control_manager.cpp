@@ -102,14 +102,22 @@ void FlowControlManager::Schedule()
     if (!isRunning_ || pool_ == nullptr) {
         return;
     }
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    if (tasks_.empty() || !isRunning_) {
-        if (taskId_ != ExecutorPool::INVALID_TASK_ID && pool_ != nullptr) {
-            pool_->Remove(taskId_);
+    auto taskId = ExecutorPool::INVALID_TASK_ID;
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (tasks_.empty()) {
+            if (taskId_ == ExecutorPool::INVALID_TASK_ID) {
+                return;
+            }
+            taskId = taskId_;
+            taskId_ = ExecutorPool::INVALID_TASK_ID;
         }
-        taskId_ = ExecutorPool::INVALID_TASK_ID;
+    }
+    if (taskId != ExecutorPool::INVALID_TASK_ID && pool_ != nullptr) {
+        pool_->Remove(taskId, true);
         return;
     }
+    std::lock_guard<decltype(mutex_)> lock(mutex_);
     const InnerTask &task = tasks_.top();
     Tp now = std::chrono::steady_clock::now();
     auto duration = task.time < now ? std::chrono::steady_clock::duration(0) : task.time - now;
