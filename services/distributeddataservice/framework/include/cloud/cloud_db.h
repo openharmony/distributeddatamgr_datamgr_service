@@ -46,7 +46,8 @@ public:
 
     API_EXPORT virtual int32_t PreSharing(const std::string &table, VBuckets &extend);
 
-    API_EXPORT virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait);
+    API_EXPORT virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async,
+        int32_t wait);
 
     API_EXPORT virtual int32_t Watch(int32_t origin, Watcher &watcher);
 
