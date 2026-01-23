@@ -389,7 +389,7 @@ bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLo
     if (!inserted) {
         return true;
     }
-    if (metaStore_ != nullptr && metaObserver != nullptr) {
+    if (metaStore_ != nullptr) {
         int mode = isLocal ? DistributedDB::OBSERVER_CHANGES_LOCAL_ONLY
                            : (DistributedDB::OBSERVER_CHANGES_NATIVE
                            | DistributedDB::OBSERVER_CHANGES_FOREIGN);
@@ -399,12 +399,13 @@ bool MetaDataManager::Subscribe(std::string prefix, Observer observer, bool isLo
                 DistributedDB::Key(), DistributedDB::OBSERVER_CHANGES_CLOUD, metaObserver);
         }
         if (status != DistributedDB::DBStatus::OK) {
+            auto err = metaStore_->UnRegisterObserver(metaObserver);
             metaObservers_.Erase(prefix);
-            ZLOGE("register meta observer failed :%{public}d.", status);
+            ZLOGE("Register status :%{public}d UnReg err:%{public}d.", status, err);
             return false;
         }
     }
-    return false;
+    return true;
 }
 
 bool MetaDataManager::Unsubscribe(std::string filter)
@@ -412,19 +413,13 @@ bool MetaDataManager::Unsubscribe(std::string filter)
     if (!inited_) {
         return false;
     }
-    std::shared_ptr<MetaObserver> metaObserver = nullptr;
-    metaObservers_.ComputeIfPresent(filter,
-        [&metaObserver](const std::string &key, std::shared_ptr<MetaObserver> &obs) {
-            metaObserver = obs;
-            return false;
-    });
-    if (metaStore_ == nullptr || metaObserver == nullptr) {
-        return false;
+    auto [err, metaObserver] = metaObservers_.Find(filter);
+    if (!err) {
+        return true;
     }
-    auto status =  metaStore_->UnRegisterObserver(metaObserver);
-    if (status != DistributedDB::OK) {
-        ZLOGE("UnRegister meta observer failed :%{public}d.", status);
-        return false;
+    metaObservers_.Erase(filter);
+    if (metaStore_ != nullptr && metaObserver != nullptr) {
+        return metaStore_->UnRegisterObserver(metaObserver);
     }
     return true;
 }

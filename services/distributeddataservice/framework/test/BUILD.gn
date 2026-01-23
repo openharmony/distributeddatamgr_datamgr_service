@@ -333,6 +333,9 @@ ohos_unittest("MetaDataManagerTest") {
   ]
 
   configs = [ ":module_private_config" ]
+  cflags = [
+    "-fno-access-control",  # Ignore Private Member Access Control
+  ]
 
   external_deps = [
     "c_utils:utils",

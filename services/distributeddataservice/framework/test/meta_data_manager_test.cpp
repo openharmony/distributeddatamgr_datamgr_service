@@ -241,4 +241,30 @@ HWTEST_F(MetaDataManagerTest, DelMetaTest002, TestSize.Level1)
     EXPECT_TRUE(flag);
     MetaDataManager::GetInstance().SetCloudSyncer(nullptr);
 }
+
+/**
+ * @tc.name: Subscribe001
+ * @tc.desc: Trigger sync.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(MetaDataManagerTest, Subscribe001, TestSize.Level1)
+{
+    std::string prefix = "prefix001";
+    MetaDataManager::Observer observer = [](const std::string &key, const std::string &value, int32_t flag) {
+        return false;
+    };
+    auto hold = MetaDataManager::GetInstance().metaStore_;
+    MetaDataManager::GetInstance().metaStore_ = nullptr;
+    bool res =  MetaDataManager::GetInstance().Subscribe(prefix, observer, false);
+    EXPECT_TRUE(res);
+    res =  MetaDataManager::GetInstance().Subscribe(prefix, observer, false);
+    EXPECT_TRUE(res);
+    res = MetaDataManager::GetInstance().Unsubscribe("errPrefix");
+    EXPECT_TRUE(res);
+    res = MetaDataManager::GetInstance().Unsubscribe(prefix);
+    EXPECT_TRUE(res);
+    MetaDataManager::GetInstance().metaStore_ = hold;
+}
 } // namespace OHOS::Test
