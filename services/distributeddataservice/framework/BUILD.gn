@@ -27,9 +27,7 @@ config("module_config") {
 
 config("module_public_config") {
   visibility = [ ":*" ]
-  include_dirs = [
-    "include",
-  ]
+  include_dirs = [ "include" ]
 }
 
 ohos_shared_library("distributeddatasvcfwk") {
@@ -42,16 +40,16 @@ ohos_shared_library("distributeddatasvcfwk") {
     debug = false
   }
   sources = [
-    "account/account_delegate.cpp",
     "access_check/app_access_check_config_manager.cpp",
+    "account/account_delegate.cpp",
     "app_id_mapping/app_id_mapping_config_manager.cpp",
     "backuprule/backup_rule_manager.cpp",
     "changeevent/remote_change_event.cpp",
     "checker/checker_manager.cpp",
     "cloud/asset_loader.cpp",
     "cloud/cloud_config_manager.cpp",
-    "cloud/cloud_db_sync_config.cpp",
     "cloud/cloud_db.cpp",
+    "cloud/cloud_db_sync_config.cpp",
     "cloud/cloud_event.cpp",
     "cloud/cloud_extra_data.cpp",
     "cloud/cloud_info.cpp",
@@ -140,12 +138,68 @@ ohos_shared_library("distributeddatasvcfwk") {
     "hilog:libhilog",
     "huks:libhukssdk",
     "json:nlohmann_json_static",
-    "openssl:libcrypto_shared",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
+    "openssl:libcrypto_shared",
   ]
   subsystem_name = "distributeddatamgr"
 
   part_name = "datamgr_service"
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
+}
+
+ohos_source_set("distributeddatasvcfwk_cloud") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  sources = [
+    "cloud/cloud_db.cpp",
+    "cloud/cloud_event.cpp",
+    "cloud/cloud_info.cpp",
+    "cloud/cloud_mark.cpp",
+    "cloud/cloud_report.cpp",
+    "cloud/cloud_server.cpp",
+    "cloud/schema_meta.cpp",
+    "eventcenter/event.cpp",
+    "metadata/auto_launch_meta_data.cpp",
+    "metadata/secret_key_meta_data.cpp",
+    "metadata/store_debug_info.cpp",
+    "metadata/store_meta_data.cpp",
+    "metadata/store_meta_data_local.cpp",
+    "metadata/strategy_meta_data.cpp",
+    "serializable/serializable.cpp",
+    "utils/anonymous.cpp",
+    "utils/constant.cpp",
+  ]
+
+  cflags = [
+    "-Werror",
+    "-Wno-multichar",
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-fdata-sections",
+    "-ffunction-sections",
+  ]
+
+  ldflags = [ "-Wl,--gc-sections" ]
+
+  cflags_cc = [ "-fvisibility=hidden" ]
+
+  configs = [ ":module_config" ]
+
+  public_configs = [ ":module_public_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+  ]
+  subsystem_name = "distributeddatamgr"
+
+  part_name = "datamgr_service"
 }

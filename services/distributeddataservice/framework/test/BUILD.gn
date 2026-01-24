@@ -266,15 +266,9 @@ ohos_unittest("BindEventTest") {
 
 ohos_unittest("CloudInfoTest") {
   module_out_path = module_output_path
-  sources = [
-    "${data_service_path}/framework/cloud/cloud_db.cpp",
-    "${data_service_path}/framework/cloud/cloud_info.cpp",
-    "${data_service_path}/framework/cloud/cloud_mark.cpp",
-    "${data_service_path}/framework/cloud/cloud_server.cpp",
-    "cloud_test.cpp",
-  ]
+  sources = [ "cloud_test.cpp" ]
   configs = [ ":module_private_config" ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_cloud" ]
 
   external_deps = [
     "c_utils:utils",
