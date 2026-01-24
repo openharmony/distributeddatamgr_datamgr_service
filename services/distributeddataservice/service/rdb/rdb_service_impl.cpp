@@ -1322,7 +1322,7 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const St
     return store;
 }
 
-bool RdbServiceImpl::IsSupportAutoSyncDeviceType(const std::string &localDeviceId, const std::string &remoteDeviceId)
+bool RdbServiceImpl::IsSupportAutoSync(const std::string &localDeviceId, const std::string &remoteDeviceId)
 {
     uint32_t localDeviceType = DmAdapter::GetInstance().GetDeviceTypeByUuid(localDeviceId);
     uint32_t remoteDeviceType = DmAdapter::GetInstance().GetDeviceTypeByUuid(remoteDeviceId);
@@ -1340,7 +1340,7 @@ std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::s
     AppDistributedKv::ExtraDataInfo extraInfo = { .userId = metaData.user, .bundleName = metaData.bundleName,
         .storeId = metaData.storeId, .tokenId = metaData.tokenId };
     for (auto &device : devices) {
-        if (!IsSupportAutoSyncDeviceType(metaData.deviceId, device)) {
+        if (!IsSupportAutoSync(metaData.deviceId, device)) {
             ZLOGW("bundleName:%{public}s, storeName:%{public}s. device type not support auto sync.",
                 metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
             continue;
