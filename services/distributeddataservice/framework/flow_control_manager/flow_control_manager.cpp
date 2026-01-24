@@ -115,7 +115,7 @@ void FlowControlManager::Schedule()
         return;
     }
     std::lock_guard<decltype(mutex_)> lock(mutex_);
-    if (tasks_.empty()) {
+    if (tasks_.empty() || !isRunning_) {
         return;
     }
     const InnerTask &task = tasks_.top();

@@ -16,8 +16,6 @@
 #include "rdb_flow_control_manager.h"
 
 #include "gtest/gtest.h"
-#include <iostream>
-#include <random>
 
 using namespace OHOS;
 using namespace testing;
@@ -31,13 +29,6 @@ class RdbFlowControlManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
-    static uint32_t GenerateRandomNumber(uint32_t min, uint32_t max)
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dis(min, max);
-        return dis(gen);
-    }
     void SetUp() {}
     void TearDown(){};
 };
@@ -274,23 +265,18 @@ HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithManyTasks_T
  * @tc.step: 2. Configure flow control with app limit Random, device limit Random, delay Randomms
  * @tc.step: 3. Submit Random tasks rapidly
  * @tc.step: 4. Remove all tasks and verify all tasks are removed
- * @tc.expected: All tasks should be executed without loss
+ * @tc.expected: Some tasks should be removed
  */
 HWTEST_F(RdbFlowControlManagerTest, RdbFlowControlManager_ExecuteWithRandomTasksAndRemoveAll_Test, TestSize.Level1)
 {
-    uint32_t valueRangeMinPool = GenerateRandomNumber(1, 2);
-    uint32_t valueRangeMaxPool = GenerateRandomNumber(3, 4);
-    auto pool = std::make_shared<ExecutorPool>(valueRangeMaxPool, valueRangeMinPool);
-    uint32_t valueRangeDuration = GenerateRandomNumber(100, 200);
-    uint32_t valueRangApp = GenerateRandomNumber(5, 20);
-    uint32_t valueRangGlobal = GenerateRandomNumber(15, 20);
-    RdbFlowControlManager flowControlManager(valueRangApp, valueRangGlobal, valueRangeDuration);
+    auto pool = std::make_shared<ExecutorPool>(4, 1);
+    RdbFlowControlManager flowControlManager(20, 20, 100);
     flowControlManager.Init(pool);
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
         (*flag)++;
     };
-    const uint32_t taskCount = GenerateRandomNumber(100, 200);;
+    const uint32_t taskCount = 200;
     for (int i = 0; i < taskCount; i++) {
         flowControlManager.Execute(task, { 0, "bulkTask" });
     }
