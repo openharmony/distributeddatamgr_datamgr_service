@@ -35,7 +35,8 @@ public:
         (override));
     MOCK_METHOD(std::shared_ptr<AssetLoader>, ConnectAssetLoader,
         (const std::string &bundleName, int user, const Database &dbMeta), (override));
-    MOCK_METHOD(std::shared_ptr<AssetLoader>, ConnectAssetLoader, (uint32_t tokenId, const Database &dbMeta), (override));
+    MOCK_METHOD(std::shared_ptr<AssetLoader>, ConnectAssetLoader, (uint32_t tokenId, const Database &dbMeta),
+        (override));
     MOCK_METHOD(std::shared_ptr<CloudDB>, ConnectCloudDB,
         (const std::string &bundleName, int user, const Database &dbMeta), (override));
     MOCK_METHOD(std::shared_ptr<CloudDB>, ConnectCloudDB, (uint32_t tokenId, const Database &dbMeta), (override));
