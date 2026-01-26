@@ -35,14 +35,14 @@ public:
     using Exporter = std::function<std::string(const StoreMeta &, DBPassword &)>;
     using Cleaner = std::function<Status(const StoreMeta &)>;
 
-    API_EXPORT static Upgrade &GetInstance();
-    API_EXPORT bool RegisterExporter(uint32_t version, Exporter exporter);
-    API_EXPORT bool RegisterCleaner(uint32_t version, Cleaner cleaner);
+    static Upgrade &GetInstance();
+    bool RegisterExporter(uint32_t version, Exporter exporter);
+    bool RegisterCleaner(uint32_t version, Cleaner cleaner);
 
     DBStatus UpdateStore(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd);
     DBStatus ExportStore(const StoreMeta &old, const StoreMeta &meta);
     DBStatus UpdateUuid(const StoreMeta &old, const StoreMeta &meta, const std::vector<uint8_t> &pwd);
-    API_EXPORT std::string GetEncryptedUuidByMeta(const StoreMeta &meta);
+    std::string GetEncryptedUuidByMeta(const StoreMeta &meta);
 
 private:
     using AutoStore = std::unique_ptr<DBStore, std::function<void(DBStore *)>>;
