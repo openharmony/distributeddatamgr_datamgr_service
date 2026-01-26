@@ -35,7 +35,7 @@ public:
     // user should use this method to get instance of CommunicationProvider;
     API_EXPORT static CommunicationProvider &GetInstance();
 
-    API_EXPORT static std::shared_ptr<CommunicationProvider> MakeCommunicationProvider();
+    static std::shared_ptr<CommunicationProvider> MakeCommunicationProvider();
 
     // add DataChangeListener to watch data change
     virtual Status StartWatchDataChange(const AppDataChangeListener *observer, const PipeInfo &pipeInfo) = 0;

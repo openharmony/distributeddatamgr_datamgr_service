@@ -27,9 +27,9 @@ public:
     // convert the name to the anonymous
     // the anonymous string is name[0,3]"***"name[end-3, end]
     // when the anonymous string is shorter than 9, the anonymous is "******"
-    KVSTORE_API static std::string ToBeAnonymous(const std::string &name);
+    static std::string ToBeAnonymous(const std::string &name);
 
-    KVSTORE_API static uint64_t GenerateSequenceId();
+    static uint64_t GenerateSequenceId();
 private:
     static constexpr int MAIN_USER_ID = 0;
     static constexpr int SYSTEM_UID = 1000;
