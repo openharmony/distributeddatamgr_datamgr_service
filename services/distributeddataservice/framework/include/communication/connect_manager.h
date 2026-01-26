@@ -37,7 +37,7 @@ public:
     static bool RegisterInstance(std::shared_ptr<ConnectManager> instance);
 
     API_EXPORT static bool CloseSession(const std::string &networkId);
-    static bool RegisterCloseSessionTask(CloseSessionTask task);
+    API_EXPORT static bool RegisterCloseSessionTask(CloseSessionTask task);
 
     API_EXPORT static bool RegisterSessionCloseListener(const std::string &name, SessionCloseListener listener);
     static void UnRegisterSessionCloseListener(const std::string &name);
