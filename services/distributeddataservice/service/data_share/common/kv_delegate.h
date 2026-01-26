@@ -50,6 +50,7 @@ private:
     void RemoveDbFile(bool isBackUp) const;
     bool CopyFile(bool isBackup);
     void ScheduleBackup();
+    void GarbageCollect();
     std::recursive_mutex mutex_;
     std::string path_;
     GRD_DB *db_ = nullptr;
@@ -59,6 +60,7 @@ private:
     bool hasChange_ = false;
     int64_t absoluteWaitTime_ = 0;
     int64_t waitTime_ = 6 * 3600; // 6 hours
+    ExecutorPool::TaskId cleanTaskId_ = ExecutorPool::INVALID_TASK_ID;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_KV_DELEGATE_H

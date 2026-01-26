@@ -34,6 +34,8 @@
 
 namespace OHOS::DataShare {
 constexpr int64_t TIME_LIMIT_BY_MILLISECONDS = 18 * 3600 * 1000; // 18 hours
+constexpr int64_t CLOSE_BY_SECONDS = 60; // 1 min
+
 
 // If using multi-process access, back up dataShare.db.map as well. Check config file to see whether
 // using multi-process maccess
@@ -210,10 +212,24 @@ void KvDelegate::ScheduleBackup()
     });
 }
 
+void KvDelegate::GarbageCollect()
+{
+    cleanTaskId_ =  executors_->Schedule(std::chrono::seconds(CLOSE_BY_SECONDS), [this]() {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        auto ret = GRD_DBClose(db_, GRD_DB_CLOSE);
+        if (ret == 0) {
+            db_ = nullptr;
+            isInitDone_ = false;
+            cleanTaskId_ = ExecutorPool::INVALID_TASK_ID;
+        }
+    });
+}
+
 bool KvDelegate::Init()
 {
     if (isInitDone_) {
         if (executors_ != nullptr) {
+            executors_->Reset(cleanTaskId_, std::chrono::seconds(CLOSE_BY_SECONDS));
             auto currTime = MiscServices::TimeServiceClient::GetInstance()->GetBootTimeMs();
             if (currTime < 0) {
                 ZLOGE("GetBootTimeMs failed, status %{public}" PRId64 "", currTime);
@@ -236,6 +252,8 @@ bool KvDelegate::Init()
     if (executors_ != nullptr) {
         // schedule first backup task
         ScheduleBackup();
+        // dynamically close DB
+        GarbageCollect();
     }
     status = GRD_CreateCollection(db_, TEMPLATE_TABLE, nullptr, 0);
     if (status != GRD_OK) {
