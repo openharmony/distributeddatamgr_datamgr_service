@@ -27,7 +27,6 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "permit_delegate.h"
-#include "cloud/cloud_info.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedKv {

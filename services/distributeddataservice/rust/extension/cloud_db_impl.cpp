@@ -173,4 +173,39 @@ int32_t CloudDbImpl::Close()
     }
     return DBErr::E_OK;
 }
+
+std::pair<int32_t, std::shared_ptr<DBCursor>> CloudDbImpl::Query(DBGenQuery &query, const DBVBucket &extend)
+{
+    return { DBErr::E_NOT_SUPPORT, nullptr };
+}
+
+int32_t CloudDbImpl::PreSharing(const std::string &table, DBVBuckets &extend)
+{
+    return DBErr::E_NOT_SUPPORT;
+}
+
+int32_t CloudDbImpl::Sync(const Devices &devices, int32_t mode, const DBGenQuery &query, Async async, int32_t wait)
+{
+    return DBErr::E_NOT_SUPPORT;
+}
+
+int32_t CloudDbImpl::Watch(int32_t origin, Watcher &watcher)
+{
+    return DBErr::E_NOT_SUPPORT;
+}
+
+int32_t CloudDbImpl::Unwatch(int32_t origin, Watcher &watcher)
+{
+    return DBErr::E_NOT_SUPPORT;
+}
+
+std::pair<int32_t, std::string> CloudDbImpl::GetEmptyCursor(const std::string &tableName)
+{
+    return { DBErr::E_NOT_SUPPORT, "" };
+}
+
+void CloudDbImpl::SetPrepareTraceId(const std::string &prepareTraceId)
+{
+    (void)prepareTraceId;
+}
 } // namespace OHOS::CloudData

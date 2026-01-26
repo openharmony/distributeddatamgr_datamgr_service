@@ -43,6 +43,7 @@ config("module_private_config") {
     "${data_service_path}/service/rdb/",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/adapter/include/utils",
     "${data_service_path}/framework/test/mock",
   ]
   cflags = [ "-Werror" ]
@@ -97,7 +98,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_cloud",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
@@ -122,6 +123,7 @@ ohos_unittest("CloudDataMockTest") {
   }
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/cloud/cloud_data_translate.cpp",
     "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
@@ -134,7 +136,6 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/service/test/mock/checker_mock.cpp",
     "cloud_data_mock_test.cpp",
     "mock/access_token_mock.cpp",
-    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -148,7 +149,7 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_cloud",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
@@ -178,6 +179,7 @@ ohos_unittest("CloudServiceImplTest") {
   }
   module_out_path = module_output_path
   sources = [
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/cloud/cloud_data_translate.cpp",
     "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
@@ -189,7 +191,6 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
     "cloud_service_impl_test.cpp",
-    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -214,7 +215,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_cloud",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
@@ -422,8 +423,8 @@ ohos_unittest("KVDBGeneralStoreTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "kvdb_general_store_test.cpp",
     "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
+    "kvdb_general_store_test.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
     "mock/general_watcher_mock.cpp",
@@ -460,7 +461,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_cloud",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
   ]
 }
@@ -594,8 +595,8 @@ ohos_unittest("RdbServiceTest") {
     "rdb_general_store_test.cpp",
     "rdb_query_test.cpp",
     "rdb_result_set_stub_test.cpp",
-    "relational_store_cursor_test.cpp",
     "rdb_store_utils_test.cpp",
+    "relational_store_cursor_test.cpp",
   ]
 
   include_dirs = [
@@ -632,7 +633,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/utils:distributeddata_utils",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_cloud",
     "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
@@ -661,7 +662,7 @@ ohos_unittest("RdbServiceTest") {
 
   if (datamgr_service_object) {
     deps += [ "${data_service_path}/service/object:distributeddata_object" ]
-    sources += [ "rdb_asset_loader_test.cpp", ]
+    sources += [ "rdb_asset_loader_test.cpp" ]
   }
 }
 
@@ -673,13 +674,9 @@ ohos_unittest("RdbFlowControlManagerTest") {
     blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
   module_out_path = module_output_path
-  sources = [
-    "rdb_flow_control_manager_test.cpp",
-  ]
+  sources = [ "rdb_flow_control_manager_test.cpp" ]
 
-  include_dirs = [
-    "${data_service_path}/framework/include",
-  ]
+  include_dirs = [ "${data_service_path}/framework/include" ]
 
   configs = [ ":module_private_config" ]
 
@@ -869,7 +866,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
   ]
 
   if (datamgr_service_object) {
-    external_deps += [ "data_object:data_object_inner", ]
+    external_deps += [ "data_object:data_object_inner" ]
   }
 
   deps = [
@@ -909,7 +906,7 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
   ]
 
   if (datamgr_service_object) {
-    external_deps += [ "data_object:data_object_inner", ]
+    external_deps += [ "data_object:data_object_inner" ]
   }
 
   deps = [
@@ -946,7 +943,7 @@ ohos_unittest("ObjectAssetMachineTest") {
   ]
 
   if (datamgr_service_object) {
-    external_deps += [ "data_object:data_object_inner", ]
+    external_deps += [ "data_object:data_object_inner" ]
   }
 
   deps = [
@@ -981,7 +978,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
   ]
 
   if (dm_part_is_enabled && datamgr_service_distributed) {
-    external_deps += [ "dmsfwk:distributed_sdk", ]
+    external_deps += [ "dmsfwk:distributed_sdk" ]
   }
 
   deps = [
@@ -1050,13 +1047,13 @@ ohos_unittest("ObjectManagerTest") {
 
   if (datamgr_service_object) {
     external_deps += [
-      "data_object:distributeddataobject_impl",
       "data_object:data_object_inner",
+      "data_object:distributeddataobject_impl",
     ]
   }
 
   if (dm_part_is_enabled && datamgr_service_distributed) {
-    external_deps += [ "dmsfwk:distributed_sdk", ]
+    external_deps += [ "dmsfwk:distributed_sdk" ]
   }
 
   deps = [
@@ -1074,6 +1071,7 @@ ohos_unittest("ObjectManagerMockTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/common/common_types_utils.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
     "../object/src/object_asset_loader.cpp",
@@ -1087,7 +1085,6 @@ ohos_unittest("ObjectManagerMockTest") {
     "../object/src/object_snapshot.cpp",
     "../object/src/object_types_utils.cpp",
     "mock/access_token_mock.cpp",
-    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "mock/device_manager_adapter_mock.cpp",
     "mock/device_matrix_mock.cpp",
     "mock/distributed_file_daemon_manager_mock.cpp",
@@ -1127,13 +1124,13 @@ ohos_unittest("ObjectManagerMockTest") {
 
   if (datamgr_service_object) {
     external_deps += [
-      "data_object:distributeddataobject_impl",
       "data_object:data_object_inner",
+      "data_object:distributeddataobject_impl",
     ]
   }
 
   if (dm_part_is_enabled && datamgr_service_distributed) {
-    external_deps += [ "dmsfwk:distributed_sdk", ]
+    external_deps += [ "dmsfwk:distributed_sdk" ]
   }
 
   deps = [
@@ -1172,7 +1169,7 @@ ohos_unittest("ObjectSnapshotTest") {
   ]
 
   if (datamgr_service_object) {
-    external_deps += [ "data_object:data_object_inner", ]
+    external_deps += [ "data_object:data_object_inner" ]
   }
 
   deps = [
@@ -1315,6 +1312,7 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 
   sources = [
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/common/bundle_utils.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
@@ -1357,8 +1355,8 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/strategies/publish_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/rdb_notify_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/subscribe_strategy.cpp",
-    "${data_service_path}/service/data_share/strategies/unsubscribe_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/template_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/unsubscribe_strategy.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/proxy_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
@@ -1375,7 +1373,6 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_types_util_test.cpp",
     "data_share_uri_utils_test.cpp",
     "kv_dalegate_test.cpp",
-    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1505,8 +1502,8 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "${data_service_path}/service/data_share/strategies/publish_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/rdb_notify_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/subscribe_strategy.cpp",
-    "${data_service_path}/service/data_share/strategies/unsubscribe_strategy.cpp",
     "${data_service_path}/service/data_share/strategies/template_strategy.cpp",
+    "${data_service_path}/service/data_share/strategies/unsubscribe_strategy.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/proxy_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/published_data_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
@@ -1691,7 +1688,7 @@ ohos_unittest("KvdbServiceImplTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_cloud",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "mock:distributeddata_mock_static",
   ]
@@ -1801,18 +1798,18 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "${data_service_path}/framework/checker/checker_manager.cpp",
     "${data_service_path}/framework/feature/feature_system.cpp",
     "${data_service_path}/service/backup/src/backup_manager.cpp",
+    "${data_service_path}/service/test/mock/meta_data_manager_mock.cpp",
     "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
     "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
     "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
     "${data_service_path}/service/udmf/lifecycle/drag_lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
-    "${data_service_path}/service/test/mock/meta_data_manager_mock.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
+    "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
     "${data_service_path}/service/udmf/preprocess/udmf_notifier_proxy.cpp",
-    "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/store/drag_observer.cpp",
     "${data_service_path}/service/udmf/store/observer_factory.cpp",
     "${data_service_path}/service/udmf/store/runtime_store.cpp",
@@ -1849,11 +1846,11 @@ ohos_unittest("UdmfServiceImplMockTest") {
 
   external_deps = [
     "ability_base:zuri",
-    "access_token:libtokenid_sdk",
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
     "app_file_service:remote_file_share_native",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -2551,8 +2548,8 @@ ohos_unittest("UserDelegateMockTest") {
   ]
 
   sources = [
-    "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
+    "${data_service_path}/service/kvdb/user_delegate.cpp",
     "mock/device_manager_adapter_mock.cpp",
     "user_delegate_mock_test.cpp",
   ]

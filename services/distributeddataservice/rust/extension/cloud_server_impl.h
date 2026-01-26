@@ -34,6 +34,7 @@ using DBField = DistributedData::Field;
 using DBSub = DistributedData::Subscription;
 using DBRelation = DBSub::Relation;
 using DBErr = DistributedData::GeneralError;
+using SharingCenter = DistributedData::SharingCenter;
 class CloudServerImpl : public DistributedData::CloudServer {
 public:
     static bool Init();
@@ -46,6 +47,12 @@ public:
         const std::string &bundleName, int user, const DBMeta &dbMeta) override;
     std::shared_ptr<DBCloudDB> ConnectCloudDB(uint32_t tokenId, const DBMeta &dbMeta) override;
     std::shared_ptr<DBCloudDB> ConnectCloudDB(const std::string &bundleName, int user, const DBMeta &dbMeta) override;
+    std::shared_ptr<SharingCenter> ConnectSharingCenter(int32_t userId, const std::string &bunleName) override;
+    void Clean(int32_t userId) override;
+    void ReleaseUserInfo(int32_t userId) override;
+    void Bind(std::shared_ptr<ExecutorPool> executor) override;
+    bool IsSupportCloud(int32_t userId) override;
+    bool CloudDriverUpdated(const std::string &bundleName) override;
 
 private:
     static constexpr uint64_t INTERVAL = 6 * 24;

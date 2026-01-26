@@ -22,7 +22,7 @@
 #include "metadata/store_meta_data.h"
 
 namespace OHOS::DistributedData {
-class API_EXPORT CloudSyncFinishedEvent : public CloudEvent {
+class CloudSyncFinishedEvent : public CloudEvent {
 public:
     CloudSyncFinishedEvent(int32_t evtId, const StoreMetaData &storeMetaData);
     ~CloudSyncFinishedEvent() = default;

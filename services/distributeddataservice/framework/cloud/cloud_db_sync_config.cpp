@@ -32,16 +32,6 @@ bool CloudDbSyncConfig::TableSyncConfig::Unmarshal(const json &node)
     return true;
 }
 
-bool CloudDbSyncConfig::TableSyncConfig::operator==(const TableSyncConfig &config) const
-{
-    return std::tie(tableName, cloudSyncEnabled) == std::tie(config.tableName, config.cloudSyncEnabled);
-}
-
-bool CloudDbSyncConfig::TableSyncConfig::operator!=(const TableSyncConfig &config) const
-{
-    return !(*this == config);
-}
-
 bool CloudDbSyncConfig::DbSyncConfig::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(dbName)], dbName);
@@ -58,17 +48,6 @@ bool CloudDbSyncConfig::DbSyncConfig::Unmarshal(const json &node)
     return true;
 }
 
-bool CloudDbSyncConfig::DbSyncConfig::operator==(const DbSyncConfig &config) const
-{
-    return std::tie(dbName, cloudSyncEnabled, tableConfigs) ==
-           std::tie(config.dbName, config.cloudSyncEnabled, config.tableConfigs);
-}
-
-bool CloudDbSyncConfig::DbSyncConfig::operator!=(const DbSyncConfig &config) const
-{
-    return !(*this == config);
-}
-
 bool CloudDbSyncConfig::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(bundleName)], bundleName);
@@ -81,16 +60,6 @@ bool CloudDbSyncConfig::Unmarshal(const json &node)
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(dbConfigs), dbConfigs);
     return true;
-}
-
-bool CloudDbSyncConfig::operator==(const CloudDbSyncConfig &config) const
-{
-    return std::tie(bundleName, dbConfigs) == std::tie(config.bundleName, config.dbConfigs);
-}
-
-bool CloudDbSyncConfig::operator!=(const CloudDbSyncConfig &config) const
-{
-    return !(*this == config);
 }
 
 std::string CloudDbSyncConfig::GetKey(int32_t userId, const std::string &bundleName)

@@ -24,34 +24,28 @@
 namespace OHOS::DistributedData {
 class API_EXPORT CloudDbSyncConfig final : public Serializable {
 public:
-    struct API_EXPORT TableSyncConfig final : public Serializable {
+    struct TableSyncConfig final : public Serializable {
         std::string tableName = "";
         bool cloudSyncEnabled = true;
 
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
-        bool operator==(const TableSyncConfig &config) const;
-        bool operator!=(const TableSyncConfig &config) const;
     };
 
-    struct API_EXPORT DbSyncConfig final : public Serializable {
+    struct DbSyncConfig final : public Serializable {
         std::string dbName = "";
         bool cloudSyncEnabled = true;
         std::vector<TableSyncConfig> tableConfigs;
 
         bool Marshal(json &node) const override;
         bool Unmarshal(const json &node) override;
-        bool operator==(const DbSyncConfig &config) const;
-        bool operator!=(const DbSyncConfig &config) const;
     };
 
     std::string bundleName = "";
     std::vector<DbSyncConfig> dbConfigs;
 
-    bool Marshal(json &node) const override;
-    bool Unmarshal(const json &node) override;
-    bool operator==(const CloudDbSyncConfig &config) const;
-    bool operator!=(const CloudDbSyncConfig &config) const;
+    API_LOCAL bool Marshal(json &node) const override;
+    API_LOCAL bool Unmarshal(const json &node) override;
 
     std::string GetKey(int32_t userId, const std::string &bundleName);
 

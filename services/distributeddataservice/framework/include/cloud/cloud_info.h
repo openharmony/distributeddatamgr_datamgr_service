@@ -23,7 +23,7 @@ class API_EXPORT CloudInfo final : public Serializable {
 public:
     static constexpr int32_t DEFAULT_BATCH_NUMBER = 30;
     static constexpr int32_t DEFAULT_BATCH_SIZE = 1024 * 512 * 3; // 1.5M
-    struct API_EXPORT AppInfo final : public Serializable {
+    struct AppInfo final : public Serializable {
         std::string bundleName = "";
         std::string appId = "";
         uint64_t version = 0;
@@ -49,16 +49,16 @@ public:
     std::string GetSchemaKey(const std::string &bundleName, int32_t instanceId = 0) const;
     std::string GetSchemaPrefix(const std::string &bundleName) const;
     static std::string GetSchemaKey(int32_t user, const std::string &bundleName, int32_t instanceId = 0);
-    static std::string GetSchemaKey(const StoreMetaData &meta);
+    API_LOCAL static std::string GetSchemaKey(const StoreMetaData &meta);
     bool IsValid() const;
     bool Exist(const std::string &bundleName, int32_t instanceId = 0) const;
     bool IsOn(const std::string &bundleName, int32_t instanceId = 0) const;
     bool IsAllSwitchOff() const;
-    static std::string GetPrefix(const std::initializer_list<std::string> &field);
+    API_LOCAL static std::string GetPrefix(const std::initializer_list<std::string> &field);
     std::optional<AppInfo> GetAppInfo(const std::string &bundleName) const;
 
-    bool Marshal(json &node) const override;
-    bool Unmarshal(const json &node) override;
+    API_LOCAL bool Marshal(json &node) const override;
+    API_LOCAL bool Unmarshal(const json &node) override;
     bool operator==(const CloudInfo &info) const;
     bool operator!=(const CloudInfo &info) const;
 
@@ -66,7 +66,7 @@ private:
     static constexpr const char *INFO_PREFIX = "CLOUD_INFO";
     static constexpr const char *SCHEMA_PREFIX = "CLOUD_SCHEMA";
 
-    static std::string GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields);
+    API_LOCAL static std::string GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields);
     bool IsAppsEqual(const std::map<std::string, AppInfo> &appInfos) const;
 };
 } // namespace OHOS::DistributedData

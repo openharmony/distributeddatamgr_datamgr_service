@@ -243,9 +243,7 @@ ohos_unittest("AssetLoaderTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
-  external_deps = [
-    "kv_store:datamgr_common",
-  ]
+  external_deps = [ "kv_store:datamgr_common" ]
 }
 
 ohos_unittest("BackupRuleManagerTest") {
@@ -254,9 +252,7 @@ ohos_unittest("BackupRuleManagerTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
-  external_deps = [
-    "kv_store:datamgr_common",
-  ]
+  external_deps = [ "kv_store:datamgr_common" ]
 }
 
 ohos_unittest("BindEventTest") {
@@ -265,16 +261,14 @@ ohos_unittest("BindEventTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
-  external_deps = [
-    "kv_store:datamgr_common",
-  ]
+  external_deps = [ "kv_store:datamgr_common" ]
 }
 
 ohos_unittest("CloudInfoTest") {
   module_out_path = module_output_path
   sources = [ "cloud_test.cpp" ]
   configs = [ ":module_private_config" ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_cloud" ]
 
   external_deps = [
     "c_utils:utils",
@@ -289,9 +283,7 @@ ohos_unittest("EventTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
-  external_deps = [
-    "kv_store:datamgr_common",
-  ]
+  external_deps = [ "kv_store:datamgr_common" ]
 }
 
 ohos_unittest("GeneralStoreTest") {
@@ -344,8 +336,8 @@ ohos_unittest("MetaDataManagerTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
-    "kv_store:distributeddb",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -359,12 +351,12 @@ ohos_unittest("StoreMetaDataLocalTest") {
   sources = [ "store_meta_data_local_test.cpp" ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
-  
+
   external_deps = [
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
-    "kv_store:distributeddb",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 }
 
@@ -374,9 +366,7 @@ ohos_unittest("ConstantTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
-  external_deps = [
-    "kv_store:datamgr_common",
-  ]
+  external_deps = [ "kv_store:datamgr_common" ]
 }
 
 ohos_unittest("CryptoTest") {
@@ -385,9 +375,7 @@ ohos_unittest("CryptoTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
-  external_deps = [
-    "kv_store:datamgr_common",
-  ]
+  external_deps = [ "kv_store:datamgr_common" ]
 }
 
 ohos_unittest("ServiceMetaDataTest") {
@@ -472,8 +460,8 @@ ohos_unittest("SyncManagerTest") {
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
-    "kv_store:datamgr_common",
     "ipc:ipc_core",
+    "kv_store:datamgr_common",
   ]
   cflags = [
     "-Dprivate=public",
@@ -483,27 +471,26 @@ ohos_unittest("SyncManagerTest") {
 
 ohos_unittest("AutoCacheTest") {
   module_out_path = module_output_path
-    include_dirs = [
-    "${data_service_path}/service/test/mock",
-  ]
+  include_dirs = [ "${data_service_path}/service/test/mock" ]
   sources = [
-    "auto_cache_test.cpp",
     "./mock/account_delegate_mock_proxy.cpp",
+    "auto_cache_test.cpp",
   ]
   configs = [ ":module_private_config" ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
-    "kv_store:datamgr_common",
-    "ipc:ipc_core",
-    "json:nlohmann_json_static",
     "googletest:gmock",
     "googletest:gtest_main",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
   ]
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
   ]
 }
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -513,6 +500,7 @@ group("unittest") {
   deps += [
     ":AppIdMappingConfigManagerTest",
     ":AssetLoaderTest",
+    ":AutoCacheTest",
     ":BackupRuleManagerTest",
     ":BindEventTest",
     ":CheckerManagerTest",
@@ -535,7 +523,6 @@ group("unittest") {
     ":StoreTest",
     ":SubscriptionTest",
     ":SyncManagerTest",
-    ":AutoCacheTest",
   ]
 }
 ###############################################################################
