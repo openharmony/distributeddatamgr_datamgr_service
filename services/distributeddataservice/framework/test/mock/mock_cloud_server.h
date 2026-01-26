@@ -15,6 +15,8 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_MOCK_CLOUD_SERVER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_MOCK_CLOUD_SERVER_H
+#include <gmock/gmock.h>
+
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/cloud_info.h"
@@ -26,22 +28,34 @@
 namespace OHOS::DistributedData {
 class MockCloudServer : public CloudServer {
 public:
-    MOCK_METHOD(std::pair<int32_t, CloudInfo>, GetServerInfo, (int32_t userId, bool needSpaceInfo), (override));
-    MOCK_METHOD(
-        std::pair<int32_t, SchemaMeta>, GetAppSchema, (int32_t userId, const std::string &bundleName), (override));
-    MOCK_METHOD(int32_t, Subscribe, (int32_t userId, const std::map<std::string, std::vector<Database>> &dbs),
-        (override));
-    MOCK_METHOD(int32_t, Unsubscribe, (int32_t userId, const std::map<std::string, std::vector<Database>> &dbs),
-        (override));
+    using Database = SchemaMeta::Database;
+    using DatabaseVector = std::vector<Database>;
+    using DatabaseMap = std::map<std::string, DatabaseVector>;
+    using ServerInfoResult = std::pair<int32_t, CloudInfo>;
+    using AppSchemaResult = std::pair<int32_t, SchemaMeta>;
+
+    MOCK_METHOD(ServerInfoResult, GetServerInfo, (int32_t userId, bool needSpaceInfo), (override));
+
+    MOCK_METHOD(AppSchemaResult, GetAppSchema, (int32_t userId, const std::string &bundleName), (override));
+
+    MOCK_METHOD(int32_t, Subscribe, (int32_t userId, const DatabaseMap &dbs), (override));
+
+    MOCK_METHOD(int32_t, Unsubscribe, (int32_t userId, const DatabaseMap &dbs), (override));
+
     MOCK_METHOD(std::shared_ptr<AssetLoader>, ConnectAssetLoader,
         (const std::string &bundleName, int user, const Database &dbMeta), (override));
+
     MOCK_METHOD(std::shared_ptr<AssetLoader>, ConnectAssetLoader, (uint32_t tokenId, const Database &dbMeta),
         (override));
+
     MOCK_METHOD(std::shared_ptr<CloudDB>, ConnectCloudDB,
         (const std::string &bundleName, int user, const Database &dbMeta), (override));
+
     MOCK_METHOD(std::shared_ptr<CloudDB>, ConnectCloudDB, (uint32_t tokenId, const Database &dbMeta), (override));
-    MOCK_METHOD(std::shared_ptr<SharingCenter>, ConnectSharingCenter,
-        (int32_t userId, const std::string &bundleName), (override));
+
+    MOCK_METHOD(std::shared_ptr<SharingCenter>, ConnectSharingCenter, (int32_t userId, const std::string &bundleName),
+        (override));
+
     MOCK_METHOD(void, Clean, (int32_t userId), (override));
     MOCK_METHOD(void, ReleaseUserInfo, (int32_t userId), (override));
     MOCK_METHOD(void, Bind, (std::shared_ptr<ExecutorPool> executor), (override));
