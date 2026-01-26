@@ -671,4 +671,25 @@ std::shared_ptr<DBCloudDB> CloudServerImpl::ConnectCloudDB(
         user, reinterpret_cast<const unsigned char *>(bundleName.c_str()), bundleName.size(), data.first);
     return cloudDb != nullptr ? std::make_shared<CloudDbImpl>(cloudDb) : nullptr;
 }
+
+std::shared_ptr<SharingCenter> CloudServerImpl::ConnectSharingCenter(int32_t userId, const std::string &bunleName)
+{
+    return nullptr;
+}
+
+void CloudServerImpl::Clean(int32_t userId) {}
+
+void CloudServerImpl::ReleaseUserInfo(int32_t userId) {}
+
+void CloudServerImpl::Bind(std::shared_ptr<ExecutorPool> executor) {}
+
+bool CloudServerImpl::IsSupportCloud(int32_t userId)
+{
+    return false;
+}
+
+bool CloudServerImpl::CloudDriverUpdated(const std::string &bundleName)
+{
+    return false;
+}
 } // namespace OHOS::CloudData
