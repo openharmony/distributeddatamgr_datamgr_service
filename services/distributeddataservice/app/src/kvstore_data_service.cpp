@@ -687,7 +687,7 @@ bool KvStoreDataService::ParseSecretKeyFile(MessageParcel &data, SecretKeyBackup
         ZLOGE("Read backup secret key failed. errno:%{public}d", errno);
         return false;
     }
-    std::string keyLoad(buffer.data(), static<size_t>(fileSize));
+    std::string keyLoad(buffer.data(), static_cast<size_t>(fileSize));
     memset_s(buffer.data(), buffer.size(), 0, buffer.size());
     DistributedData::Serializable::Unmarshall(keyLoad, backupData);
     std::fill(keyLoad.begin(), keyLoad.end(), '\0');
