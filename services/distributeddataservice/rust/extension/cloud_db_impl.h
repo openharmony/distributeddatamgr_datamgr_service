@@ -27,8 +27,12 @@ using DBVBucket = DistributedData::VBucket;
 using DBVBuckets = DistributedData::VBuckets;
 using DBCursor = DistributedData::Cursor;
 using DBMeta = DistributedData::Database;
+using DBGenQuery = DistributedData::GenQuery;
 class CloudDbImpl : public DistributedData::CloudDB {
 public:
+    using Watcher = DistributedData::GeneralWatcher;
+    using Async = std::function<void(std::map<std::string, std::map<std::string, int32_t>>)>;
+    using Devices = std::vector<std::string>;
     explicit CloudDbImpl(OhCloudExtCloudDatabase *database);
     ~CloudDbImpl();
     int32_t Execute(const std::string &table, const std::string &sql, const DBVBucket &extend) override;
@@ -37,12 +41,18 @@ public:
     int32_t BatchUpdate(const std::string &table, DBVBuckets &&values, const DBVBuckets &extends) override;
     int32_t BatchDelete(const std::string &table, DBVBuckets &extends) override;
     std::pair<int32_t, std::shared_ptr<DBCursor>> Query(const std::string &table, const DBVBucket &extend) override;
+    std::pair<int32_t, std::shared_ptr<DBCursor>> Query(DBGenQuery &query, const DBVBucket &extend) override;
+    int32_t PreSharing(const std::string &table, DBVBuckets &extend) override;
+    int32_t Sync(const Devices &devices, int32_t mode, const DBGenQuery &query, Async async, int32_t wait) override;
+    int32_t Watch(int32_t origin, Watcher &watcher) override;
+    int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t Lock() override;
     int32_t Heartbeat() override;
     int32_t Unlock() override;
     int64_t AliveTime() override;
     int32_t Close() override;
-
+    std::pair<int32_t, std::string> GetEmptyCursor(const std::string &tableName) override;
+    void SetPrepareTraceId(const std::string &prepareTraceId) override;
 private:
 
     OhCloudExtCloudDatabase *database_ = nullptr;

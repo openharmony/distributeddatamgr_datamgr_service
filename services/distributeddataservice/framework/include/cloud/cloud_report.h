@@ -20,7 +20,7 @@
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
-class API_EXPORT CloudReport {
+class CloudReport {
 public:
     using ReportParam = DistributedData::ReportParam;
     virtual ~CloudReport() = default;

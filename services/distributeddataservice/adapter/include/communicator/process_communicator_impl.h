@@ -67,7 +67,7 @@ public:
     DBStatus GetDataHeadInfo(DataHeadInfo dataHeadInfo, uint32_t &headLength) override;
     DBStatus GetDataUserInfo(DataUserInfo dataUserInfo, std::vector<UserInfo> &userInfos) override;
 
-    Status ReuseConnect(const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
+    API_EXPORT Status ReuseConnect(const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
 
 private:
     ProcessCommunicatorImpl();

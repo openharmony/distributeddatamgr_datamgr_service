@@ -23,10 +23,10 @@ namespace OHOS {
 namespace DistributedKv {
 class PermissionValidator {
 public:
-    static PermissionValidator &GetInstance();
+    API_EXPORT static PermissionValidator &GetInstance();
     // check whether the client process have enough privilege to share data with the other devices.
     // tokenId: client process tokenId
-    bool CheckSyncPermission(uint32_t tokenId);
+    API_EXPORT bool CheckSyncPermission(uint32_t tokenId);
     bool IsCloudConfigPermit(uint32_t tokenId);
 
 private:

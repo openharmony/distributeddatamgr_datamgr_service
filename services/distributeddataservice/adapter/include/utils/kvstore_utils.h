@@ -29,7 +29,7 @@ public:
     // when the anonymous string is shorter than 9, the anonymous is "******"
     static std::string ToBeAnonymous(const std::string &name);
 
-    static uint64_t GenerateSequenceId();
+    KVSTORE_API static uint64_t GenerateSequenceId();
 private:
     static constexpr int MAIN_USER_ID = 0;
     static constexpr int SYSTEM_UID = 1000;

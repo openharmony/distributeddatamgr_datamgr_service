@@ -35,7 +35,7 @@ ohos_unittest("CommunicationProviderTest") {
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_source",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -70,7 +70,7 @@ ohos_unittest("CommunicatorContextTest") {
   ]
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_source",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -275,7 +275,7 @@ ohos_unittest("SoftbusClientTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_source" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 

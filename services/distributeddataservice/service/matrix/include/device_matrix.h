@@ -79,8 +79,8 @@ public:
     void Clear();
     void SetExecutor(std::shared_ptr<ExecutorPool> executors);
     uint16_t GetCode(const StoreMetaData &metaData);
-    std::pair<bool, uint16_t> GetMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
-    std::pair<bool, uint16_t> GetRemoteMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
+    API_EXPORT std::pair<bool, uint16_t> GetMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
+    API_EXPORT std::pair<bool, uint16_t> GetRemoteMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
     std::pair<bool, uint16_t> GetRecvLevel(const std::string &device, LevelType type);
     std::pair<bool, uint16_t> GetConsLevel(const std::string &device, LevelType type);
     std::pair<bool, bool> IsConsistent(const std::string &device);
