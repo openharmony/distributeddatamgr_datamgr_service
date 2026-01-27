@@ -29,6 +29,7 @@
 #include "feature/static_acts.h"
 #include "rdb_flow_control_manager.h"
 #include "lru_bucket.h"
+#include "metadata/meta_data_saver.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "process_communicator_impl.h"
@@ -282,13 +283,17 @@ private:
 
     static StoreInfo GetStoreInfoEx(const StoreMetaData &metaData);
 
-    static int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+    static int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
+                                 DistributedData::MetaDataSaver &saver);
 
-    static int32_t SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+    static int32_t SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
+                               DistributedData::MetaDataSaver &saver);
 
-    static int32_t SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param);
+    static int32_t SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
+                                   DistributedData::MetaDataSaver &saver);
 
-    static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old);
+    static bool SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old,
+                              DistributedData::MetaDataSaver &saver);
 
     static int32_t PostSearchEvent(int32_t evtId, const StoreMetaData &param,
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);
@@ -297,7 +302,8 @@ private:
 
     std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
 
-    void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password);
+    void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password,
+                          DistributedData::MetaDataSaver &saver);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

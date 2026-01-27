@@ -327,7 +327,7 @@ std::vector<uint8_t> CryptoManager::Decrypt(const std::vector<uint8_t> &source, 
 }
 
 void CryptoManager::UpdateSecretMeta(const std::vector<uint8_t> &password, const StoreMetaData &metaData,
-    const std::string &metaKey, SecretKeyMetaData &secretKey)
+    const std::string &metaKey, SecretKeyMetaData &secretKey, MetaDataSaver &saver)
 {
     if (password.empty() || (!secretKey.nonce.empty() && secretKey.area >= 0)) {
         return;
@@ -344,7 +344,14 @@ void CryptoManager::UpdateSecretMeta(const std::vector<uint8_t> &password, const
     auto time = system_clock::to_time_t(system_clock::now());
     secretKey.time = { reinterpret_cast<uint8_t *>(&time),
         reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
-    MetaDataManager::GetInstance().SaveMeta(metaKey, secretKey, true);
+    saver.Add(metaKey, secretKey);
+}
+
+void CryptoManager::UpdateSecretMeta(const std::vector<uint8_t> &password, const StoreMetaData &metaData,
+    const std::string &metaKey, SecretKeyMetaData &secretKey)
+{
+    MetaDataSaver saver(false); // Synchronous save for backward compatibility
+    UpdateSecretMeta(password, metaData, metaKey, secretKey, saver);
 }
 
 bool BuildImportKeyParams(struct HksParamSet *&params)

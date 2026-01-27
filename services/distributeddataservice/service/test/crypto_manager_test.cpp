@@ -423,4 +423,102 @@ HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest005, TestSize.Level0)
     ASSERT_FALSE(secretKey.nonce.empty());
     ASSERT_EQ(secretKey.area, metaData.area);
 }
+
+/**
+ * @tc.name: UpdateSecretMetaTest006
+ * @tc.desc: Test UpdateSecretMeta with MetaDataSaver parameter - batch save mode
+ * @tc.type: FUNC
+ */
+HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest006, TestSize.Level0)
+{
+    auto errCode = CryptoManager::GetInstance().GenerateRootKey();
+    ASSERT_EQ(errCode, CryptoManager::ErrCode::SUCCESS);
+
+    SecretKeyMetaData secretKey;
+    StoreMetaData metaData;
+    metaData.bundleName = TEST_BUNDLE_NAME;
+    metaData.storeId = std::string(TEST_STORE_NAME) + "_batch";
+    metaData.user = TEST_USERID;
+    metaData.area = CryptoManager::Area::EL1;
+
+    // Test with MetaDataSaver for batch saving
+    MetaDataSaver saver(false); // synchronous save for test
+    CryptoManager::GetInstance().UpdateSecretMeta(randomKey, metaData, metaData.GetSecretKey(), secretKey, saver);
+
+    ASSERT_FALSE(secretKey.sKey.empty());
+    ASSERT_FALSE(secretKey.nonce.empty());
+    ASSERT_EQ(secretKey.area, metaData.area);
+
+    // Verify saver has the entry
+    EXPECT_EQ(saver.Size(), 1u);
+    EXPECT_TRUE(saver.Flush());
+}
+
+/**
+ * @tc.name: UpdateSecretMetaTest007
+ * @tc.desc: Test UpdateSecretMeta with MetaDataSaver and empty password
+ * @tc.type: FUNC
+ */
+HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest007, TestSize.Level0)
+{
+    std::vector<uint8_t> emptyPassword;
+    SecretKeyMetaData secretKey;
+    StoreMetaData metaData;
+    metaData.area = CryptoManager::Area::EL1;
+
+    MetaDataSaver saver(false);
+    CryptoManager::GetInstance().UpdateSecretMeta(emptyPassword, metaData, "", secretKey, saver);
+
+    // Should not add anything when password is empty
+    EXPECT_TRUE(secretKey.sKey.empty());
+    EXPECT_EQ(saver.Size(), 0u);
+}
+
+/**
+ * @tc.name: UpdateSecretMetaTest008
+ * @tc.desc: Test UpdateSecretMeta with MetaDataSaver when nonce exists and area >= 0
+ * @tc.type: FUNC
+ */
+HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest008, TestSize.Level0)
+{
+    SecretKeyMetaData secretKey;
+    secretKey.nonce = nonce;
+    secretKey.area = CryptoManager::Area::EL1;
+
+    StoreMetaData metaData;
+    metaData.area = CryptoManager::Area::EL2;
+
+    MetaDataSaver saver(false);
+    CryptoManager::GetInstance().UpdateSecretMeta(randomKey, metaData, "", secretKey, saver);
+
+    // Should not update when nonce exists and area >= 0
+    EXPECT_TRUE(secretKey.sKey.empty());
+    EXPECT_EQ(saver.Size(), 0u);
+}
+
+/**
+ * @tc.name: UpdateSecretMetaTest009
+ * @tc.desc: Test UpdateSecretMeta backward compatibility (without saver) uses internal saver
+ * @tc.type: FUNC
+ */
+HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest009, TestSize.Level0)
+{
+    auto errCode = CryptoManager::GetInstance().GenerateRootKey();
+    ASSERT_EQ(errCode, CryptoManager::ErrCode::SUCCESS);
+
+    SecretKeyMetaData secretKey;
+    StoreMetaData metaData;
+    metaData.bundleName = std::string(TEST_BUNDLE_NAME) + "_compat";
+    metaData.storeId = TEST_STORE_NAME;
+    metaData.user = TEST_USERID;
+    metaData.area = CryptoManager::Area::EL1;
+
+    // Call version without MetaDataSaver - should use internal saver
+    CryptoManager::GetInstance().UpdateSecretMeta(randomKey, metaData, metaData.GetSecretKey(), secretKey);
+
+    ASSERT_FALSE(secretKey.sKey.empty());
+    ASSERT_FALSE(secretKey.nonce.empty());
+    ASSERT_EQ(secretKey.area, metaData.area);
+}
+
 } // namespace OHOS::Test
