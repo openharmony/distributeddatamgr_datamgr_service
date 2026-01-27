@@ -26,8 +26,22 @@
 #include "token_setproc.h"
 #include "udmf_service_impl.h"
 #include "udmf_types_util.h"
+#include "bootstrap.h"
+#include "observer_factory.h"
+#include "drag_observer.h"
+#include "data_handler.h"
+#include "delay_data_acquire_container.h"
+#include "device_manager_adapter.h"
+#include "kvstore_meta_manager.h"
+#include "lifecycle_manager.h"
+#include "log_print.h"
+#include "nativetoken_kit.h"
+#include "udmf_notifier_proxy.h"
+#include "udmf_service_impl.h"
 
 using namespace OHOS::UDMF;
+using namespace OHOS::Security::AccessToken;
+using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 namespace OHOS {
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UdmfService";
@@ -40,6 +54,97 @@ static constexpr int USERID = 100;
 static constexpr int INSTINDEX = 0;
 static constexpr const char *BUNDLENAME = "com.test.demo";
 static constexpr const char *SCHEME_SEPARATOR = "udmf://drag/com.example.app/sajhjh";
+
+static void GrantPermissionNative()
+{
+    const char *perms[4] = {
+        "ohos.permission.DISTRIBUTED_DATASYNC",
+        "ohos.permission.ACCESS_SERVICE_DM",
+        "ohos.permission.MONITOR_DEVICE_NETWORK_STATE" // perms[2] is a permission parameter
+    };
+    TokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 3,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "distributed_data_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    AccessTokenKit::ReloadNativeTokenInfo();
+}
+
+static void SetUpTestCase(void) {}
+static void TearDownTestCase(void) {}
+static void DeleteTestHapToken();
+void SetUp() {}
+void TearDown()
+{
+    DeleteTestHapToken();
+}
+
+void AllocTestHapToken()
+{
+    HapInfoParams info = {
+        .userID = USERID,
+        .bundleName = BUNDLENAME,
+        .instIndex = INSTINDEX,
+        .appIDDesc = "ohos.test.demo1"
+    };
+
+    HapPolicyParams policy = {
+        .apl = APL_NORMAL,
+        .domain = "test.domain",
+        .permList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .bundleName = BUNDLENAME,
+                .grantMode = 1,
+                .availableLevel = APL_NORMAL,
+                .label = "label",
+                .labelId = 1,
+                .description = "test1",
+                .descriptionId = 1
+            }
+        },
+        .permStateList = {
+            {
+                .permissionName = "ohos.permission.test",
+                .isGeneral = true,
+                .resDeviceID = { "local" },
+                .grantStatus = { PermissionState::PERMISSION_GRANTED },
+                .grantFlags = { 1 }
+            }
+        }
+    };
+    auto tokenID = AccessTokenKit::AllocHapToken(info, policy);
+    SetSelfTokenID(tokenID.tokenIDEx);
+}
+
+std::shared_ptr<UdmfServiceImpl> InitializeEnvironment()
+{
+    GrantPermissionNative();
+    DistributedData::Bootstrap::GetInstance().LoadComponents();
+    DistributedData::Bootstrap::GetInstance().LoadDirectory();
+    DistributedData::Bootstrap::GetInstance().LoadCheckers();
+    auto executors = std::make_shared<OHOS::ExecutorPool>(NUM_MAX, NUM_MIN);
+    DmAdapter::GetInstance().Init(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+    AllocTestHapToken();
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    return udmfServiceImpl;
+}
+
+void DeleteTestHapToken()
+{
+    auto tokenId = AccessTokenKit::GetHapTokenID(USERID, BUNDLENAME, INSTINDEX);
+    AccessTokenKit::DeleteToken(tokenId);
+}
 
 QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 {
@@ -58,10 +163,18 @@ QueryOption GenerateFuzzQueryOption(FuzzedDataProvider &provider)
 
 void SetDelayInfoFuzz(FuzzedDataProvider &provider)
 {
+    GrantPermissionNative();
+    DistributedData::Bootstrap::GetInstance().LoadComponents();
+    DistributedData::Bootstrap::GetInstance().LoadDirectory();
+    DistributedData::Bootstrap::GetInstance().LoadCheckers();
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executor);
     udmfServiceImpl->OnBind(
         { "UdmfServiceDelayDataFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+    AllocTestHapToken();
     MessageParcel requestUpdate;
     requestUpdate.WriteInterfaceToken(INTERFACE_TOKEN);
     DataLoadInfo dataLoadInfo;
@@ -174,7 +287,7 @@ void UpdateDelayDataFuzz(FuzzedDataProvider &provider)
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = InitializeEnvironment();
     udmfServiceImpl->UpdateDelayData(key, data);
     udmfServiceImpl->GetDevicesForDelayData();
 }
@@ -186,7 +299,7 @@ void PushDelayDataToRemoteFuzz(FuzzedDataProvider &provider)
     for (size_t i = 0; i < devices.size(); ++i) {
         devices[i] = provider.ConsumeRandomLengthString();
     }
-    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
+    std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = InitializeEnvironment();
     udmfServiceImpl->PushDelayDataToRemote(query, devices);
 }
 
@@ -211,6 +324,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
+    OHOS::SetUpTestCase();
     OHOS::SetDelayInfoFuzz(provider);
     OHOS::PushDelayDataFuzz(provider);
     OHOS::GetDataIfAvailableFuzz(provider);
@@ -218,5 +332,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::UpdateDelayDataFuzz(provider);
     OHOS::PushDelayDataToRemoteFuzz(provider);
     OHOS::HandleRemoteDelayDataFuzz(provider);
+    OHOS::TearDownTestCase();
     return 0;
 }
