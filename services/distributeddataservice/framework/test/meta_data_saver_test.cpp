@@ -132,7 +132,7 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_Flush_WithEntries_001, testing::ext::T
     StoreMetaData meta;
     meta.bundleName = "test_bundle";
     meta.storeId = "test_store";
-    auto key = meta.GetKey();  // 获取 key
+    auto key = meta.GetKey();
     saver.Add(key, meta);
 
     EXPECT_EQ(saver.Size(), 1u);
@@ -167,9 +167,7 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_Destructor_AutoFlush_001, testing::ext
         meta.storeId = "auto_flush_store";
         key = meta.GetKey();
         saver.Add(key, meta);
-        // Destructor will be called here and flush
     }
-    // Record key for cleanup
     savedKeys_.push_back(key);
     // If we reach here, destructor flushed successfully (no crash)
     EXPECT_TRUE(true);
@@ -191,14 +189,10 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_Destructor_NoFlush_WhenFlushed_001, te
         meta.storeId = "already_flushed_store";
         key = meta.GetKey();
         saver.Add(key, meta);
-
         // Explicitly flush
         auto result = saver.Flush();
         EXPECT_TRUE(result);
-
-        // Destructor will be called here but should not flush again
     }
-    // Record key for cleanup
     savedKeys_.push_back(key);
     // If we reach here, destructor handled already flushed state correctly
     EXPECT_TRUE(true);
