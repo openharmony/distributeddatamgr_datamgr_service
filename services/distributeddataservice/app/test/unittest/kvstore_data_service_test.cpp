@@ -1351,6 +1351,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreFail, TestSize.Level0
     data.WriteString("");
     EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
     close(fd);
+    ASSERT_EQ(remove(SECRETKEY_BACKUP_FILE.c_str()), 0);
 }
 
 } // namespace OHOS::Test
