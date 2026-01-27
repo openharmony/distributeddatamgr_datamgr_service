@@ -38,12 +38,10 @@ public:
     };
     API_EXPORT static DirectoryManager &GetInstance();
     API_EXPORT std::string GetStorePath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
-    API_EXPORT std::string GetSecretKeyPath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetStoreBackupPath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetClonePath(const std::string &userId, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetMetaStorePath(uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetMetaBackupPath(uint32_t version = INVALID_VERSION);
-    API_EXPORT std::vector<uint32_t> GetVersions();
     API_EXPORT void Initialize(const std::vector<Strategy> &strategies, const std::vector<StoreType> &storeTypes);
     API_EXPORT bool CreateDirectory(const std::string &path) const;
 

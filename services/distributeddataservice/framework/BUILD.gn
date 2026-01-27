@@ -148,7 +148,7 @@ ohos_shared_library("distributeddatasvcfwk") {
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
-ohos_source_set("distributeddatasvcfwk_cloud") {
+ohos_source_set("distributeddatasvcfwk_src") {
   branch_protector_ret = "pac_ret"
   sanitize = {
     ubsan = true
@@ -158,6 +158,7 @@ ohos_source_set("distributeddatasvcfwk_cloud") {
     debug = false
   }
   sources = [
+    "checker/checker_manager.cpp",
     "cloud/cloud_db.cpp",
     "cloud/cloud_event.cpp",
     "cloud/cloud_info.cpp",
@@ -167,6 +168,7 @@ ohos_source_set("distributeddatasvcfwk_cloud") {
     "cloud/schema_meta.cpp",
     "eventcenter/event.cpp",
     "metadata/auto_launch_meta_data.cpp",
+    "metadata/capability_range.cpp",
     "metadata/secret_key_meta_data.cpp",
     "metadata/store_debug_info.cpp",
     "metadata/store_meta_data.cpp",
@@ -174,7 +176,12 @@ ohos_source_set("distributeddatasvcfwk_cloud") {
     "metadata/strategy_meta_data.cpp",
     "serializable/serializable.cpp",
     "utils/anonymous.cpp",
+    "utils/block_integer.cpp",
     "utils/constant.cpp",
+    "utils/corrupt_reporter.cpp",
+    "utils/converter.cpp",
+    "utils/crypto.cpp",
+    "utils/ref_count.cpp",
   ]
 
   cflags = [
@@ -194,10 +201,12 @@ ohos_source_set("distributeddatasvcfwk_cloud") {
   public_configs = [ ":module_public_config" ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "hilog:libhilog",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
+    "openssl:libcrypto_shared",
   ]
   subsystem_name = "distributeddatamgr"
 

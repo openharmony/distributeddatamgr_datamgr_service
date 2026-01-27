@@ -20,7 +20,7 @@ namespace OHOS {
 namespace DistributedData {
 struct SecretKeyBackupData final : public Serializable {
 public:
-    struct API_EXPORT BackupItem final : public Serializable {
+    struct BackupItem final : public Serializable {
         std::string bundleName;
         std::string dbName;
         std::string user;
@@ -30,17 +30,17 @@ public:
         int32_t area = -1;
         std::vector<uint8_t> time;
 
-        API_EXPORT BackupItem();
+        BackupItem();
         ~BackupItem();
-        API_EXPORT bool Marshal(json &node) const override;
-        API_EXPORT bool Unmarshal(const json &node) override;
-        API_EXPORT bool IsValid() const;
+        bool Marshal(json &node) const override;
+        bool Unmarshal(const json &node) override;
+        bool IsValid() const;
     };
     std::vector<BackupItem> infos;
-    API_EXPORT SecretKeyBackupData();
+    SecretKeyBackupData();
     ~SecretKeyBackupData();
-    API_EXPORT bool Marshal(json &node) const override;
-    API_EXPORT bool Unmarshal(const json &node) override;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 };
 } // namespace DistributedData
 } // namespace OHOS

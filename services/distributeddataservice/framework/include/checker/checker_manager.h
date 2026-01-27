@@ -63,8 +63,8 @@ public:
     API_EXPORT std::string GetAppId(const StoreInfo &info);
     API_EXPORT std::vector<StoreInfo> GetDynamicStores();
     API_EXPORT std::vector<StoreInfo> GetStaticStores();
-    API_EXPORT bool IsDynamic(const StoreInfo &info);
-    API_EXPORT bool IsStatic(const StoreInfo &info);
+    bool IsDynamic(const StoreInfo &info);
+    bool IsStatic(const StoreInfo &info);
     API_EXPORT bool IsValid(const StoreInfo &info);
     API_EXPORT bool IsDistrust(const StoreInfo &info);
     API_EXPORT bool IsSwitches(const StoreInfo &info);

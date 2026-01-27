@@ -51,11 +51,6 @@ std::string DirectoryManager::GetStoreBackupPath(const StoreMetaData &metaData, 
     return rootBackupPath + "/" + metaData.storeId;
 }
 
-std::string DirectoryManager::GetSecretKeyPath(const StoreMetaData &metaData, uint32_t version)
-{
-    return GenPath(metaData, version, "secret");
-}
-
 std::string DirectoryManager::GetMetaStorePath(uint32_t version)
 {
     int32_t index = GetVersionIndex(version);
@@ -223,15 +218,6 @@ int32_t DirectoryManager::GetVersionIndex(uint32_t version) const
         }
     }
     return int32_t(strategies_.size()) - 1;
-}
-
-std::vector<uint32_t> DirectoryManager::GetVersions()
-{
-    std::vector<uint32_t> versions;
-    for (size_t i = 0; i < strategies_.size(); ++i) {
-        versions.push_back(strategies_[i].version);
-    }
-    return versions;
 }
 
 std::string DirectoryManager::GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath) const
