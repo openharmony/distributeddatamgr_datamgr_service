@@ -674,25 +674,23 @@ bool KvStoreDataService::ParseSecretKeyFile(MessageParcel &data, SecretKeyBackup
     struct stat statBuf;
     if (fd.Get() < 0 || fstat(fd.Get(), &statBuf) < 0) {
         ZLOGE("Parse backup secret key failed, fd:%{public}d, errno:%{public}d", fd.Get(), errno);
-        close(fd.Release());
         return false;
     }
     const off_t sizeMax = 1024 * 1024 * 500; // 500M upper limit
     if (statBuf.st_size > sizeMax) {
         ZLOGE("Secret key file size exceeds the upper limit, fd:%{public}d, errno:%{public}d", fd.Get(), errno);
-        close(fd.Release());
         return false;
     }
     std::vector<char> buffer(statBuf.st_size);
     ssize_t fileSize = read(fd.Get(), buffer.data(), statBuf.st_size);
     if (fileSize < 0) {
         ZLOGE("Read backup secret key failed. errno:%{public}d", errno);
-        close(fd.Release());
         return false;
     }
-    close(fd.Release());
-    std::string secretKeyStr(buffer.data(), static<size_t>(fileSize));
-    DistributedData::Serializable::Unmarshall(secretKeyStr, backupData);
+    std::string keyLoad(buffer.data(), static<size_t>(fileSize));
+    memset_s(buffer.data(), buffer.size(), 0, buffer.size());
+    DistributedData::Serializable::Unmarshall(keyLoad, backupData);
+    std::fill(keyLoad.begin(), keyLoad.end(), '\0');
     return true;
 }
 
