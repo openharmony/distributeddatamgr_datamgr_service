@@ -1327,4 +1327,37 @@ HWTEST_F(KvStoreDataServiceTest, WriteBackupInfo_FwriteFail, TestSize.Level0)
     bool result = kvStoreDataServiceTest.WriteBackupInfo(content, "/");
     EXPECT_FALSE(result);
 }
+
+
+/**
+ * @tc.name: OnExtensionRestore_RestoreFial
+ * @tc.desc: Test OnRestore returns -1 when Secret key file size exceeds the upper limit
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lyy
+ */
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreFail, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    // int fd = open(SECRETKEY_BACKUP_FILE, O_CREAT | O_RDWR, 0644);
+    // const off_t sizeMax = 1024 * 1024 * 500 + 1;
+    // ftruncate(fd, sizeMax);
+    // lseek(fd, 0, SEEK_SET);
+    // write(fd, "header", 6);
+    // close(fd);
+
+    const off_t sizeMax = 1024 * 1024 * 500 + 1;
+    const std::string backupData(static_cast<size_t>(sizeMax), 'a');
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, backupData), 0);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+    data.WriteString("");
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+    close(fd);
+}
+
 } // namespace OHOS::Test
