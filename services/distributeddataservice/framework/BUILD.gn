@@ -166,7 +166,6 @@ ohos_source_set("distributeddatasvcfwk_src") {
     "cloud/cloud_report.cpp",
     "cloud/cloud_server.cpp",
     "cloud/schema_meta.cpp",
-    "directory/directory_manager.cpp",
     "eventcenter/event.cpp",
     "metadata/auto_launch_meta_data.cpp",
     "metadata/capability_range.cpp",

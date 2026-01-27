@@ -26,6 +26,8 @@ namespace DistributedData {
 class TimeUtils {
 public:
     API_EXPORT static std::string GetCurSysTimeWithMs();
+
+private:
     static std::string GetTimeWithMs(time_t sec, int64_t nsec);
 };
 

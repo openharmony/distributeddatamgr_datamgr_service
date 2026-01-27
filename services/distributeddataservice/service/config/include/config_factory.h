@@ -22,7 +22,7 @@ namespace OHOS {
 namespace DistributedData {
 class ConfigFactory {
 public:
-    API_EXPORT static ConfigFactory &GetInstance();
+    static ConfigFactory &GetInstance();
     int32_t Initialize();
     std::vector<ComponentConfig> *GetComponentConfig();
     NetworkConfig *GetNetworkConfig();
@@ -33,7 +33,7 @@ public:
     CloudConfig *GetCloudConfig();
     std::vector<AppIdMappingConfig> *GetAppIdMappingConfig();
     ThreadConfig *GetThreadConfig();
-    API_EXPORT DataShareConfig *GetDataShareConfig();
+    DataShareConfig *GetDataShareConfig();
     std::vector<AutoSyncAppConfig> *GetAutoSyncAppConfig();
     AppAccessCheckConfig *GetSyncAppsConfig();
     std::vector<DoubleSyncConfig> *GetDoubleSyncConfig();
