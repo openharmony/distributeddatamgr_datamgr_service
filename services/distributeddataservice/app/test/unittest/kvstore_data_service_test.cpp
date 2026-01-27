@@ -1342,13 +1342,6 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreFail, TestSize.Level0
     MessageParcel data;
     MessageParcel reply;
 
-    // int fd = open(SECRETKEY_BACKUP_FILE, O_CREAT | O_RDWR, 0644);
-    // const off_t sizeMax = 1024 * 1024 * 500 + 1;
-    // ftruncate(fd, sizeMax);
-    // lseek(fd, 0, SEEK_SET);
-    // write(fd, "header", 6);
-    // close(fd);
-
     const off_t sizeMax = 1024 * 1024 * 500 + 1;
     const std::string backupData(static_cast<size_t>(sizeMax), 'a');
     EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, backupData), 0);
