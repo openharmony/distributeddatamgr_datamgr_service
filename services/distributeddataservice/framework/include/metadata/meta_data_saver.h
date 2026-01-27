@@ -31,6 +31,10 @@ namespace OHOS::DistributedData {
  *
  * Collects multiple metadata entries and saves them in a single batch operation.
  * Automatically flushes on destruction if not explicitly flushed.
+ *
+ * @warning NOT THREAD-SAFE
+ * This class is not thread-safe and must not be accessed concurrently from
+ * multiple threads. Each instance should be used by a single thread only.
  */
 class API_EXPORT MetaDataSaver {
 public:
@@ -67,9 +71,7 @@ public:
      * @param key The metadata key
      * @param value The serialized value
      */
-    void Add(const std::string &key, const std::string &value) {
-        entries_.push_back({key, value});
-    }
+    void Add(const std::string &key, const std::string &value);
 
     /**
      * @brief Manually flush all entries to storage
@@ -82,12 +84,12 @@ public:
      * @brief Get the number of entries currently collected
      * @return Number of entries
      */
-    size_t Size() const { return entries_.size(); }
+    size_t Size() const;
 
     /**
      * @brief Clear all entries without saving
      */
-    void Clear() { entries_.clear(); }
+    void Clear();
 
 private:
     std::vector<MetaDataManager::Entry> entries_;

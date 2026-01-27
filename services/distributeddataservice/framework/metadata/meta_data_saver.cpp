@@ -33,7 +33,7 @@ MetaDataSaver::~MetaDataSaver()
 bool MetaDataSaver::Flush()
 {
     if (entries_.empty()) {
-        flushed_ = true;
+        flushed_ = true;  // Mark as flushed to prevent double-flush in destructor
         return true;
     }
 
@@ -42,8 +42,23 @@ bool MetaDataSaver::Flush()
         ZLOGE("MetaDataSaver flush failed, count=%{public}zu, async=%{public}d",
               entries_.size(), async_);
     }
-    flushed_ = true;
+    flushed_ = true;  // Mark as flushed even on failure to avoid retry in destructor
     return success;
+}
+
+size_t MetaDataSaver::Size() const
+{
+    return entries_.size();
+}
+
+void MetaDataSaver::Clear()
+{
+    entries_.clear();
+}
+
+void MetaDataSaver::Add(const std::string &key, const std::string &value)
+{
+    entries_.push_back({key, value});
 }
 
 } // namespace OHOS::DistributedData
