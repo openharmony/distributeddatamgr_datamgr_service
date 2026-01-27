@@ -168,9 +168,13 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_Destructor_AutoFlush_001, testing::ext
         key = meta.GetKey();
         saver.Add(key, meta);
     }
+
+    StoreMetaData loadedMeta;
+    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, false);
+    EXPECT_TRUE(loadSuccess) << "Destructor should have flushed metadata to MetaDataManager";
+
+    // Record key for cleanup
     savedKeys_.push_back(key);
-    // If we reach here, destructor flushed successfully (no crash)
-    EXPECT_TRUE(true);
 }
 
 /**
@@ -189,13 +193,22 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_Destructor_NoFlush_WhenFlushed_001, te
         meta.storeId = "already_flushed_store";
         key = meta.GetKey();
         saver.Add(key, meta);
+
         // Explicitly flush
         auto result = saver.Flush();
         EXPECT_TRUE(result);
+
+        // Verify metadata was saved
+        StoreMetaData loadedMeta;
+        EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, false));
     }
+    
+    StoreMetaData loadedMeta;
+    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, false);
+    EXPECT_TRUE(loadSuccess) << "Metadata should still exist after destructor (not flushed again)";
+
+    // Record key for cleanup
     savedKeys_.push_back(key);
-    // If we reach here, destructor handled already flushed state correctly
-    EXPECT_TRUE(true);
 }
 
 /**
