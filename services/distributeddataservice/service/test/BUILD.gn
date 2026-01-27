@@ -371,11 +371,13 @@ ohos_unittest("CryptoManagerTest") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   deps = [
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "mock:distributeddata_mock_static",
   ]
 }
 

@@ -23,6 +23,11 @@
 #include "accesstoken_kit.h"
 #include "hks_api.h"
 #include "hks_param.h"
+#include "metadata/meta_data_manager.h"
+#include "metadata/meta_data_saver.h"
+#include "metadata/secret_key_meta_data.h"
+#include "metadata/store_meta_data.h"
+#include "mock/db_store_mock.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 
@@ -46,21 +51,25 @@ public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
     void SetUp() {}
-    void TearDown() {}
+    void TearDown();
 
     static void SetNativeTokenIdFromProcess(const std::string &process);
     static std::vector<uint8_t> Random(int32_t len);
     static void DeleteRootKey(int32_t area);
     static uint32_t GetStorageLevel(int32_t area);
 
+    static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static std::vector<uint8_t> randomKey;
     static std::vector<uint8_t> vecRootKeyAlias;
     static std::vector<uint8_t> nonce;
+    static std::vector<std::string> savedKeys_;
 };
 
+std::shared_ptr<DBStoreMock> CryptoManagerTest::dbStoreMock_;
 std::vector<uint8_t> CryptoManagerTest::randomKey;
 std::vector<uint8_t> CryptoManagerTest::vecRootKeyAlias;
 std::vector<uint8_t> CryptoManagerTest::nonce;
+std::vector<std::string> CryptoManagerTest::savedKeys_;
 
 void CryptoManagerTest::SetNativeTokenIdFromProcess(const std::string &process)
 {
@@ -88,6 +97,10 @@ void CryptoManagerTest::SetUpTestCase(void)
 {
     SetNativeTokenIdFromProcess(PROCESS_NAME);
 
+    // Initialize MetaDataManager to ensure SaveMeta operations succeed
+    dbStoreMock_ = std::make_shared<DBStoreMock>();
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+
     randomKey = Random(KEY_LENGTH);
     vecRootKeyAlias = std::vector<uint8_t>(ROOT_KEY_ALIAS, ROOT_KEY_ALIAS + strlen(ROOT_KEY_ALIAS));
     nonce = Random(NONCE_SIZE);
@@ -100,6 +113,14 @@ void CryptoManagerTest::TearDownTestCase(void)
     DeleteRootKey(CryptoManager::Area::EL1);
     DeleteRootKey(CryptoManager::Area::EL2);
     DeleteRootKey(CryptoManager::Area::EL4);
+}
+
+void CryptoManagerTest::TearDown()
+{
+    for (const auto& key : savedKeys_) {
+        MetaDataManager::GetInstance().DelMeta(key, false);
+    }
+    savedKeys_.clear();
 }
 
 std::vector<uint8_t> CryptoManagerTest::Random(int32_t len)
@@ -452,6 +473,8 @@ HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest006, TestSize.Level0)
     // Verify saver has the entry
     EXPECT_EQ(saver.Size(), 1u);
     EXPECT_TRUE(saver.Flush());
+
+    savedKeys_.push_back(metaData.GetSecretKey());
 }
 
 /**
@@ -519,6 +542,8 @@ HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest009, TestSize.Level0)
     ASSERT_FALSE(secretKey.sKey.empty());
     ASSERT_FALSE(secretKey.nonce.empty());
     ASSERT_EQ(secretKey.area, metaData.area);
+
+    savedKeys_.push_back(metaData.GetSecretKey());
 }
 
 } // namespace OHOS::Test

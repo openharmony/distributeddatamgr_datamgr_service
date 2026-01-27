@@ -2836,8 +2836,8 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_SameSecretKey_005, TestSize.Level
     MetaDataSaver saver(false);
     service.SaveSecretKeyMeta(meta, password, saver);
 
-    // Should not add to saver since key is the same
-    EXPECT_EQ(saver.Size(), 0u);
+    // Even if the password is the same, the ciphertext and timestamp are different
+    EXPECT_EQ(saver.Size(), 1u);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
