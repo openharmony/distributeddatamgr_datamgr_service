@@ -78,10 +78,10 @@ struct RadarParam {
 
 class RadarReporter {
 public:
-    API_EXPORT RadarReporter(const char *eventName, int32_t scene, const char *bundleName, const char *funcName);
-    API_EXPORT ~RadarReporter();
-    API_EXPORT RadarReporter &operator=(int32_t errCode);
-    API_EXPORT static void Report(const RadarParam &param, const char *funcName, int32_t state = 0,
+    RadarReporter(const char *eventName, int32_t scene, const char *bundleName, const char *funcName);
+    ~RadarReporter();
+    RadarReporter &operator=(int32_t errCode);
+    static void Report(const RadarParam &param, const char *funcName, int32_t state = 0,
         const char *eventName = EventName::CLOUD_SYNC_BEHAVIOR);
 
 private:

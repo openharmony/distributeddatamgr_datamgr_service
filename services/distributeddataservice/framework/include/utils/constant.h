@@ -31,7 +31,7 @@ namespace DistributedData {
 class Constant {
 public:
     // concatenate strings and return a composition string.
-    API_EXPORT static std::string Concatenate(std::initializer_list<std::string> stringList);
+    static std::string Concatenate(std::initializer_list<std::string> stringList);
 
     API_EXPORT static std::string Join(
         const std::string &prefix, const std::string &separator, std::initializer_list<std::string> params);
@@ -84,8 +84,8 @@ public:
     static T TrimCopy(T s);
 
     API_EXPORT static bool IsValidPath(const std::string &path);
-    API_EXPORT static constexpr const char *KEY_SEPARATOR = "###";
-    API_EXPORT static constexpr const char *TOKEN_ID = "tokenId";
+    static constexpr const char *KEY_SEPARATOR = "###";
+    static constexpr const char *TOKEN_ID = "tokenId";
 
 private:
     API_EXPORT static bool DCopy(uint8_t *tag, size_t tagLen, const uint8_t *src, size_t srcLen);

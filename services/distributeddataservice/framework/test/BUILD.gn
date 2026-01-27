@@ -59,7 +59,7 @@ ohos_unittest("CheckerManagerTest") {
 
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service:distributeddatasvc",
   ]
 }
@@ -143,7 +143,7 @@ ohos_unittest("ServiceUtilsTest") {
     "kv_store:datamgr_common",
   ]
 
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_src" ]
 }
 
 ohos_unittest("StoreTest") {
@@ -268,7 +268,7 @@ ohos_unittest("CloudInfoTest") {
   module_out_path = module_output_path
   sources = [ "cloud_test.cpp" ]
   configs = [ ":module_private_config" ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_cloud" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_src" ]
 
   external_deps = [
     "c_utils:utils",
