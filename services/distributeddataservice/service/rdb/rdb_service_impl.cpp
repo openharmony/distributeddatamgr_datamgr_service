@@ -1004,7 +1004,7 @@ void RdbServiceImpl::SaveLaunchInfo(StoreMetaData &meta)
 }
 
 void RdbServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password,
-                                        MetaDataSaver &saver)
+    MetaDataSaver &saver)
 {
     CryptoManager::CryptoParams encryptParams = { .area = metaData.area, .userId = metaData.user };
     auto encryptKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
@@ -1912,7 +1912,7 @@ int32_t RdbServiceImpl::GetDebugInfo(const RdbSyncerParam &param, std::map<std::
 }
 
 int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
-                                       MetaDataSaver &saver)
+    MetaDataSaver &saver)
 {
     if (param.infos_.empty()) {
         return RDB_OK;
@@ -1961,7 +1961,7 @@ int32_t RdbServiceImpl::GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::
 }
 
 int32_t RdbServiceImpl::SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
-                                     MetaDataSaver &saver)
+    MetaDataSaver &saver)
 {
     DistributedData::StoreDfxInfo dfxMeta;
     dfxMeta.lastOpenTime = param.dfxInfo_.lastOpenTime_;
@@ -1970,7 +1970,7 @@ int32_t RdbServiceImpl::SaveDfxInfo(const StoreMetaData &metaData, const RdbSync
 }
 
 int32_t RdbServiceImpl::SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
-                                         MetaDataSaver &saver)
+    MetaDataSaver &saver)
 {
     if (param.tokenIds_.empty() && param.uids_.empty()) {
         return RDB_OK;
