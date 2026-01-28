@@ -86,6 +86,7 @@ ohos_shared_library("distributeddatasvcfwk") {
     "metadata/matrix_meta_data.cpp",
     "metadata/meta_data.cpp",
     "metadata/meta_data_manager.cpp",
+    "metadata/meta_data_saver.cpp",
     "metadata/object_user_meta_data.cpp",
     "metadata/secret_key_meta_data.cpp",
     "metadata/special_channel_data.cpp",

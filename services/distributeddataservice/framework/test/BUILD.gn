@@ -469,6 +469,26 @@ ohos_unittest("SyncManagerTest") {
   ]
 }
 
+ohos_unittest("MetaDataSaverTest") {
+  module_out_path = module_output_path
+  sources = [
+    "meta_data_saver_test.cpp",
+    "mock/db_store_mock.cpp",
+  ]
+  configs = [ ":module_private_config" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+    "kv_store:distributeddb",
+  ]
+}
+
 ohos_unittest("AutoCacheTest") {
   module_out_path = module_output_path
   include_dirs = [ "${data_service_path}/service/test/mock" ]
@@ -514,6 +534,7 @@ group("unittest") {
     ":FlowControlManagerTest",
     ":GeneralStoreTest",
     ":MetaDataManagerTest",
+    ":MetaDataSaverTest",
     ":ScreenManagerTest",
     ":SerializableTest",
     ":ServiceMetaDataTest",

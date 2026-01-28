@@ -31,6 +31,7 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/meta_data_manager.h"
+#include "metadata/meta_data_saver.h"
 #include "metadata/special_channel_data.h"
 #include "metadata/store_debug_info.h"
 #include "metadata/store_meta_data_local.h"
@@ -2743,7 +2744,8 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_001, TestSize.Leve
 
     // Call SaveSecretKeyMeta, should trigger UpdateSecretMeta for cloneKey
     RdbServiceImpl service;
-    service.SaveSecretKeyMeta(meta, password);
+    MetaDataSaver saver(false); // synchronous save for test
+    service.SaveSecretKeyMeta(meta, password, saver);
 
     // Clean up
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
@@ -2774,7 +2776,100 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_EmptySKey_002, Tes
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
     RdbServiceImpl service;
-    service.SaveSecretKeyMeta(meta, password);
+    MetaDataSaver saver(false); // synchronous save for test
+    service.SaveSecretKeyMeta(meta, password, saver);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_EncryptEmpty_004
+ * @tc.desc: Test SaveSecretKeyMeta when encryption fails (empty result)
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_EncryptEmpty_004, TestSize.Level0)
+{
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    // Use empty password which should cause encryption to fail
+    std::vector<uint8_t> emptyPassword;
+
+    RdbServiceImpl service;
+    MetaDataSaver saver(false);
+    service.SaveSecretKeyMeta(meta, emptyPassword, saver);
+
+    // Should not crash, saver should be empty since encryption failed
+    EXPECT_EQ(saver.Size(), 0u);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_SameSecretKey_005
+ * @tc.desc: Test SaveSecretKeyMeta does not save when secretKey equals oldSecretKey
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_SameSecretKey_005, TestSize.Level0)
+{
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> password = Random(KEY_LENGTH);
+
+    // Prepare existing secretKey
+    SecretKeyMetaData existingKey;
+    CryptoManager::CryptoParams params;
+    existingKey.sKey = CryptoManager::GetInstance().Encrypt(password, params);
+    existingKey.nonce = params.nonce;
+    existingKey.area = meta.area;
+    existingKey.storeType = meta.storeType;
+    auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    existingKey.time = { reinterpret_cast<uint8_t *>(&time),
+        reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetSecretKey(), existingKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    RdbServiceImpl service;
+    MetaDataSaver saver(false);
+    service.SaveSecretKeyMeta(meta, password, saver);
+
+    // Even if the password is the same, the ciphertext and timestamp are different
+    EXPECT_EQ(saver.Size(), 1u);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetSecretKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: SaveSecretKeyMeta_DecryptFail_006
+ * @tc.desc: Test SaveSecretKeyMeta when clone password decryption fails
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_DecryptFail_006, TestSize.Level0)
+{
+    auto meta = metaData_;
+    meta.isEncrypt = true;
+    std::vector<uint8_t> password = Random(KEY_LENGTH);
+
+    // Prepare cloneKey with invalid encrypted data (will fail to decrypt)
+    SecretKeyMetaData cloneKey;
+    cloneKey.sKey = { 1, 2, 3, 4 }; // Invalid encrypted data
+    cloneKey.area = -1;
+    cloneKey.nonce.clear();
+    cloneKey.storeType = meta.storeType;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+
+    RdbServiceImpl service;
+    MetaDataSaver saver(false);
+    // Should not crash when decrypt fails
+    service.SaveSecretKeyMeta(meta, password, saver);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
@@ -2805,7 +2900,8 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_NoUpdate_003, Test
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
     RdbServiceImpl service;
-    service.SaveSecretKeyMeta(meta, password);
+    MetaDataSaver saver(false); // synchronous save for test
+    service.SaveSecretKeyMeta(meta, password, saver);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);

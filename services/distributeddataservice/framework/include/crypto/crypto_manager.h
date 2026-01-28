@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <mutex>
 #include <vector>
+#include "metadata/meta_data_saver.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "visibility.h"
@@ -72,6 +73,8 @@ public:
     std::vector<uint8_t> Random(uint32_t length);
     void UpdateSecretMeta(const std::vector<uint8_t> &password, const StoreMetaData &metaData,
         const std::string &metaKey, SecretKeyMetaData &secretKey);
+    void UpdateSecretMeta(const std::vector<uint8_t> &password, const StoreMetaData &metaData,
+        const std::string &metaKey, SecretKeyMetaData &secretKey, MetaDataSaver &saver);
 
     bool ImportKey(const std::vector<uint8_t> &key, const std::vector<uint8_t> &keyAlias);
     bool DeleteKey(const std::vector<uint8_t> &keyAlias);
