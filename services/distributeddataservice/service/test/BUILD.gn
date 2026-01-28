@@ -386,6 +386,7 @@ ohos_unittest("DeviceMatrixTest") {
     "mock/checker_mock.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
+    "${data_service_path}/framework/account/account_delegate.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -411,6 +412,7 @@ ohos_unittest("DeviceMatrixTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
   ]
 }
 
@@ -479,6 +481,7 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "mock/device_manager_adapter_mock.cpp",
     "mock/general_watcher_mock.cpp",
     "mock/kv_store_nb_delegate_mock.cpp",
+    "${data_service_path}/framework/account/account_delegate.cpp",
   ]
 
   include_dirs = [
@@ -528,8 +531,9 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
   ]
 }
 

@@ -42,7 +42,11 @@ config("module_private_config") {
 
 ohos_unittest("CheckerManagerTest") {
   module_out_path = module_output_path
-  sources = [ "checker_manager_test.cpp" ]
+  sources = [
+    "checker_manager_test.cpp",
+    "${data_service_path}/framework/account/account_delegate.cpp",
+    "${data_service_path}/framework/metadata/meta_data_manager.cpp",
+  ]
 
   configs = [ ":module_private_config" ]
 
@@ -55,6 +59,7 @@ ohos_unittest("CheckerManagerTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "openssl:libcrypto_shared",
+    "kv_store:distributeddb",
   ]
 
   deps = [
@@ -450,8 +455,11 @@ ohos_unittest("ConnectManagerTest") {
   sources = [ "connect_manager_test.cpp" ]
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
-  external_deps = [ "kv_store:datamgr_common" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_src" ]
+  external_deps = [
+    "kv_store:datamgr_common",
+    "hilog:libhilog",
+  ]
 }
 
 ohos_unittest("SyncManagerTest") {
