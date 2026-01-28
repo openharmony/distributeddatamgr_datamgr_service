@@ -2742,11 +2742,11 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_001, TestSize.Leve
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
-    // Call SaveSecretKeyMeta, should trigger UpdateSecretMeta for cloneKey
+    // Call SaveSecretKeyMeta - cloneKey decrypt will fail due to area/nonce mismatch
     RdbServiceImpl service;
     MetaDataSaver saver(true); // local table save
     service.SaveSecretKeyMeta(meta, password, saver);
-    // Should save both secretKey and updated cloneKey
+    // Should save only secretKey since cloneKey decrypt fails (area/nonce don't match encryption params)
     EXPECT_EQ(saver.Size(), 1u);
 
     // Clean up
