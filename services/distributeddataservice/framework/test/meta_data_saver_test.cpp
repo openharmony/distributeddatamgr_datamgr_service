@@ -32,6 +32,7 @@ public:
     void SetUp();
     void TearDown();
 
+    static void InitMetaDataManager();
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static std::vector<std::string> savedKeys_;
 };
@@ -41,8 +42,6 @@ std::vector<std::string> MetaDataSaverTest::savedKeys_;
 
 void MetaDataSaverTest::SetUpTestCase()
 {
-    dbStoreMock_ = std::make_shared<DBStoreMock>();
-    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
 }
 
 void MetaDataSaverTest::TearDownTestCase()
@@ -61,6 +60,32 @@ void MetaDataSaverTest::TearDown()
     savedKeys_.clear();
 }
 
+void MetaDataSaverTest::InitMetaDataManager()
+{
+    if (dbStoreMock_ == nullptr) {
+        dbStoreMock_ = std::make_shared<DBStoreMock>();
+    }
+    MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
+}
+
+/**
+ * @tc.name: MetaDataSaver_Destructor_Uninitialized_001
+ * @tc.desc: Test destructor when MetaDataManager is not initialized
+ * @tc.type: FUNC
+ */
+HWTEST_F(MetaDataSaverTest, MetaDataSaver_Destructor_Uninitialized_001, testing::ext::TestSize.Level0)
+{
+    // Do NOT call InitMetaDataManager() - test failure scenario
+    std::string key = "uninitialized_test_key";
+    {
+        MetaDataSaver saver(true);
+        saver.Add(key, "test_value");
+    }
+    StoreMetaData loadedMeta;
+    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, true);
+    EXPECT_TRUE(!loadSuccess) << "String value should have not been saved";
+}
+
 /**
  * @tc.name: MetaDataSaver_Constructor_001
  * @tc.desc: Test MetaDataSaver constructor with async parameter
@@ -68,6 +93,7 @@ void MetaDataSaverTest::TearDown()
  */
 HWTEST_F(MetaDataSaverTest, MetaDataSaver_Constructor_001, testing::ext::TestSize.Level0)
 {
+    InitMetaDataManager();
     // Test async mode
     MetaDataSaver asyncSaver(true);
     EXPECT_EQ(asyncSaver.Size(), 0u);
@@ -84,7 +110,7 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_Constructor_001, testing::ext::TestSiz
  */
 HWTEST_F(MetaDataSaverTest, MetaDataSaver_Add_001, testing::ext::TestSize.Level0)
 {
-    MetaDataSaver saver(false);
+    MetaDataSaver saver(true);
 
     // Add metadata entries
     StoreMetaData meta1;
@@ -110,18 +136,17 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_Destructor_AutoFlush_001, testing::ext
     // Create scope to trigger destructor
     std::string key;
     {
-        MetaDataSaver saver(false);
+        MetaDataSaver saver(true);
         StoreMetaData meta;
         meta.bundleName = "auto_flush_bundle";
         meta.storeId = "auto_flush_store";
         key = meta.GetKey();
         saver.Add(key, meta);
-        // Destructor will be called here and automatically flush
     }
 
     // Verify: Load metadata from MetaDataManager to confirm destructor flushed successfully
     StoreMetaData loadedMeta;
-    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, false);
+    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, true);
     EXPECT_TRUE(loadSuccess) << "Destructor should have flushed metadata to MetaDataManager";
 
     // Record key for cleanup
@@ -137,7 +162,7 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_MultipleAdd_001, testing::ext::TestSiz
 {
     std::string key;
     {
-        MetaDataSaver saver(false);
+        MetaDataSaver saver(true);
         StoreMetaData meta;
         meta.bundleName = "multiple_add_bundle";
         meta.storeId = "multiple_add_store";
@@ -146,13 +171,11 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_MultipleAdd_001, testing::ext::TestSiz
         // Add multiple times - should batch save on destruction
         saver.Add(key, meta);
         saver.Add(key, meta);  // Duplicate add (same key)
-
-        // Destructor will automatically flush all entries
     }
 
     // Verify metadata was saved
     StoreMetaData loadedMeta;
-    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, false);
+    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, true);
     EXPECT_TRUE(loadSuccess) << "Destructor should have saved metadata";
 
     // Record key for cleanup
@@ -166,7 +189,7 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_MultipleAdd_001, testing::ext::TestSiz
  */
 HWTEST_F(MetaDataSaverTest, MetaDataSaver_Clear_001, testing::ext::TestSize.Level0)
 {
-    MetaDataSaver saver(false);
+    MetaDataSaver saver(true);
 
     // Add multiple entries
     StoreMetaData meta1;
@@ -198,18 +221,16 @@ HWTEST_F(MetaDataSaverTest, MetaDataSaver_Add_String_001, testing::ext::TestSize
 
     // Create scope to trigger auto-flush
     {
-        MetaDataSaver saver(false);
+        MetaDataSaver saver(true);
         saver.Add(key, value);
-        // Destructor will automatically flush
     }
 
     // Verify metadata was saved
     StoreMetaData loadedMeta;
-    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, false);
+    auto loadSuccess = MetaDataManager::GetInstance().LoadMeta(key, loadedMeta, true);
     EXPECT_TRUE(loadSuccess) << "String value should have been saved";
 
     // Note: For pre-serialized strings, the value is stored as-is
     savedKeys_.push_back(key);
 }
-
 } // namespace OHOS::Test
