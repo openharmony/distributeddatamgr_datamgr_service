@@ -275,6 +275,7 @@ void FillDelayUnifiedDataFuzz(FuzzedDataProvider &provider)
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    data.AddRecord(std::make_shared<UnifiedRecord>(FILE_URI, obj));
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     udmfServiceImpl->FillDelayUnifiedData(udKey, data);
 }
@@ -287,6 +288,8 @@ void UpdateDelayDataFuzz(FuzzedDataProvider &provider)
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     obj->value_[FILE_URI_PARAM] = provider.ConsumeRandomLengthString();
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
+    data.AddRecord(std::make_shared<UnifiedRecord>(FILE_URI, obj));
+    data.runtime_ = std::make_shared<Runtime>();
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = InitializeEnvironment();
     udmfServiceImpl->UpdateDelayData(key, data);
     udmfServiceImpl->GetDevicesForDelayData();
