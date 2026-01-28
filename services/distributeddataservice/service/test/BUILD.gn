@@ -98,7 +98,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
@@ -149,7 +149,7 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
@@ -215,7 +215,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
@@ -310,7 +310,7 @@ ohos_unittest("ConfigFactoryTest") {
 
   deps = [
     "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
+    "${data_service_path}/service/config:distributeddata_config",
   ]
 }
 
@@ -409,9 +409,8 @@ ohos_unittest("DeviceMatrixTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/matrix:distributeddata_matrix",
   ]
 }
 
@@ -462,7 +461,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
 
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
   ]
 }
@@ -529,9 +528,8 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/matrix:distributeddata_matrix",
   ]
 }
 
@@ -635,7 +633,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/utils:distributeddata_utils",
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
@@ -1434,6 +1432,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/config:distributeddata_config",
   ]
 }
 
@@ -1690,7 +1689,7 @@ ohos_unittest("KvdbServiceImplTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "mock:distributeddata_mock_static",
   ]

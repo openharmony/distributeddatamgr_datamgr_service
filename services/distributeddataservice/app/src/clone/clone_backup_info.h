@@ -22,38 +22,38 @@ struct CloneEncryptionInfo final : public Serializable {
     std::string symkey;
     std::string algName;
     std::string iv;
-    API_EXPORT bool Marshal(json &node) const override;
-    API_EXPORT bool Unmarshal(const json &node) override;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
     ~CloneEncryptionInfo();
 };
 
 struct CloneBundleInfo final : public Serializable {
     std::string bundleName;
     uint32_t accessTokenId;
-    API_EXPORT bool Marshal(json &node) const override;
-    API_EXPORT bool Unmarshal(const json &node) override;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 };
 
 struct CloneBackupInfo final : public Serializable {
     CloneEncryptionInfo encryptionInfo;
     std::vector<CloneBundleInfo> bundleInfos;
     std::string userId;
-    API_EXPORT bool Marshal(json &node) const override;
-    API_EXPORT bool Unmarshal(const json &node) override;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 };
 
 struct CloneReplyResult final : public Serializable {
     std::string type = "ErrorInfo";
     std::string errorCode;
     std::string errorInfo;
-    API_EXPORT bool Marshal(json &node) const override;
-    API_EXPORT bool Unmarshal(const json &node) override;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 };
 
 struct CloneReplyCode final : public Serializable {
     std::vector<CloneReplyResult> resultInfo;
-    API_EXPORT bool Marshal(json &node) const override;
-    API_EXPORT bool Unmarshal(const json &node) override;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
 };
 } // namespace DistributedData
 } // namespace OHOS

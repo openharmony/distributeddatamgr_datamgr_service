@@ -23,7 +23,7 @@
 
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT SharingCenter {
+class SharingCenter {
 public:
     enum Role { ROLE_NIL = -1, ROLE_INVITER, ROLE_INVITEE, ROLE_BUTT };
 

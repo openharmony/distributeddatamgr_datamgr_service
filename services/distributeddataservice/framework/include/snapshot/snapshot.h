@@ -22,7 +22,7 @@
 namespace OHOS {
 namespace DistributedData {
 
-class API_EXPORT Snapshot {
+class Snapshot {
 public:
     virtual ~Snapshot() = default;
 
@@ -43,7 +43,6 @@ public:
     virtual int32_t OnDataChanged(Asset& asset, const std::string &deviceId) = 0;
 
     virtual bool IsBoundAsset(const Asset& asset) = 0;
-
 };
 } // namespace DistributedData
 } // namespace OHOS

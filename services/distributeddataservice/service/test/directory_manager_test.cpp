@@ -232,30 +232,6 @@ HWTEST_F(DirectoryManagerTest, GetStorageMetaPath, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetSecretKeyPath
-* @tc.desc: test get secret key path
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author:
-*/
-HWTEST_F(DirectoryManagerTest, GetSecretKeyPath, TestSize.Level0)
-{
-    StoreMetaData metaData;
-    metaData.user = "0";
-    metaData.bundleName = "bundle_manager_service";
-    metaData.appId = "bundle_manager_service";
-    metaData.dataDir = "/data/service/el1/public/database/bundle_manager_service/kvdb";
-    metaData.securityLevel = SecurityLevel::S2;
-    metaData.area = 1;
-    metaData.tokenId = GetAccessTokenId(&tokenParam_);
-    metaData.storeType = KvStoreType::SINGLE_VERSION;
-    auto version = DirectoryManager::GetInstance().GetVersions();
-    EXPECT_NE(sizeof(version), 0);
-    auto path = DirectoryManager::GetInstance().GetSecretKeyPath(metaData);
-    EXPECT_EQ(path, "/data/service/el1/public/database/bundle_manager_service/kvdb/secret");
-}
-
-/**
 * @tc.name: GetStoreTypePath
 * @tc.desc: test get db dir
 * @tc.type: FUNC

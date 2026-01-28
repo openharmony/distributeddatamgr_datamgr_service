@@ -21,7 +21,7 @@
 namespace OHOS::DistributedData {
 class CorruptReporter {
 public:
-    API_EXPORT static bool CreateCorruptedFlag(const std::string &dbPath, const std::string &dbName);
+    static bool CreateCorruptedFlag(const std::string &dbPath, const std::string &dbName);
     API_EXPORT static bool HasCorruptedFlag(const std::string &dbPath, const std::string &dbName);
     API_EXPORT static bool DeleteCorruptedFlag(const std::string &dbPath, const std::string &dbName);
 };

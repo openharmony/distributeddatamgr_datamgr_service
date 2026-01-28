@@ -37,10 +37,10 @@ public:
     API_EXPORT static UserDelegate &GetInstance();
 
     API_EXPORT void Init(const std::shared_ptr<ExecutorPool> &executors);
-    API_EXPORT std::vector<UserStatus> GetLocalUserStatus();
-    API_EXPORT std::set<std::string> GetLocalUsers();
+    std::vector<UserStatus> GetLocalUserStatus();
+    std::set<std::string> GetLocalUsers();
     API_EXPORT std::vector<UserStatus> GetRemoteUserStatus(const std::string &deviceId);
-    API_EXPORT bool InitLocalUserMeta();
+    bool InitLocalUserMeta();
 
     API_EXPORT static constexpr const int SYSTEM_USER = 0;
 

@@ -27,6 +27,9 @@ ohos_fuzztest("UdmfServiceDataManagerFuzzTest") {
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/udmf/store",
     "${data_service_path}/service/udmf",
+    "${data_service_path}/service/udmf/delay_data",
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
   ]
 
   fuzz_config_file =
@@ -40,7 +43,10 @@ ohos_fuzztest("UdmfServiceDataManagerFuzzTest") {
     "-fno-access-control"
   ]
 
-  sources = [ "udmfservicedatamanager_fuzzer.cpp" ]
+  sources = [
+    "udmfservicedatamanager_fuzzer.cpp",
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp"
+  ]
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
@@ -68,6 +74,8 @@ ohos_fuzztest("UdmfServiceDataManagerFuzzTest") {
     "kv_store:distributeddb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "safwk:system_ability_fwk",
+    "access_token:libnativetoken",
   ]
 }
 

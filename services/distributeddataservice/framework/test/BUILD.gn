@@ -59,7 +59,7 @@ ohos_unittest("CheckerManagerTest") {
 
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service:distributeddatasvc",
   ]
 }
@@ -143,7 +143,7 @@ ohos_unittest("ServiceUtilsTest") {
     "kv_store:datamgr_common",
   ]
 
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_src" ]
 }
 
 ohos_unittest("StoreTest") {
@@ -268,7 +268,7 @@ ohos_unittest("CloudInfoTest") {
   module_out_path = module_output_path
   sources = [ "cloud_test.cpp" ]
   configs = [ ":module_private_config" ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_source" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_src" ]
 
   external_deps = [
     "c_utils:utils",
@@ -423,7 +423,7 @@ ohos_unittest("ServiceMetaDataTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
-    "${data_service_path}/framework:distributeddatasvcfwk_source",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
   ]
 }
@@ -449,16 +449,9 @@ ohos_unittest("ConnectManagerTest") {
   module_out_path = module_output_path
   sources = [ "connect_manager_test.cpp" ]
   configs = [ ":module_private_config" ]
-  cflags = [
-    "-fno-access-control",
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_source" ]
-  external_deps = [
-    "kv_store:datamgr_common",
-    "hilog:libhilog",
-  ]
+  cflags = [ "-fno-access-control" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+  external_deps = [ "kv_store:datamgr_common" ]
 }
 
 ohos_unittest("SyncManagerTest") {
