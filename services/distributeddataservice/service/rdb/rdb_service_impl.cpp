@@ -1050,7 +1050,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
 
-    // Create batch saver for efficient metadata storage
+    // MetaDataSaver destructor will automatically flush all entries
     MetaDataSaver saver(true);
     if (!isCreated || meta != old) {
         Upgrade(meta, old);
@@ -1087,12 +1087,6 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         SaveSecretKeyMeta(meta, param.password_, saver);
     }
 
-    // Flush all metadata entries in a single batch operation
-    if (!saver.Flush()) {
-        ZLOGE("Failed to save metadata for bundle:%{public}s store:%{public}s",
-              meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-        return RDB_ERROR;
-    }
 
     GetCloudSchema(meta);
     return RDB_OK;

@@ -19,31 +19,20 @@
 namespace OHOS::DistributedData {
 
 MetaDataSaver::MetaDataSaver(bool async)
-    : async_(async), flushed_(false)
+    : async_(async)
 {
 }
 
 MetaDataSaver::~MetaDataSaver()
 {
-    if (!flushed_ && !entries_.empty()) {
-        Flush();
+    if (!entries_.empty()) {
+        auto success = MetaDataManager::GetInstance().SaveMeta(entries_, async_);
+        if (!success) {
+            ZLOGE("MetaDataSaver auto-flush failed, count=%{public}zu, async=%{public}d",
+                  entries_.size(), async_);
+        }
+        entries_.clear();  // Clear entries regardless of success/failure
     }
-}
-
-bool MetaDataSaver::Flush()
-{
-    if (entries_.empty()) {
-        flushed_ = true;  // Mark as flushed to prevent double-flush in destructor
-        return true;
-    }
-
-    auto success = MetaDataManager::GetInstance().SaveMeta(entries_, async_);
-    if (!success) {
-        ZLOGE("MetaDataSaver flush failed, count=%{public}zu, async=%{public}d",
-              entries_.size(), async_);
-    }
-    flushed_ = true;  // Mark as flushed even on failure to avoid retry in destructor
-    return success;
 }
 
 size_t MetaDataSaver::Size() const

@@ -472,8 +472,8 @@ HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest006, TestSize.Level0)
 
     // Verify saver has the entry
     EXPECT_EQ(saver.Size(), 1u);
-    EXPECT_TRUE(saver.Flush());
 
+    // Saver destructor will automatically flush
     savedKeys_.push_back(metaData.GetSecretKey());
 }
 

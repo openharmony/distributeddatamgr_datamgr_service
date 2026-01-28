@@ -30,7 +30,7 @@ namespace OHOS::DistributedData {
  * @brief RAII-style batch metadata saver.
  *
  * Collects multiple metadata entries and saves them in a single batch operation.
- * Automatically flushes on destruction if not explicitly flushed.
+ * Automatically flushes on destruction.
  *
  * @warning NOT THREAD-SAFE
  * This class is not thread-safe and must not be accessed concurrently from
@@ -74,13 +74,6 @@ public:
     void Add(const std::string &key, const std::string &value);
 
     /**
-     * @brief Manually flush all entries to storage
-     * @return true if successful, false otherwise
-     * @note This can be called explicitly, or will be called automatically on destruction
-     */
-    bool Flush();
-
-    /**
      * @brief Get the number of entries currently collected
      * @return Number of entries
      */
@@ -94,7 +87,6 @@ public:
 private:
     std::vector<MetaDataManager::Entry> entries_;
     bool async_;
-    bool flushed_;
 };
 
 } // namespace OHOS::DistributedData
