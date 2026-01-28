@@ -1086,7 +1086,6 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     if (param.isEncrypt_ && !param.password_.empty()) {
         SaveSecretKeyMeta(meta, param.password_, saver);
     }
-    
     GetCloudSchema(meta);
     return RDB_OK;
 }
