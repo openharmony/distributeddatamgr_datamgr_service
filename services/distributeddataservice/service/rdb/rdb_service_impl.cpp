@@ -1078,10 +1078,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     SaveDebugInfo(meta, param, saver);
     SavePromiseInfo(meta, param, saver);
     SaveDfxInfo(meta, param, saver);
-
-    if (!SaveAppIDMeta(meta, old, saver)) {
-        return RDB_ERROR;
-    }
+    SaveAppIDMeta(meta, old, saver);
 
     if (param.isEncrypt_ && !param.password_.empty()) {
         SaveSecretKeyMeta(meta, param.password_, saver);

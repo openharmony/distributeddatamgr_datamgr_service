@@ -462,8 +462,8 @@ HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest006, TestSize.Level0)
     metaData.user = TEST_USERID;
     metaData.area = CryptoManager::Area::EL1;
 
-    // Test with MetaDataSaver for batch saving
-    MetaDataSaver saver(false); // synchronous save for test
+    // Test with MetaDataSaver for batch saving (local table)
+    MetaDataSaver saver(true);
     CryptoManager::GetInstance().UpdateSecretMeta(randomKey, metaData, metaData.GetSecretKey(), secretKey, saver);
 
     ASSERT_FALSE(secretKey.sKey.empty());
@@ -489,7 +489,7 @@ HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest007, TestSize.Level0)
     StoreMetaData metaData;
     metaData.area = CryptoManager::Area::EL1;
 
-    MetaDataSaver saver(false);
+    MetaDataSaver saver(true);
     CryptoManager::GetInstance().UpdateSecretMeta(emptyPassword, metaData, "", secretKey, saver);
 
     // Should not add anything when password is empty
@@ -511,7 +511,7 @@ HWTEST_F(CryptoManagerTest, UpdateSecretMetaTest008, TestSize.Level0)
     StoreMetaData metaData;
     metaData.area = CryptoManager::Area::EL2;
 
-    MetaDataSaver saver(false);
+    MetaDataSaver saver(true);
     CryptoManager::GetInstance().UpdateSecretMeta(randomKey, metaData, "", secretKey, saver);
 
     // Should not update when nonce exists and area >= 0
