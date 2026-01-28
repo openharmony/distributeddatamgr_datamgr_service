@@ -57,6 +57,7 @@ ohos_unittest("CheckerManagerTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "openssl:libcrypto_shared",
     "kv_store:distributeddb",
