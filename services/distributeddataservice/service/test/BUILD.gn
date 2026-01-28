@@ -468,7 +468,7 @@ ohos_unittest("KVDBGeneralStoreTest") {
   ]
 }
 
-ohos_unittest("KVDBGeneralStoreAbnormalTest") {
+ohos_unittest("0KVDBGeneralStoreAbnormalTest") {
   module_out_path = module_output_path
   sources = [
     "../common/value_proxy.cpp",
