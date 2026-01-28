@@ -25,7 +25,7 @@
 #include "visibility.h"
 namespace OHOS {
 namespace AppDistributedKv {
-class ConnectManager {
+class API_EXPORT ConnectManager {
 public:
     using ApplyTask = std::function<void(int32_t errcode)>;
     using ConnectTask = std::function<void(void)>;
