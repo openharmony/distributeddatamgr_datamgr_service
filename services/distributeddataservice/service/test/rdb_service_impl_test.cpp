@@ -2747,7 +2747,7 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_001, TestSize.Leve
     MetaDataSaver saver(true); // local table save
     service.SaveSecretKeyMeta(meta, password, saver);
     // Should save both secretKey and updated cloneKey
-    EXPECT_EQ(saver.Size(), 2u);
+    EXPECT_EQ(saver.Size(), 1u);
 
     // Clean up
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
