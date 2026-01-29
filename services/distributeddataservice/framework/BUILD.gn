@@ -207,6 +207,7 @@ ohos_source_set("distributeddatasvcfwk_src") {
       "metadata/special_channel_data.cpp",
       "metadata/store_debug_info.cpp",
       "metadata/store_meta_data.cpp",
+       "metadata/meta_data_manager.cpp",
       "metadata/store_meta_data_local.cpp",
       "metadata/strategy_meta_data.cpp",
       "metadata/switches_meta_data.cpp",
