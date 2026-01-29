@@ -409,6 +409,7 @@ ohos_unittest("DeviceMatrixTest") {
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
   ]
 }
 
