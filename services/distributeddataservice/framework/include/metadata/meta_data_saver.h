@@ -86,7 +86,7 @@ public:
 
 private:
     std::vector<MetaDataManager::Entry> entries_;
-    bool async_;  // true for local table, false for sync table
+    bool isLocal_;  // true for local table, false for sync table
 };
 
 } // namespace OHOS::DistributedData

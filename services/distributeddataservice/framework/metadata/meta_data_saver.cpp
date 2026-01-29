@@ -18,18 +18,18 @@
 
 namespace OHOS::DistributedData {
 
-MetaDataSaver::MetaDataSaver(bool async)
-    : async_(async)
+MetaDataSaver::MetaDataSaver(bool isLocal)
+    : isLocal_(isLocal)
 {
 }
 
 MetaDataSaver::~MetaDataSaver()
 {
     if (!entries_.empty()) {
-        auto success = MetaDataManager::GetInstance().SaveMeta(entries_, async_);
+        auto success = MetaDataManager::GetInstance().SaveMeta(entries_, isLocal_);
         if (!success) {
-            ZLOGE("MetaDataSaver auto-flush failed, count=%{public}zu, async=%{public}d",
-                  entries_.size(), async_);
+            ZLOGE("MetaDataSaver auto-flush failed, count=%{public}zu, isLocal=%{public}d",
+                  entries_.size(), isLocal_);
         }
         entries_.clear();  // Clear entries regardless of success/failure
     }
