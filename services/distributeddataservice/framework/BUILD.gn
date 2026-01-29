@@ -159,6 +159,7 @@ ohos_source_set("distributeddatasvcfwk_src") {
   }
   sources = [
       "access_check/app_access_check_config_manager.cpp",
+      "account/account_delegate.cpp",
       "app_id_mapping/app_id_mapping_config_manager.cpp",
       "backuprule/backup_rule_manager.cpp",
       "changeevent/remote_change_event.cpp",
