@@ -117,6 +117,7 @@ ohos_shared_library("distributeddataservice") {
     sources += variable_sources
   }
 
+  cflags_cc = [ "-fvisibility=hidden" ]
   configs = [ ":module_private_config" ]
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",

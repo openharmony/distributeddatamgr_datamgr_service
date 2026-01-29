@@ -17,7 +17,7 @@
 #include "ikvstore_data_service.h"
 #include "distributeddata_ipc_interface_code.h"
 namespace OHOS::DistributedKv {
-class API_EXPORT KvStoreDataServiceStub : public IRemoteStub<IKvStoreDataService> {
+class KvStoreDataServiceStub : public IRemoteStub<IKvStoreDataService> {
 public:
    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
        MessageOption &option) override;

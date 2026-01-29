@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace DistributedKv {
-class API_EXPORT KVDBNotifierProxy : public IRemoteProxy<IKVDBNotifier> {
+class KVDBNotifierProxy : public IRemoteProxy<IKVDBNotifier> {
 public:
     explicit KVDBNotifierProxy(const sptr<IRemoteObject> &impl);
     ~KVDBNotifierProxy() = default;

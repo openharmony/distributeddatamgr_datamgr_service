@@ -123,7 +123,6 @@ ohos_unittest("CloudDataMockTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/cloud/cloud_data_translate.cpp",
     "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
@@ -179,7 +178,6 @@ ohos_unittest("CloudServiceImplTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/cloud/cloud_data_translate.cpp",
     "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
     "${data_service_path}/service/cloud/cloud_service_impl.cpp",
@@ -411,8 +409,9 @@ ohos_unittest("DeviceMatrixTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
   ]
 }
 
@@ -425,7 +424,6 @@ ohos_unittest("KVDBGeneralStoreTest") {
   }
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "kvdb_general_store_test.cpp",
     "mock/db_change_data_mock.cpp",
     "mock/db_store_mock.cpp",
@@ -530,8 +528,9 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
   ]
 
   deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/matrix:distributeddata_matrix",
   ]
 }
 
@@ -1650,6 +1649,7 @@ ohos_unittest("KvdbServiceImplTest") {
     "mock/access_token_mock.cpp",
     "mock/checker_mock.cpp",
     "mock/meta_data_manager_mock.cpp",
+    "${data_service_path}/framework/cloud/cloud_server.cpp",
   ]
 
   include_dirs = [
@@ -1691,7 +1691,7 @@ ohos_unittest("KvdbServiceImplTest") {
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk_src",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
     "mock:distributeddata_mock_static",
   ]

@@ -21,7 +21,7 @@
 #include "utils/ref_count.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT MatrixEvent : public Event {
+class MatrixEvent : public Event {
 public:
     struct MatrixData {
         static constexpr uint16_t INVALID_LEVEL = 0xFFFF;
@@ -35,7 +35,7 @@ public:
     };
     MatrixEvent(int32_t evtId, const std::string &device, const MatrixData &data);
     ~MatrixEvent() = default;
-    MatrixData GetMatrixData() const;
+    API_EXPORT MatrixData GetMatrixData() const;
     std::string GetDeviceId() const;
     void SetRefCount(RefCount refCount);
     RefCount StealRefCount() const;

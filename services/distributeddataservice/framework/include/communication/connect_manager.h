@@ -34,17 +34,17 @@ public:
     using SessionOpenListener = std::function<void(const std::string &networkId)>;
 
     API_EXPORT static std::shared_ptr<ConnectManager> GetInstance();
-    API_EXPORT static bool RegisterInstance(std::shared_ptr<ConnectManager> instance);
+    static bool RegisterInstance(std::shared_ptr<ConnectManager> instance);
 
-    API_EXPORT static bool CloseSession(const std::string &networkId);
+    static bool CloseSession(const std::string &networkId);
     API_EXPORT static bool RegisterCloseSessionTask(CloseSessionTask task);
 
     API_EXPORT static bool RegisterSessionCloseListener(const std::string &name, SessionCloseListener listener);
-    API_EXPORT static void UnRegisterSessionCloseListener(const std::string &name);
+    static void UnRegisterSessionCloseListener(const std::string &name);
     API_EXPORT static void OnSessionClose(const std::string &networkId);
 
-    API_EXPORT static bool RegisterSessionOpenListener(const std::string &name, SessionOpenListener listener);
-    API_EXPORT static void UnRegisterSessionOpenListener(const std::string &name);
+    static bool RegisterSessionOpenListener(const std::string &name, SessionOpenListener listener);
+    static void UnRegisterSessionOpenListener(const std::string &name);
     API_EXPORT static void OnSessionOpen(const std::string &networkId);
 
     ConnectManager() = default;
