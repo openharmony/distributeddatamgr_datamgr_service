@@ -70,6 +70,7 @@ protected:
  */
 HWTEST_F(QosManagerTest, StartupPhase_DataShare_SetsQos_NoReset, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetStartupPhase();
 
     int setCallCount = 0;
@@ -103,6 +104,7 @@ HWTEST_F(QosManagerTest, StartupPhase_DataShare_SetsQos_NoReset, TestSize.Level1
  */
 HWTEST_F(QosManagerTest, StartupPhase_OtherBusiness_SetsQos_NoReset, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetStartupPhase();
 
     int setCallCount = 0;
@@ -128,6 +130,7 @@ HWTEST_F(QosManagerTest, StartupPhase_OtherBusiness_SetsQos_NoReset, TestSize.Le
  */
 HWTEST_F(QosManagerTest, DynamicPhase_DataShare_SetsAndResetsQos, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetDynamicPhase();
 
     int setCallCount = 0;
@@ -161,6 +164,7 @@ HWTEST_F(QosManagerTest, DynamicPhase_DataShare_SetsAndResetsQos, TestSize.Level
  */
 HWTEST_F(QosManagerTest, DynamicPhase_OtherBusiness_DoesNothing, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetDynamicPhase();
 
     int setCallCount = 0;
@@ -186,6 +190,7 @@ HWTEST_F(QosManagerTest, DynamicPhase_OtherBusiness_DoesNothing, TestSize.Level1
  */
 HWTEST_F(QosManagerTest, NestedQosManager_SecondIsNoOp, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetStartupPhase();
 
     int setCallCount = 0;
@@ -216,6 +221,7 @@ HWTEST_F(QosManagerTest, NestedQosManager_SecondIsNoOp, TestSize.Level1)
  */
 HWTEST_F(QosManagerTest, MultipleSequential_CanSetAgainAfterReset, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetDynamicPhase();
 
     int setCallCount = 0;
@@ -253,6 +259,7 @@ HWTEST_F(QosManagerTest, MultipleSequential_CanSetAgainAfterReset, TestSize.Leve
  */
 HWTEST_F(QosManagerTest, QosSetFailure_DoesNotSetFlag, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetDynamicPhase();
 
     int setCallCount = 0;
@@ -285,6 +292,8 @@ HWTEST_F(QosManagerTest, QosSetFailure_DoesNotSetFlag, TestSize.Level1)
  */
 HWTEST_F(QosManagerTest, ThreadLocal_SeparateThreads, TestSize.Level1)
 {
+    QosManager::ResetForTest();
+
     int setCallCount = 0;
     std::mutex countMutex;
 
@@ -319,6 +328,7 @@ HWTEST_F(QosManagerTest, ThreadLocal_SeparateThreads, TestSize.Level1)
  */
 HWTEST_F(QosManagerTest, ResetFailure_LogsError, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetDynamicPhase();
 
     int setCallCount = 0;
@@ -351,6 +361,7 @@ HWTEST_F(QosManagerTest, ResetFailure_LogsError, TestSize.Level1)
  */
 HWTEST_F(QosManagerTest, StartupToDynamicTransition, TestSize.Level1)
 {
+    QosManager::ResetForTest();
     SetStartupPhase();
 
     int setCallCount = 0;

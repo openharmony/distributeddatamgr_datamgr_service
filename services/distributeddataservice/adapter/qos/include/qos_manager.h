@@ -19,6 +19,7 @@
 #include <chrono>
 #include <functional>
 
+#include "visibility.h"
 namespace OHOS {
 namespace QOS {
 enum class QosLevel : int;
@@ -26,7 +27,7 @@ enum class QosLevel : int;
 
 namespace DistributedData {
 
-class QosManager {
+class API_EXPORT QosManager {
 public:
     using SetQosFunc = std::function<int(QOS::QosLevel)>;
     using ResetQosFunc = std::function<int()>;
@@ -43,6 +44,9 @@ public:
 
     // Test-only method to set startup time for testing
     static void SetStartTimeForTest(const std::chrono::steady_clock::time_point& time);
+
+    // Test-only method to reset thread-local flag
+    static void ResetForTest();
 
 private:
     bool IsInStartupPhase() const;

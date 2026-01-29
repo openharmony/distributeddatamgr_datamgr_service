@@ -32,10 +32,6 @@ ohos_source_set("distributeddata_qos") {
 
   cflags_cc = [ "-fvisibility=hidden" ]
 
-  if (build_public_version) {
-    cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
-  }
-
   include_dirs = [
     "include",
   ]

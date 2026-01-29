@@ -46,6 +46,11 @@ void QosManager::SetStartTimeForTest(const std::chrono::steady_clock::time_point
     g_startupPhaseEnded.store(false, std::memory_order_relaxed);
 }
 
+void QosManager::ResetForTest()
+{
+    g_threadQosSet = false;
+}
+
 QosManager::QosManager(bool isDataShare)
     : isDataShare_(isDataShare)
 {

@@ -45,6 +45,7 @@ config("module_private_config") {
     "${data_service_path}/adapter/include/broadcaster",
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/include",
+    "${data_service_path}/adapter/qos/include",
     "${data_service_path}/app/src/session_manager",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/common",
@@ -121,7 +122,6 @@ ohos_shared_library("distributeddataservice") {
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",
-    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]

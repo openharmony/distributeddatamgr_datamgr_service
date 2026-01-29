@@ -28,12 +28,6 @@ ohos_unittest("QosManagerTest") {
     "../include",
     "../../../framework/include",
   ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
   deps = [ "../:distributeddata_qos" ]
 
   external_deps = [
