@@ -42,11 +42,7 @@ config("module_private_config") {
 
 ohos_unittest("CheckerManagerTest") {
   module_out_path = module_output_path
-  sources = [
-    "checker_manager_test.cpp",
-    "${data_service_path}/framework/account/account_delegate.cpp",
-    "${data_service_path}/framework/metadata/meta_data_manager.cpp",
-  ]
+  sources = [ "checker_manager_test.cpp" ]
 
   configs = [ ":module_private_config" ]
 
