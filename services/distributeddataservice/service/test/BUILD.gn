@@ -1645,7 +1645,6 @@ ohos_unittest("KvdbServiceImplTest") {
     "kvdb_service_test.cpp",
     "mock/access_token_mock.cpp",
     "mock/checker_mock.cpp",
-    "mock/meta_data_manager_mock.cpp",
   ]
 
   include_dirs = [
