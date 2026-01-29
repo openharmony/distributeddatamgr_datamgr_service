@@ -241,9 +241,8 @@ bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
     return true;
 }
 
-int ObjectServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply)
+int ObjectServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel& reply)
 {
-    // Set thread QoS (RAII: no reset for non-DataShare businesses)
     QosManager qos(false);
 
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());

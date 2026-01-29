@@ -59,7 +59,6 @@ ohos_source_set("utd_server") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:datamgr_common",
-    "qos_manager:qos",
     "udmf:utd_client",
   ]
   cflags_cc = [

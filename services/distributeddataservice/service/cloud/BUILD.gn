@@ -77,7 +77,6 @@ ohos_source_set("distributeddata_cloud") {
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
-    "qos_manager:qos",
     "relational_store:cloud_data_inner",
   ]
 

@@ -101,7 +101,6 @@ int32_t KvStoreDataServiceStub::GetSelfBundleNameOnRemote(MessageParcel &data, M
 int32_t KvStoreDataServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
     MessageOption &option)
 {
-    // Set thread QoS (RAII: no reset for non-DataShare businesses)
     QosManager qos(false);
 
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());

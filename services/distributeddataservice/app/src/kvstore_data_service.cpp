@@ -15,14 +15,15 @@
 #define LOG_TAG "KvStoreDataService"
 #include "kvstore_data_service.h"
 
-#include <chrono>
 #include <fcntl.h>
-#include <fstream>
 #include <ipc_skeleton.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
-#include <thread>
 #include <unistd.h>
+
+#include <chrono>
+#include <fstream>
+#include <thread>
 
 #include "accesstoken_kit.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
@@ -32,6 +33,7 @@
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
 #include "communicator_context.h"
+#include "concurrent_task_client.h"
 #include "config_factory.h"
 #include "crypto/crypto_manager.h"
 #include "db_info_handle_impl.h"
@@ -51,8 +53,8 @@
 #include "mem_mgr_proxy.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "network/network_delegate.h"
 #include "metadata/store_meta_data.h"
+#include "network/network_delegate.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -72,7 +74,6 @@
 #include "utils/block_integer.h"
 #include "utils/constant.h"
 #include "utils/crypto.h"
-
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
@@ -421,6 +422,12 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
         Memory::MemMgrClient::GetInstance().SetCritical(getpid(), true, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     } else if (systemAbilityId == COMM_NET_CONN_MANAGER_SYS_ABILITY_ID) {
         NetworkDelegate::GetInstance()->RegOnNetworkChange();
+    } else if (systemAbilityId == CONCURRENT_TASK_SERVICE_ID) {
+        std::unordered_map<std::string, std::string> payload;
+        // get current thread pid
+        payload["pid"] = std::to_string(getpid());
+        // request qos auth for current pid
+        OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
     }
     return;
 }

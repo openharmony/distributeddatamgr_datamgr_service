@@ -59,7 +59,6 @@ const KVDBServiceStub::Handler
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
-    // Set thread QoS (RAII: no reset for non-DataShare businesses)
     QosManager qos(false);
 
     ZLOGI("code:%{public}u callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());

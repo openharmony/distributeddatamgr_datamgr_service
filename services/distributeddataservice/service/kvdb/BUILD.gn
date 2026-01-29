@@ -82,7 +82,6 @@ ohos_source_set("distributeddata_kvdb") {
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "kv_store:kvdb_inner_lite",
-    "qos_manager:qos",
   ]
 
   subsystem_name = "distributeddatamgr"

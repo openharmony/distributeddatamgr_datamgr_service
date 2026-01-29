@@ -340,7 +340,6 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
 
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
-    // Set thread QoS (RAII: auto-reset on destruction for DataShare in dynamic phase)
     QosManager qos(true);
 
     int tryTimes = TRY_TIMES;

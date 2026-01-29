@@ -128,6 +128,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   if (dataclassification_part_is_enabled && datamgr_service_distributed) {
@@ -214,6 +215,7 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   if (dataclassification_part_is_enabled && datamgr_service_distributed) {
@@ -293,6 +295,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   if (dataclassification_part_is_enabled && datamgr_service_distributed) {
@@ -429,6 +432,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   if (dataclassification_part_is_enabled && datamgr_service_distributed) {
@@ -732,6 +736,7 @@ ohos_unittest("DDMSDumpTest") {
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   if (dataclassification_part_is_enabled && datamgr_service_distributed) {

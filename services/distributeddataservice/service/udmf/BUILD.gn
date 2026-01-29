@@ -90,7 +90,6 @@ ohos_source_set("udmf_server") {
     "ipc:ipc_core",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
-    "qos_manager:qos",
     "udmf:udmf_client",
     "udmf:utd_client",
   ]

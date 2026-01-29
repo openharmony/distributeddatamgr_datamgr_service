@@ -107,6 +107,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   if (dataclassification_part_is_enabled && datamgr_service_distributed) {

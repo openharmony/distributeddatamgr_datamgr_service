@@ -146,6 +146,7 @@ ohos_shared_library("distributeddataservice") {
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
 
   if (datamgr_service_power) {

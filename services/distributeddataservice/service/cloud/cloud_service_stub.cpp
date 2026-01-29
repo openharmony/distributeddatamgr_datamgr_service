@@ -53,7 +53,6 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
 
 int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
 {
-    // Set thread QoS (RAII: no reset for non-DataShare businesses)
     QosManager qos(false);
 
     ZLOGI("code:%{public}u callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());

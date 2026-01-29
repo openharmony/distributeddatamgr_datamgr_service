@@ -28,7 +28,6 @@ constexpr UdmfServiceStub::Handler
     UdmfServiceStub::HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)];
 int UdmfServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
-    // Set thread QoS (RAII: no reset for non-DataShare businesses)
     QosManager qos(false);
 
     ZLOGI("start##code = %{public}u callingPid:%{public}u callingUid:%{public}u.", code, IPCSkeleton::GetCallingPid(),
