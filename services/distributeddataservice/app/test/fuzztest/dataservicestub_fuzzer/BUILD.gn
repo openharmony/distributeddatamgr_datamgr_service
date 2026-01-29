@@ -79,6 +79,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",

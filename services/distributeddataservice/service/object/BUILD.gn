@@ -17,10 +17,10 @@ config("object_public_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "${data_service_path}/service/common",
-    "${data_service_path}/service/matrix/include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/matrix/include",
   ]
 }
 
@@ -68,6 +68,7 @@ ohos_source_set("distributeddata_object") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
@@ -81,6 +82,7 @@ ohos_source_set("distributeddata_object") {
     "ipc:ipc_single",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
+    "qos_manager:qos",
   ]
 
   if (dm_part_is_enabled && datamgr_service_distributed) {

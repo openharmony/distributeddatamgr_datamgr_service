@@ -27,30 +27,14 @@
 #include "ishared_result_set.h"
 #include "itypes_util.h"
 #include "log_print.h"
-#include "qos.h"
 #include "utils.h"
 #include "utils/anonymous.h"
 #include "dataproxy_handle_common.h"
+#include "qos_manager.h"
 
 namespace OHOS {
 namespace DataShare {
-
-class DataShareServiceStub::QosManager {
-public:
-    QosManager()
-    {
-#ifndef IS_EMULATOR
-        // set thread qos QOS_USER_INTERACTIVE
-        QOS::SetThreadQos(QOS::QosLevel::QOS_USER_INTERACTIVE);
-#endif
-    }
-    ~QosManager()
-    {
-#ifndef IS_EMULATOR
-        QOS::ResetThreadQos();
-#endif
-    }
-};
+using OHOS::DistributedData::QosManager;
 
 bool DataShareServiceStub::CheckInterfaceToken(MessageParcel &data)
 {
@@ -356,8 +340,8 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
 
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
-    // set thread qos
-    DataShareServiceStub::QosManager qos;
+    // Set thread QoS (RAII: auto-reset on destruction for DataShare in dynamic phase)
+    QosManager qos(true);
 
     int tryTimes = TRY_TIMES;
     while (!isReady_.load() && tryTimes > 0) {
@@ -400,6 +384,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
         HiViewAdapter::GetInstance().ReportDataStatistic(callerInfo);
     }
     DataShareThreadLocal::CleanFromSystemApp();
+
     return res;
 }
 

@@ -70,6 +70,7 @@ ohos_source_set("distributeddata_rdb") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/matrix:distributeddata_matrix",
@@ -90,6 +91,7 @@ ohos_source_set("distributeddata_rdb") {
     "ipc:ipc_core",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
+    "qos_manager:qos",
     "relational_store:native_rdb",
     "resource_management:global_resmgr",
     "samgr:samgr_proxy",

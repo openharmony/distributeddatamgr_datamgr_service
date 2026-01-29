@@ -21,7 +21,7 @@ config("module_public_config") {
     "common",
     "data",
     "dfx",
-    "../../adapter/include",
+    "${data_service_path}/adapter/include",
     "../../app/src",
     "../../framework/include",
     "${data_service_path}/adapter/include/communicator",
@@ -113,6 +113,7 @@ ohos_source_set("data_share_service") {
   configs = [ ":module_public_config" ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/service/common:distributeddata_common",
     "../../framework:distributeddatasvcfwk",

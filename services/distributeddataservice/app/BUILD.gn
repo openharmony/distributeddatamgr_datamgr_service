@@ -121,6 +121,7 @@ ohos_shared_library("distributeddataservice") {
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]

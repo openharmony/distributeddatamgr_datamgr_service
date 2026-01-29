@@ -142,6 +142,7 @@ ohos_unittest("KvStoreDataServiceTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -227,6 +228,7 @@ ohos_unittest("KvStoreDataServiceMockTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -307,6 +309,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "-fno-access-control",  # Ignore Private Member Access Control
   ]
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -440,6 +443,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/app/src/checker:distributeddata_checker",
     "${data_service_path}/app/src/installer:distributeddata_installer",
@@ -735,6 +739,7 @@ ohos_unittest("DDMSDumpTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]

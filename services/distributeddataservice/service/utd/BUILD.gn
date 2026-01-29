@@ -47,6 +47,7 @@ ohos_source_set("utd_server") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/permission:distributeddata_permit"
   ]
@@ -58,6 +59,7 @@ ohos_source_set("utd_server") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:datamgr_common",
+    "qos_manager:qos",
     "udmf:utd_client",
   ]
   cflags_cc = [

@@ -22,11 +22,13 @@
 #include "common_types.h"
 #include "object_types_utils.h"
 #include "log_print.h"
+#include "qos_manager.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedObject {
 using namespace DistributedKv;
 using Anonymous = DistributedData::Anonymous;
+using OHOS::DistributedData::QosManager;
 int32_t ObjectServiceStub::ObjectStoreSaveOnRemote(MessageParcel &data, MessageParcel &reply)
 {
     std::string sessionId;
@@ -241,6 +243,9 @@ bool ObjectServiceStub::CheckInterfaceToken(MessageParcel& data)
 
 int ObjectServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply)
 {
+    // Set thread QoS (RAII: no reset for non-DataShare businesses)
+    QosManager qos(false);
+
     ZLOGD("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
         return -1;

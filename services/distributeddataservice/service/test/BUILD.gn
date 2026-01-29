@@ -97,6 +97,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
@@ -148,6 +149,7 @@ ohos_unittest("CloudDataMockTest") {
   deps = [
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
@@ -214,6 +216,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
     "${data_service_path}/framework:distributeddatasvcfwk_src",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
@@ -1059,6 +1062,7 @@ ohos_unittest("ObjectManagerTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -1136,6 +1140,7 @@ ohos_unittest("ObjectManagerMockTest") {
   }
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -1431,6 +1436,7 @@ ohos_unittest("DataShareServiceImplTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
@@ -1571,6 +1577,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
@@ -1784,6 +1791,7 @@ ohos_unittest("UdmfServiceImplTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/udmf:udmf_server",
@@ -1843,6 +1851,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/service:distributeddatasvc",
     "mock:distributeddata_mock_static",
   ]
@@ -1903,6 +1912,7 @@ ohos_unittest("UdmfServiceStubTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
     "${data_service_path}/service/udmf:udmf_server",
@@ -1988,7 +1998,10 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "-Dprotected=public",
   ]
 
-  deps = [ "${data_service_path}/service:distributeddatasvc" ]
+  deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
 
   external_deps = [
     "ability_base:zuri",
@@ -2712,6 +2725,7 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -2803,6 +2817,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
@@ -2894,6 +2909,7 @@ ohos_unittest("UdmfObserverTest") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
