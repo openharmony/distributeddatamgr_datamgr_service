@@ -40,9 +40,9 @@ class API_EXPORT MetaDataSaver {
 public:
     /**
      * @brief Constructor
-     * @param async Whether to save asynchronously (true) or synchronously (false)
+     * @param isLocal Whether to save to local table (true) or sync table (false)
      */
-    explicit MetaDataSaver(bool async = true);
+    explicit MetaDataSaver(bool isLocal = true);
 
     /**
      * @brief Destructor - automatically flushes if not already done
@@ -86,7 +86,7 @@ public:
 
 private:
     std::vector<MetaDataManager::Entry> entries_;
-    bool async_;
+    bool isLocal_;  // true for local table, false for sync table
 };
 
 } // namespace OHOS::DistributedData

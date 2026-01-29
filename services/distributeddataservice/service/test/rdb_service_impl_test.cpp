@@ -2742,10 +2742,12 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_001, TestSize.Leve
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetCloneSecretKey(), cloneKey, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
-    // Call SaveSecretKeyMeta, should trigger UpdateSecretMeta for cloneKey
+    // Call SaveSecretKeyMeta - cloneKey decrypt will fail due to area/nonce mismatch
     RdbServiceImpl service;
-    MetaDataSaver saver(false); // synchronous save for test
+    MetaDataSaver saver(true); // local table save
     service.SaveSecretKeyMeta(meta, password, saver);
+    // Should save only secretKey since cloneKey decrypt fails (area/nonce don't match encryption params)
+    EXPECT_EQ(saver.Size(), 1u);
 
     // Clean up
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
@@ -2776,8 +2778,10 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_EmptySKey_002, Tes
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
     RdbServiceImpl service;
-    MetaDataSaver saver(false); // synchronous save for test
+    MetaDataSaver saver(true); // local table save
     service.SaveSecretKeyMeta(meta, password, saver);
+    // Should save only secretKey, cloneKey has empty sKey so won't be updated
+    EXPECT_EQ(saver.Size(), 1u);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
@@ -2798,7 +2802,7 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_EncryptEmpty_004, TestSize.Level0
     std::vector<uint8_t> emptyPassword;
 
     RdbServiceImpl service;
-    MetaDataSaver saver(false);
+    MetaDataSaver saver(true);
     service.SaveSecretKeyMeta(meta, emptyPassword, saver);
 
     // Should not crash, saver should be empty since encryption failed
@@ -2833,7 +2837,7 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_SameSecretKey_005, TestSize.Level
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
     RdbServiceImpl service;
-    MetaDataSaver saver(false);
+    MetaDataSaver saver(true);
     service.SaveSecretKeyMeta(meta, password, saver);
 
     // Even if the password is the same, the ciphertext and timestamp are different
@@ -2867,9 +2871,11 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_DecryptFail_006, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
     RdbServiceImpl service;
-    MetaDataSaver saver(false);
+    MetaDataSaver saver(true);
     // Should not crash when decrypt fails
     service.SaveSecretKeyMeta(meta, password, saver);
+    // Should save only secretKey, cloneKey decrypt failed so won't be updated
+    EXPECT_EQ(saver.Size(), 1u);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
@@ -2900,8 +2906,9 @@ HWTEST_F(RdbServiceImplTest, SaveSecretKeyMeta_CloneKeyUpdate_NoUpdate_003, Test
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
 
     RdbServiceImpl service;
-    MetaDataSaver saver(false); // synchronous save for test
+    MetaDataSaver saver(true); // local table save
     service.SaveSecretKeyMeta(meta, password, saver);
+    EXPECT_EQ(saver.Size(), 1u);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetCloneSecretKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);

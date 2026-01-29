@@ -350,7 +350,7 @@ void CryptoManager::UpdateSecretMeta(const std::vector<uint8_t> &password, const
 void CryptoManager::UpdateSecretMeta(const std::vector<uint8_t> &password, const StoreMetaData &metaData,
     const std::string &metaKey, SecretKeyMetaData &secretKey)
 {
-    MetaDataSaver saver(false); // Synchronous save for backward compatibility
+    MetaDataSaver saver(true);
     UpdateSecretMeta(password, metaData, metaKey, secretKey, saver);
 }
 
