@@ -42,11 +42,8 @@ public:
 
     static void SetQosFunctions(SetQosFunc setFunc, ResetQosFunc resetFunc);
 
-    // Test-only method to set startup time for testing
-    static void SetStartTimeForTest(const std::chrono::steady_clock::time_point& time);
-
-    // Test-only method to reset thread-local flag
-    static void ResetForTest();
+    static void SetStartTime(const std::chrono::steady_clock::time_point& time);
+    static void Reset();
 
 private:
     bool IsInStartupPhase() const;

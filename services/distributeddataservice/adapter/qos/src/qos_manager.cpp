@@ -40,13 +40,13 @@ void QosManager::SetQosFunctions(SetQosFunc setFunc, ResetQosFunc resetFunc)
     resetQosFunc_ = resetFunc ? resetFunc : ResetQosFunc {};
 }
 
-void QosManager::SetStartTimeForTest(const std::chrono::steady_clock::time_point& time)
+void QosManager::SetStartTime(const std::chrono::steady_clock::time_point& time)
 {
     g_startTime.store(time, std::memory_order_relaxed);
     g_startupPhaseEnded.store(false, std::memory_order_relaxed);
 }
 
-void QosManager::ResetForTest()
+void QosManager::Reset()
 {
     g_threadQosSet = false;
 }
