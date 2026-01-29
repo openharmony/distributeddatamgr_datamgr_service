@@ -1648,7 +1648,6 @@ ohos_unittest("KvdbServiceImplTest") {
     "mock/checker_mock.cpp",
     "mock/meta_data_manager_mock.cpp",
     "${data_service_path}/framework/cloud/cloud_server.cpp",
-
   ]
 
   include_dirs = [
