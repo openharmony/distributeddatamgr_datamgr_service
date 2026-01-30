@@ -22,6 +22,7 @@ group("unittest") {
     "../account/test:unittest",
     "../communicator/test:unittest",
     "../dfx/test:unittest",
+    "../qos/test:unittest",
   ]
 
   if (defined(global_parts_info) &&

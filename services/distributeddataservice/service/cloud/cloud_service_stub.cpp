@@ -20,6 +20,7 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "permission_validator.h"
+#include "qos_manager.h"
 #include "rdb_types.h"
 #include "tokenid_kit.h"
 #include "utils/anonymous.h"
@@ -52,6 +53,8 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
 
 int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
 {
+    QosManager qos(false);
+
     ZLOGI("code:%{public}u callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());
     std::u16string local = CloudServiceStub::GetDescriptor();
     std::u16string remote = data.ReadInterfaceToken();

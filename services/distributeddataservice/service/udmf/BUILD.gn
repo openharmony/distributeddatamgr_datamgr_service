@@ -69,6 +69,7 @@ ohos_source_set("udmf_server") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/permission:distributeddata_permit",
   ]

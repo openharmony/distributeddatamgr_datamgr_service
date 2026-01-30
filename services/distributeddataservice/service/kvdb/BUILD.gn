@@ -24,10 +24,10 @@ ohos_source_set("distributeddata_kvdb") {
   }
 
   include_dirs = [
-    "${data_service_path}/service/matrix/include",
     "${data_service_path}/adapter/include",
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/service/matrix/include",
     "${data_service_path}/framework/include",
     "${data_service_path}/framework/include/dfx",
     "${data_service_path}/service/bootstrap/include",
@@ -66,6 +66,7 @@ ohos_source_set("distributeddata_kvdb") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/service/rdb:distributeddata_rdb",
   ]

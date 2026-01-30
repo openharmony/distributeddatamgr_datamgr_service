@@ -70,6 +70,7 @@ ohos_source_set("distributeddata_rdb") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/matrix:distributeddata_matrix",

@@ -27,7 +27,6 @@
 #include "bundle_utils.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
-#include "concurrent_task_client.h"
 #include "config_factory.h"
 #include "data_ability_observer_interface.h"
 #include "data_share_profile_config.h"
@@ -97,17 +96,11 @@ public:
 void DataShareServiceImpl::SystemAbilityStatusChangeListener::OnAddSystemAbility(
     int32_t systemAbilityId, const std::string &deviceId)
 {
-    ZLOGI("saId:%{public}d", systemAbilityId);
-    if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
-        InitSubEvent();
-    } else if (systemAbilityId == CONCURRENT_TASK_SERVICE_ID) {
-        std::unordered_map<std::string, std::string> payload;
-        // get current thread pid
-        payload["pid"] = std::to_string(getpid());
-        // request qos auth for current pid
-        OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+    if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        return;
     }
-    return;
+    ZLOGI("Common event service start. saId:%{public}d", systemAbilityId);
+    InitSubEvent();
 }
 
 DataShareServiceImpl::Factory::Factory()
@@ -643,7 +636,6 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     DBDelegate::SetExecutorPool(binderInfo.executors);
     HiViewAdapter::GetInstance().SetThreadPool(binderInfo.executors);
     SubscribeCommonEvent();
-    SubscribeConcurrentTask();
     SubscribeTimeChanged();
     SubscribeChange();
     SubscribeListen();
@@ -700,21 +692,6 @@ void DataShareServiceImpl::SubscribeCommonEvent()
         return;
     }
     systemManager->SubscribeSystemAbility(COMMON_EVENT_SERVICE_ID, callback);
-}
-
-void DataShareServiceImpl::SubscribeConcurrentTask()
-{
-    sptr<ISystemAbilityManager> systemManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (systemManager == nullptr) {
-        ZLOGE("System mgr is nullptr");
-        return;
-    }
-    sptr<SystemAbilityStatusChangeListener> callback(new (std::nothrow)SystemAbilityStatusChangeListener());
-    if (callback == nullptr) {
-        ZLOGE("new SystemAbilityStatusChangeListener failed! no memory");
-        return;
-    }
-    systemManager->SubscribeSystemAbility(CONCURRENT_TASK_SERVICE_ID, callback);
 }
 
 void DataShareServiceImpl::SubscribeChange()

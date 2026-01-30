@@ -89,6 +89,7 @@ ohos_fuzztest("KvdbServiceStubConcurrentFuzzTest") {
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
