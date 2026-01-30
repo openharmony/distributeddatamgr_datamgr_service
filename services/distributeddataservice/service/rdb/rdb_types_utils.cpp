@@ -46,3 +46,51 @@ std::vector<DistributedData::Reference> RdbTypesUtils::Convert(const std::vector
     return relationships;
 }
 } // namespace OHOS::DistributedRdb
+
+namespace OHOS::ITypesUtil {
+template<>
+bool Unmarshalling(NotifyConfig &output, MessageParcel &data)
+{
+    return ITypesUtil::Unmarshal(data, output.delay_, output.isFull_);
+}
+ 
+template<>
+bool Unmarshalling(Option &output, MessageParcel &data)
+{
+    return ITypesUtil::Unmarshal(
+        data, output.mode, output.seqNum, output.isAsync, output.isAutoSync, output.isCompensation);
+}
+ 
+template<>
+bool Unmarshalling(SubOption &output, MessageParcel &data)
+{
+    int32_t mode = static_cast<int32_t>(output.mode);
+    auto ret = ITypesUtil::Unmarshal(data, mode);
+    output.mode = static_cast<decltype(output.mode)>(mode);
+    return ret;
+}
+ 
+template<>
+bool Unmarshalling(RdbChangedData &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.tableData);
+}
+ 
+template<>
+bool Unmarshalling(RdbProperties &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.isTrackedDataChange, output.isP2pSyncDataChange);
+}
+ 
+template<>
+bool Unmarshalling(Reference &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.sourceTable, output.targetTable, output.refFields);
+}
+ 
+template<>
+bool Unmarshalling(StatReporter &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.statType, output.bundleName, output.storeName, output.subType, output.costTime);
+}
+} // namespace OHOS::ITypesUtil
