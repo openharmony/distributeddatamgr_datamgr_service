@@ -198,7 +198,7 @@ private:
     void InitExecutor();
 
     std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
-        const StoreMetaData &metaData, const std::vector<uint8_t> &iv);
+        const std::vector<uint8_t> &iv, const StoreMetaData &metaData);
 
     bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData);
 

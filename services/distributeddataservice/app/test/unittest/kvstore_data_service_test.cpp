@@ -1068,7 +1068,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey001, TestSize.Level0)
     SecretKeyMetaData secretKeyMeta;
     StoreMetaData storeMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey("", secretKeyMeta, storeMeta, iv);
+    auto ret = kvStoreDataServiceTest.ReEncryptKey("", secretKeyMeta, iv, storeMeta);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1106,7 +1106,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey002, TestSize.Level0)
 
     SecretKeyMetaData secretKeyMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1150,7 +1150,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey003, TestSize.Level0)
 
     SecretKeyMetaData secretKeyMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1287,7 +1287,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreSuccess, TestSize.Lev
     ASSERT_EQ(kvStoreDataServiceTest.ImportCloneKey(symKey), true);
 
     SecretKeyMetaData secretKeyMeta;
-    auto reEncryptedKey = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    auto reEncryptedKey = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
     kvStoreDataServiceTest.DeleteCloneKey();
     auto encodeEncryptedKey = DistributedData::Base64::Encode(reEncryptedKey);
 

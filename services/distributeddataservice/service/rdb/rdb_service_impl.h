@@ -200,7 +200,7 @@ private:
     void DoCompensateSync(const DistributedData::BindEvent& event);
     std::function<int()> GetSyncTask(const StoreMetaData &metaData, const RdbService::Option &option,
         const PredicatesMemo &predicates, const AsyncDetail &async);
-    int DoSync(const StoreMetaData &meta, const RdbService::Option &option, const PredicatesMemo &predicates,
+    int DoSync(const StoreMetaData &meta, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async);
     bool IsSyncLimitApp(const StoreMetaData &meta);
 
@@ -263,7 +263,7 @@ private:
     static std::pair<bool, StoreMetaData> LoadSyncMeta(const Database &database);
 
     static std::pair<int32_t, std::shared_ptr<DistributedData::Cursor>> AllocResource(
-        StoreInfo& storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
+        StoreInfo &storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
 
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
 

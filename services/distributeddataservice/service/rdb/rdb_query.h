@@ -99,10 +99,10 @@ private:
         &RdbQuery::LessThan,
         &RdbQuery::LessThanOrEqual,
         &RdbQuery::Distinct,
+        &RdbQuery::IndexedBy,
         &RdbQuery::NotContains,
         &RdbQuery::NotLike,
-        &RdbQuery::AssetsOnly,
-        &RdbQuery::IndexedBy
+        &RdbQuery::AssetsOnly
     };
     static constexpr inline uint32_t DECIMAL_BASE = 10;
 
