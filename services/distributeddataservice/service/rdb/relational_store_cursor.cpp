@@ -17,7 +17,7 @@
 
 #include "log_print.h"
 #include "rdb_errno.h"
-#include "rdb_store_utils.h"
+#include "rdb_utils.h"
 #include "rdb_types.h"
 #include "result_set.h"
 #include "value_proxy.h"
@@ -38,13 +38,13 @@ RelationalStoreCursor::~RelationalStoreCursor()
 int32_t RelationalStoreCursor::GetColumnNames(std::vector<std::string> &names) const
 {
     auto ret = resultSet_.GetAllColumnNames(names);
-    return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetColumnName(int32_t col, std::string &name) const
 {
     auto ret = resultSet_.GetColumnName(col, name);
-    return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetColumnType(int32_t col) const
@@ -70,19 +70,19 @@ int32_t RelationalStoreCursor::GetCount() const
 int32_t RelationalStoreCursor::MoveToFirst()
 {
     auto ret = resultSet_.GoToFirstRow();
-    return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::MoveToNext()
 {
     auto ret = resultSet_.GoToNextRow();
-    return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::MoveToPrev()
 {
     auto ret = resultSet_.GoToPreviousRow();
-    return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::GetEntry(DistributedData::VBucket &entry)
@@ -96,7 +96,7 @@ int32_t RelationalStoreCursor::GetRow(DistributedData::VBucket &data)
     auto ret = resultSet_.GetRow(rowEntity);
     std::map<std::string, NativeRdb::ValueObject> values = rowEntity.Steal();
     data = ValueProxy::Convert(std::move(values));
-    return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::Get(int32_t col, DistributedData::Value &value)
@@ -104,7 +104,7 @@ int32_t RelationalStoreCursor::Get(int32_t col, DistributedData::Value &value)
     NativeRdb::ValueObject valueObj;
     auto ret = resultSet_.Get(col, valueObj);
     value = ValueProxy::Convert(std::move(valueObj));
-    return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Value &value)
@@ -113,7 +113,7 @@ int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Valu
     auto ret = resultSet_.GetColumnIndex(col, index);
     if (ret != NativeRdb::E_OK) {
         ZLOGE("get column index failed:%{public}d", ret);
-        return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+        return RdbUtils::ConvertNativeRdbStatus(ret);
     }
     return Get(index, value);
 }
@@ -121,7 +121,7 @@ int32_t RelationalStoreCursor::Get(const std::string &col, DistributedData::Valu
 int32_t RelationalStoreCursor::Close()
 {
     auto ret = resultSet_.Close();
-    return RdbStoreUtils::ConvertNativeRdbStatus(ret);
+    return RdbUtils::ConvertNativeRdbStatus(ret);
 }
 
 bool RelationalStoreCursor::IsEnd()

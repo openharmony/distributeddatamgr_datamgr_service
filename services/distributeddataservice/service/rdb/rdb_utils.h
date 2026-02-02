@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,14 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RELATIONAL_STORE_UTILS_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RELATIONAL_STORE_UTILS_H
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_UTILS_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_UTILS_H
 #include <cstdint>
+#include <string>
+#include <vector>
 
+#include "rdb_types.h"
+#include "store/general_value.h"
 namespace OHOS::DistributedRdb {
-class RdbStoreUtils {
+class RdbUtils final {
 public:
+    static std::vector<std::string> GetSearchableTables(const RdbChangedData &changedData);
+    static std::vector<std::string> GetP2PTables(const RdbChangedData &changedData);
+    static std::vector<DistributedData::Reference> Convert(const std::vector<Reference> &references);
     static int32_t ConvertNativeRdbStatus(int32_t status);
 };
 } // namespace OHOS::DistributedRdb
-#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RELATIONAL_STORE_UTILS_H
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_UTILS_H

@@ -14,39 +14,6 @@
  */
 
 #include "rdb_types_utils.h"
-namespace OHOS::DistributedRdb {
-std::vector<std::string> RdbTypesUtils::GetSearchableTables(const RdbChangedData &changedData)
-{
-    std::vector<std::string> tables;
-    for (auto &[key, value] : changedData.tableData) {
-        if (value.isTrackedDataChange) {
-            tables.push_back(key);
-        }
-    }
-    return tables;
-}
-
-std::vector<std::string> RdbTypesUtils::GetP2PTables(const RdbChangedData &changedData)
-{
-    std::vector<std::string> tables;
-    for (auto &[key, value] : changedData.tableData) {
-        if (value.isP2pSyncDataChange) {
-            tables.push_back(key);
-        }
-    }
-    return tables;
-}
-std::vector<DistributedData::Reference> RdbTypesUtils::Convert(const std::vector<Reference> &references)
-{
-    std::vector<DistributedData::Reference> relationships;
-    for (const auto &reference : references) {
-        DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
-        relationships.emplace_back(relationship);
-    }
-    return relationships;
-}
-} // namespace OHOS::DistributedRdb
-
 namespace OHOS::ITypesUtil {
 template<>
 bool Unmarshalling(NotifyConfig &output, MessageParcel &data)

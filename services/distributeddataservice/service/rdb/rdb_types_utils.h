@@ -21,15 +21,6 @@
 #include "itypes_util.h"
 #include "rdb_service.h"
 #include "rdb_types.h"
-#include "store/general_value.h"
-namespace OHOS::DistributedRdb {
-class RdbTypesUtils final {
-public:
-    static std::vector<std::string> GetSearchableTables(const RdbChangedData &changedData);
-    static std::vector<std::string> GetP2PTables(const RdbChangedData &changedData);
-    static std::vector<DistributedData::Reference> Convert(const std::vector<Reference> &references);
-};
-} // namespace OHOS::DistributedRdb
 
 namespace OHOS::ITypesUtil {
 using SubOption = DistributedRdb::SubscribeOption;
