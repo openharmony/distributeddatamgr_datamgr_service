@@ -55,6 +55,97 @@ void RdbTypesUtilsTest::TearDown(void)
 {
 }
 
+// ==================== 辅助函数定义 ====================
+
+// 创建测试用的 NotifyConfig
+static NotifyConfig CreateTestNotifyConfig(uint32_t delay = 1000, bool isFull = true)
+{
+    NotifyConfig config;
+    config.delay_ = delay;
+    config.isFull_ = isFull;
+    return config;
+}
+
+// 创建测试用的 Option
+static Option CreateTestOption(int32_t mode = 0, int32_t seqNum = 12345,
+                               bool isAsync = true, bool isAutoSync = false,
+                               bool isCompensation = false)
+{
+    Option option;
+    option.mode = mode;
+    option.seqNum = seqNum;
+    option.isAsync = isAsync;
+    option.isAutoSync = isAutoSync;
+    option.isCompensation = isCompensation;
+    return option;
+}
+
+// 创建测试用的 SubOption
+static SubOption CreateTestSubOption(SubscribeMode mode = SubscribeMode::CLOUD)
+{
+    SubOption option;
+    option.mode = mode;
+    return option;
+}
+
+// 创建测试用的 RdbChangedData
+static RdbChangedData CreateTestChangedData(const std::string& tableName = "table",
+                                             bool isTracked = true, bool isP2p = false)
+{
+    RdbChangedData data;
+    RdbChangeProperties props;
+    props.isTrackedDataChange = isTracked;
+    props.isP2pSyncDataChange = isP2p;
+    data.tableData[tableName] = props;
+    return data;
+}
+
+// 创建测试用的 RdbProperties
+static RdbProperties CreateTestProperties(bool isTracked = true, bool isP2p = false)
+{
+    RdbProperties props;
+    props.isTrackedDataChange = isTracked;
+    props.isP2pSyncDataChange = isP2p;
+    return props;
+}
+
+// 创建测试用的 Reference
+static Reference CreateTestReference(const std::string& source = "source_table",
+                                     const std::string& target = "target_table",
+                                     const std::vector<std::pair<std::string, std::string>>& fields = {})
+{
+    Reference ref;
+    ref.sourceTable = source;
+    ref.targetTable = target;
+    if (fields.empty()) {
+        ref.refFields.insert({"field1", "field1_value"});
+        ref.refFields.insert({"field2", "field2_value"});
+        ref.refFields.insert({"field3", "field3_value"});
+    } else {
+        for (const auto& [key, value] : fields) {
+            ref.refFields.insert({key, value});
+        }
+    }
+    return ref;
+}
+
+// 创建测试用的 StatReporter
+static StatReporter CreateTestStatReporter(int32_t statType = 1,
+                                           const std::string& bundleName = "com.example.app",
+                                           const std::string& storeName = "test.db",
+                                           int32_t subType = 0, int32_t costTime = 100)
+{
+    StatReporter reporter;
+    reporter.statType = statType;
+    reporter.bundleName = bundleName;
+    reporter.storeName = storeName;
+    reporter.subType = subType;
+    reporter.costTime = costTime;
+    return reporter;
+}
+
+// ==================== NotifyConfig 测试用例 ====================
+
 /**
  * @tc.name: RdbTypesUtil_Unmarshal_NotifyConfig_Basic
  * @tc.desc: 测试 NotifyConfig 基础反序列化功能
@@ -63,20 +154,13 @@ void RdbTypesUtilsTest::TearDown(void)
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_NotifyConfig_Basic, TestSize.Level1)
 {
-    // Arrange - 先序列化一个 NotifyConfig
-    NotifyConfig originalConfig;
-    originalConfig.delay_ = 1000;
-    originalConfig.isFull_ = true;
+    auto originalConfig = CreateTestNotifyConfig();
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalConfig));
 
-    // Act - 反序列化
     NotifyConfig unmarshalledConfig;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledConfig);
-
-    // Assert
-    EXPECT_EQ(result, true);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledConfig));
     EXPECT_EQ(unmarshalledConfig.delay_, originalConfig.delay_);
     EXPECT_EQ(unmarshalledConfig.isFull_, originalConfig.isFull_);
 }
@@ -94,34 +178,28 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_NotifyConfig_DifferentValues,
     };
 
     std::vector<TestCase> testCases = {
-        {0, false},           // 最小 delay, 不全量
-        {100, false},          // 正常 delay
-        {1000, true},          // 正常 delay, 全量
-        {UINT32_MAX, false},   // 最大 delay
-        {5000, true}           // 大 delay, 全量
+        {0, false},
+        {100, false},
+        {1000, true},
+        {UINT32_MAX, false},
+        {5000, true}
     };
 
     for (const auto& testCase : testCases) {
-        // Arrange
-        NotifyConfig originalConfig;
-        originalConfig.delay_ = testCase.delay;
-        originalConfig.isFull_ = testCase.isFull;
+        auto originalConfig = CreateTestNotifyConfig(testCase.delay, testCase.isFull);
 
         MessageParcel parcel;
         ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalConfig));
 
-        // Act
         NotifyConfig unmarshalledConfig;
-        bool result = ITypesUtil::Unmarshal(parcel, unmarshalledConfig);
-
-        // Assert
-        EXPECT_EQ(result, true)
-            << "Failed for delay=" << testCase.delay
-            << ", isFull=" << testCase.isFull;
+        EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledConfig))
+            << "Failed for delay=" << testCase.delay << ", isFull=" << testCase.isFull;
         EXPECT_EQ(unmarshalledConfig.delay_, testCase.delay);
         EXPECT_EQ(unmarshalledConfig.isFull_, testCase.isFull);
     }
 }
+
+// ==================== Option 测试用例 ====================
 
 /**
  * @tc.name: RdbTypesUtil_Unmarshal_Option_Complete
@@ -130,23 +208,13 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_NotifyConfig_DifferentValues,
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Option_Complete, TestSize.Level1)
 {
-    // Arrange
-    Option originalOption;
-    originalOption.mode = 1;
-    originalOption.seqNum = 12345;
-    originalOption.isAsync = true;
-    originalOption.isAutoSync = false;
-    originalOption.isCompensation = true;
+    auto originalOption = CreateTestOption(1, 12345, true, false, true);
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalOption));
 
-    // Act
     Option unmarshalledOption;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledOption);
-
-    // Assert
-    EXPECT_EQ(result, true);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption));
     EXPECT_EQ(unmarshalledOption.mode, originalOption.mode);
     EXPECT_EQ(unmarshalledOption.seqNum, originalOption.seqNum);
     EXPECT_EQ(unmarshalledOption.isAsync, originalOption.isAsync);
@@ -161,30 +229,16 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Option_Complete, TestSize.Lev
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Option_FlagsCombinations, TestSize.Level1)
 {
-    // 测试 8 种标志组合
     for (int isAsync = 0; isAsync <= 1; isAsync++) {
         for (int isAutoSync = 0; isAutoSync <= 1; isAutoSync++) {
             for (int isCompensation = 0; isCompensation <= 1; isCompensation++) {
-                // Arrange
-                Option originalOption;
-                originalOption.mode = 0;
-                originalOption.seqNum = 100;
-                originalOption.isAsync = static_cast<bool>(isAsync);
-                originalOption.isAutoSync = static_cast<bool>(isAutoSync);
-                originalOption.isCompensation = static_cast<bool>(isCompensation);
+                auto originalOption = CreateTestOption(0, 100, isAsync, isAutoSync, isCompensation);
 
                 MessageParcel parcel;
                 ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalOption));
 
-                // Act
                 Option unmarshalledOption;
-                bool result = ITypesUtil::Unmarshal(parcel, unmarshalledOption);
-
-                // Assert
-                EXPECT_TRUE(result)
-                    << "Failed for flags: isAsync=" << isAsync
-                    << ", isAutoSync=" << isAutoSync
-                    << ", isCompensation=" << isCompensation;
+                EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption))
                 EXPECT_EQ(unmarshalledOption.isAsync, static_cast<bool>(isAsync));
                 EXPECT_EQ(unmarshalledOption.isAutoSync, static_cast<bool>(isAutoSync));
                 EXPECT_EQ(unmarshalledOption.isCompensation, static_cast<bool>(isCompensation));
@@ -192,6 +246,8 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Option_FlagsCombinations, Tes
         }
     }
 }
+
+// ==================== SubOption 测试用例 ====================
 
 /**
  * @tc.name: RdbTypesUtil_Unmarshal_SubOption_AllModes
@@ -207,19 +263,13 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_SubOption_AllModes, TestSize.
     };
 
     for (auto mode : modes) {
-        // Arrange
-        SubOption originalOption;
-        originalOption.mode = mode;
+        auto originalOption = CreateTestSubOption(mode);
 
         MessageParcel parcel;
         ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalOption));
 
-        // Act
         SubOption unmarshalledOption;
-        bool result = ITypesUtil::Unmarshal(parcel, unmarshalledOption);
-
-        // Assert
-        EXPECT_EQ(result, true)
+        EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption))
             << "Failed for SubscribeMode: " << static_cast<int>(mode);
         EXPECT_EQ(unmarshalledOption.mode, mode);
     }
@@ -232,27 +282,23 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_SubOption_AllModes, TestSize.
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_SubOption_ModeValue, TestSize.Level1)
 {
-    // 测试不同的模式值
     std::vector<int32_t> modeValues = {0, 1, 2, 10, 100, -1};
 
     for (int32_t modeValue : modeValues) {
-        // Arrange
         SubOption originalOption;
         originalOption.mode = static_cast<SubscribeMode>(modeValue);
 
         MessageParcel parcel;
         ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalOption));
 
-        // Act
         SubOption unmarshalledOption;
-        bool result = ITypesUtil::Unmarshal(parcel, unmarshalledOption);
-
-        // Assert
-        EXPECT_EQ(result, true)
+        EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption))
             << "Failed for mode value: " << modeValue;
         EXPECT_EQ(static_cast<int32_t>(unmarshalledOption.mode), modeValue);
     }
 }
+
+// ==================== RdbChangedData 测试用例 ====================
 
 /**
  * @tc.name: RdbTypesUtil_Unmarshal_RdbChangedData_SingleTable
@@ -261,22 +307,13 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_SubOption_ModeValue, TestSize
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_SingleTable, TestSize.Level1)
 {
-    // Arrange
-    RdbChangedData originalChangedData;
-    RdbChangeProperties properties;
-    properties.isTrackedDataChange = true;
-    properties.isP2pSyncDataChange = false;
-    originalChangedData.tableData["test_table"] = properties;
+    auto originalChangedData = CreateTestChangedData("test_table", true, false);
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalChangedData));
 
-    // Act
     RdbChangedData unmarshalledChangedData;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledChangedData);
-
-    // Assert
-    EXPECT_EQ(result, true);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledChangedData));
     EXPECT_EQ(unmarshalledChangedData.tableData.size(), originalChangedData.tableData.size());
     EXPECT_EQ(unmarshalledChangedData.tableData["test_table"].isTrackedDataChange,
               originalChangedData.tableData["test_table"].isTrackedDataChange);
@@ -291,10 +328,8 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_SingleTable, T
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_MultipleTables, TestSize.Level1)
 {
-    // Arrange
     RdbChangedData originalChangedData;
 
-    // 添加 5 个表的数据
     for (int i = 0; i < 5; i++) {
         std::string tableName = "table_" + std::to_string(i);
         RdbChangeProperties properties;
@@ -306,12 +341,8 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_MultipleTables
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalChangedData));
 
-    // Act
     RdbChangedData unmarshalledChangedData;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledChangedData);
-
-    // Assert
-    EXPECT_EQ(result, true);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledChangedData));
     EXPECT_EQ(unmarshalledChangedData.tableData.size(), originalChangedData.tableData.size());
 
     for (const auto& [tableName, properties] : originalChangedData.tableData) {
@@ -329,19 +360,13 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_MultipleTables
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_EmptyTableData, TestSize.Level1)
 {
-    // Arrange
     RdbChangedData originalChangedData;
-    // tableData 为空
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalChangedData));
 
-    // Act
     RdbChangedData unmarshalledChangedData;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledChangedData);
-
-    // Assert
-    EXPECT_EQ(result, true);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledChangedData));
     EXPECT_EQ(unmarshalledChangedData.tableData.size(), 0);
 }
 
@@ -358,33 +383,29 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbProperties_PropertyCombina
     };
 
     std::vector<TestCase> testCases = {
-        {false, false},  // 都不跟踪
-        {true, false},   // 仅跟踪
-        {false, true},   // 仅 P2P
-        {true, true}     // 都启用
+        {false, false},
+        {true, false},
+        {false, true},
+        {true, true}
     };
 
     for (const auto& testCase : testCases) {
-        // Arrange
-        RdbProperties originalProperties;
-        originalProperties.isTrackedDataChange = testCase.isTrackedDataChange;
-        originalProperties.isP2pSyncDataChange = testCase.isP2pSyncDataChange;
+        auto originalProperties = CreateTestProperties(testCase.isTrackedDataChange,
+                                                        testCase.isP2pSyncDataChange);
 
         MessageParcel parcel;
         ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalProperties));
 
-        // Act
         RdbProperties unmarshalledProperties;
-        bool result = ITypesUtil::Unmarshal(parcel, unmarshalledProperties);
-
-        // Assert
-        EXPECT_EQ(result, true)
+        EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledProperties))
             << "Failed for tracked=" << testCase.isTrackedDataChange
             << ", p2p=" << testCase.isP2pSyncDataChange;
         EXPECT_EQ(unmarshalledProperties.isTrackedDataChange, testCase.isTrackedDataChange);
         EXPECT_EQ(unmarshalledProperties.isP2pSyncDataChange, testCase.isP2pSyncDataChange);
     }
 }
+
+// ==================== Reference 测试用例 ====================
 
 /**
  * @tc.name: RdbTypesUtil_Unmarshal_Reference_Basic
@@ -393,23 +414,13 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbProperties_PropertyCombina
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Reference_Basic, TestSize.Level1)
 {
-    // Arrange
-    Reference originalRef;
-    originalRef.sourceTable = "source_table";
-    originalRef.targetTable = "target_table";
-    originalRef.refFields.insert({"field1", "field1_value"});
-    originalRef.refFields.insert({"field2", "field2_value"});
-    originalRef.refFields.insert({"field3", "field3_value"});
+    auto originalRef = CreateTestReference();
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalRef));
 
-    // Act
     Reference unmarshalledRef;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledRef);
-
-    // Assert
-    EXPECT_EQ(result, true);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledRef));
     EXPECT_EQ(unmarshalledRef.sourceTable, originalRef.sourceTable);
     EXPECT_EQ(unmarshalledRef.targetTable, originalRef.targetTable);
     EXPECT_EQ(unmarshalledRef.refFields.size(), originalRef.refFields.size());
@@ -425,12 +436,10 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Reference_Basic, TestSize.Lev
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Reference_MultipleFields, TestSize.Level1)
 {
-    // Arrange
     Reference originalRef;
     originalRef.sourceTable = "src";
     originalRef.targetTable = "tgt";
 
-    // 添加不同数量的字段
     std::vector<size_t> fieldCounts = {0, 1, 5, 10};
 
     for (size_t fieldCount : fieldCounts) {
@@ -443,18 +452,16 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Reference_MultipleFields, Tes
         MessageParcel parcel;
         ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalRef));
 
-        // Act
         Reference unmarshalledRef;
-        bool result = ITypesUtil::Unmarshal(parcel, unmarshalledRef);
-
-        // Assert
-        EXPECT_EQ(result, true)
+        EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledRef))
             << "Failed with " << fieldCount << " fields";
         EXPECT_EQ(unmarshalledRef.sourceTable, originalRef.sourceTable);
         EXPECT_EQ(unmarshalledRef.targetTable, originalRef.targetTable);
         EXPECT_EQ(unmarshalledRef.refFields.size(), originalRef.refFields.size());
     }
 }
+
+// ==================== StatReporter 测试用例 ====================
 
 /**
  * @tc.name: RdbTypesUtil_Unmarshal_StatReporter_Complete
@@ -463,23 +470,13 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Reference_MultipleFields, Tes
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_StatReporter_Complete, TestSize.Level1)
 {
-    // Arrange
-    StatReporter originalReporter;
-    originalReporter.statType = 3;
-    originalReporter.bundleName = "com.example.app";
-    originalReporter.storeName = "test.db";
-    originalReporter.subType = 1;
-    originalReporter.costTime = 250;
+    auto originalReporter = CreateTestStatReporter(3, "com.example.app", "test.db", 1, 250);
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalReporter));
 
-    // Act
     StatReporter unmarshalledReporter;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledReporter);
-
-    // Assert
-    EXPECT_EQ(result, true);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReporter));
     EXPECT_EQ(unmarshalledReporter.statType, originalReporter.statType);
     EXPECT_EQ(unmarshalledReporter.bundleName, originalReporter.bundleName);
     EXPECT_EQ(unmarshalledReporter.storeName, originalReporter.storeName);
@@ -494,27 +491,20 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_StatReporter_Complete, TestSi
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_StatReporter_LongStrings, TestSize.Level1)
 {
-    // Arrange
-    StatReporter originalReporter;
-    originalReporter.statType = 1;
-    originalReporter.bundleName = std::string(1000, 'a');  // 1000字符的包名
-    originalReporter.storeName = std::string(1000, 'b');   // 1000字符的数据库名
-    originalReporter.subType = 0;
-    originalReporter.costTime = 999999;
+    auto originalReporter = CreateTestStatReporter(1, std::string(1000, 'a'),
+                                                    std::string(1000, 'b'), 0, 999999);
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalReporter));
 
-    // Act
     StatReporter unmarshalledReporter;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledReporter);
-
-    // Assert
-    EXPECT_EQ(result, true);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReporter));
     EXPECT_EQ(unmarshalledReporter.bundleName, originalReporter.bundleName);
     EXPECT_EQ(unmarshalledReporter.storeName, originalReporter.storeName);
     EXPECT_EQ(unmarshalledReporter.costTime, originalReporter.costTime);
 }
+
+// ==================== 边界测试用例 ====================
 
 /**
  * @tc.name: RdbTypesUtil_Unmarshal_Boundary_MaxDelayValue
@@ -523,20 +513,13 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_StatReporter_LongStrings, Tes
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Boundary_MaxDelayValue, TestSize.Level1)
 {
-    // Arrange
-    NotifyConfig originalConfig;
-    originalConfig.delay_ = UINT32_MAX;
-    originalConfig.isFull_ = true;
+    auto originalConfig = CreateTestNotifyConfig(UINT32_MAX, true);
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalConfig));
 
-    // Act
     NotifyConfig unmarshalledConfig;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledConfig);
-
-    // Assert
-    EXPECT_TRUE(result);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledConfig));
     EXPECT_EQ(unmarshalledConfig.delay_, UINT32_MAX);
     EXPECT_EQ(unmarshalledConfig.isFull_, true);
 }
@@ -548,23 +531,13 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Boundary_MaxDelayValue, TestS
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Boundary_MaxSeqNum, TestSize.Level1)
 {
-    // Arrange
-    Option originalOption;
-    originalOption.mode = 0;
-    originalOption.seqNum = INT32_MAX;
-    originalOption.isAsync = true;
-    originalOption.isAutoSync = true;
-    originalOption.isCompensation = true;
+    auto originalOption = CreateTestOption(0, INT32_MAX, true, true, true);
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalOption));
 
-    // Act
     Option unmarshalledOption;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledOption);
-
-    // Assert
-    EXPECT_TRUE(result);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption));
     EXPECT_EQ(unmarshalledOption.seqNum, INT32_MAX);
     EXPECT_EQ(unmarshalledOption.isAsync, true);
     EXPECT_EQ(unmarshalledOption.isAutoSync, true);
@@ -578,243 +551,200 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Boundary_MaxSeqNum, TestSize.
  */
 HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Boundary_EmptyRefFields, TestSize.Level1)
 {
-    // Arrange
-    Reference originalRef;
-    originalRef.sourceTable = "src";
-    originalRef.targetTable = "tgt";
-    originalRef.refFields.clear();
+    auto originalRef = CreateTestReference("src", "tgt", {});
 
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalRef));
 
-    // Act
     Reference unmarshalledRef;
-    bool result = ITypesUtil::Unmarshal(parcel, unmarshalledRef);
-
-    // Assert
-    EXPECT_TRUE(result);
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledRef));
     EXPECT_EQ(unmarshalledRef.sourceTable, "src");
     EXPECT_EQ(unmarshalledRef.targetTable, "tgt");
     EXPECT_EQ(unmarshalledRef.refFields.size(), 0);
 }
 
+// ==================== 集成测试用例 ====================
+
 /**
- * @tc.name: RdbTypesUtil_Unmarshal_Integration_MultipleTypesInOneParcel
- * @tc.desc: 测试在一个 Parcel 中反序列化多种类型
+ * @tc.name: RdbTypesUtil_Unmarshal_Integration_TypesInOneParcel_Primitives
+ * @tc.desc: 测试在单个Parcel中序列化反序列化基本类型
  * @tc.type: FUNC
  */
-HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Integration_MultipleTypesInOneParcel, TestSize.Level1)
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Integration_TypesInOneParcel_Primitives, TestSize.Level1)
 {
     MessageParcel parcel;
+    auto originalConfig = CreateTestNotifyConfig();
+    auto originalOption = CreateTestOption();
+    auto originalSubOption = CreateTestSubOption();
 
-    // 1. 序列化 NotifyConfig
-    NotifyConfig originalNotifyConfig;
-    originalNotifyConfig.delay_ = 1000;
-    originalNotifyConfig.isFull_ = true;
-    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalNotifyConfig));
-
-    // 2. 序列化 Option
-    Option originalOption;
-    originalOption.mode = 0;
-    originalOption.seqNum = 12345;
-    originalOption.isAsync = true;
-    originalOption.isAutoSync = false;
-    originalOption.isCompensation = false;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalConfig));
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalOption));
-
-    // 3. 序列化 SubOption
-    SubOption originalSubOption;
-    originalSubOption.mode = SubscribeMode::CLOUD;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalSubOption));
 
-    // 4. 序列化 RdbChangedData
-    RdbChangedData originalChangedData;
-    RdbChangeProperties changeProps;
-    changeProps.isTrackedDataChange = true;
-    changeProps.isP2pSyncDataChange = false;
-    originalChangedData.tableData["table"] = changeProps;
-    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalChangedData));
-
-    // 5. 序列化 RdbProperties
-    RdbProperties originalProperties;
-    originalProperties.isTrackedDataChange = true;
-    originalProperties.isP2pSyncDataChange = false;
-    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalProperties));
-
-    // 6. 序列化 Reference
-    Reference originalReference;
-    originalReference.sourceTable = "source";
-    originalReference.targetTable = "target";
-    originalReference.refFields.insert({"f1", "f1_value"});
-    originalReference.refFields.insert({"f2", "f2_value"});
-    originalReference.refFields.insert({"f3", "f3_value"});
-    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalReference));
-
-    // 7. 序列化 StatReporter
-    StatReporter originalReporter;
-    originalReporter.statType = 1;
-    originalReporter.bundleName = "com.example.app";
-    originalReporter.storeName = "test.db";
-    originalReporter.subType = 0;
-    originalReporter.costTime = 100;
-    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalReporter));
-
-    // 反序列化并验证
-    NotifyConfig unmarshalledNotifyConfig;
-    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledNotifyConfig));
-    EXPECT_EQ(unmarshalledNotifyConfig.delay_, originalNotifyConfig.delay_);
-    EXPECT_EQ(unmarshalledNotifyConfig.isFull_, originalNotifyConfig.isFull_);
-
+    NotifyConfig unmarshalledConfig;
     Option unmarshalledOption;
-    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption));
-    EXPECT_EQ(unmarshalledOption.seqNum, originalOption.seqNum);
-
     SubOption unmarshalledSubOption;
+
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledConfig));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption));
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledSubOption));
+
+    EXPECT_EQ(unmarshalledConfig.delay_, originalConfig.delay_);
+    EXPECT_EQ(unmarshalledConfig.isFull_, originalConfig.isFull_);
+    EXPECT_EQ(unmarshalledOption.seqNum, originalOption.seqNum);
     EXPECT_EQ(unmarshalledSubOption.mode, originalSubOption.mode);
-
-    RdbChangedData unmarshalledChangedData;
-    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledChangedData));
-    EXPECT_EQ(unmarshalledChangedData.tableData.size(), originalChangedData.tableData.size());
-
-    RdbProperties unmarshalledProperties;
-    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledProperties));
-    EXPECT_EQ(unmarshalledProperties.isTrackedDataChange, originalProperties.isTrackedDataChange);
-
-    Reference unmarshalledReference;
-    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReference));
-    EXPECT_EQ(unmarshalledReference.sourceTable, originalReference.sourceTable);
-
-    StatReporter unmarshalledReporter;
-    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReporter));
-    EXPECT_EQ(unmarshalledReporter.bundleName, originalReporter.bundleName);
 }
 
 /**
- * @tc.name: RdbTypesUtil_Unmarshal_Regression_AllModifiedInterfaces
- * @tc.desc: 回归测试所有修改的接口
+ * @tc.name: RdbTypesUtil_Unmarshal_Integration_TypesInOneParcel_Complex
+ * @tc.desc: 测试在单个Parcel中序列化反序列化复杂类型
  * @tc.type: FUNC
  */
-HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_AllModifiedInterfaces, TestSize.Level1)
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Integration_TypesInOneParcel_Complex, TestSize.Level1)
 {
-    using TestFunc = std::function<bool()>;
+    MessageParcel parcel;
+    auto originalChangedData = CreateTestChangedData();
+    auto originalProperties = CreateTestProperties();
+    auto originalReference = CreateTestReference();
+    auto originalReporter = CreateTestStatReporter();
 
-    std::vector<std::pair<std::string, TestFunc>> tests = {
-        {"NotifyConfig::Unmarshalling", []() {
-            NotifyConfig originalConfig;
-            originalConfig.delay_ = 1000;
-            originalConfig.isFull_ = true;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalChangedData));
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalProperties));
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalReference));
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, originalReporter));
 
-            MessageParcel parcel;
-            if (!ITypesUtil::Marshal(parcel, originalConfig)) {
-                return false;
-            }
+    RdbChangedData unmarshalledChangedData;
+    RdbProperties unmarshalledProperties;
+    Reference unmarshalledReference;
+    StatReporter unmarshalledReporter;
 
-            NotifyConfig unmarshalledConfig;
-            return ITypesUtil::Unmarshal(parcel, unmarshalledConfig) &&
-                   unmarshalledConfig.delay_ == originalConfig.delay_ &&
-                   unmarshalledConfig.isFull_ == originalConfig.isFull_;
-        }},
-        {"Option::Unmarshalling", []() {
-            Option originalOption;
-            originalOption.mode = 0;
-            originalOption.seqNum = 12345;
-            originalOption.isAsync = true;
-            originalOption.isAutoSync = true;
-            originalOption.isCompensation = false;
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledChangedData));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledProperties));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReference));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReporter));
 
-            MessageParcel parcel;
-            if (!ITypesUtil::Marshal(parcel, originalOption)) {
-                return false;
-            }
+    EXPECT_EQ(unmarshalledChangedData.tableData.size(), originalChangedData.tableData.size());
+    EXPECT_EQ(unmarshalledProperties.isTrackedDataChange, originalProperties.isTrackedDataChange);
+    EXPECT_EQ(unmarshalledReference.sourceTable, originalReference.sourceTable);
+    EXPECT_EQ(unmarshalledReporter.bundleName, originalReporter.bundleName);
+}
 
-            Option unmarshalledOption;
-            return ITypesUtil::Unmarshal(parcel, unmarshalledOption) &&
-                   unmarshalledOption.seqNum == originalOption.seqNum &&
-                   unmarshalledOption.isAsync == originalOption.isAsync;
-        }},
-        {"SubOption::Unmarshalling", []() {
-            SubOption originalOption;
-            originalOption.mode = SubscribeMode::CLOUD;
+// ==================== 回归测试用例 ====================
 
-            MessageParcel parcel;
-            if (!ITypesUtil::Marshal(parcel, originalOption)) {
-                return false;
-            }
+/**
+ * @tc.name: RdbTypesUtil_Unmarshal_Regression_NotifyConfig
+ * @tc.desc: 回归测试 NotifyConfig 接口
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_NotifyConfig, TestSize.Level1)
+{
+    auto config = CreateTestNotifyConfig();
+    NotifyConfig unmarshalled;
 
-            SubOption unmarshalledOption;
-            return ITypesUtil::Unmarshal(parcel, unmarshalledOption) &&
-                   unmarshalledOption.mode == originalOption.mode;
-        }},
-        {"RdbChangedData::Unmarshalling", []() {
-            RdbChangedData originalChangedData;
-            RdbChangeProperties changeProps;
-            changeProps.isTrackedDataChange = true;
-            changeProps.isP2pSyncDataChange = false;
-            originalChangedData.tableData["table"] = changeProps;
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, config));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.delay_, config.delay_);
+    EXPECT_EQ(unmarshalled.isFull_, config.isFull_);
+}
 
-            MessageParcel parcel;
-            if (!ITypesUtil::Marshal(parcel, originalChangedData)) {
-                return false;
-            }
+/**
+ * @tc.name: RdbTypesUtil_Unmarshal_Regression_Option
+ * @tc.desc: 回归测试 Option 接口
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_Option, TestSize.Level1)
+{
+    auto option = CreateTestOption();
+    Option unmarshalled;
 
-            RdbChangedData unmarshalledChangedData;
-            return ITypesUtil::Unmarshal(parcel, unmarshalledChangedData) &&
-                   unmarshalledChangedData.tableData.size() == originalChangedData.tableData.size();
-        }},
-        {"RdbProperties::Unmarshalling", []() {
-            RdbProperties originalProperties;
-            originalProperties.isTrackedDataChange = true;
-            originalProperties.isP2pSyncDataChange = false;
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, option));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.seqNum, option.seqNum);
+    EXPECT_EQ(unmarshalled.isAsync, option.isAsync);
+}
 
-            MessageParcel parcel;
-            if (!ITypesUtil::Marshal(parcel, originalProperties)) {
-                return false;
-            }
+/**
+ * @tc.name: RdbTypesUtil_Unmarshal_Regression_SubOption
+ * @tc.desc: 回归测试 SubOption 接口
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_SubOption, TestSize.Level1)
+{
+    auto option = CreateTestSubOption();
+    SubOption unmarshalled;
 
-            RdbProperties unmarshalledProperties;
-            return ITypesUtil::Unmarshal(parcel, unmarshalledProperties) &&
-                   unmarshalledProperties.isTrackedDataChange == originalProperties.isTrackedDataChange;
-        }},
-        {"Reference::Unmarshalling", []() {
-            Reference originalRef;
-            originalRef.sourceTable = "source";
-            originalRef.targetTable = "target";
-            originalRef.refFields.insert({"f1", "f1_value"});
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, option));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.mode, option.mode);
+}
 
-            MessageParcel parcel;
-            if (!ITypesUtil::Marshal(parcel, originalRef)) {
-                return false;
-            }
+/**
+ * @tc.name: RdbTypesUtil_Unmarshal_Regression_RdbChangedData
+ * @tc.desc: 回归测试 RdbChangedData 接口
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_RdbChangedData, TestSize.Level1)
+{
+    auto data = CreateTestChangedData();
+    RdbChangedData unmarshalled;
 
-            Reference unmarshalledRef;
-            return ITypesUtil::Unmarshal(parcel, unmarshalledRef) &&
-                   unmarshalledRef.sourceTable == originalRef.sourceTable &&
-                   unmarshalledRef.refFields.size() == originalRef.refFields.size();
-        }},
-        {"StatReporter::Unmarshalling", []() {
-            StatReporter originalReporter;
-            originalReporter.statType = 1;
-            originalReporter.bundleName = "com.example.app";
-            originalReporter.storeName = "test.db";
-            originalReporter.subType = 0;
-            originalReporter.costTime = 100;
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, data));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.tableData.size(), data.tableData.size());
+}
 
-            MessageParcel parcel;
-            if (!ITypesUtil::Marshal(parcel, originalReporter)) {
-                return false;
-            }
+/**
+ * @tc.name: RdbTypesUtil_Unmarshal_Regression_RdbProperties
+ * @tc.desc: 回归测试 RdbProperties 接口
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_RdbProperties, TestSize.Level1)
+{
+    auto props = CreateTestProperties();
+    RdbProperties unmarshalled;
 
-            StatReporter unmarshalledReporter;
-            return ITypesUtil::Unmarshal(parcel, unmarshalledReporter) &&
-                   unmarshalledReporter.bundleName == originalReporter.bundleName &&
-                   unmarshalledReporter.costTime == originalReporter.costTime;
-        }}
-    };
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, props));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.isTrackedDataChange, props.isTrackedDataChange);
+}
 
-    for (const auto& [name, testFunc] : tests) {
-        EXPECT_TRUE(testFunc()) << "Test failed for: " << name;
-    }
+/**
+ * @tc.name: RdbTypesUtil_Unmarshal_Regression_Reference
+ * @tc.desc: 回归测试 Reference 接口
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_Reference, TestSize.Level1)
+{
+    auto ref = CreateTestReference();
+    Reference unmarshalled;
+
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, ref));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.sourceTable, ref.sourceTable);
+    EXPECT_EQ(unmarshalled.refFields.size(), ref.refFields.size());
+}
+
+/**
+ * @tc.name: RdbTypesUtil_Unmarshal_Regression_StatReporter
+ * @tc.desc: 回归测试 StatReporter 接口
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_StatReporter, TestSize.Level1)
+{
+    auto reporter = CreateTestStatReporter();
+    StatReporter unmarshalled;
+
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, reporter));
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.bundleName, reporter.bundleName);
+    EXPECT_EQ(unmarshalled.costTime, reporter.costTime);
 }
 
 } // namespace Test
