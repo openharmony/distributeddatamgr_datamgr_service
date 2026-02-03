@@ -601,7 +601,7 @@ ohos_unittest("RdbServiceTest") {
     "rdb_general_store_test.cpp",
     "rdb_query_test.cpp",
     "rdb_result_set_stub_test.cpp",
-    "rdb_store_utils_test.cpp",
+    "rdb_utils_test.cpp",
     "relational_store_cursor_test.cpp",
   ]
 
@@ -770,6 +770,7 @@ ohos_unittest("RdbServiceImplTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
+    "relational_store:native_rdb_type_utils",
     "resource_management:global_resmgr",
   ]
 

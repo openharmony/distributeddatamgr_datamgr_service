@@ -14,35 +14,50 @@
  */
 
 #include "rdb_types_utils.h"
-namespace OHOS::DistributedRdb {
-std::vector<std::string> RdbTypesUtils::GetSearchableTables(const RdbChangedData &changedData)
+namespace OHOS::ITypesUtil {
+template<>
+bool Unmarshalling(NotifyConfig &output, MessageParcel &data)
 {
-    std::vector<std::string> tables;
-    for (auto &[key, value] : changedData.tableData) {
-        if (value.isTrackedDataChange) {
-            tables.push_back(key);
-        }
-    }
-    return tables;
+    return ITypesUtil::Unmarshal(data, output.delay_, output.isFull_);
 }
-
-std::vector<std::string> RdbTypesUtils::GetP2PTables(const RdbChangedData &changedData)
+ 
+template<>
+bool Unmarshalling(Option &output, MessageParcel &data)
 {
-    std::vector<std::string> tables;
-    for (auto &[key, value] : changedData.tableData) {
-        if (value.isP2pSyncDataChange) {
-            tables.push_back(key);
-        }
-    }
-    return tables;
+    return ITypesUtil::Unmarshal(
+        data, output.mode, output.seqNum, output.isAsync, output.isAutoSync, output.isCompensation);
 }
-std::vector<DistributedData::Reference> RdbTypesUtils::Convert(const std::vector<Reference> &references)
+ 
+template<>
+bool Unmarshalling(SubOption &output, MessageParcel &data)
 {
-    std::vector<DistributedData::Reference> relationships;
-    for (const auto &reference : references) {
-        DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
-        relationships.emplace_back(relationship);
-    }
-    return relationships;
+    int32_t mode = static_cast<int32_t>(output.mode);
+    auto ret = ITypesUtil::Unmarshal(data, mode);
+    output.mode = static_cast<decltype(output.mode)>(mode);
+    return ret;
 }
-} // namespace OHOS::DistributedRdb
+ 
+template<>
+bool Unmarshalling(RdbChangedData &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.tableData);
+}
+ 
+template<>
+bool Unmarshalling(RdbProperties &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.isTrackedDataChange, output.isP2pSyncDataChange);
+}
+ 
+template<>
+bool Unmarshalling(Reference &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.sourceTable, output.targetTable, output.refFields);
+}
+ 
+template<>
+bool Unmarshalling(StatReporter &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.statType, output.bundleName, output.storeName, output.subType, output.costTime);
+}
+} // namespace OHOS::ITypesUtil
