@@ -218,6 +218,8 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Option_FlagsCombinations, Tes
 
                 Option unmarshalledOption;
                 EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption));
+                EXPECT_EQ(unmarshalledOption.mode, originalOption.mode);
+                EXPECT_EQ(unmarshalledOption.seqNum, originalOption.seqNum);
                 EXPECT_EQ(unmarshalledOption.isAsync, static_cast<bool>(isAsync));
                 EXPECT_EQ(unmarshalledOption.isAutoSync, static_cast<bool>(isAutoSync));
                 EXPECT_EQ(unmarshalledOption.isCompensation, static_cast<bool>(isCompensation));
@@ -416,6 +418,9 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Reference_MultipleFields, Tes
         EXPECT_EQ(unmarshalledRef.sourceTable, originalRef.sourceTable);
         EXPECT_EQ(unmarshalledRef.targetTable, originalRef.targetTable);
         EXPECT_EQ(unmarshalledRef.refFields.size(), originalRef.refFields.size());
+        for (const auto &[key, value] : originalRef.refFields) {
+            EXPECT_EQ(unmarshalledRef.refFields[key], value);
+        }
     }
 }
 
@@ -454,8 +459,10 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_StatReporter_LongStrings, Tes
 
     StatReporter unmarshalledReporter;
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReporter));
+    EXPECT_EQ(unmarshalledReporter.statType, originalReporter.statType);
     EXPECT_EQ(unmarshalledReporter.bundleName, originalReporter.bundleName);
     EXPECT_EQ(unmarshalledReporter.storeName, originalReporter.storeName);
+    EXPECT_EQ(unmarshalledReporter.subType, originalReporter.subType);
     EXPECT_EQ(unmarshalledReporter.costTime, originalReporter.costTime);
 }
 
@@ -491,6 +498,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Boundary_MaxSeqNum, TestSize.
 
     Option unmarshalledOption;
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledOption));
+    EXPECT_EQ(unmarshalledOption.mode, originalOption.mode);
     EXPECT_EQ(unmarshalledOption.seqNum, INT32_MAX);
     EXPECT_EQ(unmarshalledOption.isAsync, true);
     EXPECT_EQ(unmarshalledOption.isAutoSync, true);
@@ -542,7 +550,11 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Integration_TypesInOneParcel_
 
     EXPECT_EQ(unmarshalledConfig.delay_, originalConfig.delay_);
     EXPECT_EQ(unmarshalledConfig.isFull_, originalConfig.isFull_);
+    EXPECT_EQ(unmarshalledOption.mode, originalOption.mode);
     EXPECT_EQ(unmarshalledOption.seqNum, originalOption.seqNum);
+    EXPECT_EQ(unmarshalledOption.isAsync, originalOption.isAsync);
+    EXPECT_EQ(unmarshalledOption.isAutoSync, originalOption.isAutoSync);
+    EXPECT_EQ(unmarshalledOption.isCompensation, originalOption.isCompensation);
     EXPECT_EQ(unmarshalledSubOption.mode, originalSubOption.mode);
 }
 
@@ -575,9 +587,25 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Integration_TypesInOneParcel_
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReporter));
 
     EXPECT_EQ(unmarshalledChangedData.tableData.size(), originalChangedData.tableData.size());
+    for (const auto &[tableName, properties] : originalChangedData.tableData) {
+        EXPECT_EQ(unmarshalledChangedData.tableData[tableName].isTrackedDataChange,
+            properties.isTrackedDataChange);
+        EXPECT_EQ(unmarshalledChangedData.tableData[tableName].isP2pSyncDataChange,
+            properties.isP2pSyncDataChange);
+    }
     EXPECT_EQ(unmarshalledProperties.isTrackedDataChange, originalProperties.isTrackedDataChange);
+    EXPECT_EQ(unmarshalledProperties.isP2pSyncDataChange, originalProperties.isP2pSyncDataChange);
     EXPECT_EQ(unmarshalledReference.sourceTable, originalReference.sourceTable);
+    EXPECT_EQ(unmarshalledReference.targetTable, originalReference.targetTable);
+    EXPECT_EQ(unmarshalledReference.refFields.size(), originalReference.refFields.size());
+    for (const auto &[key, value] : originalReference.refFields) {
+        EXPECT_EQ(unmarshalledReference.refFields[key], value);
+    }
+    EXPECT_EQ(unmarshalledReporter.statType, originalReporter.statType);
     EXPECT_EQ(unmarshalledReporter.bundleName, originalReporter.bundleName);
+    EXPECT_EQ(unmarshalledReporter.storeName, originalReporter.storeName);
+    EXPECT_EQ(unmarshalledReporter.subType, originalReporter.subType);
+    EXPECT_EQ(unmarshalledReporter.costTime, originalReporter.costTime);
 }
 
 /**
@@ -610,8 +638,11 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_Option, TestSize.L
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, option));
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.mode, option.mode);
     EXPECT_EQ(unmarshalled.seqNum, option.seqNum);
     EXPECT_EQ(unmarshalled.isAsync, option.isAsync);
+    EXPECT_EQ(unmarshalled.isAutoSync, option.isAutoSync);
+    EXPECT_EQ(unmarshalled.isCompensation, option.isCompensation);
 }
 
 /**
@@ -644,6 +675,10 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_RdbChangedData, Te
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, data));
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
     EXPECT_EQ(unmarshalled.tableData.size(), data.tableData.size());
+    for (const auto &[tableName, properties] : data.tableData) {
+        EXPECT_EQ(unmarshalled.tableData[tableName].isTrackedDataChange, properties.isTrackedDataChange);
+        EXPECT_EQ(unmarshalled.tableData[tableName].isP2pSyncDataChange, properties.isP2pSyncDataChange);
+    }
 }
 
 /**
@@ -660,6 +695,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_RdbProperties, Tes
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, props));
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
     EXPECT_EQ(unmarshalled.isTrackedDataChange, props.isTrackedDataChange);
+    EXPECT_EQ(unmarshalled.isP2pSyncDataChange, props.isP2pSyncDataChange);
 }
 
 /**
@@ -676,7 +712,11 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_Reference, TestSiz
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, ref));
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
     EXPECT_EQ(unmarshalled.sourceTable, ref.sourceTable);
+    EXPECT_EQ(unmarshalled.targetTable, ref.targetTable);
     EXPECT_EQ(unmarshalled.refFields.size(), ref.refFields.size());
+    for (const auto &[key, value] : ref.refFields) {
+        EXPECT_EQ(unmarshalled.refFields[key], value);
+    }
 }
 
 /**
@@ -692,7 +732,10 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_StatReporter, Test
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, reporter));
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.statType, reporter.statType);
     EXPECT_EQ(unmarshalled.bundleName, reporter.bundleName);
+    EXPECT_EQ(unmarshalled.storeName, reporter.storeName);
+    EXPECT_EQ(unmarshalled.subType, reporter.subType);
     EXPECT_EQ(unmarshalled.costTime, reporter.costTime);
 }
 
