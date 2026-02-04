@@ -39,6 +39,43 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
+
+    template<typename Map>
+    static bool CompareMap(const Map &left, const Map &right)
+    {
+        if (left.size() != right.size()) {
+            return false;
+        }
+        for (auto lIt = left.begin(), rIt = right.begin(); lIt != left.end() && rIt != right.end(); lIt++, rIt++) {
+            if (lIt->first != rIt->first) {
+                return false;
+            }
+            if (lIt->second != rIt->second) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool CompareTableData(const std::map<std::string, RdbChangeProperties> &left,
+                                 const std::map<std::string, RdbChangeProperties> &right)
+    {
+        if (left.size() != right.size()) {
+            return false;
+        }
+        for (auto lIt = left.begin(), rIt = right.begin(); lIt != left.end() && rIt != right.end(); lIt++, rIt++) {
+            if (lIt->first != rIt->first) {
+                return false;
+            }
+            if (lIt->second.isTrackedDataChange != rIt->second.isTrackedDataChange) {
+                return false;
+            }
+            if (lIt->second.isP2pSyncDataChange != rIt->second.isP2pSyncDataChange) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 void RdbTypesUtilsTest::SetUpTestCase(void)
@@ -286,11 +323,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_SingleTable, T
 
     RdbChangedData unmarshalledChangedData;
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledChangedData));
-    EXPECT_EQ(unmarshalledChangedData.tableData.size(), originalChangedData.tableData.size());
-    EXPECT_EQ(unmarshalledChangedData.tableData["test_table"].isTrackedDataChange,
-        originalChangedData.tableData["test_table"].isTrackedDataChange);
-    EXPECT_EQ(unmarshalledChangedData.tableData["test_table"].isP2pSyncDataChange,
-        originalChangedData.tableData["test_table"].isP2pSyncDataChange);
+    EXPECT_TRUE(CompareTableData(unmarshalledChangedData.tableData, originalChangedData.tableData));
 }
 
 /**
@@ -315,12 +348,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_MultipleTables
 
     RdbChangedData unmarshalledChangedData;
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledChangedData));
-    EXPECT_EQ(unmarshalledChangedData.tableData.size(), originalChangedData.tableData.size());
-
-    for (const auto &[tableName, properties] : originalChangedData.tableData) {
-        EXPECT_EQ(unmarshalledChangedData.tableData[tableName].isTrackedDataChange, properties.isTrackedDataChange);
-        EXPECT_EQ(unmarshalledChangedData.tableData[tableName].isP2pSyncDataChange, properties.isP2pSyncDataChange);
-    }
+    EXPECT_TRUE(CompareTableData(unmarshalledChangedData.tableData, originalChangedData.tableData));
 }
 
 /**
@@ -337,7 +365,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_RdbChangedData_EmptyTableData
 
     RdbChangedData unmarshalledChangedData;
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledChangedData));
-    EXPECT_EQ(unmarshalledChangedData.tableData.size(), 0);
+    EXPECT_TRUE(CompareTableData(unmarshalledChangedData.tableData, originalChangedData.tableData));
 }
 
 /**
@@ -384,10 +412,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Reference_Basic, TestSize.Lev
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledRef));
     EXPECT_EQ(unmarshalledRef.sourceTable, originalRef.sourceTable);
     EXPECT_EQ(unmarshalledRef.targetTable, originalRef.targetTable);
-    EXPECT_EQ(unmarshalledRef.refFields.size(), originalRef.refFields.size());
-    EXPECT_EQ(unmarshalledRef.refFields["field1"], "field1_value");
-    EXPECT_EQ(unmarshalledRef.refFields["field2"], "field2_value");
-    EXPECT_EQ(unmarshalledRef.refFields["field3"], "field3_value");
+    EXPECT_TRUE(CompareMap(unmarshalledRef.refFields, originalRef.refFields));
 }
 
 /**
@@ -417,10 +442,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Reference_MultipleFields, Tes
         EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledRef)) << "Failed with " << fieldCount << " fields";
         EXPECT_EQ(unmarshalledRef.sourceTable, originalRef.sourceTable);
         EXPECT_EQ(unmarshalledRef.targetTable, originalRef.targetTable);
-        EXPECT_EQ(unmarshalledRef.refFields.size(), originalRef.refFields.size());
-        for (const auto &[key, value] : originalRef.refFields) {
-            EXPECT_EQ(unmarshalledRef.refFields[key], value);
-        }
+        EXPECT_TRUE(CompareMap(unmarshalledRef.refFields, originalRef.refFields));
     }
 }
 
@@ -521,7 +543,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Boundary_EmptyRefFields, Test
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledRef));
     EXPECT_EQ(unmarshalledRef.sourceTable, "src");
     EXPECT_EQ(unmarshalledRef.targetTable, "tgt");
-    EXPECT_EQ(unmarshalledRef.refFields.size(), 0);
+    EXPECT_TRUE(CompareMap(unmarshalledRef.refFields, originalRef.refFields));
 }
 
 /**
@@ -586,21 +608,12 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Integration_TypesInOneParcel_
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReference));
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalledReporter));
 
-    EXPECT_EQ(unmarshalledChangedData.tableData.size(), originalChangedData.tableData.size());
-    for (const auto &[tableName, properties] : originalChangedData.tableData) {
-        EXPECT_EQ(unmarshalledChangedData.tableData[tableName].isTrackedDataChange,
-            properties.isTrackedDataChange);
-        EXPECT_EQ(unmarshalledChangedData.tableData[tableName].isP2pSyncDataChange,
-            properties.isP2pSyncDataChange);
-    }
+    EXPECT_TRUE(CompareTableData(unmarshalledChangedData.tableData, originalChangedData.tableData));
     EXPECT_EQ(unmarshalledProperties.isTrackedDataChange, originalProperties.isTrackedDataChange);
     EXPECT_EQ(unmarshalledProperties.isP2pSyncDataChange, originalProperties.isP2pSyncDataChange);
     EXPECT_EQ(unmarshalledReference.sourceTable, originalReference.sourceTable);
     EXPECT_EQ(unmarshalledReference.targetTable, originalReference.targetTable);
-    EXPECT_EQ(unmarshalledReference.refFields.size(), originalReference.refFields.size());
-    for (const auto &[key, value] : originalReference.refFields) {
-        EXPECT_EQ(unmarshalledReference.refFields[key], value);
-    }
+    EXPECT_TRUE(CompareMap(unmarshalledReference.refFields, originalReference.refFields));
     EXPECT_EQ(unmarshalledReporter.statType, originalReporter.statType);
     EXPECT_EQ(unmarshalledReporter.bundleName, originalReporter.bundleName);
     EXPECT_EQ(unmarshalledReporter.storeName, originalReporter.storeName);
@@ -674,11 +687,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_RdbChangedData, Te
     MessageParcel parcel;
     ASSERT_TRUE(ITypesUtil::Marshal(parcel, data));
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
-    EXPECT_EQ(unmarshalled.tableData.size(), data.tableData.size());
-    for (const auto &[tableName, properties] : data.tableData) {
-        EXPECT_EQ(unmarshalled.tableData[tableName].isTrackedDataChange, properties.isTrackedDataChange);
-        EXPECT_EQ(unmarshalled.tableData[tableName].isP2pSyncDataChange, properties.isP2pSyncDataChange);
-    }
+    EXPECT_TRUE(CompareTableData(unmarshalled.tableData, data.tableData));
 }
 
 /**
@@ -713,10 +722,7 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_Reference, TestSiz
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
     EXPECT_EQ(unmarshalled.sourceTable, ref.sourceTable);
     EXPECT_EQ(unmarshalled.targetTable, ref.targetTable);
-    EXPECT_EQ(unmarshalled.refFields.size(), ref.refFields.size());
-    for (const auto &[key, value] : ref.refFields) {
-        EXPECT_EQ(unmarshalled.refFields[key], value);
-    }
+    EXPECT_TRUE(CompareMap(unmarshalled.refFields, ref.refFields));
 }
 
 /**
