@@ -36,7 +36,7 @@
 #include "rdb_helper.h"
 #include "rdb_hiview_adapter.h"
 #include "rdb_query.h"
-#include "rdb_utils.h"
+#include "rdb_common_utils.h"
 #include "relational_store_manager.h"
 #include "relational_store_cursor.h"
 #include "snapshot/bind_event.h"
@@ -250,7 +250,7 @@ std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> RdbGeneralStore::InitRd
         return { GenErr::E_OK, rdbStore_ };
     }
     rdbStore_ = std::move(rdbStore);
-    return { RdbUtils::ConvertNativeRdbStatus(code), rdbStore_ };
+    return { RdbCommonUtils::ConvertNativeRdbStatus(code), rdbStore_ };
 }
 
 int32_t RdbGeneralStore::InitDelegate()
@@ -1674,7 +1674,7 @@ std::pair<int32_t, int64_t> RdbGeneralStore::Insert(const std::string &table, VB
         return { ret, -1 };
     }
     auto [code, id] = store->Insert(table, ValueProxy::Convert(std::move(value)), ConvertResolution(resolution));
-    return { RdbUtils::ConvertNativeRdbStatus(code), id };
+    return { RdbCommonUtils::ConvertNativeRdbStatus(code), id };
 }
 
 std::pair<int32_t, int64_t> RdbGeneralStore::BatchInsert(const std::string &table, VBuckets &&values,
@@ -1688,7 +1688,7 @@ std::pair<int32_t, int64_t> RdbGeneralStore::BatchInsert(const std::string &tabl
     }
     NativeRdb::ValuesBuckets valuesBuckets(ValueProxy::Convert(std::move(values)));
     auto [code, count] = store->BatchInsert(table, valuesBuckets, ConvertResolution(resolution));
-    return { RdbUtils::ConvertNativeRdbStatus(code), count };
+    return { RdbCommonUtils::ConvertNativeRdbStatus(code), count };
 }
 
 std::pair<int32_t, int64_t> RdbGeneralStore::Update(GenQuery &query, VBucket &&value,
@@ -1710,7 +1710,7 @@ std::pair<int32_t, int64_t> RdbGeneralStore::Update(GenQuery &query, VBucket &&v
     NativeRdb::RdbStore::Values args = ValueProxy::Convert(query.GetArgs());
     auto code = store->UpdateWithConflictResolution(count, table, ValueProxy::Convert(std::move(value)),
         query.GetWhereClause(), args, ConvertResolution(resolution));
-    return { RdbUtils::ConvertNativeRdbStatus(code), count };
+    return { RdbCommonUtils::ConvertNativeRdbStatus(code), count };
 }
 
 std::pair<int32_t, int64_t> RdbGeneralStore::Delete(GenQuery &query)
@@ -1730,7 +1730,7 @@ std::pair<int32_t, int64_t> RdbGeneralStore::Delete(GenQuery &query)
     int count = -1;
     NativeRdb::RdbStore::Values args = ValueProxy::Convert(query.GetArgs());
     auto code = store->Delete(count, table, query.GetWhereClause(), args);
-    return { RdbUtils::ConvertNativeRdbStatus(code), count };
+    return { RdbCommonUtils::ConvertNativeRdbStatus(code), count };
 }
 
 std::pair<int32_t, Value> RdbGeneralStore::Execute(const std::string &sql, Values &&args)
@@ -1742,7 +1742,7 @@ std::pair<int32_t, Value> RdbGeneralStore::Execute(const std::string &sql, Value
         return { ret, -1 };
     }
     auto [code, value] = store->Execute(sql, ValueProxy::Convert(std::move(args)));
-    return { RdbUtils::ConvertNativeRdbStatus(code), ValueProxy::Convert(std::move(value)) };
+    return { RdbCommonUtils::ConvertNativeRdbStatus(code), ValueProxy::Convert(std::move(value)) };
 }
 
 std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(const std::string &sql, Values &&args, bool preCount)

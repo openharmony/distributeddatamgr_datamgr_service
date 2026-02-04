@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "rdb_utils.h"
+#include "rdb_common_utils.h"
 #include "rdb_errno.h"
 #include "rdb_types.h"
 #include "store/general_value.h"
@@ -22,17 +22,17 @@ using namespace testing::ext;
 using namespace testing;
 using namespace OHOS::DistributedRdb;
 namespace OHOS::Test {
-class RdbUtilsTest : public testing::Test {
+class RdbCommonUtilsTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
 };
-void RdbUtilsTest::SetUpTestCase(void) {};
-void RdbUtilsTest::TearDownTestCase(void) {};
-void RdbUtilsTest::SetUp() {};
-void RdbUtilsTest::TearDown() {};
+void RdbCommonUtilsTest::SetUpTestCase(void) {};
+void RdbCommonUtilsTest::TearDownTestCase(void) {};
+void RdbCommonUtilsTest::SetUp() {};
+void RdbCommonUtilsTest::TearDown() {};
 /**
 * @tc.name: GetSearchableTables_001
 * @tc.desc: get searchable tables from RdbChangedData.
@@ -40,7 +40,7 @@ void RdbUtilsTest::TearDown() {};
 * @tc.require:
 * @tc.author: Sven Wang
 */
-HWTEST_F(RdbUtilsTest, GetSearchableTables_001, TestSize.Level0)
+HWTEST_F(RdbCommonUtilsTest, GetSearchableTables_001, TestSize.Level0)
 {
     RdbChangedData changedData;
     changedData.tableData = {
@@ -49,7 +49,7 @@ HWTEST_F(RdbUtilsTest, GetSearchableTables_001, TestSize.Level0)
         { "table3", { .isP2pSyncDataChange = true } },
         { "table4", { .isTrackedDataChange = true } },
     };
-    auto searchableTables = RdbUtils::GetSearchableTables(changedData);
+    auto searchableTables = RdbCommonUtils::GetSearchableTables(changedData);
     std::vector<std::string> tagTables = { "table1", "table4" };
     EXPECT_EQ(searchableTables, tagTables);
 }
@@ -61,7 +61,7 @@ HWTEST_F(RdbUtilsTest, GetSearchableTables_001, TestSize.Level0)
 * @tc.require:
 * @tc.author: Sven Wang
 */
-HWTEST_F(RdbUtilsTest, GetP2PTables_001, TestSize.Level0)
+HWTEST_F(RdbCommonUtilsTest, GetP2PTables_001, TestSize.Level0)
 {
     RdbChangedData changedData;
     changedData.tableData = {
@@ -70,7 +70,7 @@ HWTEST_F(RdbUtilsTest, GetP2PTables_001, TestSize.Level0)
         { "table3", { .isP2pSyncDataChange = true } },
         { "table4", { .isTrackedDataChange = true } },
     };
-    auto p2pTables = RdbUtils::GetP2PTables(changedData);
+    auto p2pTables = RdbCommonUtils::GetP2PTables(changedData);
     std::vector<std::string> tagTables = { "table2", "table3" };
     EXPECT_EQ(p2pTables, tagTables);
 }
@@ -82,14 +82,14 @@ HWTEST_F(RdbUtilsTest, GetP2PTables_001, TestSize.Level0)
 * @tc.require:
 * @tc.author: Sven Wang
 */
-HWTEST_F(RdbUtilsTest, Convert_001, TestSize.Level0)
+HWTEST_F(RdbCommonUtilsTest, Convert_001, TestSize.Level0)
 {
     std::vector<Reference> references = {
         { "srcTable", "tagTable", { {"uuid", "srcId"} } },
         { "srcTable1", "tagTable1", { {"uuid", "srcId"} } },
         { "srcTable2", "tagTable2", { {"uuid", "srcId"} } },
     };
-    auto relations = RdbUtils::Convert(references);
+    auto relations = RdbCommonUtils::Convert(references);
     std::vector<DistributedData::Reference> tagRelations = {
         { "srcTable", "tagTable", { { "uuid", "srcId" } } },
         { "srcTable1", "tagTable1", { { "uuid", "srcId" } } },
@@ -110,31 +110,31 @@ HWTEST_F(RdbUtilsTest, Convert_001, TestSize.Level0)
 * @tc.require:
 * @tc.author:
 */
-HWTEST_F(RdbUtilsTest, ConvertNativeRdbStatus_001, TestSize.Level1)
+HWTEST_F(RdbCommonUtilsTest, ConvertNativeRdbStatus_001, TestSize.Level1)
 {
     int32_t status = NativeRdb::E_SQLITE_BUSY;
-    int32_t ret = RdbUtils::ConvertNativeRdbStatus(status);
+    int32_t ret = RdbCommonUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, DistributedData::GeneralError::E_BUSY);
     status = NativeRdb::E_DATABASE_BUSY;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbCommonUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, DistributedData::GeneralError::E_BUSY);
     status = NativeRdb::E_SQLITE_LOCKED;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbCommonUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, DistributedData::GeneralError::E_BUSY);
     status = NativeRdb::E_INVALID_ARGS;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbCommonUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, DistributedData::GeneralError::E_INVALID_ARGS);
     status = NativeRdb::E_INVALID_ARGS_NEW;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbCommonUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, DistributedData::GeneralError::E_INVALID_ARGS);
     status = NativeRdb::E_ALREADY_CLOSED;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbCommonUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, DistributedData::GeneralError::E_ALREADY_CLOSED);
     status = NativeRdb::E_SQLITE_CORRUPT;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbCommonUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, DistributedData::GeneralError::E_DB_CORRUPT);
     status = NativeRdb::E_SQLITE_SCHEMA;
-    ret = RdbUtils::ConvertNativeRdbStatus(status);
+    ret = RdbCommonUtils::ConvertNativeRdbStatus(status);
     EXPECT_EQ(ret, DistributedData::GeneralError::E_ERROR);
 }
 }
