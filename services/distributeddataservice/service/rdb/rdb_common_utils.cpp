@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "rdb_utils.h"
+#include "rdb_common_utils.h"
 #include "rdb_errno.h"
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
-std::vector<std::string> RdbUtils::GetSearchableTables(const RdbChangedData &changedData)
+std::vector<std::string> RdbCommonUtils::GetSearchableTables(const RdbChangedData &changedData)
 {
     std::vector<std::string> tables;
     for (auto &[key, value] : changedData.tableData) {
@@ -27,7 +27,7 @@ std::vector<std::string> RdbUtils::GetSearchableTables(const RdbChangedData &cha
     return tables;
 }
 
-std::vector<std::string> RdbUtils::GetP2PTables(const RdbChangedData &changedData)
+std::vector<std::string> RdbCommonUtils::GetP2PTables(const RdbChangedData &changedData)
 {
     std::vector<std::string> tables;
     for (auto &[key, value] : changedData.tableData) {
@@ -37,7 +37,7 @@ std::vector<std::string> RdbUtils::GetP2PTables(const RdbChangedData &changedDat
     }
     return tables;
 }
-std::vector<DistributedData::Reference> RdbUtils::Convert(const std::vector<Reference> &references)
+std::vector<DistributedData::Reference> RdbCommonUtils::Convert(const std::vector<Reference> &references)
 {
     std::vector<DistributedData::Reference> relationships;
     for (const auto &reference : references) {
@@ -46,7 +46,7 @@ std::vector<DistributedData::Reference> RdbUtils::Convert(const std::vector<Refe
     }
     return relationships;
 }
-int32_t RdbUtils::ConvertNativeRdbStatus(int32_t status)
+int32_t RdbCommonUtils::ConvertNativeRdbStatus(int32_t status)
 {
     switch (status) {
         case NativeRdb::E_OK:

@@ -22,7 +22,7 @@
 #include "rdb_types.h"
 #include "store/general_value.h"
 namespace OHOS::DistributedRdb {
-class RdbUtils final {
+class RdbCommonUtils final {
 public:
     static std::vector<std::string> GetSearchableTables(const RdbChangedData &changedData);
     static std::vector<std::string> GetP2PTables(const RdbChangedData &changedData);

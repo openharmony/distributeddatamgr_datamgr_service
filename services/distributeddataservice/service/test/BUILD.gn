@@ -601,7 +601,7 @@ ohos_unittest("RdbServiceTest") {
     "rdb_general_store_test.cpp",
     "rdb_query_test.cpp",
     "rdb_result_set_stub_test.cpp",
-    "rdb_utils_test.cpp",
+    "rdb_common_utils_test.cpp",
     "relational_store_cursor_test.cpp",
   ]
 
