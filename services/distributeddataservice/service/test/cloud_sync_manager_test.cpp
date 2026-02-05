@@ -120,9 +120,7 @@ protected:
         std::pair<int32_t, CloudInfo> GetServerInfo(int32_t userId, bool needSpaceInfo) override;
         std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundle) override;
         virtual ~CloudServerMock() = default;
-        static constexpr uint64_t REMAINSPACE = 1000;
-        static constexpr uint64_t TATALSPACE = 2000;
-        static constexpr int32_t INVALID_USER_ID = -1;
+        static constexpr uint64_t REMAIN_SPACE = 1000;
     };
 
     static void InitMetaData();
@@ -305,7 +303,6 @@ void CloudSyncManagerTest::SetUpTestCase(void)
 void CloudSyncManagerTest::TearDownTestCase(void)
 {
     SetSelfTokenID(g_selfTokenID);
-
 }
 
 void CloudSyncManagerTest::SetUp()
@@ -402,7 +399,8 @@ HWTEST_F(CloudSyncManagerTest, DoCloudSync_GetCloudSyncInfo_StoresNotEmpty_Verif
 */
 HWTEST_F(CloudSyncManagerTest, DoCloudSync_GetCloudSyncInfo_StoreNotInSchema_VerifyQueryLastSyncInfo, TestSize.Level1)
 {
-    std::string lastSyncInfoKey = CloudLastSyncInfo::GetKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, "invalid_store_not_in_schema");
+    std::string lastSyncInfoKey = CloudLastSyncInfo::GetKey(cloudInfo_.user, TEST_CLOUD_BUNDLE,
+        "invalid_store_not_in_schema");
     MetaDataManager::GetInstance().DelMeta(lastSyncInfoKey, true);
 
     CloudData::SyncManager syncManager;

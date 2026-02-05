@@ -816,7 +816,7 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
             if (std::find(schemaStores.begin(), schemaStores.end(), requestedStore) == schemaStores.end()) {
                 ZLOGE("Requested store not found in schema. bundleName:%{public}s, store:%{public}s, user:%{public}d",
                     info.bundleName_.c_str(), Anonymous::Change(requestedStore).c_str(), cloud.user);
-                return cloudSyncInfos; 
+                return cloudSyncInfos;
             }
             storesToSync.push_back(requestedStore);
         }
