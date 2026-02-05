@@ -372,7 +372,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
             if (info.stores_.empty()) {
                 for (const auto &database : schema.databases) {
                     if (!info.Contains(database.name)) {
-                        HandleSyncError({ cloud, bundleName, "", syncId, E_ERROR,
+                        HandleSyncError({ cloud, bundleName, database.name, syncId, E_ERROR,
                             "!Contains:" + database.name, traceId });
                         continue;
                     }
