@@ -305,14 +305,6 @@ AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, 
     }
 }
 
-AutoCache::Delegate::Delegate(const Delegate &delegate) : garbageInterval_(delegate.garbageInterval_)
-{
-    store_ = delegate.store_;
-    if (store_ != nullptr) {
-        store_->AddRef();
-    }
-}
-
 AutoCache::Delegate::~Delegate()
 {
     if (store_ != nullptr) {
@@ -359,11 +351,6 @@ void AutoCache::Delegate::SetObservers(const AutoCache::Watchers &watchers)
 int32_t AutoCache::Delegate::GetArea() const
 {
     return meta_.area;
-}
-
-const std::string &AutoCache::Delegate::GetDataDir() const
-{
-    return meta_.dataDir;
 }
 
 const StoreMetaData &AutoCache::Delegate::GetMeta() const

@@ -51,6 +51,7 @@
 #include "rdb_result_set_impl.h"
 #include "rdb_schema_config.h"
 #include "rdb_types_utils.h"
+#include "rdb_common_utils.h"
 #include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "sync_mgr/sync_mgr.h"
@@ -379,7 +380,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     metaMapping = metaData;
     MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
     return store->SetDistributedTables(
-        tables, type, RdbTypesUtils::Convert(references), tableType);
+        tables, type, RdbCommonUtils::Convert(references), tableType);
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
@@ -1003,7 +1004,8 @@ void RdbServiceImpl::SaveLaunchInfo(StoreMetaData &meta)
     }
 }
 
-void RdbServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password)
+void RdbServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password,
+    MetaDataSaver &saver)
 {
     CryptoManager::CryptoParams encryptParams = { .area = metaData.area, .userId = metaData.user };
     auto encryptKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
@@ -1018,7 +1020,7 @@ void RdbServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std:
         secretKey.time = { reinterpret_cast<uint8_t *>(&time), reinterpret_cast<uint8_t *>(&time) + sizeof(time) };
         if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetSecretKey(), oldSecretKey, true) ||
             secretKey != oldSecretKey) {
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetSecretKey(), secretKey, true);
+            saver.Add(metaData.GetSecretKey(), secretKey);
         }
     }
     SecretKeyMetaData cloneKey;
@@ -1030,7 +1032,7 @@ void RdbServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std:
             .nonce = cloneKey.nonce };
         auto clonePassword = CryptoManager::GetInstance().Decrypt(cloneKey.sKey, decryptParams);
         if (!clonePassword.empty()) {
-            CryptoManager::GetInstance().UpdateSecretMeta(clonePassword, metaData, metaKey, cloneKey);
+            CryptoManager::GetInstance().UpdateSecretMeta(clonePassword, metaData, metaKey, cloneKey, saver);
         }
         clonePassword.assign(clonePassword.size(), 0);
     }
@@ -1048,6 +1050,9 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     StoreMetaData old;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
+
+    // MetaDataSaver destructor will automatically flush all entries
+    MetaDataSaver saver(true);
     if (!isCreated || meta != old) {
         Upgrade(meta, old);
         ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
@@ -1055,6 +1060,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
             meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
         meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId(old, meta);
         MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+        saver.Add(meta.GetKey(), meta);
         AutoLaunchMetaData launchData;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
             SaveLaunchInfo(meta);
@@ -1067,24 +1073,22 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         metaMapping.searchPath = meta.dataDir;
     }
     metaMapping = meta;
-    MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
+    saver.Add(metaMapping.GetKey(), metaMapping);
 
-    SaveDebugInfo(meta, param);
-    SavePromiseInfo(meta, param);
-    SaveDfxInfo(meta, param);
-
-    if (!SaveAppIDMeta(meta, old)) {
-        return RDB_ERROR;
-    }
+    // Collect metadata entries using batch saver
+    SaveDebugInfo(meta, param, saver);
+    SavePromiseInfo(meta, param, saver);
+    SaveDfxInfo(meta, param, saver);
+    SaveAppIDMeta(meta, old, saver);
 
     if (param.isEncrypt_ && !param.password_.empty()) {
-        SaveSecretKeyMeta(meta, param.password_);
+        SaveSecretKeyMeta(meta, param.password_, saver);
     }
     GetCloudSchema(meta);
     return RDB_OK;
 }
 
-bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old)
+bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old, MetaDataSaver &saver)
 {
     AppIDMetaData appIdMeta;
     AppIDMetaData oldAppIdMeta;
@@ -1093,12 +1097,7 @@ bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaDat
     if (MetaDataManager::GetInstance().LoadMeta(appIdMeta.GetKey(), oldAppIdMeta, true) && appIdMeta == oldAppIdMeta) {
         return true;
     }
-    if (!MetaDataManager::GetInstance().SaveMeta(appIdMeta.GetKey(), appIdMeta, true)) {
-        ZLOGE("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
-            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        return false;
-    }
+    saver.Add(appIdMeta.GetKey(), appIdMeta);
     return true;
 }
 
@@ -1322,6 +1321,16 @@ std::shared_ptr<DistributedData::GeneralStore> RdbServiceImpl::GetStore(const St
     return store;
 }
 
+bool RdbServiceImpl::IsSupportAutoSync(const std::string &localDeviceId, const std::string &remoteDeviceId)
+{
+    uint32_t localDeviceType = DmAdapter::GetInstance().GetDeviceTypeByUuid(localDeviceId);
+    uint32_t remoteDeviceType = DmAdapter::GetInstance().GetDeviceTypeByUuid(remoteDeviceId);
+    return (localDeviceType == DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE &&
+               remoteDeviceType == DmAdapter::DmDeviceType::DEVICE_TYPE_WATCH) ||
+           (localDeviceType == DmAdapter::DmDeviceType::DEVICE_TYPE_WATCH &&
+               remoteDeviceType == DmAdapter::DmDeviceType::DEVICE_TYPE_PHONE);
+}
+
 std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::string> &devices,
     const StoreMetaData &metaData)
 {
@@ -1330,6 +1339,11 @@ std::vector<std::string> RdbServiceImpl::GetReuseDevice(const std::vector<std::s
     AppDistributedKv::ExtraDataInfo extraInfo = { .userId = metaData.user, .bundleName = metaData.bundleName,
         .storeId = metaData.storeId, .tokenId = metaData.tokenId };
     for (auto &device : devices) {
+        if (!IsSupportAutoSync(metaData.deviceId, device)) {
+            ZLOGW("bundleName:%{public}s, storeName:%{public}s. device type not support auto sync.",
+                metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str());
+            continue;
+        }
         AppDistributedKv::DeviceId deviceId = { .deviceId = device };
         if (instance->ReuseConnect(deviceId, extraInfo) == Status::SUCCESS) {
             onDevices.push_back(device);
@@ -1395,14 +1409,10 @@ int32_t RdbServiceImpl::OnReady(const std::string &device)
         index--;
 
         auto [isCreated, metaData] = LoadSyncMeta(database);
-        if (!isCreated || metaData.instanceId != 0) {
+        if (!isCreated || metaData.instanceId != 0 ||
+            !SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId) || !isSpecialDevice) {
             continue;
         }
-
-        if (SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId) && !isSpecialDevice) {
-            continue;
-        }
-
         synced++;
         DoAutoSync({ device }, metaData, database.GetSyncTables());
     }
@@ -1574,19 +1584,18 @@ void RdbServiceImpl::OnCollaborationChange(const StoreMetaData &metaData, const 
         });
         devices.erase(begin, devices.end());
     }
-
     if (devices.empty()) {
         return;
     }
 
-    auto tables = RdbTypesUtils::GetP2PTables(changedData);
+    auto tables = RdbCommonUtils::GetP2PTables(changedData);
     DoAutoSync(devices, metaData, tables);
 }
 
 void RdbServiceImpl::OnSearchableChange(const StoreMetaData &metaData, const RdbNotifyConfig &config,
     const RdbChangedData &changedData)
 {
-    auto changedTables = RdbTypesUtils::GetSearchableTables(changedData);
+    auto changedTables = RdbCommonUtils::GetSearchableTables(changedData);
     DataChangeEvent::EventInfo eventInfo(changedTables);
     eventInfo.isFull = config.isFull_;
     StoreInfo storeInfo = GetStoreInfoEx(metaData);
@@ -1892,7 +1901,8 @@ int32_t RdbServiceImpl::GetDebugInfo(const RdbSyncerParam &param, std::map<std::
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param)
+int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
+    MetaDataSaver &saver)
 {
     if (param.infos_.empty()) {
         return RDB_OK;
@@ -1908,7 +1918,7 @@ int32_t RdbServiceImpl::SaveDebugInfo(const StoreMetaData &metaData, const RdbSy
         fileInfo.gid = info.gid_;
         debugMeta.fileInfos.insert(std::pair{ name, fileInfo });
     }
-    MetaDataManager::GetInstance().SaveMeta(metaData.GetDebugInfoKey(), debugMeta, true);
+    saver.Add(metaData.GetDebugInfoKey(), debugMeta);
     return RDB_OK;
 }
 
@@ -1940,15 +1950,17 @@ int32_t RdbServiceImpl::GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param)
+int32_t RdbServiceImpl::SaveDfxInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
+    MetaDataSaver &saver)
 {
     DistributedData::StoreDfxInfo dfxMeta;
     dfxMeta.lastOpenTime = param.dfxInfo_.lastOpenTime_;
-    MetaDataManager::GetInstance().SaveMeta(metaData.GetDfxInfoKey(), dfxMeta, true);
+    saver.Add(metaData.GetDfxInfoKey(), dfxMeta);
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param)
+int32_t RdbServiceImpl::SavePromiseInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
+    MetaDataSaver &saver)
 {
     if (param.tokenIds_.empty() && param.uids_.empty()) {
         return RDB_OK;
@@ -1963,7 +1975,7 @@ int32_t RdbServiceImpl::SavePromiseInfo(const StoreMetaData &metaData, const Rdb
     localMeta.promiseInfo.tokenIds = param.tokenIds_;
     localMeta.promiseInfo.uids = param.uids_;
     localMeta.promiseInfo.permissionNames = param.permissionNames_;
-    MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyLocal(), localMeta, true);
+    saver.Add(metaData.GetKeyLocal(), localMeta);
     return RDB_OK;
 }
 

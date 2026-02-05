@@ -27,7 +27,7 @@
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
-class API_EXPORT DeviceMatrix {
+class DeviceMatrix {
 public:
     using TimePoint = std::chrono::steady_clock::time_point;
     using Origin = OHOS::DistributedData::MatrixMetaData::Origin;
@@ -62,16 +62,16 @@ public:
         bool IsValid() const;
     };
 
-    static DeviceMatrix &GetInstance();
-    bool Initialize(uint32_t token, std::string storeId);
-    void Online(const std::string &device, RefCount refCount = {});
-    void Offline(const std::string &device);
-    std::pair<uint16_t, uint16_t> OnBroadcast(const std::string &device, const std::string &networkId,
+    API_EXPORT static DeviceMatrix &GetInstance();
+    API_EXPORT bool Initialize(uint32_t token, std::string storeId);
+    API_EXPORT void Online(const std::string &device, RefCount refCount = {});
+    API_EXPORT void Offline(const std::string &device);
+    API_EXPORT std::pair<uint16_t, uint16_t> OnBroadcast(const std::string &device, const std::string &networkId,
         const DataLevel &dataLevel);
     void Broadcast(const DataLevel &dataLevel);
-    void OnChanged(uint16_t code, LevelType type = LevelType::DYNAMIC);
+    API_EXPORT void OnChanged(uint16_t code, LevelType type = LevelType::DYNAMIC);
     void OnChanged(const StoreMetaData &metaData);
-    void OnExchanged(const std::string &device, uint16_t code,
+    API_EXPORT void OnExchanged(const std::string &device, uint16_t code,
         LevelType type = LevelType::DYNAMIC, ChangeType changeType = ChangeType::CHANGE_ALL);
     void OnExchanged(const std::string &device,
         const StoreMetaData &metaData, ChangeType type = ChangeType::CHANGE_ALL);
@@ -79,8 +79,8 @@ public:
     void Clear();
     void SetExecutor(std::shared_ptr<ExecutorPool> executors);
     uint16_t GetCode(const StoreMetaData &metaData);
-    std::pair<bool, uint16_t> GetMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
-    std::pair<bool, uint16_t> GetRemoteMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
+    API_EXPORT std::pair<bool, uint16_t> GetMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
+    API_EXPORT std::pair<bool, uint16_t> GetRemoteMask(const std::string &device, LevelType type = LevelType::DYNAMIC);
     std::pair<bool, uint16_t> GetRecvLevel(const std::string &device, LevelType type);
     std::pair<bool, uint16_t> GetConsLevel(const std::string &device, LevelType type);
     std::pair<bool, bool> IsConsistent(const std::string &device);

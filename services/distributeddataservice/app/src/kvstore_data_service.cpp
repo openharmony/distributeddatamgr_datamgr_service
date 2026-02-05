@@ -15,14 +15,15 @@
 #define LOG_TAG "KvStoreDataService"
 #include "kvstore_data_service.h"
 
-#include <chrono>
 #include <fcntl.h>
-#include <fstream>
 #include <ipc_skeleton.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
-#include <thread>
 #include <unistd.h>
+
+#include <chrono>
+#include <fstream>
+#include <thread>
 
 #include "accesstoken_kit.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
@@ -32,6 +33,7 @@
 #include "checker/checker_manager.h"
 #include "communication_provider.h"
 #include "communicator_context.h"
+#include "concurrent_task_client.h"
 #include "config_factory.h"
 #include "crypto/crypto_manager.h"
 #include "db_info_handle_impl.h"
@@ -51,8 +53,8 @@
 #include "mem_mgr_proxy.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
-#include "network/network_delegate.h"
 #include "metadata/store_meta_data.h"
+#include "network/network_delegate.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
@@ -72,7 +74,6 @@
 #include "utils/block_integer.h"
 #include "utils/constant.h"
 #include "utils/crypto.h"
-
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
@@ -88,10 +89,10 @@ constexpr const char* CLONE_KEY_ALIAS = "distributed_db_backup_key";
 REGISTER_SYSTEM_ABILITY_BY_ID(KvStoreDataService, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, true);
 
 constexpr char FOUNDATION_PROCESS_NAME[] = "foundation";
-constexpr int MAX_DOWNLOAD_ASSETS_COUNT = 50;
-constexpr int MAX_DOWNLOAD_TASK = 5;
 constexpr int KEY_SIZE = 32;
 constexpr int AES_256_NONCE_SIZE = 32;
+constexpr int MAX_DOWNLOAD_ASSETS_COUNT = 50;
+constexpr int MAX_DOWNLOAD_TASK = 5;
 constexpr int MAX_CLIENT_DEATH_OBSERVER_SIZE = 16;
 
 KvStoreDataService::KvStoreDataService(bool runOnCreate)
@@ -421,6 +422,12 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
         Memory::MemMgrClient::GetInstance().SetCritical(getpid(), true, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     } else if (systemAbilityId == COMM_NET_CONN_MANAGER_SYS_ABILITY_ID) {
         NetworkDelegate::GetInstance()->RegOnNetworkChange();
+    } else if (systemAbilityId == CONCURRENT_TASK_SERVICE_ID) {
+        std::unordered_map<std::string, std::string> payload;
+        // get current thread pid
+        payload["pid"] = std::to_string(getpid());
+        // request qos auth for current pid
+        OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
     }
     return;
 }
@@ -566,7 +573,7 @@ int32_t KvStoreDataService::OnBackup(MessageParcel &data, MessageParcel &reply)
 }
 
 std::vector<uint8_t> KvStoreDataService::ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
-    const StoreMetaData &metaData, const std::vector<uint8_t> &iv)
+    const std::vector<uint8_t> &iv, const StoreMetaData &metaData)
 {
     if (!MetaDataManager::GetInstance().LoadMeta(key, secretKeyMeta, true)) {
         return {};
@@ -604,7 +611,7 @@ std::string KvStoreDataService::GetSecretKeyBackup(const std::vector<Distributed
             };
             auto key = storeMeta.GetSecretKey();
             SecretKeyMetaData secretKeyMeta;
-            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta, storeMeta, iv);
+            auto reEncryptedKey = ReEncryptKey(key, secretKeyMeta, iv, storeMeta);
             if (reEncryptedKey.size() == 0) {
                 continue;
             };
@@ -674,18 +681,23 @@ bool KvStoreDataService::ParseSecretKeyFile(MessageParcel &data, SecretKeyBackup
     struct stat statBuf;
     if (fd.Get() < 0 || fstat(fd.Get(), &statBuf) < 0) {
         ZLOGE("Parse backup secret key failed, fd:%{public}d, errno:%{public}d", fd.Get(), errno);
-        close(fd.Release());
         return false;
     }
-    char buffer[statBuf.st_size + 1];
-    if (read(fd.Get(), buffer, statBuf.st_size + 1) < 0) {
+    const off_t sizeMax = 1024 * 1024 * 500; // 500M upper limit
+    if (statBuf.st_size > sizeMax) {
+        ZLOGE("Secret key file size exceeds the upper limit, fd:%{public}d, errno:%{public}d", fd.Get(), errno);
+        return false;
+    }
+    std::vector<char> buffer(statBuf.st_size);
+    ssize_t fileSize = read(fd.Get(), buffer.data(), statBuf.st_size);
+    if (fileSize < 0) {
         ZLOGE("Read backup secret key failed. errno:%{public}d", errno);
-        close(fd.Release());
         return false;
     }
-    close(fd.Release());
-    std::string secretKeyStr(buffer);
-    DistributedData::Serializable::Unmarshall(secretKeyStr, backupData);
+    std::string keyLoad(buffer.data(), static_cast<size_t>(fileSize));
+    memset_s(buffer.data(), buffer.size(), 0, buffer.size());
+    DistributedData::Serializable::Unmarshall(keyLoad, backupData);
+    std::fill(keyLoad.begin(), keyLoad.end(), '\0');
     return true;
 }
 

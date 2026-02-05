@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <mutex>
 #include <string>
 
 #include "accesstoken_kit.h"
@@ -139,7 +140,6 @@ private:
     std::pair<bool, Security::AccessToken::ATokenTypeEnum> GetCallerInfo(std::string &bundleName, int32_t &appIndex);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
     void SubscribeCommonEvent();
-    void SubscribeConcurrentTask();
     static void InitSubEvent();
     void AutoLaunch(const DistributedData::Event &event);
     void SubscribeChange();
@@ -160,6 +160,7 @@ private:
     void SetCriticalTask();
     bool VerifyPredicates(const DataSharePredicates &predicates, uint32_t callingTokenId,
         DataProviderConfig::ProviderInfo &providerInfo, std::string &func);
+    std::shared_ptr<DataShareServiceImpl::TimerReceiver> GetTimerReceiver();
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;
@@ -175,6 +176,7 @@ private:
     static BindInfo binderInfo_;
     std::shared_ptr<TimerReceiver> timerReceiver_ = nullptr;
     DataShareSilentConfig dataShareSilentConfig_;
+    std::mutex mutex_;
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_DATA_SERVICE_IMPL_H

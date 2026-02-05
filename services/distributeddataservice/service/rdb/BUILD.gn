@@ -55,8 +55,8 @@ ohos_source_set("distributeddata_rdb") {
     "rdb_schema_config.cpp",
     "rdb_service_impl.cpp",
     "rdb_service_stub.cpp",
-    "rdb_store_utils.cpp",
     "rdb_types_utils.cpp",
+    "rdb_common_utils.cpp",
     "rdb_watcher.cpp",
     "relational_store_cursor.cpp",
   ]
@@ -70,6 +70,7 @@ ohos_source_set("distributeddata_rdb") {
   ]
 
   deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/matrix:distributeddata_matrix",

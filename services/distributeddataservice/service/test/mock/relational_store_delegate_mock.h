@@ -216,8 +216,7 @@ protected:
         return DBStatus::OK;
     }
 
-    DBStatus CreateDistributedTableInner(const std::string &tableName, TableSyncType type,
-        const CreateDistributedTableConfig &config) override
+    DBStatus CreateDistributedTableInner(const std::string &tableName, TableSyncType type) override
     {
         if (tableName == "test") {
             return DBStatus::DB_ERROR;

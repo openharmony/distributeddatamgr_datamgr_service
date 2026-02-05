@@ -22,21 +22,21 @@ namespace OHOS {
 namespace DistributedData {
 class ConfigFactory {
 public:
-    API_EXPORT static ConfigFactory &GetInstance();
-    API_EXPORT int32_t Initialize();
-    API_EXPORT std::vector<ComponentConfig> *GetComponentConfig();
-    API_EXPORT NetworkConfig *GetNetworkConfig();
-    API_EXPORT CheckerConfig *GetCheckerConfig();
-    API_EXPORT GlobalConfig *GetGlobalConfig();
-    API_EXPORT DirectoryConfig *GetDirectoryConfig();
-    API_EXPORT BackupConfig *GetBackupConfig();
-    API_EXPORT CloudConfig *GetCloudConfig();
-    API_EXPORT std::vector<AppIdMappingConfig> *GetAppIdMappingConfig();
-    API_EXPORT ThreadConfig *GetThreadConfig();
-    API_EXPORT DataShareConfig *GetDataShareConfig();
-    API_EXPORT std::vector<AutoSyncAppConfig> *GetAutoSyncAppConfig();
-    API_EXPORT AppAccessCheckConfig *GetSyncAppsConfig();
-    API_EXPORT std::vector<DoubleSyncConfig> *GetDoubleSyncConfig();
+    static ConfigFactory &GetInstance();
+    int32_t Initialize();
+    std::vector<ComponentConfig> *GetComponentConfig();
+    NetworkConfig *GetNetworkConfig();
+    CheckerConfig *GetCheckerConfig();
+    GlobalConfig *GetGlobalConfig();
+    DirectoryConfig *GetDirectoryConfig();
+    BackupConfig *GetBackupConfig();
+    CloudConfig *GetCloudConfig();
+    std::vector<AppIdMappingConfig> *GetAppIdMappingConfig();
+    ThreadConfig *GetThreadConfig();
+    DataShareConfig *GetDataShareConfig();
+    std::vector<AutoSyncAppConfig> *GetAutoSyncAppConfig();
+    AppAccessCheckConfig *GetSyncAppsConfig();
+    std::vector<DoubleSyncConfig> *GetDoubleSyncConfig();
 private:
     static constexpr const char *CONF_PATH = "/system/etc/distributeddata/conf";
     ConfigFactory();

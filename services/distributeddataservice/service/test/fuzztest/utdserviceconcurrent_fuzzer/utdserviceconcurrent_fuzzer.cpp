@@ -1,0 +1,139 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <fuzzer/FuzzedDataProvider.h>
+
+#include "utdserviceconcurrent_fuzzer.h"
+#include "accesstoken_kit.h"
+#include "distributeddata_udmf_ipc_interface_code.h"
+#include "ipc_skeleton.h"
+#include "message_parcel.h"
+#include "securec.h"
+#include "token_setproc.h"
+#include "utd_service_impl.h"
+#include "utd_tlv_util.h"
+
+using namespace OHOS::UDMF;
+
+namespace OHOS {
+constexpr size_t NUM_MIN = 5;
+constexpr size_t NUM_MAX = 12;
+const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UtdService";
+static std::shared_ptr<UtdServiceImpl> g_utdServiceImpl = nullptr;
+
+void OnRegisterTypeDescriptorsFuzz(FuzzedDataProvider &provider)
+{
+    std::string str = provider.ConsumeRandomLengthString();
+    std::vector<std::string> vec;
+    size_t dataSize = provider.ConsumeIntegralInRange<size_t>(1, 50);
+    for (size_t i = 0; i < dataSize; i++) {
+        vec.push_back(str);
+    }
+
+    std::vector<TypeDescriptorCfg> descriptors;
+    for (size_t i = 0; i < dataSize; i++) {
+        TypeDescriptorCfg descriptor;
+        descriptor.typeId = str;
+        descriptor.filenameExtensions = vec;
+        descriptor.belongingToTypes = vec;
+        descriptor.mimeTypes = vec;
+        descriptor.description = str;
+        descriptor.ownerBundle = str;
+        descriptors.push_back(descriptor);
+    }
+    
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    ITypesUtil::Marshal(request, descriptors);
+    MessageParcel reply;
+    std::shared_ptr<UtdServiceStub> utdServiceStub = g_utdServiceImpl;
+    if (utdServiceStub == nullptr) {
+        return;
+    }
+    utdServiceStub->OnRemoteRequest(
+        static_cast<uint32_t>(UtdServiceInterfaceCode::REGISTER_UTD_TYPES), request, reply);
+}
+
+void OnUnregisterTypeDescriptorsFuzz(FuzzedDataProvider &provider)
+{
+    std::string str = provider.ConsumeRandomLengthString();
+    std::vector<std::string> vec;
+    size_t dataSize = provider.ConsumeIntegralInRange<size_t>(1, 50);
+    for (size_t i = 0; i < dataSize; i++) {
+        vec.push_back(str);
+    }
+
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    ITypesUtil::Marshal(request, vec);
+    MessageParcel reply;
+    std::shared_ptr<UtdServiceStub> utdServiceStub = g_utdServiceImpl;
+    if (utdServiceStub == nullptr) {
+        return;
+    }
+    utdServiceStub->OnRemoteRequest(
+        static_cast<uint32_t>(UtdServiceInterfaceCode::UNREGISTER_UTD_TYPES), request, reply);
+}
+
+void OnRegServiceNotifierFuzz(FuzzedDataProvider &provider)
+{
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    MessageParcel reply;
+    sptr<IRemoteObject> iUdmfNotifier = nullptr;
+    ITypesUtil::Marshal(request, iUdmfNotifier);
+    std::shared_ptr<UtdServiceStub> utdServiceStub = g_utdServiceImpl;
+    if (utdServiceStub == nullptr) {
+        return;
+    }
+    utdServiceStub->OnRemoteRequest(
+        static_cast<uint32_t>(UtdServiceInterfaceCode::SET_UTD_NOTIFIER), request, reply);
+    std::string str = provider.ConsumeRandomLengthString();
+    std::vector<std::string> vec;
+    size_t dataSize = provider.ConsumeIntegralInRange<size_t>(1, 50);
+    for (size_t i = 0; i < dataSize; i++) {
+        vec.push_back(str);
+    }
+    MessageParcel requestWrong;
+    requestWrong.WriteInterfaceToken(INTERFACE_TOKEN);
+    ITypesUtil::Marshal(requestWrong, vec);
+    utdServiceStub->OnRemoteRequest(
+        static_cast<uint32_t>(UtdServiceInterfaceCode::SET_UTD_NOTIFIER), requestWrong, reply);
+}
+}
+
+/* Fuzzer entry point */
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+    OHOS::g_utdServiceImpl = std::make_shared<UtdServiceImpl>();
+    OHOS::Security::AccessToken::AccessTokenID tokenId =
+        OHOS::Security::AccessToken::AccessTokenKit::GetHapTokenID(100, "com.ohos.dlpmanager", 0);
+    SetSelfTokenID(tokenId);
+    std::shared_ptr<OHOS::ExecutorPool> executor = std::make_shared<OHOS::ExecutorPool>(OHOS::NUM_MAX, OHOS::NUM_MIN);
+    OHOS::g_utdServiceImpl->OnBind(
+        { "UtdServiceConcurrentFuzzTest", static_cast<uint32_t>(OHOS::IPCSkeleton::GetSelfTokenID()),
+        std::move(executor) });
+    return 0;
+}
+
+/* Fuzzer entry point */
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    OHOS::OnRegisterTypeDescriptorsFuzz(provider);
+    OHOS::OnUnregisterTypeDescriptorsFuzz(provider);
+    OHOS::OnRegServiceNotifierFuzz(provider);
+    return 0;
+}

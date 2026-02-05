@@ -23,7 +23,7 @@
 #include "executor_pool.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT CloudServer {
+class CloudServer {
 public:
     using Database = SchemaMeta::Database;
     API_EXPORT static CloudServer *GetInstance();

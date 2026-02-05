@@ -24,9 +24,9 @@
 
 namespace OHOS {
 namespace DistributedKv {
-class API_EXPORT KVDBObserverProxy : public IRemoteProxy<IKvStoreObserver> {
+class KVDBObserverProxy : public IRemoteProxy<IKvStoreObserver> {
 public:
-    explicit KVDBObserverProxy(const sptr<IRemoteObject> &impl);
+    API_EXPORT explicit KVDBObserverProxy(const sptr<IRemoteObject> &impl);
     ~KVDBObserverProxy() = default;
     void OnChange(const ChangeNotification &changeNotification) override;
     void OnChange(const DataOrigin &origin, Keys &&keys) override;

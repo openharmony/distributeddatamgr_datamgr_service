@@ -93,7 +93,7 @@ private:
     static constexpr uint32_t QOS_COUNT = 3;
     static constexpr uint32_t BR_QOS_COUNT = 3;
     static constexpr uint32_t HML_QOS_COUNT = 2;
-    static constexpr uint32_t REUSE_QOS_COUNT = 1;
+    static constexpr uint32_t REUSE_QOS_COUNT = 2;
     static constexpr QosTV QOS_INFOS[QOS_BUTT][QOS_COUNT] = {
         { // BR QOS
             QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 0x5a5a5a5a },
@@ -104,7 +104,8 @@ private:
             QosTV{ .qos = QOS_TYPE_MAX_LATENCY, .value = 10000 },
             QosTV{ .qos = QOS_TYPE_MIN_LATENCY, .value = 2000 }
         },
-        { // REUSE_QOS
+        { // REUSE_QOS, 384 is max bw softbus support to reuse br link
+            QosTV{ .qos = QOS_TYPE_MIN_BW, .value = 384 * 1024 },
             QosTV{ .qos = QOS_TYPE_REUSE_BE, .value = 1 }
         }
     };

@@ -84,7 +84,22 @@ DBStatus RdbCloud::Query(const std::string &tableName, DBVBucket &extend, std::v
     } else {
         std::tie(code, cursor) = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
     }
+    return HandleQueryResult(code, cursor, tableName, extend, data);
+}
+
+DBStatus RdbCloud::QueryAllGid(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data)
+{
+    extend[SchemaMeta::CURSOR_EXPIRE] = true;
+    auto [code, cursor] = cloudDB_->Query(tableName, ValueProxy::Convert(std::move(extend)));
+    return HandleQueryResult(code, cursor, tableName, extend, data);
+}
+
+DBStatus RdbCloud::HandleQueryResult(int32_t code, std::shared_ptr<Cursor> cursor, const std::string &tableName,
+    DBVBucket &extend, std::vector<DBVBucket> &data)
+{
     if (cursor == nullptr || code != E_OK) {
+        ZLOGE("code:%{public}d, table:%{public}s, extend:%{public}zu", code,
+            Anonymous::Change(tableName).c_str(), extend.size());
         return ConvertStatus(static_cast<GeneralError>(Convert(cursor, data, code)));
     }
     auto err = Convert(cursor, data, code);
@@ -191,6 +206,8 @@ DBStatus RdbCloud::ConvertStatus(DistributedData::GeneralError error)
             return DBStatus::SKIP_ASSET;
         case GeneralError::E_SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT:
             return DBStatus::SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT;
+        case GeneralError::E_EXPIRED_CURSOR:
+            return DBStatus::EXPIRED_CURSOR;
         default:
             ZLOGI("error:0x%{public}x", error);
             break;

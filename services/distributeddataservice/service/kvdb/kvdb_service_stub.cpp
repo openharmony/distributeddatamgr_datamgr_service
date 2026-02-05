@@ -18,6 +18,7 @@
 #include "ipc_skeleton.h"
 #include "kv_types_util.h"
 #include "log_print.h"
+#include "qos_manager.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 namespace OHOS::DistributedKv {
@@ -58,6 +59,8 @@ const KVDBServiceStub::Handler
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
+    QosManager qos(false);
+
     ZLOGI("code:%{public}u callingPid:%{public}u", code, IPCSkeleton::GetCallingPid());
     std::u16string local = KVDBServiceStub::GetDescriptor();
     std::u16string remote = data.ReadInterfaceToken();

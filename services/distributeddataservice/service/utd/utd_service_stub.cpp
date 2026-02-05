@@ -18,15 +18,19 @@
 
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "qos_manager.h"
 #include "string_ex.h"
 #include "utd_tlv_util.h"
 
 namespace OHOS {
 namespace UDMF {
+using OHOS::DistributedData::QosManager;
 constexpr UtdServiceStub::Handler
     UtdServiceStub::HANDLERS[static_cast<uint32_t>(UtdServiceInterfaceCode::CODE_BUTT)];
 int UtdServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
+    QosManager qos(false);
+
     ZLOGI("start##code = %{public}u callingPid:%{public}u callingUid:%{public}u.", code, IPCSkeleton::GetCallingPid(),
         IPCSkeleton::GetCallingUid());
     std::u16string myDescripter = UtdServiceStub::GetDescriptor();

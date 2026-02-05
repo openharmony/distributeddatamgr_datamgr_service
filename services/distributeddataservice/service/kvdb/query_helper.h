@@ -24,7 +24,7 @@
 namespace OHOS::DistributedKv {
 class QueryHelper {
 public:
-    API_EXPORT static DistributedDB::Query StringToDbQuery(const std::string &query, bool &isSuccess);
+    static DistributedDB::Query StringToDbQuery(const std::string &query, bool &isSuccess);
 
 private:
     using DBQuery = DistributedDB::Query;

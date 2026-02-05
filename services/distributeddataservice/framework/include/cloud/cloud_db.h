@@ -23,7 +23,7 @@
 #include "store/general_watcher.h"
 #include "visibility.h"
 namespace OHOS::DistributedData {
-class API_EXPORT CloudDB {
+class CloudDB {
 public:
     using Watcher = GeneralWatcher;
     using Async = std::function<void(std::map<std::string, std::map<std::string, int32_t>>)>;

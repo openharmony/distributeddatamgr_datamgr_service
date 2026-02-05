@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,13 +12,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "rdb_store_utils.h"
+#include "rdb_common_utils.h"
 #include "rdb_errno.h"
-#include "store/general_value.h"
-
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
-int32_t RdbStoreUtils::ConvertNativeRdbStatus(int32_t status)
+std::vector<std::string> RdbCommonUtils::GetSearchableTables(const RdbChangedData &changedData)
+{
+    std::vector<std::string> tables;
+    for (auto &[key, value] : changedData.tableData) {
+        if (value.isTrackedDataChange) {
+            tables.push_back(key);
+        }
+    }
+    return tables;
+}
+
+std::vector<std::string> RdbCommonUtils::GetP2PTables(const RdbChangedData &changedData)
+{
+    std::vector<std::string> tables;
+    for (auto &[key, value] : changedData.tableData) {
+        if (value.isP2pSyncDataChange) {
+            tables.push_back(key);
+        }
+    }
+    return tables;
+}
+std::vector<DistributedData::Reference> RdbCommonUtils::Convert(const std::vector<Reference> &references)
+{
+    std::vector<DistributedData::Reference> relationships;
+    for (const auto &reference : references) {
+        DistributedData::Reference relationship = { reference.sourceTable, reference.targetTable, reference.refFields };
+        relationships.emplace_back(relationship);
+    }
+    return relationships;
+}
+int32_t RdbCommonUtils::ConvertNativeRdbStatus(int32_t status)
 {
     switch (status) {
         case NativeRdb::E_OK:

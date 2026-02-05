@@ -21,11 +21,13 @@
 
 #include "itypes_util.h"
 #include "log_print.h"
+#include "qos_manager.h"
 #include "rdb_result_set_stub.h"
 #include "utils/anonymous.h"
 
 namespace OHOS::DistributedRdb {
 using Anonymous = DistributedData::Anonymous;
+using OHOS::DistributedData::QosManager;
 int32_t RdbServiceStub::OnRemoteObtainDistributedTableName(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
@@ -280,6 +282,7 @@ bool RdbServiceStub::CheckInterfaceToken(MessageParcel& data)
 
 int RdbServiceStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply)
 {
+    QosManager qos(false);
     ZLOGI("code:%{public}u, callingPid:%{public}d", code, IPCSkeleton::GetCallingPid());
     if (!CheckInterfaceToken(data)) {
         return RDB_ERROR;

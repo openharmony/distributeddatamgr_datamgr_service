@@ -933,4 +933,26 @@ HWTEST_F(DataShareServiceImplTest, SetCriticalTask001, TestSize.Level1)
     dataShareServiceImpl.SetCriticalTask();
     ZLOGI("DataShareServiceImplTest SetCriticalTask001 end");
 }
+
+/**
+* @tc.name: SubscribeTimeChanged001
+* @tc.desc: Test the SubscribeTimeChanged methods of DataShareServiceImpl
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribeTimeChanged001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest SubscribeTimeChanged001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    // test timerReceiver_ is nullptr
+    EXPECT_EQ(dataShareServiceImpl.timerReceiver_, nullptr);
+    bool ret = dataShareServiceImpl.SubscribeTimeChanged();
+    EXPECT_TRUE(ret);
+    EXPECT_NE(dataShareServiceImpl.timerReceiver_, nullptr);
+    // test timerReceiver_ is not nullptr
+    ret = dataShareServiceImpl.SubscribeTimeChanged();
+    EXPECT_TRUE(ret);
+    EXPECT_NE(dataShareServiceImpl.timerReceiver_, nullptr);
+    ZLOGI("DataShareServiceImplTest SubscribeTimeChanged001 end");
+}
 } // namespace OHOS::Test

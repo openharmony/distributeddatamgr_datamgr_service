@@ -182,9 +182,10 @@ Status SoftBusClient::CheckStatus()
 int32_t SoftBusClient::Open(int32_t socket, uint32_t type, const ISocketListener *listener, bool async)
 {
     auto networkId = GetNetworkId();
-    ZLOGI("Bind start, device:%{public}s, networkId:%{public}s, session:%{public}s, socketId:%{public}d",
-        Anonymous::Change(device_.deviceId).c_str(), Anonymous::Change(networkId).c_str(),
-        pipe_.pipeId.c_str(), socket);
+    ZLOGI(
+        "Bind start, device:%{public}s, networkId:%{public}s, session:%{public}s, socketId:%{public}d, type:%{public}d",
+        Anonymous::Change(device_.deviceId).c_str(), Anonymous::Change(networkId).c_str(), pipe_.pipeId.c_str(), socket,
+        type);
     int32_t status = Bind(socket, QOS_INFOS[type % QOS_BUTT], QOS_COUNTS[type % QOS_BUTT], listener);
     if (status != SOFTBUS_OK) {
         ZLOGE("Bind fail, device:%{public}s, networkId:%{public}s, socketId:%{public}d, result:%{public}d",

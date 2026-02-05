@@ -24,9 +24,8 @@
 
 namespace OHOS {
 namespace AppDistributedKv {
-class API_EXPORT ProcessCommunicatorImpl : public DistributedDB::IProcessCommunicator, public AppDataChangeListener,
+class ProcessCommunicatorImpl : public DistributedDB::IProcessCommunicator, public AppDataChangeListener,
                                            public AppDeviceChangeListener {
-
 public:
     using DBStatus = DistributedDB::DBStatus;
     using OnDeviceChange = DistributedDB::OnDeviceChange;
@@ -41,7 +40,7 @@ public:
 
     API_EXPORT static ProcessCommunicatorImpl *GetInstance();
     API_EXPORT void SetRouteHeadHandlerCreator(RouteHeadHandlerCreator handlerCreator);
-    API_EXPORT ~ProcessCommunicatorImpl() override;
+    ~ProcessCommunicatorImpl() override;
 
     DBStatus Start(const std::string &processLabel) override;
     DBStatus Stop() override;
@@ -63,12 +62,12 @@ public:
     void OnSessionReady(const DeviceInfo &info, int32_t errCode) const override;
     void OnMessage(const DeviceInfo &info, const uint8_t *ptr, const int size, const PipeInfo &pipeInfo) const override;
 
-    API_EXPORT std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
+    std::shared_ptr<DistributedDB::ExtendHeaderHandle> GetExtendHeaderHandle(
         const DistributedDB::ExtendInfo &info) override;
-    API_EXPORT DBStatus GetDataHeadInfo(DataHeadInfo dataHeadInfo, uint32_t &headLength) override;
-    API_EXPORT DBStatus GetDataUserInfo(DataUserInfo dataUserInfo, std::vector<UserInfo> &userInfos) override;
+    DBStatus GetDataHeadInfo(DataHeadInfo dataHeadInfo, uint32_t &headLength) override;
+    DBStatus GetDataUserInfo(DataUserInfo dataUserInfo, std::vector<UserInfo> &userInfos) override;
 
-    Status ReuseConnect(const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
+    API_EXPORT Status ReuseConnect(const DeviceId &deviceId, const ExtraDataInfo &extraInfo);
 
 private:
     ProcessCommunicatorImpl();

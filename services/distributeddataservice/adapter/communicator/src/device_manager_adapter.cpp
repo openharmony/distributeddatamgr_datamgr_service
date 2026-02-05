@@ -50,6 +50,35 @@ struct DeviceExtraInfo final : public Serializable {
     };
 };
 
+uint32_t GetDeviceType(uint16_t deviceTypeId)
+{
+    uint32_t deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_UNKNOWN;
+    switch (deviceTypeId) {
+        case OHOS::DistributedHardware::DEVICE_TYPE_PC:
+            deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PC;
+            break;
+        case OHOS::DistributedHardware::DEVICE_TYPE_PHONE:
+            deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PHONE;
+            break;
+        case OHOS::DistributedHardware::DEVICE_TYPE_PAD:
+            deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PAD;
+            break;
+        case OHOS::DistributedHardware::DEVICE_TYPE_WATCH:
+            deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_WATCH;
+            break;
+        case OHOS::DistributedHardware::DEVICE_TYPE_CAR:
+            deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_CAR;
+            break;
+        case OHOS::DistributedHardware::DEVICE_TYPE_2IN1:
+            deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_2IN1;
+            break;
+        default:
+            deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_UNKNOWN;
+            break;
+    }
+    return deviceType;
+}
+
 std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
 {
     std::pair<bool, DeviceInfo> result(false, DeviceInfo{});
@@ -67,23 +96,7 @@ std::pair<bool, DeviceInfo> GetDeviceInfo(const DmDeviceInfo &dmInfo)
     deviceInfo.udid = std::move(udid);
     deviceInfo.networkId = std::move(networkId);
     deviceInfo.deviceName = std::string(dmInfo.deviceName);
-    switch (dmInfo.deviceTypeId) {
-        case OHOS::DistributedHardware::DEVICE_TYPE_PC:
-            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PC;
-            break;
-        case OHOS::DistributedHardware::DEVICE_TYPE_PAD:
-            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_PAD;
-            break;
-        case OHOS::DistributedHardware::DEVICE_TYPE_CAR:
-            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_CAR;
-            break;
-        case OHOS::DistributedHardware::DEVICE_TYPE_2IN1:
-            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_2IN1;
-            break;
-        default:
-            deviceInfo.deviceType = DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_UNKNOWN;
-            break;
-    }
+    deviceInfo.deviceType = GetDeviceType(dmInfo.deviceTypeId);
     deviceInfo.authForm = static_cast<int32_t>(dmInfo.authForm);
     if (deviceInfo.uuid == DeviceManagerAdapter::CLOUD_DEVICE_UUID) {
         deviceInfo.osType = DeviceExtraInfo::OH_OS_TYPE;
@@ -557,6 +570,18 @@ std::string DeviceManagerAdapter::GetUuidByNetworkId(const std::string &networkI
         return "";
     }
     return uuid;
+}
+
+uint32_t DeviceManagerAdapter::GetDeviceTypeByUuid(const std::string &uuid)
+{
+    if (uuid.empty()) {
+        return DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_UNKNOWN;
+    }
+    DeviceInfo dvInfo;
+    if (deviceInfos_.Get(uuid, dvInfo)) {
+        return dvInfo.deviceType;
+    }
+    return DeviceManagerAdapter::DmDeviceType::DEVICE_TYPE_UNKNOWN;
 }
 
 std::string DeviceManagerAdapter::GetUdidByNetworkId(const std::string &networkId)

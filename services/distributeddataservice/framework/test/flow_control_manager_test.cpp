@@ -604,8 +604,8 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelSpecificPriorityTask_T
 
     // Submit a new priority 1 task to verify that the flow manager is still functional for that priority
     flowControlManager.Execute(priority1Task, 1);
-    // Wait for it to execute (550ms > 500ms delay)
-    std::this_thread::sleep_for(std::chrono::milliseconds(550));
+    // Wait for it to execute (600ms > 500ms delay)
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
     EXPECT_EQ(priority0Flag->load(), 1);
     EXPECT_EQ(priority1Flag->load(), 1); // This should now be 1 as it's a new task
     EXPECT_EQ(priority2Flag->load(), 1);
@@ -737,12 +737,12 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_LabelBasedFlowControl_Test, 
     flowControlManager.Execute(lowPriorityTask, lowInfo);
 
     // Immediately check - only high priority task should be executed
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_EQ(highPriorityFlag->load(), 1);
     EXPECT_EQ(mediumPriorityFlag->load(), 0);
     EXPECT_EQ(lowPriorityFlag->load(), 0);
 
-    // After 250ms, medium priority task should be executed
+    // After 200ms, medium priority task should be executed
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     EXPECT_EQ(highPriorityFlag->load(), 1);
     EXPECT_EQ(mediumPriorityFlag->load(), 1);

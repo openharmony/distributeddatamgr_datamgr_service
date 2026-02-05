@@ -1068,7 +1068,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey001, TestSize.Level0)
     SecretKeyMetaData secretKeyMeta;
     StoreMetaData storeMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey("", secretKeyMeta, storeMeta, iv);
+    auto ret = kvStoreDataServiceTest.ReEncryptKey("", secretKeyMeta, iv, storeMeta);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1106,7 +1106,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey002, TestSize.Level0)
 
     SecretKeyMetaData secretKeyMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1150,7 +1150,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey003, TestSize.Level0)
 
     SecretKeyMetaData secretKeyMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1287,7 +1287,7 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreSuccess, TestSize.Lev
     ASSERT_EQ(kvStoreDataServiceTest.ImportCloneKey(symKey), true);
 
     SecretKeyMetaData secretKeyMeta;
-    auto reEncryptedKey = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    auto reEncryptedKey = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
     kvStoreDataServiceTest.DeleteCloneKey();
     auto encodeEncryptedKey = DistributedData::Base64::Encode(reEncryptedKey);
 
@@ -1327,4 +1327,31 @@ HWTEST_F(KvStoreDataServiceTest, WriteBackupInfo_FwriteFail, TestSize.Level0)
     bool result = kvStoreDataServiceTest.WriteBackupInfo(content, "/");
     EXPECT_FALSE(result);
 }
+
+
+/**
+ * @tc.name: OnExtensionRestore_RestoreFial
+ * @tc.desc: Test OnRestore returns -1 when Secret key file size exceeds the upper limit
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: lyy
+ */
+HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreFail, TestSize.Level0)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    MessageParcel data;
+    MessageParcel reply;
+
+    const off_t sizeMax = 1024 * 1024 * 500 + 1;
+    const std::string backupData(static_cast<size_t>(sizeMax), 'a');
+    EXPECT_EQ(WriteContentToFile(SECRETKEY_BACKUP_FILE, backupData), 0);
+    int32_t fd = open(SECRETKEY_BACKUP_FILE.c_str(), O_RDONLY);
+    ASSERT_GE(fd, 0);
+    data.WriteFileDescriptor(fd);
+    data.WriteString("");
+    EXPECT_EQ(kvStoreDataServiceTest.OnExtension("restore", data, reply), -1);
+    close(fd);
+    ASSERT_EQ(remove(SECRETKEY_BACKUP_FILE.c_str()), 0);
+}
+
 } // namespace OHOS::Test

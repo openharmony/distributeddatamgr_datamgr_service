@@ -28,7 +28,7 @@
 #define RDB_UTILS_PUSH_WARNING _Pragma("GCC diagnostic push")
 #define RDB_UTILS_POP_WARNING _Pragma("GCC diagnostic pop")
 #define RDB_UTILS_DISABLE_WARNING_INTERNAL2(warningName) #warningName
-#define RDB_UTILS_DISABLE_WARNING(warningName) \
+#define RDB_UTILS_DISABLE_WARNING(warningName)   \
     _Pragma(                                     \
         RDB_UTILS_DISABLE_WARNING_INTERNAL2(GCC diagnostic ignored warningName))
 
