@@ -121,6 +121,8 @@ protected:
         std::pair<int32_t, SchemaMeta> GetAppSchema(int32_t userId, const std::string &bundle) override;
         virtual ~CloudServerMock() = default;
         static constexpr uint64_t REMAIN_SPACE = 1000;
+        static constexpr uint64_t TOTAL_SPACE = 2000;
+        static constexpr int32_t INVALID_USER_ID = -1;
     };
 
     static void InitMetaData();
@@ -142,8 +144,8 @@ std::pair<int32_t, CloudInfo> CloudSyncManagerTest::CloudServerMock::GetServerIn
     CloudInfo cloudInfo;
     cloudInfo.user = userId;
     cloudInfo.id = TEST_CLOUD_ID;
-    cloudInfo.remainSpace = REMAINSPACE;
-    cloudInfo.totalSpace = TATALSPACE;
+    cloudInfo.remainSpace = REMAIN_SPACE;
+    cloudInfo.totalSpace = TOTAL_SPACE;
     cloudInfo.enableCloud = true;
 
     CloudInfo::AppInfo appInfo;
