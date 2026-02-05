@@ -28,6 +28,7 @@ public:
     static std::vector<std::string> GetP2PTables(const RdbChangedData &changedData);
     static std::vector<DistributedData::Reference> Convert(const std::vector<Reference> &references);
     static int32_t ConvertNativeRdbStatus(int32_t status);
+    static int32_t ConvertGeneralRdbStatus(int32_t status);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_UTILS_H

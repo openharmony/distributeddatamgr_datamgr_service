@@ -75,4 +75,32 @@ int32_t RdbCommonUtils::ConvertNativeRdbStatus(int32_t status)
     }
     return GeneralError::E_ERROR;
 }
+
+int32_t RdbCommonUtils::ConvertGeneralRdbStatus(int32_t status)
+{
+    switch (status) {
+        case GeneralError::E_OK:
+            return NativeRdb::E_OK;
+        case GeneralError::E_BUSY:
+            return NativeRdb::E_SQLITE_BUSY;
+        case GeneralError::E_INVALID_ARGS:
+            return NativeRdb::E_INVALID_ARGS_NEW;
+        case GeneralError::E_ALREADY_CLOSED:
+            return NativeRdb::E_ALREADY_CLOSED;
+        case GeneralError::E_DB_CORRUPT:
+            return NativeRdb::E_SQLITE_CORRUPT;
+        case GeneralError::E_DB_ERROR:
+        case GeneralError::E_TABLE_NOT_FOUND:
+            return NativeRdb::E_SQLITE_ERROR;
+        case GeneralError::E_NOT_SUPPORT:
+            return NativeRdb::E_NOT_SUPPORT_NEW;
+        case GeneralError::E_DB_NOT_EXIST:
+            return NativeRdb::E_DB_NOT_EXIST;
+        case GeneralError::E_NON_SYSTEM_APP:
+            return NativeRdb::E_NON_SYSTEM_APP;
+        default:
+            break;
+    }
+    return NativeRdb::E_ERROR;
+}
 } // namespace OHOS::DistributedRdb

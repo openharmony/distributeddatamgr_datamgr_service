@@ -107,12 +107,8 @@ static DBSchema GetDBSchema(const Database &database)
 
 static bool IsExistence(const std::string &col, const std::vector<std::string> &cols)
 {
-    for (auto &column : cols) {
-        if (col == column) {
-            return true;
-        }
-    }
-    return false;
+    auto colRet = std::find(cols.begin(), cols.end(), col);
+    return colRet != cols.end();
 }
 
 std::pair<bool, DistributedDB::DistributedSchema> RdbGeneralStore::GetGaussDistributedSchema(const Database &database)
@@ -1171,6 +1167,38 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     return GeneralError::E_OK;
 }
 
+int32_t RdbGeneralStore::RemoveExceptDeviceData(
+    const std::map<std::string, std::vector<std::string>> &removeDataExceptDevicesMap)
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    if (removeDataExceptDevicesMap.empty()) {
+        return GeneralError::E_NOT_SUPPORT;
+    }
+    std::map<std::string, std::vector<std::string>> tempMap;
+    for (auto &p : removeDataExceptDevicesMap) {
+        if (p.second.empty()) {
+            return GeneralError::E_NOT_SUPPORT;
+        }
+        tempMap[p.first] = DmAdapter::GetInstance().ToUUID(p.second);
+        if (!IsExistence(meta_.deviceId, tempMap[p.first])) {
+            tempMap[p.first].push_back(meta_.deviceId);
+        }
+    }
+    auto status = delegate_->RemoveExceptDeviceData(tempMap);
+    if (status != DBStatus::OK) {
+        ZLOGE("RemoveExceptDeviceData failed, bundleName: %{public}s, storeName: %{public}s, err:%{public}d",
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str(), status);
+    }
+    return ConvertStatus(status);
+}
+
 int32_t RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
 {
     if (isClosed_) {
@@ -1258,9 +1286,20 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
         case DBStatus::CLOUD_SYNC_TASK_MERGED:
             return GenErr::E_SYNC_TASK_MERGED;
         case DBStatus::CLOUD_DISABLED:
-            return GeneralError::E_CLOUD_DISABLED;
+            return GenErr::E_CLOUD_DISABLED;
         case DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB:
-            return GeneralError::E_DB_CORRUPT;
+            return GenErr::E_DB_CORRUPT;
+        case DBStatus::NOT_SUPPORT:
+            return GenErr::E_NOT_SUPPORT;
+        case DBStatus::TABLE_NOT_FOUND:
+            return GenErr::E_TABLE_NOT_FOUND;
+        case DBStatus::INVALID_ARGS:
+            return GenErr::E_INVALID_ARGS;
+        case DBStatus::COMM_FAILURE:
+        case DBStatus::EKEYREVOKED_ERROR:
+        case DBStatus::CONSTRAINT:
+        case DBStatus::DB_ERROR:
+            return GenErr::E_DB_ERROR;
         default:
             ZLOGI("status:0x%{public}x", status);
             break;
