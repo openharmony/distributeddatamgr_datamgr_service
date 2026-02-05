@@ -207,7 +207,7 @@ bool Field::operator==(const Field &field) const
         std::tie(field.colName, field.alias, field.type, field.primary, field.nullable);
 }
 
-Database SchemaMeta::GetDataBase(const std::string &storeId)
+Database SchemaMeta::GetDataBase(const std::string &storeId) const
 {
     for (const auto &database : databases) {
         if (database.name == storeId) {

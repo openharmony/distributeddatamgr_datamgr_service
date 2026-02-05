@@ -99,7 +99,7 @@ public:
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     bool IsValid() const;
-    Database GetDataBase(const std::string &storeId);
+    Database GetDataBase(const std::string &storeId) const;
     std::vector<std::string> GetStores();
     bool operator==(const SchemaMeta &meta) const;
     bool operator!=(const SchemaMeta &meta) const;

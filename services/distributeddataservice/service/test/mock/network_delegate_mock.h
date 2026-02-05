@@ -26,6 +26,7 @@ public:
     void RegOnNetworkChange() override;
     void BindExecutor(std::shared_ptr<ExecutorPool> executors) override;
     bool isNetworkAvailable_ = true;
+    NetworkType networkType_ = NetworkDelegate::NONE;
     virtual ~NetworkDelegateMock() = default;
 };
 } // namespace DistributedData

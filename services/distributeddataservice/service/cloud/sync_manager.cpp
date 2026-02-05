@@ -59,12 +59,13 @@ SyncManager::SyncInfo::SyncInfo(
 {
     if (!store.empty()) {
         tables_[store] = tables;
+        stores_.push_back(store);
     }
     syncId_ = SyncManager::GenerateId(user);
 }
 
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Stores &stores)
-    : user_(user), bundleName_(bundleName)
+    : user_(user), bundleName_(bundleName), stores_(stores)
 {
     for (auto &store : stores) {
         tables_[store] = {};
@@ -76,6 +77,9 @@ SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, con
     : user_(user), bundleName_(bundleName), tables_(tables)
 {
     tables_ = tables;
+    for (const auto &entry : tables_) {
+        stores_.push_back(entry.first);
+    }
     syncId_ = SyncManager::GenerateId(user);
 }
 
@@ -84,6 +88,7 @@ SyncManager::SyncInfo::SyncInfo(const Param &param)
 {
     if (!param.store.empty()) {
         tables_[param.store] = param.tables;
+        stores_.push_back(param.store);
     }
     syncId_ = SyncManager::GenerateId(param.user);
     prepareTraceId_ = param.prepareTraceId;
@@ -310,52 +315,85 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
     return E_OK;
 }
 
+bool SyncManager::ProcessDatabaseForSync(const SyncContext &ctx, const Database &database)
+{
+    if (!SyncConfig::IsDbEnable(ctx.info.user_, ctx.bundleName, database.name)) {
+        HandleSyncError({ ctx.cloud, ctx.bundleName, database.name, ctx.syncId, E_ERROR,
+            "!DbEnable:" + database.name, ctx.traceId });
+        return false;
+    }
+
+    StoreInfo storeInfo = { 0, ctx.bundleName, database.name, ctx.cloud.apps[ctx.bundleName].instanceId,
+        ctx.info.user_, "", ctx.syncId };
+    auto status = syncStrategy_->CheckSyncAction(storeInfo);
+    if (status != SUCCESS) {
+        ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
+            storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
+        HandleSyncError({ ctx.cloud, ctx.bundleName, database.name, ctx.syncId, status, "CheckSyncAction",
+            ctx.traceId });
+        ctx.info.SetError(status);
+        return false;
+    }
+
+    auto tables = ctx.info.GetTables(database);
+    if (!SyncConfig::FilterCloudEnabledTables(ctx.info.user_, ctx.bundleName, database.name, tables)) {
+        HandleSyncError({ ctx.cloud, ctx.bundleName, database.name, ctx.syncId, E_CLOUD_DISABLED, "tableDisable",
+            ctx.traceId });
+        ctx.info.SetError(E_CLOUD_DISABLED);
+        return false;
+    }
+
+    auto query = ctx.info.GenerateQuery(tables);
+    SyncParam syncParam = { ctx.info.mode_, ctx.info.wait_, ctx.info.isCompensation_, ctx.info.triggerMode_,
+        ctx.traceId, ctx.info.user_ };
+    auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
+        SyncEvent::EventInfo{ syncParam, ctx.retry, std::move(query), ctx.info.async_ });
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    return true;
+}
+
 std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud,
     SyncInfo &info, bool retry, const TraceIds &traceIds)
 {
     return [this, &cloud, &info, &schemas, retry, &traceIds]() {
         bool isPostEvent = false;
         auto syncId = info.syncId_;
+
         for (auto &schema : schemas) {
             std::string bundleName = schema.bundleName;
             std::string traceId = traceIds.count(bundleName) ? traceIds.at(bundleName) : "";
+
             if (!cloud.IsOn(bundleName)) {
                 HandleSyncError({ cloud, bundleName, "", syncId, E_ERROR, "!IsOn:" + bundleName, traceId });
                 continue;
             }
-            for (const auto &database : schema.databases) {
-                if (!info.Contains(database.name) || !SyncConfig::IsDbEnable(info.user_, bundleName, database.name)) {
-                    HandleSyncError(
-                        { cloud, bundleName, database.name, syncId, E_ERROR, "!Contains:" + database.name, traceId });
-                    continue;
-                }
-                StoreInfo storeInfo = { 0, bundleName, database.name, cloud.apps[bundleName].instanceId, info.user_,
-                    "", syncId };
-                auto status = syncStrategy_->CheckSyncAction(storeInfo);
-                if (status != SUCCESS) {
-                    ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
-                        storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
-                    HandleSyncError({ cloud, bundleName, database.name, syncId, status, "CheckSyncAction", traceId });
-                    info.SetError(status);
-                    continue;
-                }
 
-                auto tables = info.GetTables(database);
-                if (!SyncConfig::FilterCloudEnabledTables(info.user_, bundleName, database.name, tables)) {
-                    HandleSyncError(
-                        { cloud, bundleName, database.name, syncId, E_CLOUD_DISABLED, "tableDisable", traceId });
-                    info.SetError(E_CLOUD_DISABLED);
-                    continue;
+            SyncContext ctx = { info, cloud, bundleName, traceId, syncId, retry };
+            if (info.stores_.empty()) {
+                for (const auto &database : schema.databases) {
+                    if (!info.Contains(database.name)) {
+                        HandleSyncError({ cloud, bundleName, "", syncId, E_ERROR,
+                            "!Contains:" + database.name, traceId });
+                        continue;
+                    }
+                    if (ProcessDatabaseForSync(ctx, database)) {
+                        isPostEvent = true;
+                    }
                 }
-                auto query = info.GenerateQuery(tables);
-                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_, traceId,
-                    info.user_ };
-                auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-                    SyncEvent::EventInfo{ syncParam, retry, std::move(query), info.async_ });
-                EventCenter::GetInstance().PostEvent(std::move(evt));
-                isPostEvent = true;
+            } else {
+                for (const auto &store : info.stores_) {
+                    auto database = schema.GetDataBase(store);
+                    if (database.name.empty()) {
+                        HandleSyncError({ cloud, bundleName, "", syncId, E_ERROR, "!GetDataBase:" + store, traceId });
+                        continue;
+                    }
+                    if (ProcessDatabaseForSync(ctx, database)) {
+                        isPostEvent = true;
+                    }
+                }
             }
         }
+
         if (!isPostEvent) {
             ZLOGE("schema is invalid, user: %{public}d", cloud.user);
             info.SetError(E_ERROR);
@@ -767,8 +805,25 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
         ZLOGE("load schema fail, bundleName: %{public}s, user %{public}d", info.bundleName_.c_str(), info.user_);
         return cloudSyncInfos;
     }
-    auto stores = schemaMeta.GetStores();
-    for (auto &storeId : stores) {
+    auto schemaStores = schemaMeta.GetStores();
+
+    std::vector<std::string> storesToSync;
+    if (info.stores_.empty()) {
+        storesToSync.assign(schemaStores.begin(), schemaStores.end());
+        ZLOGD("Sync all stores, count=%{public}zu", storesToSync.size());
+    } else {
+        for (const auto &requestedStore : info.stores_) {
+            if (std::find(schemaStores.begin(), schemaStores.end(), requestedStore) == schemaStores.end()) {
+                ZLOGE("Requested store not found in schema. bundleName:%{public}s, store:%{public}s, user:%{public}d",
+                    info.bundleName_.c_str(), Anonymous::Change(requestedStore).c_str(), cloud.user);
+                return cloudSyncInfos; 
+            }
+            storesToSync.push_back(requestedStore);
+        }
+        ZLOGD("Sync specific stores, count=%{public}zu", storesToSync.size());
+    }
+
+    for (auto &storeId : storesToSync) {
         QueryKey queryKey{ cloud.user, cloud.id, info.bundleName_, std::move(storeId) };
         cloudSyncInfos.emplace_back(std::make_tuple(std::move(queryKey), info.syncId_));
     }

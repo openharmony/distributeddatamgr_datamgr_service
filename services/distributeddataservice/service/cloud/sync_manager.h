@@ -88,6 +88,7 @@ public:
         std::string id_ = DEFAULT_ID;
         std::string bundleName_;
         std::map<std::string, std::vector<std::string>> tables_;
+        Stores stores_;
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
         bool isCompensation_ = false;
@@ -200,6 +201,17 @@ private:
     void AddCompensateSync(const StoreMetaData &meta);
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
+
+    struct SyncContext {
+        SyncInfo &info;
+        CloudInfo &cloud;
+        const std::string &bundleName;
+        const std::string &traceId;
+        uint64_t syncId;
+        bool retry;
+    };
+    bool ProcessDatabaseForSync(const SyncContext &ctx, const Database &database);
+
     struct ErrorContext {
         const CloudInfo &cloud;
         std::string bundleName;
