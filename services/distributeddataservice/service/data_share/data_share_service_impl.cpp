@@ -729,21 +729,21 @@ void DataShareServiceImpl::SaveLaunchInfo(const std::string &bundleName, const s
     if (profileInfos.empty()) {
         return;
     }
+    StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
     for (auto &[uri, value] : profileInfos) {
         if (uri.find(EXT_URI_SCHEMA) == std::string::npos) {
             continue;
         }
         std::string extUri = uri;
         extUri.insert(strlen(EXT_URI_SCHEMA), "/");
-        StoreMetaData meta = MakeMetaData(bundleName, userId, deviceId);
         if (value.launchInfos.empty()) {
             meta.storeId = "";
             AutoLaunchMetaData autoLaunchMetaData = {};
-            std::vector<std::string> tempData = {};
-            autoLaunchMetaData.datas.emplace(extUri, tempData);
+            std::vector<std::string> tempDatas = {};
+            autoLaunchMetaData.datas.emplace(extUri, tempDatas);
             autoLaunchMetaData.launchForCleanData = value.launchForCleanData;
             MetaDataManager::GetInstance().SaveMeta(meta.GetAutoLaunchKey(), autoLaunchMetaData, true);
-            ZLOGI("Without launchInfos, save meta end, bundleName = %{public}s.", bundleName.c_str());
+            ZLOGI("without launchInfos, save meta end, bundleName = %{public}s.", bundleName.c_str());
             continue;
         }
         for (const auto &launchInfo : value.launchInfos) {
@@ -776,7 +776,7 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
         meta.storeId = "";
         if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
-            ZLOGE("No launch meta without storeId, bundleName = %{public}s.", dataInfo.bundleName.c_str());
+            ZLOGE("No autoLaunch meta without storeId, bundleName = %{public}s.", dataInfo.bundleName.c_str());
             return;
         }
     }
@@ -785,14 +785,14 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     }
     for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
         if (dataInfo.tables.empty() && dataInfo.changeType == 1) {
-            ZLOGI("Start to connect extension, bundlename = %{public}s.", dataInfo.bundleName.c_str());
+            ZLOGI("Start to connect extension, bundleName = %{public}s.", dataInfo.bundleName.c_str());
             AAFwk::WantParams wantParams;
             ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName, wantParams);
             return;
         }
         for (const auto &table : dataInfo.tables) {
             if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
-                ZLOGI("Find table, start to connect extension, bundlename = %{public}s.", dataInfo.bundleName.c_str());
+                ZLOGI("Find table, start to connect extension, bundleName = %{public}s.", dataInfo.bundleName.c_str());
                 AAFwk::WantParams wantParams;
                 ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName, wantParams);
                 break;
