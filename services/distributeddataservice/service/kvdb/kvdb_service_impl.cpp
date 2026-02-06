@@ -961,7 +961,6 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = options.hapName;
-    metaData.customDir = options.isCustomDir ? options.baseDir : "";
     metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
     metaData.schema = options.schema;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
