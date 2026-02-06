@@ -1193,30 +1193,30 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
 }
 
 /**
-* @tc.name: RemoveExceptDeviceData001
-* @tc.desc: RdbGeneralStore RemoveExceptDeviceData function test
+* @tc.name: RetainDeviceData001
+* @tc.desc: RdbGeneralStore RetainDeviceData function test
 * @tc.type: FUNC
 */
-HWTEST_F(RdbGeneralStoreTest, RemoveExceptDeviceData001, TestSize.Level1)
+HWTEST_F(RdbGeneralStoreTest, RetainDeviceData001, TestSize.Level1)
 {
-    std::map<std::string, std::vector<std::string>> removeDataExceptDevicesMap;
-    auto result = store_->RemoveExceptDeviceData(removeDataExceptDevicesMap);
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    auto result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
     store_->Init();
-    result = store_->RemoveExceptDeviceData(removeDataExceptDevicesMap);
+    result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_NOT_SUPPORT);
     std::vector<std::string> devices;
-    removeDataExceptDevicesMap["test"] = devices;
-    result = store_->RemoveExceptDeviceData(removeDataExceptDevicesMap);
+    retainDevices["test"] = devices;
+    result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_NOT_SUPPORT);
     devices.push_back("testdevice");
-    removeDataExceptDevicesMap["test"] = devices;
-    result = store_->RemoveExceptDeviceData(removeDataExceptDevicesMap);
+    retainDevices["test"] = devices;
+    result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_OK);
     MockRelationalStoreDelegate::SetResRemove(DBStatus::INVALID_ARGS);
-    result = store_->RemoveExceptDeviceData(removeDataExceptDevicesMap);
+    result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 }
 

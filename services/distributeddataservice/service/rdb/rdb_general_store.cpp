@@ -107,8 +107,12 @@ static DBSchema GetDBSchema(const Database &database)
 
 static bool IsExistence(const std::string &col, const std::vector<std::string> &cols)
 {
-    auto colRet = std::find(cols.begin(), cols.end(), col);
-    return colRet != cols.end();
+    for (auto &column : cols) {
+        if (col == column) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::pair<bool, DistributedDB::DistributedSchema> RdbGeneralStore::GetGaussDistributedSchema(const Database &database)
@@ -1167,8 +1171,8 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     return GeneralError::E_OK;
 }
 
-int32_t RdbGeneralStore::RemoveExceptDeviceData(
-    const std::map<std::string, std::vector<std::string>> &removeDataExceptDevicesMap)
+int32_t RdbGeneralStore::RetainDeviceData(
+    const std::map<std::string, std::vector<std::string>> &retainDevices)
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
@@ -1178,22 +1182,9 @@ int32_t RdbGeneralStore::RemoveExceptDeviceData(
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
     }
-    if (removeDataExceptDevicesMap.empty()) {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    std::map<std::string, std::vector<std::string>> tempMap;
-    for (auto &p : removeDataExceptDevicesMap) {
-        if (p.second.empty()) {
-            return GeneralError::E_NOT_SUPPORT;
-        }
-        tempMap[p.first] = DmAdapter::GetInstance().ToUUID(p.second);
-        if (!IsExistence(meta_.deviceId, tempMap[p.first])) {
-            tempMap[p.first].push_back(meta_.deviceId);
-        }
-    }
-    auto status = delegate_->RemoveExceptDeviceData(tempMap);
+    auto status = delegate_->RemoveExceptDeviceData(retainDevices);
     if (status != DBStatus::OK) {
-        ZLOGE("RemoveExceptDeviceData failed, bundleName: %{public}s, storeName: %{public}s, err:%{public}d",
+        ZLOGE("RetainDeviceData failed, bundleName: %{public}s, storeName: %{public}s, err:%{public}d",
             meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str(), status);
     }
     return ConvertStatus(status);

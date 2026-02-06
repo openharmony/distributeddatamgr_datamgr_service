@@ -70,8 +70,6 @@ enum GeneralError : int32_t {
     E_SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT,
     E_EXPIRED_CURSOR,
     E_TABLE_NOT_FOUND,
-    E_DB_NOT_EXIST,
-    E_NON_SYSTEM_APP,
     E_BUTT,
 };
 }

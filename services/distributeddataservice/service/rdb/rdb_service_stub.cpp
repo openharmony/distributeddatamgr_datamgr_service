@@ -166,16 +166,17 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
     return RDB_OK;
 }
 
-int32_t RdbServiceStub::OnRemoteRemoveExceptDeviceData(MessageParcel &data, MessageParcel &reply)
+int32_t RdbServiceStub::OnRemoteRetainDeviceData(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    if (!ITypesUtil::Unmarshal(data, param)) {
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    if (!ITypesUtil::Unmarshal(data, param, retainDevices)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s",
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = RemoveExceptDeviceData(param);
+    auto status = RetainDeviceData(param, retainDevices);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;

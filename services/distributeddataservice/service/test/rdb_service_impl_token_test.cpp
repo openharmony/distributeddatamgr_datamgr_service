@@ -34,9 +34,9 @@
 #include "mock/db_store_mock.h"
 #include "mock/device_manager_adapter_mock.h"
 #include "mock/general_store_mock.h"
+#include "rdb_common_utils.h"
 #include "rdb_general_store.h"
 #include "rdb_service_impl.h"
-#include "rdb_common_utils.h"
 #include "rdb_types.h"
 #include "relational_store_manager.h"
 using namespace OHOS::DistributedRdb;
@@ -46,6 +46,7 @@ using namespace OHOS::Security::AccessToken;
 using namespace testing::ext;
 using namespace testing;
 using namespace std;
+using RdbStatus = OHOS::DistributedRdb::RdbStatus;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using RdbGeneralStore = OHOS::DistributedRdb::RdbGeneralStore;
 
@@ -171,11 +172,6 @@ void RdbServiceImplTokenTest::GetRdbSyncerParam(RdbSyncerParam &param)
     param.haMode_ = metaData_.haMode;
     param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
     param.user_ = metaData_.user;
-    std::map<std::string, std::vector<std::string>> map;
-    std::vector<std::string> devices;
-    devices.push_back("testdevice");
-    map["test"] = devices;
-    param.removeDataExceptDevicesMap_ = map;
 }
 
 /**
@@ -504,47 +500,49 @@ HWTEST_F(RdbServiceImplTokenTest, IsSupportAutoSyncDeviceType003, TestSize.Level
 }
 
 /**
- * @tc.name: RemoveExceptDeviceData001
- * @tc.desc: Test RemoveExceptDeviceData when user is non system app.
+ * @tc.name: RetainDeviceData001
+ * @tc.desc: Test RetainDeviceData when user is non system app.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
-HWTEST_F(RdbServiceImplTokenTest, RemoveExceptDeviceData001, TestSize.Level0)
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData001, TestSize.Level0)
 {
     EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(false));
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
-    auto result = service.RemoveExceptDeviceData(param);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_NON_SYSTEM_APP));
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RdbStatus::RDB_NON_SYSTEM_APP);
 }
 
 /**
- * @tc.name: RemoveExceptDeviceData002
- * @tc.desc: Test RemoveExceptDeviceData when no db meta.
+ * @tc.name: RetainDeviceData002
+ * @tc.desc: Test RetainDeviceData when no db meta.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
-HWTEST_F(RdbServiceImplTokenTest, RemoveExceptDeviceData002, TestSize.Level0)
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData002, TestSize.Level0)
 {
     EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
-    auto result = service.RemoveExceptDeviceData(param);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_DB_NOT_EXIST));
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RdbStatus::RDB_DB_NOT_EXIST);
 }
 
 /**
- * @tc.name: RemoveExceptDeviceData003
- * @tc.desc: Test RemoveExceptDeviceData when instanceId = -1.
+ * @tc.name: RetainDeviceData003
+ * @tc.desc: Test RetainDeviceData when instanceId = -1.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
-HWTEST_F(RdbServiceImplTokenTest, RemoveExceptDeviceData003, TestSize.Level0)
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData003, TestSize.Level0)
 {
     EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
     RdbServiceImpl service;
@@ -553,19 +551,20 @@ HWTEST_F(RdbServiceImplTokenTest, RemoveExceptDeviceData003, TestSize.Level0)
     auto meta = service.GetStoreMetaData(param);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
-    auto result = service.RemoveExceptDeviceData(param);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_DB_NOT_EXIST));
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RdbStatus::RDB_DB_NOT_EXIST);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
 /**
- * @tc.name: RemoveExceptDeviceData004
- * @tc.desc: Test RemoveExceptDeviceData when delegate return error.
+ * @tc.name: RetainDeviceData004
+ * @tc.desc: Test RetainDeviceData when delegate return error.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
-HWTEST_F(RdbServiceImplTokenTest, RemoveExceptDeviceData004, TestSize.Level0)
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData004, TestSize.Level0)
 {
     EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
@@ -578,21 +577,23 @@ HWTEST_F(RdbServiceImplTokenTest, RemoveExceptDeviceData004, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     dbStatus_ = E_TABLE_NOT_FOUND;
-    auto result = service.RemoveExceptDeviceData(param);
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    auto result = service.RetainDeviceData(param, retainDevices);
     EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_TABLE_NOT_FOUND));
     dbStatus_ = E_OK;
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
 /**
- * @tc.name: RemoveExceptDeviceData005
- * @tc.desc: Test RemoveExceptDeviceData when param is invalid.
+ * @tc.name: RetainDeviceData005
+ * @tc.desc: Test RetainDeviceData when param is invalid.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
  */
-HWTEST_F(RdbServiceImplTokenTest, RemoveExceptDeviceData005, TestSize.Level0)
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData005, TestSize.Level0)
 {
+
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
@@ -600,8 +601,9 @@ HWTEST_F(RdbServiceImplTokenTest, RemoveExceptDeviceData005, TestSize.Level0)
     auto meta = service.GetStoreMetaData(param);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
-    auto result = service.RemoveExceptDeviceData(param);
-    EXPECT_EQ(result, RDB_ERROR);
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RdbStatus::RDB_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 } // namespace DistributedRDBTest

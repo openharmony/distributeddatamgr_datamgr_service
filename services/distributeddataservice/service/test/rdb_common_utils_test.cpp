@@ -21,6 +21,7 @@
 using namespace testing::ext;
 using namespace testing;
 using namespace OHOS::DistributedRdb;
+using RdbStatus = OHOS::DistributedRdb::RdbStatus;
 namespace OHOS::Test {
 class RdbCommonUtilsTest : public testing::Test {
 public:
@@ -147,25 +148,21 @@ HWTEST_F(RdbCommonUtilsTest, ConvertNativeRdbStatus_001, TestSize.Level1)
 */
 HWTEST_F(RdbCommonUtilsTest, RdbCommonUtilsTest002, TestSize.Level1)
 {
-    int32_t ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_BUSY);
-    EXPECT_EQ(ret, NativeRdb::E_SQLITE_BUSY);
-    ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_OK);
-    EXPECT_EQ(ret, NativeRdb::E_OK);
-    ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_INVALID_ARGS);
-    EXPECT_EQ(ret, NativeRdb::E_INVALID_ARGS_NEW);
-    ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_DB_ERROR);
-    EXPECT_EQ(ret, NativeRdb::E_SQLITE_ERROR);
-    ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_TABLE_NOT_FOUND);
-    EXPECT_EQ(ret, NativeRdb::E_SQLITE_ERROR);
+    int32_t ret = RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_BUSY);
+    EXPECT_EQ(ret, RdbStatus::RDB_SQLITE_BUSY);
+    ret = RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK);
+    EXPECT_EQ(ret, RdbStatus::RDB_OK);
+    ret = RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_INVALID_ARGS);
+    EXPECT_EQ(ret, RdbStatus::RDB_INVALID_ARGS);
+    ret = RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_DB_ERROR);
+    EXPECT_EQ(ret, RdbStatus::RDB_SQLITE_ERROR);
+    ret = RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_TABLE_NOT_FOUND);
+    EXPECT_EQ(ret, RdbStatus::RDB_SQLITE_ERROR);
     ret = RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_NOT_SUPPORT);
-    EXPECT_EQ(ret, NativeRdb::E_NOT_SUPPORT_NEW);
-    ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_DB_NOT_EXIST);
-    EXPECT_EQ(ret, NativeRdb::E_DB_NOT_EXIST);
-    ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_NON_SYSTEM_APP);
-    EXPECT_EQ(ret, NativeRdb::E_NON_SYSTEM_APP);
-    ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_DB_CORRUPT);
-    EXPECT_EQ(ret, NativeRdb::E_SQLITE_CORRUPT);
-    ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_ALREADY_CLOSED);
-    EXPECT_EQ(ret, NativeRdb::E_ALREADY_CLOSED);
+    EXPECT_EQ(ret, RdbStatus::RDB_NOT_SUPPORT);
+    ret = RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_DB_CORRUPT);
+    EXPECT_EQ(ret, RdbStatus::RDB_SQLITE_CORRUPT);
+    ret = RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_ALREADY_CLOSED);
+    EXPECT_EQ(ret, RdbStatus::RDB_ERROR);
 }
 }
