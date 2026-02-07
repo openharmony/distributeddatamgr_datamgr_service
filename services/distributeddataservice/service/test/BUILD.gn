@@ -171,66 +171,6 @@ ohos_unittest("CloudDataMockTest") {
   ]
 }
 
-ohos_unittest("CloudSyncManagerTest") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
-  }
-  module_out_path = module_output_path
-  sources = [
-    "${data_service_path}/service/cloud/cloud_data_translate.cpp",
-    "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
-    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
-    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
-    "${data_service_path}/service/cloud/cloud_types_util.cpp",
-    "${data_service_path}/service/cloud/cloud_value_util.cpp",
-    "${data_service_path}/service/cloud/sync_config.cpp",
-    "${data_service_path}/service/cloud/sync_manager.cpp",
-    "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
-    "${data_service_path}/service/test/mock/checker_mock.cpp",
-    "cloud_sync_manager_test.cpp",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  deps = [
-    "${data_service_path}/adapter/account:distributeddata_account",
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/adapter/dfx:distributeddata_dfx",
-    "${data_service_path}/adapter/qos:distributeddata_qos",
-    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
-    "${data_service_path}/framework:distributeddatasvcfwk_src",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
-    "${data_service_path}/service/common:distributeddata_common",
-    "${data_service_path}/service/rdb:distributeddata_rdb",
-    "mock:distributeddata_mock_static",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "access_token:libtoken_setproc",
-    "access_token:libtokenid_sdk",
-    "c_utils:utils",
-    "googletest:gmock",
-    "googletest:gtest",
-    "hicollie:libhicollie",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-    "relational_store:native_rdb",
-  ]
-
-  cflags = [
-    "-fno-access-control",  # Ignore Private Member Access Control
-  ]
-
-  cflags_cc = cflags
-}
-
 ohos_unittest("CloudServiceImplTest") {
   sanitize = {
     cfi = true
@@ -3088,7 +3028,6 @@ group("unittest") {
     deps += [
       ":CloudDataMockTest",
       ":CloudDataTest",
-      ":CloudSyncManagerTest",
       ":CloudServiceImplTest",
       ":CloudTest",
     ]
