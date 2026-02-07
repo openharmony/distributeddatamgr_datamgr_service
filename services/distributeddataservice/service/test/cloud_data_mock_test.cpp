@@ -51,6 +51,8 @@ static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_
 static constexpr const char *TEST_CLOUD_PATH = "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/"
                                                "test_cloud_store";
 static constexpr const int32_t TEST_TOKEN_FLAG_CALL_COUNT = 3;
+static constexpr const int32_t GET_USER_BY_TOKEN_CALL_COUNT = 2;
+static constexpr const int32_t TEST_TOKEN_FLAG_USER_ID = 100;
 class CloudDataMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -198,8 +200,9 @@ void CloudDataMockTest::SetUpTestCase(void)
         AccountDelegate::instance_ = nullptr;
         AccountDelegate::RegisterAccountInstance(accountDelegateMock);
     }
-    // 2 means that the GetUserByToken interface will be called twice
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).Times(2).WillRepeatedly(Return(100));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_))
+        .Times(GET_USER_BY_TOKEN_CALL_COUNT)
+        .WillRepeatedly(Return(TEST_TOKEN_FLAG_USER_ID));
 
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
@@ -266,7 +269,7 @@ void CloudDataMockTest::TearDown()
 */
 HWTEST_F(CloudDataMockTest, GetSchema001, TestSize.Level1)
 {
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(100));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(TEST_TOKEN_FLAG_USER_ID));
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
@@ -293,7 +296,7 @@ HWTEST_F(CloudDataMockTest, GetSchema001, TestSize.Level1)
 */
 HWTEST_F(CloudDataMockTest, GetSchema002, TestSize.Level1)
 {
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(100));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(TEST_TOKEN_FLAG_USER_ID));
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
@@ -323,7 +326,7 @@ HWTEST_F(CloudDataMockTest, GetSchema002, TestSize.Level1)
 */
 HWTEST_F(CloudDataMockTest, GetSchema003, TestSize.Level1)
 {
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(100));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(TEST_TOKEN_FLAG_USER_ID));
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
