@@ -205,8 +205,8 @@ private:
     struct SyncContext {
         SyncInfo &info;
         CloudInfo &cloud;
-        const std::string &bundleName;
-        const std::string &traceId;
+        std::string bundleName;
+        std::string traceId;
         uint64_t syncId;
         bool retry;
     };
