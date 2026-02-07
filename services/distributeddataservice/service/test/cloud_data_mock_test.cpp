@@ -492,7 +492,8 @@ HWTEST_F(CloudDataMockTest, DoCloudSync_GetCloudSyncInfo_StoresNotEmpty_VerifyQu
 */
 HWTEST_F(CloudDataMockTest, DoCloudSync_GetCloudSyncInfo_StoreNotInSchema_VerifyQueryLastSyncInfo, TestSize.Level1)
 {
-    std::string lastSyncInfoKey = CloudLastSyncInfo::GetKey(cloudInfo_.user, TEST_CLOUD_BUNDLE, "invalid_store_not_in_schema");
+    std::string lastSyncInfoKey = CloudLastSyncInfo::GetKey(cloudInfo_.user, TEST_CLOUD_BUNDLE,
+        "invalid_store_not_in_schema");
     MetaDataManager::GetInstance().DelMeta(lastSyncInfoKey, true);
 
     CloudData::SyncManager syncManager;
