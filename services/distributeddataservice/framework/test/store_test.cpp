@@ -318,7 +318,8 @@ HWTEST_F(AutoCacheTest, CloseStore002, TestSize.Level2)
     mock_->isLocked_ = true;
     StoreMetaData meta;
     meta.area = GeneralStore::EL4;
-    meta.dataDir = "";
+    meta.dataDir = "abc";
+    std::string storeId = "";
     uint32_t tokenId = 123;
     AutoCache autoCache;
     autoCache.stores_.Compute(tokenId,
@@ -328,7 +329,7 @@ HWTEST_F(AutoCacheTest, CloseStore002, TestSize.Level2)
                 std::forward_as_tuple(store, watchers, meta));
             return !stores.empty();
         });
-    autoCache.CloseStore(tokenId, meta.dataDir);
+    autoCache.CloseStore(tokenId, meta.dataDir, storeId);
     EXPECT_FALSE(autoCache.stores_.Empty());
 }
 } // namespace OHOS::Test
