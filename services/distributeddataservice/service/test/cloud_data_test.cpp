@@ -1520,7 +1520,7 @@ HWTEST_F(CloudDataTest, EnableCloud03, TestSize.Level0)
     CloudInfo info;
     MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
     info.enableCloud = false;
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), info, true);
+    MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true);
     std::map<std::string, int32_t> switches;
     switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_ON);
     auto ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
