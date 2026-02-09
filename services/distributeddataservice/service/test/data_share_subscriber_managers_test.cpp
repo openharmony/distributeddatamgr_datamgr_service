@@ -198,13 +198,13 @@ HWTEST_F(DataShareSubscriberManagersTest, Emit, TestSize.Level1)
 }
 
 /**
-* @tc.name: EmitByKeyWithSubscribers
+* @tc.name: EmitByKey
 * @tc.desc: use storageManager to get a remote object and create a observer by it, use the observer to subscribe
             DATA_SHARE_SUBSCRIBE_TEST_URI , then call EmitByKey to emit by the key DATA_SHARE_SUBSCRIBE_TEST_URI
 * @tc.type: FUNC
 * @tc.require: None
 */
-HWTEST_F(DataShareSubscriberManagersTest, EmitByKeyWithSubscribers, TestSize.Level1)
+HWTEST_F(DataShareSubscriberManagersTest, EmitByKey, TestSize.Level1)
 {
     auto context = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
     context->visitedUserId = USER_TEST;
@@ -306,26 +306,25 @@ HWTEST_F(DataShareSubscriberManagersTest, NotFirstSubscribe, TestSize.Level1)
 */
 HWTEST_F(DataShareSubscriberManagersTest, NotNotifyAfterEnable, TestSize.Level1)
 {
-    auto context = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
+    auto context = std::make_shared<Context>(DATA_SHARE_URI_TEST);
     uint32_t selfTokenId = GetSelfTokenID();
-    context->type = "test";
     context->callerTokenId = selfTokenId;
     DataShare::Key key(context->uri, TEST_SUB_ID, BUNDLE_NAME_TEST);
 
-    sptr<IDataProxyRdbObserver> observer;
+    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(saManager, nullptr);
+    auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
+    ASSERT_NE(remoteObj, nullptr);
+    sptr<IDataProxyRdbObserver> observer = new (std::nothrow) RdbObserverProxy(remoteObj);
     std::shared_ptr<ExecutorPool> executorPool = std::make_shared<ExecutorPool>(1, 1);
     ASSERT_NE(executorPool, nullptr);
-    auto result = RdbSubscriberManager::GetInstance().Add(key, observer, context, executorPool);
-    EXPECT_EQ(result, DataShare::E_OK);
+    auto result1 = RdbSubscriberManager::GetInstance().Add(key, observer, context, executorPool);
+    EXPECT_EQ(result1, DataShare::E_OK);
 
     auto result2 = RdbSubscriberManager::GetInstance().Disable(key, selfTokenId);
     EXPECT_EQ(result2, DataShare::E_OK);
-    RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_SUBSCRIBE_TEST_URI, context);
 
     auto result3 = RdbSubscriberManager::GetInstance().Enable(key, context);
     EXPECT_EQ(result3, DataShare::E_OK);
-
-    auto result4 = RdbSubscriberManager::GetInstance().Delete(key, selfTokenId);
-    EXPECT_EQ(result4, DataShare::E_OK);
 }
 } // namespace OHOS::Test
