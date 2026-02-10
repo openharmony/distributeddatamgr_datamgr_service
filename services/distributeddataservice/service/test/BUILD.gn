@@ -836,7 +836,6 @@ ohos_unittest("RdbServiceImplTokenTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
-    "relational_store:native_rdb_type_utils",
     "resource_management:global_resmgr",
   ]
 
