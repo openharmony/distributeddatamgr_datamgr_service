@@ -51,6 +51,7 @@
 #include "rdb_result_set_impl.h"
 #include "rdb_schema_config.h"
 #include "rdb_types_utils.h"
+#include "rdb_common_utils.h"
 #include "rdb_watcher.h"
 #include "store/general_store.h"
 #include "sync_mgr/sync_mgr.h"
@@ -379,7 +380,7 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
     metaMapping = metaData;
     MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true);
     return store->SetDistributedTables(
-        tables, type, RdbTypesUtils::Convert(references), tableType);
+        tables, type, RdbCommonUtils::Convert(references), tableType);
 }
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
@@ -1587,14 +1588,14 @@ void RdbServiceImpl::OnCollaborationChange(const StoreMetaData &metaData, const 
         return;
     }
 
-    auto tables = RdbTypesUtils::GetP2PTables(changedData);
+    auto tables = RdbCommonUtils::GetP2PTables(changedData);
     DoAutoSync(devices, metaData, tables);
 }
 
 void RdbServiceImpl::OnSearchableChange(const StoreMetaData &metaData, const RdbNotifyConfig &config,
     const RdbChangedData &changedData)
 {
-    auto changedTables = RdbTypesUtils::GetSearchableTables(changedData);
+    auto changedTables = RdbCommonUtils::GetSearchableTables(changedData);
     DataChangeEvent::EventInfo eventInfo(changedTables);
     eventInfo.isFull = config.isFull_;
     StoreInfo storeInfo = GetStoreInfoEx(metaData);
