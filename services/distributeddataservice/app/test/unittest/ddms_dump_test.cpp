@@ -15,7 +15,6 @@
 
 #include "kvstore_data_service.h"
 #include "gtest/gtest.h"
-#include "account_delegate_mock.h"
 #include "db_store_mock.h"
 #include "device_manager_adapter.h"
 #include "device_manager_adapter_mock.h"
@@ -39,12 +38,10 @@ public:
     void SetUp();
     void TearDown();
     static void ConfigSendParameters(bool isCancel);
-    static void MockUserId();
     static std::string foregroundUserId_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
     static DistributedKv::KvStoreDataService dumpTest_;
-    static inline AccountDelegateMock *accountDelegateMock = nullptr;
     static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
 };
 
@@ -55,11 +52,6 @@ DistributedKv::KvStoreDataService DDMSDumpTest::dumpTest_;
 void DDMSDumpTest::SetUpTestCase(void)
 {
     dbStoreMock_ = std::make_shared<DBStoreMock>();
-    accountDelegateMock = new (std::nothrow) AccountDelegateMock();
-    if (accountDelegateMock != nullptr) {
-        AccountDelegate::instance_ = nullptr;
-        AccountDelegate::RegisterAccountInstance(accountDelegateMock);
-    }
     deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
     BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
     DeviceInfo deviceInfo;
@@ -69,10 +61,6 @@ void DDMSDumpTest::SetUpTestCase(void)
 
 void DDMSDumpTest::TearDownTestCase(void)
 {
-    if (accountDelegateMock != nullptr) {
-        delete accountDelegateMock;
-        accountDelegateMock = nullptr;
-    }
     deviceManagerAdapterMock = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
@@ -97,15 +85,6 @@ void DDMSDumpTest::ConfigSendParameters(bool isCancel)
     } else {
         MetaDataManager::GetInstance().SaveMeta(localMetaData.GetKeyWithoutPath(), localMetaData);
     }
-}
-
-void DDMSDumpTest::MockUserId()
-{
-    int32_t userId = 0;
-    if (accountDelegateMock == nullptr) {
-        return;
-    }
-    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(userId)).WillOnce(Return(true));
 }
 
 /**
@@ -141,7 +120,6 @@ HWTEST_F(DDMSDumpTest, DumpStoreInfo002, TestSize.Level0)
 {
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
-    MockUserId();
     ConfigSendParameters(true);
     std::vector<StoreMetaData> metas;
     auto res = MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId_ }),
@@ -159,7 +137,6 @@ HWTEST_F(DDMSDumpTest, DumpBundleInfo002, TestSize.Level0)
 {
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
-    MockUserId();
     ConfigSendParameters(true);
     std::vector<StoreMetaData> metas;
     auto res = MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId_ }),
@@ -178,7 +155,6 @@ HWTEST_F(DDMSDumpTest, DumpStoreInfo003, TestSize.Level0)
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
-    MockUserId();
     ConfigSendParameters(false);
     std::vector<StoreMetaData> metas;
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId_ }), metas,
@@ -195,7 +171,6 @@ HWTEST_F(DDMSDumpTest, DumpBundleInfo003, TestSize.Level0)
 {
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
-    MockUserId();
     ConfigSendParameters(false);
     std::vector<StoreMetaData> metas;
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(StoreMetaData::GetPrefix({ TEST_UUID, foregroundUserId_ }), metas,
