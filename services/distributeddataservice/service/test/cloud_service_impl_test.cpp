@@ -518,7 +518,7 @@ HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_001, TestSize.Level0)
     CloudServer::RegisterCloudInstance(&cloudServer);
     int user = 100;
     auto status = cloudServiceImpl_->UpdateSchemaFromServer(user);
-    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    EXPECT_EQ(status, E_ERROR);
     CloudServer::instance_ = nullptr;
 }
 
