@@ -639,7 +639,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/network:distributeddata_network",
     "${data_service_path}/adapter/utils:distributeddata_utils",
-    "${data_service_path}/framework:distributeddatasvcfwk_src",
+    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/backup:distributeddata_backup",
     "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
     "${data_service_path}/service/common:distributeddata_common",

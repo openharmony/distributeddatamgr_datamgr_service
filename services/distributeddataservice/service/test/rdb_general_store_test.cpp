@@ -20,6 +20,7 @@
 #include <thread>
 
 #include "bootstrap.h"
+#include "cloud_db_mock.h"
 #include "cloud/schema_meta.h"
 #include "device_matrix.h"
 #include "error/general_error.h"
@@ -63,6 +64,7 @@ public:
     static void TearDownTestCase(void){};
     void SetUp()
     {
+        mockCloudDB = std::make_shared<MockCloudDB>();
         Bootstrap::GetInstance().LoadDirectory();
         InitMetaData();
         InitDataBase();
@@ -97,6 +99,7 @@ protected:
     DistributedData::Database dataBase_;
     std::shared_ptr<RdbGeneralStore> store_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
+    static inline std::shared_ptr<MockCloudDB> mockCloudDB = nullptr;
 };
 std::shared_ptr<DBStoreMock> RdbGeneralStoreTest::dbStoreMock_ = std::make_shared<DBStoreMock>();
 
@@ -403,7 +406,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
     EXPECT_TRUE(bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_OK);
 
-    std::shared_ptr<CloudDB> dbs = std::make_shared<CloudDB>();
+    std::shared_ptr<CloudDB> dbs = mockCloudDB;
     std::shared_ptr<AssetLoader> loaders = std::make_shared<AssetLoader>();
 
     GeneralStore::BindInfo bindInfo(nullptr, nullptr);
@@ -432,7 +435,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind002, TestSize.Level1)
 {
     DistributedData::Database database;
     std::map<uint32_t, DistributedData::GeneralStore::BindInfo> bindInfos;
-    std::shared_ptr<CloudDB> db = std::make_shared<CloudDB>();
+    std::shared_ptr<CloudDB> db = mockCloudDB;
     std::shared_ptr<AssetLoader> loader = std::make_shared<AssetLoader>();
     GeneralStore::BindInfo bindInfo(db, loader);
     uint32_t key = 1;
@@ -456,7 +459,7 @@ HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
     DistributedData::Database database;
     std::map<uint32_t, DistributedData::GeneralStore::BindInfo> bindInfos;
 
-    std::shared_ptr<CloudDB> db = std::make_shared<CloudDB>();
+    std::shared_ptr<CloudDB> db = mockCloudDB;
     std::shared_ptr<AssetLoader> loader = std::make_shared<AssetLoader>();
     GeneralStore::BindInfo bindInfo(db, loader);
     uint32_t key = 1;
