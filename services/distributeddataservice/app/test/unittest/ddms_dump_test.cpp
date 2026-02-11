@@ -83,7 +83,7 @@ void DDMSDumpTest::ConfigSendParameters(bool isCancel)
     if (isCancel) {
         MetaDataManager::GetInstance().DelMeta(localMetaData.GetKeyWithoutPath());
     } else {
-        MetaDataManager::GetInstance().SaveMeta(localMetaData.GetKeyWithoutPath(), localMetaData);
+        MetaDataManager::GetInstance().SaveMeta(localMetaData.GetKeyWithoutPath(), localMetaData, true);
     }
 }
 
