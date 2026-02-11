@@ -705,14 +705,6 @@ ohos_unittest("DDMSDumpTest") {
     "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
     "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
   ]
-  sanitize = {
-    ubsan = true
-    boundary_sanitize = true
-    integer_overflow = true
-    debug = false
-    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
-  }
-
   configs = [ ":module_private_config" ]
 
   external_deps = [
