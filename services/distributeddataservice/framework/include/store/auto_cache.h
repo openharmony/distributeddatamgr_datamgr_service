@@ -104,7 +104,7 @@ private:
         const uint32_t garbageInterval_;
         std::shared_mutex mutex_;
     };
-    static constexpr uint32_t DEFAULT_INTERVAL = 1000;
+    static constexpr uint32_t DEFAULT_INTERVAL = 60 * 1000;
     static constexpr int32_t MAX_CREATOR_NUM = 30;
 
     uint32_t garbageInterval_ = DEFAULT_INTERVAL;
