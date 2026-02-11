@@ -37,7 +37,7 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
-    static void ConfigSendParameters(bool isCancel);
+    static void ConfigSendParameters(bool isCancel) __attribute__((no_sanitize("cfi")));
     static std::string foregroundUserId_;
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
@@ -150,7 +150,7 @@ HWTEST_F(DDMSDumpTest, DumpBundleInfo002, TestSize.Level0)
 * @tc.desc: test DumpStoreInfo function
 * @tc.type: FUNC
 */
-HWTEST_F(DDMSDumpTest, DumpStoreInfo003, TestSize.Level0) __attribute__((no_sanitize("cfi")))
+HWTEST_F(DDMSDumpTest, DumpStoreInfo003, TestSize.Level0)
 {
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     int fd = 1;
@@ -167,7 +167,7 @@ HWTEST_F(DDMSDumpTest, DumpStoreInfo003, TestSize.Level0) __attribute__((no_sani
 * @tc.desc: test DumpBundleInfo function
 * @tc.type: FUNC
 */
-HWTEST_F(DDMSDumpTest, DumpBundleInfo003, TestSize.Level0) __attribute__((no_sanitize("cfi")))
+HWTEST_F(DDMSDumpTest, DumpBundleInfo003, TestSize.Level0)
 {
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
