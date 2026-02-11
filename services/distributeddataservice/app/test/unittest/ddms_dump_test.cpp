@@ -150,7 +150,7 @@ HWTEST_F(DDMSDumpTest, DumpBundleInfo002, TestSize.Level0)
 * @tc.desc: test DumpStoreInfo function
 * @tc.type: FUNC
 */
-HWTEST_F(DDMSDumpTest, DumpStoreInfo003, TestSize.Level0)
+HWTEST_F(DDMSDumpTest, DumpStoreInfo003, TestSize.Level0) __attribute__((no_sanitize("cfi")))
 {
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     int fd = 1;
@@ -167,7 +167,7 @@ HWTEST_F(DDMSDumpTest, DumpStoreInfo003, TestSize.Level0)
 * @tc.desc: test DumpBundleInfo function
 * @tc.type: FUNC
 */
-HWTEST_F(DDMSDumpTest, DumpBundleInfo003, TestSize.Level0)
+HWTEST_F(DDMSDumpTest, DumpBundleInfo003, TestSize.Level0) __attribute__((no_sanitize("cfi")))
 {
     int fd = 1;
     std::map<std::string, std::vector<std::string>> params = {};
