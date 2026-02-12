@@ -65,6 +65,7 @@
                 "common_event_service",
                 "c_utils",
                 "dataclassification",
+                "data_object",
                 "data_share",
                 "device_auth",
                 "device_manager",
@@ -76,7 +77,6 @@
                 "hitrace",
                 "huks",
                 "kv_store",
-                "image_framework",
                 "ipc",
                 "memmgr",
                 "napi",
@@ -94,8 +94,7 @@
                 "file_api",
                 "openssl",
                 "json",
-                "dmsfwk",
-                "data_object"
+                "dmsfwk"
             ],
             "third_party": [
                 "libuv",
