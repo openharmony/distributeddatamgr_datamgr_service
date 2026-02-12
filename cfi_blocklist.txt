@@ -15,4 +15,4 @@
 src:*third_party/googletest/googlemock/include/gmock/*
 src:*third_party/googletest/googletest/include/gtest/*
 src:*foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/adapter/communicator/test/unittest/*
-src:*foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test/*
+src:*foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test/unittest/*

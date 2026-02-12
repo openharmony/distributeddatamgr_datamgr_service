@@ -703,7 +703,7 @@ ohos_unittest("DDMSDumpTest") {
     "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/test/mock/db_store_mock.cpp",
     "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
-    "${data_service_path}/app/test/mock/capability/metadata/meta_data_manager.cpp",
+    "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
   ]
   sanitize = {
     ubsan = true
@@ -712,6 +712,7 @@ ohos_unittest("DDMSDumpTest") {
     debug = false
     blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
+
   configs = [ ":module_private_config" ]
 
   external_deps = [
