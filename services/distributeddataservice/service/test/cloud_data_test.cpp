@@ -162,7 +162,6 @@ public:
     static SchemaMeta schemaMeta_;
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
     bool priority_ = false;
-
 protected:
     class CloudServerMock : public CloudServer {
     public:
@@ -1091,6 +1090,10 @@ HWTEST_F(CloudDataTest, SetCloudStrategy001, TestSize.Level1)
     strategy = CloudData::Strategy::STRATEGY_NETWORK;
     ret = cloudServiceImpl_->SetCloudStrategy(strategy, values);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    strategy = CloudData::Strategy::STRATEGY_NETWORK;
+    ret = cloudServiceImpl_->SetCloudStrategy(strategy, values);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
 /**
@@ -1416,12 +1419,30 @@ HWTEST_F(CloudDataTest, DisableCloud001, TestSize.Level0)
 }
 
 /**
-* @tc.name: ChangeAppSwitch
+* @tc.name: DisableCloud002
+* @tc.desc: Test the DisableCloud function branch coverage.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, DisableCloud002, TestSize.Level0)
+{
+    cloudInfo_.enableCloud = true;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    auto ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    ret = cloudServiceImpl_->DisableCloud(TEST_CLOUD_ID);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: ChangeAppSwitch01
 * @tc.desc:
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
+HWTEST_F(CloudDataTest, ChangeAppSwitch01, TestSize.Level0)
 {
     std::string id = "testId";
     std::string bundleName = "testName";
@@ -1431,6 +1452,28 @@ HWTEST_F(CloudDataTest, ChangeAppSwitch, TestSize.Level0)
     ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, bundleName, CloudData::CloudService::SWITCH_ON,
         switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF,
+        switchConfig);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: ChangeAppSwitch02
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, ChangeAppSwitch02, TestSize.Level0)
+{
+    CloudInfo info;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
+    auto cloudSwitch = !info.apps[TEST_CLOUD_BUNDLE].cloudSwitch ? CloudData::CloudService::SWITCH_ON
+                                                                 : CloudData::CloudService::SWITCH_OFF;
+    OHOS::CloudData::SwitchConfig switchConfig;
+    auto ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, cloudSwitch, switchConfig);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
     ret = cloudServiceImpl_->ChangeAppSwitch(TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF,
         switchConfig);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
@@ -1463,6 +1506,28 @@ HWTEST_F(CloudDataTest, EnableCloud02, TestSize.Level0)
     std::map<std::string, int32_t> switches;
     switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_OFF);
     auto ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: EnableCloud03
+* @tc.desc: Test the EnableCloud function branch coverage.
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, EnableCloud03, TestSize.Level0)
+{
+    CloudInfo info;
+    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), info, true);
+    info.enableCloud = false;
+    MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true);
+    std::map<std::string, int32_t> switches;
+    switches.insert_or_assign(TEST_CLOUD_BUNDLE, CloudData::CloudService::SWITCH_ON);
+    auto ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    ret = cloudServiceImpl_->EnableCloud(TEST_CLOUD_ID, switches);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
 
@@ -2207,14 +2272,31 @@ HWTEST_F(CloudDataTest, RetryCallback, TestSize.Level0)
 }
 
 /**
-* @tc.name: UpdateCloudInfoFromServer
+* @tc.name: UpdateCloudInfoFromServer01
 * @tc.desc: Test updating cloudinfo from the server
 * @tc.type: FUNC
 * @tc.require:
  */
-HWTEST_F(CloudDataTest, UpdateCloudInfoFromServer, TestSize.Level0)
+HWTEST_F(CloudDataTest, UpdateCloudInfoFromServer01, TestSize.Level0)
 {
     auto ret = cloudServiceImpl_->UpdateCloudInfoFromServer(cloudInfo_.user);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: UpdateCloudInfoFromServer02
+* @tc.desc: Test updating cloudinfo from the server
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, UpdateCloudInfoFromServer02, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+    auto ret = cloudServiceImpl_->UpdateCloudInfoFromServer(cloudInfo_.user);
+    EXPECT_EQ(ret, E_OK);
+
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    ret = cloudServiceImpl_->UpdateCloudInfoFromServer(cloudInfo_.user);
     EXPECT_EQ(ret, E_OK);
 }
 
