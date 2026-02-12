@@ -340,24 +340,36 @@ bool DataShareServiceImpl::GetCallerBundleName(std::string &bundleName)
 }
 
 std::pair<bool, Security::AccessToken::ATokenTypeEnum> DataShareServiceImpl::GetCallerInfo(
-    std::string &bundleName, int32_t &appIndex)
+    std::string &bundleName, int32_t &appIndex, const int32_t &systemAbilityId)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
     if (type == Security::AccessToken::TOKEN_NATIVE) {
-        return std::make_pair(true, type);
+        // SA calling and provider is SA, get calling processName
+        if (systemAbilityId != URIUtils::INVALID_SA_ID) {
+            Security::AccessToken::NativeTokenInfo nativeTokenInfo;
+            auto ret = Security::AccessToken::AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo);
+            if (ret == Security::AccessToken::RET_SUCCESS) {
+                bundleName = nativeTokenInfo.processName;
+                return std::make_pair(true, type);
+            }
+            ZLOGE("get proc name failed, token:0x%{public}x, ret:%{public}d", tokenId, ret);
+            return std::make_pair(false, type);
+        } else {
+            return std::make_pair(true, type);
+        }
     }
     if (type != Security::AccessToken::TOKEN_HAP) {
         return std::make_pair(false, type);
     }
-    Security::AccessToken::HapTokenInfo tokenInfo;
-    auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    Security::AccessToken::HapTokenInfo hapTokenInfo;
+    auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
     if (result != Security::AccessToken::RET_SUCCESS) {
         ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, result);
         return std::make_pair(false, type);
     }
-    bundleName = tokenInfo.bundleName;
-    appIndex = tokenInfo.instIndex;
+    bundleName = hapTokenInfo.bundleName;
+    appIndex = hapTokenInfo.instIndex;
     return std::make_pair(true, type);
 }
 
@@ -1056,6 +1068,7 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
     if (calledTokenId == 0) {
         calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(0, calledBundleName, 0);
     }
+    // SA has no extension configuration, IsSilentProxyEnable is not usable yet, just return true
     auto success = dataShareSilentConfig_.IsSilentProxyEnable(calledTokenId, currentUserId, calledBundleName, uri);
     if (!success) {
         ZLOGW("silent proxy disable, %{public}s", URIUtils::Anonymous(uri).c_str());
@@ -1229,7 +1242,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
             providerInfo.currentUserId, providerInfo.visitedUserId);
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
-    if (!CheckAllowList(providerInfo.currentUserId, tokenId, providerInfo.allowLists)) {
+    if (!CheckAllowList(providerInfo.currentUserId, tokenId, providerInfo.allowLists, providerInfo.systemAbilityId)) {
         ZLOGE("CheckAllowList failed, permission denied! token:0x%{public}x, uri:%{public}s",
             tokenId, URIUtils::Anonymous(providerInfo.uri).c_str());
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
@@ -1259,23 +1272,33 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
 }
 
 bool DataShareServiceImpl::CheckAllowList(const uint32_t &currentUserId, const uint32_t &callerTokenId,
-    const std::vector<AllowList> &allowLists)
+    const std::vector<AllowList> &allowLists, const int32_t &systemAbilityId)
 {
     if (allowLists.empty()) {
         return true;
     }
     std::string callerBundleName;
     int32_t callerAppIndex = 0;
-    auto [success, type] = GetCallerInfo(callerBundleName, callerAppIndex);
+    // if provider is SA, callerBundleName means processName
+    auto [success, type] = GetCallerInfo(callerBundleName, callerAppIndex, systemAbilityId);
     if (!success) {
         ZLOGE("Get caller info failed, token:0x%{public}x", callerTokenId);
         return false;
     }
     // SA calling
     if (type == Security::AccessToken::TOKEN_NATIVE) {
-        return true;
+        // SA calling, and provider is not SA, do not verify processName, just return true
+        if (systemAbilityId == URIUtils::INVALID_SA_ID) {
+            return true;
+        }
+        // check SA provider allowLists by processName (callerBundleName)
+        for (auto const& allowList : allowLists) {
+            if (callerBundleName == allowList.appIdentifier) {
+                return true;
+            }
+        }
     }
-
+    // check appIdentifier
     auto [ret, callerAppIdentifier] = BundleMgrProxy::GetInstance()->GetCallerAppIdentifier(
         callerBundleName, currentUserId);
     if (ret != 0) {

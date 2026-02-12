@@ -23,6 +23,7 @@
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "extension_connect_adaptor.h"
+#include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
@@ -31,6 +32,7 @@
 #include "ipc_skeleton.h"
 
 namespace OHOS::DataShare {
+static const int32_t WAIT_TIME = 2;
 std::pair<bool, DistributedData::StoreMetaData> DataShareDbConfig::QueryMetaData(
     const std::string &bundleName, const std::string &storeName, int32_t userId, int32_t appIndex)
 {
@@ -54,11 +56,32 @@ std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(co
     auto [success, metaData] = QueryMetaData(
         dbConfig.bundleName, dbConfig.storeName, dbConfig.userId, dbConfig.appIndex);
     if (!success) {
-        if (!dbConfig.hasExtension) {
-            return std::pair(NativeRdb::E_DB_NOT_EXIST, metaData);
+        // without extension configuration, load the SA when there is no metadata information.
+        int32_t systemAbilityId = URIUtils::GetSystemAbilityId(dbConfig.uri);
+        if (systemAbilityId != URIUtils::INVALID_SA_ID) {
+            ZLOGE("QueryMeta failed, checkAndLoad %{public}d", systemAbilityId);
+            auto manager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+            if (manager == nullptr) {
+                ZLOGE("get system ability manager failed");
+                return std::pair(NativeRdb::E_DB_NOT_EXIST, metaData);
+            }
+            auto remoteObject = manager->CheckSystemAbility(systemAbilityId);
+            if (remoteObject == nullptr) {
+                // check SA failed, try load SA
+                remoteObject = manager->LoadSystemAbility(systemAbilityId, WAIT_TIME);
+            }
+            // load failed or timeout, return E_DB_NOT_EXIST
+            if (remoteObject == nullptr) {
+                ZLOGE("load systemAbility:%{public}d failed", systemAbilityId);
+                return std::pair(NativeRdb::E_DB_NOT_EXIST, metaData);
+            }
+        } else {
+            if (!dbConfig.hasExtension) {
+                return std::pair(NativeRdb::E_DB_NOT_EXIST, metaData);
+            }
+            AAFwk::WantParams wantParams;
+            ExtensionConnectAdaptor::TryAndWait(dbConfig.uri, dbConfig.bundleName, wantParams);
         }
-        AAFwk::WantParams wantParams;
-        ExtensionConnectAdaptor::TryAndWait(dbConfig.uri, dbConfig.bundleName, wantParams);
         auto [succ, meta] = QueryMetaData(dbConfig.bundleName, dbConfig.storeName, dbConfig.userId, dbConfig.appIndex);
         if (!succ) {
             return std::pair(NativeRdb::E_DB_NOT_EXIST, meta);

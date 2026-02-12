@@ -39,6 +39,7 @@ using namespace OHOS::DataShare;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 std::string SLIENT_ACCESS_URI = "datashareproxy://com.acts.ohos.data.datasharetest/test";
+std::string SA_SLIENT_ACCESS_URI = "datashareproxy://com.acts.ohos.data.datasharetest/SAID=12321/storeName/tableName";
 std::string TBL_NAME0 = "name0";
 std::string TBL_NAME1 = "name1";
 std::string BUNDLE_NAME = "ohos.datasharetest.demo";
@@ -50,6 +51,7 @@ public:
     static constexpr int64_t TEST_SUB_ID = 100;
     static constexpr uint32_t CUREEENT_USER_ID = 123;
     static constexpr uint32_t NATIVE_USER_ID = 0;
+    static constexpr int32_t TEST_SA_ID = 12321;
     static void SetUpTestCase(void)
     {
         accountDelegateMock = new (std::nothrow) AccountDelegateMock();
@@ -758,6 +760,85 @@ HWTEST_F(DataShareServiceImplTest, GetCallerInfo002, TestSize.Level1)
     auto result = dataShareServiceImpl.GetCallerInfo(BUNDLE_NAME, appIndex);
     EXPECT_EQ(result.first, false);
     ZLOGI("DataShareServiceImplTest GetCallerInfo002 end");
+}
+
+/**
+ * @tc.name: GetCallerInfo003
+ * @tc.desc: Verify GetCallerInfo behavior with TOKEN_HAP
+ * @tc.type: FUNC
+ * @tc.precon: DataShareServiceImpl is initialized
+ * @tc.step:
+ *   1. Set bundleName to empty
+ *   2. Call GetCallerInfo with TOKEN_HAP, expect bundleName to be set
+ * @tc.expect:
+ *   1. Return true
+ *   2. bundleName is "ohos.datasharetest.demo"
+ */
+HWTEST_F(DataShareServiceImplTest, GetCallerInfo003, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetCallerInfo003 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    int32_t appIndex = 1;
+    std::string bundleName = "";
+    // TOKEN_HAP bundleName is ohos.datasharetest.demo
+    auto result = dataShareServiceImpl.GetCallerInfo(bundleName, appIndex, TEST_SA_ID);
+    EXPECT_TRUE(result.first);
+    EXPECT_EQ(bundleName, "ohos.datasharetest.demo");
+    ZLOGI("DataShareServiceImplTest GetCallerInfo003 end");
+}
+
+/**
+ * @tc.name: CheckAllowList001
+ * @tc.desc: Verify CheckAllowList behavior with specific allow list configuration
+ * @tc.type: FUNC
+ * @tc.precon: DataShareServiceImpl is initialized
+ * @tc.step:
+ *   1. Set testTokenId with valid HAP token ID
+ *   2. Create allowLists with onlyMain set to true
+ *   3. Call CheckAllowList and verify result
+ * @tc.expect:
+ *   1. Return false
+ */
+HWTEST_F(DataShareServiceImplTest, CheckAllowList001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest CheckAllowList001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(NATIVE_USER_ID, BUNDLE_NAME, 0);
+    AllowList procAllowList;
+    procAllowList.appIdentifier = "processName";
+    procAllowList.onlyMain = true;
+    std::vector<AllowList> allowLists = { procAllowList };
+    // TOKEN_HAP and systemAbilityId is valid
+    auto result = dataShareServiceImpl.CheckAllowList(USER_TEST, testTokenId, allowLists, TEST_SA_ID);
+    EXPECT_FALSE(result);
+    ZLOGI("DataShareServiceImplTest CheckAllowList001 end");
+}
+
+/**
+ * @tc.name: CheckAllowList002
+ * @tc.desc: Verify CheckAllowList behavior with specific allow list configuration
+ * @tc.type: FUNC
+ * @tc.precon: DataShareServiceImpl is initialized
+ * @tc.step:
+ *   1. Set testTokenId with valid HAP token ID
+ *   2. Create allowLists with one entry, onlyMain set to true
+ *   3. Call CheckAllowList and verify result
+ * @tc.expect:
+ *   1. Return false
+ */
+HWTEST_F(DataShareServiceImplTest, CheckAllowList002, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest CheckAllowList002 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(NATIVE_USER_ID, BUNDLE_NAME, 0);
+    AllowList procAllowList;
+    procAllowList.appIdentifier = "processName";
+    procAllowList.onlyMain = true;
+    std::vector<AllowList> allowLists = { procAllowList };
+    // TOKEN_HAP and systemAbilityId is INVALID_SA_ID(0)
+    auto result = dataShareServiceImpl.CheckAllowList(USER_TEST, testTokenId, allowLists, 0);
+    EXPECT_FALSE(result);
+    ZLOGI("DataShareServiceImplTest CheckAllowList002 end");
 }
 
 /**
