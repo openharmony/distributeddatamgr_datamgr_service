@@ -1487,7 +1487,7 @@ Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
 void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
 {
     ZLOGI("tokenId=%{public}x, seqnum=%{public}u", tokenId, seqNum);
-    sptr<CloudNotifierProxyBroker> notifier = nullptr;
+    sptr<CloudNotifierProxy> notifier = nullptr;
     syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &syncAgent) {
         notifier = syncAgent.notifier_;
         return true;
