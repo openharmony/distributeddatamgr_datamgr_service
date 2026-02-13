@@ -23,6 +23,7 @@
 #include "log_print.h"
 #include "utils/anonymous.h"
 #include "utils/time_utils.h"
+
 namespace OHOS {
 namespace DistributedDataDfx {
 using namespace DistributedKv;
@@ -70,7 +71,7 @@ void HiViewAdapter::ReportArkDataFault(int dfxCode, const ArkDataFaultMsg &msg, 
         std::string occurTime = DistributedData::TimeUtils::GetCurSysTimeWithMs();
         std::string bundleName = msg.bundleName;
         std::string moduleName = msg.moduleName;
-        std::string storeName = msg.storeName;
+        std::string storeName = Anonymous::Change(msg.storeName);
         std::string businessType = msg.businessType;
         std::string appendix = msg.appendixMsg;
         std::string faultType = msg.faultType;

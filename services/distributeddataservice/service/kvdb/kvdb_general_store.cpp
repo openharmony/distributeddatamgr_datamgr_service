@@ -171,17 +171,15 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
 
 KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     : observer_(std::make_shared<ObserverProxy>()),
-      manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
+    manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
         meta.instanceId)
 {
-    if (observer_ == nullptr) {
-        ZLOGE("Create ObserverProxy failed errno %{public}d.", errno);
-        return;
-    }
     if (!Constant::IsValidPath(meta.dataDir)) {
         return;
     }
-    observer_->storeId_ = meta.storeId;
+    if (observer_ != nullptr) {
+        observer_->storeId_ = meta.storeId;
+    }
     StoreMetaDataLocal local;
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
     isPublic_ = local.isPublic;
@@ -224,7 +222,7 @@ KVDBGeneralStore::~KVDBGeneralStore()
 {
     {
         std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
-        if (delegate_ != nullptr && observer_ != nullptr) {
+        if (delegate_ != nullptr) {
             delegate_->UnRegisterObserver(observer_);
         }
         manager_.CloseKvStore(delegate_);
@@ -243,6 +241,10 @@ KVDBGeneralStore::~KVDBGeneralStore()
 
 void KVDBGeneralStore::RegisterObservers()
 {
+    if (observer_ == nullptr) {
+        ZLOGE("RegisterObservers failed, observer_ is nullptr.");
+        return;
+    }
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_FOREIGN, observer_);
     delegate_->RegisterObserver({}, DistributedDB::OBSERVER_CHANGES_CLOUD, observer_);
 }
@@ -851,7 +853,7 @@ std::pair<int32_t, uint32_t> KVDBGeneralStore::LockCloudDB()
 {
     return { GeneralError::E_NOT_SUPPORT, 0 };
 }
-
+ 
 int32_t KVDBGeneralStore::UnLockCloudDB()
 {
     return GeneralError::E_NOT_SUPPORT;
