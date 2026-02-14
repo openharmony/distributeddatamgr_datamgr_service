@@ -108,11 +108,8 @@ bool ObjectStoreManager::RegisterAssetsLister()
     if (objectAssetsSendListener_ == nullptr) {
         objectAssetsSendListener_ = new ObjectAssetsSendListener();
     }
-    {
-        std::lock_guard<std::mutex> lock(assetsRecvMutex_);
-        if (objectAssetsRecvListener_ == nullptr) {
-            objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
-        }
+    if (objectAssetsRecvListener_ == nullptr) {
+        objectAssetsRecvListener_ = new ObjectAssetsRecvListener();
     }
     auto status = DistributedFileDaemonManager::GetInstance().RegisterAssetCallback(objectAssetsRecvListener_);
     if (status != DistributedDB::DBStatus::OK) {
@@ -125,7 +122,6 @@ bool ObjectStoreManager::RegisterAssetsLister()
 bool ObjectStoreManager::UnRegisterAssetsLister()
 {
     ZLOGI("ObjectStoreManager UnRegisterAssetsLister");
-    std::lock_guard<std::mutex> lock(assetsRecvMutex_);
     if (objectAssetsRecvListener_ != nullptr) {
         auto status = DistributedFileDaemonManager::GetInstance().UnRegisterAssetCallback(objectAssetsRecvListener_);
         if (status != DistributedDB::DBStatus::OK) {
@@ -511,7 +507,7 @@ void ObjectStoreManager::RegisterProgressObserverCallback(const std::string &bun
         return;
     }
     std::string objectKey = bundleName + sessionId;
-    sptr<ObjectProgressCallbackProxyBroker> observer;
+    sptr<ObjectProgressCallbackProxy> observer;
     processCallbacks_.Compute(
         tokenId, ([pid, &proxy, &objectKey, &observer](const uint32_t key, ProgressCallbackInfo &value) {
             if (value.pid != pid) {
@@ -739,7 +735,7 @@ void ObjectStoreManager::PullAssets(const std::map<std::string, ObjectRecord>& d
 void ObjectStoreManager::NotifyAssetsRecvProgress(const std::string &objectKey, int32_t progress)
 {
     assetsRecvProgress_.InsertOrAssign(objectKey, progress);
-    std::list<sptr<ObjectProgressCallbackProxyBroker>> observers;
+    std::list<sptr<ObjectProgressCallbackProxy>> observers;
     bool flag = false;
     processCallbacks_.ForEach(
         [&objectKey, &observers, &flag](uint32_t tokenId, const ProgressCallbackInfo &value) {
