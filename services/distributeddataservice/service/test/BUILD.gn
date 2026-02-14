@@ -1333,6 +1333,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/common_utils.cpp",
+    "${data_service_path}/service/data_share/common/data_share_sa_config_info_manager.cpp",
     "${data_service_path}/service/data_share/common/db_delegate.cpp",
     "${data_service_path}/service/data_share/common/div_strategy.cpp",
     "${data_service_path}/service/data_share/common/extension_ability_manager.cpp",
@@ -1380,6 +1381,8 @@ ohos_unittest("DataShareServiceImplTest") {
     "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "data_share_common_test.cpp",
+    "data_share_sa_config_info_manager_test.cpp",
+    "data_provider_config_test.cpp",
     "data_share_obs_proxy_test.cpp",
     "data_share_profile_config_test.cpp",
     "data_share_service_impl_test.cpp",
@@ -1461,7 +1464,10 @@ ohos_unittest("DataShareServiceImplMockTest") {
   }
   module_out_path = module_output_path
 
-  include_dirs = [ "${data_service_path}/service/config/include" ]
+  include_dirs = [
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/service/test/mock",
+  ]
 
   sources = [
     "${data_service_path}/service/common/bundle_utils.cpp",
@@ -1526,8 +1532,12 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "${data_service_path}/service/data_share/subscriber_managers/rdb_subscriber_manager.cpp",
     "${data_service_path}/service/data_share/sys_event_subscriber.cpp",
     "data_share_scheduler_manager_test.cpp",
+    "data_share_service_impl_mock_test.cpp",
     "data_share_sys_event_subscriber_test.cpp",
+    "data_provider_config_mock_test.cpp",
     "mock/config_factory_mock.cpp",
+    "mock/data_share_sa_config_info_manager_mock.cpp",
+    "mock/native_and_hap_token_mock.cpp",
   ]
 
   configs = [ ":module_private_config" ]

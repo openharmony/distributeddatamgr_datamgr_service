@@ -970,6 +970,11 @@ std::pair<int32_t, bool> RdbServiceImpl::IsSupportSilent(const RdbSyncerParam &p
             Anonymous::Change(param.storeName_).c_str());
         return {RDB_ERROR, false};
     }
+    auto callingTokenId = IPCSkeleton::GetCallingTokenID();
+    auto type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(callingTokenId);
+    if (type == Security::AccessToken::TOKEN_NATIVE) {
+        return std::make_pair(RDB_OK, false);
+    }
     auto meta = GetStoreMetaData(param);
     auto [err, flag] =
         BundleUtils::GetInstance().IsConfigSilentProxy(meta.bundleName, std::atoi(meta.user.c_str()), meta.storeId);

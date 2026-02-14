@@ -134,6 +134,50 @@ __attribute__((no_sanitize("cfi"))) UriConfig URIUtils::GetUriConfig(const std::
     return uriConfig;
 }
 
+int32_t URIUtils::GetSystemAbilityId(const std::string &uri)
+{
+    std::string formatUri = FormatConstUri(uri);
+    // Locate the position of PARAM_URI_SEPARATOR or SCHEME_SEPARATOR
+    size_t bundleStartPos = 0;
+    size_t paramUriSeparatorPos = formatUri.find(PARAM_URI_SEPARATOR);
+    size_t schemeSeparatorPos = formatUri.find(SCHEME_SEPARATOR);
+    if (paramUriSeparatorPos != std::string::npos) {
+        bundleStartPos = paramUriSeparatorPos + PARAM_URI_SEPARATOR_LEN;
+    } else if (schemeSeparatorPos != std::string::npos) {
+        bundleStartPos = schemeSeparatorPos + SCHEME_SEPARATOR_LEN;
+    } else {
+        return INVALID_SA_ID;
+    }
+
+    size_t bundleEndPos = formatUri.find(URI_SEPARATOR, bundleStartPos);
+    if (bundleEndPos == std::string::npos) {
+        return INVALID_SA_ID;
+    }
+
+    size_t saIdStartPos = bundleEndPos + 1;
+    size_t saIdEndPos = formatUri.find(URI_SEPARATOR, saIdStartPos);
+    if (saIdEndPos == std::string::npos) {
+        return INVALID_SA_ID;
+    }
+
+    // Find the position of SA_ID in the remaining substring
+    std::string remainingUri = formatUri.substr(saIdStartPos, saIdEndPos - saIdStartPos);
+    size_t saIdPos = remainingUri.find(SA_ID);
+    if (saIdPos == std::string::npos || saIdPos != 0) {
+        return INVALID_SA_ID;
+    }
+
+    std::string saIdStr = remainingUri.substr(SA_ID_LEN);
+    if (saIdStr.empty() || saIdStr[0] == '-') {
+        return INVALID_SA_ID;
+    }
+    auto [res, saId] = Strtoul(saIdStr);
+    if (!res || saId >= LAST_SYS_ABILITY_ID || saId == 0) {
+        return INVALID_SA_ID;
+    }
+    return static_cast<int32_t>(saId);
+}
+
 std::string URIUtils::Anonymous(const std::string &uri)
 {
     if (uri.length() <= END_LENGTH) {

@@ -137,7 +137,8 @@ private:
     bool GetCallerBundleName(std::string &bundleName);
     std::pair<int32_t, int32_t> ExecuteEx(const std::string &uri, const std::string &extUri, const int32_t tokenId,
         bool isRead, ExecuteCallbackEx callback);
-    std::pair<bool, Security::AccessToken::ATokenTypeEnum> GetCallerInfo(std::string &bundleName, int32_t &appIndex);
+    std::pair<bool, Security::AccessToken::ATokenTypeEnum> GetCallerInfo(std::string &bundleName, int32_t &appIndex,
+        const int32_t &systemAbilityId = URIUtils::INVALID_SA_ID);
     int32_t GetBMSAndMetaDataStatus(const std::string &uri, const int32_t tokenId);
     void SubscribeCommonEvent();
     static void InitSubEvent();
@@ -153,7 +154,7 @@ private:
     void ReportExcuteFault(uint32_t callingTokenId, DataProviderConfig::ProviderInfo &providerInfo,
         int32_t errCode, std::string &func);
     bool CheckAllowList(const uint32_t &currentUserId, const uint32_t &callerTokenId,
-        const std::vector<AllowList> &allowLists);
+        const std::vector<AllowList> &allowLists, const int32_t &systemAbilityId = URIUtils::INVALID_SA_ID);
     bool VerifyPermission(const std::string &bundleName, const std::string &permission,
         bool isFromExtension, const int32_t tokenId);
     bool GetCallerBundleInfo(BundleInfo &callerBundleInfo);

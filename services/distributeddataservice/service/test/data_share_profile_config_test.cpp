@@ -27,8 +27,8 @@
 namespace OHOS::Test {
 using namespace testing::ext;
 using namespace OHOS::DataShare;
-using namespace OHOS::DistributedData;
 std::string DATA_SHARE_URI = "datashare:///com.acts.datasharetest";
+std::string DATA_SHARE_SA_URI = "datashareproxy://com.acts.datasharetest/SAID=12321/test";
 constexpr uint32_t CALLERTOKENID = 100;
 class DataShareProfileConfigTest : public testing::Test {
 public:
@@ -40,13 +40,14 @@ public:
 };
 
 /**
-* @tc.name: GetDbConfig
+* @tc.name: GetDbConfig001
 * @tc.desc: test data_share_db_config is GetDbConfig abnormal scene
 * @tc.type: FUNC
 * @tc.require:SQL
 */
-HWTEST_F(DataShareProfileConfigTest, GetDbConfig, TestSize.Level1)
+HWTEST_F(DataShareProfileConfigTest, GetDbConfig001, TestSize.Level1)
 {
+    ZLOGI("DataShareProfileConfigTest GetDbConfig001 start");
     DataShareDbConfig dbConfig;
     DataShareDbConfig::DbConfig config {"", "", "", "", "", 0, false};
     auto result = dbConfig.GetDbConfig(config);
@@ -62,6 +63,35 @@ HWTEST_F(DataShareProfileConfigTest, GetDbConfig, TestSize.Level1)
     config.userId = USER_TEST;
     result = dbConfig.GetDbConfig(config);
     EXPECT_NE(std::get<0>(result), DataShare::E_OK);
+    ZLOGI("DataShareProfileConfigTest GetDbConfig001 end");
+}
+
+/**
+ * @tc.name: GetDbConfig002
+ * @tc.desc: Verify GetDbConfig behavior with non-existent SA Id and missing metaData
+ * @tc.type: FUNC
+ * @tc.precon: DataShareDbConfig is initialized
+ * @tc.step:
+ *   1. Set config with non-existent SA Id, expect E_DB_NOT_EXIST
+ *   2. Set config with SA Id distributeddata, metaData not exist, expect E_DB_NOT_EXIST
+ * @tc.expect:
+ *   1. Return E_DB_NOT_EXIST
+ *   2. Return E_DB_NOT_EXIST
+ */
+HWTEST_F(DataShareProfileConfigTest, GetDbConfig002, TestSize.Level1)
+{
+    ZLOGI("DataShareProfileConfigTest GetDbConfig002 start");
+    DataShareDbConfig dbConfig;
+    // SA Id is not exist, just return E_DB_NOT_EXIST
+    DataShareDbConfig::DbConfig config {DATA_SHARE_SA_URI, "extUri", "bundleName", "storeName", "", 0, false};
+    auto result = dbConfig.GetDbConfig(config);
+    EXPECT_EQ(std::get<0>(result), NativeRdb::E_DB_NOT_EXIST);
+
+    // SA Id is distributeddata, CheckSystemAbility return not null, but metaData is not exist, return E_DB_NOT_EXIST
+    config.uri = "datashareproxy://com.acts.datasharetest/SAID=1301/test";
+    result = dbConfig.GetDbConfig(config);
+    EXPECT_EQ(std::get<0>(result), NativeRdb::E_DB_NOT_EXIST);
+    ZLOGI("DataShareProfileConfigTest GetDbConfig002 end");
 }
 
 /**
@@ -77,7 +107,7 @@ HWTEST_F(DataShareProfileConfigTest, Config, TestSize.Level1)
     config.crossUserMode = 1;
     config.writePermission = "writePermission";
     config.readPermission = "readPermission";
-    Serializable::json node;
+    DistributedData::Serializable::json node;
     config.Marshal(node);
     EXPECT_EQ(node["uri"], "uri");
     EXPECT_EQ(node["crossUserMode"], 1);
@@ -111,7 +141,7 @@ HWTEST_F(DataShareProfileConfigTest, ProfileInfo001, TestSize.Level1)
     info.storeName = "storeName";
     info.tableName = "tableName";
 
-    Serializable::json node;
+    DistributedData::Serializable::json node;
     info.Marshal(node);
     EXPECT_EQ(node["isSilentProxyEnable"], true);
     EXPECT_EQ(node["path"], "storeName/tableName");
@@ -145,7 +175,7 @@ HWTEST_F(DataShareProfileConfigTest, ProfileInfo002, TestSize.Level1)
     info.isSilentProxyEnable = 1;
     info.storeName = "";
     info.tableName = "";
-    Serializable::json node1;
+    DistributedData::Serializable::json node1;
     info.Marshal(node1);
     EXPECT_EQ(node1["path"], "/");
     ProfileInfo profileInfo;
@@ -153,7 +183,7 @@ HWTEST_F(DataShareProfileConfigTest, ProfileInfo002, TestSize.Level1)
     EXPECT_EQ(profileInfo.storeName, "");
     EXPECT_EQ(profileInfo.tableName, "");
 
-    Serializable::json node2;
+    DistributedData::Serializable::json node2;
     info.storeName = "storeName";
     info.tableName = "";
     info.Marshal(node2);
@@ -162,7 +192,7 @@ HWTEST_F(DataShareProfileConfigTest, ProfileInfo002, TestSize.Level1)
     EXPECT_EQ(profileInfo.storeName, "");
     EXPECT_EQ(profileInfo.tableName, "");
 
-    Serializable::json node3;
+    DistributedData::Serializable::json node3;
     info.storeName = "";
     info.tableName = "tableName";
     info.Marshal(node3);

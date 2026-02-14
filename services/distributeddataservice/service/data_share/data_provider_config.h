@@ -20,6 +20,7 @@
 
 #include "account/account_delegate.h"
 #include "bundle_mgr_proxy.h"
+#include "data_share_sa_config_info_manager.h"
 #include "data_share_profile_config.h"
 #include "hap_module_info.h"
 #include "utils.h"
@@ -35,6 +36,7 @@ public:
         int32_t currentUserId = -1;
         int32_t visitedUserId = -1;
         int32_t appIndex = 0;   // appIndex is in [1, 1000], and original app's index is 0
+        int32_t systemAbilityId = 0; // systemAbilityId is in [1, 16777215]
         std::string appIdentifier;
         std::string bundleName;
         std::string moduleName;
@@ -65,6 +67,8 @@ private:
     void GetMetaDataFromUri();
     std::pair<int, BundleConfig> GetBundleInfo();
     bool IsInExtList(const std::string &bundleName);
+    int32_t GetFromDataShareConfig();
+    std::pair<int32_t, DataShareSAConfigInfo> GetDataShareSAConfigInfo();
     enum class PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,
         MODULE_NAME,

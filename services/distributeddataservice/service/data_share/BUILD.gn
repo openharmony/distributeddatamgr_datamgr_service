@@ -54,6 +54,7 @@ ohos_source_set("data_share_service") {
     "common/app_connect_manager.cpp",
     "common/bundle_mgr_proxy.cpp",
     "common/common_utils.cpp",
+    "common/data_share_sa_config_info_manager.cpp",
     "common/db_delegate.cpp",
     "common/div_strategy.cpp",
     "common/extension_ability_manager.cpp",
