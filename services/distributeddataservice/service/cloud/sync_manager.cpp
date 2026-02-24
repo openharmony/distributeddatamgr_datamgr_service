@@ -75,6 +75,7 @@ SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, con
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables)
     : user_(user), bundleName_(bundleName), tables_(tables)
 {
+    tables_ = tables;
     syncId_ = SyncManager::GenerateId(user);
 }
 
@@ -825,15 +826,15 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
         ZLOGE("load schema fail, bundleName: %{public}s, user %{public}d", info.bundleName_.c_str(), info.user_);
         return cloudSyncInfos;
     }
-    auto Stores = schemaMeta.GetStores();
+    auto stores = schemaMeta.GetStores();
 
     if (!info.tables_.empty()) {
-        Stores = GetStoresIntersection(Stores, info.tables_, info.bundleName_, cloud.user);
-        if (Stores.empty()) {
+        stores = GetStoresIntersection(stores, info.tables_, info.bundleName_, cloud.user);
+        if (stores.empty()) {
             return cloudSyncInfos;
         }
     }
-    for (auto &storeId : Stores) {
+    for (auto &storeId : stores) {
         QueryKey queryKey{ cloud.user, cloud.id, info.bundleName_, std::move(storeId) };
         cloudSyncInfos.emplace_back(std::make_tuple(std::move(queryKey), info.syncId_));
     }
@@ -1263,6 +1264,6 @@ void SyncManager::HandleSyncError(const ErrorContext &context)
     UpdateFinishSyncInfo({ context.cloud.user, context.cloud.id, context.bundleName, context.dbName }, context.syncId,
         context.errorCode);
     SyncManager::Report(
-        { context.cloud.user, context.bundleName, context.trace, SyncStage::END, context.errorCode, context.reason });
+        { context.cloud.user, context.bundleName, context.traceId, SyncStage::END, context.errorCode, context.reason });
 }
 } // namespace OHOS::CloudData

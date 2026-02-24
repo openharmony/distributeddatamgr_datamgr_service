@@ -211,7 +211,7 @@ private:
     };
     bool ProcessDatabaseForSync(const SyncContext &ctx, const Database &database);
     std::vector<Database> GetDatabasesToSync(const SchemaMeta &schema, const SyncContext &ctx);
-    std::vector<std::string> GetStoresIntersection(const std::vector<std::string> &schemaStores,
+    static std::vector<std::string> GetStoresIntersection(const std::vector<std::string> &schemaStores,
         const std::map<std::string, std::vector<std::string>> &requestedTables,
         const std::string &bundleName, int32_t user);
 
