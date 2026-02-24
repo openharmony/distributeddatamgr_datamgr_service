@@ -44,7 +44,7 @@ namespace DistributedDataTest {
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
-static constexpr const char *TEST_CLOUD_STORE_1 = "test_cloud_store1";
+static constexpr const char *TEST_CLOUD_STORE_SECOND = "test_cloud_store_second";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
@@ -167,7 +167,7 @@ void CloudDataMockTest::InitSchemaMeta()
     database.tables.emplace_back(table);
 
     SchemaMeta::Database database2;
-    database2.name = TEST_CLOUD_STORE_1;
+    database2.name = TEST_CLOUD_STORE_SECOND;
     database2.alias = TEST_CLOUD_DATABASE_ALIAS_2;
     database2.tables.emplace_back(table);
     schemaMeta_.databases.emplace_back(database2);
@@ -441,12 +441,12 @@ HWTEST_F(CloudDataMockTest, DoCloudSync_GetCloudSyncInfo_StoresEmpty_VerifyQuery
     queryKey.user = user;
     queryKey.accountId = TEST_CLOUD_ID;
     queryKey.bundleName = TEST_CLOUD_BUNDLE;
-    queryKey.storeId = TEST_CLOUD_STORE_1;
+    queryKey.storeId = TEST_CLOUD_STORE_SECOND;
     queryKeys.push_back(queryKey);
 
     auto [status, result] = syncManager.QueryLastSyncInfo(queryKeys);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
-    EXPECT_EQ(result[TEST_CLOUD_STORE_1].code, E_BLOCKED_BY_NETWORK_STRATEGY);
+    EXPECT_EQ(result[TEST_CLOUD_STORE_SECOND].code, E_BLOCKED_BY_NETWORK_STRATEGY);
 }
 
 /**

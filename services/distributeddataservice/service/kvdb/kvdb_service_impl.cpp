@@ -1071,7 +1071,8 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     }
     auto network = NetworkDelegate::GetInstance();
     if (network == nullptr || !network->IsNetworkAvailable()) {
-        ZLOGE("network is not available");
+        ZLOGE("appId:%{public}s storeId:%{public}s instanceId:%{public}d network is not available", meta.appId.c_str(),
+            Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
         return Status::NETWORK_ERROR;
     }
     std::vector<int32_t> users;

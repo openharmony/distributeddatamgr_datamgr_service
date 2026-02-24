@@ -88,7 +88,6 @@ public:
         std::string id_ = DEFAULT_ID;
         std::string bundleName_;
         std::map<std::string, std::vector<std::string>> tables_;
-        Stores stores_;
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
         bool isCompensation_ = false;
@@ -211,6 +210,10 @@ private:
         bool retry;
     };
     bool ProcessDatabaseForSync(const SyncContext &ctx, const Database &database);
+    std::vector<Database> GetDatabasesToSync(const SchemaMeta &schema, const SyncContext &ctx);
+    std::vector<std::string> GetStoresIntersection(const std::vector<std::string> &schemaStores,
+        const std::map<std::string, std::vector<std::string>> &requestedTables,
+        const std::string &bundleName, int32_t user);
 
     struct ErrorContext {
         const CloudInfo &cloud;

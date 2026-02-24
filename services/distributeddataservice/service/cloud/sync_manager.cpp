@@ -59,13 +59,12 @@ SyncManager::SyncInfo::SyncInfo(
 {
     if (!store.empty()) {
         tables_[store] = tables;
-        stores_.push_back(store);
     }
     syncId_ = SyncManager::GenerateId(user);
 }
 
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const Stores &stores)
-    : user_(user), bundleName_(bundleName), stores_(stores)
+    : user_(user), bundleName_(bundleName)
 {
     for (auto &store : stores) {
         tables_[store] = {};
@@ -76,10 +75,6 @@ SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, con
 SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables)
     : user_(user), bundleName_(bundleName), tables_(tables)
 {
-    tables_ = tables;
-    for (const auto &entry : tables_) {
-        stores_.push_back(entry.first);
-    }
     syncId_ = SyncManager::GenerateId(user);
 }
 
@@ -88,7 +83,6 @@ SyncManager::SyncInfo::SyncInfo(const Param &param)
 {
     if (!param.store.empty()) {
         tables_[param.store] = param.tables;
-        stores_.push_back(param.store);
     }
     syncId_ = SyncManager::GenerateId(param.user);
     prepareTraceId_ = param.prepareTraceId;
@@ -352,6 +346,32 @@ bool SyncManager::ProcessDatabaseForSync(const SyncContext &ctx, const Database 
     return true;
 }
 
+std::vector<Database> SyncManager::GetDatabasesToSync(const SchemaMeta &schema, const SyncContext &ctx)
+{
+    std::vector<Database> databases;
+    if (ctx.info.tables_.empty()) {
+        for (const auto &database : schema.databases) {
+            if (!ctx.info.Contains(database.name)) {
+                HandleSyncError({ ctx.cloud, ctx.bundleName, database.name, ctx.syncId, E_ERROR,
+                    "!Contains:" + database.name, ctx.traceId });
+                continue;
+            }
+            databases.push_back(database);
+        }
+    } else {
+        for (const auto &[store, _] : ctx.info.tables_) {
+            auto database = schema.GetDataBase(store);
+            if (database.name.empty()) {
+                HandleSyncError({ ctx.cloud, ctx.bundleName, "", ctx.syncId, E_ERROR,
+                    "!GetDataBase:" + store, ctx.traceId });
+                continue;
+            }
+            databases.push_back(database);
+        }
+    }
+    return databases;
+}
+
 std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud,
     SyncInfo &info, bool retry, const TraceIds &traceIds)
 {
@@ -369,27 +389,10 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
             }
 
             SyncContext ctx = { info, cloud, bundleName, traceId, syncId, retry };
-            if (info.stores_.empty()) {
-                for (const auto &database : schema.databases) {
-                    if (!info.Contains(database.name)) {
-                        HandleSyncError({ cloud, bundleName, database.name, syncId, E_ERROR,
-                            "!Contains:" + database.name, traceId });
-                        continue;
-                    }
-                    if (ProcessDatabaseForSync(ctx, database)) {
-                        isPostEvent = true;
-                    }
-                }
-            } else {
-                for (const auto &store : info.stores_) {
-                    auto database = schema.GetDataBase(store);
-                    if (database.name.empty()) {
-                        HandleSyncError({ cloud, bundleName, "", syncId, E_ERROR, "!GetDataBase:" + store, traceId });
-                        continue;
-                    }
-                    if (ProcessDatabaseForSync(ctx, database)) {
-                        isPostEvent = true;
-                    }
+            auto databases = GetDatabasesToSync(schema, ctx);
+            for (const auto &database : databases) {
+                if (ProcessDatabaseForSync(ctx, database)) {
+                    isPostEvent = true;
                 }
             }
         }
@@ -779,6 +782,23 @@ bool SyncManager::NeedGetCloudInfo(CloudInfo &cloud)
            NetworkDelegate::GetInstance()->IsNetworkAvailable() && Account::GetInstance()->IsLoginAccount();
 }
 
+std::vector<std::string> SyncManager::GetStoresIntersection(const std::vector<std::string> &schemaStores,
+    const std::map<std::string, std::vector<std::string>> &requestedTables,
+    const std::string &bundleName, int32_t user)
+{
+    std::vector<std::string> result;
+    for (const auto &[requestedStore, _] : requestedTables) {
+        if (std::find(schemaStores.begin(), schemaStores.end(), requestedStore) == schemaStores.end()) {
+            ZLOGE("Requested store not found in schema. bundleName:%{public}s, store:%{public}s, user:%{public}d",
+                bundleName.c_str(), Anonymous::Change(requestedStore).c_str(), user);
+            return {};
+        }
+        result.push_back(requestedStore);
+    }
+    ZLOGD("Sync specific stores, count=%{public}zu", result.size());
+    return result;
+}
+
 std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud)
 {
     std::vector<std::tuple<QueryKey, uint64_t>> cloudSyncInfos;
@@ -805,25 +825,15 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
         ZLOGE("load schema fail, bundleName: %{public}s, user %{public}d", info.bundleName_.c_str(), info.user_);
         return cloudSyncInfos;
     }
-    auto schemaStores = schemaMeta.GetStores();
+    auto Stores = schemaMeta.GetStores();
 
-    std::vector<std::string> storesToSync;
-    if (info.stores_.empty()) {
-        storesToSync.assign(schemaStores.begin(), schemaStores.end());
-        ZLOGD("Sync all stores, count=%{public}zu", storesToSync.size());
-    } else {
-        for (const auto &requestedStore : info.stores_) {
-            if (std::find(schemaStores.begin(), schemaStores.end(), requestedStore) == schemaStores.end()) {
-                ZLOGE("Requested store not found in schema. bundleName:%{public}s, store:%{public}s, user:%{public}d",
-                    info.bundleName_.c_str(), Anonymous::Change(requestedStore).c_str(), cloud.user);
-                return cloudSyncInfos;
-            }
-            storesToSync.push_back(requestedStore);
+    if (!info.tables_.empty()) {
+        Stores = GetStoresIntersection(Stores, info.tables_, info.bundleName_, cloud.user);
+        if (Stores.empty()) {
+            return cloudSyncInfos;
         }
-        ZLOGD("Sync specific stores, count=%{public}zu", storesToSync.size());
     }
-
-    for (auto &storeId : storesToSync) {
+    for (auto &storeId : Stores) {
         QueryKey queryKey{ cloud.user, cloud.id, info.bundleName_, std::move(storeId) };
         cloudSyncInfos.emplace_back(std::make_tuple(std::move(queryKey), info.syncId_));
     }
@@ -1253,6 +1263,6 @@ void SyncManager::HandleSyncError(const ErrorContext &context)
     UpdateFinishSyncInfo({ context.cloud.user, context.cloud.id, context.bundleName, context.dbName }, context.syncId,
         context.errorCode);
     SyncManager::Report(
-        { context.cloud.user, context.bundleName, context.traceId, SyncStage::END, context.errorCode, context.reason });
+        { context.cloud.user, context.bundleName, context.trace, SyncStage::END, context.errorCode, context.reason });
 }
 } // namespace OHOS::CloudData
