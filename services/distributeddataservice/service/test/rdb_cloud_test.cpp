@@ -23,10 +23,6 @@
 #include <functional>
 
 #include "cloud/cloud_db.h"
-#include "error/general_error.h"
-#include "store/general_value.h"
-#include "store/cursor.h"
-
 #include "cloud_db_mock.h"
 #include "cursor_mock.h"
 #include "gmock/gmock.h"
@@ -38,80 +34,6 @@ using namespace testing;
 using namespace OHOS::DistributedData;
 using namespace OHOS::DistributedRdb;
 
-// Fake CloudDB implementation that returns E_NOT_SUPPORT (same as CloudDB base class)
-// This avoids vtable issues and mock ambiguity problems
-class FakeCloudDB : public CloudDB {
-public:
-    int32_t Execute(const std::string &table, const std::string &sql, const VBucket &extend) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t BatchInsert(const std::string &table, VBuckets &&values, VBuckets &extends) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t BatchUpdate(const std::string &table, VBuckets &&values, VBuckets &extends) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t BatchUpdate(const std::string &table, VBuckets &&values, const VBuckets &extends) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t BatchDelete(const std::string &table, VBuckets &extends) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, const VBucket &extend) override
-    {
-        return { GeneralError::E_NOT_SUPPORT, nullptr };
-    }
-    std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const VBucket &extend) override
-    {
-        return { GeneralError::E_NOT_SUPPORT, nullptr };
-    }
-    int32_t PreSharing(const std::string &table, VBuckets &extend) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t Watch(int32_t origin, Watcher &watcher) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t Unwatch(int32_t origin, Watcher &watcher) override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t Lock() override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t Heartbeat() override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int32_t Unlock() override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    int64_t AliveTime() override
-    {
-        return -1;
-    }
-    int32_t Close() override
-    {
-        return GeneralError::E_NOT_SUPPORT;
-    }
-    std::pair<int32_t, std::string> GetEmptyCursor(const std::string &tableName) override
-    {
-        return { GeneralError::E_NOT_SUPPORT, "" };
-    }
-    void SetPrepareTraceId(const std::string &prepareTraceId) override {}
-};
 using DBVBucket = DistributedDB::VBucket;
 using DBStatus = DistributedDB::DBStatus;
 using DBAsset = DistributedDB::Asset;
@@ -184,7 +106,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest001, TestSize.Level1)
 {
     BindAssets bindAssets;
     Bytes bytes;
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
     std::string tableName = "testTable";
 
     std::vector<DBVBucket> dataInsert = g_DBVBuckets;
@@ -212,7 +134,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest001, TestSize.Level1)
 HWTEST_F(RdbCloudTest, RdbCloudTest002, TestSize.Level1)
 {
     BindAssets bindAssets;
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
     std::string tableName = "testTable";
     rdbCloud.Lock();
     std::string traceId = "id";
@@ -246,7 +168,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest002, TestSize.Level1)
 HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 {
     BindAssets bindAssets = nullptr;
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
     std::string tableName = "testTable";
     DBVBucket extends = { { "#gid", { "0000000" } }, { "#flag", { true } }, { "#value", { int64_t(100) } },
         { "#float", { double(100) } }, { "#_type", { int64_t(1) } } };
@@ -276,7 +198,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest003, TestSize.Level1)
 HWTEST_F(RdbCloudTest, RdbCloudTest004, TestSize.Level1)
 {
     BindAssets bindAssets;
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
 
     auto err = rdbCloud.UnLockCloudDB(OHOS::DistributedRdb::RdbCloud::FLAG::SYSTEM_ABILITY);
     EXPECT_EQ(err, GeneralError::E_NOT_SUPPORT);
@@ -299,7 +221,7 @@ HWTEST_F(RdbCloudTest, RdbCloudTest004, TestSize.Level1)
 HWTEST_F(RdbCloudTest, ConvertStatus, TestSize.Level1)
 {
     BindAssets bindAssets;
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), bindAssets);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), bindAssets);
     auto result = rdbCloud.ConvertStatus(GeneralError::E_OK);
     EXPECT_EQ(result, DBStatus::OK);
     result = rdbCloud.ConvertStatus(GeneralError::E_NETWORK_ERROR);
@@ -386,7 +308,7 @@ HWTEST_F(RdbCloudTest, SetPrepareTraceId001, TestSize.Level1)
 HWTEST_F(RdbCloudTest, PostEvent001, TestSize.Level1)
 {
     BindAssets bindAssets;
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), nullptr);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), nullptr);
     std::string traceId = "testId";
     rdbCloud.SetPrepareTraceId(traceId);
     std::string tableName = "testTable";
@@ -406,7 +328,7 @@ HWTEST_F(RdbCloudTest, PostEvent002, TestSize.Level1)
     BindAssets snapshots = std::make_shared<std::map<std::string, std::shared_ptr<Snapshot>>>();
     std::shared_ptr<Snapshot> snapshot;
     snapshots->insert_or_assign(assetValue1.uri, snapshot);
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), snapshots);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), snapshots);
     std::string tableName = "testTable";
     std::vector<DBVBucket> dataInsert = g_DBVBuckets;
     std::vector<DBVBucket> extendInsert = g_DBVBuckets;
@@ -425,7 +347,7 @@ HWTEST_F(RdbCloudTest, PostEvent003, TestSize.Level1)
     std::shared_ptr<Snapshot> snapshot;
     std::string uri = "testuri";
     snapshots->insert_or_assign(uri, snapshot);
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), snapshots);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), snapshots);
     std::string tableName = "testTable";
     std::vector<DBVBucket> dataInsert = g_DBVBuckets;
     std::vector<DBVBucket> extendInsert = g_DBVBuckets;
@@ -444,7 +366,7 @@ HWTEST_F(RdbCloudTest, PostEvent004, TestSize.Level1)
     std::shared_ptr<Snapshot> snapshot = nullptr;
     std::string uri = "testuri";
     snapshots->insert_or_assign(uri, snapshot);
-    RdbCloud rdbCloud(std::make_shared<FakeCloudDB>(), snapshots);
+    RdbCloud rdbCloud(std::make_shared<CloudDB>(), snapshots);
     std::string tableName = "testTable";
     std::vector<DBVBucket> dataInsert = g_DBVBuckets;
     std::vector<DBVBucket> extendInsert = g_DBVBuckets;
