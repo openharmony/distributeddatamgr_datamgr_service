@@ -397,7 +397,6 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                 }
             }
         }
-
         if (!isPostEvent) {
             ZLOGE("schema is invalid, user: %{public}d", cloud.user);
             info.SetError(E_ERROR);
