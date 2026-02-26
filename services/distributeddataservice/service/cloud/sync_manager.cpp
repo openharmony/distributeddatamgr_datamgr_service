@@ -167,7 +167,7 @@ std::shared_ptr<GenQuery> SyncManager::SyncInfo::GenerateQuery(const Tables &tab
     return std::make_shared<SyncQuery>(tables);
 }
 
-bool SyncManager::SyncInfo::Contains(const std::string &storeName)
+bool SyncManager::SyncInfo::Contains(const std::string &storeName) const
 {
     return tables_.empty() || tables_.find(storeName) != tables_.end();
 }
@@ -310,91 +310,50 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
     return E_OK;
 }
 
-bool SyncManager::ProcessDatabaseForSync(const SyncContext &ctx, const Database &database)
-{
-    if (!SyncConfig::IsDbEnable(ctx.info.user_, ctx.bundleName, database.name)) {
-        HandleSyncError({ ctx.cloud, ctx.bundleName, database.name, ctx.syncId, E_ERROR,
-            "!DbEnable:" + database.name, ctx.traceId });
-        return false;
-    }
-
-    StoreInfo storeInfo = { 0, ctx.bundleName, database.name, ctx.cloud.apps[ctx.bundleName].instanceId,
-        ctx.info.user_, "", ctx.syncId };
-    auto status = syncStrategy_->CheckSyncAction(storeInfo);
-    if (status != SUCCESS) {
-        ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
-            storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
-        HandleSyncError({ ctx.cloud, ctx.bundleName, database.name, ctx.syncId, status, "CheckSyncAction",
-            ctx.traceId });
-        ctx.info.SetError(status);
-        return false;
-    }
-
-    auto tables = ctx.info.GetTables(database);
-    if (!SyncConfig::FilterCloudEnabledTables(ctx.info.user_, ctx.bundleName, database.name, tables)) {
-        HandleSyncError({ ctx.cloud, ctx.bundleName, database.name, ctx.syncId, E_CLOUD_DISABLED, "tableDisable",
-            ctx.traceId });
-        ctx.info.SetError(E_CLOUD_DISABLED);
-        return false;
-    }
-
-    auto query = ctx.info.GenerateQuery(tables);
-    SyncParam syncParam = { ctx.info.mode_, ctx.info.wait_, ctx.info.isCompensation_, ctx.info.triggerMode_,
-        ctx.traceId, ctx.info.user_ };
-    auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
-        SyncEvent::EventInfo{ syncParam, ctx.retry, std::move(query), ctx.info.async_ });
-    EventCenter::GetInstance().PostEvent(std::move(evt));
-    return true;
-}
-
-std::vector<Database> SyncManager::GetDatabasesToSync(const SchemaMeta &schema, const SyncContext &ctx)
-{
-    std::vector<Database> databases;
-    if (ctx.info.tables_.empty()) {
-        for (const auto &database : schema.databases) {
-            if (!ctx.info.Contains(database.name)) {
-                HandleSyncError({ ctx.cloud, ctx.bundleName, database.name, ctx.syncId, E_ERROR,
-                    "!Contains:" + database.name, ctx.traceId });
-                continue;
-            }
-            databases.push_back(database);
-        }
-    } else {
-        for (const auto &[store, _] : ctx.info.tables_) {
-            auto database = schema.GetDataBase(store);
-            if (database.name.empty()) {
-                HandleSyncError({ ctx.cloud, ctx.bundleName, "", ctx.syncId, E_ERROR,
-                    "!GetDataBase:" + store, ctx.traceId });
-                continue;
-            }
-            databases.push_back(database);
-        }
-    }
-    return databases;
-}
-
 std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta> &schemas, CloudInfo &cloud,
     SyncInfo &info, bool retry, const TraceIds &traceIds)
 {
     return [this, &cloud, &info, &schemas, retry, &traceIds]() {
         bool isPostEvent = false;
         auto syncId = info.syncId_;
-
         for (auto &schema : schemas) {
             std::string bundleName = schema.bundleName;
             std::string traceId = traceIds.count(bundleName) ? traceIds.at(bundleName) : "";
-
             if (!cloud.IsOn(bundleName)) {
                 HandleSyncError({ cloud, bundleName, "", syncId, E_ERROR, "!IsOn:" + bundleName, traceId });
                 continue;
             }
-
-            SyncContext ctx = { info, cloud, bundleName, traceId, syncId, retry };
-            auto databases = GetDatabasesToSync(schema, ctx);
-            for (const auto &database : databases) {
-                if (ProcessDatabaseForSync(ctx, database)) {
-                    isPostEvent = true;
+            for (const auto &database : schema.databases) {
+                if (!info.Contains(database.name) || !SyncConfig::IsDbEnable(info.user_, bundleName, database.name)) {
+                    HandleSyncError(
+                        { cloud, bundleName, database.name, syncId, E_ERROR, "!Contains:" + database.name, traceId });
+                    continue;
                 }
+                StoreInfo storeInfo = { 0, bundleName, database.name, cloud.apps[bundleName].instanceId, info.user_,
+                    "", syncId };
+                auto status = syncStrategy_->CheckSyncAction(storeInfo);
+                if (status != SUCCESS) {
+                    ZLOGW("Verification strategy failed, status:%{public}d. %{public}d:%{public}s:%{public}s", status,
+                        storeInfo.user, storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str());
+                    HandleSyncError({ cloud, bundleName, database.name, syncId, status, "CheckSyncAction", traceId });
+                    info.SetError(status);
+                    continue;
+                }
+
+                auto tables = info.GetTables(database);
+                if (!SyncConfig::FilterCloudEnabledTables(info.user_, bundleName, database.name, tables)) {
+                    HandleSyncError(
+                        { cloud, bundleName, database.name, syncId, E_CLOUD_DISABLED, "tableDisable", traceId });
+                    info.SetError(E_CLOUD_DISABLED);
+                    continue;
+                }
+                auto query = info.GenerateQuery(tables);
+                SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_, traceId,
+                    info.user_ };
+                auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
+                    SyncEvent::EventInfo{ syncParam, retry, std::move(query), info.async_ });
+                EventCenter::GetInstance().PostEvent(std::move(evt));
+                isPostEvent = true;
             }
         }
         if (!isPostEvent) {
@@ -433,10 +392,10 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         }
 
         auto retryer = GetRetryer(times, info, cloud.user);
-        auto schemas = GetSchemaMeta(cloud, info.bundleName_);
+        auto schemas = GetSchemaMeta(cloud, info.bundleName_, info);
         if (schemas.empty()) {
             UpdateSchema(info);
-            schemas = GetSchemaMeta(cloud, info.bundleName_);
+            schemas = GetSchemaMeta(cloud, info.bundleName_, info);
             if (schemas.empty()) {
                 auto it = traceIds.find(info.bundleName_);
                 retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, GenStore::CLOUD_ERR_OFFSET + E_CLOUD_DISABLED,
@@ -986,11 +945,30 @@ ExecutorPool::Duration SyncManager::GetInterval(int32_t code)
     }
 }
 
-std::vector<SchemaMeta> SyncManager::GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName)
+std::vector<SchemaMeta> SyncManager::GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName,
+    const SyncInfo &info)
 {
     std::vector<SchemaMeta> schemas;
     auto key = cloud.GetSchemaPrefix(bundleName);
     MetaDataManager::GetInstance().LoadMeta(key, schemas, true);
+    if (bundleName.empty()) {
+        return schemas;
+    }
+    for (auto iter = schemas.begin(); iter != schemas.end();) {
+        auto &databases = iter->databases;
+        for (auto dbIter = databases.begin(); dbIter != databases.end();) {
+            if (!info.Contains(dbIter->name)) {
+                dbIter = databases.erase(dbIter);
+            } else {
+                ++dbIter;
+            }
+        }
+        if (databases.empty()) {
+            iter = schemas.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
     return schemas;
 }
 

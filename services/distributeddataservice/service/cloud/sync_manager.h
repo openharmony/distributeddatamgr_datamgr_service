@@ -75,7 +75,7 @@ public:
         void SetTriggerMode(int32_t triggerMode);
         void SetPrepareTraceId(const std::string &prepareTraceId);
         std::shared_ptr<GenQuery> GenerateQuery(const Tables &tables);
-        bool Contains(const std::string &storeName);
+        bool Contains(const std::string &storeName) const;
         std::vector<std::string> GetTables(const Database &database);
         static constexpr const char *DEFAULT_ID = "default";
 
@@ -158,7 +158,8 @@ private:
         const StoreMetaData &meta, const std::vector<int32_t> &users, const DistributedData::Database &schemaDatabase);
     static std::string GetAccountId(int32_t user);
     static std::vector<std::tuple<QueryKey, uint64_t>> GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud);
-    static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName);
+    static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName,
+        const SyncInfo &info);
     static bool NeedGetCloudInfo(CloudInfo &cloud);
     static GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
     static std::function<void(const Event &)> GetLockChangeHandler();
@@ -209,8 +210,6 @@ private:
         uint64_t syncId;
         bool retry;
     };
-    bool ProcessDatabaseForSync(const SyncContext &ctx, const Database &database);
-    std::vector<Database> GetDatabasesToSync(const SchemaMeta &schema, const SyncContext &ctx);
     static std::vector<std::string> GetStoresIntersection(const std::vector<std::string> &schemaStores,
         const std::map<std::string, std::vector<std::string>> &requestedTables,
         const std::string &bundleName, int32_t user);
