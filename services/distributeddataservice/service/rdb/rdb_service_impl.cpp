@@ -1833,7 +1833,8 @@ StoreInfo RdbServiceImpl::GetStoreInfoEx(const StoreMetaData &metaData)
 std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerParam &param)
 {
     std::pair<int32_t, uint32_t> result{ RDB_ERROR, 0 };
-    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_) ||
+        !TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return result;
@@ -1855,7 +1856,8 @@ std::pair<int32_t, uint32_t> RdbServiceImpl::LockCloudContainer(const RdbSyncerP
 int32_t RdbServiceImpl::UnlockCloudContainer(const RdbSyncerParam &param)
 {
     int32_t result = RDB_ERROR;
-    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
+    if (!IsValidAccess(param.bundleName_, param.storeName_) ||
+        !TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return result;
