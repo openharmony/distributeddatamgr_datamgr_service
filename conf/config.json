@@ -114,6 +114,13 @@
       "5765880207853570539",
       "5765880207853771197",
       "5765880207854616753"
+    ],
+    "publicProvider":[
+      "calendardata",
+      "com.example.dataabilityserver_fa.DataAbility",
+      "com.ohos.contactsdataability",
+      "com.ohos.settingsdata.DataAbility",
+      "media"
     ]
   },
   "doubleSyncApps": [
