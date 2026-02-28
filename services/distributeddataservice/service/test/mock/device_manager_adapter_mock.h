@@ -44,6 +44,7 @@ public:
     virtual bool CheckAccessControl(const AccessCaller &, const AccessCallee &) = 0;
     virtual DeviceInfo GetLocalDevice() = 0;
     virtual std::string CalcClientUuid(const std::string &appId, const std::string &uuid) = 0;
+    virtual std::function<void()> RegDevCallback() = 0;
     static inline std::shared_ptr<BDeviceManagerAdapter> deviceManagerAdapter = nullptr;
     BDeviceManagerAdapter() = default;
     virtual ~BDeviceManagerAdapter() = default;
@@ -67,6 +68,7 @@ public:
     MOCK_METHOD(DeviceInfo, GetLocalDevice, ());
     MOCK_METHOD(std::string, CalcClientUuid, (const std::string &, const std::string &));
     MOCK_METHOD(uint32_t, GetDeviceTypeByUuid, (const std::string &));
+    MOCK_METHOD(std::function<void()>, RegDevCallback, ());
 };
 
 } // namespace DistributedData
