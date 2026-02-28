@@ -46,7 +46,6 @@ public:
     Status GetRuntime(const std::string &key, Runtime &runtime) override;
     Status GetBatchRuntime(const std::string &dataPrefix, std::vector<Runtime> &runtimeSet) override;
     Status PutSummary(UnifiedKey &key, const Summary &summary) override;
-    Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
     Status SetRemotePullStartNotify() override;
     Status RegisterDataChangedObserver(const std::string &intention) override;
     Status PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo &info) override;
@@ -70,7 +69,7 @@ private:
     bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
-    Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
+    Status PutSummary(UnifiedKey &key, const Summary &summary, std::vector<Entry> &entries);
     Status MarkWhenCorrupted(DistributedDB::DBStatus status);
     void ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate);
     void UnRegisterAllObserver();

@@ -160,6 +160,13 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
 Status RuntimeStore::PutSummary(UnifiedKey &key, const Summary &summary, std::vector<Entry> &entries)
 {
     UpdateTime();
+
+    UDDetails details {};
+    if (PreProcessUtils::GetDetailsFromUData(data, details)) {
+        Summary summaryFromDetails;
+        PreProcessUtils::GetSummaryFromDetails(details, summaryFromDetails);
+        summary = std::move(summaryFromDetails);
+    }
     auto propertyKey = key.GetKeyCommonPrefix();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
