@@ -104,7 +104,8 @@ UdmfServiceImpl::UdmfServiceImpl()
     CheckerManager::GetInstance().LoadCheckers();
 }
 
-int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData, const Summary &summary, std::string &key)
+int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
+    const Summary &summary, std::string &key)
 {
     ZLOGD("start");
     int32_t res = E_OK;
@@ -141,7 +142,8 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     return res;
 }
 
-int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData, const Summary &summary, std::string &key)
+int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData,
+    const Summary &summary, std::string &key)
 {
     if (!unifiedData.IsValid()) {
         ZLOGE("UnifiedData is invalid.");
