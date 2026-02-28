@@ -392,10 +392,10 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         }
 
         auto retryer = GetRetryer(times, info, cloud.user);
-        auto schemas = GetSchemaMeta(cloud, info.bundleName_, info);
+        auto schemas = GetSchemaMeta(cloud, info);
         if (schemas.empty()) {
             UpdateSchema(info);
-            schemas = GetSchemaMeta(cloud, info.bundleName_, info);
+            schemas = GetSchemaMeta(cloud, info);
             if (schemas.empty()) {
                 auto it = traceIds.find(info.bundleName_);
                 retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, GenStore::CLOUD_ERR_OFFSET + E_CLOUD_DISABLED,
@@ -741,20 +741,16 @@ bool SyncManager::NeedGetCloudInfo(CloudInfo &cloud)
            NetworkDelegate::GetInstance()->IsNetworkAvailable() && Account::GetInstance()->IsLoginAccount();
 }
 
-std::vector<std::string> SyncManager::GetStoresIntersection(const std::vector<std::string> &schemaStores,
-    const std::map<std::string, std::vector<std::string>> &requestedTables,
-    const std::string &bundleName, int32_t user)
+std::vector<std::string> SyncManager::GetStoresIntersection(const SyncInfo::Stores &schemaStores,
+    const std::map<std::string, SyncInfo::Tables> &requestedTables)
 {
+    std::unordered_set<std::string> schemaSet(schemaStores.begin(), schemaStores.end());
     std::vector<std::string> result;
     for (const auto &[requestedStore, _] : requestedTables) {
-        if (std::find(schemaStores.begin(), schemaStores.end(), requestedStore) == schemaStores.end()) {
-            ZLOGE("Requested store not found in schema. bundleName:%{public}s, store:%{public}s, user:%{public}d",
-                bundleName.c_str(), Anonymous::Change(requestedStore).c_str(), user);
-            return {};
+        if (schemaSet.find(requestedStore) != schemaSet.end()) {
+            result.push_back(requestedStore);
         }
-        result.push_back(requestedStore);
     }
-    ZLOGD("Sync specific stores, count=%{public}zu", result.size());
     return result;
 }
 
@@ -787,8 +783,10 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
     auto stores = schemaMeta.GetStores();
 
     if (!info.tables_.empty()) {
-        stores = GetStoresIntersection(stores, info.tables_, info.bundleName_, cloud.user);
+        stores = GetStoresIntersection(stores, info.tables_);
         if (stores.empty()) {
+            ZLOGE("Requested store not found in schema. bundleName:%{public}s, user:%{public}d",
+                info.bundleName_.c_str(), info.user_);
             return cloudSyncInfos;
         }
     }
@@ -945,30 +943,27 @@ ExecutorPool::Duration SyncManager::GetInterval(int32_t code)
     }
 }
 
-std::vector<SchemaMeta> SyncManager::GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName,
-    const SyncInfo &info)
+std::vector<SchemaMeta> SyncManager::GetSchemaMeta(const CloudInfo &cloud, const SyncInfo &info)
 {
     std::vector<SchemaMeta> schemas;
-    auto key = cloud.GetSchemaPrefix(bundleName);
+    auto key = cloud.GetSchemaPrefix(info.bundleName_);
     MetaDataManager::GetInstance().LoadMeta(key, schemas, true);
-    if (bundleName.empty()) {
+    if (info.bundleName_.empty()) {
         return schemas;
     }
-    for (auto iter = schemas.begin(); iter != schemas.end();) {
-        auto &databases = iter->databases;
-        for (auto dbIter = databases.begin(); dbIter != databases.end();) {
-            if (!info.Contains(dbIter->name)) {
-                dbIter = databases.erase(dbIter);
-            } else {
-                ++dbIter;
-            }
-        }
-        if (databases.empty()) {
-            iter = schemas.erase(iter);
-        } else {
-            ++iter;
-        }
-    }
+    
+    auto newEnd = std::remove_if(schemas.begin(), schemas.end(),
+        [&info](SchemaMeta &schema) {
+            auto &dbs = schema.databases;
+            dbs.erase(std::remove_if(dbs.begin(), dbs.end(),
+                [&info](const Database &db) {
+                    return !info.Contains(db.name);
+                }), dbs.end());
+            
+            return dbs.empty();
+        });
+    
+    schemas.erase(newEnd, schemas.end());
     return schemas;
 }
 

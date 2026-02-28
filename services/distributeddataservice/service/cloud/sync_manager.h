@@ -87,7 +87,7 @@ public:
         int32_t wait_ = 0;
         std::string id_ = DEFAULT_ID;
         std::string bundleName_;
-        std::map<std::string, std::vector<std::string>> tables_;
+        std::map<std::string, Tables> tables_;
         GenAsync async_;
         std::shared_ptr<GenQuery> query_;
         bool isCompensation_ = false;
@@ -158,8 +158,7 @@ private:
         const StoreMetaData &meta, const std::vector<int32_t> &users, const DistributedData::Database &schemaDatabase);
     static std::string GetAccountId(int32_t user);
     static std::vector<std::tuple<QueryKey, uint64_t>> GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud);
-    static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const std::string &bundleName,
-        const SyncInfo &info);
+    static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const SyncInfo &info);
     static bool NeedGetCloudInfo(CloudInfo &cloud);
     static GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
     static std::function<void(const Event &)> GetLockChangeHandler();
@@ -202,17 +201,8 @@ private:
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
 
-    struct SyncContext {
-        SyncInfo &info;
-        CloudInfo &cloud;
-        std::string bundleName;
-        std::string traceId;
-        uint64_t syncId;
-        bool retry;
-    };
-    static std::vector<std::string> GetStoresIntersection(const std::vector<std::string> &schemaStores,
-        const std::map<std::string, std::vector<std::string>> &requestedTables,
-        const std::string &bundleName, int32_t user);
+    static std::vector<std::string> GetStoresIntersection(const SyncInfo::Stores &schemaStores,
+        const std::map<std::string, SyncInfo::Tables> &requestedTables);
 
     struct ErrorContext {
         const CloudInfo &cloud;
