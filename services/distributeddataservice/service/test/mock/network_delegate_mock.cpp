@@ -23,7 +23,7 @@ bool NetworkDelegateMock::IsNetworkAvailable()
 
 NetworkDelegate::NetworkType NetworkDelegateMock::GetNetworkType(bool retrieve)
 {
-    return NetworkDelegate::NONE;
+    return networkType_;
 }
 
 void NetworkDelegateMock::RegOnNetworkChange()

@@ -793,7 +793,7 @@ HWTEST_F(CloudDataTest, QueryLastSyncInfo011, TestSize.Level1)
     MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
     int32_t user = 100;
     CloudData::SyncManager sync;
-    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1);
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE);
     info.syncId_ = 0;
     CloudInfo cloud;
     cloud.user = info.user_;

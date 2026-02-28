@@ -892,9 +892,11 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
     std::vector<int32_t> users;
     Account::GetInstance()->QueryForegroundUsers(users);
     if (users.empty()) {
+        ZLOGW("current user is not foreground.");
         return SUCCESS;
     }
     if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
+        ZLOGE("network is not available");
         return NETWORK_ERROR;
     }
     for (auto user : users) {
