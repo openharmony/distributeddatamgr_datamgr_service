@@ -33,7 +33,7 @@ public:
     UdmfServiceImpl();
     ~UdmfServiceImpl() = default;
     using DBLaunchParam = DistributedDB::AutoLaunchParam;
-    int32_t SetData(CustomOption &option, UnifiedData &unifiedData, std::string &key) override;
+    int32_t SetData(CustomOption &option, UnifiedData &unifiedData, const Summary &summary, std::string &key) override;
     int32_t GetData(const QueryOption &query, UnifiedData &unifiedData) override;
     int32_t GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet) override;
     int32_t UpdateData(const QueryOption &query, UnifiedData &unifiedData) override;
@@ -62,7 +62,7 @@ private:
     using StaticActs = DistributedData::StaticActs;
     bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
     int32_t StoreSync(const UnifiedKey &key, const QueryOption &query, const std::vector<std::string> &devices);
-    int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
+    int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, const Summary &summary, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
     int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);

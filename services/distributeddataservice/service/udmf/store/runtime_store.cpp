@@ -101,13 +101,13 @@ Status RuntimeStore::DeleteLocal(const std::string &key)
     return E_OK;
 }
 
-Status RuntimeStore::Put(const UnifiedData &unifiedData)
+Status RuntimeStore::Put(const UnifiedData &unifiedData, const Summary &summary)
 {
     UpdateTime();
     std::vector<Entry> entries;
     std::string intention = unifiedData.GetRuntime()->key.intention;
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        PutSummary(unifiedData, entries);
+        PutSummary(unifiedData.GetRuntime()->key, summary, entries);
     }
     auto status = DataHandler::MarshalToEntries(unifiedData, entries);
     if (status != E_OK) {
@@ -157,18 +157,10 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     return DataHandler::UnmarshalEntries(key, entries, unifiedData);
 }
 
-Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &entries)
+Status RuntimeStore::PutSummary(UnifiedKey &key, const Summary &summary, std::vector<Entry> &entries)
 {
     UpdateTime();
-    UDDetails details {};
-    Summary summary;
-    if (PreProcessUtils::GetDetailsFromUData(data, details)) {
-        PreProcessUtils::GetSummaryFromDetails(details, summary);
-    } else {
-        UnifiedDataHelper::GetSummary(data, summary);
-    }
-
-    auto propertyKey = data.GetRuntime()->key.GetKeyCommonPrefix();
+    auto propertyKey = key.GetKeyCommonPrefix();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
     if (status != E_OK) {

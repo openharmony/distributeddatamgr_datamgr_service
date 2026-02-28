@@ -46,6 +46,7 @@ public:
     Status GetRuntime(const std::string &key, Runtime &runtime) override;
     Status GetBatchRuntime(const std::string &dataPrefix, std::vector<Runtime> &runtimeSet) override;
     Status PutSummary(UnifiedKey &key, const Summary &summary) override;
+    Status PutSummary(const UnifiedData &data, std::vector<DistributedDB::Entry> &entries);
     Status SetRemotePullStartNotify() override;
     Status RegisterDataChangedObserver(const std::string &intention) override;
     Status PutDelayData(const UnifiedData &unifiedData, const DataLoadInfo &info) override;
