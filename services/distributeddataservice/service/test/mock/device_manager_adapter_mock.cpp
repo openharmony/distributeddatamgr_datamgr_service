@@ -160,6 +160,14 @@ std::string OHOS::DistributedData::DeviceManagerAdapter::CalcClientUuid(
     return BDeviceManagerAdapter::deviceManagerAdapter->CalcClientUuid(appId, uuid);
 }
 
+std::function<void()> OHOS::DistributedData::DeviceManagerAdapter::RegDevCallback()
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return []() {};
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->RegDevCallback();
+}
+
 DeviceManagerAdapter::~DeviceManagerAdapter()
 {
 }
