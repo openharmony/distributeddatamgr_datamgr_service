@@ -460,7 +460,7 @@ HWTEST_F(CloudServiceImplTest, DoSubscribe, TestSize.Level0)
  */
 HWTEST_F(CloudServiceImplTest, OnAppInstallTest, TestSize.Level0)
 {
-    ZLOGI("CloudServiceImplTest OnAppInstallTest start");
+    ZLOGI("CloudServiceImplTest OnAppInstallTest start.");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
     int32_t user = 0;
@@ -751,7 +751,8 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_002, TestSize.Level1)
 
 /**
  * @tc.name: GetStoreMetaData_003
- * @tc.desc: test GetStoreMetaData LoadMeta failed and user is not 0.
+ * @tc.desc: test GetStoreMetaData First load of metadata failed and the user is not 0,
+ * then the load of metadata succeeded.
  * @tc.type: FUNC
  */
 HWTEST_F(CloudServiceImplTest, GetStoreMetaData_003, TestSize.Level1)
@@ -816,7 +817,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_004, TestSize.Level1)
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
     CheckDelMeta(metaMapping, meta, meta1);
-
+ 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKeyLocal(), localMetaData, true), true);
@@ -908,6 +909,7 @@ HWTEST_F(CloudServiceImplTest, ChangeConfirmation001, TestSize.Level0)
  */
 HWTEST_F(CloudServiceImplTest, GetSharingHandle001, TestSize.Level0)
 {
+    ZLOGI("CloudServiceImplTest GetSharingHandle001 start");
     CloudData::CloudServiceImpl::HapInfo hapInfo;
     auto status = cloudServiceImpl_->GetSharingHandle(hapInfo);
     EXPECT_EQ(status, nullptr);
@@ -1192,11 +1194,11 @@ HWTEST_F(CloudServiceImplTest, NetworkRecoveryTest004, TestSize.Level0)
 }
 
 /*
-* @tc.name: CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo
-* @tc.desc: Test Clean with db level config and empty table info
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo
+ * @tc.desc: Test Clean with db level config and empty table info
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_DbLevelWithEmptyTableInfo, TestSize.Level1)
 {
     InitCloudInfoAndSchema();

@@ -251,6 +251,13 @@ ohos_unittest("SoftBusAdapterStandardTest") {
 }
 
 ohos_unittest("SoftbusClientTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+
   module_out_path = module_output_path
   include_dirs = [
     "${data_service_path}/adapter/communicator/src",
@@ -275,7 +282,7 @@ ohos_unittest("SoftbusClientTest") {
     "-Dprivate=public",
     "-Dprotected=public",
   ]
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk_src" ]
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 

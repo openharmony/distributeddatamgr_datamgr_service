@@ -302,11 +302,11 @@ HWTEST_F(AccountDelegateTest, QueryForegroundUsers, TestSize.Level0)
 }
 
 /**
-* @tc.name: IsOsAccountConstraintEnabled
+* @tc.name: IsOsAccountConstraintEnabled001
 * @tc.desc: check account constraint
 * @tc.type: FUNC
 */
-HWTEST_F(AccountDelegateTest, IsOsAccountConstraintEnabled, TestSize.Level0)
+HWTEST_F(AccountDelegateTest, IsOsAccountConstraintEnabled001, TestSize.Level0)
 {
     EXPECT_FALSE(AccountDelegate::GetInstance()->IsOsAccountConstraintEnabled());
 }

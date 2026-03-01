@@ -704,6 +704,8 @@ ohos_unittest("DDMSDumpTest") {
     "${data_service_path}/service/test/mock/db_store_mock.cpp",
     "${data_service_path}/service/test/mock/db_change_data_mock.cpp",
     "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
+    "${data_service_path}/framework/metadata/meta_data_manager.cpp",
+    "${data_service_path}/framework/utils/corrupt_reporter.cpp",
   ]
   sanitize = {
     ubsan = true

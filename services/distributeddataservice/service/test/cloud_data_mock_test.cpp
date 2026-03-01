@@ -36,18 +36,23 @@ using namespace DistributedDB;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
+using Querykey = OHOS::CloudData::QueryKey;
+using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
+static constexpr const char *TEST_CLOUD_STORE_SECOND = "test_cloud_store_second";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *TEST_CLOUD_PATH = "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/"
                                                "test_cloud_store";
 static constexpr const int32_t TEST_TOKEN_FLAG_CALL_COUNT = 3;
+static constexpr const int32_t GET_USER_BY_TOKEN_CALL_COUNT = 2;
+static constexpr const int32_t TEST_TOKEN_FLAG_USER_ID = 100;
 class CloudDataMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -142,6 +147,7 @@ void CloudDataMockTest::InitMetaData()
 
 void CloudDataMockTest::InitSchemaMeta()
 {
+    schemaMeta_.databases.clear();
     SchemaMeta::Field field1;
     field1.colName = "test_cloud_field_name1";
     field1.alias = "test_cloud_field_alias1";
@@ -160,10 +166,14 @@ void CloudDataMockTest::InitSchemaMeta()
     database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
     database.tables.emplace_back(table);
 
+    SchemaMeta::Database database2;
+    database2.name = TEST_CLOUD_STORE_SECOND;
+    database2.alias = TEST_CLOUD_DATABASE_ALIAS_2;
+    database2.tables.emplace_back(table);
+    schemaMeta_.databases.emplace_back(database2);
+
     schemaMeta_.version = 1;
     schemaMeta_.bundleName = TEST_CLOUD_BUNDLE;
-    schemaMeta_.databases.emplace_back(database);
-    database.alias = TEST_CLOUD_DATABASE_ALIAS_2;
     schemaMeta_.databases.emplace_back(database);
     schemaMeta_.e2eeEnable = false;
 }
@@ -190,8 +200,9 @@ void CloudDataMockTest::SetUpTestCase(void)
         AccountDelegate::instance_ = nullptr;
         AccountDelegate::RegisterAccountInstance(accountDelegateMock);
     }
-    // 2 means that the GetUserByToken interface will be called twice
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).Times(2).WillRepeatedly(Return(0));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_))
+        .Times(GET_USER_BY_TOKEN_CALL_COUNT)
+        .WillRepeatedly(Return(TEST_TOKEN_FLAG_USER_ID));
 
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
@@ -258,14 +269,14 @@ void CloudDataMockTest::TearDown()
 */
 HWTEST_F(CloudDataMockTest, GetSchema001, TestSize.Level1)
 {
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(0));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(TEST_TOKEN_FLAG_USER_ID));
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
     ASSERT_TRUE(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), true));
     SchemaMeta schemaMeta;
     ASSERT_FALSE(MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta, true));
-    std::vector<int> users = { 0, 1 };
+    std::vector<int> users = { 100, 101 };
     EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).Times(1).WillOnce(DoAll(Return(true)));
     DistributedData::StoreInfo storeInfo{ OHOS::IPCSkeleton::GetCallingTokenID(), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE,
@@ -285,7 +296,7 @@ HWTEST_F(CloudDataMockTest, GetSchema001, TestSize.Level1)
 */
 HWTEST_F(CloudDataMockTest, GetSchema002, TestSize.Level1)
 {
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(0));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(TEST_TOKEN_FLAG_USER_ID));
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
@@ -315,7 +326,7 @@ HWTEST_F(CloudDataMockTest, GetSchema002, TestSize.Level1)
 */
 HWTEST_F(CloudDataMockTest, GetSchema003, TestSize.Level1)
 {
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(0));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillOnce(Return(TEST_TOKEN_FLAG_USER_ID));
     auto cloudServerMock = std::make_shared<CloudServerMock>();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = cloudServerMock->GetServerInfo(user, true);
@@ -356,7 +367,6 @@ HWTEST_F(CloudDataMockTest, OnReadyTest_LoginAccount, TestSize.Level0)
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
     ZLOGI("CloudDataMockTest OnReadyTest_LoginAccount end");
 }
-
 
 /**
 * @tc.name: GetHapInfo001
@@ -401,6 +411,162 @@ HWTEST_F(CloudDataMockTest, GetHapInfo002, TestSize.Level1)
     auto [ret, _] = cloudServiceImpl_->AllocResourceAndShare(TEST_CLOUD_STORE, predicates, columns, participants);
     EXPECT_EQ(ret, E_ERROR);
     ZLOGI("CloudDataMockTest GetHapInfo002 end");
+}
+
+/**
+* @tc.name: DoCloudSync_GetCloudSyncInfo_StoresEmpty_VerifyQueryLastSyncInfo
+* @tc.desc: Test GetCloudSyncInfo with info.stores_ is empty, verify QueryLastSyncInfo
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, DoCloudSync_GetCloudSyncInfo_StoresEmpty_VerifyQueryLastSyncInfo, TestSize.Level1)
+{
+    CloudData::SyncManager syncManager;
+    size_t max = 12;
+    size_t min = 5;
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    ASSERT_EQ(syncManager.Bind(executor), E_OK);
+
+    int32_t user = cloudInfo_.user;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE);
+
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).Times(1).WillOnce(DoAll(Return(true)));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    auto ret = syncManager.DoCloudSync(std::move(info));
+    ASSERT_EQ(ret, E_OK);
+    sleep(1);
+    std::vector<Querykey> queryKeys;
+    Querykey queryKey;
+    queryKey.user = user;
+    queryKey.accountId = TEST_CLOUD_ID;
+    queryKey.bundleName = TEST_CLOUD_BUNDLE;
+    queryKey.storeId = TEST_CLOUD_STORE_SECOND;
+    queryKeys.push_back(queryKey);
+
+    auto [status, result] = syncManager.QueryLastSyncInfo(queryKeys);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(result[TEST_CLOUD_STORE_SECOND].code, E_BLOCKED_BY_NETWORK_STRATEGY);
+}
+
+/**
+* @tc.name: DoCloudSync_GetCloudSyncInfo_StoresNotEmpty_VerifyQueryLastSyncInfo
+* @tc.desc: Test GetCloudSyncInfo with specific store, verify QueryLastSyncInfo
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, DoCloudSync_GetCloudSyncInfo_StoresNotEmpty_VerifyQueryLastSyncInfo, TestSize.Level1)
+{
+    CloudData::SyncManager syncManager;
+    size_t max = 12;
+    size_t min = 5;
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    ASSERT_EQ(syncManager.Bind(executor), E_OK);
+    delegate_.networkType_ = NetworkDelegate::WIFI;
+    int32_t user = cloudInfo_.user;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    auto ret = syncManager.DoCloudSync(std::move(info));
+    ASSERT_EQ(ret, E_OK);
+    sleep(1);
+    std::vector<Querykey> queryKeys;
+    Querykey queryKey;
+    queryKey.user = user;
+    queryKey.accountId = TEST_CLOUD_ID;
+    queryKey.bundleName = TEST_CLOUD_BUNDLE;
+    queryKey.storeId = TEST_CLOUD_STORE;
+    queryKeys.push_back(queryKey);
+
+    auto [status, result] = syncManager.QueryLastSyncInfo(queryKeys);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(result[TEST_CLOUD_STORE].code, E_ERROR);
+    delegate_.networkType_ = NetworkDelegate::NONE;
+}
+
+/**
+* @tc.name: DoCloudSync_GetCloudSyncInfo_StoreNotInSchema_VerifyQueryLastSyncInfo
+* @tc.desc: Test GetCloudSyncInfo with store not in schema, verify QueryLastSyncInfo
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, DoCloudSync_GetCloudSyncInfo_StoreNotInSchema_VerifyQueryLastSyncInfo, TestSize.Level1)
+{
+    std::string lastSyncInfoKey = CloudLastSyncInfo::GetKey(cloudInfo_.user, TEST_CLOUD_BUNDLE,
+        "invalid_store_not_in_schema");
+    MetaDataManager::GetInstance().DelMeta(lastSyncInfoKey, true);
+
+    CloudData::SyncManager syncManager;
+    size_t max = 12;
+    size_t min = 5;
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    ASSERT_EQ(syncManager.Bind(executor), E_OK);
+
+    int32_t user = cloudInfo_.user;
+    const char* invalidStore = "invalid_store_not_in_schema";
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE, invalidStore);
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    auto ret = syncManager.DoCloudSync(std::move(info));
+    ASSERT_EQ(ret, E_OK);
+
+    sleep(1);
+
+    std::vector<Querykey> queryKeys;
+    Querykey queryKey;
+    queryKey.user = user;
+    queryKey.accountId = TEST_CLOUD_ID;
+    queryKey.bundleName = TEST_CLOUD_BUNDLE;
+    queryKey.storeId = invalidStore;
+    queryKeys.push_back(queryKey);
+
+    auto [status, result] = syncManager.QueryLastSyncInfo(queryKeys);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+* @tc.name: DoCloudSync_ContainsFalse_MultipleStores_VerifyQueryLastSyncInfo
+* @tc.desc: Test GetPostEventTask with multiple stores in schema but tables_ only contains one
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, DoCloudSync_ContainsFalse_MultipleStores_VerifyQueryLastSyncInfo, TestSize.Level1)
+{
+    CloudData::SyncManager syncManager;
+    size_t max = 12;
+    size_t min = 5;
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    ASSERT_EQ(syncManager.Bind(executor), E_OK);
+
+    delegate_.networkType_ = NetworkDelegate::WIFI;
+    int32_t user = cloudInfo_.user;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE);
+    std::vector<std::string> tables;
+    info.tables_.insert_or_assign(TEST_CLOUD_STORE, tables);
+
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    auto ret = syncManager.DoCloudSync(std::move(info));
+    ASSERT_EQ(ret, E_OK);
+
+    sleep(1);
+
+    std::vector<Querykey> queryKeys;
+    Querykey queryKey;
+    queryKey.user = user;
+    queryKey.accountId = TEST_CLOUD_ID;
+    queryKey.bundleName = TEST_CLOUD_BUNDLE;
+    queryKey.storeId = TEST_CLOUD_STORE;
+    queryKeys.push_back(queryKey);
+
+    auto [status, result] = syncManager.QueryLastSyncInfo(queryKeys);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(result[TEST_CLOUD_STORE].code, E_ERROR);
+    delegate_.networkType_ = NetworkDelegate::NONE;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

@@ -57,7 +57,7 @@ static constexpr const char *SCHEME_SEPARATOR = "udmf://drag/com.example.app/saj
 
 static void GrantPermissionNative()
 {
-    const char *perms[4] = {
+    const char *perms[3] = {
         "ohos.permission.DISTRIBUTED_DATASYNC",
         "ohos.permission.ACCESS_SERVICE_DM",
         "ohos.permission.MONITOR_DEVICE_NETWORK_STATE" // perms[2] is a permission parameter

@@ -38,6 +38,7 @@
 #include "mock/db_store_mock.h"
 #include "mock/device_manager_adapter_mock.h"
 #include "mock/general_store_mock.h"
+#include "mock/tokenid_kit_mock.h"
 #include "rdb_general_store.h"
 #include "rdb_types.h"
 #include "relational_store_manager.h"
@@ -138,6 +139,7 @@ void RdbServiceImplTest::SetUpTestCase()
     EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, CalcClientUuid(_, _)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(deviceInfo.uuid)).WillRepeatedly(Return(deviceInfo.uuid));
+    EXPECT_CALL(*deviceManagerAdapterMock, RegDevCallback()).WillRepeatedly(Return([]() {}));
 
     InitMetaData();
     Bootstrap::GetInstance().LoadCheckers();
@@ -1857,6 +1859,30 @@ HWTEST_F(RdbServiceImplTest, LockCloudContainer002, TestSize.Level0)
 }
 
 /**
+ * @tc.name: LockCloudContainer003
+ * @tc.desc: Test LockCloudContainer when CheckAccess succeeds and systemApi check success.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, LockCloudContainer003, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    MockIsSystemAppByFullTokenID(true);
+    auto result = service.LockCloudContainer(param);
+
+    EXPECT_EQ(result.first, RDB_ERROR);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+    MockIsSystemAppByFullTokenID(false);
+}
+
+/**
  * @tc.name: UnlockCloudContainer001
  * @tc.desc: Test UnlockCloudContainer when CheckAccess fails.
  * @tc.type: FUNC
@@ -1895,6 +1921,30 @@ HWTEST_F(RdbServiceImplTest, UnlockCloudContainer002, TestSize.Level0)
     EXPECT_EQ(result, RDB_ERROR); // Assuming the callback sets status to RDB_OK
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: UnlockCloudContainer003
+ * @tc.desc: Test UnlockCloudContainer when CheckAccess succeeds and systemApi check success.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zhaojh
+ */
+HWTEST_F(RdbServiceImplTest, UnlockCloudContainer003, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    MockIsSystemAppByFullTokenID(true);
+    int32_t result = service.UnlockCloudContainer(param);
+
+    EXPECT_EQ(result, RDB_ERROR);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+    MockIsSystemAppByFullTokenID(false);
 }
 
 /**

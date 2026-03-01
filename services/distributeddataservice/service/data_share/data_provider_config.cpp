@@ -222,6 +222,51 @@ void DataProviderConfig::GetMetaDataFromUri()
     }
 }
 
+std::pair<int32_t, DataShareSAConfigInfo> DataProviderConfig::GetDataShareSAConfigInfo()
+{
+    // get SA configInfo from config file
+    DataShareSAConfigInfo configInfo;
+    providerInfo_.bundleName = uriConfig_.authority;
+    if (providerInfo_.bundleName.empty()) {
+        if (uriConfig_.pathSegments.empty()) {
+            return std::make_pair(E_URI_NOT_EXIST, configInfo);
+        }
+        providerInfo_.bundleName = uriConfig_.pathSegments[0];
+    }
+
+    int32_t ret = DataShareSAConfigInfoManager::GetInstance()->GetDataShareSAConfigInfo(
+        providerInfo_.bundleName, providerInfo_.systemAbilityId, configInfo);
+    return std::make_pair(ret, configInfo);
+}
+
+int32_t DataProviderConfig::GetFromDataShareConfig()
+{
+    auto [errCode, configInfo] = GetDataShareSAConfigInfo();
+    if (errCode != E_OK) {
+        ZLOGE("Get configInfo failed, process:%{public}s, sa:%{public}d, userId:%{public}d, visitedId:%{public}d, "
+            "uri:%{public}s", providerInfo_.bundleName.c_str(), providerInfo_.systemAbilityId,
+            providerInfo_.currentUserId, providerInfo_.visitedUserId, URIUtils::Anonymous(providerInfo_.uri).c_str());
+        return errCode;
+    }
+    providerInfo_.singleton = configInfo.singleton;
+    std::vector<SAConfigProxyData> &proxyDatas = configInfo.proxyData;
+    for (SAConfigProxyData &data : proxyDatas) {
+        if (data.uri.length() > uriConfig_.formatUri.length() ||
+            uriConfig_.formatUri.compare(0, data.uri.length(), data.uri) != 0) {
+            continue;
+        }
+        providerInfo_.readPermission = std::move(data.requiredReadPermission);
+        providerInfo_.writePermission = std::move(data.requiredWritePermission);
+        providerInfo_.allowLists = std::move(data.profile.allowLists);
+        // auto set SAID to moduleName
+        providerInfo_.moduleName = URIUtils::SA_ID + std::to_string(providerInfo_.systemAbilityId);
+        ProfileInfo profile = data.profile;
+        // SA has no moduleName, moduleName is SAID
+        return GetFromDataProperties(profile, providerInfo_.moduleName);
+    }
+    return E_URI_NOT_EXIST;
+}
+
 std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProviderInfo()
 {
     if (providerInfo_.appIndex == -1) {
@@ -230,7 +275,21 @@ std::pair<int, DataProviderConfig::ProviderInfo> DataProviderConfig::GetProvider
     if (providerInfo_.visitedUserId == -1) {
         return std::make_pair(E_INVALID_USER_ID, providerInfo_);
     }
-    auto ret = GetFromProxyData();
+    int ret = E_OK;
+    int32_t systemAbilityId = URIUtils::GetSystemAbilityId(uriConfig_.formatUri);
+    if (systemAbilityId != URIUtils::INVALID_SA_ID) {
+        providerInfo_.systemAbilityId = systemAbilityId;
+        // GetFromDataShareConfig means load datashareconfig info and fill params of providerInfo_
+        ret = GetFromDataShareConfig();
+        // not support extension yet, if get failed, just return (ret, providerInfo_)
+        if (ret != E_OK) {
+            ZLOGE("Get datashare configInfo failed:%{public}d", ret);
+            providerInfo_.systemAbilityId = URIUtils::INVALID_SA_ID;
+            return std::make_pair(ret, providerInfo_);
+        }
+    } else {
+        ret = GetFromProxyData();
+    }
     if (ret == E_OK) {
         GetMetaDataFromUri();
         return std::make_pair(ret, providerInfo_);

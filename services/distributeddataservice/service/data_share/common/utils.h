@@ -63,6 +63,7 @@ public:
     static void FormatUri(std::string &uri);
     static std::string FormatConstUri(const std::string &uri);
     static UriConfig GetUriConfig(const std::string &uri);
+    static int32_t GetSystemAbilityId(const std::string &uri);
     static std::string Anonymous(const std::string &uri);
     static std::map<std::string, std::string> GetQueryParams(const std::string& uri);
     static std::pair<bool, uint32_t> Strtoul(const std::string &str);
@@ -72,10 +73,15 @@ public:
     static constexpr const char *SCHEME_SEPARATOR = "://";
     static constexpr const char *URI_SEPARATOR = "/";
     static constexpr const char *APP_INDEX = "appIndex";  // for Application Clone
+    static constexpr const char *SA_ID = "SAID=";
     static constexpr const char USER_PARAM[] = "user";
     static constexpr int DATA_PROXY_SCHEMA_LEN = sizeof(DATA_PROXY_SCHEMA) - 1;
+    static constexpr int32_t INVALID_SA_ID = 0;
     static constexpr uint32_t PARAM_URI_SEPARATOR_LEN = 4;
-
+    static constexpr uint32_t SCHEME_SEPARATOR_LEN = 3;
+    static constexpr uint32_t SA_ID_LEN = 5;
+    // LAST_SYS_ABILITY_ID is 0x00ffffff(16777215)
+    static constexpr const uint32_t LAST_SYS_ABILITY_ID = 0x00ffffff;
 private:
     enum PATH_PARAM : int32_t {
         BUNDLE_NAME = 0,

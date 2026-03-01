@@ -892,9 +892,11 @@ int32_t CloudServiceImpl::OnReady(const std::string &device)
     std::vector<int32_t> users;
     Account::GetInstance()->QueryForegroundUsers(users);
     if (users.empty()) {
+        ZLOGW("current user is not foreground.");
         return SUCCESS;
     }
     if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
+        ZLOGE("network is not available");
         return NETWORK_ERROR;
     }
     for (auto user : users) {
@@ -1487,7 +1489,7 @@ Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
 void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
 {
     ZLOGI("tokenId=%{public}x, seqnum=%{public}u", tokenId, seqNum);
-    sptr<CloudNotifierProxyBroker> notifier = nullptr;
+    sptr<CloudNotifierProxy> notifier = nullptr;
     syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &syncAgent) {
         notifier = syncAgent.notifier_;
         return true;
