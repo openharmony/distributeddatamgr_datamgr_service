@@ -184,6 +184,24 @@ int32_t RdbServiceStub::OnRemoteRetainDeviceData(MessageParcel &data, MessagePar
     return RDB_OK;
 }
 
+int32_t RdbServiceStub::OnRemoteObtainUuid(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    std::vector<std::string> devices;
+    if (!ITypesUtil::Unmarshal(data, param, devices)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto status = ObtainUuid(param, devices);
+    if (!ITypesUtil::Marshal(reply, status, devices)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
 int32_t RdbServiceStub::OnRemoteDoSync(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;

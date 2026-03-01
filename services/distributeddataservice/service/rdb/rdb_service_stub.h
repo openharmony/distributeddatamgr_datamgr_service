@@ -43,6 +43,8 @@ private:
 
     int32_t OnRemoteRetainDeviceData(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnRemoteObtainUuid(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnRemoteDoSync(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteDoAsync(MessageParcel& data, MessageParcel& reply);
@@ -130,6 +132,8 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_ISSILENT)] = &RdbServiceStub::OnIsSupportSilent,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REMOVE_REMOTE_DATA)] =
             &RdbServiceStub::OnRemoteRetainDeviceData,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_OBTAIN_UUID)] =
+            &RdbServiceStub::OnRemoteObtainUuid,
     };
 RDB_UTILS_POP_WARNING
 };

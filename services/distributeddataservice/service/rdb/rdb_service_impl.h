@@ -69,6 +69,8 @@ public:
     int32_t RetainDeviceData(
         const RdbSyncerParam &param, const std::map<std::string, std::vector<std::string>> &retainDevices) override;
 
+    int32_t ObtainUuid(const RdbSyncerParam &param, std::vector<std::string> &devices) override;
+
     std::pair<int32_t, std::shared_ptr<ResultSet>> RemoteQuery(const RdbSyncerParam& param, const std::string& device,
         const std::string& sql, const std::vector<std::string>& selectionArgs) override;
 

@@ -1203,17 +1203,16 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
 HWTEST_F(RdbGeneralStoreTest, RetainDeviceData001, TestSize.Level1)
 {
     std::map<std::string, std::vector<std::string>> retainDevices;
+    store_->isClosed_ = true;
     auto result = store_->RetainDeviceData(retainDevices);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    store_->isClosed_ = false;
+    result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
     metaData_.storeId = "mock";
     store_ = std::make_shared<RdbGeneralStore>(metaData_);
     store_->Init();
-    result = store_->RetainDeviceData(retainDevices);
-    EXPECT_EQ(result, GeneralError::E_NOT_SUPPORT);
     std::vector<std::string> devices;
-    retainDevices["test"] = devices;
-    result = store_->RetainDeviceData(retainDevices);
-    EXPECT_EQ(result, GeneralError::E_NOT_SUPPORT);
     devices.push_back("testdevice");
     retainDevices["test"] = devices;
     result = store_->RetainDeviceData(retainDevices);
@@ -1700,8 +1699,8 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_DB_ERROR);
     result = store_->ConvertStatus(DBStatus::EKEYREVOKED_ERROR);
     EXPECT_EQ(result, GeneralError::E_DB_ERROR);
-    result = store_->ConvertStatus(DBStatus::CONSTRAINT);
-    EXPECT_EQ(result, GeneralError::E_DB_ERROR);
+    result = store_->ConvertStatus(DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB);
+    EXPECT_EQ(result, GeneralError::E_DB_CORRUPT);
 }
 
 /**

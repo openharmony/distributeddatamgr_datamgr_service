@@ -559,7 +559,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData003, TestSize.Level0)
 
 /**
  * @tc.name: RetainDeviceData004
- * @tc.desc: Test RetainDeviceData when delegate return error.
+ * @tc.desc: Test RetainDeviceData success empty map.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: zd
@@ -576,11 +576,9 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData004, TestSize.Level0)
     auto meta = service.GetStoreMetaData(param);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
-    dbStatus_ = E_TABLE_NOT_FOUND;
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_TABLE_NOT_FOUND));
-    dbStatus_ = E_OK;
+    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -593,7 +591,6 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData004, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData005, TestSize.Level0)
 {
-
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
@@ -604,6 +601,260 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData005, TestSize.Level0)
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
     EXPECT_EQ(result, RdbStatus::RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: RetainDeviceData006
+ * @tc.desc: Test RetainDeviceData fail map is not empty touuid fail.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData006, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    auto meta = service.GetStoreMetaData(param);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    std::vector<std::string> devices;
+    devices.push_back("test");
+    retainDevices["employee"] = devices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: RetainDeviceData007
+ * @tc.desc: Test RetainDeviceData success empty devices.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData007, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    auto meta = service.GetStoreMetaData(param);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    std::vector<std::string> devices;
+    retainDevices["employee"] = devices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: RetainDeviceData008
+ * @tc.desc: Test RetainDeviceData fail tablename empty string.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData008, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    auto meta = service.GetStoreMetaData(param);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    std::vector<std::string> devices;
+    devices.push_back("device");
+    retainDevices[""] = devices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: RetainDeviceData009
+ * @tc.desc: Test RetainDeviceData fail device empty string.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData009, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    auto meta = service.GetStoreMetaData(param);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    std::vector<std::string> devices;
+    devices.push_back("");
+    retainDevices["employee"] = devices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: ObtainUuid001
+ * @tc.desc: Test ObtainUuid fail device empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, ObtainUuid001, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    std::vector<std::string> devices;
+    auto result = service.ObtainUuid(param, devices);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
+}
+
+/**
+ * @tc.name: ObtainUuid002
+ * @tc.desc: Test ObtainUuid fail non system app.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, ObtainUuid002, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(false));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    std::vector<std::string> devices;
+    devices.push_back(DmAdapter::GetInstance().GetLocalDevice().networkId);
+    auto result = service.ObtainUuid(param, devices);
+    EXPECT_EQ(result, RDB_NON_SYSTEM_APP);
+}
+
+/**
+ * @tc.name: ObtainUuid003
+ * @tc.desc: Test ObtainUuid fail touuid fail.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, ObtainUuid003, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    std::vector<std::string> devices;
+    devices.push_back(DmAdapter::GetInstance().GetLocalDevice().networkId);
+    auto result = service.ObtainUuid(param, devices);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
+}
+
+/**
+ * @tc.name: ObtainUuid004
+ * @tc.desc: Test ObtainUuid fail device empty.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, ObtainUuid004, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    std::vector<std::string> devices;
+    devices.push_back("test");
+    auto result = service.ObtainUuid(param, devices);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
+}
+
+/**
+ * @tc.name: ObtainUuid005
+ * @tc.desc: Test ObtainUuid when param is invalid.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, ObtainUuid005, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.user_ = "test\\..test";
+    std::vector<std::string> devices;
+    devices.push_back(DmAdapter::GetInstance().GetLocalDevice().networkId);
+    auto result = service.ObtainUuid(param, devices);
+    EXPECT_EQ(result, RdbStatus::RDB_ERROR);
+}
+
+/**
+ * @tc.name: ObtainUuid006
+ * @tc.desc: Test ObtainUuid success.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, ObtainUuid006, TestSize.Level0)
+{
+    std::vector<std::string> devices;
+    devices.push_back("test");
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(devices)).WillOnce(Return(devices));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    auto result = service.ObtainUuid(param, devices);
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: RetainDeviceData010
+ * @tc.desc: Test RetainDeviceData success map is not empty touuid success.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData010, TestSize.Level0)
+{
+    std::vector<std::string> devices;
+    devices.push_back("test");
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(devices)).WillOnce(Return(devices));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    auto meta = service.GetStoreMetaData(param);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    retainDevices["employee"] = devices;
+    auto result = service.RetainDeviceData(param, retainDevices);
+    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 } // namespace DistributedRDBTest

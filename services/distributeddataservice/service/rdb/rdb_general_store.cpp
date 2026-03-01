@@ -127,7 +127,7 @@ std::pair<bool, DistributedDB::DistributedSchema> RdbGeneralStore::GetGaussDistr
         DistributedTable &dbTable = distributedSchema.tables[i];
         dbTable.tableName = table.name;
         for (auto &field : table.fields) {
-            DistributedField dbField;
+            DistributedDB::DistributedField dbField;
             dbField.colName = field.colName;
             dbField.isP2pSync = IsExistence(field.colName, table.deviceSyncFields);
             dbField.isSpecified = field.primary;
@@ -1288,7 +1288,6 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_INVALID_ARGS;
         case DBStatus::COMM_FAILURE:
         case DBStatus::EKEYREVOKED_ERROR:
-        case DBStatus::CONSTRAINT:
         case DBStatus::DB_ERROR:
             return GenErr::E_DB_ERROR;
         default:
