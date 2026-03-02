@@ -285,7 +285,7 @@ Status RuntimeStore::GetBatchRuntime(const std::string &dataPrefix, std::vector<
     return DataHandler::UnmarshalRuntimes(keySet, entries, runtimeSet);
 }
 
-Status RuntimeStore::Update(const UnifiedData &unifiedData)
+Status RuntimeStore::Update(const UnifiedData &unifiedData, Summary &summary)
 {
     std::string key = unifiedData.GetRuntime()->key.key;
     auto status = Delete(UnifiedKey(key).GetKeyCommonPrefix());
@@ -294,7 +294,7 @@ Status RuntimeStore::Update(const UnifiedData &unifiedData)
         ZLOGE("Delete unified data failed, dataPrefix: %{public}s.", key.c_str());
         return status;
     }
-    status = Put(unifiedData);
+    status = Put(unifiedData, summary);
     if (status != E_OK) {
         ZLOGE("Update unified data failed, dataPrefix: %{public}s.", key.c_str());
         return status;

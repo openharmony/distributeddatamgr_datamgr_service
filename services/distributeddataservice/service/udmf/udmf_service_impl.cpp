@@ -440,7 +440,7 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifiedData)
+int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifiedData, Summary &summary)
 {
     UnifiedKey key(query.key);
     if (!IsValidInput(query, unifiedData, key)) {
@@ -477,7 +477,7 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
     unifiedData.SetRuntime(*runtime);
     PreProcessUtils::SetRecordUid(unifiedData);
-    if ((res = store->Update(unifiedData)) != E_OK) {
+    if ((res = store->Update(unifiedData, summary)) != E_OK) {
         ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
         HandleDbError(key.intention, res);
         return E_DB_ERROR;

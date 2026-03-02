@@ -110,13 +110,14 @@ int32_t UdmfServiceStub::OnUpdateData(MessageParcel &data, MessageParcel &reply)
     ZLOGI("start");
     QueryOption query;
     UnifiedData unifiedData;
-    if (!ITypesUtil::Unmarshal(data, query, unifiedData)) {
+    Summary summary;
+    if (!ITypesUtil::Unmarshal(data, query, unifiedData, summary)) {
         ZLOGE("Unmarshal queryOption or unifiedData failed!");
         return E_READ_PARCEL_ERROR;
     }
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     query.tokenId = token;
-    int32_t status = UpdateData(query, unifiedData);
+    int32_t status = UpdateData(query, unifiedData, summary);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;

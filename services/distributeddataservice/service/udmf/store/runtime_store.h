@@ -32,7 +32,7 @@ public:
     Status Put(const UnifiedData &unifiedData, Summary &summary) override;
     Status Get(const std::string &key, UnifiedData &unifiedData) override;
     Status GetSummary(UnifiedKey &key, Summary &summary) override;
-    Status Update(const UnifiedData &unifiedData) override;
+    Status Update(const UnifiedData &unifiedData, Summary &summary) override;
     Status Delete(const std::string &key) override;
     Status DeleteBatch(const std::vector<std::string> &unifiedKeys) override;
     Status Sync(const std::vector<std::string> &devices) override;
