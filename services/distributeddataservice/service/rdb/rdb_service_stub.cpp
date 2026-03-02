@@ -193,9 +193,8 @@ int32_t RdbServiceStub::OnRemoteObtainUuid(MessageParcel &data, MessageParcel &r
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-
-    auto status = ObtainUuid(param, devices);
-    if (!ITypesUtil::Marshal(reply, status, devices)) {
+    auto [status, uuids] = ObtainUuid(param, devices);
+    if (!ITypesUtil::Marshal(reply, status, uuids)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

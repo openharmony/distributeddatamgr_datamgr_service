@@ -1286,8 +1286,6 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_TABLE_NOT_FOUND;
         case DBStatus::INVALID_ARGS:
             return GenErr::E_INVALID_ARGS;
-        case DBStatus::COMM_FAILURE:
-        case DBStatus::EKEYREVOKED_ERROR:
         case DBStatus::DB_ERROR:
             return GenErr::E_DB_ERROR;
         default:

@@ -729,7 +729,7 @@ HWTEST_F(RdbServiceImplTokenTest, ObtainUuid001, TestSize.Level0)
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
     std::vector<std::string> devices;
-    auto result = service.ObtainUuid(param, devices);
+    auto [result, uuids] = service.ObtainUuid(param, devices);
     EXPECT_EQ(result, RDB_INVALID_ARGS);
 }
 
@@ -748,7 +748,7 @@ HWTEST_F(RdbServiceImplTokenTest, ObtainUuid002, TestSize.Level0)
     GetRdbSyncerParam(param);
     std::vector<std::string> devices;
     devices.push_back(DmAdapter::GetInstance().GetLocalDevice().networkId);
-    auto result = service.ObtainUuid(param, devices);
+    auto [result, uuids] = service.ObtainUuid(param, devices);
     EXPECT_EQ(result, RDB_NON_SYSTEM_APP);
 }
 
@@ -767,7 +767,7 @@ HWTEST_F(RdbServiceImplTokenTest, ObtainUuid003, TestSize.Level0)
     GetRdbSyncerParam(param);
     std::vector<std::string> devices;
     devices.push_back(DmAdapter::GetInstance().GetLocalDevice().networkId);
-    auto result = service.ObtainUuid(param, devices);
+    auto [result, uuids] = service.ObtainUuid(param, devices);
     EXPECT_EQ(result, RDB_INVALID_ARGS);
 }
 
@@ -786,7 +786,7 @@ HWTEST_F(RdbServiceImplTokenTest, ObtainUuid004, TestSize.Level0)
     GetRdbSyncerParam(param);
     std::vector<std::string> devices;
     devices.push_back("test");
-    auto result = service.ObtainUuid(param, devices);
+    auto [result, uuids] = service.ObtainUuid(param, devices);
     EXPECT_EQ(result, RDB_INVALID_ARGS);
 }
 
@@ -805,7 +805,7 @@ HWTEST_F(RdbServiceImplTokenTest, ObtainUuid005, TestSize.Level0)
     param.user_ = "test\\..test";
     std::vector<std::string> devices;
     devices.push_back(DmAdapter::GetInstance().GetLocalDevice().networkId);
-    auto result = service.ObtainUuid(param, devices);
+    auto [result, uuids] = service.ObtainUuid(param, devices);
     EXPECT_EQ(result, RdbStatus::RDB_ERROR);
 }
 
@@ -825,8 +825,54 @@ HWTEST_F(RdbServiceImplTokenTest, ObtainUuid006, TestSize.Level0)
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
-    auto result = service.ObtainUuid(param, devices);
+    auto [result, uuids] = service.ObtainUuid(param, devices);
     EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(uuids.size(), 1);
+    EXPECT_EQ(uuids[0], "test");
+}
+
+/**
+ * @tc.name: ObtainUuid007
+ * @tc.desc: Test ObtainUuid fail.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, ObtainUuid007, TestSize.Level0)
+{
+    std::vector<std::string> devices;
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(devices)).WillOnce(Return(devices));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    std::vector<std::string> devices1;
+    devices1.push_back("test");
+    auto [result, uuids] = service.ObtainUuid(param, devices1);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
+}
+
+/**
+ * @tc.name: ObtainUuid008
+ * @tc.desc: Test ObtainUuid fail.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, ObtainUuid008, TestSize.Level0)
+{
+    std::vector<std::string> devices;
+    devices.push_back("test");
+    devices.push_back("test1");
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(devices)).WillOnce(Return(devices));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    std::vector<std::string> devices1;
+    devices1.push_back("test");
+    auto [result, uuids] = service.ObtainUuid(param, devices1);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
 }
 
 /**

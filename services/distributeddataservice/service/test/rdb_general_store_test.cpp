@@ -1695,10 +1695,6 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
     EXPECT_EQ(result, GeneralError::E_TABLE_NOT_FOUND);
     result = store_->ConvertStatus(DBStatus::INVALID_ARGS);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
-    result = store_->ConvertStatus(DBStatus::COMM_FAILURE);
-    EXPECT_EQ(result, GeneralError::E_DB_ERROR);
-    result = store_->ConvertStatus(DBStatus::EKEYREVOKED_ERROR);
-    EXPECT_EQ(result, GeneralError::E_DB_ERROR);
     result = store_->ConvertStatus(DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB);
     EXPECT_EQ(result, GeneralError::E_DB_CORRUPT);
 }
