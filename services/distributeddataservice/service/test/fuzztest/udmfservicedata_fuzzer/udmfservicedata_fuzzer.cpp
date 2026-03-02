@@ -37,6 +37,7 @@
 #include "nativetoken_kit.h"
 #include "udmf_notifier_proxy.h"
 #include "udmf_service_impl.h"
+#include "unified_data_helper.h"
 
 using namespace OHOS::UDMF;
 using namespace OHOS::Security::AccessToken;

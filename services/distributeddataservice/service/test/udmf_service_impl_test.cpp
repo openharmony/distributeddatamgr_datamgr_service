@@ -680,7 +680,8 @@ HWTEST_F(UdmfServiceImplTest, UpdateData003, TestSize.Level1)
     unifiedData.AddRecord(record2);
 
     UdmfServiceImpl impl;
-    EXPECT_NE(impl.UpdateData(query, unifiedData), E_OK);
+    Summary summary;
+    EXPECT_NE(impl.UpdateData(query, unifiedData, summary), E_OK);
 }
 
 /**
@@ -695,7 +696,8 @@ HWTEST_F(UdmfServiceImplTest, UpdateData004, TestSize.Level1)
 
     query.key = "invalid_key";
     UdmfServiceImpl impl;
-    EXPECT_EQ(impl.UpdateData(query, unifiedData), E_INVALID_PARAMETERS);
+    Summary summary;
+    EXPECT_EQ(impl.UpdateData(query, unifiedData, summary), E_INVALID_PARAMETERS);
 }
 
 /**

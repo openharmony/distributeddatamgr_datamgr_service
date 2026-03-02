@@ -26,6 +26,7 @@
 #include "token_setproc.h"
 #include "udmf_service_impl.h"
 #include "udmf_types_util.h"
+#include "unified_data_helper.h"
 
 using namespace OHOS::UDMF;
 
