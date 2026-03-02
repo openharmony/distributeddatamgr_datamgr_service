@@ -1000,6 +1000,7 @@ HWTEST_F(UdmfRunTimeStoreTest, OnTimeout002, TestSize.Level1)
     status = store->GetEntries("udmf://", entries);
     EXPECT_EQ(status, E_OK);
     EXPECT_EQ(0, entries.size());
+    EXPECT_EQ(0, LifeCycleManager::GetInstance().udKeys_.Size());
 }
 
 /**
