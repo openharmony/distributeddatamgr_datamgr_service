@@ -97,7 +97,7 @@ private:
     int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
     bool VerifySavedTokenId(std::shared_ptr<Runtime> runtime);
     int32_t RegisterRemotePullObserver(const std::string &key);
-    int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);
+    int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData, Summary &summary);
     int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
     int32_t FillDelayUnifiedData(const UnifiedKey &key, UnifiedData &unifiedData);
     std::vector<std::string> GetDevicesForDelayData();
