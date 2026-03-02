@@ -89,7 +89,9 @@ void PushDelayDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data.AddRecord(record);
-    ITypesUtil::Marshal(requestUpdate, data);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(data, summary);
+    ITypesUtil::Marshal(requestUpdate, data, summary);
 
     MessageParcel replyUpdate;
     std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;

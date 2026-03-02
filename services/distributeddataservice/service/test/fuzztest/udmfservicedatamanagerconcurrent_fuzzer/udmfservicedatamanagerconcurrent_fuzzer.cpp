@@ -68,9 +68,11 @@ void SetDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data1.AddRecord(record);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(data1, summary);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(request, option1, data1);
+    ITypesUtil::Marshal(request, option1, data1, summary);
     MessageParcel reply;
     std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
     if (udmfServiceStub == nullptr) {
@@ -114,9 +116,11 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data1.AddRecord(record);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(data1, summary);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(request, query, data1);
+    ITypesUtil::Marshal(request, query, data1, summary);
     MessageParcel reply;
     std::shared_ptr<UdmfServiceStub> udmfServiceStub = g_udmfServiceImpl;
     if (udmfServiceStub == nullptr) {

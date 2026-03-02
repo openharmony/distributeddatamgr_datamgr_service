@@ -1023,7 +1023,8 @@ HWTEST_F(UdmfRunTimeStoreTest, OnStart001, TestSize.Level1)
     };
     inputData.SetRuntime(runtime);
     inputData.SetRecords({record});
-    auto status = store->Put(inputData);
+    Summary summary;
+    auto status = store->Put(inputData, summary);
     EXPECT_EQ(status, E_OK);
 
     LifeCycleManager::GetInstance().SetThreadPool(std::make_shared<ExecutorPool>(1, 1));

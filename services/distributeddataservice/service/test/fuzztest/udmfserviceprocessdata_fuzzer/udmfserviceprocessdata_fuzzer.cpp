@@ -129,7 +129,9 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     UnifiedData data;
     std::shared_ptr<UnifiedRecord> record = std::make_shared<UnifiedRecord>();
     data.AddRecord(record);
-    udmfServiceImpl->UpdateData(query, data);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(data, summary);
+    udmfServiceImpl->UpdateData(query, data, summary);
 }
 
 void DeleteDataFuzz(FuzzedDataProvider &provider)

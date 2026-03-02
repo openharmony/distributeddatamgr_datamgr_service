@@ -160,9 +160,11 @@ void SetDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data1.AddRecord(record);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(data1, summary);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(request, option1, data1);
+    ITypesUtil::Marshal(request, option1, data1, summary);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DATA), request, reply);
     udmfServiceImpl->OnBind(
@@ -220,9 +222,11 @@ void UpdateDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data1.AddRecord(record);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(data1, summary);
     MessageParcel request;
     request.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(request, query, data1);
+    ITypesUtil::Marshal(request, query, data1, summary);
     MessageParcel reply;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::UPDATE_DATA), request, reply);
     udmfServiceImpl->OnBind(

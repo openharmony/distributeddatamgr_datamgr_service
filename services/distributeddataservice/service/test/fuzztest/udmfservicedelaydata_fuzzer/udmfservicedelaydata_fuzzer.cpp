@@ -222,7 +222,9 @@ void PushDelayDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     data.AddRecord(record);
-    ITypesUtil::Marshal(requestUpdate, data);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(data, summary);
+    ITypesUtil::Marshal(requestUpdate, data, summary);
 
     MessageParcel replyUpdate;
     udmfServiceImpl->OnRemoteRequest(static_cast<uint32_t>(UdmfServiceInterfaceCode::SET_DELAY_DATA),
@@ -241,7 +243,8 @@ void PushDelayDataImplFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     std::string key = SCHEME_SEPARATOR;
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
-    udmfServiceImpl->PushDelayData(key, data);
+    Summary summary;
+    udmfServiceImpl->PushDelayData(key, data, summary);
 }
 
 void GetDataIfAvailableFuzz(FuzzedDataProvider &provider)

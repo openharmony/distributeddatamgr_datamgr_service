@@ -265,8 +265,10 @@ void SaveDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     unifiedData.AddRecord(record);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(unifiedData, summary);
     std::string key = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->SaveData(option, unifiedData, key);
+    udmfServiceImpl->SaveData(option, unifiedData, summary, key);
 }
 }
 
