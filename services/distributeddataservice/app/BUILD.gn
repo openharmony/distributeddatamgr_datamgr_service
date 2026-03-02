@@ -74,11 +74,13 @@ config("module_private_config") {
     "-Oz",
     "-fdata-sections",
     "-ffunction-sections",
+    "-Werror=vla",
   ]
 
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   ldflags = [ "-Wl,--gc-sections" ]
@@ -118,7 +120,7 @@ ohos_shared_library("distributeddataservice") {
     sources += variable_sources
   }
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [ "-fvisibility=hidden", "-Werror=vla", ]
   configs = [ ":module_private_config" ]
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",

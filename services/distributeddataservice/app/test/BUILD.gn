@@ -56,6 +56,7 @@ config("module_private_config") {
     "-Werror",
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
   defines = [
@@ -310,6 +311,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
   }
   cflags = [
     "-fno-access-control",  # Ignore Private Member Access Control
+    "-Werror=vla",
   ]
   deps = [
     "${data_service_path}/adapter/qos:distributeddata_qos",
@@ -337,7 +339,7 @@ ohos_unittest("SessionManagerTest") {
     blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
 
-  cflags_cc = [ "-DUT_TEST" ]
+  cflags_cc = [ "-DUT_TEST", "-Werror=vla", ]
   configs = [ ":module_private_config" ]
 
   external_deps = [
@@ -502,6 +504,7 @@ ohos_unittest("FeatureStubImplTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   if (datamgr_service_power) {
@@ -524,6 +527,7 @@ ohos_unittest("UpgradeManagerTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   include_dirs = [
@@ -602,7 +606,7 @@ ohos_unittest("RouteHeadHandlerImplTest") {
     blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
   }
 
-  cflags_cc = [ "-DUT_TEST" ]
+  cflags_cc = [ "-DUT_TEST", "-Werror=vla", ]
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -642,6 +646,7 @@ ohos_unittest("RouteHeadHandlerImplTest") {
     "-Werror",
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
   ldflags = [ "-Wl,--whole-archive" ]
   defines = [

@@ -35,7 +35,7 @@ config("module_private_config") {
     "${data_service_path}/service/matrix/include",
     "${data_service_path}/service/kvdb",
   ]
-  cflags = [ "-Werror" ]
+  cflags = [ "-Werror", "-Werror=vla", ]
   ldflags = [ "-Wl,--whole-archive" ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -133,6 +133,7 @@ ohos_unittest("ServiceUtilsTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   external_deps = [
@@ -171,6 +172,7 @@ ohos_unittest("StoreTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   external_deps = [
@@ -216,6 +218,7 @@ ohos_unittest("StoreMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   external_deps = [
@@ -330,6 +333,7 @@ ohos_unittest("MetaDataManagerTest") {
   configs = [ ":module_private_config" ]
   cflags = [
     "-fno-access-control",  # Ignore Private Member Access Control
+    "-Werror=vla",
   ]
 
   external_deps = [
@@ -400,6 +404,7 @@ ohos_unittest("ServiceMetaDataTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   configs = [ ":module_private_config" ]
@@ -443,7 +448,7 @@ ohos_unittest("AppIdMappingConfigManagerTest") {
   module_out_path = module_output_path
   sources = [ "app_id_mapping_config_manager_test.cpp" ]
   configs = [ ":module_private_config" ]
-  cflags = [ "-fno-access-control" ]
+  cflags = [ "-fno-access-control", "-Werror=vla", ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [ "kv_store:datamgr_common" ]
 }
@@ -452,7 +457,7 @@ ohos_unittest("ConnectManagerTest") {
   module_out_path = module_output_path
   sources = [ "connect_manager_test.cpp" ]
   configs = [ ":module_private_config" ]
-  cflags = [ "-fno-access-control" ]
+  cflags = [ "-fno-access-control", "-Werror=vla", ]
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk_src" ]
   external_deps = [
     "kv_store:datamgr_common",
@@ -472,6 +477,7 @@ ohos_unittest("SyncManagerTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 }
 
@@ -514,6 +520,7 @@ ohos_unittest("AutoCacheTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 }
 

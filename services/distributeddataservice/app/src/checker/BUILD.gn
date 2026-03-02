@@ -30,16 +30,17 @@ ohos_source_set("distributeddata_checker") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   include_dirs = [ "${data_service_path}/framework/include" ]
 
   if (build_public_version) {
-    cflags_cc += [ "-DCONFIG_PUBLIC_VERSION" ]
+    cflags_cc += [ "-DCONFIG_PUBLIC_VERSION", "-Werror=vla", ]
   }
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
   deps = [ "${data_service_path}/adapter/utils:distributeddata_utils" ]
-  cflags = [ "-Oz" ]
+  cflags = [ "-Oz", "-Werror=vla", ]
   external_deps = [
     "ability_base:base",
     "ability_base:want",
