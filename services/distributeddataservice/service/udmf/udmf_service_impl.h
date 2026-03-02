@@ -36,7 +36,7 @@ public:
     int32_t SetData(CustomOption &option, UnifiedData &unifiedData, Summary &summary, std::string &key) override;
     int32_t GetData(const QueryOption &query, UnifiedData &unifiedData) override;
     int32_t GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet) override;
-    int32_t UpdateData(const QueryOption &query, UnifiedData &unifiedData) override;
+    int32_t UpdateData(const QueryOption &query, UnifiedData &unifiedData, Summary &summary) override;
     int32_t DeleteData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet) override;
     int32_t GetSummary(const QueryOption &query, Summary &summary) override;
     int32_t AddPrivilege(const QueryOption &query, Privilege &privilege) override;
@@ -53,7 +53,7 @@ public:
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
         std::string &key) override;
-    int32_t PushDelayData(const std::string &key, UnifiedData &unifiedData) override;
+    int32_t PushDelayData(const std::string &key, UnifiedData &unifiedData, Summary &summary) override;
     int32_t GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
         sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData) override;
     int32_t HandleRemoteDelayData(const std::string &key);
@@ -62,7 +62,7 @@ private:
     using StaticActs = DistributedData::StaticActs;
     bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
     int32_t StoreSync(const UnifiedKey &key, const QueryOption &query, const std::vector<std::string> &devices);
-    int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, const Summary &summary, std::string &key);
+    int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, Summary &summary, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
     int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);

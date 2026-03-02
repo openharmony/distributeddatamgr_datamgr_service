@@ -324,13 +324,13 @@ int32_t UdmfServiceStub::OnPushDelayData(MessageParcel &data, MessageParcel &rep
     ZLOGD("start");
     std::string key;
     UnifiedData unifiedData;
-
-    if (!ITypesUtil::Unmarshal(data, key, unifiedData)) {
+    Summary summary;
+    if (!ITypesUtil::Unmarshal(data, key, unifiedData, summary)) {
         ZLOGE("Unmarshal failed!");
         return E_READ_PARCEL_ERROR;
     }
 
-    int32_t status = PushDelayData(key, unifiedData);
+    int32_t status = PushDelayData(key, unifiedData, summary);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;

@@ -69,7 +69,7 @@ private:
     bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
-    Status PutSummary(const UnifiedData &unifiedData, const Summary &summary, std::vector<Entry> &entries);
+    Status PutSummary(const UnifiedData &unifiedData, Summary &summary, std::vector<DistributedDB::Entry> &entries);
     Status MarkWhenCorrupted(DistributedDB::DBStatus status);
     void ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate);
     void UnRegisterAllObserver();

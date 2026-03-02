@@ -105,7 +105,7 @@ UdmfServiceImpl::UdmfServiceImpl()
 }
 
 int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
-    const Summary &summary, std::string &key)
+    Summary &summary, std::string &key)
 {
     ZLOGD("start");
     int32_t res = E_OK;
@@ -1228,7 +1228,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
+int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData, Summary &summary)
 {
     UnifiedKey udKey(key);
     if (!CheckDragParams(udKey)) {
@@ -1245,7 +1245,7 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     }
     if (!isDataLoading && !isBlockData) {
         ZLOGW("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
-        return UpdateDelayData(key, unifiedData);
+        return UpdateDelayData(key, unifiedData, summary);
     }
     QueryOption query;
     query.tokenId = isDataLoading ? getDataInfo.tokenId : blockData.tokenId;
@@ -1299,7 +1299,7 @@ int32_t UdmfServiceImpl::FillDelayUnifiedData(const UnifiedKey &key, UnifiedData
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &unifiedData)
+int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &unifiedData, Summary &summary)
 {
     UnifiedKey udKey(key);
     if (!CheckDragParams(udKey)) {
@@ -1311,7 +1311,7 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         return E_DB_ERROR;
     }
     uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    int32_t res = store->Update(unifiedData);
+    int32_t res = store->Update(unifiedData, summary);
     if (res != E_OK) {
         ZLOGE("Update delay data failed:%{public}s, status:%{public}d", key.c_str(), res);
         HandleDbError(udKey.intention, res);
