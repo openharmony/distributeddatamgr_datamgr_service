@@ -101,7 +101,7 @@ Status RuntimeStore::DeleteLocal(const std::string &key)
     return E_OK;
 }
 
-Status RuntimeStore::Put(const UnifiedData &unifiedData, const Summary &summary)
+Status RuntimeStore::Put(const UnifiedData &unifiedData, Summary &summary)
 {
     UpdateTime();
     std::vector<Entry> entries;
@@ -157,7 +157,7 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     return DataHandler::UnmarshalEntries(key, entries, unifiedData);
 }
 
-Status RuntimeStore::PutSummary(UnifiedKey &key, const Summary &summary, std::vector<Entry> &entries)
+Status RuntimeStore::PutSummary(const UnifiedData &data, const Summary &summary, std::vector<Entry> &entries)
 {
     UpdateTime();
 
@@ -167,7 +167,7 @@ Status RuntimeStore::PutSummary(UnifiedKey &key, const Summary &summary, std::ve
         PreProcessUtils::GetSummaryFromDetails(details, summaryFromDetails);
         summary = std::move(summaryFromDetails);
     }
-    auto propertyKey = key.GetKeyCommonPrefix();
+    auto propertyKey = data.GetRuntime()->key.GetKeyCommonPrefix();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
     if (status != E_OK) {

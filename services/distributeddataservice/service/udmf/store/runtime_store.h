@@ -29,7 +29,7 @@ class RuntimeStore final : public Store {
 public:
     explicit RuntimeStore(const std::string &storeId);
     ~RuntimeStore();
-    Status Put(const UnifiedData &unifiedData) override;
+    Status Put(const UnifiedData &unifiedData, Summary &summary) override;
     Status Get(const std::string &key, UnifiedData &unifiedData) override;
     Status GetSummary(UnifiedKey &key, Summary &summary) override;
     Status Update(const UnifiedData &unifiedData) override;
@@ -69,7 +69,7 @@ private:
     bool BuildMetaDataParam(DistributedData::StoreMetaData &metaData);
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
-    Status PutSummary(UnifiedKey &key, const Summary &summary, std::vector<Entry> &entries);
+    Status PutSummary(const UnifiedData &unifiedData, const Summary &summary, std::vector<Entry> &entries);
     Status MarkWhenCorrupted(DistributedDB::DBStatus status);
     void ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate);
     void UnRegisterAllObserver();

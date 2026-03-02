@@ -143,7 +143,7 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
 }
 
 int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData,
-    const Summary &summary, std::string &key)
+    Summary &summary, std::string &key)
 {
     if (!unifiedData.IsValid()) {
         ZLOGE("UnifiedData is invalid.");
