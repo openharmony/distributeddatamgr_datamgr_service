@@ -409,7 +409,7 @@ int32_t RdbServiceImpl::RetainDeviceData(
             }
         }
         std::vector<std::string> uuids = DmAdapter::GetInstance().ToUUID(devices);
-        if (uuids.empty()) {
+        if (uuids.empty() || (uuids.size() != devices.size())) {
             ZLOGE("ToUUID fail! bundleName:%{public}s, storeName:%{public}s.", param.bundleName_.c_str(),
                 Anonymous::Change(param.storeName_).c_str());
             return RDB_INVALID_ARGS;
@@ -447,7 +447,7 @@ std::pair<int32_t, std::vector<std::string>> RdbServiceImpl::ObtainUuid(
         return { RDB_INVALID_ARGS, {} };
     }
     std::vector<std::string> uuids = DmAdapter::GetInstance().ToUUID(devices);
-    if (devices.empty() || (uuids.size() != devices.size())) {
+    if (uuids.empty() || (uuids.size() != devices.size())) {
         ZLOGE("ToUUID fail! bundleName:%{public}s, storeName:%{public}s.",
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
         return { RDB_INVALID_ARGS, {} };
