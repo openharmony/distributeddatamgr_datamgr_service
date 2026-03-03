@@ -247,8 +247,7 @@ HWTEST_F(UdmfServiceImplTest, UpdateData001, TestSize.Level1)
     QueryOption query;
     UnifiedData data;
     UdmfServiceImpl udmfServiceImpl;
-    Summary summary;
-    int32_t ret = udmfServiceImpl.UpdateData(query, data, summary);
+    int32_t ret = udmfServiceImpl.UpdateData(query, data);
     EXPECT_EQ(ret, E_INVALID_PARAMETERS);
 }
 
@@ -658,8 +657,7 @@ HWTEST_F(UdmfServiceImplTest, UpdateData002, TestSize.Level1)
     unifiedData.AddRecord(record2);
 
     UdmfServiceImpl impl;
-    Summary summary;
-    EXPECT_NE(impl.UpdateData(query, unifiedData, summary), E_OK);
+    EXPECT_NE(impl.UpdateData(query, unifiedData), E_OK);
 }
 
 /**
@@ -680,8 +678,7 @@ HWTEST_F(UdmfServiceImplTest, UpdateData003, TestSize.Level1)
     unifiedData.AddRecord(record2);
 
     UdmfServiceImpl impl;
-    Summary summary;
-    EXPECT_NE(impl.UpdateData(query, unifiedData, summary), E_OK);
+    EXPECT_NE(impl.UpdateData(query, unifiedData), E_OK);
 }
 
 /**
@@ -696,8 +693,7 @@ HWTEST_F(UdmfServiceImplTest, UpdateData004, TestSize.Level1)
 
     query.key = "invalid_key";
     UdmfServiceImpl impl;
-    Summary summary;
-    EXPECT_EQ(impl.UpdateData(query, unifiedData, summary), E_INVALID_PARAMETERS);
+    EXPECT_EQ(impl.UpdateData(query, unifiedData), E_INVALID_PARAMETERS);
 }
 
 /**
