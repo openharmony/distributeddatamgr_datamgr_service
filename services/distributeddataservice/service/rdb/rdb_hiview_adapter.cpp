@@ -75,7 +75,8 @@ void RdbHiViewAdapter::InvokeSync()
 
     HiSysEventParam params[] = {
         { .name = "TYPE", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = statTypes.data() }, .arraySize = count },
-        { .name = "BUNDLE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = bundleNames.data() }, .arraySize = count },
+        { .name = "BUNDLE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = bundleNames.data() },
+          .arraySize = count },
         { .name = "STORE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = storeNames.data() }, .arraySize = count },
         { .name = "PARAM_TYPE1", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = subTypes.data() }, .arraySize = count },
         { .name = "PARAM_TYPE2", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = costTimes.data() }, .arraySize = count },
