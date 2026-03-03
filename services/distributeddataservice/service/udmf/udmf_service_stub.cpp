@@ -51,14 +51,15 @@ int32_t UdmfServiceStub::OnSetData(MessageParcel &data, MessageParcel &reply)
     ZLOGI("start");
     CustomOption customOption;
     UnifiedData unifiedData;
-    if (!ITypesUtil::Unmarshal(data, customOption, unifiedData)) {
-        ZLOGE("Unmarshal customOption or unifiedData failed!");
+    Summary summary;
+    if (!ITypesUtil::Unmarshal(data, customOption, unifiedData, summary)) {
+        ZLOGE("Unmarshal customOption or unifiedData or summary failed!");
         return E_READ_PARCEL_ERROR;
     }
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     customOption.tokenId = token;
     std::string key;
-    int32_t status = SetData(customOption, unifiedData, key);
+    int32_t status = SetData(customOption, unifiedData, summary, key);
     if (!ITypesUtil::Marshal(reply, status, key)) {
         ZLOGE("Marshal status or key failed, status: %{public}d, key: %{public}s", status, key.c_str());
         return E_WRITE_PARCEL_ERROR;
@@ -322,13 +323,13 @@ int32_t UdmfServiceStub::OnPushDelayData(MessageParcel &data, MessageParcel &rep
     ZLOGD("start");
     std::string key;
     UnifiedData unifiedData;
-
-    if (!ITypesUtil::Unmarshal(data, key, unifiedData)) {
+    Summary summary;
+    if (!ITypesUtil::Unmarshal(data, key, unifiedData, summary)) {
         ZLOGE("Unmarshal failed!");
         return E_READ_PARCEL_ERROR;
     }
 
-    int32_t status = PushDelayData(key, unifiedData);
+    int32_t status = PushDelayData(key, unifiedData, summary);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;

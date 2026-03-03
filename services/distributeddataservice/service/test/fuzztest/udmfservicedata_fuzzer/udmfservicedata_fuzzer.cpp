@@ -37,6 +37,7 @@
 #include "nativetoken_kit.h"
 #include "udmf_notifier_proxy.h"
 #include "udmf_service_impl.h"
+#include "unified_data_helper.h"
 
 using namespace OHOS::UDMF;
 using namespace OHOS::Security::AccessToken;
@@ -265,8 +266,10 @@ void SaveDataFuzz(FuzzedDataProvider &provider)
     obj->value_[FILE_TYPE] = provider.ConsumeRandomLengthString();
     auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
     unifiedData.AddRecord(record);
+    Summary summary;
+    UnifiedDataHelper::GetSummary(unifiedData, summary);
     std::string key = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->SaveData(option, unifiedData, key);
+    udmfServiceImpl->SaveData(option, unifiedData, summary, key);
 }
 }
 

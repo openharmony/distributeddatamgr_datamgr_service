@@ -101,13 +101,13 @@ Status RuntimeStore::DeleteLocal(const std::string &key)
     return E_OK;
 }
 
-Status RuntimeStore::Put(const UnifiedData &unifiedData)
+Status RuntimeStore::Put(const UnifiedData &unifiedData, Summary &summary)
 {
     UpdateTime();
     std::vector<Entry> entries;
     std::string intention = unifiedData.GetRuntime()->key.intention;
     if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
-        PutSummary(unifiedData, entries);
+        PutSummary(unifiedData, summary, entries);
     }
     auto status = DataHandler::MarshalToEntries(unifiedData, entries);
     if (status != E_OK) {
@@ -157,17 +157,16 @@ Status RuntimeStore::Get(const std::string &key, UnifiedData &unifiedData)
     return DataHandler::UnmarshalEntries(key, entries, unifiedData);
 }
 
-Status RuntimeStore::PutSummary(const UnifiedData &data, std::vector<Entry> &entries)
+Status RuntimeStore::PutSummary(const UnifiedData &data, Summary &summary, std::vector<Entry> &entries)
 {
     UpdateTime();
-    UDDetails details {};
-    Summary summary;
-    if (PreProcessUtils::GetDetailsFromUData(data, details)) {
-        PreProcessUtils::GetSummaryFromDetails(details, summary);
-    } else {
-        UnifiedDataHelper::GetSummary(data, summary);
-    }
 
+    UDDetails details {};
+    if (PreProcessUtils::GetDetailsFromUData(data, details)) {
+        Summary summaryFromDetails;
+        PreProcessUtils::GetSummaryFromDetails(details, summaryFromDetails);
+        summary = std::move(summaryFromDetails);
+    }
     auto propertyKey = data.GetRuntime()->key.GetKeyCommonPrefix();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
@@ -286,7 +285,7 @@ Status RuntimeStore::GetBatchRuntime(const std::string &dataPrefix, std::vector<
     return DataHandler::UnmarshalRuntimes(keySet, entries, runtimeSet);
 }
 
-Status RuntimeStore::Update(const UnifiedData &unifiedData)
+Status RuntimeStore::Update(const UnifiedData &unifiedData, Summary &summary)
 {
     std::string key = unifiedData.GetRuntime()->key.key;
     auto status = Delete(UnifiedKey(key).GetKeyCommonPrefix());
@@ -295,7 +294,7 @@ Status RuntimeStore::Update(const UnifiedData &unifiedData)
         ZLOGE("Delete unified data failed, dataPrefix: %{public}s.", key.c_str());
         return status;
     }
-    status = Put(unifiedData);
+    status = Put(unifiedData, summary);
     if (status != E_OK) {
         ZLOGE("Update unified data failed, dataPrefix: %{public}s.", key.c_str());
         return status;

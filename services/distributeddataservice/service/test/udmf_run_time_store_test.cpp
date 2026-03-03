@@ -879,7 +879,8 @@ HWTEST_F(UdmfRunTimeStoreTest, GetBatchRuntime001, TestSize.Level1)
     auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
     EXPECT_TRUE(result);
-    auto status = store->Put(inputData);
+    Summary summary;
+    auto status = store->Put(inputData, summary);
     EXPECT_EQ(status, E_OK);
 
     std::vector<Runtime> outRuntimes;
@@ -930,7 +931,8 @@ HWTEST_F(UdmfRunTimeStoreTest, OnTimeout001, TestSize.Level1)
     auto store = std::make_shared<RuntimeStore>("DataHub");
     bool result = store->Init();
     EXPECT_TRUE(result);
-    auto status = store->Put(inputData);
+    Summary summary;
+    auto status = store->Put(inputData, summary);
     EXPECT_EQ(status, E_OK);
 
     UnifiedKey udKey2("DataHub", "com.test", "222");
@@ -940,7 +942,7 @@ HWTEST_F(UdmfRunTimeStoreTest, OnTimeout001, TestSize.Level1)
                       std::chrono::hours(25)).time_since_epoch().count()
     };
     inputData.SetRuntime(tomorrowRuntime);
-    status = store->Put(inputData);
+    status = store->Put(inputData, summary);
     EXPECT_EQ(status, E_OK);
     LifeCyclePolicy policy;
     policy.OnTimeout("DataHub");
@@ -975,7 +977,8 @@ HWTEST_F(UdmfRunTimeStoreTest, OnTimeout002, TestSize.Level1)
     auto store = std::make_shared<RuntimeStore>("drag");
     bool result = store->Init();
     EXPECT_TRUE(result);
-    auto status = store->Put(inputData);
+    Summary summary;
+    auto status = store->Put(inputData, summary);
     EXPECT_EQ(status, E_OK);
 
     UnifiedKey udKey2("drag", "com.test", PreProcessUtils::GenerateId());
@@ -987,7 +990,7 @@ HWTEST_F(UdmfRunTimeStoreTest, OnTimeout002, TestSize.Level1)
         .tokenId = 123
     };
     inputData.SetRuntime(tomorrowRuntime);
-    status = store->Put(inputData);
+    status = store->Put(inputData, summary);
     EXPECT_EQ(status, E_OK);
     LifeCycleManager::GetInstance().InsertUdKey(123, udKey2.GetUnifiedKey());
     EXPECT_EQ(1, LifeCycleManager::GetInstance().udKeys_.Size());
@@ -1021,7 +1024,8 @@ HWTEST_F(UdmfRunTimeStoreTest, OnStart001, TestSize.Level1)
     };
     inputData.SetRuntime(runtime);
     inputData.SetRecords({record});
-    auto status = store->Put(inputData);
+    Summary summary;
+    auto status = store->Put(inputData, summary);
     EXPECT_EQ(status, E_OK);
 
     LifeCycleManager::GetInstance().SetThreadPool(std::make_shared<ExecutorPool>(1, 1));

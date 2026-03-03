@@ -104,7 +104,8 @@ UdmfServiceImpl::UdmfServiceImpl()
     CheckerManager::GetInstance().LoadCheckers();
 }
 
-int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData, std::string &key)
+int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
+    Summary &summary, std::string &key)
 {
     ZLOGD("start");
     int32_t res = E_OK;
@@ -121,7 +122,7 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
         RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
             BizScene::SET_DATA, SetDataStage::SET_DATA_SERVICE_BEGIN, StageRes::IDLE, bundleName);
         msg.appId = bundleName;
-        res = SaveData(option, unifiedData, key);
+        res = SaveData(option, unifiedData, summary, key);
     }
     auto errFind = ERROR_MAP.find(res);
     msg.result = errFind == ERROR_MAP.end() ? "E_ERROR" : errFind->second;
@@ -141,7 +142,8 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     return res;
 }
 
-int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key)
+int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData,
+    Summary &summary, std::string &key)
 {
     if (!unifiedData.IsValid()) {
         ZLOGE("UnifiedData is invalid.");
@@ -171,7 +173,7 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         ZLOGE("Get store failed:%{public}s", intention.c_str());
         return E_DB_ERROR;
     }
-    int32_t status = store->Put(unifiedData);
+    int32_t status = store->Put(unifiedData, summary);
     if (status != E_OK) {
         ZLOGE("Put unified data failed:%{public}s, status:%{public}d", intention.c_str(), status);
         HandleDbError(intention, status);
@@ -475,7 +477,8 @@ int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifi
     runtime->lastModifiedTime = PreProcessUtils::GetTimestamp();
     unifiedData.SetRuntime(*runtime);
     PreProcessUtils::SetRecordUid(unifiedData);
-    if ((res = store->Update(unifiedData)) != E_OK) {
+    Summary summary;
+    if ((res = store->Update(unifiedData, summary)) != E_OK) {
         ZLOGE("Unified data update failed:%{public}s", key.intention.c_str());
         HandleDbError(key.intention, res);
         return E_DB_ERROR;
@@ -1226,7 +1229,7 @@ int32_t UdmfServiceImpl::SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRe
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData)
+int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unifiedData, Summary &summary)
 {
     UnifiedKey udKey(key);
     if (!CheckDragParams(udKey)) {
@@ -1243,7 +1246,7 @@ int32_t UdmfServiceImpl::PushDelayData(const std::string &key, UnifiedData &unif
     }
     if (!isDataLoading && !isBlockData) {
         ZLOGW("DelayData callback and block cache not exist, key:%{public}s", key.c_str());
-        return UpdateDelayData(key, unifiedData);
+        return UpdateDelayData(key, unifiedData, summary);
     }
     QueryOption query;
     query.tokenId = isDataLoading ? getDataInfo.tokenId : blockData.tokenId;
@@ -1297,7 +1300,7 @@ int32_t UdmfServiceImpl::FillDelayUnifiedData(const UnifiedKey &key, UnifiedData
     return E_OK;
 }
 
-int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &unifiedData)
+int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &unifiedData, Summary &summary)
 {
     UnifiedKey udKey(key);
     if (!CheckDragParams(udKey)) {
@@ -1309,7 +1312,7 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         return E_DB_ERROR;
     }
     uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    int32_t res = store->Update(unifiedData);
+    int32_t res = store->Update(unifiedData, summary);
     if (res != E_OK) {
         ZLOGE("Update delay data failed:%{public}s, status:%{public}d", key.c_str(), res);
         HandleDbError(udKey.intention, res);

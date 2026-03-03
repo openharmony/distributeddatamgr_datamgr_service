@@ -201,7 +201,8 @@ HWTEST_F(UdmfServiceImplTest, SaveData001, TestSize.Level1)
     std::string key = "";
     option.intention = UD_INTENTION_BASE;
     UdmfServiceImpl udmfServiceImpl;
-    int32_t ret = udmfServiceImpl.SaveData(option, data, key);
+    Summary summary;
+    int32_t ret = udmfServiceImpl.SaveData(option, data, summary, key);
     EXPECT_EQ(ret, E_INVALID_PARAMETERS);
 }
 
@@ -708,7 +709,8 @@ HWTEST_F(UdmfServiceImplTest, SaveData002, TestSize.Level1)
     std::string key = "";
 
     UdmfServiceImpl impl;
-    EXPECT_EQ(impl.SaveData(option, unifiedData, key), E_INVALID_PARAMETERS);
+    Summary summary;
+    EXPECT_EQ(impl.SaveData(option, unifiedData, summary, key), E_INVALID_PARAMETERS);
 }
 
 /**
@@ -729,7 +731,8 @@ HWTEST_F(UdmfServiceImplTest, SaveData003, TestSize.Level1)
     option.intention = Intention::UD_INTENTION_BASE;
 
     UdmfServiceImpl impl;
-    EXPECT_EQ(impl.SaveData(option, unifiedData, key), E_INVALID_PARAMETERS);
+    Summary summary;
+    EXPECT_EQ(impl.SaveData(option, unifiedData, summary, key), E_INVALID_PARAMETERS);
 }
 
 /**
@@ -751,7 +754,8 @@ HWTEST_F(UdmfServiceImplTest, SaveData004, TestSize.Level1)
     option.tokenId = 99999;
 
     UdmfServiceImpl impl;
-    EXPECT_NE(impl.SaveData(option, unifiedData, key), E_OK);
+    Summary summary;
+    EXPECT_NE(impl.SaveData(option, unifiedData, summary, key), E_OK);
 }
 
 /**
@@ -792,7 +796,8 @@ HWTEST_F(UdmfServiceImplTest, PushDelayData001, TestSize.Level1)
     std::string key = "invalid key";
 
     UdmfServiceImpl impl;
-    auto result = impl.PushDelayData(key, unifiedData);
+    Summary summary;
+    auto result = impl.PushDelayData(key, unifiedData, summary);
     EXPECT_NE(result, E_OK);
 }
 
@@ -946,7 +951,8 @@ HWTEST_F(UdmfServiceImplTest, PushDelayData002, TestSize.Level1)
     insertedData.AddRecord(std::make_shared<UnifiedRecord>());
 
     UdmfServiceImpl service;
-    auto status = service.PushDelayData(query.key, insertedData);
+    Summary summary;
+    auto status = service.PushDelayData(query.key, insertedData, summary);
     EXPECT_EQ(status, UDMF::E_INVALID_PARAMETERS);
 }
 
@@ -1005,7 +1011,8 @@ HWTEST_F(UdmfServiceImplTest, RetrieveData002, TestSize.Level1)
     service.OnBind(bindInfo);
     UnifiedData insertedData;
     insertedData.AddRecord(std::make_shared<PlainText>());
-    auto status = service.SaveData(option, insertedData, query.key);
+    Summary summary;
+    auto status = service.SaveData(option, insertedData, summary, query.key);
     EXPECT_EQ(status, E_OK);
 
     UnifiedData getData;
@@ -1034,7 +1041,8 @@ HWTEST_F(UdmfServiceImplTest, RetrieveData003, TestSize.Level1)
     service.OnBind(bindInfo);
     UnifiedData insertedData;
     insertedData.AddRecord(std::make_shared<PlainText>());
-    auto status = service.SaveData(option, insertedData, query.key);
+    Summary summary;
+    auto status = service.SaveData(option, insertedData, summary, query.key);
     EXPECT_EQ(status, E_OK);
 
     UnifiedData getData;
@@ -1064,7 +1072,8 @@ HWTEST_F(UdmfServiceImplTest, SaveData005, TestSize.Level1)
     unifiedData.AddRecord(record);
 
     UdmfServiceImpl impl;
-    auto status = impl.SaveData(option, unifiedData, key);
+    Summary summary;
+    auto status = impl.SaveData(option, unifiedData, summary, key);
     EXPECT_EQ(status, E_NO_PERMISSION);
 }
 
@@ -1404,7 +1413,8 @@ HWTEST_F(UdmfServiceImplTest, UpdateDelayData001, TestSize.Level1)
     UnifiedKey unifiedKey(key);
     runtime.key = unifiedKey;
     unifiedData.SetRuntime(runtime);
-    auto status = service.UpdateDelayData(key, unifiedData);
+    Summary summary;
+    auto status = service.UpdateDelayData(key, unifiedData, summary);
     EXPECT_EQ(status, E_ERROR);
 }
 
@@ -1482,7 +1492,8 @@ HWTEST_F(UdmfServiceImplTest, OnAppUninstall001, TestSize.Level1)
     UnifiedData data;
     data.AddRecord(std::make_shared<PlainText>());
     std::string key;
-    auto status = service.SaveData(option, data, key);
+    Summary summary;
+    auto status = service.SaveData(option, data, summary, key);
     EXPECT_EQ(status, E_OK);
     EXPECT_EQ(1, LifeCycleManager::GetInstance().udKeys_.Size());
     UdmfServiceImpl::UdmfStatic udmfStatic;

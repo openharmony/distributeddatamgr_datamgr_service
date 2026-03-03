@@ -33,7 +33,7 @@ public:
     UdmfServiceImpl();
     ~UdmfServiceImpl() = default;
     using DBLaunchParam = DistributedDB::AutoLaunchParam;
-    int32_t SetData(CustomOption &option, UnifiedData &unifiedData, std::string &key) override;
+    int32_t SetData(CustomOption &option, UnifiedData &unifiedData, Summary &summary, std::string &key) override;
     int32_t GetData(const QueryOption &query, UnifiedData &unifiedData) override;
     int32_t GetBatchData(const QueryOption &query, std::vector<UnifiedData> &unifiedDataSet) override;
     int32_t UpdateData(const QueryOption &query, UnifiedData &unifiedData) override;
@@ -53,7 +53,7 @@ public:
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
     int32_t SetDelayInfo(const DataLoadInfo &dataLoadInfo, sptr<IRemoteObject> iUdmfNotifier,
         std::string &key) override;
-    int32_t PushDelayData(const std::string &key, UnifiedData &unifiedData) override;
+    int32_t PushDelayData(const std::string &key, UnifiedData &unifiedData, Summary &summary) override;
     int32_t GetDataIfAvailable(const std::string &key, const DataLoadInfo &dataLoadInfo,
         sptr<IRemoteObject> iUdmfNotifier, std::shared_ptr<UnifiedData> unifiedData) override;
     int32_t HandleRemoteDelayData(const std::string &key);
@@ -62,7 +62,7 @@ private:
     using StaticActs = DistributedData::StaticActs;
     bool IsNeedMetaSync(const DistributedData::StoreMetaData &meta, const std::vector<std::string> &uuids);
     int32_t StoreSync(const UnifiedKey &key, const QueryOption &query, const std::vector<std::string> &devices);
-    int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, std::string &key);
+    int32_t SaveData(CustomOption &option, UnifiedData &unifiedData, Summary &summary, std::string &key);
     int32_t RetrieveData(const QueryOption &query, UnifiedData &unifiedData);
     int32_t QueryDataCommon(const QueryOption &query, std::vector<UnifiedData> &dataSet, std::shared_ptr<Store> &store);
     int32_t ProcessUri(const QueryOption &query, UnifiedData &unifiedData);
@@ -97,7 +97,7 @@ private:
     int32_t VerifyUpdatePermission(const QueryOption &query, UnifiedData &unifiedData, std::string &bundleName);
     bool VerifySavedTokenId(std::shared_ptr<Runtime> runtime);
     int32_t RegisterRemotePullObserver(const std::string &key);
-    int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData);
+    int32_t UpdateDelayData(const std::string &key, UnifiedData &unifiedData, Summary &summary);
     int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
     int32_t FillDelayUnifiedData(const UnifiedKey &key, UnifiedData &unifiedData);
     std::vector<std::string> GetDevicesForDelayData();

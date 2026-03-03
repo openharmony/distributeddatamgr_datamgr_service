@@ -176,7 +176,8 @@ HWTEST_F(UdmfObserverTest, DragObserverTest001, TestSize.Level1)
 
     UdmfServiceImpl::factory_.product_ = std::make_shared<UdmfServiceImpl>();
     auto store = StoreCache::GetInstance().GetStore("drag");
-    store->Put(data);
+    Summary summary;
+    store->Put(data, summary);
 
     DelayGetDataInfo delayGetDataInfo;
     delayGetDataInfo.tokenId = tokenId;

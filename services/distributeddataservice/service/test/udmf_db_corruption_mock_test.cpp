@@ -111,7 +111,8 @@ HWTEST_F(UdmfServiceImplDbCorruptionMockTest, SaveDataTest001, TestSize.Level1)
     data.AddRecord(record);
     std::string key1 = "key";
     UdmfServiceImpl serviceImpl;
-    auto status = serviceImpl.SaveData(option, data, key1);
+    Summary summary;
+    auto status = serviceImpl.SaveData(option, data, summary, key1);
     EXPECT_EQ(status, OHOS::UDMF::E_DB_ERROR);
 }
 
@@ -365,7 +366,8 @@ HWTEST_F(UdmfServiceImplDbCorruptionMockTest, Update001, TestSize.Level1)
     data.runtime_ = rumtime;
     auto store = std::make_shared<RuntimeStore>(DATA_HUB_INTENTION);
     store->kvStore_ = std::make_shared<DistributedDB::KvStoreNbDelegateCorruptionMock>();
-    auto status = store->Update(data);
+    Summary summary;
+    auto status = store->Update(data, summary);
     EXPECT_EQ(status, OHOS::UDMF::E_DB_CORRUPTED);
 }
 
