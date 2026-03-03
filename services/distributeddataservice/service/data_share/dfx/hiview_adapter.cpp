@@ -72,13 +72,13 @@ void HiViewAdapter::InvokeData()
     GetCallerTotalInfoVec(callerTotalInfos);
     uint32_t count = std::min(static_cast<uint32_t>(callerTotalInfos.size()), MAX_COLLECT_COUNT);
     if (count == 0) { return; }
-    int64_t callerUids[count];
-    char* callerNames[count];
-    int64_t totalCounts[count];
-    int64_t slowRequestCounts[count];
-    int64_t maxCostTimes[count];
-    int64_t totalCostTimes[count];
-    char* funcCounts[count];
+    std::vector<int64_t> callerUids(count);
+    std::vector<char*> callerNames(count);
+    std::vector<int64_t> totalCounts(count);
+    std::vector<int64_t> slowRequestCounts(count);
+    std::vector<int64_t> maxCostTimes(count);
+    std::vector<int64_t> totalCostTimes(count);
+    std::vector<char*> funcCounts(count);
     std::vector<std::string> funcCountsHolder(count);
     for (uint32_t i = 0; i < count; i++) {
         CallerTotalInfo &callerTotalInfo = callerTotalInfos[i];
@@ -98,19 +98,19 @@ void HiViewAdapter::InvokeData()
     }
 
     HiSysEventParam callerUid = { .name = "COLLIE_UID", .t = HISYSEVENT_INT64_ARRAY,
-        .v = { .array = callerUids }, .arraySize = count };
+        .v = { .array = callerUids.data() }, .arraySize = count };
     HiSysEventParam callerName = { .name = "CALLER_NAME", .t = HISYSEVENT_STRING_ARRAY,
-        .v = { .array = callerNames }, .arraySize = count };
+        .v = { .array = callerNames.data() }, .arraySize = count };
     HiSysEventParam totalCount = { .name = "TOTAL_COUNT", .t = HISYSEVENT_INT64_ARRAY,
-        .v = { .array = totalCounts }, .arraySize = count };
+        .v = { .array = totalCounts.data() }, .arraySize = count };
     HiSysEventParam slowRequestCount = { .name = "SLOW_RQUEST_COUNT", .t = HISYSEVENT_INT64_ARRAY,
-        .v = { .array = slowRequestCounts }, .arraySize = count };
+        .v = { .array = slowRequestCounts.data() }, .arraySize = count };
     HiSysEventParam maxCostTime = { .name = "MAX_COST_TIME", .t = HISYSEVENT_INT64_ARRAY,
-        .v = { .array = maxCostTimes }, .arraySize = count };
+        .v = { .array = maxCostTimes.data() }, .arraySize = count };
     HiSysEventParam totalCostTime = { .name = "TOTAL_COST_TIME", .t = HISYSEVENT_INT64_ARRAY,
-        .v = { .array = totalCostTimes }, .arraySize = count };
+        .v = { .array = totalCostTimes.data() }, .arraySize = count };
     HiSysEventParam funcCount = { .name = "FUNC_COUNTS", .t = HISYSEVENT_STRING_ARRAY,
-        .v = { .array = funcCounts }, .arraySize = count };
+        .v = { .array = funcCounts.data() }, .arraySize = count };
     HiSysEventParam params[] = {callerUid, callerName, totalCount, slowRequestCount,
         maxCostTime, totalCostTime, funcCount};
     int res = OH_HiSysEvent_Write(DOMAIN, EVENT_NAME, HISYSEVENT_STATISTIC, params, PARAMS_SIZE);
