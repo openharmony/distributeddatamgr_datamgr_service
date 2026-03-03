@@ -53,12 +53,12 @@ void RdbHiViewAdapter::InvokeSync()
         return;
     }
 
-    uint32_t statTypes[count];
-    const char* bundleNames[count];
-    const char* storeNames[count];
-    uint32_t subTypes[count];
-    uint32_t costTimes[count];
-    uint32_t occurTimes[count];
+    std::vector<uint32_t> statTypes(count);
+    std::vector<const char*> bundleNames(count);
+    std::vector<const char*> storeNames(count);
+    std::vector<uint32_t> subTypes(count);
+    std::vector<uint32_t> costTimes(count);
+    std::vector<uint32_t> occurTimes(count);
     uint32_t index = 0;
 
     statEvents.ForEach([&statTypes, &bundleNames, &storeNames, &subTypes, &costTimes, &occurTimes, &index](
@@ -74,12 +74,12 @@ void RdbHiViewAdapter::InvokeSync()
     });
 
     HiSysEventParam params[] = {
-        { .name = "TYPE", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = statTypes }, .arraySize = count },
-        { .name = "BUNDLE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = bundleNames }, .arraySize = count },
-        { .name = "STORE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = storeNames }, .arraySize = count },
-        { .name = "PARAM_TYPE1", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = subTypes }, .arraySize = count },
-        { .name = "PARAM_TYPE2", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = costTimes }, .arraySize = count },
-        { .name = "TIMES", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = occurTimes }, .arraySize = count },
+        { .name = "TYPE", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = statTypes.data() }, .arraySize = count },
+        { .name = "BUNDLE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = bundleNames.data() }, .arraySize = count },
+        { .name = "STORE_NAME", .t = HISYSEVENT_STRING_ARRAY, .v = { .array = storeNames.data() }, .arraySize = count },
+        { .name = "PARAM_TYPE1", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = subTypes.data() }, .arraySize = count },
+        { .name = "PARAM_TYPE2", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = costTimes.data() }, .arraySize = count },
+        { .name = "TIMES", .t = HISYSEVENT_UINT32_ARRAY, .v = { .array = occurTimes.data() }, .arraySize = count },
     };
     auto size = sizeof(params) / sizeof(params[0]);
     OH_HiSysEvent_Write(DISTRIBUTED_DATAMGR, STATISTIC_EVENT, HISYSEVENT_STATISTIC, params, size);
