@@ -67,6 +67,7 @@ ohos_source_set("distributeddata_rdb") {
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Werror",
     "-Oz",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -98,6 +99,7 @@ ohos_source_set("distributeddata_rdb") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
   subsystem_name = "distributeddatamgr"
 

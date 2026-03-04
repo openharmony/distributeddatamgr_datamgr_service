@@ -122,11 +122,12 @@ ohos_shared_library("distributeddatasvcfwk") {
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-fdata-sections",
     "-ffunction-sections",
+    "-Werror=vla",
   ]
 
   ldflags = [ "-Wl,--gc-sections" ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [ "-fvisibility=hidden", "-Werror=vla", ]
 
   configs = [ ":module_config" ]
 
@@ -239,11 +240,12 @@ ohos_source_set("distributeddatasvcfwk_src") {
       "-D_LIBCPP_HAS_COND_CLOCKWAIT",
       "-fdata-sections",
       "-ffunction-sections",
+      "-Werror=vla",
     ]
 
     ldflags = [ "-Wl,--gc-sections" ]
 
-    cflags_cc = [ "-fvisibility=hidden" ]
+    cflags_cc = [ "-fvisibility=hidden", "-Werror=vla", ]
 
     configs = [ ":module_config" ]
 

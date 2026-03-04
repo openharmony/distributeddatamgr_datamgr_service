@@ -40,9 +40,10 @@ ohos_source_set("distributeddata_installer") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
-  cflags = [ "-Oz" ]
+  cflags = [ "-Oz", "-Werror=vla", ]
 
   deps = [
     "${data_service_path}/framework:distributeddatasvcfwk",

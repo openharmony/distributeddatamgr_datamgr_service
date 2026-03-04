@@ -984,9 +984,9 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup007, TestSize.Level0) {
     EXPECT_TRUE(fstat(fd.Get(), &statBuf) == 0);
     EXPECT_TRUE(statBuf.st_size > 0);
 
-    char buffer[statBuf.st_size + 1];
-    EXPECT_TRUE(read(fd.Get(), buffer, statBuf.st_size + 1) > 0);
-    std::string secretKeyStr(buffer);
+    std::vector<char> buffer(statBuf.st_size + 1);
+    EXPECT_TRUE(read(fd.Get(), buffer.data(), buffer.size()) > 0);
+    std::string secretKeyStr(buffer.data());
     EXPECT_TRUE(secretKeyStr == "{\"infos\":[]}");
 }
 
@@ -1043,9 +1043,9 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionBackup008, TestSize.Level0) {
     EXPECT_TRUE(fstat(fd.Get(), &statBuf) == 0);
     EXPECT_TRUE(statBuf.st_size > 0);
 
-    char buffer[statBuf.st_size + 1];
-    EXPECT_TRUE(read(fd.Get(), buffer, statBuf.st_size + 1) > 0);
-    std::string secretKeyStr(buffer);
+    std::vector<char> buffer(statBuf.st_size + 1);
+    EXPECT_TRUE(read(fd.Get(), buffer.data(), buffer.size()) > 0);
+    std::string secretKeyStr(buffer.data());
     SecretKeyBackupData backupData;
     backupData.Unmarshal(DistributedData::Serializable::ToJson(secretKeyStr));
 

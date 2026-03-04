@@ -33,6 +33,7 @@ ohos_fuzztest("StoreDebugInfoFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
+    "-Werror=vla",
   ]
 
   deps = [
