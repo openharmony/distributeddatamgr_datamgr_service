@@ -55,6 +55,7 @@ ohos_source_set("distributeddata_kvdb") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   cflags = [

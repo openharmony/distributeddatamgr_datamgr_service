@@ -60,7 +60,10 @@ ohos_source_set("distributeddata_communicator") {
     "${data_service_path}/adapter/include/utils",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Werror=vla",
+  ]
   public_configs = [ ":module_public_config" ]
 
   deps = [

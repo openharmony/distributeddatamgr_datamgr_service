@@ -32,6 +32,7 @@ ohos_source_set("distributeddata_backup") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   include_dirs = [

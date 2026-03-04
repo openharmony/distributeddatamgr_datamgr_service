@@ -30,7 +30,10 @@ ohos_source_set("distributeddata_qos") {
 
   sources = [ "src/qos_manager.cpp" ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Werror=vla",
+  ]
 
   include_dirs = [
     "include",
