@@ -74,6 +74,18 @@ public:
     {
         return resSetDbSchema;
     }
+
+    static inline DBStatus resRemove = DB_ERROR;
+    static bool SetResRemove(DBStatus res)
+    {
+        resRemove = res;
+        return true;
+    }
+
+    DBStatus RemoveExceptDeviceData(const std::map<std::string, std::vector<std::string>> &tableMap) override
+    {
+        return resRemove;
+    }
     
     int32_t GetCloudSyncTaskCount() override
     {

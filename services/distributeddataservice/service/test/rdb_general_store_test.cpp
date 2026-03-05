@@ -77,6 +77,7 @@ public:
         MockRelationalStoreDelegate::SetResSetStoreConfig(DBStatus::OK);
         MockRelationalStoreDelegate::SetResSetDbSchema(DBStatus::OK);
         MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+        MockRelationalStoreDelegate::SetResRemove(DBStatus::OK);
     };
     void TearDown()
     {
@@ -910,7 +911,7 @@ HWTEST_F(RdbGeneralStoreTest, Sync001, TestSize.Level1)
     EXPECT_EQ(result1, GeneralError::E_OK);
     syncParam.mode = GeneralStore::NEARBY_END;
     std::tie(result1, result2) = store_->Sync(devices, query, async, syncParam);
-    EXPECT_EQ(result1, GeneralError::E_ERROR);
+    EXPECT_EQ(result1, GeneralError::E_INVALID_ARGS);
     syncParam.mode = GeneralStore::NEARBY_PULL_PUSH;
     std::tie(result1, result2) = store_->Sync(devices, query, async, syncParam);
     EXPECT_EQ(result1, GeneralError::E_OK);
@@ -937,7 +938,7 @@ HWTEST_F(RdbGeneralStoreTest, Sync003, TestSize.Level1)
     syncParam.mode = GeneralStore::NEARBY_PULL;
     MockRelationalStoreDelegate::SetResSync(DBStatus::DB_ERROR);
     auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
-    EXPECT_EQ(result1, GeneralError::E_ERROR);
+    EXPECT_EQ(result1, GeneralError::E_DB_ERROR);
 }
 
 /**
@@ -1192,6 +1193,49 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
     store->ref_ = 0;
     result = store->AddRef();
     EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name: RetainDeviceData001
+* @tc.desc: RdbGeneralStore RetainDeviceData function test db is close
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RetainDeviceData001, TestSize.Level1)
+{
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    store_->Close(true);
+    auto result = store_->RetainDeviceData(retainDevices);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+}
+
+/**
+* @tc.name: RetainDeviceData002
+* @tc.desc: RdbGeneralStore RetainDeviceData function E_OK
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RetainDeviceData002, TestSize.Level1)
+{
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    std::vector<std::string> devices;
+    devices.push_back("testdevice");
+    retainDevices["test"] = devices;
+    store_->Init();
+    auto result = store_->RetainDeviceData(retainDevices);
+    EXPECT_EQ(result, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: RetainDeviceData003
+* @tc.desc: RdbGeneralStore RetainDeviceData function test INVALID_ARGS
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RetainDeviceData003, TestSize.Level1)
+{
+    std::map<std::string, std::vector<std::string>> retainDevices;
+    MockRelationalStoreDelegate::SetResRemove(DBStatus::INVALID_ARGS);
+    store_->Init();
+    auto result = store_->RetainDeviceData(retainDevices);
+    EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 }
 
 /**
@@ -1654,13 +1698,21 @@ HWTEST_F(RdbGeneralStoreTest, ConvertStatus, TestSize.Level1)
     result = store_->ConvertStatus(DBStatus::BUSY);
     EXPECT_EQ(result, GeneralError::E_BUSY);
     result = store_->ConvertStatus(DBStatus::DB_ERROR);
-    EXPECT_EQ(result, GeneralError::E_ERROR);
+    EXPECT_EQ(result, GeneralError::E_DB_ERROR);
     result = store_->ConvertStatus(DBStatus::CLOUD_DISABLED);
     EXPECT_EQ(result, GeneralError::E_CLOUD_DISABLED);
     result = store_->ConvertStatus(DBStatus::CLOUD_SYNC_TASK_MERGED);
     EXPECT_EQ(result, GeneralError::E_SYNC_TASK_MERGED);
     result = store_->ConvertStatus(DBStatus::SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT);
     EXPECT_EQ(result, GeneralError::E_NO_SPACE_FOR_ASSET);
+    result = store_->ConvertStatus(DBStatus::NOT_SUPPORT);
+    EXPECT_EQ(result, GeneralError::E_NOT_SUPPORT);
+    result = store_->ConvertStatus(DBStatus::TABLE_NOT_FOUND);
+    EXPECT_EQ(result, GeneralError::E_TABLE_NOT_FOUND);
+    result = store_->ConvertStatus(DBStatus::INVALID_ARGS);
+    EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
+    result = store_->ConvertStatus(DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB);
+    EXPECT_EQ(result, GeneralError::E_DB_CORRUPT);
 }
 
 /**

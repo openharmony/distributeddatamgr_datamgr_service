@@ -66,6 +66,12 @@ public:
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
         const std::vector<Reference> &references, bool isRebuild, int32_t type = DISTRIBUTED_DEVICE) override;
 
+    int32_t RetainDeviceData(
+        const RdbSyncerParam &param, const std::map<std::string, std::vector<std::string>> &retainDevices) override;
+
+    std::pair<int32_t, std::vector<std::string>> ObtainUuid(
+        const RdbSyncerParam &param, const std::vector<std::string> &devices) override;
+
     std::pair<int32_t, std::shared_ptr<ResultSet>> RemoteQuery(const RdbSyncerParam& param, const std::string& device,
         const std::string& sql, const std::vector<std::string>& selectionArgs) override;
 

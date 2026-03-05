@@ -18,6 +18,7 @@
 #include <gmock/gmock.h>
 #include "accesstoken_kit.h"
 #include "access_token.h"
+#include "tokenid_kit.h"
 
 namespace OHOS {
 namespace Security {
@@ -42,6 +43,20 @@ public:
     MOCK_METHOD(int, GetHapTokenInfo, (AccessTokenID, HapTokenInfo&));
     MOCK_METHOD(int, GetNativeTokenInfo, (AccessTokenID, NativeTokenInfo&));
     MOCK_METHOD(int, VerifyAccessToken, (AccessTokenID, const std::string&));
+};
+
+class BTokenIdKit {
+public:
+    virtual bool IsSystemAppByFullTokenID(uint64_t) = 0;
+    BTokenIdKit() = default;
+    virtual ~BTokenIdKit() = default;
+private:
+    static inline std::shared_ptr<BTokenIdKit> tokenkIdKit = nullptr;
+};
+
+class TokenIdKitMock : public BTokenIdKit {
+public:
+    MOCK_METHOD(bool, IsSystemAppByFullTokenID, (uint64_t));
 };
 }
 }

@@ -127,7 +127,7 @@ std::pair<bool, DistributedDB::DistributedSchema> RdbGeneralStore::GetGaussDistr
         DistributedTable &dbTable = distributedSchema.tables[i];
         dbTable.tableName = table.name;
         for (auto &field : table.fields) {
-            DistributedField dbField;
+            DistributedDB::DistributedField dbField;
             dbField.colName = field.colName;
             dbField.isP2pSync = IsExistence(field.colName, table.deviceSyncFields);
             dbField.isSpecified = field.primary;
@@ -1171,6 +1171,25 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     return GeneralError::E_OK;
 }
 
+int32_t RdbGeneralStore::RetainDeviceData(
+    const std::map<std::string, std::vector<std::string>> &retainDevices)
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto status = delegate_->RemoveExceptDeviceData(retainDevices);
+    if (status != DBStatus::OK) {
+        ZLOGE("RetainDeviceData failed, bundleName: %{public}s, storeName: %{public}s, err:%{public}d",
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str(), status);
+    }
+    return ConvertStatus(status);
+}
+
 int32_t RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
 {
     if (isClosed_) {
@@ -1258,9 +1277,17 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
         case DBStatus::CLOUD_SYNC_TASK_MERGED:
             return GenErr::E_SYNC_TASK_MERGED;
         case DBStatus::CLOUD_DISABLED:
-            return GeneralError::E_CLOUD_DISABLED;
+            return GenErr::E_CLOUD_DISABLED;
         case DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB:
-            return GeneralError::E_DB_CORRUPT;
+            return GenErr::E_DB_CORRUPT;
+        case DBStatus::NOT_SUPPORT:
+            return GenErr::E_NOT_SUPPORT;
+        case DBStatus::TABLE_NOT_FOUND:
+            return GenErr::E_TABLE_NOT_FOUND;
+        case DBStatus::INVALID_ARGS:
+            return GenErr::E_INVALID_ARGS;
+        case DBStatus::DB_ERROR:
+            return GenErr::E_DB_ERROR;
         default:
             ZLOGI("status:0x%{public}x", status);
             break;

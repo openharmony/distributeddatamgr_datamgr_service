@@ -69,6 +69,7 @@ enum GeneralError : int32_t {
     E_CLOUD_ASSET_NOT_FOUND,
     E_SKIP_WHEN_CLOUD_SPACE_INSUFFICIENT,
     E_EXPIRED_CURSOR,
+    E_TABLE_NOT_FOUND,
     E_BUTT,
 };
 }

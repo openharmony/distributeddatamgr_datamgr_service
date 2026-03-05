@@ -14,8 +14,10 @@
  */
 #include "rdb_common_utils.h"
 #include "rdb_errno.h"
+#include "rdb_types.h"
 namespace OHOS::DistributedRdb {
 using namespace OHOS::DistributedData;
+using RdbStatus = OHOS::DistributedRdb::RdbStatus;
 std::vector<std::string> RdbCommonUtils::GetSearchableTables(const RdbChangedData &changedData)
 {
     std::vector<std::string> tables;
@@ -74,5 +76,27 @@ int32_t RdbCommonUtils::ConvertNativeRdbStatus(int32_t status)
             break;
     }
     return GeneralError::E_ERROR;
+}
+
+int32_t RdbCommonUtils::ConvertGeneralRdbStatus(int32_t status)
+{
+    switch (status) {
+        case GeneralError::E_OK:
+            return RdbStatus::RDB_OK;
+        case GeneralError::E_BUSY:
+            return RdbStatus::RDB_SQLITE_BUSY;
+        case GeneralError::E_INVALID_ARGS:
+            return RdbStatus::RDB_INVALID_ARGS;
+        case GeneralError::E_DB_CORRUPT:
+            return RdbStatus::RDB_SQLITE_CORRUPT;
+        case GeneralError::E_DB_ERROR:
+        case GeneralError::E_TABLE_NOT_FOUND:
+            return RdbStatus::RDB_SQLITE_ERROR;
+        case GeneralError::E_NOT_SUPPORT:
+            return RdbStatus::RDB_NOT_SUPPORT;
+        default:
+            break;
+    }
+    return RdbStatus::RDB_ERROR;
 }
 } // namespace OHOS::DistributedRdb

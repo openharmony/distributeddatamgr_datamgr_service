@@ -383,6 +383,78 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         tables, type, RdbCommonUtils::Convert(references), tableType);
 }
 
+int32_t RdbServiceImpl::RetainDeviceData(
+    const RdbSyncerParam &param, const std::map<std::string, std::vector<std::string>> &retainDevices)
+{
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
+        return RDB_NON_SYSTEM_APP;
+    }
+    std::map<std::string, std::vector<std::string>> retainDevicesTemp;
+    for (auto &[table, devices] : retainDevices) {
+        if (table.empty()) {
+            return RDB_INVALID_ARGS;
+        }
+        if (devices.empty()) {
+            retainDevicesTemp[table] = devices;
+            continue;
+        }
+        for (auto &device : devices) {
+            if (device.empty()) {
+                return RDB_INVALID_ARGS;
+            }
+        }
+        std::vector<std::string> uuids = DmAdapter::GetInstance().ToUUID(devices);
+        if (uuids.empty() || (uuids.size() != devices.size())) {
+            ZLOGE("ToUUID fail! bundleName:%{public}s, storeName:%{public}s.", param.bundleName_.c_str(),
+                Anonymous::Change(param.storeName_).c_str());
+            return RDB_INVALID_ARGS;
+        }
+        retainDevicesTemp[table] = uuids;
+    }
+    auto [exists, metaData] = LoadStoreMetaData(param);
+    if (!exists || metaData.instanceId != 0) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d exists:%{public}d. No store meta",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), metaData.instanceId, exists);
+        return RDB_DB_NOT_EXIST;
+    }
+    auto store = GetStore(metaData);
+    if (store == nullptr) {
+        ZLOGE("bundle:%{public}s, %{public}s.", param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return RDB_DB_NOT_EXIST;
+    }
+    return RdbCommonUtils::ConvertGeneralRdbStatus(store->RetainDeviceData(retainDevicesTemp));
+}
+
+std::pair<int32_t, std::vector<std::string>> RdbServiceImpl::ObtainUuid(
+    const RdbSyncerParam &param, const std::vector<std::string> &devices)
+{
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return { RDB_ERROR, {} };
+    }
+    if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
+        return { RDB_NON_SYSTEM_APP, {} };
+    }
+    if (devices.empty()) {
+        ZLOGE("Device is empty! bundleName:%{public}s, storeName:%{public}s.",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return { RDB_INVALID_ARGS, {} };
+    }
+    std::vector<std::string> uuids = DmAdapter::GetInstance().ToUUID(devices);
+    if (uuids.empty() || (uuids.size() != devices.size())) {
+        ZLOGE("ToUUID fail! bundleName:%{public}s, storeName:%{public}s.",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return { RDB_INVALID_ARGS, {} };
+    }
+    return { RDB_OK, uuids };
+}
+
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
 {
     ZLOGI("tokenId=%{public}x, pid=%{public}d, seqnum=%{public}u", tokenId, pid, seqNum);
