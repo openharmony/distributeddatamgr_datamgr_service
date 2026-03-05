@@ -35,6 +35,7 @@ ohos_fuzztest("UdmfServiceHandleAppShareOptionConcurrentFuzzTest") {
   cflags = [
     "-g",
     "-O0",
+    "-Werror=vla",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
     "-fno-access-control"

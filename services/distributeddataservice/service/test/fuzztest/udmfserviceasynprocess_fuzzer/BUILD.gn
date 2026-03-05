@@ -35,9 +35,10 @@ ohos_fuzztest("UdmfServiceAsynProcessFuzzTest") {
   cflags = [
     "-g",
     "-O0",
+    "-Werror=vla",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
-    "-fno-access-control"
+    "-fno-access-control",
   ]
 
   sources = [ "udmfserviceasynprocess_fuzzer.cpp" ]

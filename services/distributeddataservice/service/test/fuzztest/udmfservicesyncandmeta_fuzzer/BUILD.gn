@@ -39,6 +39,7 @@ ohos_fuzztest("UdmfServiceSyncAndMetaFuzzTest") {
     "-g",
     "-O0",
     "-Wno-unused-variable",
+    "-Werror=vla",
     "-fno-omit-frame-pointer",
     "-fno-access-control"
   ]
