@@ -1197,28 +1197,44 @@ HWTEST_F(RdbGeneralStoreTest, Release, TestSize.Level1)
 
 /**
 * @tc.name: RetainDeviceData001
-* @tc.desc: RdbGeneralStore RetainDeviceData function test
+* @tc.desc: RdbGeneralStore RetainDeviceData function test db is close
 * @tc.type: FUNC
 */
 HWTEST_F(RdbGeneralStoreTest, RetainDeviceData001, TestSize.Level1)
 {
     std::map<std::string, std::vector<std::string>> retainDevices;
-    store_->isClosed_ = true;
+    store_->Close(true);
     auto result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
-    store_->isClosed_ = false;
-    result = store_->RetainDeviceData(retainDevices);
-    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
-    metaData_.storeId = "mock";
-    store_ = std::make_shared<RdbGeneralStore>(metaData_);
-    store_->Init();
+}
+
+/**
+* @tc.name: RetainDeviceData002
+* @tc.desc: RdbGeneralStore RetainDeviceData function E_OK
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RetainDeviceData002, TestSize.Level1)
+{
+    std::map<std::string, std::vector<std::string>> retainDevices;
     std::vector<std::string> devices;
     devices.push_back("testdevice");
     retainDevices["test"] = devices;
-    result = store_->RetainDeviceData(retainDevices);
+    store_->Init();
+    auto result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: RetainDeviceData003
+* @tc.desc: RdbGeneralStore RetainDeviceData function test INVALID_ARGS
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RetainDeviceData003, TestSize.Level1)
+{
+    std::map<std::string, std::vector<std::string>> retainDevices;
     MockRelationalStoreDelegate::SetResRemove(DBStatus::INVALID_ARGS);
-    result = store_->RetainDeviceData(retainDevices);
+    store_->Init();
+    auto result = store_->RetainDeviceData(retainDevices);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 }
 
