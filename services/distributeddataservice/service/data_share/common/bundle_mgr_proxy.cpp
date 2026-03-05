@@ -26,6 +26,7 @@
 #include "utils.h"
 #include "ipc_skeleton.h"
 #include "hiview_fault_adapter.h"
+#include <algorithm>
 
 namespace OHOS::DataShare {
 sptr<AppExecFwk::IBundleMgr> BundleMgrProxy::GetBundleMgrProxy()
@@ -192,7 +193,7 @@ void BundleMgrProxy::Delete(const std::string &bundleName, int32_t userId, int32
         bundleCache_.Erase(bundleName + std::to_string(userId));
     }
     callerInfoCache_.Erase(bundleName + std::to_string(userId));
-    isSilent_.Delete(SilentBundleInfo(bundleName, userId));
+    silentAccessStores_.Delete(SilentBundleInfo(bundleName, userId));
     return;
 }
 
@@ -293,35 +294,20 @@ std::pair<int, std::vector<HapModuleInfo>> BundleMgrProxy::ConvertHapModuleInfo(
     return std::make_pair(E_OK, hapModuleInfos);
 }
 
-void BundleMgrProxy::UpdateSilentConfig(const SilentBundleInfo &silentBundleInfo, const std::string &storeName,
-    bool isSilent)
-{
-    std::map<std::string, bool> storeNameMap;
-    if (isSilent_.Get(silentBundleInfo, storeNameMap)) {
-        storeNameMap.insert_or_assign(storeName, isSilent);
-    } else {
-        storeNameMap.emplace(storeName, isSilent);
-    }
-    isSilent_.Set(silentBundleInfo, storeNameMap);
-}
  
-std::pair<int, bool> BundleMgrProxy::IsConfigSilentProxy(const std::string &bundleName, int32_t userId,
-    const std::string &storeName)
+std::pair<int, std::vector<std::string>> BundleMgrProxy::GetSilentAccessStores(const std::string &bundleName,
+    int32_t userId)
 {
-    std::map<std::string, bool> storeNameMap;
+    std::vector<std::string> silentAccessStores;
     SilentBundleInfo silentBundleInfo(bundleName, userId);
-    if (isSilent_.Get(silentBundleInfo, storeNameMap)) {
-        auto it = storeNameMap.find(storeName);
-        if (it != storeNameMap.end()) {
-            auto flag = it->second ? E_OK : E_SILENT_PROXY_DISABLE;
-            return {flag, it->second};
-        }
+    if (silentAccessStores_.Get(silentBundleInfo, silentAccessStores)) {
+        return std::make_pair(E_OK, silentAccessStores);
     }
  
     auto bmsClient = GetBundleMgrProxy();
     if (bmsClient == nullptr) {
         ZLOGE("GetBundleMgrProxy is nullptr! bundle is %{public}s, user is %{public}d.", bundleName.c_str(), userId);
-        return std::make_pair(E_BMS_NOT_READY, false);
+        return std::make_pair(E_BMS_NOT_READY, silentAccessStores);
     }
  
     AppExecFwk::BundleInfo bundleInfo;
@@ -330,7 +316,7 @@ std::pair<int, bool> BundleMgrProxy::IsConfigSilentProxy(const std::string &bund
     if (!result) {
         ZLOGE("Get bundleInfo failed! ret: %{public}d, bundle is %{public}s, user is %{public}d.",
             result, bundleName.c_str(), userId);
-        return std::make_pair(E_ERROR, false);
+        return std::make_pair(E_ERROR, silentAccessStores);
     }
  
     auto [errCode, hapModuleInfos] = ConvertHapModuleInfo(bundleInfo);
@@ -338,17 +324,15 @@ std::pair<int, bool> BundleMgrProxy::IsConfigSilentProxy(const std::string &bund
         for (auto &data : hapModuleInfo.proxyDatas) {
             const auto &profileInfo = data.profileInfo;
             if (profileInfo.resultCode == ERROR) {
-                ZLOGE("Profile unmarshall error.bundleName: %{public}s, userId: %{public}d",
-                    bundleName.c_str(), userId);
-                return std::make_pair(E_SILENT_PROXY_DISABLE, false);
+                continue;
             }
-            if (profileInfo.profile.storeName == storeName) {
-                UpdateSilentConfig(silentBundleInfo, storeName, true);
-                return std::make_pair(E_OK, true);
+            if (std::find(silentAccessStores.begin(), silentAccessStores.end(), profileInfo.profile.storeName) ==
+                silentAccessStores.end()) {
+                silentAccessStores.push_back(profileInfo.profile.storeName);
             }
         }
     }
-    UpdateSilentConfig(silentBundleInfo, storeName, false);
-    return std::make_pair(E_SILENT_PROXY_DISABLE, false);
+    silentAccessStores_.Set(silentBundleInfo, silentAccessStores);
+    return std::make_pair(E_OK, silentAccessStores);
 }
 } // namespace OHOS::DataShare

@@ -69,7 +69,7 @@ private:
 
     int32_t OnAfterOpen(MessageParcel& data, MessageParcel& reply);
 
-    int32_t OnIsSupportSilent(MessageParcel& data, MessageParcel& reply);
+    int32_t OnGetSilentAccessStores(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnReportStatistic(MessageParcel& data, MessageParcel& reply);
 
@@ -129,7 +129,8 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REPORT_STAT)] =
             &RdbServiceStub::OnReportStatistic,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_DFX_INFO)] = &RdbServiceStub::OnGetDfxInfo,
-        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_ISSILENT)] = &RdbServiceStub::OnIsSupportSilent,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_GET_ISSILENT)] =
+            &RdbServiceStub::OnGetSilentAccessStores,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REMOVE_REMOTE_DATA)] =
             &RdbServiceStub::OnRemoteRetainDeviceData,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_OBTAIN_UUID)] =

@@ -50,6 +50,7 @@
 #include "rdb_query.h"
 #include "rdb_result_set_impl.h"
 #include "rdb_schema_config.h"
+#include "rdb_types.h"
 #include "rdb_types_utils.h"
 #include "rdb_common_utils.h"
 #include "rdb_watcher.h"
@@ -1034,23 +1035,27 @@ int32_t RdbServiceImpl::BeforeOpen(RdbSyncerParam &param)
     return RDB_OK;
 }
 
-std::pair<int32_t, bool> RdbServiceImpl::IsSupportSilent(const RdbSyncerParam &param)
+std::pair<int32_t, std::vector<std::string>> RdbServiceImpl::GetSilentAccessStores(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
-        return {RDB_ERROR, false};
+        return {RDB_PERMISSION_DENIED, std::vector<std::string>()};
     }
     auto callingTokenId = IPCSkeleton::GetCallingTokenID();
     auto type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(callingTokenId);
     if (type == Security::AccessToken::TOKEN_NATIVE) {
-        return std::make_pair(RDB_OK, false);
+        return std::make_pair(RDB_OK, std::vector<std::string>());
     }
     auto meta = GetStoreMetaData(param);
-    auto [err, flag] =
-        BundleUtils::GetInstance().IsConfigSilentProxy(meta.bundleName, std::atoi(meta.user.c_str()), meta.storeId);
-    return {RDB_OK, flag};
+    auto [err, storeNames] =
+        BundleUtils::GetInstance().GetSilentAccessStores(meta.bundleName, std::atoi(meta.user.c_str()));
+    if (err != E_OK) {
+        ZLOGE("GetSilentAccessStores from BundleUtils failed, err: %{public}d", err);
+        return { RDB_ERROR, std::vector<std::string>() };
+    }
+    return { err, storeNames };
 }
 
 void RdbServiceImpl::SetReturnParam(const StoreMetaData &metadata, RdbSyncerParam &param)

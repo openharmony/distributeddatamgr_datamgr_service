@@ -28,12 +28,12 @@ void BundleUtils::SetBundleInfoCallback(Callback callback)
     bundleInfoCallback_ = callback;
 }
  
-std::pair<int, bool> BundleUtils::IsConfigSilentProxy(const std::string &bundleName, int32_t userId,
-    const std::string &storeName)
+std::pair<int, std::vector<std::string>> BundleUtils::GetSilentAccessStores(
+    const std::string &bundleName, int32_t userId)
 {
     if (bundleInfoCallback_ == nullptr) {
-        return std::make_pair(-1, false);
+        return std::make_pair(-1, std::vector<std::string>());
     }
-    return bundleInfoCallback_(bundleName, userId, storeName);
+    return bundleInfoCallback_(bundleName, userId);
 }
-}
+} // namespace OHOS::DistributedData
