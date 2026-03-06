@@ -15,7 +15,7 @@
 
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_SECRET_KEY_BACKUP_DATA_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_SECRET_KEY_BACKUP_DATA_H
-#include "serializable/serializable.h"
+#include <serializable/serializable.h>
 namespace OHOS {
 namespace DistributedData {
 struct SecretKeyBackupData final : public Serializable {
