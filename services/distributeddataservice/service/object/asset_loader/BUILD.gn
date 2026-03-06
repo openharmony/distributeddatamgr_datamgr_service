@@ -32,6 +32,7 @@ ohos_shared_library("asset_sync_manager") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   include_dirs = [
@@ -47,6 +48,7 @@ ohos_shared_library("asset_sync_manager") {
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
+    "-Werror=vla",
   ]
 
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]

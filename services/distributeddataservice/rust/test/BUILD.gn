@@ -23,7 +23,7 @@ config("module_private_config") {
     "../ylong_cloud_extension/include",
   ]
 
-  cflags = [ "-Werror" ]
+  cflags = [ "-Werror", "-Werror=vla" ]
   defines = [
     "TEST_ON_DEVICE",
     "OPENSSL_SUPPRESS_DEPRECATED",

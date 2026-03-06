@@ -41,6 +41,7 @@ ohos_source_set("distributeddata_cloud") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   include_dirs = [
@@ -62,6 +63,7 @@ ohos_source_set("distributeddata_cloud") {
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
+    "-Werror=vla",
   ]
 
   deps = [
