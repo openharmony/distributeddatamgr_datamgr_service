@@ -32,6 +32,7 @@ ohos_source_set("distributeddata_bootstrap") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   include_dirs = [ "${data_service_path}/service/config/include" ]

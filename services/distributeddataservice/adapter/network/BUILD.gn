@@ -31,6 +31,7 @@ ohos_source_set("distributeddata_network") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   configs = [ ":module_public_config" ]

@@ -35,8 +35,11 @@ ohos_source_set("distributeddata_account") {
     "${data_service_path}/framework/include/account",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
-
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Werror=vla",
+  ]
+  
   remove_configs = [ "//build/config/compiler:no_exceptions" ]
 
   configs = [ "//build/config/compiler:exceptions" ]
