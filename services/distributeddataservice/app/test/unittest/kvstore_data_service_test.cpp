@@ -24,6 +24,7 @@
 #include <nlohmann/json.hpp>
 #include "kvstore_client_death_observer.h"
 #include "bootstrap.h"
+#include "clone_manager.h"
 #include "gtest/gtest.h"
 #include "kvstore_data_service.h"
 #include "serializable/serializable.h"
@@ -1068,7 +1069,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey001, TestSize.Level0)
     SecretKeyMetaData secretKeyMeta;
     StoreMetaData storeMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey("", secretKeyMeta, iv, storeMeta);
+    auto ret = ReEncryptKey("", secretKeyMeta, storeMeta, iv);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1106,7 +1107,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey002, TestSize.Level0)
 
     SecretKeyMetaData secretKeyMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
+    auto ret = ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1150,7 +1151,7 @@ HWTEST_F(KvStoreDataServiceTest, ReEncryptKey003, TestSize.Level0)
 
     SecretKeyMetaData secretKeyMeta;
     std::vector<uint8_t> iv;
-    auto ret = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
+    auto ret = ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
     EXPECT_TRUE(ret.empty());
 }
 
@@ -1284,11 +1285,11 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreSuccess, TestSize.Lev
     std::vector<uint8_t> iv{ 97, 160, 201, 177, 46, 37, 129, 18, 112, 220, 107, 106, 25, 231, 15, 15, 58, 85, 31, 83,
         123, 216, 211, 2, 222, 49, 122, 72, 21, 251, 83, 16 };
 
-    ASSERT_EQ(kvStoreDataServiceTest.ImportCloneKey(symKey), true);
+    ASSERT_EQ(ImportCloneKey(symKey), true);
 
     SecretKeyMetaData secretKeyMeta;
-    auto reEncryptedKey = kvStoreDataServiceTest.ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, iv, testMeta);
-    kvStoreDataServiceTest.DeleteCloneKey();
+    auto reEncryptedKey = ReEncryptKey(testMeta.GetSecretKey(), secretKeyMeta, testMeta, iv);
+    DeleteCloneKey();
     auto encodeEncryptedKey = DistributedData::Base64::Encode(reEncryptedKey);
 
     const std::string backupData =
@@ -1324,7 +1325,7 @@ HWTEST_F(KvStoreDataServiceTest, WriteBackupInfo_FwriteFail, TestSize.Level0)
     KvStoreDataService kvStoreDataServiceTest;
     std::string content = "test_content";
     // Try to open a directory as a file, which should fail at fopen
-    bool result = kvStoreDataServiceTest.WriteBackupInfo(content, "/");
+    bool result = WriteBackupInfo(content, "/");
     EXPECT_FALSE(result);
 }
 

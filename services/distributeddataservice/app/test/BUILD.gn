@@ -25,6 +25,7 @@ config("module_private_config") {
     "${data_service_path}/adapter/include/utils",
     "${data_service_path}/framework/include",
     "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/clone",
     "${data_service_path}/service/common",
     "${data_service_path}/service/config/include",
     "${data_service_path}/service/crypto/include",
@@ -70,8 +71,6 @@ ohos_unittest("KvStoreDataServiceTest") {
   sources = [
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
-    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
-    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/installer/installer.cpp",
@@ -91,6 +90,9 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/app/test/unittest/kvstore_data_service_test.cpp",
     "${data_service_path}/app/test/unittest/security_test.cpp",
     "${data_service_path}/app/test/unittest/sensitive_test.cpp",
+    "${data_service_path}/service/clone/clone_backup_info.cpp",
+    "${data_service_path}/service/clone/clone_manager.cpp",
+    "${data_service_path}/service/clone/secret_key_backup_data.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
   ]
 
@@ -147,6 +149,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/clone:distributeddata_clone",
   ]
   part_name = "datamgr_service"
 }
@@ -156,8 +159,6 @@ ohos_unittest("KvStoreDataServiceMockTest") {
   sources = [
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
-    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
-    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/installer/installer.cpp",
@@ -176,7 +177,7 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_data_service_mock_test.cpp",
     "${data_service_path}/service/common/xcollie.cpp",
-    "${data_service_path}/service/test/mock/access_token_mock.cpp", 
+    "${data_service_path}/service/test/mock/access_token_mock.cpp",
   ]
   include_dirs = [
     "${data_service_path}/service/test/mock",
@@ -249,8 +250,6 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
   sources = [
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
-    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
-    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/installer/installer.cpp",
@@ -383,8 +382,6 @@ ohos_unittest("SessionManagerTest") {
 ohos_unittest("KvStoreDataServiceClearTest") {
   module_out_path = module_output_path
   sources = [
-    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
-    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/kvstore_account_observer.cpp",
@@ -686,8 +683,6 @@ ohos_unittest("DDMSDumpTest") {
   sources = [
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
-    "${data_service_path}/app/src/clone/clone_backup_info.cpp",
-    "${data_service_path}/app/src/clone/secret_key_backup_data.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
     "${data_service_path}/app/src/installer/installer.cpp",

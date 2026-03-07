@@ -22,8 +22,6 @@
 #include <set>
 
 #include "account/account_delegate.h"
-#include "clone/clone_backup_info.h"
-#include "clone/secret_key_backup_data.h"
 #include "dfx/reporter.h"
 #include "executor_pool.h"
 #include "feature_stub_impl.h"
@@ -64,8 +62,6 @@ public:
         std::set<std::string> storeIDs;
     };
     using StoreMetaData = DistributedData::StoreMetaData;
-    using SecretKeyBackupData = DistributedData::SecretKeyBackupData;
-    using CloneBackupInfo = DistributedData::CloneBackupInfo;
     // record kvstore meta version for compatible, should update when modify kvstore meta structure.
     static constexpr uint32_t STORE_VERSION = 0x03000001;
 
@@ -136,11 +132,6 @@ public:
     int32_t OnScreenUnlocked(int32_t user);
 
     int32_t OnExtension(const std::string &extension, MessageParcel &data, MessageParcel &reply) override;
-    int32_t OnBackup(MessageParcel &data, MessageParcel &reply);
-    int32_t OnRestore(MessageParcel &data, MessageParcel &reply);
-    bool WriteBackupInfo(const std::string &content, const std::string &backupPath);
-    std::string GetSecretKeyBackup(const std::vector<DistributedData::CloneBundleInfo> &bundleInfos,
-        const std::string &userId, const std::vector<uint8_t> &iv);
 
 private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
@@ -180,7 +171,18 @@ private:
         std::map<std::string, sptr<IRemoteObject>> observerProxy_;
         sptr<KvStoreDeathRecipient> deathRecipient_;
     };
-
+    class CloneManager {
+    public:
+        CloneManager();
+        ~CloneManager();
+        int32_t OnBackup(MessageParcel &data, MessageParcel &reply);
+        int32_t OnRestore(MessageParcel &data, MessageParcel &reply);
+    private:
+        using OnBackupFunc = int32_t (*)(MessageParcel &, MessageParcel &, const std::string &);
+        using OnRestoreFunc = int32_t (*)(MessageParcel &, MessageParcel &);
+        // Clone SO loading
+        void *cloneHandle_ = nullptr;
+    };
     void Initialize();
 
     void LoadFeatures();
@@ -196,20 +198,6 @@ private:
     void LoadConfigs();
 
     void InitExecutor();
-
-    std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &secretKeyMeta,
-        const std::vector<uint8_t> &iv, const StoreMetaData &metaData);
-
-    bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData);
-
-    bool RestoreSecretKey(const SecretKeyBackupData::BackupItem &item, const std::string &userId,
-        const std::vector<uint8_t> &iv);
-    bool ImportCloneKey(const std::string &keyStr);
-    void DeleteCloneKey();
-    
-    std::string GetBackupReplyCode(int replyCode, const std::string &info = "");
-
-    int32_t ReplyForRestore(MessageParcel &reply, int32_t result);
 
     static constexpr int TEN_SEC = 10;
 
@@ -231,5 +219,5 @@ private:
     static constexpr pid_t INVALID_PID = -1;
     static constexpr uint32_t INVALID_TOKEN = 0;
 };
-}
-#endif  // KVSTORE_DATASERVICE_H
+} // namespace OHOS::DistributedKv
+#endif // KVSTORE_DATASERVICE_H

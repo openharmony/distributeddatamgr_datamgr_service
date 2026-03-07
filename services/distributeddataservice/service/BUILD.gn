@@ -15,13 +15,17 @@ import("//build/ohos_var.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
 group("build_module") {
-  deps = [ ":distributeddatasvc" ]
+  deps = [
+    "clone:distributeddata_clone",
+    ":distributeddatasvc"
+  ]
 }
 config("module_public_config") {
   visibility = [ ":*" ]
   include_dirs = [
     "backup/include",
     "bootstrap/include",
+    "clone",
     "cloud",
     "common",
     "config/include",
