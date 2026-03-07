@@ -249,6 +249,24 @@ bool OnGetSilentProxyStatusFuzz(FuzzedDataProvider &provider)
     return true;
 }
 
+bool OnGetConnectionInterfaceInfoFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
+    dataShareServiceImpl->OnBind(
+        { "DataShareServiceStubFuzz", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
+    std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
+    int32_t saId = provider.ConsumeIntegral<int32_t>();
+    uint32_t waitTime = provider.ConsumeIntegral<uint32_t>();
+    MessageParcel request;
+    request.WriteInterfaceToken(IDataShareService::GetDescriptor());
+    ITypesUtil::Marshal(request, saId, waitTime);
+    MessageParcel reply;
+    dataShareServiceStub->OnRemoteRequest(
+        IDataShareService::DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO, request, reply);
+    return true;
+}
+
 } // namespace OHOS
 
 /* Fuzzer entry point */
