@@ -1102,4 +1102,28 @@ HWTEST_F(DataShareServiceImplTest, SubscribeTimeChanged001, TestSize.Level1)
     EXPECT_NE(dataShareServiceImpl.timerReceiver_, nullptr);
     ZLOGI("DataShareServiceImplTest SubscribeTimeChanged001 end");
 }
+
+/**
+* @tc.name: BundleMgrProxyTest_GetSilentAccessStoresWithStores
+* @tc.desc: Test GetSilentAccessStores when cache miss and BMS returns stores
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_GetSilentAccessStoresWithStores, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_GetSilentAccessStoresWithStores start");
+
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+
+    int32_t user = static_cast<int32_t>(USER_TEST);
+
+    std::string testBundle = "com.test.bundle";
+    auto [err, stores] = bundleMgr->GetSilentAccessStores(testBundle, user);
+
+    EXPECT_EQ(err, OHOS::DataShare::E_OK);
+    EXPECT_TRUE(stores.empty());
+
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_GetSilentAccessStoresWithStores end");
+}
 } // namespace OHOS::Test

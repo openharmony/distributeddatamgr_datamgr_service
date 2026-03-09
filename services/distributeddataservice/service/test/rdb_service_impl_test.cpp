@@ -1736,6 +1736,34 @@ HWTEST_F(RdbServiceImplTest, BeforeOpen004, TestSize.Level0)
 }
 
 /**
+ * @tc.name: BeforeOpen005
+ * @tc.desc: Test BeforeOpen when checkacess pass and CheckParam pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, BeforeOpen005, TestSize.Level0)
+{
+    // Mock token type to TOKEN_NATIVE so that subUser_ is used
+    OHOS::Security::AccessToken::MockGetTokenTypeFlag(
+        true, OHOS::Security::AccessToken::TOKEN_NATIVE);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.subUser_ = 100;
+    int32_t result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_NO_META);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+
+    // Restore default token type
+    OHOS::Security::AccessToken::MockGetTokenTypeFlag(
+        false, OHOS::Security::AccessToken::TOKEN_HAP);
+}
+
+/**
  * @tc.name: Subscribe001
  * @tc.desc: Test Subscribe when option mode invalid.
  * @tc.type: FUNC
