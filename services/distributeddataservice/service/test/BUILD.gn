@@ -1354,6 +1354,7 @@ ohos_unittest("UdmfRunTimeStoreTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   external_deps = [
@@ -1866,6 +1867,8 @@ ohos_unittest("UdmfServiceImplTest") {
 
   configs = [ ":module_private_config" ]
 
+  cflags = [ "-Werror=vla" ]
+
   external_deps = [
     "ability_base:base",
     "ability_base:want",
@@ -1948,6 +1951,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -2009,6 +2013,7 @@ ohos_unittest("UdmfServiceStubTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -2096,6 +2101,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -2143,6 +2149,7 @@ ohos_unittest("UdmfPreProcessUtilsTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -2189,6 +2196,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -2243,6 +2251,7 @@ ohos_unittest("UdmfCheckerManagerTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -2286,6 +2295,7 @@ ohos_unittest("LifeCycleManagerTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -2319,6 +2329,7 @@ ohos_unittest("DataHandlerTest") {
   cflags = [
     "-Dprivate=public",
     "-Dprotected=public",
+    "-Werror=vla",
   ]
 
   deps = [
@@ -2794,6 +2805,8 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
 
   configs = [ ":module_private_config" ]
 
+  cflags = [ "-Werror=vla" ]
+
   external_deps = [
     "ability_base:base",
     "ability_base:want",
@@ -2883,6 +2896,8 @@ ohos_unittest("UdmfDelayDataContainerTest") {
   ]
 
   configs = [ ":module_private_config" ]
+
+  cflags = [ "-Werror=vla" ]
 
   external_deps = [
     "ability_base:base",
@@ -2975,6 +2990,8 @@ ohos_unittest("UdmfObserverTest") {
   ]
 
   configs = [ ":module_private_config" ]
+
+  cflags = [ "-Werror=vla" ]
 
   external_deps = [
     "ability_base:base",

@@ -65,6 +65,7 @@ ohos_source_set("udmf_server") {
   cflags = [
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Werror",
+    "-Werror=vla",
     "-Oz",
   ]
 
