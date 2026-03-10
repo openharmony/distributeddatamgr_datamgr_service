@@ -34,8 +34,8 @@ ohos_shared_library("conn_adapter") {
     "src/connect_wrapper.cpp",
   ]
   configs = [ ":export_connect" ]
-  cflags = [ "-Werror" ]
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags = [ "-Werror", "-Werror=vla" ]
+  cflags_cc = [ "-fvisibility=hidden", "-Werror=vla" ]
 
   external_deps = [
     "ability_base:want",

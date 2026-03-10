@@ -32,6 +32,7 @@ ohos_source_set("distributeddata_common") {
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",
+    "-Werror=vla",
   ]
 
   include_dirs = [ "include" ]
@@ -41,6 +42,7 @@ ohos_source_set("distributeddata_common") {
     "-Wno-c99-designator",
     "-D_LIBCPP_HAS_COND_CLOCKWAIT",
     "-Oz",
+    "-Werror=vla",
   ]
 
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]

@@ -46,9 +46,10 @@ ohos_shared_library("opencloudextension") {
   cflags = [
     "-Werror",
     "-Wno-multichar",
+    "-Werror=vla",
   ]
 
-  cflags_cc = [ "-fvisibility=hidden" ]
+  cflags_cc = [ "-fvisibility=hidden", "-Werror=vla" ]
 
   configs = [ ":module_public_config" ]
 
