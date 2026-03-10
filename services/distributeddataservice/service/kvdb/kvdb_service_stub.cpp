@@ -181,7 +181,13 @@ int32_t KVDBServiceStub::OnDelete(const AppId &appId, const StoreId &storeId, Me
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = Delete(appId, storeId, subUser);
+    Options options;
+    if (!ITypesUtil::Unmarshal(data, options)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = Delete(appId, storeId, subUser, options);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());

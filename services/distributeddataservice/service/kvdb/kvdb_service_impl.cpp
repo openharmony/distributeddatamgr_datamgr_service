@@ -184,10 +184,14 @@ Status KVDBServiceImpl::GetStoreIds(const AppId &appId, int32_t subUser, std::ve
 
 Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }
+    metaData.storeType = options.kvStoreType;
+    metaData.area = options.area;
+    metaData.customDir = options.isCustomDir ? options.baseDir : "";
+    metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
     syncAgents_.ComputeIfPresent(metaData.tokenId, [&appId, &storeId](auto &key, SyncAgent &syncAgent) {
         if (syncAgent.pid_ != IPCSkeleton::GetCallingPid()) {
             ZLOGW("agent already changed! old pid:%{public}d new pid:%{public}d appId:%{public}s",
