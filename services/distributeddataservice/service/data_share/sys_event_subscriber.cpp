@@ -15,6 +15,7 @@
 #define LOG_TAG "SysEventSubscriber"
 #include "sys_event_subscriber.h"
 
+#include "bundle_mgr_proxy.h"
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "log_print.h"
@@ -92,6 +93,7 @@ void SysEventSubscriber::OnAppUpdate(const std::string &bundleName,
 {
     ZLOGI("%{public}s updated, userId: %{public}d, appIndex: %{public}d, tokenId: %{public}d",
         bundleName.c_str(), userId, appIndex, tokenId);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, userId, appIndex);
     if (isCrossAppSharedConfig) {
         ProxyDataManager::GetInstance().OnAppUpdate(bundleName, userId, appIndex, tokenId);
     }
@@ -102,6 +104,7 @@ void SysEventSubscriber::OnAppUninstall(const std::string &bundleName,
 {
     ZLOGI("%{public}s uninstalled, userId: %{public}d, appIndex: %{public}d, tokenId: %{public}d",
         bundleName.c_str(), userId, appIndex, tokenId);
+    BundleMgrProxy::GetInstance()->Delete(bundleName, userId, appIndex);
     ProxyDataManager::GetInstance().OnAppUninstall(bundleName, userId, appIndex, tokenId);
 }
 
