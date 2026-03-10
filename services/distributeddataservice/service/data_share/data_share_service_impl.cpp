@@ -651,8 +651,8 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     SubscribeTimeChanged();
     SubscribeChange();
     SubscribeListen();
-    auto task = [](const std::string &bundleName, int32_t userId, const std::string &storeName) {
-        return BundleMgrProxy::GetInstance()->IsConfigSilentProxy(bundleName, userId, storeName);
+    auto task = [](const std::string &bundleName, int32_t userId) {
+        return BundleMgrProxy::GetInstance()->GetSilentAccessStores(bundleName, userId);
     };
     BundleUtils::GetInstance().SetBundleInfoCallback(task);
     SetCriticalTask();

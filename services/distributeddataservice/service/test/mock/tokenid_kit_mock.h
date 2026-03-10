@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+#include "accesstoken_kit.h"
 #include "tokenid_kit.h"
 
 bool g_isSystemAppByFullTokenID = true;
@@ -30,9 +31,41 @@ void MockIsSystemAppByFullTokenID(bool mockRet)
 namespace OHOS {
 namespace Security {
 namespace AccessToken {
+bool g_mockGetTokenTypeFlag = false;
+ATokenTypeEnum g_mockTokenTypeFlag = TOKEN_HAP;
+
+void MockGetTokenTypeFlag(bool mockEnable, ATokenTypeEnum mockTokenType)
+{
+    g_mockGetTokenTypeFlag = mockEnable;
+    g_mockTokenTypeFlag = mockTokenType;
+}
+
+int32_t g_mockGetHapTokenInfoRet = 0;
+HapTokenInfo g_mockHapTokenInfo{ .instIndex = 0, .userID = 0 };
+
+void MockGetHapTokenInfo(int32_t ret, const HapTokenInfo& tokenInfo)
+{
+    g_mockGetHapTokenInfoRet = ret;
+    g_mockHapTokenInfo = tokenInfo;
+}
+
+int AccessTokenKit::GetHapTokenInfo(uint32_t tokenId, HapTokenInfo& tokenInfo)
+{
+    tokenInfo = g_mockHapTokenInfo;
+    return g_mockGetHapTokenInfoRet;
+}
+
 bool TokenIdKit::IsSystemAppByFullTokenID(uint64_t tokenId)
 {
     return g_isSystemAppByFullTokenID;
+}
+
+ATokenTypeEnum AccessTokenKit::GetTokenTypeFlag(uint32_t tokenId)
+{
+    if (g_mockGetTokenTypeFlag) {
+        return g_mockTokenTypeFlag;
+    }
+    return TOKEN_HAP;
 }
 }
 }

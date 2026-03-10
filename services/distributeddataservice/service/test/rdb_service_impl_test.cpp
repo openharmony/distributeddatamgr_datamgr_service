@@ -18,8 +18,11 @@
 #include <gtest/gtest.h>
 #include <random>
 
+#include "itypes_util.h"
+
 #include "account/account_delegate.h"
 #include "bootstrap.h"
+#include "bundle_utils.h"
 #include "checker_mock.h"
 #include "cloud/change_event.h"
 #include "cloud/schema_meta.h"
@@ -1733,6 +1736,34 @@ HWTEST_F(RdbServiceImplTest, BeforeOpen004, TestSize.Level0)
 }
 
 /**
+ * @tc.name: BeforeOpen005
+ * @tc.desc: Test BeforeOpen when checkacess pass and CheckParam pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTest, BeforeOpen005, TestSize.Level0)
+{
+    // Mock token type to TOKEN_NATIVE so that subUser_ is used
+    OHOS::Security::AccessToken::MockGetTokenTypeFlag(
+        true, OHOS::Security::AccessToken::TOKEN_NATIVE);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.subUser_ = 100;
+    int32_t result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_NO_META);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+
+    // Restore default token type
+    OHOS::Security::AccessToken::MockGetTokenTypeFlag(
+        false, OHOS::Security::AccessToken::TOKEN_HAP);
+}
+
+/**
  * @tc.name: Subscribe001
  * @tc.desc: Test Subscribe when option mode invalid.
  * @tc.type: FUNC
@@ -3052,5 +3083,335 @@ HWTEST_F(RdbServiceImplTest, StealEvent001, TestSize.Level0)
     auto result = service.eventContainer_->StealEvent(testPath);
     EXPECT_EQ(result, std::nullopt);
 }
+
+/**
+ * @tc.name: GetSilentAccessStores_Normal001
+ * @tc.desc: Test GetSilentAccessStores with valid parameters and BundleUtils callback
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: test
+ */
+HWTEST_F(RdbServiceImplTest, GetSilentAccessStores_Normal001, TestSize.Level0)
+{
+    BundleUtils::GetInstance().SetBundleInfoCallback([](const std::string &bundleName, int32_t userId) {
+        return std::make_pair(E_OK, std::vector<std::string>());
+    });
+
+    InitMetaDataManager();
+    auto ret = MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false);
+    EXPECT_EQ(ret, true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    auto [err, stores] = service.GetSilentAccessStores(param);
+    EXPECT_EQ(err, RDB_OK);
+    EXPECT_EQ(stores.size(), 0);
+
+    BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
+}
+
+/**
+ * @tc.name: GetSilentAccessStores_WithStores002
+ * @tc.desc: Test GetSilentAccessStores returning store names
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: test
+ */
+HWTEST_F(RdbServiceImplTest, GetSilentAccessStores_WithStores002, TestSize.Level0)
+{
+    std::vector<std::string> expectedStores = {"store1", "store2"};
+    BundleUtils::GetInstance().SetBundleInfoCallback([expectedStores](const std::string &bundleName, int32_t userId) {
+        return std::make_pair(E_OK, expectedStores);
+    });
+
+    InitMetaDataManager();
+    auto ret = MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false);
+    EXPECT_EQ(ret, true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    auto [err, stores] = service.GetSilentAccessStores(param);
+    EXPECT_EQ(err, RDB_OK);
+    EXPECT_EQ(stores.size(), expectedStores.size());
+    EXPECT_EQ(stores, expectedStores);
+
+    BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
+}
+
+/**
+ * @tc.name: GetSilentAccessStores_InvalidHapName003
+ * @tc.desc: Test GetSilentAccessStores with invalid hapName containing path separator
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: test
+ */
+HWTEST_F(RdbServiceImplTest, GetSilentAccessStores_InvalidHapName003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.hapName_ = "invalid/hap/name";
+    auto [err, stores] = service.GetSilentAccessStores(param);
+    EXPECT_EQ(err, RDB_PERMISSION_DENIED);
+    EXPECT_EQ(stores.size(), 0);
+}
+
+/**
+ * @tc.name: GetSilentAccessStores_InvalidBundleName004
+ * @tc.desc: Test GetSilentAccessStores with empty bundleName (access denied)
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: test
+ */
+HWTEST_F(RdbServiceImplTest, GetSilentAccessStores_InvalidBundleName004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = "";
+    param.storeName_ = TEST_STORE;
+    auto [err, stores] = service.GetSilentAccessStores(param);
+    EXPECT_EQ(err, RDB_PERMISSION_DENIED);
+    EXPECT_EQ(stores.size(), 0);
+}
+
+/**
+ * @tc.name: GetSilentAccessStores_InvalidStoreName005
+ * @tc.desc: Test GetSilentAccessStores with storeName containing path separator
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: test
+ */
+HWTEST_F(RdbServiceImplTest, GetSilentAccessStores_InvalidStoreName005, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "invalid/store/name";
+    auto [err, stores] = service.GetSilentAccessStores(param);
+    EXPECT_EQ(err, RDB_PERMISSION_DENIED);
+    EXPECT_EQ(stores.size(), 0);
+}
+
+/**
+ * @tc.name: GetSilentAccessStores_DotDotHapName006
+ * @tc.desc: Test GetSilentAccessStores with hapName containing ".."
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: test
+ */
+HWTEST_F(RdbServiceImplTest, GetSilentAccessStores_DotDotHapName006, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    param.hapName_ = "../escape";
+    auto [err, stores] = service.GetSilentAccessStores(param);
+    EXPECT_EQ(err, RDB_PERMISSION_DENIED);
+    EXPECT_EQ(stores.size(), 0);
+}
+
+/**
+ * @tc.name: GetSilentAccessStores_NativeToken007
+ * @tc.desc: Test GetSilentAccessStores with native token
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: test
+ */
+HWTEST_F(RdbServiceImplTest, GetSilentAccessStores_NativeToken007, TestSize.Level0)
+{
+    OHOS::Security::AccessToken::MockGetTokenTypeFlag(
+        true, OHOS::Security::AccessToken::TOKEN_NATIVE);
+
+    InitMetaDataManager();
+    auto ret = MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false);
+    EXPECT_EQ(ret, true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    auto [err, stores] = service.GetSilentAccessStores(param);
+    EXPECT_EQ(err, RDB_OK);
+    EXPECT_EQ(stores.size(), 0);
+
+    OHOS::Security::AccessToken::MockGetTokenTypeFlag(
+        false, OHOS::Security::AccessToken::TOKEN_HAP);
+}
+/**
+ * @tc.name: GetSilentAccessStores_BundleUtilsError008
+ * @tc.desc: Test GetSilentAccessStores when BundleUtils returns error
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: test
+ */
+HWTEST_F(RdbServiceImplTest, GetSilentAccessStores_BundleUtilsError008, TestSize.Level0)
+{
+    BundleUtils::GetInstance().SetBundleInfoCallback([](const std::string &bundleName, int32_t userId) {
+        return std::make_pair(-1, std::vector<std::string>());
+    });
+
+    InitMetaDataManager();
+    auto ret = MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false);
+    EXPECT_EQ(ret, true);
+
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+    auto [err, stores] = service.GetSilentAccessStores(param);
+    EXPECT_EQ(err, RDB_ERROR);
+    EXPECT_EQ(stores.size(), 0);
+
+    BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
+}
+
+/**
+* @tc.name: OnGetSilentAccessStores_Normal001
+* @tc.desc: Test OnGetSilentAccessStores with valid parameters (normal flow)
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(RdbServiceImplTest, OnGetSilentAccessStores_Normal001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto task = [](const std::string &bundleName, int32_t userId) {
+        std::vector<std::string> stores;
+        return std::make_pair(0, std::move(stores));
+    };
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
+
+    ASSERT_TRUE(ITypesUtil::Marshal(data, param));
+
+    int32_t result = service.OnGetSilentAccessStores(data, reply);
+
+    EXPECT_EQ(result, RDB_OK);
+
+    BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
+}
+
+/**
+* @tc.name: OnGetSilentAccessStores_UnmarshalFail002
+* @tc.desc: Test OnGetSilentAccessStores when unmarshal fails
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(RdbServiceImplTest, OnGetSilentAccessStores_UnmarshalFail002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+
+    MessageParcel data;
+    MessageParcel reply;
+
+    int32_t result = service.OnGetSilentAccessStores(data, reply);
+
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+* @tc.name: OnGetSilentAccessStores_WithStores004
+* @tc.desc: Test OnGetSilentAccessStores returning store names
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(RdbServiceImplTest, OnGetSilentAccessStores_WithStores004, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto task = [](const std::string &bundleName, int32_t userId) {
+        std::vector<std::string> stores = { "store1", "store2", "store3" };
+        return std::make_pair(0, std::move(stores));
+    };
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
+
+    ASSERT_TRUE(ITypesUtil::Marshal(data, param));
+
+    int32_t result = service.OnGetSilentAccessStores(data, reply);
+
+    EXPECT_EQ(result, RDB_OK);
+
+    BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
+}
+
+/**
+* @tc.name: OnGetSilentAccessStores_EmptyStores005
+* @tc.desc: Test OnGetSilentAccessStores returning empty stores list
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(RdbServiceImplTest, OnGetSilentAccessStores_EmptyStores005, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto task = [](const std::string &bundleName, int32_t userId) {
+        std::vector<std::string> stores;
+        return std::make_pair(0, std::move(stores));
+    };
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
+
+    ASSERT_TRUE(ITypesUtil::Marshal(data, param));
+
+    int32_t result = service.OnGetSilentAccessStores(data, reply);
+
+    EXPECT_EQ(result, RDB_OK);
+
+    BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
+}
+
+/**
+* @tc.name: OnGetSilentAccessStores_BundleUtilsError006
+* @tc.desc: Test OnGetSilentAccessStores when BundleUtils returns error
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(RdbServiceImplTest, OnGetSilentAccessStores_BundleUtilsError006, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = TEST_STORE;
+
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto task = [](const std::string &bundleName, int32_t userId) {
+        std::vector<std::string> stores;
+        return std::make_pair(-1, std::move(stores));
+    };
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
+
+    ASSERT_TRUE(ITypesUtil::Marshal(data, param));
+
+    int32_t result = service.OnGetSilentAccessStores(data, reply);
+
+    EXPECT_EQ(result, RDB_OK);
+
+    BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
+}
+
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

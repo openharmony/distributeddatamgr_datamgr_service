@@ -63,17 +63,16 @@ int32_t RdbServiceStub::OnBeforeOpen(MessageParcel &data, MessageParcel &reply)
     return RDB_OK;
 }
 
-int32_t RdbServiceStub::OnIsSupportSilent(MessageParcel &data, MessageParcel &reply)
+int32_t RdbServiceStub::OnGetSilentAccessStores(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
-    bool isSilent = false;
-    if (!ITypesUtil::Unmarshal(data, param, isSilent)) {
+    if (!ITypesUtil::Unmarshal(data, param)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto [status, ret] = IsSupportSilent(param);
-    if (!ITypesUtil::Marshal(reply, status, ret)) {
+    auto [status, stores] = GetSilentAccessStores(param);
+    if (!ITypesUtil::Marshal(reply, status, stores)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "bundle_info.h"
 #include "bundlemgr/bundle_mgr_proxy.h"
@@ -86,7 +87,7 @@ struct SilentBundleInfo {
     bool operator<(const SilentBundleInfo &other) const
     {
         if (bundleName == other.bundleName) {
-        return userId < other.userId;
+            return userId < other.userId;
         }
         return bundleName < other.bundleName;
     }
@@ -101,8 +102,7 @@ public:
         BundleConfig &bundleConfig, int32_t appIndex = 0);
     int GetBundleInfoFromBMSWithCheck(const std::string &bundleName, int32_t userId,
         BundleConfig &bundleConfig, int32_t appIndex = 0);
-    std::pair<int, bool> IsConfigSilentProxy(const std::string &bundleName, int32_t userId,
-        const std::string &storeName);
+    std::pair<int, std::vector<std::string>> GetSilentAccessStores(const std::string &bundleName, int32_t userId);
     void Delete(const std::string &bundleName, int32_t userId, int32_t appIndex);
     sptr<IRemoteObject> CheckBMS();
     std::pair<int, std::string> GetCallerAppIdentifier(const std::string &bundleName, int32_t userId);
@@ -126,8 +126,6 @@ private:
     std::pair<int, BundleConfig> ConvertToDataShareBundle(AppExecFwk::BundleInfo &bundleInfo);
     std::pair<int, std::vector<ExtensionAbilityInfo>> ConvertExtensionAbility(AppExecFwk::BundleInfo &bundleInfo);
     std::pair<int, std::vector<HapModuleInfo>> ConvertHapModuleInfo(AppExecFwk::BundleInfo &bundleInfo);
-    void UpdateSilentConfig(const SilentBundleInfo &silentBundleInfo, const std::string &storeName,
-        bool isSilent);
     std::mutex mutex_;
     sptr<IRemoteObject> proxy_;
     sptr<BundleMgrProxy::ServiceDeathRecipient> deathRecipient_;
@@ -136,7 +134,7 @@ private:
     static constexpr const char *DATA_SHARE_EXTENSION_META = "ohos.extension.dataShare";
     static constexpr const char *DATA_SHARE_PROPERTIES_META = "dataProperties";
     static constexpr size_t CACHE_SIZE = 32;
-    LRUBucket<SilentBundleInfo, std::map<std::string, bool>> isSilent_ {CACHE_SIZE};
+    LRUBucket<SilentBundleInfo, std::vector<std::string>> silentAccessStores_ {CACHE_SIZE};
 };
 } // namespace OHOS::DataShare
 #endif // DATASHARESERVICE_BUNDLEMGR_PROXY_H

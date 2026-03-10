@@ -24,14 +24,13 @@
  
 namespace OHOS::DistributedData {
 using Callback =
-    std::function<std::pair<int, bool>(const std::string &bundleName, int32_t userId, const std::string &storeName)>;
+    std::function<std::pair<int, std::vector<std::string>>(const std::string &bundleName, int32_t userId)>;
 class BundleUtils {
 public:
     BundleUtils() = default;
     static BundleUtils &GetInstance();
  
-    std::pair<int, bool> IsConfigSilentProxy(const std::string &bundleName, int32_t userId,
-        const std::string &storeName);
+    std::pair<int, std::vector<std::string>> GetSilentAccessStores(const std::string &bundleName, int32_t userId);
  
     void SetBundleInfoCallback(Callback callback);
  
