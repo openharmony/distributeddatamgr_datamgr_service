@@ -356,9 +356,9 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGW("No uri permissions needed,queryKey=%{public}s", query.key.c_str());
         return E_OK;
     }
-    std::vector<Uri> readUris;
-    std::vector<Uri> writeUris;
-    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, readUris, writeUris);
+    std::map<unsigned int, std::vector<Uri>> grantUris;
+    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData,
+        query.intention == Intention::UD_INTENTION_DRAG, grantUris);
     if (verifyRes != E_OK) {
         ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
         return verifyRes;
@@ -369,7 +369,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     }
     uint32_t sourceTokenId = unifiedData.GetRuntime()->tokenId;
     if (UriPermissionManager::GetInstance().GrantUriPermission(
-        readUris, writeUris, query.tokenId, sourceTokenId, isLocal) != E_OK) {
+        grantUris, query.tokenId, sourceTokenId, isLocal) != E_OK) {
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
             bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
@@ -394,18 +394,46 @@ bool UdmfServiceImpl::VerifySavedTokenId(std::shared_ptr<Runtime> runtime)
 int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
     std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
 {
+    std::map<unsigned int, std::vector<Uri>> grantUris;
+    auto result = ProcessCrossDeviceData(tokenId, unifiedData, false, grantUris);
+    if (result != E_OK) {
+        return result;
+    }
+    for (const auto &[permission, uris] : grantUris) {
+        if ((permission & AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION) != 0) {
+            writeUris.insert(writeUris.end(), uris.begin(), uris.end());
+            continue;
+        }
+        if ((permission & AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION) != 0) {
+            readUris.insert(readUris.end(), uris.begin(), uris.end());
+        }
+    }
+    return E_OK;
+}
+
+int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
+    bool enableCustomUriAuthorization, std::map<unsigned int, std::vector<Uri>> &grantUris)
+{
     if (unifiedData.GetRuntime() == nullptr) {
         ZLOGE("Get runtime empty!");
         return E_DB_ERROR;
     }
     bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
     bool hasError = false;
-    PreProcessUtils::ProcessFiles(hasError, unifiedData, isLocal, readUris, writeUris);
+    std::map<std::string, unsigned int> uriPermissions;
+    PreProcessUtils::ProcessFiles(hasError, unifiedData, isLocal, enableCustomUriAuthorization, uriPermissions);
     if (hasError) {
         ZLOGE("ProcessFiles fail");
         return E_INVALID_PARAMETERS;
     }
-    PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal, readUris, writeUris);
+    PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal,
+        enableCustomUriAuthorization, uriPermissions);
+    for (const auto &[uri, permission] : uriPermissions) {
+        if (permission == 0) {
+            continue;
+        }
+        grantUris[permission].emplace_back(Uri(uri));
+    }
     return E_OK;
 }
 

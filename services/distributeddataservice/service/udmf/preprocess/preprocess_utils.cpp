@@ -60,6 +60,96 @@ using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
 using namespace RadarReporter;
 
+namespace {
+constexpr unsigned int GRANT_READ_URI_PERMISSION = AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION;
+constexpr unsigned int GRANT_WRITE_URI_PERMISSION = AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION;
+constexpr unsigned int GRANT_PERSIST_URI_PERMISSION = AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION;
+
+unsigned int ConvertToGrantUriPermission(uint32_t permissionMask)
+{
+    permissionMask = UriPermissionUtil::NormalizeMask(permissionMask);
+    unsigned int grantPermission = 0;
+    if ((permissionMask & UriPermissionUtil::READ_FLAG) != 0) {
+        grantPermission |= GRANT_READ_URI_PERMISSION;
+    }
+    if ((permissionMask & UriPermissionUtil::WRITE_FLAG) != 0) {
+        grantPermission |= GRANT_WRITE_URI_PERMISSION;
+    }
+    if ((permissionMask & UriPermissionUtil::PERSIST_FLAG) != 0) {
+        grantPermission |= GRANT_PERSIST_URI_PERMISSION;
+    }
+    return grantPermission;
+}
+
+uint32_t GetDefaultUriPermissionMask(int32_t permissionPolicy)
+{
+    if (permissionPolicy == static_cast<int32_t>(PermissionPolicy::ONLY_READ)) {
+        return UriPermissionUtil::READ_FLAG;
+    }
+    if (permissionPolicy == static_cast<int32_t>(PermissionPolicy::READ_WRITE) ||
+        permissionPolicy == static_cast<int32_t>(PermissionPolicy::UNKNOW)) {
+        return UriPermissionUtil::READ_FLAG | UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG;
+    }
+    return 0;
+}
+
+bool GetObjectUriAuthorizationMask(const std::shared_ptr<Object> &object, uint32_t &permissionMask)
+{
+    if (object == nullptr) {
+        return false;
+    }
+    int32_t uriAuthorizationPolicies = 0;
+    if (!object->GetValue(URI_AUTHORIZATION_POLICIES, uriAuthorizationPolicies) || uriAuthorizationPolicies < 0) {
+        return false;
+    }
+    permissionMask = UriPermissionUtil::NormalizeMask(static_cast<uint32_t>(uriAuthorizationPolicies));
+    return true;
+}
+
+bool GetPropertiesUriAuthorizationMask(const std::shared_ptr<UnifiedDataProperties> &properties, uint32_t &permissionMask)
+{
+    if (properties == nullptr || properties->uriAuthorizationPolicies.empty()) {
+        return false;
+    }
+    permissionMask = UriPermissionUtil::ToMask(properties->uriAuthorizationPolicies);
+    return true;
+}
+
+unsigned int GetGrantUriPermission(int32_t permissionPolicy, bool enableCustomUriAuthorization,
+    bool hasPropertiesPermission, uint32_t propertiesPermissionMask, bool hasRecordPermission,
+    uint32_t recordPermissionMask)
+{
+    uint32_t availableMask = GetDefaultUriPermissionMask(permissionPolicy);
+    if (!enableCustomUriAuthorization || availableMask == 0) {
+        return ConvertToGrantUriPermission(availableMask);
+    }
+    uint32_t configuredMask = 0;
+    if (hasRecordPermission) {
+        configuredMask = recordPermissionMask;
+    } else if (hasPropertiesPermission) {
+        configuredMask = propertiesPermissionMask;
+    } else {
+        configuredMask = availableMask;
+    }
+    uint32_t grantMask = UriPermissionUtil::NormalizeMask(availableMask & configuredMask);
+    return ConvertToGrantUriPermission(grantMask);
+}
+
+void AppendUriPermission(const std::string &uri, unsigned int grantPermission,
+    std::map<std::string, unsigned int> &uriPermissions)
+{
+    if (uri.empty() || grantPermission == 0) {
+        return;
+    }
+    auto iter = uriPermissions.find(uri);
+    if (iter == uriPermissions.end()) {
+        uriPermissions.emplace(uri, grantPermission);
+        return;
+    }
+    iter->second |= grantPermission;
+}
+} // namespace
+
 int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option)
 {
     auto it = UD_INTENTION_MAP.find(option.intention);
@@ -520,22 +610,32 @@ void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
 }
 
 void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
+    bool enableCustomUriAuthorization, std::map<std::string, unsigned int> &uriPermissions)
 {
+    uint32_t propertiesPermissionMask = 0;
+    bool hasPropertiesPermission = GetPropertiesUriAuthorizationMask(data.GetProperties(), propertiesPermissionMask);
     std::map<std::string, int32_t> strUris;
     for (auto &record : data.GetRecords()) {
         if (record == nullptr) {
             continue;
         }
         PreProcessUtils::ProcessRecord(record, tokenId, isLocal, strUris);
-    }
-    for (const auto &item : strUris) {
-        // If the value is PermissionPolicy::UNKNOW, it means the data comes from an earlier version.
-        if (item.second == PermissionPolicy::READ_WRITE || item.second == PermissionPolicy::UNKNOW) {
-            writeUris.emplace_back(item.first);
-        } else if (item.second == PermissionPolicy::ONLY_READ) {
-            readUris.emplace_back(item.first);
+        uint32_t recordPermissionMask = 0;
+        bool hasRecordPermission = false;
+        auto entries = record->GetEntries();
+        if (entries != nullptr) {
+            auto iter = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
+            if (iter != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(iter->second)) {
+                hasRecordPermission = GetObjectUriAuthorizationMask(std::get<std::shared_ptr<Object>>(iter->second),
+                    recordPermissionMask);
+            }
         }
+        for (const auto &item : strUris) {
+            auto grantPermission = GetGrantUriPermission(item.second, enableCustomUriAuthorization,
+                hasPropertiesPermission, propertiesPermissionMask, hasRecordPermission, recordPermissionMask);
+            AppendUriPermission(item.first, grantPermission, uriPermissions);
+        }
+        strUris.clear();
     }
     if (isLocal) {
         PreProcessUtils::ClearHtmlDfsUris(data);
@@ -543,8 +643,10 @@ void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, b
 }
 
 void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal,
-    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
+    bool enableCustomUriAuthorization, std::map<std::string, unsigned int> &uriPermissions)
 {
+    uint32_t propertiesPermissionMask = 0;
+    bool hasPropertiesPermission = GetPropertiesUriAuthorizationMask(data.GetProperties(), propertiesPermissionMask);
     PreProcessUtils::ProcessFileType(data.GetRecords(), [&] (std::shared_ptr<Object> obj) {
         if (hasError) {
             return false;
@@ -573,12 +675,19 @@ void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLoc
                 return false;
             }
         }
-        int32_t permission;
+        uint32_t recordPermissionMask = 0;
+        bool hasRecordPermission = GetObjectUriAuthorizationMask(obj, recordPermissionMask);
+        int32_t permission = static_cast<int32_t>(PermissionPolicy::UNKNOW);
         if (obj->GetValue(PERMISSION_POLICY, permission)) {
-            permission == PermissionPolicy::READ_WRITE ? writeUris.emplace_back(uri) : readUris.emplace_back(uri);
+            auto grantPermission = GetGrantUriPermission(permission, enableCustomUriAuthorization,
+                hasPropertiesPermission, propertiesPermissionMask, hasRecordPermission, recordPermissionMask);
+            AppendUriPermission(uri.ToString(), grantPermission, uriPermissions);
             return true;
         }
-        writeUris.emplace_back(uri); // Compatibility Handling Between Different Versions.
+        auto grantPermission = GetGrantUriPermission(static_cast<int32_t>(PermissionPolicy::UNKNOW),
+            enableCustomUriAuthorization, hasPropertiesPermission, propertiesPermissionMask,
+            hasRecordPermission, recordPermissionMask);
+        AppendUriPermission(uri.ToString(), grantPermission, uriPermissions);
         return true;
     });
 }

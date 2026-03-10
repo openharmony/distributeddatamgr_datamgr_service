@@ -16,6 +16,9 @@
 #ifndef UDMF_URI_PERMISSION_MANAGER_H
 #define UDMF_URI_PERMISSION_MANAGER_H
 
+#include <map>
+#include <vector>
+
 #include "error_code.h"
 #include "uri.h"
 
@@ -24,6 +27,8 @@ namespace UDMF {
 class UriPermissionManager {
 public:
     static UriPermissionManager &GetInstance();
+    Status GrantUriPermission(const std::map<unsigned int, std::vector<Uri>> &uriPermissions,
+        uint32_t dstTokenId, uint32_t srcTokenId, bool isLocal);
     Status GrantUriPermission(const std::vector<Uri> &readUris, const std::vector<Uri> &writeUris,
         uint32_t dstTokenId, uint32_t srcTokenId, bool isLocal);
 
