@@ -18,6 +18,9 @@
 
 #include <chrono>
 #include <functional>
+#include <memory>
+#include <mutex>
+#include <string>
 
 #include "visibility.h"
 namespace OHOS {
@@ -26,7 +29,6 @@ enum class QosLevel : int;
 } // namespace QOS
 
 namespace DistributedData {
-
 class API_EXPORT QosManager {
 public:
     using SetQosFunc = std::function<int(QOS::QosLevel)>;
@@ -44,6 +46,7 @@ public:
 
     static void SetStartTime(const std::chrono::steady_clock::time_point& time);
     static void Reset();
+    static void QosInit();
 
 private:
     bool IsInStartupPhase() const;
@@ -52,8 +55,8 @@ private:
 
     static SetQosFunc setQosFunc_;
     static ResetQosFunc resetQosFunc_;
+    static std::mutex mutex_;
 };
-
 } // namespace DistributedData
 } // namespace OHOS
 

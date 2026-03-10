@@ -59,16 +59,17 @@
 #include "permission_validator.h"
 #include "permit_delegate.h"
 #include "process_communicator_impl.h"
-#include "session_manager/route_head_handler_impl.h"
+#include "qos_manager.h"
 #include "runtime_config.h"
 #include "securec.h"
+#include "session_manager/route_head_handler_impl.h"
+#include "session_manager/upgrade_manager.h"
 #include "store/auto_cache.h"
 #include "string_ex.h"
 #include "system_ability_definition.h"
 #include "task_manager.h"
 #include "thread/thread_manager.h"
 #include "upgrade.h"
-#include "session_manager/upgrade_manager.h"
 #include "user_delegate.h"
 #include "utils/anonymous.h"
 #include "utils/base64_utils.h"
@@ -528,6 +529,7 @@ void KvStoreDataService::StartService()
         return false;
     };
     KvStoreDelegateManager::SetAutoLaunchRequestCallback(autoLaunch);
+    QosManager::QosInit();
     ZLOGI("Start distributedata Success, Publish ret: %{public}d", static_cast<int>(ret));
 }
 

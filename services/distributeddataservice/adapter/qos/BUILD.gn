@@ -39,6 +39,10 @@ ohos_source_set("distributeddata_qos") {
     "include",
   ]
 
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
+
   ldflags = [ "-Wl,--exclude-libs,ALL" ]
 
   external_deps = [
