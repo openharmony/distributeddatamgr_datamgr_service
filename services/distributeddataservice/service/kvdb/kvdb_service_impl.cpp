@@ -182,7 +182,7 @@ Status KVDBServiceImpl::GetStoreIds(const AppId &appId, int32_t subUser, std::ve
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32_t subUser)
+Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32_t subUser, const Options &options)
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     if (metaData.instanceId < 0) {
