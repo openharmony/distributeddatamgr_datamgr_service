@@ -265,7 +265,12 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
         if (key.uri != uri) {
             return false;
         }
-        obsMap.emplace(key, val);
+        for (const auto &node : val) {
+            if (node.enabled) {
+                obsMap.emplace(key, val);
+                break;
+            }
+        }
         SetObserverNotifyOnEnabled(val);
         return false;
     });

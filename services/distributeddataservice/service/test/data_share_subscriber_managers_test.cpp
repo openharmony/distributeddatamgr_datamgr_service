@@ -271,6 +271,40 @@ HWTEST_F(DataShareSubscriberManagersTest, PublishedDataKey, TestSize.Level1)
 }
 
 /**
+* @tc.name: EmitWhenEnableAndDisable
+* @tc.desc: test Enable and then Disable case, Emit only Notify when enable
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareSubscriberManagersTest, EmitWhenEnableAndDisable, TestSize.Level1)
+{
+    auto context = std::make_shared<Context>(DATA_SHARE_URI_TEST);
+    uint32_t selfTokenId = GetSelfTokenID();
+    context->callerTokenId = selfTokenId;
+    DataShare::Key key(context->uri, TEST_SUB_ID, BUNDLE_NAME_TEST);
+ 
+    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(saManager, nullptr);
+    auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
+    ASSERT_NE(remoteObj, nullptr);
+    sptr<IDataProxyRdbObserver> observer = new (std::nothrow) RdbObserverProxy(remoteObj);
+    std::shared_ptr<ExecutorPool> executorPool = std::make_shared<ExecutorPool>(1, 1);
+    ASSERT_NE(executorPool, nullptr);
+    auto result1 = RdbSubscriberManager::GetInstance().Add(key, observer, context, executorPool);
+    EXPECT_EQ(result1, DataShare::E_OK);
+ 
+    auto result2 = RdbSubscriberManager::GetInstance().Disable(key, selfTokenId);
+    EXPECT_EQ(result2, DataShare::E_OK);
+    RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_URI_TEST, context);
+    
+    auto result3 = RdbSubscriberManager::GetInstance().Enable(key, context);
+    EXPECT_EQ(result3, DataShare::E_OK);
+    RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_URI_TEST, context);
+    auto result4 = RdbSubscriberManager::GetInstance().Delete(key, selfTokenId);
+    EXPECT_EQ(result4, DataShare::E_OK);
+}
+ 
+/**
 * @tc.name: NotFirstSubscribe
 * @tc.desc: test not first subscribe case
 * @tc.type: FUNC
