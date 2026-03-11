@@ -781,6 +781,56 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     return { ret, AssembleLastResults(databases, lastSyncInfos) };
 }
 
+std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBatch(
+    const std::string &id, const std::vector<BundleInfo> &bundleInfos)
+{
+    BatchQueryLastResults batchResults;
+    if (id.empty()) {
+        return { INVALID_ARGUMENT, batchResults };
+    }
+    if (bundleInfos.empty()) {
+        return { INVALID_ARGUMENT, batchResults };
+    }
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    auto [status, cloudInfo] = GetCloudInfo(user);
+    if (status != SUCCESS) {
+        Report(FT_QUERY_INFO, Fault::CSF_CLOUD_INFO, "", "QueryLastSyncInfoBatch ret=" + std::to_string(status));
+        return { ERROR, batchResults };
+    }
+    int32_t successCount = 0;
+    for (const auto &bundleInfo : bundleInfos) {
+        if (bundleInfo.bundleName.empty()) {
+            batchResults[bundleInfo.bundleName] = {};
+            continue;
+        }
+        if (cloudInfo.apps.find(bundleInfo.bundleName) == cloudInfo.apps.end()) {
+            ZLOGE("Invalid bundleName: %{public}s", bundleInfo.bundleName.c_str());
+            batchResults[bundleInfo.bundleName] = {};
+            continue;
+        }
+        auto [ret, storeResults] = syncManager_.QueryLastSyncInfo(user, id, bundleInfo.bundleName);
+        if (ret != SUCCESS) {
+            ZLOGW("QueryLastSyncInfo failed for bundleName: %{public}s, ret: %{public}d",
+                bundleInfo.bundleName.c_str(), ret);
+            batchResults[bundleInfo.bundleName] = {};
+            continue;
+        }
+        if (!storeResults.empty()) {
+            QueryLastResults queryResults;
+            for (const auto &[storeId, syncInfo] : storeResults) {
+                CloudSyncInfo cloudSyncInfo = { .startTime = syncInfo.startTime,
+                    .finishTime = syncInfo.finishTime,
+                    .code = syncInfo.code,
+                    .syncStatus = syncInfo.syncStatus };
+                queryResults[storeId] = std::move(cloudSyncInfo);
+            }
+            batchResults[bundleInfo.bundleName] = std::move(queryResults);
+            successCount++;
+        }
+    }
+    return { successCount == 0 ? ERROR : SUCCESS, batchResults };
+}
+
 int32_t CloudServiceImpl::OnInitialize()
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);

@@ -103,6 +103,8 @@ public:
     int32_t StopCloudSync(int32_t user = 0);
     std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> QueryLastSyncInfo(
         const std::vector<QueryKey> &queryKeys);
+    std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>>
+        QueryLastSyncInfo(int32_t user, const std::string &id, const std::string &bundleName);
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
     static std::string GetPath(const StoreMetaData &meta);

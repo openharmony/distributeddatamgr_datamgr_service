@@ -36,6 +36,7 @@ private:
     int32_t OnNotifyChange(MessageParcel &data, MessageParcel &reply);
     int32_t OnQueryStatistics(MessageParcel &data, MessageParcel &reply);
     int32_t OnQueryLastSyncInfo(MessageParcel &data, MessageParcel &reply);
+    int32_t OnQueryLastSyncInfoBatch(MessageParcel &data, MessageParcel &reply);
     int32_t OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply);
     int32_t OnCloudSync(MessageParcel &data, MessageParcel &reply);
 

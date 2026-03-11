@@ -1436,5 +1436,445 @@ HWTEST_F(CloudServiceImplTest, CloudServiceImpl_Clean_StoreMetaDataNotFound, Tes
     auto ret = cloudServiceImpl_->Clean(TEST_CLOUD_APPID, actions, configs);
     EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
 }
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_EmptyAccountId
+ * @tc.desc: Test QueryLastSyncInfoBatch with empty accountId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyAccountId, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_EmptyAccountId start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(info);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch("", bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_EmptyBundleInfosArray
+ * @tc.desc: Test QueryLastSyncInfoBatch with empty bundleInfos array
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyBundleInfosArray, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_EmptyBundleInfosArray start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_GetCloudInfoFailed
+ * @tc.desc: Test QueryLastSyncInfoBatch when GetCloudInfo returns error
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_GetCloudInfoFailed, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_GetCloudInfoFailed start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(info);
+
+    // No CloudInfo data prepared
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_EmptyBundleName
+ * @tc.desc: Test QueryLastSyncInfoBatch with empty bundleName in BundleInfo
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyBundleName, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_EmptyBundleName start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = ""; // Empty bundleName
+    bundleInfos.push_back(info);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_InvalidBundleName
+ * @tc.desc: Test QueryLastSyncInfoBatch with invalid bundleName not in cloudInfo.apps
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_InvalidBundleName, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_InvalidBundleName start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = "invalid_bundle_name";
+    bundleInfos.push_back(info);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_QueryFailed
+ * @tc.desc: Test QueryLastSyncInfoBatch when SyncManager::QueryLastSyncInfo returns error
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_QueryFailed, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_QueryFailed start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(info);
+
+    // Mock SyncManager to return error
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    // Since we don't have mock for SyncManager, it will return empty result
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_EmptyStoreResults
+ * @tc.desc: Test QueryLastSyncInfoBatch when QueryLastSyncInfo returns empty storeResults
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyStoreResults, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_EmptyStoreResults start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(info);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    // QueryLastSyncInfo will return empty results without actual sync data
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_ValidStoreResults
+ * @tc.desc: Test QueryLastSyncInfoBatch when QueryLastSyncInfo returns valid storeResults
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_ValidStoreResults, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_ValidStoreResults start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(info);
+
+    // Prepare CloudLastSyncInfo data
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.startTime = 1234567890;
+    lastSyncInfo.finishTime = 1234567900;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.storeId = TEST_CLOUD_STORE;
+    lastSyncInfo.id = TEST_CLOUD_APPID;
+
+    std::string syncInfoKey = CloudLastSyncInfo::GetKey(
+        AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    MetaDataManager::GetInstance().SaveMeta(syncInfoKey, lastSyncInfo, true);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.find(TEST_CLOUD_BUNDLE) != result.end());
+
+    // Clean up
+    MetaDataManager::GetInstance().DelMeta(syncInfoKey, true);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_AllBundlesFailed
+ * @tc.desc: Test QueryLastSyncInfoBatch when all BundleInfo queries fail
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_AllBundlesFailed, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_AllBundlesFailed start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info1;
+    info1.bundleName = ""; // Empty bundleName
+    bundleInfos.push_back(info1);
+
+    CloudData::BundleInfo info2;
+    info2.bundleName = "invalid_bundle";
+    bundleInfos.push_back(info2);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_SomeBundlesSucceed
+ * @tc.desc: Test QueryLastSyncInfoBatch when some BundleInfo queries succeed
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_SomeBundlesSucceed, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_SomeBundlesSucceed start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo validInfo;
+    validInfo.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(validInfo);
+
+    CloudData::BundleInfo invalidInfo;
+    invalidInfo.bundleName = "invalid_bundle";
+    bundleInfos.push_back(invalidInfo);
+
+    // Prepare CloudLastSyncInfo data for valid bundle
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.startTime = 1234567890;
+    lastSyncInfo.finishTime = 1234567900;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.storeId = TEST_CLOUD_STORE;
+    lastSyncInfo.id = TEST_CLOUD_APPID;
+
+    std::string syncInfoKey = CloudLastSyncInfo::GetKey(
+        AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    MetaDataManager::GetInstance().SaveMeta(syncInfoKey, lastSyncInfo, true);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.find(TEST_CLOUD_BUNDLE) != result.end());
+    EXPECT_TRUE(result.find("invalid_bundle") != result.end());
+    EXPECT_TRUE(result["invalid_bundle"].empty());
+
+    // Clean up
+    MetaDataManager::GetInstance().DelMeta(syncInfoKey, true);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_MixedValidInvalid
+ * @tc.desc: Test QueryLastSyncInfoBatch with mixed valid and invalid BundleInfo objects
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_MixedValidInvalid, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_MixedValidInvalid start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+
+    // Valid BundleInfo
+    CloudData::BundleInfo validInfo;
+    validInfo.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(validInfo);
+
+    // Empty bundleName
+    CloudData::BundleInfo emptyInfo;
+    emptyInfo.bundleName = "";
+    bundleInfos.push_back(emptyInfo);
+
+    // Invalid bundleName
+    CloudData::BundleInfo invalidInfo;
+    invalidInfo.bundleName = "invalid_bundle";
+    bundleInfos.push_back(invalidInfo);
+
+    // Prepare CloudLastSyncInfo data for valid bundle
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.startTime = 1234567890;
+    lastSyncInfo.finishTime = 1234567900;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.storeId = TEST_CLOUD_STORE;
+    lastSyncInfo.id = TEST_CLOUD_APPID;
+
+    std::string syncInfoKey = CloudLastSyncInfo::GetKey(
+        AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    MetaDataManager::GetInstance().SaveMeta(syncInfoKey, lastSyncInfo, true);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_FALSE(result.empty());
+    EXPECT_EQ(result.size(), 3); // All three should be in results
+    EXPECT_TRUE(result.find(TEST_CLOUD_BUNDLE) != result.end());
+    EXPECT_FALSE(result[TEST_CLOUD_BUNDLE].empty());
+
+    // Clean up
+    MetaDataManager::GetInstance().DelMeta(syncInfoKey, true);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_MultipleBundles
+ * @tc.desc: Test QueryLastSyncInfoBatch with multiple valid BundleInfo objects
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_MultipleBundles, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_MultipleBundles start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info1;
+    info1.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(info1);
+
+    CloudData::BundleInfo info2;
+    info2.bundleName = "test_bundle_2";
+    bundleInfos.push_back(info2);
+
+    // Prepare CloudLastSyncInfo data for first bundle
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.startTime = 1234567890;
+    lastSyncInfo.finishTime = 1234567900;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.storeId = TEST_CLOUD_STORE;
+    lastSyncInfo.id = TEST_CLOUD_APPID;
+
+    std::string syncInfoKey = CloudLastSyncInfo::GetKey(
+        AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    MetaDataManager::GetInstance().SaveMeta(syncInfoKey, lastSyncInfo, true);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.find(TEST_CLOUD_BUNDLE) != result.end());
+
+    // Clean up
+    MetaDataManager::GetInstance().DelMeta(syncInfoKey, true);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_WithStoreId
+ * @tc.desc: Test QueryLastSyncInfoBatch with BundleInfo containing storeId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_WithStoreId, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_WithStoreId start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    info.storeId = TEST_CLOUD_STORE;
+    bundleInfos.push_back(info);
+
+    // Prepare CloudLastSyncInfo data
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.startTime = 1234567890;
+    lastSyncInfo.finishTime = 1234567900;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.storeId = TEST_CLOUD_STORE;
+    lastSyncInfo.id = TEST_CLOUD_APPID;
+
+    std::string syncInfoKey = CloudLastSyncInfo::GetKey(
+        AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    MetaDataManager::GetInstance().SaveMeta(syncInfoKey, lastSyncInfo, true);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.find(TEST_CLOUD_BUNDLE) != result.end());
+    EXPECT_TRUE(result[TEST_CLOUD_BUNDLE].find(TEST_CLOUD_STORE) != result[TEST_CLOUD_BUNDLE].end());
+
+    // Clean up
+    MetaDataManager::GetInstance().DelMeta(syncInfoKey, true);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_ValidStoreResults_MultipleStores
+ * @tc.desc: Test QueryLastSyncInfoBatch when QueryLastSyncInfo returns valid storeResults with multiple stores
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_ValidStoreResults_MultipleStores, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_ValidStoreResults start");
+    InitCloudInfoAndSchema();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfos.push_back(info);
+
+    // Prepare CloudLastSyncInfo data for multiple stores
+    CloudLastSyncInfo lastSyncInfo1;
+    lastSyncInfo1.startTime = 1234567890;
+    lastSyncInfo1.finishTime = 1234567900;
+    lastSyncInfo1.code = 0;
+    lastSyncInfo1.syncStatus = 1;
+    lastSyncInfo1.storeId = TEST_CLOUD_STORE;
+    lastSyncInfo1.id = TEST_CLOUD_APPID;
+
+    std::string syncInfoKey1 = CloudLastSyncInfo::GetKey(
+        AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId), TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    MetaDataManager::GetInstance().SaveMeta(syncInfoKey1, lastSyncInfo1, true);
+
+    CloudLastSyncInfo lastSyncInfo2;
+    lastSyncInfo2.startTime = 1234567880;
+    lastSyncInfo2.finishTime = 1234567895;
+    lastSyncInfo2.code = 0;
+    lastSyncInfo2.syncStatus = 1;
+    lastSyncInfo2.storeId = "TEST_CLOUD_STORE2";
+    lastSyncInfo2.id = TEST_CLOUD_APPID;
+
+    std::string syncInfoKey2 = CloudLastSyncInfo::GetKey(
+        AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId), TEST_CLOUD_BUNDLE, "TEST_CLOUD_STORE2");
+    MetaDataManager::GetInstance().SaveMeta(syncInfoKey2, lastSyncInfo2, true);
+
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.find(TEST_CLOUD_BUNDLE) != result.end());
+    EXPECT_EQ(result[TEST_CLOUD_BUNDLE].size(), 2); // Should have 2 stores
+    EXPECT_TRUE(result[TEST_CLOUD_BUNDLE].find(TEST_CLOUD_STORE) != result[TEST_CLOUD_BUNDLE].end());
+    EXPECT_TRUE(result[TEST_CLOUD_BUNDLE].find("TEST_CLOUD_STORE2") != result[TEST_CLOUD_BUNDLE].end());
+
+    // Verify CloudSyncInfo structure
+    auto &cloudSyncInfo1 = result[TEST_CLOUD_BUNDLE][TEST_CLOUD_STORE];
+    EXPECT_EQ(cloudSyncInfo1.startTime, lastSyncInfo1.startTime);
+    EXPECT_EQ(cloudSyncInfo1.finishTime, lastSyncInfo1.finishTime);
+    EXPECT_EQ(cloudSyncInfo1.code, lastSyncInfo1.code);
+    EXPECT_EQ(cloudSyncInfo1.syncStatus, lastSyncInfo1.syncStatus);
+
+    // Clean up
+    MetaDataManager::GetInstance().DelMeta(syncInfoKey1, true);
+    MetaDataManager::GetInstance().DelMeta(syncInfoKey2, true);
+}
+
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

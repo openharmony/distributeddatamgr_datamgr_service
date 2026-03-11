@@ -36,6 +36,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnNotifyChange,
     &CloudServiceStub::OnQueryStatistics,
     &CloudServiceStub::OnQueryLastSyncInfo,
+    &CloudServiceStub::OnQueryLastSyncInfoBatch,
     &CloudServiceStub::OnSetGlobalCloudStrategy,
     &CloudServiceStub::OnCloudSync,
     &CloudServiceStub::OnAllocResourceAndShare,
@@ -166,6 +167,18 @@ int32_t CloudServiceStub::OnQueryLastSyncInfo(MessageParcel &data, MessageParcel
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [status, results] = QueryLastSyncInfo(id, bundleName, storeId);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnQueryLastSyncInfoBatch(MessageParcel &data, MessageParcel &reply)
+{
+    std::string id;
+    std::vector<BundleInfo> bundleInfos;
+    if (!ITypesUtil::Unmarshal(data, id, bundleInfos)) {
+        ZLOGE("Unmarshal id:%{public}s, size:%{public}zu", Anonymous::Change(id).c_str(), bundleInfos.size());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [status, results] = QueryLastSyncInfoBatch(id, bundleInfos);
     return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 

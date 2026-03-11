@@ -38,6 +38,7 @@ using SwitchConfig = OHOS::CloudData::SwitchConfig;
 using DBSwitchInfo = OHOS::CloudData::DBSwitchInfo;
 using ClearConfig = OHOS::CloudData::ClearConfig;
 using DBActionInfo = OHOS::CloudData::DBActionInfo;
+using BundleInfo = OHOS::CloudData::BundleInfo;
 
 template<>
 bool Marshalling(const Participant &input, MessageParcel &data);
@@ -91,5 +92,11 @@ bool Unmarshalling(ClearConfig &output, MessageParcel &data);
 
 template<>
 bool Unmarshalling(DBActionInfo &output, MessageParcel &data);
+
+template<>
+bool Marshalling(const BundleInfo &input, MessageParcel &data);
+
+template<>
+bool Unmarshalling(BundleInfo &output, MessageParcel &data);
 } // namespace OHOS::ITypesUtil
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H

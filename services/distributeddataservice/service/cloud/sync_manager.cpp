@@ -840,6 +840,47 @@ std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryL
     return { SUCCESS, lastSyncInfoMap };
 }
 
+std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(
+    int32_t user, const std::string &id, const std::string &bundleName)
+{
+    std::map<std::string, CloudLastSyncInfo> lastSyncInfoMap;
+    if (bundleName.empty()) {
+        return { INVALID_ARGUMENT, lastSyncInfoMap };
+    }
+    std::string accountId = id;
+    std::string schemaKey = CloudInfo::GetSchemaKey(user, bundleName);
+    SchemaMeta schemaMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true) || schemaMeta.databases.empty()) {
+        return { ERROR, lastSyncInfoMap };
+    }
+
+    for (const auto &database : schemaMeta.databases) {
+        std::string storeId = database.name;
+        QueryKey queryKey{ user, accountId, bundleName, storeId };
+
+        bool found = false;
+        lastSyncInfos_.ComputeIfPresent(
+            queryKey, [&storeId, &lastSyncInfoMap, &found](auto &key, std::map<SyncId, CloudLastSyncInfo> &vals) {
+                auto [status, syncInfo] = GetLastResults(vals);
+                if (status == SUCCESS) {
+                    lastSyncInfoMap.insert(std::make_pair(std::move(storeId), std::move(syncInfo)));
+                    found = true;
+                }
+                return !vals.empty();
+            });
+
+        if (found) {
+            continue;
+        }
+
+        auto [status, syncInfo] = SyncManager::GetLastSyncInfoFromMeta(queryKey);
+        if (status == SUCCESS) {
+            lastSyncInfoMap.insert(std::make_pair(std::move(syncInfo.storeId), std::move(syncInfo)));
+        }
+    }
+    return { SUCCESS, lastSyncInfoMap };
+}
+
 void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos)
 {
     int64_t startTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
