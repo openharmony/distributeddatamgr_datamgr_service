@@ -19,16 +19,30 @@ module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
 ###############################################################################
 ohos_unittest("QosManagerTest") {
   module_out_path = module_output_path
-
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
   sources = [
     "qos_manager_test.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
   ]
 
   include_dirs = [
     "../include",
-    "../../../framework/include",
+    "${data_service_path}/framework/test/mock",
   ]
-  deps = [ "../:distributeddata_qos" ]
+
+  deps = [
+    "../:distributeddata_qos",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
+
+  cflags = [ "-fno-access-control" ]
 
   external_deps = [
     "c_utils:utils",
@@ -40,7 +54,6 @@ ohos_unittest("QosManagerTest") {
   ]
 }
 
-###############################################################################
 group("unittest") {
   testonly = true
 

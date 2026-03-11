@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
+#include <mutex>
 #define LOG_TAG "QosManager"
 
 #include "qos_manager.h"
+
 #include <atomic>
 #include <chrono>
 
+#include "account/account_delegate.h"
 #include "log_print.h"
 #include "qos.h"
 
@@ -28,22 +31,55 @@ namespace DistributedData {
 thread_local bool g_threadQosSet = false;
 constexpr auto STARTUP_PHASE_DURATION = std::chrono::minutes(3);
 
-std::atomic<std::chrono::steady_clock::time_point> g_startTime { std::chrono::steady_clock::now() };
-std::atomic<bool> g_startupPhaseEnded { false };
+std::chrono::steady_clock::time_point g_startTime = std::chrono::steady_clock::now();
+bool g_startupPhaseEnded = false;
+
+class QosObserver : public AccountDelegate::Observer {
+public:
+    explicit QosObserver();
+    void OnAccountChanged(const DistributedData::AccountEventInfo &eventInfo, int32_t timeout) override;
+    std::string Name() override;
+    LevelType GetLevel() override;
+};
+
+QosObserver::QosObserver()
+{
+}
+
+void QosObserver::OnAccountChanged(const DistributedData::AccountEventInfo &eventInfo, int32_t timeout)
+{
+    if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_UNLOCKED ||
+        eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED) {
+        ZLOGI("StartupPhase restart");
+        QosManager::SetStartTime(std::chrono::steady_clock::now());
+    }
+}
+
+std::string QosObserver::Name()
+{
+    return "QosObserver";
+}
+
+QosObserver::LevelType QosObserver::GetLevel()
+{
+    return LevelType::HIGH;
+}
 
 QosManager::SetQosFunc QosManager::setQosFunc_ = [](QOS::QosLevel level) { return QOS::SetThreadQos(level); };
 QosManager::ResetQosFunc QosManager::resetQosFunc_ = []() { return QOS::ResetThreadQos(); };
 
+std::mutex QosManager::mutex_;
 void QosManager::SetQosFunctions(SetQosFunc setFunc, ResetQosFunc resetFunc)
 {
-    setQosFunc_ = setFunc ? setFunc : SetQosFunc {};
-    resetQosFunc_ = resetFunc ? resetFunc : ResetQosFunc {};
+    setQosFunc_ = setFunc ? setFunc : SetQosFunc{};
+    resetQosFunc_ = resetFunc ? resetFunc : ResetQosFunc{};
 }
 
-void QosManager::SetStartTime(const std::chrono::steady_clock::time_point& time)
+void QosManager::SetStartTime(const std::chrono::steady_clock::time_point &time)
 {
-    g_startTime.store(time, std::memory_order_relaxed);
-    g_startupPhaseEnded.store(false, std::memory_order_relaxed);
+    std::lock_guard<std::mutex> lock(mutex_);
+    g_startTime = time;
+    g_startupPhaseEnded = false;
 }
 
 void QosManager::Reset()
@@ -51,8 +87,7 @@ void QosManager::Reset()
     g_threadQosSet = false;
 }
 
-QosManager::QosManager(bool isDataShare)
-    : isDataShare_(isDataShare)
+QosManager::QosManager(bool isDataShare) : isDataShare_(isDataShare)
 {
 #ifndef IS_EMULATOR
     if (g_threadQosSet || !(isDataShare_ || IsInStartupPhase()) || setQosFunc_ == nullptr) {
@@ -86,20 +121,31 @@ QosManager::~QosManager()
 
 bool QosManager::IsInStartupPhase() const
 {
-    if (g_startupPhaseEnded.load(std::memory_order_relaxed)) {
+    if (g_startupPhaseEnded) {
         return false;
     }
 
-    auto now = std::chrono::steady_clock::now();
-    auto startTime = g_startTime.load(std::memory_order_relaxed);
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime);
+    std::lock_guard<std::mutex> lock(mutex_);
 
+    if (g_startupPhaseEnded) {
+        return false;
+    }
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - g_startTime);
     if (elapsed >= STARTUP_PHASE_DURATION) {
-        g_startupPhaseEnded.store(true, std::memory_order_relaxed);
+        g_startupPhaseEnded = true;
+        ZLOGI("StartupPhase end");
         return false;
     }
 
     return true;
+}
+
+void QosManager::QosInit()
+{
+    auto obs = std::make_shared<QosObserver>();
+    AccountDelegate::GetInstance()->Subscribe(obs);
+    ZLOGI("StartupPhase start");
 }
 } // namespace DistributedData
 } // namespace OHOS
