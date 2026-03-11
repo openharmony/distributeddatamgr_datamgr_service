@@ -163,8 +163,7 @@ void KvStoreDataService::Initialize()
 sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &name)
 {
     sptr<FeatureStubImpl> feature;
-    bool isFirstCreate = false;
-    features_.Compute(name, [&feature, &isFirstCreate](const auto &key, auto &value) -> bool {
+    features_.Compute(name, [&feature](const auto &key, auto &value) -> bool {
         if (value != nullptr) {
             feature = value;
             return true;
@@ -180,13 +179,13 @@ sptr<IRemoteObject> KvStoreDataService::GetFeatureInterface(const std::string &n
 
         value = new FeatureStubImpl(impl);
         feature = value;
-        isFirstCreate = true;
         return true;
     });
-    if (isFirstCreate) {
-        feature->OnInitialize(executors_);
+    if (feature == nullptr) {
+        return nullptr;
     }
-    return feature != nullptr ? feature->AsObject() : nullptr;
+    feature->OnInitialize(executors_);
+    return feature->AsObject();
 }
 
 void KvStoreDataService::LoadFeatures()
@@ -458,7 +457,7 @@ int32_t KvStoreDataService::OnExtension(const std::string &extension, MessagePar
 
 KvStoreDataService::CloneManager::CloneManager()
 {
-    const char *libName = "libdistributeddata_clone.z.so";
+    static constexpr const char *libName = "libdistributeddata_clone.z.so";
     cloneHandle_ = dlopen(libName, RTLD_LAZY);
     if (cloneHandle_ == nullptr) {
         ZLOGE("dlopen failed: %{public}s", dlerror());

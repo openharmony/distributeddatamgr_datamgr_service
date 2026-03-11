@@ -19,6 +19,8 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <cctype>
 
 #include "clone_backup_info.h"
 #include "metadata/secret_key_meta_data.h"
@@ -131,6 +133,13 @@ bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData);
  */
 bool RestoreSecretKey(
     const SecretKeyBackupData::BackupItem &item, const std::string &userId, const std::vector<uint8_t> &iv);
+
+/**
+ * @brief Check if a string contains only numeric characters (0-9)
+ * @param str The string to check
+ * @return true if the string is non-empty and contains only digits, false otherwise
+ */
+bool IsNumber(const std::string& str);
 } // namespace OHOS::DistributedKv
 } // namespace OHOS
 

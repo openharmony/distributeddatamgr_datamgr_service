@@ -26,6 +26,7 @@ config("module_private_config") {
     "${data_service_path}/framework/include",
     "${data_service_path}/service/bootstrap/include/",
     "${data_service_path}/service/backup/include/",
+    "${data_service_path}/service/clone/",
     "${data_service_path}/service/cloud/",
     "${data_service_path}/service/config/include/",
     "${data_service_path}/service/common/",
@@ -3111,6 +3112,46 @@ ohos_unittest("UtdServiceImplTest") {
   ]
 }
 
+ohos_unittest("CloneManagerTest") {
+  module_out_path = module_output_path
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "clone_manager_test.cpp",
+    "${data_service_path}/service/clone/clone_manager.cpp",
+    "${data_service_path}/service/clone/clone_backup_info.cpp",
+    "${data_service_path}/service/clone/secret_key_backup_data.cpp",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/clone:distributeddata_clone",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -3192,6 +3233,7 @@ group("unittest") {
 
   deps += [
     ":BootStrapMockTest",
+    ":CloneManagerTest",
     ":CryptoManagerTest",
     ":DataHandlerTest",
     ":DeviceMatrixTest",
