@@ -66,7 +66,7 @@ HWTEST_F(SensitiveTest, GetDeviceSecurityLevel001, TestSize.Level1)
 HWTEST_F(SensitiveTest, GetDeviceSecurityLevel002, TestSize.Level1)
 {
     auto sensitive = std::make_shared<Sensitive>();
-    sensitive->securityLevel = DATA_SEC_LEVEL2;
+    sensitive->securityLevel_ = DATA_SEC_LEVEL2;
     auto res = sensitive->GetDeviceSecurityLevel();
     EXPECT_EQ(res, DATA_SEC_LEVEL2);
 }
@@ -118,7 +118,7 @@ HWTEST_F(SensitiveTest, Operator003, TestSize.Level1)
 HWTEST_F(SensitiveTest, Operator004, TestSize.Level1)
 {
     Sensitive sensitive;
-    sensitive.securityLevel = DATA_SEC_LEVEL2;
+    sensitive.securityLevel_ = DATA_SEC_LEVEL2;
     DistributedDB::SecurityOption option;
     option.securityLabel = DistributedDB::S4;
     EXPECT_FALSE(sensitive >= option);
@@ -132,7 +132,7 @@ HWTEST_F(SensitiveTest, Operator004, TestSize.Level1)
 HWTEST_F(SensitiveTest, Operator005, TestSize.Level1)
 {
     Sensitive sensitive;
-    sensitive.securityLevel = DATA_SEC_LEVEL2;
+    sensitive.securityLevel_ = DATA_SEC_LEVEL2;
     DistributedDB::SecurityOption option;
     option.securityLabel = DistributedDB::S1;
     EXPECT_TRUE(sensitive >= option);
