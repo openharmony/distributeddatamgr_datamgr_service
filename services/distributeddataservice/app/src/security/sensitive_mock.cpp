@@ -32,12 +32,12 @@ struct DEVSLQueryParams {
     uint32_t udidLen;
 };
 Sensitive::Sensitive(std::string deviceId)
-    : deviceId(std::move(deviceId)), securityLevel(DATA_SEC_LEVEL1)
+    : deviceId_(std::move(deviceId)), securityLevel_(DATA_SEC_LEVEL1)
 {
 }
 
 Sensitive::Sensitive()
-    : deviceId(""), securityLevel(DATA_SEC_LEVEL1)
+    : deviceId_(""), securityLevel_(DATA_SEC_LEVEL1)
 {
 }
 
@@ -71,8 +71,8 @@ Sensitive &Sensitive::operator=(const Sensitive &sensitive)
     if (this == &sensitive) {
         return *this;
     }
-    deviceId = sensitive.deviceId;
-    securityLevel = sensitive.securityLevel;
+    deviceId_ = sensitive.deviceId_;
+    securityLevel_ = sensitive.securityLevel_;
     return *this;
 }
 
@@ -86,8 +86,8 @@ Sensitive &Sensitive::operator=(Sensitive &&sensitive) noexcept
     if (this == &sensitive) {
         return *this;
     }
-    deviceId = std::move(sensitive.deviceId);
-    securityLevel = sensitive.securityLevel;
+    deviceId_ = std::move(sensitive.deviceId_);
+    securityLevel_ = sensitive.securityLevel_;
     return *this;
 }
 

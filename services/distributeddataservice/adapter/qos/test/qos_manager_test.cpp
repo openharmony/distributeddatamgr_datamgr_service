@@ -72,15 +72,15 @@ protected:
     void SetStartupPhase()
     {
         auto now = std::chrono::steady_clock::now();
-        auto startTime = now - std::chrono::minutes(1);
-        QosManager::SetStartTime(startTime);
+        auto startupEndTime = now + std::chrono::minutes(3);
+        QosManager::ResetStartupEndTime(startupEndTime);
     }
 
     void SetDynamicPhase()
     {
         auto now = std::chrono::steady_clock::now();
-        auto startTime = now - std::chrono::minutes(4);
-        QosManager::SetStartTime(startTime);
+        auto startupEndTime = now - std::chrono::minutes(1);
+        QosManager::ResetStartupEndTime(startupEndTime);
     }
 
     bool IsInStartupPhase()

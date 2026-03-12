@@ -43,8 +43,7 @@ public:
     QosManager& operator=(QosManager&&) = delete;
 
     static void SetQosFunctions(SetQosFunc setFunc, ResetQosFunc resetFunc);
-
-    static void SetStartTime(const std::chrono::steady_clock::time_point& time);
+    static void ResetStartupEndTime(const std::chrono::steady_clock::time_point& time);
     static void Reset();
     static void QosInit();
 

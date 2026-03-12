@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-#include <mutex>
 #define LOG_TAG "QosManager"
-
 #include "qos_manager.h"
 
 #include <atomic>
 #include <chrono>
+#include <mutex>
 
 #include "account/account_delegate.h"
 #include "log_print.h"
@@ -30,8 +29,7 @@ namespace DistributedData {
 
 thread_local bool g_threadQosSet = false;
 constexpr auto STARTUP_PHASE_DURATION = std::chrono::minutes(3);
-
-std::chrono::steady_clock::time_point g_startTime = std::chrono::steady_clock::now();
+std::chrono::steady_clock::time_point g_startupEndTime = std::chrono::steady_clock::now() + STARTUP_PHASE_DURATION;
 bool g_startupPhaseEnded = false;
 
 class QosObserver : public AccountDelegate::Observer {
@@ -51,7 +49,7 @@ void QosObserver::OnAccountChanged(const DistributedData::AccountEventInfo &even
     if (eventInfo.status == AccountStatus::DEVICE_ACCOUNT_UNLOCKED ||
         eventInfo.status == AccountStatus::DEVICE_ACCOUNT_SWITCHED) {
         ZLOGI("StartupPhase restart");
-        QosManager::SetStartTime(std::chrono::steady_clock::now());
+        QosManager::ResetStartupEndTime(std::chrono::steady_clock::now() + STARTUP_PHASE_DURATION);
     }
 }
 
@@ -75,10 +73,10 @@ void QosManager::SetQosFunctions(SetQosFunc setFunc, ResetQosFunc resetFunc)
     resetQosFunc_ = resetFunc ? resetFunc : ResetQosFunc{};
 }
 
-void QosManager::SetStartTime(const std::chrono::steady_clock::time_point &time)
+void QosManager::ResetStartupEndTime(const std::chrono::steady_clock::time_point &startupEndTime)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    g_startTime = time;
+    g_startupEndTime = startupEndTime;
     g_startupPhaseEnded = false;
 }
 
@@ -131,8 +129,7 @@ bool QosManager::IsInStartupPhase() const
         return false;
     }
     auto now = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - g_startTime);
-    if (elapsed >= STARTUP_PHASE_DURATION) {
+    if (now >= g_startupEndTime) {
         g_startupPhaseEnded = true;
         ZLOGI("StartupPhase end");
         return false;
