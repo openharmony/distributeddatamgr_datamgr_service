@@ -41,10 +41,8 @@ public:
     static void GetHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
         std::map<std::string, int32_t> &htmlUris);
     static void ClearHtmlDfsUris(UnifiedData &data);
-    static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-        bool enableCustomUriAuthorization, std::map<std::string, unsigned int> &uriPermissions);
-    static void ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal,
-        bool enableCustomUriAuthorization, std::map<std::string, unsigned int> &uriPermissions);
+    static void ProcessFileAuthorization(bool &hasError, uint32_t tokenId, UnifiedData &data, bool isLocal,
+        std::map<std::string, unsigned int> &uriPermissions);
     static void ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
         bool isLocal, std::map<std::string, int32_t> &uris);
     static void SetRecordUid(UnifiedData &data);
@@ -65,6 +63,7 @@ private:
         std::map<std::string, int32_t> &permissionUris);
     static int32_t ReadCheckUri(uint32_t tokenId, UnifiedData &data, std::vector<std::string> &uris);
     static bool ValidateUriScheme(Uri &uri, bool &hasError);
+    static bool ValidateFileEntry(std::shared_ptr<Object> obj, bool isLocal, bool &hasError);
     static bool JudgeFileUriExist(const std::string &uri, uint32_t tokenId);
     static bool MatchImgExtension(const std::string &uri);
 };

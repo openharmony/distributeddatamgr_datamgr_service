@@ -70,9 +70,7 @@ private:
     bool IsPermissionInCache(const QueryOption &query);
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
     int32_t ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
-        std::vector<Uri> &readUris, std::vector<Uri> &writeUris);
-    int32_t ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
-        bool enableCustomUriAuthorization, std::map<unsigned int, std::vector<Uri>> &grantUris);
+        std::map<unsigned int, std::vector<Uri>> &grantUris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
     bool HasDatahubPriviledge(const std::string &bundleName);
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);

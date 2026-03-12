@@ -171,14 +171,20 @@ void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
 }
 
 void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal,
-    bool enableCustomUriAuthorization, std::map<std::string, unsigned int> &uriPermissions)
+    std::map<std::string, unsigned int> &uriPermissions)
+{
+    return;
+}
+
+void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId, UnifiedData &data, bool isLocal,
+    std::map<std::string, unsigned int> &uriPermissions)
 {
     return;
 }
 
 
 void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-    bool enableCustomUriAuthorization, std::map<std::string, unsigned int> &uriPermissions)
+    std::map<std::string, unsigned int> &uriPermissions)
 {
     return;
 }

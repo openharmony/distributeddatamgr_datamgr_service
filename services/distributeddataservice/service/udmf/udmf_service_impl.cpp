@@ -357,8 +357,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         return E_OK;
     }
     std::map<unsigned int, std::vector<Uri>> grantUris;
-    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData,
-        query.intention == Intention::UD_INTENTION_DRAG, grantUris);
+    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, grantUris);
     if (verifyRes != E_OK) {
         ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
         return verifyRes;
@@ -392,27 +391,7 @@ bool UdmfServiceImpl::VerifySavedTokenId(std::shared_ptr<Runtime> runtime)
 }
 
 int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
-    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
-{
-    std::map<unsigned int, std::vector<Uri>> grantUris;
-    auto result = ProcessCrossDeviceData(tokenId, unifiedData, false, grantUris);
-    if (result != E_OK) {
-        return result;
-    }
-    for (const auto &[permission, uris] : grantUris) {
-        if ((permission & AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION) != 0) {
-            writeUris.insert(writeUris.end(), uris.begin(), uris.end());
-            continue;
-        }
-        if ((permission & AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION) != 0) {
-            readUris.insert(readUris.end(), uris.begin(), uris.end());
-        }
-    }
-    return E_OK;
-}
-
-int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
-    bool enableCustomUriAuthorization, std::map<unsigned int, std::vector<Uri>> &grantUris)
+    std::map<unsigned int, std::vector<Uri>> &grantUris)
 {
     if (unifiedData.GetRuntime() == nullptr) {
         ZLOGE("Get runtime empty!");
@@ -421,13 +400,11 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &u
     bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
     bool hasError = false;
     std::map<std::string, unsigned int> uriPermissions;
-    PreProcessUtils::ProcessFiles(hasError, unifiedData, isLocal, enableCustomUriAuthorization, uriPermissions);
+    PreProcessUtils::ProcessFileAuthorization(hasError, tokenId, unifiedData, isLocal, uriPermissions);
     if (hasError) {
-        ZLOGE("ProcessFiles fail");
+        ZLOGE("ProcessFileAuthorization fail");
         return E_INVALID_PARAMETERS;
     }
-    PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal,
-        enableCustomUriAuthorization, uriPermissions);
     for (const auto &[uri, permission] : uriPermissions) {
         if (permission == 0) {
             continue;
