@@ -178,6 +178,12 @@ int32_t CloudServiceStub::OnQueryLastSyncInfoBatch(MessageParcel &data, MessageP
         ZLOGE("Unmarshal id:%{public}s, size:%{public}zu", Anonymous::Change(id).c_str(), bundleInfos.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    constexpr size_t MAX_BUNDLE_INFO_COUNT = 30;
+    if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
+        ZLOGE("BundleInfos size %{public}zu exceeds maximum allowed %{public}zu",
+              bundleInfos.size(), MAX_BUNDLE_INFO_COUNT);
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     auto [status, results] = QueryLastSyncInfoBatch(id, bundleInfos);
     return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }

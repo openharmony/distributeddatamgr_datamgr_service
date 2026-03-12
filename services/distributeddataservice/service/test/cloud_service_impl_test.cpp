@@ -1452,7 +1452,7 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyAccountId, TestSize.L
     bundleInfos.push_back(info);
 
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch("", bundleInfos);
-    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT_V20);
     EXPECT_TRUE(result.empty());
 }
 
@@ -1468,7 +1468,7 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyBundleInfosArray, Tes
     std::vector<CloudData::BundleInfo> bundleInfos;
 
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
-    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT_V20);
     EXPECT_TRUE(result.empty());
 }
 
@@ -1874,6 +1874,29 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_ValidStoreResults_Multiple
     // Clean up
     MetaDataManager::GetInstance().DelMeta(syncInfoKey1, true);
     MetaDataManager::GetInstance().DelMeta(syncInfoKey2, true);
+}
+
+/**
+ * @tc.name: QueryLastSyncInfoBatch_31Items
+ * @tc.desc: Test QueryLastSyncInfoBatch with 31 BundleInfo items (should fail)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_31Items, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_31Items start");
+    InitCloudInfoAndSchema();
+    
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    for (int i = 0; i < 31; i++) {
+        CloudData::BundleInfo info;
+        info.bundleName = TEST_CLOUD_BUNDLE;
+        bundleInfos.push_back(info);
+    }
+    
+    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT_V20);
+    EXPECT_TRUE(result.empty());
 }
 
 } // namespace DistributedDataTest

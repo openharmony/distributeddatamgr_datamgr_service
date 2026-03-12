@@ -785,11 +785,13 @@ std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBat
     const std::string &id, const std::vector<BundleInfo> &bundleInfos)
 {
     BatchQueryLastResults batchResults;
-    if (id.empty()) {
-        return { INVALID_ARGUMENT, batchResults };
+    if (id.empty() || bundleInfos.empty()) {
+        return { INVALID_ARGUMENT_V20, batchResults };
     }
-    if (bundleInfos.empty()) {
-        return { INVALID_ARGUMENT, batchResults };
+    constexpr size_t MAX_BUNDLE_INFO_COUNT = 30;
+    if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
+        ZLOGE("BundleInfos size %{public}zu exceeds maximum allowed", bundleInfos.size());
+        return { INVALID_ARGUMENT_V20, batchResults };
     }
     auto user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = GetCloudInfo(user);
