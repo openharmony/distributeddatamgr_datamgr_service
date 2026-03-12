@@ -46,6 +46,8 @@ public:
 
 private:
     std::shared_ptr<FeatureSystem::Feature> featureImpl_;
+    std::once_flag initFlag_;
+    int32_t initedCode_ = -1;
 };
 }
 #endif // OHOS_DISTRIBUTED_DATA_APP_FEATURE_STUB_IMPL_H

@@ -129,7 +129,6 @@ std::string GetSecretKeyBackup(const std::vector<DistributedData::CloneBundleInf
     const std::string &userId, const std::vector<uint8_t> &iv, const std::string &localDeviceId)
 {
     SecretKeyBackupData backupInfos;
-    // std::string deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     for (const auto &bundleInfo : bundleInfos) {
         std::string metaPrefix = StoreMetaData::GetKey({ localDeviceId, userId, "default", bundleInfo.bundleName });
         std::vector<StoreMetaData> StoreMetas;
@@ -185,6 +184,10 @@ int32_t OnBackup(MessageParcel &data, MessageParcel &reply, const std::string &l
     auto content = GetSecretKeyBackup(backupInfo.bundleInfos, backupInfo.userId, iv, localDeviceId);
     DeleteCloneKey();
 
+    if (!IsNumber(backupInfo.userId)) {
+        ZLOGE("userId is not number, userId:%{public}s", backupInfo.userId.c_str());
+        return -1;
+    }
     std::string backupPath = DirectoryManager::GetInstance().GetClonePath(backupInfo.userId);
     if (backupPath.empty()) {
         ZLOGE("GetClonePath failed, userId:%{public}s errno: %{public}d", backupInfo.userId.c_str(), errno);
@@ -316,5 +319,10 @@ int32_t OnRestore(MessageParcel &data, MessageParcel &reply)
     }
     DeleteCloneKey();
     return ReplyForRestore(reply, 0);
+}
+
+bool IsNumber(const std::string& str)
+{
+    return !str.empty() && std::all_of(str.begin(), str.end(), [](unsigned char c) { return std::isdigit(c); });
 }
 } // namespace OHOS::DistributedKv
