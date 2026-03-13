@@ -21,6 +21,7 @@
 
 #include "datashare_predicates.h"
 #include "datashare_result_set.h"
+#include "datashare_sa_provider_info.h"
 #include "datashare_values_bucket.h"
 #include "datashare_template.h"
 #include "data_proxy_observer.h"
@@ -59,6 +60,7 @@ public:
         DATA_SHARE_SERVICE_CMD_PROXY_GET,
         DATA_SHARE_SERVICE_CMD_SUBSCRIBE_PROXY_DATA,
         DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_PROXY_DATA,
+        DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO,
         DATA_SHARE_SERVICE_CMD_MAX,
         DATA_SHARE_SERVICE_CMD_QUERY_SYSTEM = DATA_SHARE_CMD_SYSTEM_CODE,
         DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE_SYSTEM,
@@ -133,6 +135,8 @@ public:
         const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer) = 0;
     virtual std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris,
         const DataProxyConfig &proxyConfig) = 0;
+    virtual std::pair<int32_t, ConnectionInterfaceInfo> GetConnectionInterfaceInfo(int32_t saId,
+        uint32_t waitTime) = 0;
     };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAFWK_IDATA_SHARE_SERVICE_H

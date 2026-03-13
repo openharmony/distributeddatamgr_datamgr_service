@@ -529,5 +529,21 @@ int32_t DataShareServiceStub::OnUnsubscribeProxyData(MessageParcel& data, Messag
     }
     return 0;
 }
+
+int32_t DataShareServiceStub::OnGetConnectionInterfaceInfo(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t saId;
+    uint32_t waitTime;
+    if (!ITypesUtil::Unmarshal(data, saId, waitTime)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [errCode, info] = GetConnectionInterfaceInfo(saId, waitTime);
+    if (!ITypesUtil::Marshal(reply, errCode, info)) {
+        ZLOGE("ConnectionInterfaceInfo Marshal reply failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
 } // namespace DataShare
 } // namespace OHOS

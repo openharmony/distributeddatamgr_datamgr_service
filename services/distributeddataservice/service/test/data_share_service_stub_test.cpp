@@ -207,4 +207,42 @@ HWTEST_F(DataShareServiceStubTest, OnEnableRdbSubs001, TestSize.Level1)
     result = dataShareServiceStub->OnDisableRdbSubs(request, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
 }
+
+/**
+ * @tc.name: OnGetConnectionInterfaceInfo
+ * @tc.desc: Verify OnRemoteRequest method of DataShareServiceImpl class with
+ *           DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO command handles
+ *           valid parameters correctly and returns DATA_SHARE_OK.
+ * @tc.type: FUNC
+ * @tc.require: issueIC8OCN
+ * @tc.precon:
+ *     1. The test environment supports instantiation of DataShareServiceImpl and MessageParcel objects.
+ *     2. The IDataShareServiceService class provides GetDescriptor and DATA_SHARE_OK constants.
+ *     3. The DataShareServiceImpl class provides DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO constant.
+ * @tc.step:
+ *     1. Instantiate a DataShareServiceImpl object (service).
+ *     2. Create empty MessageParcel objects (data, reply).
+ *     3. Define interfaceCode (1001) and waitTime (10) as test parameters.
+ *     4. Write interface descriptor, interfaceCode, and waitTime to data parcel.
+ *     5. Set code to DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO.
+ *     6. Call OnRemoteRequest with code, data, and reply; verify return equals DATA_SHARE_OK.
+ * @tc.expect:
+ *     1. OnRemoteRequest returns DATA_SHARE_OK for valid get connection interface info request.
+ */
+HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo, TestSize.Level1)
+{
+    DataShareServiceImpl service;
+    MessageParcel data;
+    MessageParcel reply;
+    int32_t interfaceCode = 1001; // 1001 is interfaceCode
+    uint32_t waitTime = 10; // 10 is waitTime
+    
+    data.WriteInterfaceToken(IDataShareService::GetDescriptor());
+    data.WriteInt32(interfaceCode);
+    data.WriteUint32(waitTime);
+    
+    int32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO;
+    int32_t result = service.OnRemoteRequest(code, data, reply);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
+}
 } // namespace OHOS::Test

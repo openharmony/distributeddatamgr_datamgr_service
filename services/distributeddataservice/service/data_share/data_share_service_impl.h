@@ -103,6 +103,7 @@ public:
         const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer) override;
     std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris,
         const DataProxyConfig &proxyConfig) override;
+    std::pair<int32_t, ConnectionInterfaceInfo> GetConnectionInterfaceInfo(int32_t saId, uint32_t waitTime) override;
     static void UpdateLaunchInfo();
 private:
     class SystemAbilityStatusChangeListener;
