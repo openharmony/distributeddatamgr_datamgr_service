@@ -74,19 +74,6 @@ Status UriPermissionManager::GrantUriPermission(const std::map<unsigned int, std
     return E_OK;
 }
 
-Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &readUris, const std::vector<Uri> &writeUris,
-    uint32_t dstTokenId, uint32_t srcTokenId, bool isLocal)
-{
-    std::map<unsigned int, std::vector<Uri>> uriPermissions;
-    if (!readUris.empty()) {
-        uriPermissions.emplace(READ_PERMISSION, readUris);
-    }
-    if (!writeUris.empty()) {
-        uriPermissions.emplace(READ_WRITE_PERMISSION, writeUris);
-    }
-    return GrantUriPermission(uriPermissions, dstTokenId, srcTokenId, isLocal);
-}
-
 Status UriPermissionManager::ProcessUriPermission(const GrantUriOptions &options, bool isLocal)
 {
     int32_t status = E_NO_PERMISSION;

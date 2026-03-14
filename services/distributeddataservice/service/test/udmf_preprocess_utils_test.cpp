@@ -16,6 +16,7 @@
 #include "preprocess_utils.h"
 #include "gtest/gtest.h"
 #include "text.h"
+#include "unified_html_record_process.h"
 #include "unified_record.h"
 
 namespace OHOS::UDMF {
@@ -322,22 +323,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileType001, TestSize.Level1)
 }
 
 /**
-* @tc.name: GetHtmlFileUris001
-* @tc.desc: Abnormal test of GetHtmlFileUris, uris is invalid
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfPreProcessUtilsTest, GetHtmlFileUris001, TestSize.Level1)
-{
-    uint32_t tokenId = 0;
-    UnifiedData data;
-    bool isLocal = false;
-    std::map<std::string, int32_t> uris = { {"test", 0} };
-    PreProcessUtils preProcessUtils;
-    EXPECT_NO_FATAL_FAILURE(preProcessUtils.GetHtmlFileUris(tokenId, data, isLocal, uris));
-}
-
-/**
 * @tc.name: SetRecordUid001
 * @tc.desc: Abnormal test of SetRecordUid, record is nullptr
 * @tc.type: FUNC
@@ -412,8 +397,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris002, TestSize.Level1)
     obj->value_["plainContent"] = "htmlPlainContent";
     auto record = std::make_shared<UnifiedRecord>(UDType::HTML, obj);
     data.AddRecord(record);
-    std::map<std::string, int32_t> htmlUris;
-    PreProcessUtils::GetHtmlFileUris(0, data, false, htmlUris);
+    UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
     std::string key = "file:///data/102.png";
     record->ComputeUris([&key] (UriInfo &uriInfo) {
         if (uriInfo.oriUri == key) {

@@ -153,14 +153,8 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
     return;
 }
 
-void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
+void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
     bool isLocal, std::map<std::string, int32_t> &uris)
-{
-    return;
-}
-
-void PreProcessUtils::GetHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-    std::map<std::string, int32_t> &htmlUris)
 {
     return;
 }

@@ -29,8 +29,6 @@ public:
     static UriPermissionManager &GetInstance();
     Status GrantUriPermission(const std::map<unsigned int, std::vector<Uri>> &uriPermissions,
         uint32_t dstTokenId, uint32_t srcTokenId, bool isLocal);
-    Status GrantUriPermission(const std::vector<Uri> &readUris, const std::vector<Uri> &writeUris,
-        uint32_t dstTokenId, uint32_t srcTokenId, bool isLocal);
 
 private:
     UriPermissionManager() {}

@@ -315,59 +315,74 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
 
 int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
 {
-    std::vector<std::string> uris;
-    ProcessFileType(data.GetRecords(), [&uris](std::shared_ptr<Object> obj) {
-        obj->value_[REMOTE_URI] = ""; // To ensure remoteUri is empty when save data!
-        obj->value_[PERMISSION_POLICY] = static_cast<int32_t>(NO_PERMISSION);
-        std::string oriUri;
-        obj->GetValue(ORI_URI, oriUri);
-        if (oriUri.empty()) {
-            ZLOGW("URI is empty, please check");
-            return false;
-        }
-        Uri uri(oriUri);
-        std::string scheme = uri.GetScheme();
-        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (uri.GetAuthority().empty() || scheme != FILE_SCHEME) {
-            ZLOGW("Empty URI authority or scheme not file");
-            return false;
-        }
-        uris.push_back(oriUri);
-        return true;
-    });
+    std::vector<std::string> fileUris;
     std::map<std::string, int32_t> htmlUris;
-    GetHtmlFileUris(tokenId, data, true, htmlUris);
-    for (const auto &item : htmlUris) {
-        if (std::find(uris.begin(), uris.end(), item.first) == uris.end()) {
-            uris.emplace_back(item.first);
+    for (const auto &record : data.GetRecords()) {
+        if (record == nullptr) {
+            continue;
+        }
+        auto entries = record->GetEntries();
+        if (entries == nullptr) {
+            continue;
+        }
+        auto fileEntry = entries->find(GENERAL_FILE_URI);
+        if (fileEntry != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(fileEntry->second)) {
+            auto obj = std::get<std::shared_ptr<Object>>(fileEntry->second);
+            if (obj != nullptr) {
+                obj->value_[REMOTE_URI] = ""; // To ensure remoteUri is empty when save data!
+                obj->value_[PERMISSION_POLICY] = static_cast<int32_t>(NO_PERMISSION);
+                std::string oriUri;
+                obj->GetValue(ORI_URI, oriUri);
+                Uri uri(oriUri);
+                bool hasError = false;
+                if (ValidateUri(uri, hasError)) {
+                    fileUris.emplace_back(oriUri);
+                }
+            }
+        }
+        auto htmlEntry = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
+        if (htmlEntry != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(htmlEntry->second)) {
+            UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
+            ProcessHtmlRecord(record, tokenId, true, htmlUris);
         }
     }
-    return ReadCheckUri(tokenId, data, uris);
+    int32_t status = ReadCheckUri(tokenId, data, fileUris);
+    if (status != E_OK) {
+        return status;
+    }
+    std::vector<std::string> htmlUriVec;
+    htmlUriVec.reserve(htmlUris.size());
+    for (const auto &item : htmlUris) {
+        htmlUriVec.emplace_back(item.first);
+    }
+    return ReadCheckUri(tokenId, data, htmlUriVec, true);
 }
 
-int32_t PreProcessUtils::ReadCheckUri(uint32_t tokenId, UnifiedData &data, std::vector<std::string> &uris)
+int32_t PreProcessUtils::ReadCheckUri(uint32_t tokenId, UnifiedData &data, const std::vector<std::string> &uris,
+    bool readOnly)
 {
-    if (!uris.empty()) {
-        ZLOGI("Read to check uri authorization");
-        std::map<std::string, int32_t> permissionUris;
-        if (!CheckUriAuthorization(uris, tokenId, permissionUris)) {
-            ZLOGE("UriAuth check failed:bundleName:%{public}s,tokenId:%{public}d,uris size:%{public}zu",
-                  data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
-            RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
-                BizScene::SET_DATA, SetDataStage::VERIFY_SHARE_PERMISSIONS, StageRes::FAILED, E_NO_PERMISSION);
-            return E_NO_PERMISSION;
-        }
-        std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
-        if (!IsNetworkingEnabled()) {
-            FillUris(data, dfsUris, permissionUris);
-            return E_OK;
-        }
-        int32_t userId;
-        if (GetHapUidByToken(tokenId, userId) == E_OK) {
-            GetDfsUrisFromLocal(uris, userId, dfsUris);
-        }
-        FillUris(data, dfsUris, permissionUris);
+    if (uris.empty()) {
+        return E_OK;
     }
+    ZLOGI("Read to check uri authorization");
+    std::map<std::string, int32_t> permissionUris;
+    if (!CheckUriAuthorization(uris, tokenId, permissionUris, readOnly)) {
+        ZLOGE("UriAuth check failed:bundleName:%{public}s,tokenId:%{public}d,uris size:%{public}zu",
+              data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
+        RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
+            BizScene::SET_DATA, SetDataStage::VERIFY_SHARE_PERMISSIONS, StageRes::FAILED, E_NO_PERMISSION);
+        return E_NO_PERMISSION;
+    }
+    std::unordered_map<std::string, HmdfsUriInfo> dfsUris;
+    if (!IsNetworkingEnabled()) {
+        FillUris(data, dfsUris, permissionUris);
+        return E_OK;
+    }
+    int32_t userId;
+    if (GetHapUidByToken(tokenId, userId) == E_OK) {
+        GetDfsUrisFromLocal(uris, userId, dfsUris);
+    }
+    FillUris(data, dfsUris, permissionUris);
     return E_OK;
 }
 
@@ -438,12 +453,25 @@ void PreProcessUtils::FillUris(UnifiedData &data, std::unordered_map<std::string
     }
 }
 
-bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId,
-    std::map<std::string, int32_t> &permissionUris)
+bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string> &uris, uint32_t tokenId,
+    std::map<std::string, int32_t> &permissionUris, bool readOnly)
 {
     for (size_t index = 0; index < uris.size(); index += VERIFY_URI_PERMISSION_MAX_SIZE) {
         std::vector<std::string> urisToBeChecked(
             uris.begin() + index, uris.begin() + std::min(index + VERIFY_URI_PERMISSION_MAX_SIZE, uris.size()));
+        if (readOnly) {
+            auto results = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
+                urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
+            auto item = std::find(results.begin(), results.end(), false);
+            if (item != results.end()) {
+                permissionUris.clear();
+                return false;
+            }
+            for (const auto &uri : urisToBeChecked) {
+                permissionUris[uri] = static_cast<int32_t>(ONLY_READ);
+            }
+            continue;
+        }
         auto checkResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
             urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
             AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION, tokenId);
@@ -459,13 +487,12 @@ bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string>& uris
         if (!noWritePermissionUris.empty()) {
             auto results = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
                 noWritePermissionUris, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
-            auto item = find(results.begin(), results.end(), false);
+            auto item = std::find(results.begin(), results.end(), false);
             if (item != results.end()) {
                 permissionUris.clear();
                 return false;
             }
         }
-        noWritePermissionUris.clear();
     }
     return true;
 }
@@ -540,7 +567,7 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
     }
 }
 
-void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
+void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
     bool isLocal, std::map<std::string, int32_t> &uris)
 {
     record->ComputeUris([&uris, &isLocal, &tokenId] (UriInfo &uriInfo) {
@@ -577,20 +604,6 @@ void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint3
         }
         return true;
     });
-}
-
-void PreProcessUtils::GetHtmlFileUris(uint32_t tokenId, UnifiedData &data,
-    bool isLocal, std::map<std::string, int32_t> &htmlUris)
-{
-    if (data.HasType(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML))) {
-        UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(data);
-    }
-    for (auto &record : data.GetRecords()) {
-        if (record == nullptr) {
-            continue;
-        }
-        PreProcessUtils::ProcessRecord(record, tokenId, isLocal, htmlUris);
-    }
 }
 
 void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
@@ -639,16 +652,15 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
             }
             int32_t permission = static_cast<int32_t>(PermissionPolicy::UNKNOW);
             if (!obj->GetValue(PERMISSION_POLICY, permission)) {
-                permission = static_cast<int32_t>(PermissionPolicy::UNKNOW);
+                continue;
             }
             strUris.emplace(uriStr, permission);
             AppendAuthorizedUriPermission(strUris, properties, obj, uriPermissions);
         }
-
         auto htmlIter = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
         if (htmlIter != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(htmlIter->second)) {
             auto htmlPermissionObj = std::get<std::shared_ptr<Object>>(htmlIter->second);
-            PreProcessUtils::ProcessRecord(record, tokenId, isLocal, strUris);
+            PreProcessUtils::ProcessHtmlRecord(record, tokenId, isLocal, strUris);
             AppendAuthorizedUriPermission(strUris, properties, htmlPermissionObj, uriPermissions);
         }
         strUris.clear();
@@ -658,7 +670,7 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
     }
 }
 
-bool PreProcessUtils::ValidateUriScheme(Uri &uri, bool &hasError)
+bool PreProcessUtils::ValidateUri(Uri &uri, bool &hasError)
 {
     std::string scheme = uri.GetScheme();
     std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
@@ -693,7 +705,7 @@ bool PreProcessUtils::ValidateFileEntry(std::shared_ptr<Object> obj, bool isLoca
         return false;
     }
     Uri uri(oriUri);
-    if (!ValidateUriScheme(uri, hasError)) {
+    if (!ValidateUri(uri, hasError)) {
         return false;
     }
     if (!isLocal) {
@@ -706,7 +718,7 @@ bool PreProcessUtils::ValidateFileEntry(std::shared_ptr<Object> obj, bool isLoca
         }
         uri = Uri(remoteUri);
         obj->value_.insert_or_assign(ORI_URI, std::move(remoteUri)); // cross dev, need dis path.
-        if (!ValidateUriScheme(uri, hasError)) {
+        if (!ValidateUri(uri, hasError)) {
             return false;
         }
     }

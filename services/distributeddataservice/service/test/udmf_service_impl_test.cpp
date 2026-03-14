@@ -1327,15 +1327,20 @@ HWTEST_F(UdmfServiceImplTest, GrantUriPermission001, TestSize.Level1)
     std::vector<Uri> writeUris;
     auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
     const std::string queryKey = "udmf://drag/com.test.demo/ascdca";
-    auto result = UriPermissionManager::GetInstance().GrantUriPermission(readUris, writeUris, tokenId, tokenId, false);
+    std::map<unsigned int, std::vector<Uri>> uriPermissions;
+    uriPermissions.emplace(AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, readUris);
+    auto result = UriPermissionManager::GetInstance().GrantUriPermission(uriPermissions, tokenId, tokenId, false);
     EXPECT_EQ(result, E_NO_PERMISSION);
-    result = UriPermissionManager::GetInstance().GrantUriPermission(readUris, writeUris, tokenId, tokenId, true);
+    result = UriPermissionManager::GetInstance().GrantUriPermission(uriPermissions, tokenId, tokenId, true);
     EXPECT_EQ(result, E_NO_PERMISSION);
     readUris.clear();
     writeUris.emplace_back(Uri(strUri));
-    result = UriPermissionManager::GetInstance().GrantUriPermission(readUris, writeUris, tokenId, tokenId, false);
+    uriPermissions.clear();
+    uriPermissions.emplace(AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
+        AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION | AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION, writeUris);
+    result = UriPermissionManager::GetInstance().GrantUriPermission(uriPermissions, tokenId, tokenId, false);
     EXPECT_EQ(result, E_NO_PERMISSION);
-    result = UriPermissionManager::GetInstance().GrantUriPermission(readUris, writeUris, tokenId, tokenId, true);
+    result = UriPermissionManager::GetInstance().GrantUriPermission(uriPermissions, tokenId, tokenId, true);
     EXPECT_EQ(result, E_NO_PERMISSION);
 }
 
