@@ -210,9 +210,6 @@ void CloudDataMockTest::SetUpTestCase(void)
     DeviceInfo deviceInfo;
     deviceInfo.uuid = "ABCD";
     EXPECT_CALL(*deviceManagerAdapterMock, GetLocalDevice()).WillRepeatedly(Return(deviceInfo));
-    EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return(deviceInfo.uuid));
-    EXPECT_CALL(*deviceManagerAdapterMock, CalcClientUuid(_, _)).WillRepeatedly(Return(deviceInfo.uuid));
-    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(deviceInfo.uuid)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, RegDevCallback()).WillRepeatedly(Return([]() {}));
 
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
