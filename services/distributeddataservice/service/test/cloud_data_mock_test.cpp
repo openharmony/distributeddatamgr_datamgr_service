@@ -19,7 +19,6 @@
 
 #include "cloud/cloud_server.h"
 #include "cloud_service_impl.h"
-#include "communicator/device_manager_adapter.h"
 #include "device_matrix.h"
 #include "eventcenter/event_center.h"
 #include "ipc_skeleton.h"
@@ -28,6 +27,7 @@
 #include "mock/access_token_mock.h"
 #include "account_delegate_mock.h"
 #include "mock/db_store_mock.h"
+#include "mock/device_manager_adapter_mock.h"
 #include "network_delegate_mock.h"
 
 using namespace testing::ext;
@@ -50,8 +50,6 @@ static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *TEST_CLOUD_PATH = "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/"
                                                "test_cloud_store";
-static constexpr const int32_t TEST_TOKEN_FLAG_CALL_COUNT = 3;
-static constexpr const int32_t GET_USER_BY_TOKEN_CALL_COUNT = 2;
 static constexpr const int32_t TEST_TOKEN_FLAG_USER_ID = 100;
 class CloudDataMockTest : public testing::Test {
 public:
@@ -61,6 +59,7 @@ public:
     void TearDown();
 
     static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
+    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
     static SchemaMeta schemaMeta_;
     static std::shared_ptr<CloudData::CloudServiceImpl> cloudServiceImpl_;
 
@@ -200,15 +199,21 @@ void CloudDataMockTest::SetUpTestCase(void)
         AccountDelegate::instance_ = nullptr;
         AccountDelegate::RegisterAccountInstance(accountDelegateMock);
     }
-    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_))
-        .Times(GET_USER_BY_TOKEN_CALL_COUNT)
-        .WillRepeatedly(Return(TEST_TOKEN_FLAG_USER_ID));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(TEST_TOKEN_FLAG_USER_ID));
 
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
-        .Times(TEST_TOKEN_FLAG_CALL_COUNT)
-        .WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+
+    deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+    BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
+    DeviceInfo deviceInfo;
+    deviceInfo.uuid = "ABCD";
+    EXPECT_CALL(*deviceManagerAdapterMock, GetLocalDevice()).WillRepeatedly(Return(deviceInfo));
+    EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return(deviceInfo.uuid));
+    EXPECT_CALL(*deviceManagerAdapterMock, CalcClientUuid(_, _)).WillRepeatedly(Return(deviceInfo.uuid));
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(deviceInfo.uuid)).WillRepeatedly(Return(deviceInfo.uuid));
+    EXPECT_CALL(*deviceManagerAdapterMock, RegDevCallback()).WillRepeatedly(Return([]() {}));
 
     MetaDataManager::GetInstance().Initialize(dbStoreMock_, nullptr, "");
     MetaDataManager::GetInstance().SetSyncer(
@@ -239,6 +244,8 @@ void CloudDataMockTest::TearDownTestCase()
     }
     accTokenMock = nullptr;
     BAccessTokenKit::accessTokenkit = nullptr;
+    deviceManagerAdapterMock = nullptr;
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 void CloudDataMockTest::SetUp()
