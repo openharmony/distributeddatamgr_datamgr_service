@@ -39,19 +39,15 @@ public:
     static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
         std::function<bool(std::shared_ptr<Object>)> callback);
     static void ClearHtmlDfsUris(UnifiedData &data);
-    static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-        std::map<std::string, unsigned int> &uriPermissions);
-    static void ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal, std::map<std::string, unsigned int> &uriPermissions);
     static void ProcessFileAuthorization(bool &hasError, uint32_t tokenId, UnifiedData &data, bool isLocal,
         std::map<std::string, unsigned int> &uriPermissions);
     static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-        bool isLocal, std::map<std::string, int32_t> &uris);
+        bool isLocal, std::map<std::string, uint32_t> &uris);
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
     static bool GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
         std::string &bundleName);
-    static std::string GetAppId(const std::string &bundleName);
     static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();
 };
 } // namespace UDMF

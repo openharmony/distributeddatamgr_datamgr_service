@@ -23,9 +23,6 @@
 namespace OHOS {
 namespace UDMF {
 constexpr const std::uint32_t GRANT_URI_PERMISSION_MAX_SIZE = 10000;
-constexpr unsigned int READ_PERMISSION = AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION;
-constexpr unsigned int READ_WRITE_PERMISSION = AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
-    AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION | AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION;
 
 UriPermissionManager &UriPermissionManager::GetInstance()
 {

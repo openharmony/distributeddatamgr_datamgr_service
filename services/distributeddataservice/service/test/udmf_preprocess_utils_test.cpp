@@ -194,7 +194,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, CheckUriAuthorization001, TestSize.Level1)
     const std::vector<std::string> uris = {"test"};
     uint32_t tokenId = 0;
     PreProcessUtils preProcessUtils;
-    std::map<std::string, int32_t> permissionUris;
+    std::map<std::string, uint32_t> permissionUris;
     bool ret = preProcessUtils.CheckUriAuthorization(uris, tokenId, permissionUris);
     EXPECT_EQ(ret, false);
 }
@@ -347,13 +347,13 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris001, TestSize.Level1)
 {
     UnifiedData data;
     std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
-    std::map<std::string, int32_t> permissionUri;
+    std::map<std::string, uint32_t> permissionUri;
     PreProcessUtils::FillUris(data, dfsUris, permissionUri);
     std::shared_ptr<Object> obj = std::make_shared<Object>();
     obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
     auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
     data.AddRecord(record);
-    permissionUri.emplace("file://data/104.png", 1);
+    permissionUri.emplace("file://data/104.png", UriPermissionUtil::READ_FLAG);
     PreProcessUtils::FillUris(data, dfsUris, permissionUri);
     std::shared_ptr<Object> obj1 = std::make_shared<Object>();
     obj1->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
@@ -368,7 +368,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris001, TestSize.Level1)
     PreProcessUtils::FillUris(data, dfsUris, permissionUri);
     int32_t permission;
     EXPECT_TRUE(obj2->GetValue(PERMISSION_POLICY, permission));
-    EXPECT_EQ(permission, 1);
+    EXPECT_EQ(permission, static_cast<int32_t>(PermissionPolicy::ONLY_READ));
     AppFileService::ModuleRemoteFileShare::HmdfsUriInfo uriInfo = { "file://distributed/104.png", 1 };
     dfsUris.emplace("file://data/104.png", uriInfo);
     PreProcessUtils::FillUris(data, dfsUris, permissionUri);
@@ -387,8 +387,8 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris002, TestSize.Level1)
 {
     UnifiedData data;
     std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
-    std::map<std::string, int32_t> permissionUri;
-    permissionUri.emplace("file://authUri/104.png", 1);
+    std::map<std::string, uint32_t> permissionUri;
+    permissionUri.emplace("file://authUri/104.png", UriPermissionUtil::READ_FLAG);
     std::string html = "<img data-ohos='clipboard' src='file:///data/102.png'>"
                         "<img data-ohos='clipboard' src='file:///data/103.png'>";
     auto obj = std::make_shared<Object>();
@@ -413,7 +413,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris002, TestSize.Level1)
         }
         return true;
     });
-    EXPECT_EQ(permission, 1);
+    EXPECT_EQ(permission, static_cast<int32_t>(PermissionPolicy::ONLY_READ));
     AppFileService::ModuleRemoteFileShare::HmdfsUriInfo uriInfo = { "file://distributed/104.png", 0 };
     dfsUris.emplace("file://authUri/104.png", uriInfo);
     PreProcessUtils::FillUris(data, dfsUris, permissionUri);

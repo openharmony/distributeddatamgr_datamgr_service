@@ -154,7 +154,7 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
 }
 
 void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-    bool isLocal, std::map<std::string, int32_t> &uris)
+    bool isLocal, std::map<std::string, uint32_t> &uris)
 {
     return;
 }
@@ -164,20 +164,7 @@ void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
     return;
 }
 
-void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal,
-    std::map<std::string, unsigned int> &uriPermissions)
-{
-    return;
-}
-
 void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId, UnifiedData &data, bool isLocal,
-    std::map<std::string, unsigned int> &uriPermissions)
-{
-    return;
-}
-
-
-void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
     std::map<std::string, unsigned int> &uriPermissions)
 {
     return;

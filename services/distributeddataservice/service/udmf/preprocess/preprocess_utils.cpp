@@ -81,7 +81,7 @@ unsigned int ConvertToGrantUriPermission(uint32_t permissionMask)
     return grantPermission;
 }
 
-uint32_t GetDefaultUriPermissionMask(int32_t permissionPolicy)
+uint32_t ToPermissionMask(int32_t permissionPolicy)
 {
     if (permissionPolicy == static_cast<int32_t>(PermissionPolicy::ONLY_READ)) {
         return UriPermissionUtil::READ_FLAG;
@@ -93,6 +93,21 @@ uint32_t GetDefaultUriPermissionMask(int32_t permissionPolicy)
     return 0;
 }
 
+int32_t ToPermissionPolicy(uint32_t permissionMask)
+{
+    permissionMask = UriPermissionUtil::NormalizeMask(permissionMask);
+    if (permissionMask == 0) {
+        return static_cast<int32_t>(PermissionPolicy::NO_PERMISSION);
+    }
+    if (permissionMask == UriPermissionUtil::READ_FLAG) {
+        return static_cast<int32_t>(PermissionPolicy::ONLY_READ);
+    }
+    if ((permissionMask & UriPermissionUtil::WRITE_FLAG) != 0) {
+        return static_cast<int32_t>(PermissionPolicy::READ_WRITE);
+    }
+    return static_cast<int32_t>(PermissionPolicy::NO_PERMISSION);
+}
+
 bool GetPropertiesUriAuthorizationMask(const std::shared_ptr<UnifiedDataProperties> &properties, uint32_t &permissionMask)
 {
     if (properties == nullptr || properties->uriAuthorizationPolicies.empty()) {
@@ -102,7 +117,7 @@ bool GetPropertiesUriAuthorizationMask(const std::shared_ptr<UnifiedDataProperti
     return true;
 }
 
-void AppendAuthorizedUriPermission(const std::map<std::string, int32_t> &strUris,
+void AppendAuthorizedUriPermission(const std::map<std::string, uint32_t> &strUris,
     const std::shared_ptr<UnifiedDataProperties> &properties, const std::shared_ptr<Object> &recordObject,
     std::map<std::string, unsigned int> &uriPermissions)
 {
@@ -122,11 +137,10 @@ void AppendAuthorizedUriPermission(const std::map<std::string, int32_t> &strUris
     }
     for (const auto &item : strUris) {
         const auto &uri = item.first;
-        int32_t permissionPolicy = item.second;
+        uint32_t availableMask = UriPermissionUtil::NormalizeMask(item.second);
         if (uri.empty()) {
             continue;
         }
-        uint32_t availableMask = GetDefaultUriPermissionMask(permissionPolicy);
         if (availableMask == 0) {
             continue;
         }
@@ -316,7 +330,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
 int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
 {
     std::vector<std::string> fileUris;
-    std::map<std::string, int32_t> htmlUris;
+    std::map<std::string, uint32_t> htmlUris;
     for (const auto &record : data.GetRecords()) {
         if (record == nullptr) {
             continue;
@@ -365,7 +379,7 @@ int32_t PreProcessUtils::ReadCheckUri(uint32_t tokenId, UnifiedData &data, const
         return E_OK;
     }
     ZLOGI("Read to check uri authorization");
-    std::map<std::string, int32_t> permissionUris;
+    std::map<std::string, uint32_t> permissionUris;
     if (!CheckUriAuthorization(uris, tokenId, permissionUris, readOnly)) {
         ZLOGE("UriAuth check failed:bundleName:%{public}s,tokenId:%{public}d,uris size:%{public}zu",
               data.GetRuntime()->createPackage.c_str(), tokenId, uris.size());
@@ -407,7 +421,7 @@ int32_t PreProcessUtils::GetDfsUrisFromLocal(const std::vector<std::string> &uri
 }
 
 void PreProcessUtils::FillUris(UnifiedData &data, std::unordered_map<std::string, HmdfsUriInfo> &dfsUris,
-    std::map<std::string, int32_t> &permissionUris)
+    std::map<std::string, uint32_t> &permissionUris)
 {
     if (permissionUris.empty()) {
         return;
@@ -418,7 +432,7 @@ void PreProcessUtils::FillUris(UnifiedData &data, std::unordered_map<std::string
             return false;
         }
         if (permissionUris.find(oriUri) != permissionUris.end()) {
-            obj->value_[PERMISSION_POLICY] = permissionUris[oriUri];
+            obj->value_[PERMISSION_POLICY] = ToPermissionPolicy(permissionUris[oriUri]);
         } else {
             return true;
         }
@@ -437,7 +451,7 @@ void PreProcessUtils::FillUris(UnifiedData &data, std::unordered_map<std::string
         }
         record->ComputeUris([&dfsUris, &permissionUris] (UriInfo &uriInfo) {
             if (permissionUris.find(uriInfo.authUri) != permissionUris.end()) {
-                uriInfo.permission = permissionUris[uriInfo.authUri];
+                uriInfo.permission = ToPermissionPolicy(permissionUris[uriInfo.authUri]);
             } else {
                 return true;
             }
@@ -454,44 +468,37 @@ void PreProcessUtils::FillUris(UnifiedData &data, std::unordered_map<std::string
 }
 
 bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string> &uris, uint32_t tokenId,
-    std::map<std::string, int32_t> &permissionUris, bool readOnly)
+    std::map<std::string, uint32_t> &permissionUris, bool readOnly)
 {
     for (size_t index = 0; index < uris.size(); index += VERIFY_URI_PERMISSION_MAX_SIZE) {
         std::vector<std::string> urisToBeChecked(
             uris.begin() + index, uris.begin() + std::min(index + VERIFY_URI_PERMISSION_MAX_SIZE, uris.size()));
-        if (readOnly) {
-            auto results = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
-                urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
-            auto item = std::find(results.begin(), results.end(), false);
-            if (item != results.end()) {
+        auto readResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
+            urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
+        auto writeResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
+            urisToBeChecked, AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION, tokenId);
+        auto persistResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
+            urisToBeChecked, AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION, tokenId);
+        for (size_t i = 0; i < urisToBeChecked.size(); ++i) {
+            uint32_t permissionMask = 0;
+            if (i < readResults.size() && readResults[i]) {
+                permissionMask |= UriPermissionUtil::READ_FLAG;
+            }
+            if (!readOnly && i < writeResults.size() && writeResults[i]) {
+                permissionMask |= UriPermissionUtil::WRITE_FLAG;
+            }
+            if (!readOnly && i < persistResults.size() && persistResults[i]) {
+                permissionMask |= UriPermissionUtil::PERSIST_FLAG;
+            }
+            if (readOnly && (permissionMask & UriPermissionUtil::READ_FLAG) == 0) {
                 permissionUris.clear();
                 return false;
             }
-            for (const auto &uri : urisToBeChecked) {
-                permissionUris[uri] = static_cast<int32_t>(ONLY_READ);
-            }
-            continue;
-        }
-        auto checkResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
-            urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
-            AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION, tokenId);
-        std::vector<std::string> noWritePermissionUris;
-        for (size_t i = 0; i < checkResults.size(); ++i) {
-            if (!checkResults[i]) {
-                noWritePermissionUris.push_back(urisToBeChecked[i]);
-                permissionUris[urisToBeChecked[i]] = static_cast<int32_t>(ONLY_READ);
-            } else {
-                permissionUris[urisToBeChecked[i]] = static_cast<int32_t>(READ_WRITE);
-            }
-        }
-        if (!noWritePermissionUris.empty()) {
-            auto results = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
-                noWritePermissionUris, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
-            auto item = std::find(results.begin(), results.end(), false);
-            if (item != results.end()) {
+            if (permissionMask == 0) {
                 permissionUris.clear();
                 return false;
             }
+            permissionUris[urisToBeChecked[i]] = permissionMask;
         }
     }
     return true;
@@ -568,7 +575,7 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
 }
 
 void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-    bool isLocal, std::map<std::string, int32_t> &uris)
+    bool isLocal, std::map<std::string, uint32_t> &uris)
 {
     record->ComputeUris([&uris, &isLocal, &tokenId] (UriInfo &uriInfo) {
         std::string newUriStr = "";
@@ -600,7 +607,7 @@ void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, u
             return true;
         }
         if (JudgeFileUriExist(newUriStr, tokenId)) {
-            uris.emplace(newUriStr, uriInfo.permission);
+            uris.emplace(newUriStr, ToPermissionMask(uriInfo.permission));
         }
         return true;
     });
@@ -623,7 +630,7 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
     std::map<std::string, unsigned int> &uriPermissions)
 {
     auto properties = data.GetProperties();
-    std::map<std::string, int32_t> strUris;
+    std::map<std::string, uint32_t> strUris;
     for (auto &record : data.GetRecords()) {
         if (record == nullptr) {
             ZLOGW("Record is empty!");
@@ -654,7 +661,7 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
             if (!obj->GetValue(PERMISSION_POLICY, permission)) {
                 continue;
             }
-            strUris.emplace(uriStr, permission);
+            strUris.emplace(uriStr, ToPermissionMask(permission));
             AppendAuthorizedUriPermission(strUris, properties, obj, uriPermissions);
         }
         auto htmlIter = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
@@ -670,7 +677,7 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
     }
 }
 
-bool PreProcessUtils::ValidateUri(Uri &uri, bool &hasError)
+bool PreProcessUtils::ValidateUriScheme(Uri &uri, bool &hasError)
 {
     std::string scheme = uri.GetScheme();
     std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
@@ -685,6 +692,11 @@ bool PreProcessUtils::ValidateUri(Uri &uri, bool &hasError)
         return false;
     }
     return true;
+}
+
+bool PreProcessUtils::ValidateUri(Uri &uri, bool &hasError)
+{
+    return ValidateUriScheme(uri, hasError);
 }
 
 bool PreProcessUtils::ValidateFileEntry(std::shared_ptr<Object> obj, bool isLocal, bool &hasError)
