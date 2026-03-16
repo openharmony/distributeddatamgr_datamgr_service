@@ -600,6 +600,45 @@ HWTEST_F(DataMiningEtlTest, StartAutoPipelinesSkipsManualAndStartsAutoTriggered0
     EXPECT_EQ(manualSource->initializeCount_, 0);
 }
 
+HWTEST_F(DataMiningEtlTest, RegisterPipelineReleasesPreviousSourceBindings011, TestSize.Level1)
+{
+    DataMining::DataMiningManager manager;
+
+    auto pluginConfig = CreatePluginConfig("replace_plugin.json", "replace_source", "source", "libs/libreplace.so");
+    auto tree = "{"
+        "\"opName\":\"replace_source\","
+        "\"mode\":\"subscribe\","
+        "\"topic\":\"replace.topic\","
+        "\"children\":[],"
+        "\"output\":[]"
+    "}";
+    auto pipelineConfigV1 = CreatePipelineConfig("replace_pipeline_v1.json", "replace_pipeline", tree,
+        "[{\"sourceName\":\"replace_source\",\"topic\":\"replace.topic\",\"parameters\":\"{}\"}]", "[]");
+    auto pipelineConfigV2 = CreatePipelineConfig("replace_pipeline_v2.json", "replace_pipeline", tree, "[]", "[]");
+
+    ASSERT_EQ(manager.RegisterPlugin(pluginConfig), E_OK);
+    ASSERT_EQ(manager.RegisterPipeline(pipelineConfigV1), E_OK);
+
+    auto source = std::make_shared<TestSubscribeSource>();
+    DataMining::EndpointConfig endpoint;
+    endpoint.kind = DataMining::EndpointKind::LIBRARY;
+    manager.pipelines_["replace_pipeline"].sources["replace_source"] = {
+        std::make_shared<DataMining::SourceProxy>("replace_source", endpoint,
+            std::make_shared<DataMining::PluginLoader>(), nullptr, source),
+        std::make_shared<DataMining::DataMiningManager::SourceNotifier>(manager, "replace_pipeline", "replace_source")
+    };
+    manager.pipelines_["replace_pipeline"].subscriptions = {
+        { "replace_source", "replace.topic", "{}" }
+    };
+    manager.pipelines_["replace_pipeline"].started = true;
+
+    ASSERT_EQ(manager.RegisterPipeline(pipelineConfigV2), E_OK);
+    EXPECT_EQ(source->stopCount_, 1);
+    EXPECT_FALSE(manager.pipelines_["replace_pipeline"].started);
+    EXPECT_TRUE(manager.pipelines_["replace_pipeline"].sources.empty());
+    EXPECT_TRUE(manager.pipelines_["replace_pipeline"].subscriptions.empty());
+}
+
 HWTEST_F(DataMiningEtlTest, PipelineRuntimePropagatesOperatorFailure006, TestSize.Level1)
 {
     DataMining::PipelineDescription pipeline;

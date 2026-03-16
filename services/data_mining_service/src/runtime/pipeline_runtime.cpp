@@ -43,6 +43,21 @@ bool AppendUnique(std::vector<std::string> &items, const std::string &value)
     items.push_back(value);
     return true;
 }
+
+class MergedDataValue final : public QueryInterfaceSupport<MergedDataValue, IRecordBatchView> {
+public:
+    explicit MergedDataValue(std::vector<std::shared_ptr<DataValue>> values) : values_(std::move(values))
+    {
+    }
+
+    const std::vector<std::shared_ptr<DataValue>> &GetItems() const override
+    {
+        return values_;
+    }
+
+private:
+    std::vector<std::shared_ptr<DataValue>> values_;
+};
 } // namespace
 
 PipelineRuntime::PipelineRuntime() : loader_(std::make_shared<PluginLoader>())
@@ -117,16 +132,7 @@ int32_t PipelineRuntime::BuildGraph(const OpNode &node, const std::string &paren
     }
 
     if (!parent.empty()) {
-        // routes_ 记录单向边，inputParents_ 记录某个节点的所有上游父节点。
-        // 后者主要用于多父场景的 merge。
-        auto &routes = routes_[parent];
-        auto routeIt = std::find_if(routes.begin(), routes.end(), [&node](const auto &route) {
-            return route.child == node.opName;
-        });
-        if (routeIt == routes.end()) {
-            routes.push_back(RouteNode { node.opName, node.output });
-        }
-        AppendUnique(inputParents_[node.opName], parent);
+        AddRouteLocked(parent, node);
     }
 
     if (existed) {
@@ -140,6 +146,20 @@ int32_t PipelineRuntime::BuildGraph(const OpNode &node, const std::string &paren
         }
     }
     return E_OK;
+}
+
+void PipelineRuntime::AddRouteLocked(const std::string &parent, const OpNode &node)
+{
+    // routes_ 记录单向边，inputParents_ 记录某个节点的所有上游父节点。
+    // 后者主要用于多父场景的 merge。
+    auto &routes = routes_[parent];
+    auto routeIt = std::find_if(routes.begin(), routes.end(), [&node](const auto &route) {
+        return route.child == node.opName;
+    });
+    if (routeIt == routes.end()) {
+        routes.push_back(RouteNode { node.opName, node.output });
+    }
+    AppendUnique(inputParents_[node.opName], parent);
 }
 
 int32_t PipelineRuntime::EnsureNodeBound(const OpNode &node)
@@ -234,14 +254,20 @@ void PipelineRuntime::OnNodeOutput(
         int32_t status = DispatchToNode(route.child, context, merged);
         if (status != E_OK) {
             std::lock_guard<std::mutex> lock(mutex_);
-            if (lastError_ == E_OK) {
-                lastError_ = status;
-            }
-            ZLOGE("dispatch failed, from:%{public}s, child:%{public}s, status:%{public}d", from.c_str(),
-                route.child.c_str(), status);
+            RecordDispatchErrorLocked(from, route.child, status);
         }
     }
     (void)topic;
+}
+
+void PipelineRuntime::RecordDispatchErrorLocked(const std::string &from, const std::string &child, int32_t status)
+{
+    // 只保留首个错误作为本次 dispatch 的返回值，但日志仍记录具体失败边。
+    if (lastError_ == E_OK) {
+        lastError_ = status;
+    }
+    ZLOGE("dispatch failed, from:%{public}s, child:%{public}s, status:%{public}d", from.c_str(), child.c_str(),
+        status);
 }
 
 std::shared_ptr<DataValue> PipelineRuntime::MergeInputsLocked(
@@ -256,38 +282,30 @@ std::shared_ptr<DataValue> PipelineRuntime::MergeInputsLocked(
     }
 
     pendingInputs_[nodeName][from] = data;
-    if (pendingInputs_[nodeName].size() < parentIt->second.size()) {
+    return BuildMergedValueLocked(nodeName, parentIt->second, ready);
+}
+
+std::shared_ptr<DataValue> PipelineRuntime::BuildMergedValueLocked(
+    const std::string &nodeName, const std::vector<std::string> &parents, bool &ready)
+{
+    // 多父节点 merge 拆到独立函数，避免 MergeInputsLocked 同时承担“缓存”和“组装结果”两类职责。
+    if (pendingInputs_[nodeName].size() < parents.size()) {
         // 还没等到全部父节点的数据时先缓存，直到最后一个父节点到达再统一放行。
         return nullptr;
     }
-
     std::vector<std::shared_ptr<DataValue>> values;
-    values.reserve(parentIt->second.size());
-    for (const auto &parent : parentIt->second) {
+    values.reserve(parents.size());
+    for (const auto &parent : parents) {
         auto pending = pendingInputs_[nodeName].find(parent);
         if (pending != pendingInputs_[nodeName].end()) {
             values.push_back(pending->second);
         }
     }
     pendingInputs_[nodeName].clear();
-    ready = values.size() == parentIt->second.size();
+    ready = values.size() == parents.size();
     if (!ready) {
         return nullptr;
     }
-    class MergedDataValue final : public QueryInterfaceSupport<MergedDataValue, IRecordBatchView> {
-    public:
-        explicit MergedDataValue(std::vector<std::shared_ptr<DataValue>> values) : values_(std::move(values))
-        {
-        }
-
-        const std::vector<std::shared_ptr<DataValue>> &GetItems() const override
-        {
-            return values_;
-        }
-
-    private:
-        std::vector<std::shared_ptr<DataValue>> values_;
-    };
     return std::make_shared<MergedDataValue>(std::move(values));
 }
 } // namespace OHOS::DataMining

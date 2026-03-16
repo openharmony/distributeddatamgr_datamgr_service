@@ -75,11 +75,15 @@ private:
     };
 
     int32_t BuildGraph(const OpNode &node, const std::string &parent);
+    void AddRouteLocked(const std::string &parent, const OpNode &node);
     int32_t EnsureNodeBound(const OpNode &node);
     int32_t DispatchToNode(const std::string &nodeName, std::shared_ptr<Context> context,
         std::shared_ptr<DataValue> data);
     void OnNodeOutput(const std::string &from, std::shared_ptr<Context> context, const std::string &topic,
         std::shared_ptr<DataValue> data);
+    void RecordDispatchErrorLocked(const std::string &from, const std::string &child, int32_t status);
+    std::shared_ptr<DataValue> BuildMergedValueLocked(
+        const std::string &nodeName, const std::vector<std::string> &parents, bool &ready);
     std::shared_ptr<DataValue> MergeInputsLocked(const std::string &nodeName, const std::string &from,
         std::shared_ptr<DataValue> data, bool &ready);
 
