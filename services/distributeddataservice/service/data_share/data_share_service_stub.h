@@ -29,6 +29,7 @@ public:
 private:
     static constexpr std::chrono::milliseconds TIME_THRESHOLD = std::chrono::milliseconds(500);
     static bool CheckInterfaceToken(MessageParcel& data);
+    bool IsTemplateRequest(uint32_t code);
     int32_t OnQuery(MessageParcel& data, MessageParcel& reply);
     int32_t OnAddTemplate(MessageParcel& data, MessageParcel& reply);
     int32_t OnDelTemplate(MessageParcel& data, MessageParcel& reply);
