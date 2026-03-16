@@ -37,7 +37,9 @@
 #include "runtime/sink_proxy.h"
 #include "runtime/source_proxy.h"
 #include "runtime/transport_types.h"
+#include "serializable/serializable.h"
 #include "service/data_mining_manager.h"
+#include "service/etl_runtime_manager.h"
 #include "service/etl_runtime_client.h"
 
 using namespace testing::ext;
@@ -670,6 +672,41 @@ HWTEST_F(DataMiningEtlTest, StopPipelineUnsubscribesAndStopsSource013, TestSize.
     EXPECT_EQ(source->stopCount_, 1);
     EXPECT_TRUE(manager.pipelines_["stop_pipeline"].timerTaskIds.empty());
     EXPECT_FALSE(manager.pipelines_["stop_pipeline"].started);
+}
+
+HWTEST_F(DataMiningEtlTest, EtlRuntimeManagerReusesRuntimeWhenConfigUnchanged014, TestSize.Level1)
+{
+    DataMining::EtlRuntimeManager manager;
+
+    DataMining::PluginDescription plugin;
+    DataMining::OPDescription op;
+    op.name = "runtime_source";
+    op.type = "source";
+    plugin.ops.push_back(op);
+
+    DataMining::PipelineDescription pipeline;
+    pipeline.name = "runtime_pipeline";
+    pipeline.tree.opName = "runtime_source";
+
+    auto pluginContent = OHOS::DistributedData::Serializable::Marshall(plugin);
+    auto pipelineContent = OHOS::DistributedData::Serializable::Marshall(pipeline);
+
+    ASSERT_EQ(manager.RegisterPlugin(pluginContent), E_OK);
+    ASSERT_EQ(manager.RegisterPipeline(pipelineContent), E_OK);
+
+    DataMining::DispatchRequest request;
+    request.pipelineName = "runtime_pipeline";
+    request.fromNode = "runtime_source";
+    request.topic = "runtime.topic";
+    ASSERT_EQ(manager.Dispatch(request), E_OK);
+
+    auto firstRuntime = manager.runtimes_["runtime_pipeline"];
+    ASSERT_NE(firstRuntime, nullptr);
+
+    ASSERT_EQ(manager.RegisterPlugin(pluginContent), E_OK);
+    ASSERT_EQ(manager.RegisterPipeline(pipelineContent), E_OK);
+    ASSERT_EQ(manager.Dispatch(request), E_OK);
+    EXPECT_EQ(manager.runtimes_["runtime_pipeline"], firstRuntime);
 }
 
 HWTEST_F(DataMiningEtlTest, PipelineRuntimePropagatesOperatorFailure006, TestSize.Level1)

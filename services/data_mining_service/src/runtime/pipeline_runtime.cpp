@@ -79,9 +79,9 @@ int32_t PipelineRuntime::Load(const PipelineDescription &pipeline,
     const std::unordered_map<std::string, PluginDescription> &pluginsByOp)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    // Load 做两件事：
-    // 1. 用 pipeline tree 展开有向图
-    // 2. 为每个 operator/sink 绑定对应的插件端点信息
+    // Load 只做两件事：
+    // 1. 用 pipeline tree 展开有向图。
+    // 2. 为每个 operator 和 sink 绑定对应的插件端点信息。
     pipeline_ = pipeline;
     pluginsByOp_ = pluginsByOp;
     nodes_.clear();
@@ -114,7 +114,7 @@ const PipelineDescription &PipelineRuntime::GetDescription() const
 
 int32_t PipelineRuntime::BuildGraph(const OpNode &node, const std::string &parent)
 {
-    // tree 根节点允许为空壳节点，真正的 source/operator/sink 挂在 children 下。
+    // tree 根节点允许为空壳节点，真正的 source、operator、sink 挂在 children 下。
     if (node.opName.empty()) {
         for (const auto &child : node.children) {
             int32_t status = BuildGraph(child, parent);
@@ -151,7 +151,7 @@ int32_t PipelineRuntime::BuildGraph(const OpNode &node, const std::string &paren
 void PipelineRuntime::AddRouteLocked(const std::string &parent, const OpNode &node)
 {
     // routes_ 记录单向边，inputParents_ 记录某个节点的所有上游父节点。
-    // 后者主要用于多父场景的 merge。
+    // 后者主要用于多父场景下的 merge。
     auto &routes = routes_[parent];
     auto routeIt = std::find_if(routes.begin(), routes.end(), [&node](const auto &route) {
         return route.child == node.opName;
@@ -228,9 +228,9 @@ void PipelineRuntime::OnNodeOutput(
     const std::string &from, std::shared_ptr<Context> context, const std::string &topic, std::shared_ptr<DataValue> data)
 {
     // 任意节点输出后都走统一派发逻辑：
-    // 1. 查找下游边
-    // 2. 如有多父节点先 merge
-    // 3. 再把结果交给 operator/sink
+    // 1. 查找下游边。
+    // 2. 如有多父节点则先 merge。
+    // 3. 再把结果交给 operator 或 sink。
     std::vector<RouteNode> nextRoutes;
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -290,7 +290,7 @@ std::shared_ptr<DataValue> PipelineRuntime::BuildMergedValueLocked(
 {
     // 多父节点 merge 拆到独立函数，避免 MergeInputsLocked 同时承担“缓存”和“组装结果”两类职责。
     if (pendingInputs_[nodeName].size() < parents.size()) {
-        // 还没等到全部父节点的数据时先缓存，直到最后一个父节点到达再统一放行。
+        // 没等到全部父节点数据前先缓存，直到最后一个父节点到达再统一放行。
         return nullptr;
     }
     std::vector<std::shared_ptr<DataValue>> values;

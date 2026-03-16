@@ -28,38 +28,38 @@ constexpr int32_t E_ERROR = -1;
 int32_t EtlRuntimeManager::RegisterPlugin(const std::string &pluginContent)
 {
     // ETL SA 只保存“按 opName 索引后的插件元数据”。
-    // 真正的 operator/sink 实例会在运行时按需创建，避免 SA 启动时一次性加载全部插件。
+    // 真正的 operator 和 sink 实例会在 runtime 构图时按需创建，避免 SA 启动时一次性加载全部插件。
     PluginDescription description;
     if (!OHOS::DistributedData::Serializable::Unmarshall(pluginContent, description)) {
         return E_ERROR;
     }
 
     std::lock_guard<std::mutex> lock(mutex_);
-    for (const auto &op : description.ops) {
-        pluginsByOp_[op.name] = description;
+    if (UpdatePluginsLocked(description)) {
+        runtimes_.clear();
     }
-    runtimes_.clear();
     return E_OK;
 }
 
 int32_t EtlRuntimeManager::RegisterPipeline(const std::string &pipelineContent)
 {
-    // pipeline 更新后直接丢弃旧 runtime，下一次 dispatch 时按最新有向图重建。
+    // pipeline 更新后只在描述真正变化时才丢弃旧 runtime，避免重复注册把缓存打废。
     PipelineDescription description;
     if (!OHOS::DistributedData::Serializable::Unmarshall(pipelineContent, description) || description.name.empty()) {
         return E_ERROR;
     }
 
     std::lock_guard<std::mutex> lock(mutex_);
-    pipelines_[description.name] = description;
-    runtimes_.erase(description.name);
+    if (UpdatePipelineLocked(description)) {
+        runtimes_.erase(description.name);
+    }
     return E_OK;
 }
 
 int32_t EtlRuntimeManager::Dispatch(const DispatchRequest &request)
 {
     // DDMS 送来的 dispatch 已经确定了入口 source 节点。
-    // SA 侧只负责确保 runtime 就绪，然后从 fromNode 往后执行 operator/sink。
+    // SA 侧只负责确保 runtime 就绪，然后从 fromNode 往后执行 operator 和 sink。
     std::shared_ptr<PipelineRuntime> runtime;
     PipelineDescription description;
     {
@@ -89,10 +89,38 @@ int32_t EtlRuntimeManager::Dispatch(const DispatchRequest &request)
     return runtime->DispatchFrom(request.fromNode, context, request.topic, data);
 }
 
+bool EtlRuntimeManager::UpdatePluginsLocked(const PluginDescription &description)
+{
+    bool changed = false;
+    const auto serialized = OHOS::DistributedData::Serializable::Marshall(description);
+    for (const auto &op : description.ops) {
+        auto pluginIt = pluginsByOp_.find(op.name);
+        if (pluginIt != pluginsByOp_.end() &&
+            OHOS::DistributedData::Serializable::Marshall(pluginIt->second) == serialized) {
+            continue;
+        }
+        pluginsByOp_[op.name] = description;
+        changed = true;
+    }
+    return changed;
+}
+
+bool EtlRuntimeManager::UpdatePipelineLocked(const PipelineDescription &description)
+{
+    auto pipelineIt = pipelines_.find(description.name);
+    const auto serialized = OHOS::DistributedData::Serializable::Marshall(description);
+    if (pipelineIt != pipelines_.end() &&
+        OHOS::DistributedData::Serializable::Marshall(pipelineIt->second) == serialized) {
+        return false;
+    }
+    pipelines_[description.name] = description;
+    return true;
+}
+
 int32_t EtlRuntimeManager::BuildRuntime(
     const std::string &pipelineName, const PipelineDescription &description, std::shared_ptr<PipelineRuntime> &runtime)
 {
-    // runtime 是按 pipelineName 懒加载缓存的，避免每次 dispatch 都重复构图。
+    // runtime 按 pipelineName 懒加载缓存，避免每次 dispatch 都重复构图。
     std::unordered_map<std::string, PluginDescription> plugins;
     {
         std::lock_guard<std::mutex> lock(mutex_);
