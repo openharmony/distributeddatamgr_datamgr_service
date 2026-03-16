@@ -1,0 +1,136 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/ohos/sa_profile/sa_profile.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+group("build_module") {
+  deps = []
+  if (datamgr_service_data_mining_etl) {
+    deps += [
+      ":data_mining_etl_profile",
+      ":data_mining_etl_service",
+      ":data_mining_etl_service_cfg",
+    ]
+  }
+}
+
+config("data_mining_etl_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "include",
+    "${data_mining_path}/include",
+    "${data_service_path}/framework/include",
+  ]
+}
+
+ohos_source_set("data_mining_etl_ipc") {
+  sources = [
+    "src/ipc/etl_service_proxy.cpp",
+    "src/ipc/etl_service_stub.cpp",
+  ]
+
+  configs = [ ":data_mining_etl_public_config" ]
+  public_configs = [ ":data_mining_etl_public_config" ]
+
+  deps = [ "${data_mining_path}:data_mining_client" ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_core",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}
+
+ohos_source_set("data_mining_etl_runtime") {
+  sources = [
+    "src/runtime/operator_proxy.cpp",
+    "src/runtime/pipeline_runtime.cpp",
+    "src/runtime/sink_proxy.cpp",
+    "src/service/etl_runtime_manager.cpp",
+  ]
+
+  configs = [ ":data_mining_etl_public_config" ]
+  public_configs = [ ":data_mining_etl_public_config" ]
+
+  deps = [ "${data_mining_path}:data_mining_client" ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}
+
+ohos_shared_library("data_mining_etl_service") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  sources = [ "data_mining_etl_service.cpp" ]
+
+  configs = [ ":data_mining_etl_public_config" ]
+  public_configs = [ ":data_mining_etl_public_config" ]
+
+  cflags = [
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Werror",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-Oz",
+  ]
+
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
+
+  deps = [
+    ":data_mining_etl_ipc",
+    ":data_mining_etl_runtime",
+    "${data_mining_path}:data_mining_client",
+  ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:datamgr_common",
+    "safwk:system_ability_fwk",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}
+
+ohos_sa_profile("data_mining_etl_profile") {
+  sources = [ "sa_profile/1311.json" ]
+  part_name = "datamgr_service"
+}
+
+ohos_prebuilt_etc("data_mining_etl_service_cfg") {
+  source = "data_mining_etl_service.cfg"
+  relative_install_dir = "init"
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}

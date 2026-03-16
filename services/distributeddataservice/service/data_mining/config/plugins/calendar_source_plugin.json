@@ -1,0 +1,26 @@
+{
+  "ops": [
+    {
+      "name": "calendar_source",
+      "type": "source",
+      "input": {
+        "typeName": "none",
+        "elements": []
+      },
+      "output": {
+        "typeName": "json",
+        "elements": []
+      }
+    }
+  ],
+  "libs": {
+    "path": "libs/libcalendar_source_plugin.so"
+  },
+  "extension": {
+    "uri": ""
+  },
+  "sa": {
+    "said": 0,
+    "code": 0
+  }
+}

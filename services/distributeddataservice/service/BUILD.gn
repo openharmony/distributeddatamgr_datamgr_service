@@ -119,6 +119,12 @@ ohos_shared_library("distributeddatasvc") {
     deps += [ "${data_service_path}/service/data_share:data_share_service" ]
   }
 
+
+  # Data mining ETL framework
+  if (datamgr_service_data_mining_etl) {
+    deps += [ "${data_service_path}/service/data_mining:data_mining_etl" ]
+  }
+
   if (datamgr_service_object) {
     deps += [ "${data_service_path}/service/object:distributeddata_object" ]
   }

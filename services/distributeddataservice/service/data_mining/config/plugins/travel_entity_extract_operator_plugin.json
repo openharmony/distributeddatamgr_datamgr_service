@@ -1,0 +1,26 @@
+{
+  "ops": [
+    {
+      "name": "travel_entity_extract_operator",
+      "type": "operator",
+      "input": {
+        "typeName": "json_batch",
+        "elements": []
+      },
+      "output": {
+        "typeName": "json",
+        "elements": []
+      }
+    }
+  ],
+  "libs": {
+    "path": "libs/libtravel_entity_extract_operator_plugin.so"
+  },
+  "extension": {
+    "uri": ""
+  },
+  "sa": {
+    "said": 0,
+    "code": 0
+  }
+}

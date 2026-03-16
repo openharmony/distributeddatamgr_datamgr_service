@@ -1,0 +1,26 @@
+{
+  "ops": [
+    {
+      "name": "context_operator",
+      "type": "operator",
+      "input": {
+        "typeName": "json_batch",
+        "elements": []
+      },
+      "output": {
+        "typeName": "json",
+        "elements": []
+      }
+    }
+  ],
+  "libs": {
+    "path": "libs/libcontext_operator_plugin.so"
+  },
+  "extension": {
+    "uri": ""
+  },
+  "sa": {
+    "said": 0,
+    "code": 0
+  }
+}

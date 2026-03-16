@@ -1,0 +1,26 @@
+{
+  "ops": [
+    {
+      "name": "location_source",
+      "type": "source",
+      "input": {
+        "typeName": "none",
+        "elements": []
+      },
+      "output": {
+        "typeName": "json",
+        "elements": []
+      }
+    }
+  ],
+  "libs": {
+    "path": "libs/liblocation_source_plugin.so"
+  },
+  "extension": {
+    "uri": ""
+  },
+  "sa": {
+    "said": 0,
+    "code": 0
+  }
+}

@@ -95,4 +95,8 @@ group("fuzztest") {
       "utdserviceconcurrent_fuzzer:fuzztest"
     ]
   }
+
+  if (datamgr_service_data_mining_etl) {
+    deps += [ "dataminingetlservicestub_fuzzer:fuzztest" ]
+  }
 }

@@ -3132,6 +3132,44 @@ ohos_unittest("UtdServiceImplTest") {
   ]
 }
 
+ohos_unittest("DataMiningEtlTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [ "data_mining_etl_test.cpp" ]
+
+  include_dirs = [
+    "${datamgr_service_path}/services/data_mining_service/include",
+    "${data_mining_path}/include",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/data_mining/include",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+  ]
+
+  deps = [
+    "${data_mining_path}:data_mining_client",
+    "${datamgr_service_path}/services/data_mining_service:data_mining_etl_runtime",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/data_mining:data_mining_etl",
+  ]
+
+  defines = [
+    "private=public",
+    "protected=public",
+  ]
+}
+
 ohos_unittest("CloneManagerTest") {
   module_out_path = module_output_path
 
@@ -3249,6 +3287,10 @@ group("unittest") {
       ":DataShareServiceImplMockTest",
       ":DataShareServiceImplTest",
     ]
+  }
+
+  if (datamgr_service_data_mining_etl) {
+    deps += [ ":DataMiningEtlTest" ]
   }
 
   deps += [

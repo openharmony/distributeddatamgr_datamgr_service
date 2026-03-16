@@ -46,7 +46,8 @@
             "datamgr_service_kvdb",
             "datamgr_service_object",
             "datamgr_service_data_share",
-            "datamgr_service_distributed"
+            "datamgr_service_distributed",
+            "datamgr_service_data_mining_etl"
         ],
         "adapted_system_type": [
             "standard"
@@ -103,17 +104,40 @@
                 "zlib"
             ]
         },
-        "build": {
-            "sub_component": [
+            "build": {
+                "sub_component": [
+                "//foundation/distributeddatamgr/data_mining:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/rust/extension:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module",
+                "//foundation/distributeddatamgr/datamgr_service/services/data_mining_service:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/conf:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_share:build_module",
                 "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/object/asset_loader:asset_sync_manager"
-            ],
-            "inner_kits": [
+                ],
+                "inner_kits": [
+                {
+                    "name": "//foundation/distributeddatamgr/data_mining:data_mining_client",
+                    "header": {
+                        "header_files": [
+                            "etl_interfaces.h",
+                            "interfaces/async_notifier.h",
+                            "interfaces/basic_value.h",
+                            "interfaces/context.h",
+                            "interfaces/data.h",
+                            "interfaces/operator.h",
+                            "interfaces/payload.h",
+                            "interfaces/sink.h",
+                            "interfaces/source.h",
+                            "model/pipeline_description.h",
+                            "model/plugin_description.h",
+                            "plugin/plugin_export.h",
+                            "plugin/plugin_module.h"
+                        ],
+                        "header_base": "//foundation/distributeddatamgr/data_mining/include"
+                    }
+                },
                 {
                     "name": "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
                     "header": {

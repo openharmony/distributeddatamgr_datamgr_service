@@ -38,6 +38,10 @@ udmf_path = "//foundation/distributeddatamgr/udmf"
 
 dataobject_path = "//foundation/distributeddatamgr/data_object"
 
+data_mining_path = "//foundation/distributeddatamgr/data_mining"
+
+data_mining_demo_path = "//foundation/distributeddatamgr/data_mining_demo"
+
 datamgr_service_path = "//foundation/distributeddatamgr/datamgr_service"
 
 declare_args() {
@@ -81,4 +85,8 @@ declare_args() {
   datamgr_service_data_share = true
 
   datamgr_service_distributed = true
+
+  datamgr_service_data_mining_etl = true
+
+  datamgr_service_data_mining_demo = false
 }

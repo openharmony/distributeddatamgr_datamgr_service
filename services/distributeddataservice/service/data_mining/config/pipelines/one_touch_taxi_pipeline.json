@@ -1,0 +1,166 @@
+{
+  "name": "one_touch_taxi_pipeline",
+  "scene": [
+    "one_touch_taxi",
+    "travel_service"
+  ],
+  "trigger": {
+    "type": "hybrid",
+    "interval": 86400,
+    "eventType": 0,
+    "nextOrAnd": "and"
+  },
+  "tree": {
+    "opName": "",
+    "mode": "",
+    "topic": "",
+    "children": [
+      {
+        "opName": "sms_source",
+        "mode": "subscribe",
+        "topic": "sms.changed",
+        "children": [
+          {
+            "opName": "behavior_parser_operator",
+            "mode": "",
+            "topic": "",
+            "children": [
+              {
+                "opName": "travel_entity_extract_operator",
+                "mode": "",
+                "topic": "",
+                "children": [
+                  {
+                    "opName": "context_operator",
+                    "mode": "",
+                    "topic": "",
+                    "children": [
+                      {
+                        "opName": "confidence_operator",
+                        "mode": "",
+                        "topic": "",
+                        "children": [
+                          {
+                            "opName": "graph_sink",
+                            "mode": "",
+                            "topic": "",
+                            "children": [],
+                            "output": [
+                              "graph.record"
+                            ]
+                          }
+                        ],
+                        "output": [
+                          "confidence"
+                        ]
+                      }
+                    ],
+                    "output": [
+                      "context"
+                    ]
+                  }
+                ],
+                "output": [
+                  "travel_entities"
+                ]
+              }
+            ],
+            "output": [
+              "behavior"
+            ]
+          }
+        ],
+        "output": [
+          "sms_event"
+        ]
+      },
+      {
+        "opName": "location_source",
+        "mode": "subscribe",
+        "topic": "location.changed",
+        "children": [
+          {
+            "opName": "context_operator",
+            "mode": "",
+            "topic": "",
+            "children": [],
+            "output": [
+              "context"
+            ]
+          }
+        ],
+        "output": [
+          "location_event"
+        ]
+      },
+      {
+        "opName": "calendar_source",
+        "mode": "trigger",
+        "topic": "calendar.daily",
+        "children": [
+          {
+            "opName": "travel_entity_extract_operator",
+            "mode": "",
+            "topic": "",
+            "children": [],
+            "output": [
+              "travel_entities"
+            ]
+          }
+        ],
+        "output": [
+          "calendar_event"
+        ]
+      },
+      {
+        "opName": "notification_source",
+        "mode": "subscribe",
+        "topic": "notification.changed",
+        "children": [
+          {
+            "opName": "taxi_notification_extract_operator",
+            "mode": "",
+            "topic": "",
+            "children": [
+              {
+                "opName": "context_operator",
+                "mode": "",
+                "topic": "",
+                "children": [],
+                "output": [
+                  "context"
+                ]
+              }
+            ],
+            "output": [
+              "notify_entities"
+            ]
+          }
+        ],
+        "output": [
+          "notification_event"
+        ]
+      },
+      {
+        "opName": "graph_source",
+        "mode": "trigger",
+        "topic": "graph.daily",
+        "children": [
+          {
+            "opName": "context_operator",
+            "mode": "",
+            "topic": "",
+            "children": [],
+            "output": [
+              "context"
+            ]
+          }
+        ],
+        "output": [
+          "graph_snapshot"
+        ]
+      }
+    ],
+    "output": []
+  }
+}

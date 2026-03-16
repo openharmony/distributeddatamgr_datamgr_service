@@ -1,0 +1,26 @@
+{
+  "ops": [
+    {
+      "name": "confidence_operator",
+      "type": "operator",
+      "input": {
+        "typeName": "json",
+        "elements": []
+      },
+      "output": {
+        "typeName": "json",
+        "elements": []
+      }
+    }
+  ],
+  "libs": {
+    "path": "libs/libconfidence_operator_plugin.so"
+  },
+  "extension": {
+    "uri": ""
+  },
+  "sa": {
+    "said": 0,
+    "code": 0
+  }
+}

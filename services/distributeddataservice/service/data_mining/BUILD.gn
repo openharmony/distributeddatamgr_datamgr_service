@@ -1,0 +1,87 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+config("data_mining_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "${data_mining_path}/include",
+    # DDMS 本地只保留 feature/bridge 头；公共 ETL 定义统一来自兄弟目录 data_mining。
+    "include",
+    "${data_service_path}/framework/include",
+    "${datamgr_service_path}/services/data_mining_service/include",
+  ]
+}
+
+config("data_mining_private_config") {
+  visibility = [ ":*" ]
+  include_dirs = [ "." ]
+}
+
+ohos_source_set("data_mining_etl") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    ubsan = true
+    boundary_sanitize = true
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  sources = [
+    "data_mining_service_impl.cpp",
+    "src/runtime/source_client.cpp",
+    "src/runtime/source_proxy.cpp",
+    "src/service/data_mining_manager.cpp",
+    "src/service/etl_runtime_client.cpp",
+  ]
+
+  configs = [
+    ":data_mining_private_config",
+    ":data_mining_public_config",
+  ]
+  public_configs = [ ":data_mining_public_config" ]
+
+  cflags = [
+    "-D_LIBCPP_HAS_COND_CLOCKWAIT",
+    "-Werror",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+    "-Oz",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_mining_path}:data_mining_client",
+    "${datamgr_service_path}/services/data_mining_service:data_mining_etl_ipc",
+  ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:datamgr_common",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  cflags_cc = [
+    "-fvisibility=hidden",
+    "-Oz",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}

@@ -1,0 +1,26 @@
+{
+  "ops": [
+    {
+      "name": "graph_sink",
+      "type": "sink",
+      "input": {
+        "typeName": "json",
+        "elements": []
+      },
+      "output": {
+        "typeName": "none",
+        "elements": []
+      }
+    }
+  ],
+  "libs": {
+    "path": "libs/libgraph_sink_plugin.so"
+  },
+  "extension": {
+    "uri": ""
+  },
+  "sa": {
+    "said": 0,
+    "code": 0
+  }
+}

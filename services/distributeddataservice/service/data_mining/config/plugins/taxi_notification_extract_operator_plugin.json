@@ -1,0 +1,26 @@
+{
+  "ops": [
+    {
+      "name": "taxi_notification_extract_operator",
+      "type": "operator",
+      "input": {
+        "typeName": "json",
+        "elements": []
+      },
+      "output": {
+        "typeName": "json",
+        "elements": []
+      }
+    }
+  ],
+  "libs": {
+    "path": "libs/libtaxi_notification_extract_operator_plugin.so"
+  },
+  "extension": {
+    "uri": ""
+  },
+  "sa": {
+    "said": 0,
+    "code": 0
+  }
+}

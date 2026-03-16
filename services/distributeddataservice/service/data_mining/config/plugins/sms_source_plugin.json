@@ -1,0 +1,26 @@
+{
+  "ops": [
+    {
+      "name": "sms_source",
+      "type": "source",
+      "input": {
+        "typeName": "none",
+        "elements": []
+      },
+      "output": {
+        "typeName": "json",
+        "elements": []
+      }
+    }
+  ],
+  "libs": {
+    "path": "libs/libsms_source_plugin.so"
+  },
+  "extension": {
+    "uri": ""
+  },
+  "sa": {
+    "said": 0,
+    "code": 0
+  }
+}
