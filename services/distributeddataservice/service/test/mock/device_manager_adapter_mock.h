@@ -22,10 +22,12 @@
 
 namespace OHOS {
 namespace DistributedData {
-using namespace OHOS::AppDistributedKv;
 using AccessCaller = OHOS::AppDistributedKv::AccessCaller;
 using AccessCallee = OHOS::AppDistributedKv::AccessCallee;
+using AppDeviceChangeListener = OHOS::AppDistributedKv::AppDeviceChangeListener;
 using DeviceInfo = OHOS::AppDistributedKv::DeviceInfo;
+using Status =  OHOS::AppDistributedKv::Status;
+using PipeInfo =  OHOS::AppDistributedKv::PipeInfo;
 class BDeviceManagerAdapter {
 public:
     virtual std::vector<DeviceInfo> GetRemoteDevices() = 0;
