@@ -324,13 +324,16 @@ int32_t DataMiningManager::RegisterPlugin(const std::string &pluginConfigPath)
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
+        std::unordered_map<std::string, PluginDescription> stagedPlugins;
+        std::unordered_set<std::string> stagedNames;
         for (const auto &op : description.ops) {
-            if (pluginsByOp_.find(op.name) != pluginsByOp_.end()) {
+            if (op.name.empty() || !stagedNames.insert(op.name).second || pluginsByOp_.find(op.name) != pluginsByOp_.end()) {
                 return E_ERROR;
             }
+            stagedPlugins.emplace(op.name, description);
         }
-        for (const auto &op : description.ops) {
-            pluginsByOp_[op.name] = description;
+        for (const auto &[opName, plugin] : stagedPlugins) {
+            pluginsByOp_.emplace(opName, plugin);
         }
     }
     return E_OK;

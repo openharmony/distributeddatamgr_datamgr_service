@@ -16,6 +16,8 @@
 #define LOG_TAG "DataMiningEtlMgr"
 #include "service/etl_runtime_manager.h"
 
+#include <unordered_set>
+
 #include "log_print.h"
 #include "serializable/serializable.h"
 
@@ -35,7 +37,11 @@ int32_t EtlRuntimeManager::RegisterPlugin(const std::string &pluginContent)
     }
 
     std::lock_guard<std::mutex> lock(mutex_);
-    if (UpdatePluginsLocked(description)) {
+    bool changed = false;
+    if (UpdatePluginsLocked(description, changed) != E_OK) {
+        return E_ERROR;
+    }
+    if (changed) {
         runtimes_.clear();
     }
     return E_OK;
@@ -89,20 +95,28 @@ int32_t EtlRuntimeManager::Dispatch(const DispatchRequest &request)
     return runtime->DispatchFrom(request.fromNode, context, request.topic, data);
 }
 
-bool EtlRuntimeManager::UpdatePluginsLocked(const PluginDescription &description)
+int32_t EtlRuntimeManager::UpdatePluginsLocked(const PluginDescription &description, bool &changed)
 {
-    bool changed = false;
+    changed = false;
     const auto serialized = OHOS::DistributedData::Serializable::Marshall(description);
+    std::unordered_map<std::string, PluginDescription> stagedPlugins;
+    std::unordered_set<std::string> stagedNames;
     for (const auto &op : description.ops) {
+        if (op.name.empty() || !stagedNames.insert(op.name).second) {
+            return E_ERROR;
+        }
         auto pluginIt = pluginsByOp_.find(op.name);
         if (pluginIt != pluginsByOp_.end() &&
             OHOS::DistributedData::Serializable::Marshall(pluginIt->second) == serialized) {
             continue;
         }
-        pluginsByOp_[op.name] = description;
+        stagedPlugins[op.name] = description;
         changed = true;
     }
-    return changed;
+    for (const auto &[opName, plugin] : stagedPlugins) {
+        pluginsByOp_[opName] = plugin;
+    }
+    return E_OK;
 }
 
 bool EtlRuntimeManager::UpdatePipelineLocked(const PipelineDescription &description)

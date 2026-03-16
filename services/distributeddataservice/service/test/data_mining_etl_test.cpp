@@ -318,25 +318,32 @@ public:
     }
 
 protected:
-    std::string CreatePluginConfig(const std::string &fileName, const std::string &opName, const std::string &type,
-        const std::string &libraryPath)
+    std::string CreatePluginConfigWithOps(
+        const std::string &fileName, const std::string &opsJson, const std::string &libraryPath)
     {
         const auto configPath = (std::filesystem::path(TEST_ROOT) / "plugins" / fileName).string();
         std::string content = "{\n"
-            "  \"ops\": [\n"
-            "    {\n"
-            "      \"name\": \"" + opName + "\",\n"
-            "      \"type\": \"" + type + "\",\n"
-            "      \"input\": { \"typeName\": \"json\", \"elements\": [] },\n"
-            "      \"output\": { \"typeName\": \"json\", \"elements\": [] }\n"
-            "    }\n"
-            "  ],\n"
+            "  \"ops\": " + opsJson + ",\n"
             "  \"libs\": { \"path\": \"" + libraryPath + "\" },\n"
             "  \"extension\": { \"uri\": \"\" },\n"
             "  \"sa\": { \"said\": 0, \"code\": 0 }\n"
             "}\n";
         EXPECT_TRUE(WriteFile(configPath, content));
         return configPath;
+    }
+
+    std::string CreatePluginConfig(const std::string &fileName, const std::string &opName, const std::string &type,
+        const std::string &libraryPath)
+    {
+        std::string opsJson = "[\n"
+            "    {\n"
+            "      \"name\": \"" + opName + "\",\n"
+            "      \"type\": \"" + type + "\",\n"
+            "      \"input\": { \"typeName\": \"json\", \"elements\": [] },\n"
+            "      \"output\": { \"typeName\": \"json\", \"elements\": [] }\n"
+            "    }\n"
+            "  ]";
+        return CreatePluginConfigWithOps(fileName, opsJson, libraryPath);
     }
 
     std::string CreatePipelineConfig(const std::string &fileName, const std::string &name, const std::string &tree,
@@ -634,7 +641,31 @@ HWTEST_F(DataMiningEtlTest, RegisterPluginRejectsDuplicateOpName012, TestSize.Le
     EXPECT_EQ(manager.RegisterPlugin(pluginConfigV2), E_ERROR);
 }
 
-HWTEST_F(DataMiningEtlTest, StopPipelineUnsubscribesAndStopsSource013, TestSize.Level1)
+HWTEST_F(DataMiningEtlTest, RegisterPluginRejectsDuplicateOpsInSameConfig013, TestSize.Level1)
+{
+    DataMining::DataMiningManager manager;
+
+    auto pluginConfig = CreatePluginConfigWithOps("duplicate_plugin_same_file.json",
+        "["
+        "  {"
+        "    \"name\":\"duplicate_source\","
+        "    \"type\":\"source\","
+        "    \"input\":{\"typeName\":\"json\",\"elements\":[]},"
+        "    \"output\":{\"typeName\":\"json\",\"elements\":[]}"
+        "  },"
+        "  {"
+        "    \"name\":\"duplicate_source\","
+        "    \"type\":\"source\","
+        "    \"input\":{\"typeName\":\"json\",\"elements\":[]},"
+        "    \"output\":{\"typeName\":\"json\",\"elements\":[]}"
+        "  }"
+        "]",
+        "libs/libdup.so");
+
+    EXPECT_EQ(manager.RegisterPlugin(pluginConfig), E_ERROR);
+}
+
+HWTEST_F(DataMiningEtlTest, StopPipelineUnsubscribesAndStopsSource014, TestSize.Level1)
 {
     DataMining::DataMiningManager manager;
     manager.BindExecutors(std::make_shared<ExecutorPool>(1, 1));
@@ -674,7 +705,7 @@ HWTEST_F(DataMiningEtlTest, StopPipelineUnsubscribesAndStopsSource013, TestSize.
     EXPECT_FALSE(manager.pipelines_["stop_pipeline"].started);
 }
 
-HWTEST_F(DataMiningEtlTest, EtlRuntimeManagerReusesRuntimeWhenConfigUnchanged014, TestSize.Level1)
+HWTEST_F(DataMiningEtlTest, EtlRuntimeManagerReusesRuntimeWhenConfigUnchanged015, TestSize.Level1)
 {
     DataMining::EtlRuntimeManager manager;
 
@@ -707,6 +738,21 @@ HWTEST_F(DataMiningEtlTest, EtlRuntimeManagerReusesRuntimeWhenConfigUnchanged014
     ASSERT_EQ(manager.RegisterPipeline(pipelineContent), E_OK);
     ASSERT_EQ(manager.Dispatch(request), E_OK);
     EXPECT_EQ(manager.runtimes_["runtime_pipeline"], firstRuntime);
+}
+
+HWTEST_F(DataMiningEtlTest, EtlRuntimeManagerRejectsDuplicateOpsInSamePlugin016, TestSize.Level1)
+{
+    DataMining::EtlRuntimeManager manager;
+
+    DataMining::PluginDescription plugin;
+    DataMining::OPDescription firstOp;
+    firstOp.name = "duplicate_source";
+    firstOp.type = "source";
+    plugin.ops.push_back(firstOp);
+    plugin.ops.push_back(firstOp);
+
+    EXPECT_EQ(manager.RegisterPlugin(OHOS::DistributedData::Serializable::Marshall(plugin)), E_ERROR);
+    EXPECT_TRUE(manager.pluginsByOp_.empty());
 }
 
 HWTEST_F(DataMiningEtlTest, PipelineRuntimePropagatesOperatorFailure006, TestSize.Level1)

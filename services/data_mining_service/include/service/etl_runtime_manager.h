@@ -35,7 +35,7 @@ public:
     int32_t Dispatch(const DispatchRequest &request);
 
 private:
-    bool UpdatePluginsLocked(const PluginDescription &description);
+    int32_t UpdatePluginsLocked(const PluginDescription &description, bool &changed);
     bool UpdatePipelineLocked(const PipelineDescription &description);
     int32_t BuildRuntime(const std::string &pipelineName, const PipelineDescription &description,
         std::shared_ptr<PipelineRuntime> &runtime);
