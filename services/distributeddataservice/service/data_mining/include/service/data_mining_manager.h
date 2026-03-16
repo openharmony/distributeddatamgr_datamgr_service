@@ -81,6 +81,19 @@ private:
         std::vector<SourceTimer> timers;
     };
 
+    struct PendingStop final {
+        std::shared_ptr<OHOS::ExecutorPool> executors;
+        std::unordered_map<std::string, SourceBinding> sources;
+        std::vector<SourceSubscription> subscriptions;
+        std::vector<OHOS::ExecutorPool::TaskId> timerTaskIds;
+    };
+
+    struct RuntimeDispatchSnapshot final {
+        std::shared_ptr<IEtlRuntimeClient> client;
+        PipelineDescription description;
+        std::vector<PluginDescription> plugins;
+    };
+
     bool LoadFile(const std::string &path, std::string &content) const;
     int32_t ParsePluginConfig(const std::string &pluginConfigPath, PluginDescription &description) const;
     int32_t ParsePipelineConfig(const std::string &pipelineConfigPath, PipelineDescription &description) const;
@@ -93,6 +106,13 @@ private:
     void EnsureTriggerSourcesLocked(PipelineState &state,
         const std::unordered_map<std::string, OpNode> &sourceNodes) const;
     int32_t StartPipelineInternal(const std::string &name, const PendingStart &startInfo);
+    void FillPendingStopLocked(PipelineState &state, PendingStop &stopInfo) const;
+    bool BuildRuntimeDispatchSnapshotLocked(
+        const std::string &pipelineName, RuntimeDispatchSnapshot &snapshot) const;
+    int32_t RegisterRuntimeSnapshot(const RuntimeDispatchSnapshot &snapshot) const;
+    int32_t BuildDispatchRequest(const std::string &pipelineName, const std::string &sourceName,
+        const std::shared_ptr<Context> &context, const std::string &topic, const std::shared_ptr<DataValue> &data,
+        DispatchRequest &request) const;
     int32_t DispatchToRuntime(const std::string &pipelineName, const std::string &sourceName,
         std::shared_ptr<Context> context, const std::string &topic, std::shared_ptr<DataValue> data);
     void OnSourceOutput(const std::string &pipelineName, const std::string &sourceName,

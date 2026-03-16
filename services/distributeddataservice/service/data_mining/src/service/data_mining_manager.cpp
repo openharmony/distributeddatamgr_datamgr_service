@@ -155,6 +155,32 @@ bool ShouldAutoStartPipeline(const PipelineDescription &description)
     }
     return HasSubscribeSource(description.tree);
 }
+
+void AppendTimerTaskIds(const std::unordered_map<std::string, ExecutorPool::TaskId> &timerTaskIds,
+    std::vector<ExecutorPool::TaskId> &tasks)
+{
+    for (const auto &[sourceName, taskId] : timerTaskIds) {
+        (void)sourceName;
+        if (taskId != ExecutorPool::INVALID_TASK_ID) {
+            tasks.push_back(taskId);
+        }
+    }
+}
+
+std::vector<PluginDescription> CollectUniquePlugins(
+    const std::unordered_map<std::string, PluginDescription> &pluginsByOp)
+{
+    std::vector<PluginDescription> plugins;
+    std::unordered_set<std::string> sentPlugins;
+    for (const auto &[opName, plugin] : pluginsByOp) {
+        (void)opName;
+        auto key = OHOS::DistributedData::Serializable::Marshall(plugin);
+        if (sentPlugins.insert(key).second) {
+            plugins.push_back(plugin);
+        }
+    }
+    return plugins;
+}
 } // namespace
 
 DataMiningManager::DataMiningManager()
@@ -166,17 +192,14 @@ DataMiningManager::~DataMiningManager()
 {
     std::vector<ExecutorPool::TaskId> timerTaskIds;
     std::vector<std::shared_ptr<SourceProxy>> sources;
+    std::shared_ptr<ExecutorPool> executors;
     {
         std::lock_guard<std::mutex> lock(mutex_);
+        executors = executors_;
         for (auto &[pipelineName, state] : pipelines_) {
             (void)pipelineName;
             state.started = false;
-            for (auto &[sourceName, taskId] : state.timerTaskIds) {
-                (void)sourceName;
-                if (taskId != ExecutorPool::INVALID_TASK_ID) {
-                    timerTaskIds.push_back(taskId);
-                }
-            }
+            AppendTimerTaskIds(state.timerTaskIds, timerTaskIds);
             state.timerTaskIds.clear();
             for (auto &[sourceName, binding] : state.sources) {
                 (void)sourceName;
@@ -190,10 +213,10 @@ DataMiningManager::~DataMiningManager()
             state.triggerSources.clear();
         }
     }
-    if (executors_ != nullptr) {
+    if (executors != nullptr) {
         for (auto taskId : timerTaskIds) {
             if (taskId != ExecutorPool::INVALID_TASK_ID) {
-                executors_->Remove(taskId, true);
+                executors->Remove(taskId, true);
             }
         }
     }
@@ -218,10 +241,10 @@ void DataMiningManager::SourceNotifier::Notify(
 
 void DataMiningManager::BindExecutors(std::shared_ptr<OHOS::ExecutorPool> executors)
 {
-    // 当前 FeatureSystem 的正常顺序是先 OnBind，再 OnInitialize。
+    // FeatureSystem 的正常顺序是先 OnBind，再 OnInitialize。
     // 这里仍然保留“重新挂载 timer”的逻辑，原因有两个：
-    // 1. executor 可能发生替换，需要把旧 taskId 清掉并重新调度
-    // 2. 单测 / fuzz / 未来调用路径未必严格复用主链路顺序
+    // 1. executor 可能发生替换，需要先移除旧任务，再按当前 started 状态重新调度。
+    // 2. 单测、fuzz 或未来扩展路径不一定严格复用主链路顺序。
     std::shared_ptr<OHOS::ExecutorPool> previousExecutors;
     std::vector<OHOS::ExecutorPool::TaskId> timerTaskIds;
     std::vector<std::pair<std::string, SourceTimer>> pendingTimers;
@@ -230,12 +253,7 @@ void DataMiningManager::BindExecutors(std::shared_ptr<OHOS::ExecutorPool> execut
         previousExecutors = executors_;
         for (auto &[pipelineName, state] : pipelines_) {
             (void)pipelineName;
-            for (auto &[sourceName, taskId] : state.timerTaskIds) {
-                (void)sourceName;
-                if (taskId != ExecutorPool::INVALID_TASK_ID) {
-                    timerTaskIds.push_back(taskId);
-                }
-            }
+            AppendTimerTaskIds(state.timerTaskIds, timerTaskIds);
             state.timerTaskIds.clear();
         }
         executors_ = executors;
@@ -250,7 +268,6 @@ void DataMiningManager::BindExecutors(std::shared_ptr<OHOS::ExecutorPool> execut
             }
         }
     }
-
     if (previousExecutors != nullptr) {
         for (auto taskId : timerTaskIds) {
             previousExecutors->Remove(taskId, true);
@@ -263,7 +280,6 @@ void DataMiningManager::BindExecutors(std::shared_ptr<OHOS::ExecutorPool> execut
         ScheduleTimerTask(pipelineName, timer);
     }
 }
-
 void DataMiningManager::SetRuntimeClient(std::shared_ptr<IEtlRuntimeClient> client)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -352,7 +368,7 @@ int32_t DataMiningManager::StartPipelines(const std::vector<std::string> &pipeli
 
 int32_t DataMiningManager::ParsePluginConfig(const std::string &pluginConfigPath, PluginDescription &description) const
 {
-    // 配置文件解析与路径安全校验放在一起，调用方只关心“拿到可用 description”。
+    // 配置文件解析和路径安全校验放在一起，调用方只关心能否拿到可用的 description。
     std::string content;
     if (!LoadFile(pluginConfigPath, content)) {
         return E_ERROR;
@@ -398,9 +414,9 @@ int32_t DataMiningManager::StartAutoPipelines()
     {
         std::lock_guard<std::mutex> lock(mutex_);
         // OnInitialize 只自动拉起“有自动触发策略”的 pipeline：
-        // 1. 显式 subscriptions/timers
-        // 2. trigger.type 为 timer/hybrid
-        // 3. tree 上声明了 subscribe source
+        // 1. 显式声明了 subscriptions 或 timers。
+        // 2. trigger.type 为 timer 或 hybrid。
+        // 3. tree 上声明了 subscribe source。
         // 纯 manual pipeline 保持未启动，等显式 TriggerPipeline 再进入运行态。
         for (const auto &[name, state] : pipelines_) {
             if (ShouldAutoStartPipeline(state.description)) {
@@ -454,33 +470,22 @@ int32_t DataMiningManager::StartPipeline(const std::string &name)
 
 int32_t DataMiningManager::StopPipeline(const std::string &name)
 {
-    std::unordered_map<std::string, SourceBinding> sources;
-    std::vector<SourceSubscription> subscriptions;
-    std::vector<ExecutorPool::TaskId> timerTaskIds;
+    PendingStop stopInfo;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = pipelines_.find(name);
         if (it == pipelines_.end()) {
             return E_ERROR;
         }
-        it->second.started = false;
-        sources = it->second.sources;
-        subscriptions = it->second.subscriptions;
-        for (auto &[sourceName, taskId] : it->second.timerTaskIds) {
-            (void)sourceName;
-            if (taskId != ExecutorPool::INVALID_TASK_ID) {
-                timerTaskIds.push_back(taskId);
-            }
-        }
-        it->second.timerTaskIds.clear();
+        FillPendingStopLocked(it->second, stopInfo);
     }
 
-    if (executors_ != nullptr) {
-        for (auto taskId : timerTaskIds) {
-            executors_->Remove(taskId, true);
+    if (stopInfo.executors != nullptr) {
+        for (auto taskId : stopInfo.timerTaskIds) {
+            stopInfo.executors->Remove(taskId, true);
         }
     }
-    StopSources(sources, subscriptions);
+    StopSources(stopInfo.sources, stopInfo.subscriptions);
     return E_OK;
 }
 
@@ -567,8 +572,8 @@ int32_t DataMiningManager::PreparePipelineLocked(const std::string &name, Pipeli
         return E_OK;
     }
 
-    // 每次按最新的 pipeline.json 重新展开 source 视图。
-    // DDMS 侧只关心 source 节点，因为 operator/sink 已经下沉到 ETL SA。
+    // 每次都按最新的 pipeline.json 重新展开 source 视图。
+    // DDMS 侧只关心 source 节点，因为 operator 和 sink 已经下沉到 ETL SA。
     state.subscriptions.clear();
     state.timers.clear();
     state.triggerSources.clear();
@@ -621,7 +626,7 @@ int32_t DataMiningManager::BuildSourceBindingsLocked(const std::string &name, Pi
 void DataMiningManager::ApplyTriggerPolicyLocked(
     PipelineState &state, const std::unordered_map<std::string, OpNode> &sourceNodes)
 {
-    // 这一层只负责“决定 subscriptions/timers 的最终值”，不再处理 source 创建。
+    // 这一层只负责决定 subscriptions 和 timers 的最终值，不再处理 source 创建。
     // 显式 trigger 配置优先级最高；如果 pipeline.json 没写，则退回到 tree 上的 mode/type 推导。
     if (!state.description.trigger.subscriptions.empty()) {
         state.subscriptions = state.description.trigger.subscriptions;
@@ -646,7 +651,7 @@ void DataMiningManager::EnsureTriggerSourcesLocked(
     PipelineState &state, const std::unordered_map<std::string, OpNode> &sourceNodes) const
 {
     // triggerSources 表示“可被手动或定时主动触发的 source 集合”。
-    // 这里做最后补齐，保证非订阅 source 都能被 TriggerPipeline/timer 命中。
+    // 这里做最后补齐，保证非订阅 source 都能被 TriggerPipeline 或 timer 命中。
     if (state.triggerSources.empty()) {
         for (const auto &timer : state.timers) {
             state.triggerSources.push_back(timer);
@@ -668,10 +673,10 @@ void DataMiningManager::EnsureTriggerSourcesLocked(
 int32_t DataMiningManager::StartPipelineInternal(const std::string &name, const PendingStart &startInfo)
 {
     (void)name;
-    // 启动顺序固定为:
-    // 1. 先初始化全部 source
-    // 2. 再建立订阅
-    // 3. 定时任务由 StartPipeline 外层统一挂到 executor
+    // 启动顺序固定为：
+    // 1. 先初始化全部 source。
+    // 2. 再建立订阅。
+    // 3. 定时任务由 StartPipeline 外层统一挂到 executor。
     for (const auto &[sourceName, binding] : startInfo.sources) {
         (void)sourceName;
         if (binding.proxy == nullptr) {
@@ -697,42 +702,43 @@ int32_t DataMiningManager::StartPipelineInternal(const std::string &name, const 
     return E_OK;
 }
 
-int32_t DataMiningManager::DispatchToRuntime(const std::string &pipelineName, const std::string &sourceName,
-    std::shared_ptr<Context> context, const std::string &topic, std::shared_ptr<DataValue> data)
+void DataMiningManager::FillPendingStopLocked(PipelineState &state, PendingStop &stopInfo) const
 {
-    // DDMS 不执行 operator/sink，只负责把 source 输出连同 pipeline 描述一起送到 ETL SA。
-    // 这样可以把真正的运行时内存和 DDMS feature 的常驻内存拆开。
-    std::shared_ptr<IEtlRuntimeClient> client;
-    PipelineDescription description;
-    std::vector<PluginDescription> plugins;
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto pipelineIt = pipelines_.find(pipelineName);
-        if (pipelineIt == pipelines_.end() || !pipelineIt->second.started || runtimeClient_ == nullptr) {
+    state.started = false;
+    stopInfo.executors = executors_;
+    stopInfo.sources = state.sources;
+    stopInfo.subscriptions = state.subscriptions;
+    AppendTimerTaskIds(state.timerTaskIds, stopInfo.timerTaskIds);
+    state.timerTaskIds.clear();
+}
+
+bool DataMiningManager::BuildRuntimeDispatchSnapshotLocked(
+    const std::string &pipelineName, RuntimeDispatchSnapshot &snapshot) const
+{
+    auto pipelineIt = pipelines_.find(pipelineName);
+    if (pipelineIt == pipelines_.end() || !pipelineIt->second.started || runtimeClient_ == nullptr) {
+        return false;
+    }
+    snapshot.client = runtimeClient_;
+    snapshot.description = pipelineIt->second.description;
+    snapshot.plugins = CollectUniquePlugins(pluginsByOp_);
+    return true;
+}
+
+int32_t DataMiningManager::RegisterRuntimeSnapshot(const RuntimeDispatchSnapshot &snapshot) const
+{
+    for (const auto &plugin : snapshot.plugins) {
+        if (snapshot.client->RegisterPlugin(plugin) != E_OK) {
             return E_ERROR;
         }
-        client = runtimeClient_;
-        description = pipelineIt->second.description;
-        std::unordered_set<std::string> sentPlugins;
-        for (const auto &[opName, plugin] : pluginsByOp_) {
-            (void)opName;
-            auto key = OHOS::DistributedData::Serializable::Marshall(plugin);
-            if (sentPlugins.insert(key).second) {
-                plugins.push_back(plugin);
-            }
-        }
     }
+    return snapshot.client->RegisterPipeline(snapshot.description);
+}
 
-    for (const auto &plugin : plugins) {
-        if (client->RegisterPlugin(plugin) != E_OK) {
-            return E_ERROR;
-        }
-    }
-    if (client->RegisterPipeline(description) != E_OK) {
-        return E_ERROR;
-    }
-
-    DispatchRequest request;
+int32_t DataMiningManager::BuildDispatchRequest(const std::string &pipelineName, const std::string &sourceName,
+    const std::shared_ptr<Context> &context, const std::string &topic, const std::shared_ptr<DataValue> &data,
+    DispatchRequest &request) const
+{
     request.pipelineName = pipelineName;
     request.fromNode = sourceName;
     request.topic = topic;
@@ -740,10 +746,30 @@ int32_t DataMiningManager::DispatchToRuntime(const std::string &pipelineName, co
         request.contextData = context->GetData();
         request.contextParameters = context->GetParameters();
     }
-    if (ConvertToTransportValue(data, request.value) != E_OK) {
+    return ConvertToTransportValue(data, request.value);
+}
+
+int32_t DataMiningManager::DispatchToRuntime(const std::string &pipelineName, const std::string &sourceName,
+    std::shared_ptr<Context> context, const std::string &topic, std::shared_ptr<DataValue> data)
+{
+    // DDMS 不执行 operator 和 sink，只负责把 source 输出连同 pipeline 描述一起送到 ETL SA。
+    // 这样可以把真正的运行时内存和 DDMS feature 的常驻内存拆开。
+    RuntimeDispatchSnapshot snapshot;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!BuildRuntimeDispatchSnapshotLocked(pipelineName, snapshot)) {
+            return E_ERROR;
+        }
+    }
+    if (RegisterRuntimeSnapshot(snapshot) != E_OK) {
         return E_ERROR;
     }
-    return client->Dispatch(request);
+
+    DispatchRequest request;
+    if (BuildDispatchRequest(pipelineName, sourceName, context, topic, data, request) != E_OK) {
+        return E_ERROR;
+    }
+    return snapshot.client->Dispatch(request);
 }
 
 void DataMiningManager::OnSourceOutput(const std::string &pipelineName, const std::string &sourceName,
@@ -758,13 +784,17 @@ void DataMiningManager::OnSourceOutput(const std::string &pipelineName, const st
 
 void DataMiningManager::ScheduleTimerTask(const std::string &pipelineName, const SourceTimer &timer)
 {
-    auto executors = executors_;
+    std::shared_ptr<ExecutorPool> executors;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        executors = executors_;
+    }
     if (executors == nullptr) {
         return;
     }
     // 定时器采用“单次调度 + 回调里续约”的方式：
-    // 1. 便于 StopPipeline 时精确移除当前 taskId
-    // 2. 避免长周期定时器在状态切换时保留过期上下文
+    // 1. 便于 StopPipeline 时精确移除当前 taskId。
+    // 2. 避免长周期定时器在状态切换时保留过期上下文。
     int32_t interval = timer.interval > 0 ? timer.interval : DEFAULT_DAILY_INTERVAL;
     auto taskId = executors->Schedule(std::chrono::seconds(interval), [this, pipelineName, timer]() {
         SourceBinding binding;
@@ -799,7 +829,6 @@ void DataMiningManager::ScheduleTimerTask(const std::string &pipelineName, const
         }
         ScheduleTimerTask(pipelineName, timer);
     });
-
     if (taskId == ExecutorPool::INVALID_TASK_ID) {
         return;
     }
@@ -809,7 +838,6 @@ void DataMiningManager::ScheduleTimerTask(const std::string &pipelineName, const
         pipelineIt->second.timerTaskIds[timer.sourceName] = taskId;
     }
 }
-
 void DataMiningManager::StopSources(
     const std::unordered_map<std::string, SourceBinding> &sources, const std::vector<SourceSubscription> &subscriptions)
 {

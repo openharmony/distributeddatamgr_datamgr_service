@@ -632,6 +632,46 @@ HWTEST_F(DataMiningEtlTest, RegisterPluginRejectsDuplicateOpName012, TestSize.Le
     EXPECT_EQ(manager.RegisterPlugin(pluginConfigV2), E_ERROR);
 }
 
+HWTEST_F(DataMiningEtlTest, StopPipelineUnsubscribesAndStopsSource013, TestSize.Level1)
+{
+    DataMining::DataMiningManager manager;
+    manager.BindExecutors(std::make_shared<ExecutorPool>(1, 1));
+
+    auto pluginConfig = CreatePluginConfig("stop_pipeline_plugin.json", "stop_source", "source", "libs/libstop.so");
+    auto tree = "{"
+        "\"opName\":\"stop_source\","
+        "\"mode\":\"subscribe\","
+        "\"topic\":\"stop.topic\","
+        "\"children\":[],"
+        "\"output\":[]"
+    "}";
+    auto pipelineConfig = CreatePipelineConfig("stop_pipeline.json", "stop_pipeline", tree,
+        "[{\"sourceName\":\"stop_source\",\"topic\":\"stop.topic\",\"parameters\":\"{}\"}]", "[]");
+
+    ASSERT_EQ(manager.RegisterPlugin(pluginConfig), E_OK);
+    ASSERT_EQ(manager.RegisterPipeline(pipelineConfig), E_OK);
+
+    auto source = std::make_shared<TestSubscribeSource>();
+    DataMining::EndpointConfig endpoint;
+    endpoint.kind = DataMining::EndpointKind::LIBRARY;
+    manager.pipelines_["stop_pipeline"].sources["stop_source"] = {
+        std::make_shared<DataMining::SourceProxy>("stop_source", endpoint, std::make_shared<DataMining::PluginLoader>(),
+            nullptr, source),
+        std::make_shared<DataMining::DataMiningManager::SourceNotifier>(manager, "stop_pipeline", "stop_source")
+    };
+    manager.pipelines_["stop_pipeline"].subscriptions = {
+        { "stop_source", "stop.topic", "{}" }
+    };
+    manager.pipelines_["stop_pipeline"].timerTaskIds["stop_source"] = 123;
+
+    ASSERT_EQ(manager.StartPipeline("stop_pipeline"), E_OK);
+    ASSERT_EQ(manager.StopPipeline("stop_pipeline"), E_OK);
+    EXPECT_EQ(source->unsubscribeCount_, 1);
+    EXPECT_EQ(source->stopCount_, 1);
+    EXPECT_TRUE(manager.pipelines_["stop_pipeline"].timerTaskIds.empty());
+    EXPECT_FALSE(manager.pipelines_["stop_pipeline"].started);
+}
+
 HWTEST_F(DataMiningEtlTest, PipelineRuntimePropagatesOperatorFailure006, TestSize.Level1)
 {
     DataMining::PipelineDescription pipeline;
