@@ -46,13 +46,13 @@ public:
     int32_t OnInitialize() override;
     int32_t OnBind(const FeatureSystem::Feature::BindInfo &bindInfo) override;
 
+private:
     int32_t RegisterPlugin(const std::string &pluginConfigPath);
     int32_t RegisterPipeline(const std::string &pipelineConfigPath);
     int32_t StartPipeline(const std::string &name);
     int32_t StopPipeline(const std::string &name);
     int32_t TriggerPipeline(const std::string &name, std::shared_ptr<OHOS::DataMining::Context> context);
 
-private:
     static Factory factory_;
     OHOS::DataMining::DataMiningManager manager_;
 };

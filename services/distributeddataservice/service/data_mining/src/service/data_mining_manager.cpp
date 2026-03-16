@@ -285,6 +285,9 @@ int32_t DataMiningManager::RegisterPlugin(const std::string &pluginConfigPath)
         for (const auto &op : description.ops) {
             pluginsByOp_[op.name] = description;
         }
+        // 当前 DDMS 主链路基本只在初始化阶段先注册 plugin、后注册 pipeline。
+        // 这里遍历 pipelines_ 不是因为此时一定已有 pipeline，而是为了兼容“重复注册 plugin”
+        // 的场景：一旦插件描述发生变化，旧 pipeline 上缓存的 source/timer 视图需要失效重建。
         for (auto &entry : pipelines_) {
             auto detached = DetachPipelineResourcesLocked(entry.second);
             resources.timerTaskIds.insert(resources.timerTaskIds.end(), detached.timerTaskIds.begin(),
