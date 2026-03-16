@@ -194,8 +194,10 @@ void DataMiningManager::SourceNotifier::Notify(
 
 void DataMiningManager::BindExecutors(std::shared_ptr<OHOS::ExecutorPool> executors)
 {
-    // Feature 的 OnInitialize 可能早于 OnBind。
-    // 这里在 executor 就绪时统一回挂 timer，避免 pipeline 已启动但定时任务没有真正进入线程池。
+    // 当前 FeatureSystem 的正常顺序是先 OnBind，再 OnInitialize。
+    // 这里仍然保留“重新挂载 timer”的逻辑，原因有两个：
+    // 1. executor 可能发生替换，需要把旧 taskId 清掉并重新调度
+    // 2. 单测 / fuzz / 未来调用路径未必严格复用主链路顺序
     std::shared_ptr<OHOS::ExecutorPool> previousExecutors;
     std::vector<OHOS::ExecutorPool::TaskId> timerTaskIds;
     std::vector<std::pair<std::string, SourceTimer>> pendingTimers;

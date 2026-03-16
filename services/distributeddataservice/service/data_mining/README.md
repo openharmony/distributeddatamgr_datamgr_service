@@ -104,21 +104,24 @@ flowchart LR
 
 ## 4. 初始化与装配流程
 
-DDMS feature 启动后，当前主流程如下：
+按当前 FeatureSystem 的真实调用顺序，DDMS feature 启动主流程如下：
 
-1. `DataMiningServiceImpl::OnInitialize()` 调用 `LoadDefaultConfigs(...)`
-2. DDMS 扫描默认目录下的 `plugin.json` 和 `pipeline.json`
-3. `RegisterPlugin()` 解析 plugin 描述，并把 `libs.path` 解析成受限的相对路径
-4. `RegisterPipeline()` 解析 pipeline 描述并保存 `PipelineState`
-5. `OnInitialize()` 再调用 `StartAutoPipelines()`
-6. 只有带订阅/定时策略的 pipeline 会自动启动
-7. `OnBind()` 拿到 `ExecutorPool` 后，DDMS 才真正挂载定时任务
+1. `FeatureStubImpl::OnInitialize(executor)` 先调用 `DataMiningServiceImpl::OnBind(bindInfo)`
+2. `OnBind()` 把 `ExecutorPool` 交给 `DataMiningManager::BindExecutors()`
+3. `FeatureStubImpl::OnInitialize(executor)` 再调用 `DataMiningServiceImpl::OnInitialize()`
+4. `OnInitialize()` 调用 `LoadDefaultConfigs(...)`
+5. DDMS 扫描默认目录下的 `plugin.json` 和 `pipeline.json`
+6. `RegisterPlugin()` 解析 plugin 描述，并把 `libs.path` 解析成受限的相对路径
+7. `RegisterPipeline()` 解析 pipeline 描述并保存 `PipelineState`
+8. `OnInitialize()` 再调用 `StartAutoPipelines()`
+9. 只有带订阅/定时策略的 pipeline 会自动启动
+10. 已启动 pipeline 的 timer 直接挂到当前 executor 上
 
 这里的关键点：
 
 - 自动启动入口是 `StartAutoPipelines()`，不是 `StartAllPipelines()`
 - 纯 manual pipeline 会保留未启动状态，等 `TriggerPipeline()` 时再按需拉起
-- `BindExecutors()` 会重新挂载已启动 pipeline 的 timer，避免 `OnInitialize` 早于 `OnBind` 时丢定时任务
+- `BindExecutors()` 仍然保留了“重新挂载 timer”的能力，用于 executor 替换和非主链路调用场景
 
 ## 5. DDMS 侧运行逻辑
 
@@ -182,6 +185,7 @@ sequenceDiagram
     participant Sink as "Sink"
 
     Dev->>DDMS: 部署 pipeline.json，声明 subscriptions/topic
+    DDMS->>DDMS: OnBind 绑定 ExecutorPool
     DDMS->>DDMS: OnInitialize 读取 plugin.json / pipeline.json
     DDMS->>DDMS: StartAutoPipelines()
     DDMS->>Proxy: PreparePipeline，创建 SourceProxy/SourceNotifier
@@ -218,6 +222,7 @@ sequenceDiagram
     participant Sink as "Sink"
 
     Dev->>DDMS: 部署 pipeline.json，声明 timers
+    DDMS->>DDMS: OnBind 绑定 ExecutorPool
     DDMS->>DDMS: OnInitialize 读取配置
     DDMS->>DDMS: StartAutoPipelines()
     DDMS->>Proxy: PreparePipeline，创建 SourceProxy/SourceNotifier
