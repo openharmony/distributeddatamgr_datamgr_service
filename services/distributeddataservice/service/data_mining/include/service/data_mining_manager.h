@@ -81,15 +81,11 @@ private:
         std::vector<SourceTimer> timers;
     };
 
-    struct PipelineResources final {
-        std::vector<OHOS::ExecutorPool::TaskId> timerTaskIds;
-        std::vector<std::shared_ptr<SourceProxy>> sources;
-    };
-
     bool LoadFile(const std::string &path, std::string &content) const;
     int32_t ParsePluginConfig(const std::string &pluginConfigPath, PluginDescription &description) const;
     int32_t ParsePipelineConfig(const std::string &pipelineConfigPath, PipelineDescription &description) const;
     std::string ResolveRelativePath(const std::string &configPath, const std::string &targetPath) const;
+    int32_t StartPipelines(const std::vector<std::string> &pipelineNames);
     int32_t PreparePipelineLocked(const std::string &name, PipelineState &state);
     int32_t BuildSourceBindingsLocked(const std::string &name, PipelineState &state,
         const std::unordered_map<std::string, OpNode> &sourceNodes);
@@ -102,10 +98,8 @@ private:
     void OnSourceOutput(const std::string &pipelineName, const std::string &sourceName,
         std::shared_ptr<Context> context, const std::string &topic, std::shared_ptr<DataValue> data);
     void ScheduleTimerTask(const std::string &pipelineName, const SourceTimer &timer);
-    void ReleasePipelineResources(const PipelineResources &resources);
     void StopSources(const std::unordered_map<std::string, SourceBinding> &sources,
         const std::vector<SourceSubscription> &subscriptions);
-    PipelineResources DetachPipelineResourcesLocked(PipelineState &state);
     std::shared_ptr<Context> BuildContext(const std::shared_ptr<Context> &context, const std::string &parameters) const;
 
     std::mutex mutex_;

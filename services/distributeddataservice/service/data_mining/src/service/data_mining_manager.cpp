@@ -164,17 +164,44 @@ DataMiningManager::DataMiningManager()
 
 DataMiningManager::~DataMiningManager()
 {
-    PipelineResources resources;
+    std::vector<ExecutorPool::TaskId> timerTaskIds;
+    std::vector<std::shared_ptr<SourceProxy>> sources;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        for (auto &entry : pipelines_) {
-            auto detached = DetachPipelineResourcesLocked(entry.second);
-            resources.timerTaskIds.insert(resources.timerTaskIds.end(), detached.timerTaskIds.begin(),
-                detached.timerTaskIds.end());
-            resources.sources.insert(resources.sources.end(), detached.sources.begin(), detached.sources.end());
+        for (auto &[pipelineName, state] : pipelines_) {
+            (void)pipelineName;
+            state.started = false;
+            for (auto &[sourceName, taskId] : state.timerTaskIds) {
+                (void)sourceName;
+                if (taskId != ExecutorPool::INVALID_TASK_ID) {
+                    timerTaskIds.push_back(taskId);
+                }
+            }
+            state.timerTaskIds.clear();
+            for (auto &[sourceName, binding] : state.sources) {
+                (void)sourceName;
+                if (binding.proxy != nullptr) {
+                    sources.push_back(binding.proxy);
+                }
+            }
+            state.sources.clear();
+            state.subscriptions.clear();
+            state.timers.clear();
+            state.triggerSources.clear();
         }
     }
-    ReleasePipelineResources(resources);
+    if (executors_ != nullptr) {
+        for (auto taskId : timerTaskIds) {
+            if (taskId != ExecutorPool::INVALID_TASK_ID) {
+                executors_->Remove(taskId, true);
+            }
+        }
+    }
+    for (const auto &source : sources) {
+        if (source != nullptr) {
+            source->OnStop();
+        }
+    }
 }
 
 DataMiningManager::SourceNotifier::SourceNotifier(
@@ -312,6 +339,17 @@ int32_t DataMiningManager::RegisterPipeline(const std::string &pipelineConfigPat
     return E_OK;
 }
 
+int32_t DataMiningManager::StartPipelines(const std::vector<std::string> &pipelineNames)
+{
+    int32_t result = E_OK;
+    for (const auto &name : pipelineNames) {
+        if (StartPipeline(name) != E_OK) {
+            result = E_ERROR;
+        }
+    }
+    return result;
+}
+
 int32_t DataMiningManager::ParsePluginConfig(const std::string &pluginConfigPath, PluginDescription &description) const
 {
     // 配置文件解析与路径安全校验放在一起，调用方只关心“拿到可用 description”。
@@ -351,14 +389,7 @@ int32_t DataMiningManager::StartAllPipelines()
             pipelineNames.push_back(entry.first);
         }
     }
-
-    int32_t result = E_OK;
-    for (const auto &name : pipelineNames) {
-        if (StartPipeline(name) != E_OK) {
-            result = E_ERROR;
-        }
-    }
-    return result;
+    return StartPipelines(pipelineNames);
 }
 
 int32_t DataMiningManager::StartAutoPipelines()
@@ -377,14 +408,7 @@ int32_t DataMiningManager::StartAutoPipelines()
             }
         }
     }
-
-    int32_t result = E_OK;
-    for (const auto &name : pipelineNames) {
-        if (StartPipeline(name) != E_OK) {
-            result = E_ERROR;
-        }
-    }
-    return result;
+    return StartPipelines(pipelineNames);
 }
 
 int32_t DataMiningManager::StartPipeline(const std::string &name)
@@ -802,48 +826,6 @@ void DataMiningManager::StopSources(
             binding.proxy->OnStop();
         }
     }
-}
-
-void DataMiningManager::ReleasePipelineResources(const PipelineResources &resources)
-{
-    // 真正的外部动作统一放在锁外执行，避免持锁调用 executor/source 导致锁粒度过大。
-    if (executors_ != nullptr) {
-        for (auto taskId : resources.timerTaskIds) {
-            if (taskId != ExecutorPool::INVALID_TASK_ID) {
-                executors_->Remove(taskId, true);
-            }
-        }
-    }
-    for (const auto &source : resources.sources) {
-        if (source != nullptr) {
-            source->OnStop();
-        }
-    }
-}
-
-DataMiningManager::PipelineResources DataMiningManager::DetachPipelineResourcesLocked(PipelineState &state)
-{
-    PipelineResources resources;
-    // 这里仅做“从 state 中摘资源并清空状态”，真正停止 timer/source 由 ReleasePipelineResources 负责。
-    state.started = false;
-    for (auto &[sourceName, taskId] : state.timerTaskIds) {
-        (void)sourceName;
-        if (taskId != ExecutorPool::INVALID_TASK_ID) {
-            resources.timerTaskIds.push_back(taskId);
-        }
-    }
-    state.timerTaskIds.clear();
-    for (auto &[sourceName, binding] : state.sources) {
-        (void)sourceName;
-        if (binding.proxy != nullptr) {
-            resources.sources.push_back(binding.proxy);
-        }
-    }
-    state.sources.clear();
-    state.subscriptions.clear();
-    state.timers.clear();
-    state.triggerSources.clear();
-    return resources;
 }
 
 std::shared_ptr<Context> DataMiningManager::BuildContext(
