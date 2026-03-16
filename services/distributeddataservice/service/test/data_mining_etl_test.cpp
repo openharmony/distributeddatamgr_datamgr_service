@@ -600,43 +600,36 @@ HWTEST_F(DataMiningEtlTest, StartAutoPipelinesSkipsManualAndStartsAutoTriggered0
     EXPECT_EQ(manualSource->initializeCount_, 0);
 }
 
-HWTEST_F(DataMiningEtlTest, RegisterPipelineReleasesPreviousSourceBindings011, TestSize.Level1)
+HWTEST_F(DataMiningEtlTest, RegisterPipelineRejectsDuplicateName011, TestSize.Level1)
 {
     DataMining::DataMiningManager manager;
 
-    auto pluginConfig = CreatePluginConfig("replace_plugin.json", "replace_source", "source", "libs/libreplace.so");
+    auto pluginConfig = CreatePluginConfig("duplicate_pipeline_plugin.json", "duplicate_source", "source", "libs/libdup.so");
     auto tree = "{"
-        "\"opName\":\"replace_source\","
+        "\"opName\":\"duplicate_source\","
         "\"mode\":\"subscribe\","
-        "\"topic\":\"replace.topic\","
+        "\"topic\":\"duplicate.topic\","
         "\"children\":[],"
         "\"output\":[]"
     "}";
-    auto pipelineConfigV1 = CreatePipelineConfig("replace_pipeline_v1.json", "replace_pipeline", tree,
-        "[{\"sourceName\":\"replace_source\",\"topic\":\"replace.topic\",\"parameters\":\"{}\"}]", "[]");
-    auto pipelineConfigV2 = CreatePipelineConfig("replace_pipeline_v2.json", "replace_pipeline", tree, "[]", "[]");
+    auto pipelineConfigV1 = CreatePipelineConfig("duplicate_pipeline_v1.json", "duplicate_pipeline", tree,
+        "[{\"sourceName\":\"duplicate_source\",\"topic\":\"duplicate.topic\",\"parameters\":\"{}\"}]", "[]");
+    auto pipelineConfigV2 = CreatePipelineConfig("duplicate_pipeline_v2.json", "duplicate_pipeline", tree, "[]", "[]");
 
     ASSERT_EQ(manager.RegisterPlugin(pluginConfig), E_OK);
     ASSERT_EQ(manager.RegisterPipeline(pipelineConfigV1), E_OK);
+    EXPECT_EQ(manager.RegisterPipeline(pipelineConfigV2), E_ERROR);
+}
 
-    auto source = std::make_shared<TestSubscribeSource>();
-    DataMining::EndpointConfig endpoint;
-    endpoint.kind = DataMining::EndpointKind::LIBRARY;
-    manager.pipelines_["replace_pipeline"].sources["replace_source"] = {
-        std::make_shared<DataMining::SourceProxy>("replace_source", endpoint,
-            std::make_shared<DataMining::PluginLoader>(), nullptr, source),
-        std::make_shared<DataMining::DataMiningManager::SourceNotifier>(manager, "replace_pipeline", "replace_source")
-    };
-    manager.pipelines_["replace_pipeline"].subscriptions = {
-        { "replace_source", "replace.topic", "{}" }
-    };
-    manager.pipelines_["replace_pipeline"].started = true;
+HWTEST_F(DataMiningEtlTest, RegisterPluginRejectsDuplicateOpName012, TestSize.Level1)
+{
+    DataMining::DataMiningManager manager;
 
-    ASSERT_EQ(manager.RegisterPipeline(pipelineConfigV2), E_OK);
-    EXPECT_EQ(source->stopCount_, 1);
-    EXPECT_FALSE(manager.pipelines_["replace_pipeline"].started);
-    EXPECT_TRUE(manager.pipelines_["replace_pipeline"].sources.empty());
-    EXPECT_TRUE(manager.pipelines_["replace_pipeline"].subscriptions.empty());
+    auto pluginConfigV1 = CreatePluginConfig("duplicate_plugin_v1.json", "duplicate_source", "source", "libs/libdup1.so");
+    auto pluginConfigV2 = CreatePluginConfig("duplicate_plugin_v2.json", "duplicate_source", "source", "libs/libdup2.so");
+
+    ASSERT_EQ(manager.RegisterPlugin(pluginConfigV1), E_OK);
+    EXPECT_EQ(manager.RegisterPlugin(pluginConfigV2), E_ERROR);
 }
 
 HWTEST_F(DataMiningEtlTest, PipelineRuntimePropagatesOperatorFailure006, TestSize.Level1)

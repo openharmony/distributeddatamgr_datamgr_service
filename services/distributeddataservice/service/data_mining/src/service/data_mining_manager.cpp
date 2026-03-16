@@ -279,23 +279,17 @@ int32_t DataMiningManager::RegisterPlugin(const std::string &pluginConfigPath)
         return E_ERROR;
     }
 
-    PipelineResources resources;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         for (const auto &op : description.ops) {
+            if (pluginsByOp_.find(op.name) != pluginsByOp_.end()) {
+                return E_ERROR;
+            }
+        }
+        for (const auto &op : description.ops) {
             pluginsByOp_[op.name] = description;
         }
-        // 当前 DDMS 主链路基本只在初始化阶段先注册 plugin、后注册 pipeline。
-        // 这里遍历 pipelines_ 不是因为此时一定已有 pipeline，而是为了兼容“重复注册 plugin”
-        // 的场景：一旦插件描述发生变化，旧 pipeline 上缓存的 source/timer 视图需要失效重建。
-        for (auto &entry : pipelines_) {
-            auto detached = DetachPipelineResourcesLocked(entry.second);
-            resources.timerTaskIds.insert(resources.timerTaskIds.end(), detached.timerTaskIds.begin(),
-                detached.timerTaskIds.end());
-            resources.sources.insert(resources.sources.end(), detached.sources.begin(), detached.sources.end());
-        }
     }
-    ReleasePipelineResources(resources);
     return E_OK;
 }
 
@@ -306,14 +300,15 @@ int32_t DataMiningManager::RegisterPipeline(const std::string &pipelineConfigPat
         return E_ERROR;
     }
 
-    PipelineResources resources;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        auto &state = pipelines_[description.name];
-        resources = DetachPipelineResourcesLocked(state);
+        if (pipelines_.find(description.name) != pipelines_.end()) {
+            return E_ERROR;
+        }
+        PipelineState state;
         state.description = description;
+        pipelines_.emplace(description.name, std::move(state));
     }
-    ReleasePipelineResources(resources);
     return E_OK;
 }
 
