@@ -1,392 +1,302 @@
 # 数据挖掘 ETL 模块说明
 
-> 2026-03 结构更新说明：
-> - 公共 ETL 接口、Plugin/Pipeline 描述、PluginLoader/EndpointConfig 等统一迁移到兄弟目录 `foundation/distributeddatamgr/data_mining`
-> - demo 迁移到兄弟目录 `foundation/distributeddatamgr/data_mining_demo`
-> - DDMS 目录仅保留 feature 编排与 source bridge，不再保留公共 `source/operator/sink/runtime` 定义副本
+> 2026-03 当前版本说明：
+> - 公共 ETL 客户端能力已经拆分到兄弟目录 `foundation/distributeddatamgr/data_mining`
+> - demo 已经拆分到兄弟目录 `foundation/distributeddatamgr/data_mining_demo`
+> - 本目录只保留 DDMS 侧的 feature 编排、source bridge、配置加载和触发调度
+> - Operator 与 Sink 的真正运行时已经下沉到独立 ETL SA，SystemAbilityId 为 `1311`
 
-## 1. 模块定位
+## 1. 总体架构
 
-`data_mining` 是 `datamgr_service` 中面向 OpenHarmony 场景数据挖掘的 ETL 框架。
+当前实现已经按“常驻控制面”和“按需运行面”拆成三部分：
 
-当前目标不是做一个“单次脚本式”的 ETL 工具，而是做一套可共建的算子框架：
+### 1.1 `foundation/distributeddatamgr/data_mining`
 
-- Source 开发者提供数据源采集能力
-- Operator 开发者提供数据转换和数据理解能力
-- Sink 开发者提供数据落地能力
-- Pipeline 开发者只负责编排，不直接写算子
-- `datamgr_service` 负责动态加载、图编排、触发调度和服务侧管理
+这是 ETL 的公共客户端部分，给 source/operator/sink 开发者和 pipeline 开发者使用，主要包含：
 
-当前接入形态分三种：
+- `interfaces/`：`Source`、`Operator`、`Sink`、`AsyncNotifier`、`Context`、`DataValue`
+- `model/`：`PluginDescription`、`PipelineDescription`
+- `plugin/`：动态库注册导出接口
+- `runtime/`：公共的 `PluginLoader`、`PluginRegistry`、`EndpointConfig`、transport 类型
 
-- `so` 动态库接入：主实现路径，已完整落骨架
-- `SA` 接入：已预留 proxy 和 endpoint，当前为粗实现
-- `Extension` 接入：已预留 proxy 和 endpoint，当前为粗实现
+这一层不依赖 DDMS feature，本质上是对外 SDK。
 
-## 2. 这次重构解决了什么问题
+### 1.2 `datamgr_service/services/distributeddataservice/service/data_mining`
 
-上一版代码的主要问题是职责混杂，公共接口、运行时逻辑、插件注册、pipeline 编排全塞在少数几个大文件里，导致：
+这是 DDMS 侧的 `data_mining` feature，本目录当前只负责：
 
-- 开发者接口和框架内部接口混在一起
-- `Context` 被塞进不属于框架的业务字段
-- `std::any` 和节点身份传递耦合过深
-- `RegisterModule` 仍要求开发者在 json 里重复写 symbol
-- demo 只是线性玩具链路，无法解释真实场景
+- 在 `OnInitialize` 阶段读取 `plugin.json` 和 `pipeline.json`
+- 解析 `pipeline.json` 中的订阅策略和定时策略
+- 构建并缓存 `SourceProxy`
+- 在需要时通过 `SourceProxy` 触发真实 source
+- 通过 `LoadSystemAbility(1311)` 拉起 ETL SA
+- 把 source 输出定向转发给 ETL SA
 
-现在改成了按职责拆分的结构：
+注意：
 
-```text
-data_mining/
-├── include/
-│   ├── interfaces/         # 只给算子开发者继承的 ETL 接口
-│   ├── plugin/             # 给 so 开发者使用的模块导出接口
-│   ├── model/              # PluginDescription / PipelineDescription
-│   ├── runtime/            # 框架内部运行时、proxy、loader、registry
-│   └── service/            # datamgr_service 侧总控
-├── src/
-│   ├── interfaces/
-│   ├── plugin/
-│   ├── model/
-│   ├── runtime/
-│   └── service/
-├── demo/
-│   ├── common/
-│   ├── sources/
-│   ├── operators/
-│   └── sinks/
-└── config/
-    ├── plugins/
-    └── pipelines/
+- DDMS 不执行 operator/sink
+- DDMS 只处理 source 入口、调度、订阅、定时器和 IPC 转发
+- `OnInitialize` 只会自动启动带自动触发策略的 pipeline，不会无差别 `StartAllPipelines`
+
+### 1.3 `datamgr_service/services/data_mining_service`
+
+这是独立的 ETL SA，负责：
+
+- 接收 DDMS 发送的 plugin/pipeline 元数据
+- 按 `pipelineName` 懒加载并缓存 `PipelineRuntime`
+- 从某个 source 节点开始沿有向图继续执行 operator 和 sink
+- 处理多父节点输入合流
+
+SA 注册入口在：
+
+- `services/data_mining_service/data_mining_etl_service.cpp`
+
+运行时核心在：
+
+- `services/data_mining_service/src/service/etl_runtime_manager.cpp`
+- `services/data_mining_service/src/runtime/pipeline_runtime.cpp`
+
+## 2. 当前职责边界
+
+当前职责边界可以概括为：
+
+```mermaid
+flowchart LR
+    A["pipeline.json / plugin.json"] --> B["DDMS DataMining Feature"]
+    B --> C["SourceProxy"]
+    B --> D["ETL Runtime Client"]
+    D --> E["LoadSystemAbility(1311)"]
+    E --> F["ETL SA"]
+    F --> G["EtlRuntimeManager"]
+    G --> H["PipelineRuntime"]
+    H --> I["Operator / Sink"]
 ```
 
-## 3. 两类开发者
+其中：
 
-### 3.1 算子开发者
+- DDMS 侧只展开 source 视图，不构建 operator/sink 运行时
+- ETL SA 只处理运行时，不关心配置目录扫描、定时器、订阅建立
+- source 若为本地 `so`，按需 `dlopen`
+- source 若未来走 SA/Extension，统一经 `SourceClient` 转发
 
-算子开发者维护两部分内容：
+## 3. `pipeline.json` 现在负责什么
 
-- 代码：实现 `Source` / `Operator` / `Sink`
-- 配置：维护 `PluginDescription`
+`pipeline.json` 已经不是单纯描述有向图，还负责承载触发策略。
 
-算子开发者关注的是：
+当前 `PipelineDescription` 里的关键字段如下：
 
-- 我提供的算子名字是什么
-- 它是 source/operator/sink 中的哪一种
-- 它的输入输出类型是什么
-- 它通过 so / SA / Extension 哪种方式接入
+- `name`：pipeline 唯一名
+- `scene`：场景标签
+- `trigger.subscriptions`：显式订阅配置
+- `trigger.timers`：显式定时任务配置
+- `trigger.type`：兼容历史 `manual` / `timer` / `hybrid`
+- `tree`：source 到 operator/sink 的有向图
 
-### 3.2 Pipeline 开发者
+其中：
 
-Pipeline 开发者不实现算子，只做编排，维护 `PipelineDescription`。
+- `trigger.subscriptions` 决定 DDMS 要为哪些 source 建立 topic 订阅
+- `trigger.timers` 决定 DDMS 要为哪些 source 创建定时任务
+- 如果没有显式写 `subscriptions/timers`，DDMS 会回退到 `tree.mode` 和 `trigger.type` 做推导
 
-Pipeline 开发者关注的是：
+对应定义在：
 
-- 这条工作流叫什么
-- 哪些 source、operator、sink 要连起来
-- 哪些节点是 fanout，哪些节点需要汇合
-- 是订阅触发、手动触发还是定时触发
+- `../data_mining/include/model/pipeline_description.h`
 
-## 4. 公共接口与内部接口
+## 4. 初始化与装配流程
 
-### 4.1 只给算子开发者的公共接口
+DDMS feature 启动后，当前主流程如下：
 
-`[etl_interfaces.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/etl_interfaces.h)` 现在只做一个公共聚合头，里面只包含：
+1. `DataMiningServiceImpl::OnInitialize()` 调用 `LoadDefaultConfigs(...)`
+2. DDMS 扫描默认目录下的 `plugin.json` 和 `pipeline.json`
+3. `RegisterPlugin()` 解析 plugin 描述，并把 `libs.path` 解析成受限的相对路径
+4. `RegisterPipeline()` 解析 pipeline 描述并保存 `PipelineState`
+5. `OnInitialize()` 再调用 `StartAutoPipelines()`
+6. 只有带订阅/定时策略的 pipeline 会自动启动
+7. `OnBind()` 拿到 `ExecutorPool` 后，DDMS 才真正挂载定时任务
 
-- `[Context](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/interfaces/context.h)`
-- `[Data / DataValue](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/interfaces/data.h)`
-- `[Basic Values](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/interfaces/basic_value.h)`
-- `[Merged Input View](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/interfaces/payload.h)`
-- `[AsyncNotifier](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/interfaces/async_notifier.h)`
-- `[Source](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/interfaces/source.h)`
-- `[Operator](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/interfaces/operator.h)`
-- `[Sink](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/interfaces/sink.h)`
+这里的关键点：
 
-这里不再放 loader、proxy、registry、pipeline runtime 这些框架内部对象。
+- 自动启动入口是 `StartAutoPipelines()`，不是 `StartAllPipelines()`
+- 纯 manual pipeline 会保留未启动状态，等 `TriggerPipeline()` 时再按需拉起
+- `BindExecutors()` 会重新挂载已启动 pipeline 的 timer，避免 `OnInitialize` 早于 `OnBind` 时丢定时任务
 
-### 4.2 关键接口说明
+## 5. DDMS 侧运行逻辑
 
-`Context`
+### 5.1 Source 准备阶段
 
-- 只保留 `data` 和 `parameters` 两个字符串
-- 推荐写 JSON 字符串
-- 不再维护 `operatorName`
+`DataMiningManager::PreparePipelineLocked()` 会按当前最新 `pipeline.json` 展开 source 视图：
 
-`Data / DataValue`
+- 遍历 `tree` 找出 source 节点
+- 为每个 source 创建 `SourceProxy`
+- 为每个 source 创建 `SourceNotifier`
+- 根据显式 `trigger.subscriptions` / `trigger.timers` 或树上 `mode` 推导订阅和定时项
+- 构建 `triggerSources`
 
-- 替代 `std::any`
-- 通过 `QueryInterface<T>()` 做类型查询
-- 框架提供 `DataValue` / QueryInterface 机制，以及 `StringValue`、`JsonValue`、`BytesValue` 这 3 个基础原始值
-- 框架只额外提供 `IRecordBatchView`，用于多父节点输入合流
+这里故意只准备 source，不准备 operator/sink，因为它们属于 ETL SA 的运行时内存。
 
-`AsyncNotifier`
+### 5.2 SourceProxy 行为
 
-- 只保留一个纯虚接口：`Notify(context, topic, data)`
-- 不再单独做一个具体 `AsyncData` 类
+`SourceProxy` 统一屏蔽三种 source 形态：
 
-`Source`
+- 已注入对象：主要给测试或内存对象使用
+- 本地动态库：首次真正使用时 `dlopen`
+- 远端 source：通过 `SourceClient` 转发
 
-- `Trigger` 和 `Subscribe` 是两种互斥模式
-- `Unsubscribe` 现在也必须带 `topic`
-- `GetName()` 为虚函数，子类直接写死名字
+这意味着：
 
-`Operator`
+- 订阅型 source 在 `Subscribe()` 时才真正进入 source 实现
+- 定时型或手动型 source 在 `Trigger()` 时才真正进入 source 实现
+- 本地 `so` source 不会在 DDMS 启动时整体预加载
 
-- 只保留异步风格 `Process`
-- 同步返回对象的旧接口已经去掉
+## 6. ETL SA 侧运行逻辑
 
-## 5. 动态库注册方式
+DDMS 把 source 输出送到 SA 后，ETL SA 当前流程如下：
 
-现在的 so 接入不再要求开发者在 json 里再写一遍 `RegisterSymbol / UnregisterSymbol`。
+1. `SaEtlRuntimeClient` 先 `CheckSystemAbility(1311)`
+2. 若未拉起，则 `LoadSystemAbility(1311)`
+3. DDMS 把 plugin/pipeline 元数据发送给 SA
+4. DDMS 再发送一条 `DispatchRequest`
+5. `DispatchRequest` 中包含 `pipelineName`、`fromNode`、`topic`、`context` 和 value
+6. `EtlRuntimeManager` 按 `pipelineName` 找对应 runtime
+7. 若 runtime 不存在，则按该 pipeline 懒构图
+8. `PipelineRuntime::DispatchFrom(fromNode, ...)` 从 source 对应的后继节点继续执行
 
-json 里只保留：
+这里有两个关键结论：
 
-- 动态库路径 `libs.path`
-- 算子描述 `ops`
-- 未来的 `sa` / `extension` 信息
+- ETL SA 不会因为注册了多个 pipeline 就一次执行全部 pipeline
+- 每次 dispatch 都带 `pipelineName`，SA 只会命中对应的那一条 pipeline runtime
 
-真正的 so 注册方式改成了和 napi 类似的 constructor 自注册模型：
+## 7. 订阅制时序图
 
-- so 被 `dlopen`
-- `DATA_MINING_REGISTER_MODULE(...)` 触发 constructor
-- constructor 调用 `PluginRegistry::RegisterModule`
-- `PluginLoader` 再从注册表中取回 `PluginModule`
-
-### 5.1 关键文件
-
-- `[plugin_module.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/plugin/plugin_module.h)`
-- `[plugin_export.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/plugin/plugin_export.h)`
-- `[plugin_registry.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/runtime/plugin_registry.h)`
-- `[plugin_loader.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/runtime/plugin_loader.h)`
-
-### 5.2 动态加载时序图
+订阅制下，source 主动向外部数据捐赠或事件系统订阅，回调后由 DDMS 转发到 ETL SA。
 
 ```mermaid
 sequenceDiagram
-    participant M as "DataMiningManager"
-    participant R as "PipelineRuntime"
-    participant L as "PluginLoader"
-    participant SO as "Plugin .so"
-    participant G as "PluginRegistry"
+    participant Dev as "Pipeline 开发者"
+    participant DDMS as "DDMS DataMining Feature"
+    participant Proxy as "SourceProxy"
+    participant Source as "Source / SourceClient / lib.so"
+    participant SAM as "SystemAbilityManager"
+    participant ETL as "ETL SA(1311)"
+    participant Runtime as "PipelineRuntime"
+    participant Sink as "Sink"
 
-    M->>R: "StartPipeline / TriggerPipeline"
-    R->>L: "Load(libs.path)"
-    L->>SO: "dlopen"
-    SO->>G: "constructor -> RegisterModule"
-    L->>G: "GetModule(path or basename)"
-    G-->>L: "PluginModule"
-    L-->>R: "PluginModule"
-    R->>R: "Create SourceProxy / OperatorProxy / SinkProxy"
+    Dev->>DDMS: 部署 pipeline.json，声明 subscriptions/topic
+    DDMS->>DDMS: OnInitialize 读取 plugin.json / pipeline.json
+    DDMS->>DDMS: StartAutoPipelines()
+    DDMS->>Proxy: PreparePipeline，创建 SourceProxy/SourceNotifier
+    DDMS->>Proxy: Subscribe(topic, context, notifier)
+    Proxy->>Source: 建立订阅
+    Source-->>Proxy: 数据捐赠/事件回调
+    Proxy-->>DDMS: notifier->Notify(context, topic, data)
+    DDMS->>SAM: CheckSystemAbility(1311)
+    alt SA 未启动
+        DDMS->>SAM: LoadSystemAbility(1311)
+    end
+    DDMS->>ETL: RegisterPlugin(...)
+    DDMS->>ETL: RegisterPipeline(...)
+    DDMS->>ETL: Dispatch(pipelineName, fromNode=sourceName, topic, value)
+    ETL->>Runtime: 按 pipelineName 获取或构建 runtime
+    Runtime->>Runtime: 从 source 后继节点继续执行 DAG
+    Runtime->>Sink: Save(result)
 ```
 
-## 6. 运行时架构
+## 8. 定时任务制时序图
 
-运行时不是直接拿到算子实例就串起来，而是拆成 4 层：
-
-- `PluginLoader`：负责 so 装载
-- `PluginRegistry`：负责进程内模块注册表
-- `SourceProxy / OperatorProxy / SinkProxy`：统一屏蔽 so / SA / Extension
-- `PipelineRuntime`：负责图绑定、触发、路由、汇合
-
-整体关系如下：
+定时任务制下，DDMS 持有定时器，定时器回调时才触发 source。
 
 ```mermaid
-flowchart LR
-    A["PluginDescription.json"] --> B["DataMiningManager"]
-    C["PipelineDescription.json"] --> B
-    B --> D["PipelineRuntime"]
-    D --> E["PluginLoader"]
-    E --> F["PluginRegistry"]
-    F --> G["PluginModule"]
-    G --> H["SourceProxy / OperatorProxy / SinkProxy"]
-    H --> I["Source / Operator / Sink 实例"]
+sequenceDiagram
+    participant Dev as "Pipeline 开发者"
+    participant DDMS as "DDMS DataMining Feature"
+    participant Exec as "ExecutorPool"
+    participant Proxy as "SourceProxy"
+    participant Source as "Source / SourceClient / lib.so"
+    participant SAM as "SystemAbilityManager"
+    participant ETL as "ETL SA(1311)"
+    participant Runtime as "PipelineRuntime"
+    participant Sink as "Sink"
+
+    Dev->>DDMS: 部署 pipeline.json，声明 timers
+    DDMS->>DDMS: OnInitialize 读取配置
+    DDMS->>DDMS: StartAutoPipelines()
+    DDMS->>Proxy: PreparePipeline，创建 SourceProxy/SourceNotifier
+    DDMS->>Exec: ScheduleTimerTask(interval)
+    Exec-->>DDMS: 定时器到期回调
+    DDMS->>Proxy: Trigger(context, notifier)
+    Proxy->>Source: 触发真实 source
+    Source-->>Proxy: notifier->Notify(context, topic, data)
+    Proxy-->>DDMS: source 输出
+    DDMS->>SAM: CheckSystemAbility(1311)
+    alt SA 未启动
+        DDMS->>SAM: LoadSystemAbility(1311)
+    end
+    DDMS->>ETL: RegisterPlugin(...)
+    DDMS->>ETL: RegisterPipeline(...)
+    DDMS->>ETL: Dispatch(pipelineName, fromNode=sourceName, topic, value)
+    ETL->>Runtime: 按 pipelineName 获取或构建 runtime
+    Runtime->>Runtime: 执行 operator 链并处理 merge
+    Runtime->>Sink: Save(result)
 ```
 
-## 7. 为什么不再把节点名放进 Context
+## 9. 多 pipeline 的行为说明
 
-这是这次改造的一个核心点。
+当系统里注册了多个 pipeline 时，当前行为是：
 
-旧思路是把 `operatorName` 塞到 `Context` 里，让 runtime 从上下文里猜“是谁发出来的数据”。这个设计不对，因为：
+- DDMS 按 pipeline 维度保存 `PipelineState`
+- 每个 pipeline 有自己的一组 `subscriptions`、`timers`、`sources`
+- source 回调转发时会显式带上 `pipelineName`
+- SA 侧 runtime 也是按 `pipelineName` 缓存
 
-- `Context` 应该表达业务上下文，不该承载运行时控制信息
-- 一旦跨 so，谁写谁读都不清晰
-- 框架会被迫理解大量业务字段
+因此：
 
-现在改成了 `NodeNotifier` 模型：
+- 一次 source 回调，只会 dispatch 到对应 pipeline
+- 一次定时器触发，只会触发对应 pipeline 的 source
+- ETL SA 不会收到一次触发就把所有 pipeline 全跑一遍
 
-- 每个运行时节点创建一个自己的 `NodeNotifier`
-- 算子调用 `notifier->Notify(...)`
-- `NodeNotifier` 把“当前节点名”带回 `PipelineRuntime`
-- `PipelineRuntime` 再按照图把数据路由给下游
+需要注意的只有一个边界：
 
-对应代码在：
+- 如果多个 pipeline 同时订阅了同一个 source/topic，那么会出现多次独立触发，这是前面的多条订阅导致的，不是 SA 广播执行
 
-- `[pipeline_runtime.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/data_mining_service/include/runtime/pipeline_runtime.h)`
-- `[pipeline_runtime.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/data_mining_service/src/runtime/pipeline_runtime.cpp)`
+## 10. 多父节点合流
 
-## 8. 多父节点汇合逻辑
+`PipelineRuntime` 当前支持图状 pipeline。
 
-当前 pipeline 不是线性的，而是图状的。
+当一个 operator 有多个父节点时：
 
-当某个 operator 有多个父节点时，`PipelineRuntime` 会：
+- `inputParents_` 记录它所有上游父节点
+- `pendingInputs_` 暂存各父节点输出
+- 等待所有父节点输入到齐后，运行时会构造合流后的 `MergedDataValue`
+- 然后再把合流结果送给当前 operator
 
-1. 根据图结构计算该节点需要等待哪些父节点
-2. 把每个父节点的输出暂存到 `pendingInputs_`
-3. 等父节点输入凑齐后再组装成运行时内部的 `MergedDataValue`
-4. 再把这个合流数据投递给当前 operator
+这也是当前 `context_operator`、`travel_entity_extract_operator` 这类汇聚型节点能工作的基础。
 
-这就是为什么 `travel_entity_extract_operator` 和 `context_operator` 可以做汇合。
+## 11. 关键类职责索引
 
-## 9. 服务侧控制面
+DDMS feature 侧：
 
-`data_mining` 作为一个 feature，入口仍然是：
+- `data_mining_service_impl.cpp`：Feature 生命周期入口
+- `src/service/data_mining_manager.cpp`：DDMS 总控、配置加载、启动、调度、转发
+- `src/runtime/source_proxy.cpp`：统一封装本地库/远端 source
+- `src/service/etl_runtime_client.cpp`：拉起 SA 并做 IPC 转发
 
-- `[data_mining_service_impl.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/data_mining_service_impl.h)`
-- `[data_mining_service_impl.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/data_mining_service_impl.cpp)`
+ETL SA 侧：
 
-但真正的业务总控已经下沉到：
+- `services/data_mining_service/data_mining_etl_service.cpp`：SA 入口与发布
+- `services/data_mining_service/src/service/etl_runtime_manager.cpp`：pipeline/runtime 管理
+- `services/data_mining_service/src/runtime/pipeline_runtime.cpp`：有向图装配、路由、merge、operator/sink 调度
 
-- `[data_mining_manager.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/include/service/data_mining_manager.h)`
-- `[data_mining_manager.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/src/service/data_mining_manager.cpp)`
+公共客户端侧：
 
-控制流程如下：
+- `../data_mining/include/interfaces/`
+- `../data_mining/include/model/`
+- `../data_mining/include/plugin/`
 
-```mermaid
-flowchart TD
-    A["FeatureSystem 绑定 data_mining"] --> B["DataMiningServiceImpl.OnBind"]
-    B --> C["DataMiningManager.BindExecutors"]
-    C --> D["RegisterPlugin(plugin.json)"]
-    C --> E["RegisterPipeline(pipeline.json)"]
-    E --> F["StartPipeline(name)"]
-    F --> G["PipelineRuntime.Start"]
-    G --> H["Subscribe 型 Source 开始监听"]
-    F --> I["ExecutorPool 定时调度 24h Trigger"]
-    J["TriggerPipeline(name)"] --> K["PipelineRuntime.Trigger"]
-    K --> L["Trigger 型 Source 输出数据"]
-```
+## 12. 当前限制
 
-## 10. 一键打车 demo 场景
+当前版本还有这些边界：
 
-### 10.1 Source
-
-当前 demo 里有 5 个 source：
-
-- `sms_source`：订阅短信变化
-- `location_source`：订阅位置变化
-- `notification_source`：订阅通知变化
-- `calendar_source`：每天 24h 触发一次
-- `graph_source`：每天 24h 触发一次
-
-对应代码在：
-
-- `[sms_source.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/sources/sms_source.cpp)`
-- `[location_source.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/sources/location_source.cpp)`
-- `[notification_source.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/sources/notification_source.cpp)`
-- `[calendar_source.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/sources/calendar_source.cpp)`
-- `[graph_source.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/sources/graph_source.cpp)`
-
-### 10.2 Operator
-
-当前 demo 里有 5 个 operator：
-
-- `behavior_parser_operator`
-- `travel_entity_extract_operator`
-- `taxi_notification_extract_operator`
-- `context_operator`
-- `confidence_operator`
-
-对应代码在：
-
-- `[behavior_parser_operator.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/operators/behavior_parser_operator.cpp)`
-- `[travel_entity_extract_operator.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/operators/travel_entity_extract_operator.cpp)`
-- `[taxi_notification_extract_operator.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/operators/taxi_notification_extract_operator.cpp)`
-- `[context_operator.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/operators/context_operator.cpp)`
-- `[confidence_operator.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/operators/confidence_operator.cpp)`
-
-### 10.3 Sink
-
-当前 sink 只有一个：
-
-- `graph_sink`
-
-对应代码在：
-
-- `[graph_sink.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/sinks/graph_sink.cpp)`
-
-### 10.4 Pipeline 图
-
-一键打车 pipeline 的编排目标是：
-
-- 订阅侧先持续收集短信、位置、通知
-- 定时侧再每天读取日历和图谱快照
-- 先从短信中抽行为，再和日历一起抽出行实体
-- 从通知里抽打车相关实体
-- 最后把位置、出行实体、通知实体、图谱画像汇总成场景上下文
-- 由置信度算子给出最终推荐分数
-- Sink 落到图谱数据库
-
-配置文件在：
-
-- `[one_touch_taxi_pipeline.json](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/config/pipelines/one_touch_taxi_pipeline.json)`
-
-图如下：
-
-```mermaid
-flowchart LR
-    A["sms_source (subscribe)"] --> B["behavior_parser_operator"]
-    B --> C["travel_entity_extract_operator"]
-    D["calendar_source (24h trigger)"] --> C
-    E["location_source (subscribe)"] --> F["context_operator"]
-    C --> F
-    G["notification_source (subscribe)"] --> H["taxi_notification_extract_operator"]
-    H --> F
-    I["graph_source (24h trigger)"] --> F
-    F --> J["confidence_operator"]
-    J --> K["graph_sink"]
-```
-
-### 10.5 混合触发如何工作
-
-这条 pipeline 的 `trigger.type` 是 `hybrid`：
-
-- `StartPipeline` 时：`sms/location/notification` 三个 subscribe 型 source 先注册监听
-- 如果未显式 `StartPipeline`，第一次 `TriggerPipeline` 也会懒启动 runtime
-- 监听到变化后：这些 source 直接 `Notify`
-- 24h 定时到达或手动触发时：`calendar/graph` 两个 trigger 型 source 被主动调用
-- 运行时等多路输入凑齐后，汇合节点再继续向下游执行
-
-## 11. 配置文件位置
-
-插件描述：
-
-- `[config/plugins](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/config/plugins)`
-
-Pipeline 描述：
-
-- `[config/pipelines](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/config/pipelines)`
-
-Demo 构建脚本：
-
-- `[build_demo.sh](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining_demo/build_demo.sh)`
-
-## 12. 建议阅读顺序
-
-如果要快速理解当前实现，建议按下面顺序看：
-
-1. `[etl_interfaces.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/etl_interfaces.h)`
-2. `[plugin_export.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/plugin/plugin_export.h)`
-3. `[plugin_description.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/model/plugin_description.h)`
-4. `[pipeline_description.h](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/data_mining/include/model/pipeline_description.h)`
-5. `[pipeline_runtime.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/data_mining_service/src/runtime/pipeline_runtime.cpp)`
-6. `[data_mining_manager.cpp](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/src/service/data_mining_manager.cpp)`
-7. `[one_touch_taxi_pipeline.json](/Z:/home/lizhuojun/workspace/oh/foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/data_mining/config/pipelines/one_touch_taxi_pipeline.json)`
-8. `demo/sources -> demo/operators -> demo/sinks`
-
-## 13. 当前边界
-
-当前版本已经把结构、插件接入和图编排骨架改到了可继续演进的状态，但仍有这些边界：
-
-- `SA` 和 `Extension` 目前是 proxy 骨架，不是完整远端调用
-- 还没有把完整 IPC 控制面铺到 `OnRemoteRequest`
-- UT / Fuzz 仍是旧接口风格，后续需要整体重写
-- demo 构建脚本目前是本地示意脚本，真实可运行插件仍需要对接最终的框架链接环境
-- 这轮没有做完整编译和自动化验证
+- source 的 SA/Extension 远端通路目前还是占位骨架，真实远端 source 能力尚未补齐
+- plugin 注册仍按 `opName` 建索引，同名算子若配置成不同实现，后注册的会覆盖前注册的
+- DDMS 每次 dispatch 前会把当前 plugin/pipeline 元数据同步给 SA，后续还可以继续优化增量同步
+- 本轮主要做了结构和流程重构，文档、UT、FUZZ 已跟上主链路，但仍建议在完整编译环境下继续做联调验证
