@@ -646,9 +646,10 @@ std::vector<uint8_t> KVDBServiceImpl::LoadSecretKey(const StoreMetaData &metaDat
 }
 
 Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId, int32_t subUser,
-    std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType)
+    std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType, const std::string &baseDir)
 {
     StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
+    meta.dataDir = baseDir;
     if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
         auto backupPwd = BackupManager::GetInstance().GetPassWord(metaData);
         if (backupPwd.empty()) {
