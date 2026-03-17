@@ -190,8 +190,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32
     }
     metaData.storeType = options.kvStoreType;
     metaData.area = options.area;
-    metaData.customDir = options.isCustomDir ? options.baseDir : "";
-    metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    metaData.dataDir = options.isCustomDir ? options.baseDir : DirectoryManager::GetInstance().GetStorePath(metaData);
     syncAgents_.ComputeIfPresent(metaData.tokenId, [&appId, &storeId](auto &key, SyncAgent &syncAgent) {
         if (syncAgent.pid_ != IPCSkeleton::GetCallingPid()) {
             ZLOGW("agent already changed! old pid:%{public}d new pid:%{public}d appId:%{public}s",
@@ -965,8 +964,7 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = options.hapName;
-    metaData.customDir = options.isCustomDir ? options.baseDir : "";
-    metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    metaData.dataDir = options.isCustomDir ? options.baseDir : DirectoryManager::GetInstance().GetStorePath(metaData);
     metaData.schema = options.schema;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isNeedCompress = options.isNeedCompress;
@@ -982,7 +980,8 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
     localMetaData.isAutoSync = options.autoSync;
     localMetaData.isBackup = options.backup;
     localMetaData.isEncrypt = options.encrypt;
-    localMetaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    localMetaData.dataDir = options.isCustomDir ? options.baseDir :
+        DirectoryManager::GetInstance().GetStorePath(metaData);
     localMetaData.schema = options.schema;
     localMetaData.isPublic = options.isPublic;
     for (auto &policy : options.policies) {
