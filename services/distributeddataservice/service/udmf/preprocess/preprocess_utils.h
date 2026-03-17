@@ -62,7 +62,6 @@ private:
     static int32_t ReadCheckUri(uint32_t tokenId, UnifiedData &data, const std::vector<std::string> &uris,
         bool readOnly = false);
     static bool ValidateUriScheme(Uri &uri, bool &hasError);
-    static bool ValidateUri(Uri &uri, bool &hasError);
     static bool ValidateFileEntry(std::shared_ptr<Object> obj, bool isLocal, bool &hasError);
     static bool JudgeFileUriExist(const std::string &uri, uint32_t tokenId);
     static bool MatchImgExtension(const std::string &uri);

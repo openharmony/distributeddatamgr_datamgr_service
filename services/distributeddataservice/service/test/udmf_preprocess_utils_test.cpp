@@ -428,6 +428,68 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris002, TestSize.Level1)
 }
 
 /**
+* @tc.name: FillUris003
+* @tc.desc: New permission version should keep exact permission policy
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, FillUris003, TestSize.Level1)
+{
+    UnifiedData data;
+    Runtime runtime;
+    runtime.permissionVersion = PERMISSION_VERSION_CURRENT;
+    data.SetRuntime(runtime);
+    std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
+    std::map<std::string, uint32_t> permissionUri;
+    permissionUri.emplace("file://data/105.png", UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG);
+
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[ORI_URI] = "file://data/105.png";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    data.AddRecord(record);
+
+    PreProcessUtils::FillUris(data, dfsUris, permissionUri);
+    int32_t permission = static_cast<int32_t>(PermissionPolicy::NO_PERMISSION);
+    EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY, permission));
+    EXPECT_EQ(permission, static_cast<int32_t>(PermissionPolicy::READ_WRITE));
+    int32_t permissionExt = 0;
+    EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY_EXT, permissionExt));
+    EXPECT_EQ(permissionExt, static_cast<int32_t>(UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG));
+}
+
+/**
+* @tc.name: FillUris004
+* @tc.desc: Legacy permission version should keep old authorization compatibility
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, FillUris004, TestSize.Level1)
+{
+    UnifiedData data;
+    Runtime runtime;
+    runtime.permissionVersion = PERMISSION_VERSION_LEGACY;
+    data.SetRuntime(runtime);
+    std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
+    std::map<std::string, uint32_t> permissionUri;
+    permissionUri.emplace("file://data/106.png", UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG);
+
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[ORI_URI] = "file://data/106.png";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    data.AddRecord(record);
+
+    PreProcessUtils::FillUris(data, dfsUris, permissionUri);
+    int32_t permission = static_cast<int32_t>(PermissionPolicy::NO_PERMISSION);
+    EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY, permission));
+    EXPECT_EQ(permission, static_cast<int32_t>(PermissionPolicy::READ_WRITE));
+    int32_t permissionExt = 0;
+    EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY_EXT, permissionExt));
+    EXPECT_EQ(permissionExt, static_cast<int32_t>(UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG));
+}
+
+/**
 * @tc.name: MatchImgExtension001
 * @tc.desc: Normal testcase of MatchImgExtension
 * @tc.type: FUNC
