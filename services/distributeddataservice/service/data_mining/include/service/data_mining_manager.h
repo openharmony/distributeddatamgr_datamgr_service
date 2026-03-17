@@ -42,7 +42,9 @@ public:
     int32_t StartAutoPipelines();
     int32_t StartAllPipelines();
     int32_t StartPipeline(const std::string &name);
+    int32_t StartScene(const std::string &scene);
     int32_t StopPipeline(const std::string &name);
+    int32_t StopScene(const std::string &scene);
     int32_t TriggerPipeline(const std::string &name, std::shared_ptr<Context> context);
 
 private:

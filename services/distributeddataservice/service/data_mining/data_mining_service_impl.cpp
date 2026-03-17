@@ -17,11 +17,15 @@
 #include "data_mining_service_impl.h"
 
 #include "log_print.h"
+#include "scene_etl_control.h"
 
 namespace OHOS::DistributedData {
 namespace {
 constexpr const char *PLUGIN_CONFIG_DIR = "/system/etc/distributeddata/data_mining/plugins";
 constexpr const char *PIPELINE_CONFIG_DIR = "/system/etc/distributeddata/data_mining/pipelines";
+constexpr int32_t IPC_SUCCESS = 0;
+constexpr int32_t IPC_ERROR = -1;
+constexpr char16_t FEATURE_DESCRIPTOR[] = u"OHOS.DistributedData.ServiceProxy";
 }
 
 __attribute__((used)) DataMiningServiceImpl::Factory DataMiningServiceImpl::factory_;
@@ -43,10 +47,28 @@ DataMiningServiceImpl::Factory::~Factory()
 
 int DataMiningServiceImpl::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
 {
-    (void)code;
-    (void)data;
-    (void)reply;
-    return -1;
+    if (data.ReadInterfaceToken() != FEATURE_DESCRIPTOR) {
+        return IPC_ERROR;
+    }
+
+    int32_t status = OHOS::DataMining::DATA_MINING_ERROR;
+    std::string scene = data.ReadString();
+    switch (static_cast<OHOS::DataMining::SceneEtlRequestCode>(code)) {
+        case OHOS::DataMining::SceneEtlRequestCode::ENABLE_SCENE:
+            status = manager_.StartScene(scene);
+            break;
+        case OHOS::DataMining::SceneEtlRequestCode::DISABLE_SCENE:
+            status = manager_.StopScene(scene);
+            break;
+        default:
+            ZLOGE("unknown data mining request code:%{public}u", code);
+            break;
+    }
+
+    if (!reply.WriteInt32(status)) {
+        return IPC_ERROR;
+    }
+    return IPC_SUCCESS;
 }
 
 int32_t DataMiningServiceImpl::OnInitialize()

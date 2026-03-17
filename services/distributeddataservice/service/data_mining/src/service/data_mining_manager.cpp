@@ -132,6 +132,11 @@ bool ContainsTriggerSource(const std::vector<SourceTimer> &triggerSources, const
     });
 }
 
+bool ContainsSceneTag(const std::vector<std::string> &scenes, const std::string &scene)
+{
+    return std::find(scenes.begin(), scenes.end(), scene) != scenes.end();
+}
+
 bool HasSubscribeSource(const OpNode &node)
 {
     if (node.mode == "subscribe") {
@@ -471,6 +476,27 @@ int32_t DataMiningManager::StartPipeline(const std::string &name)
     return E_OK;
 }
 
+int32_t DataMiningManager::StartScene(const std::string &scene)
+{
+    if (scene.empty()) {
+        return E_ERROR;
+    }
+
+    std::vector<std::string> pipelineNames;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        for (const auto &[name, state] : pipelines_) {
+            if (ContainsSceneTag(state.description.scene, scene)) {
+                pipelineNames.push_back(name);
+            }
+        }
+    }
+    if (pipelineNames.empty()) {
+        return E_ERROR;
+    }
+    return StartPipelines(pipelineNames);
+}
+
 int32_t DataMiningManager::StopPipeline(const std::string &name)
 {
     PendingStop stopInfo;
@@ -490,6 +516,34 @@ int32_t DataMiningManager::StopPipeline(const std::string &name)
     }
     StopSources(stopInfo.sources, stopInfo.subscriptions);
     return E_OK;
+}
+
+int32_t DataMiningManager::StopScene(const std::string &scene)
+{
+    if (scene.empty()) {
+        return E_ERROR;
+    }
+
+    std::vector<std::string> pipelineNames;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        for (const auto &[name, state] : pipelines_) {
+            if (ContainsSceneTag(state.description.scene, scene)) {
+                pipelineNames.push_back(name);
+            }
+        }
+    }
+    if (pipelineNames.empty()) {
+        return E_ERROR;
+    }
+
+    int32_t result = E_OK;
+    for (const auto &name : pipelineNames) {
+        if (StopPipeline(name) != E_OK) {
+            result = E_ERROR;
+        }
+    }
+    return result;
 }
 
 int32_t DataMiningManager::TriggerPipeline(const std::string &name, std::shared_ptr<Context> context)

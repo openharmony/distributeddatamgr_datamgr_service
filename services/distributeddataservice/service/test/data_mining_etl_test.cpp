@@ -348,12 +348,12 @@ protected:
 
     std::string CreatePipelineConfig(const std::string &fileName, const std::string &name, const std::string &tree,
         const std::string &subscriptionsJson, const std::string &timersJson, const std::string &type = "manual",
-        int32_t interval = 0)
+        int32_t interval = 0, const std::string &sceneJson = "[\"test\"]")
     {
         const auto configPath = (std::filesystem::path(TEST_ROOT) / "pipelines" / fileName).string();
         std::string content = "{\n"
             "  \"name\": \"" + name + "\",\n"
-            "  \"scene\": [\"test\"],\n"
+            "  \"scene\": " + sceneJson + ",\n"
             "  \"trigger\": {\n"
             "    \"type\": \"" + type + "\",\n"
             "    \"interval\": " + std::to_string(interval) + ",\n"
@@ -753,6 +753,145 @@ HWTEST_F(DataMiningEtlTest, EtlRuntimeManagerRejectsDuplicateOpsInSamePlugin016,
 
     EXPECT_EQ(manager.RegisterPlugin(OHOS::DistributedData::Serializable::Marshall(plugin)), E_ERROR);
     EXPECT_TRUE(manager.pluginsByOp_.empty());
+}
+
+
+HWTEST_F(DataMiningEtlTest, StartSceneStartsOnlyMatchedPipelines017, TestSize.Level1)
+{
+    DataMining::DataMiningManager manager;
+
+    auto taxiPlugin = CreatePluginConfig("scene_taxi_plugin.json", "scene_taxi_source", "source", "libs/libtaxi.so");
+    auto hotelPlugin =
+        CreatePluginConfig("scene_hotel_plugin.json", "scene_hotel_source", "source", "libs/libhotel.so");
+
+    auto taxiTree = "{"
+        "\"opName\":\"scene_taxi_source\"," 
+        "\"mode\":\"subscribe\"," 
+        "\"topic\":\"scene.taxi\"," 
+        "\"children\":[],"
+        "\"output\":[]"
+    "}";
+    auto hotelTree = "{"
+        "\"opName\":\"scene_hotel_source\"," 
+        "\"mode\":\"subscribe\"," 
+        "\"topic\":\"scene.hotel\"," 
+        "\"children\":[],"
+        "\"output\":[]"
+    "}";
+
+    auto taxiPipeline = CreatePipelineConfig("scene_taxi_pipeline.json", "scene_taxi_pipeline", taxiTree,
+        "[{\"sourceName\":\"scene_taxi_source\",\"topic\":\"scene.taxi\",\"parameters\":\"{}\"}]",
+        "[]", "manual", 0, "[\"one_touch_taxi\",\"travel_service\"]");
+    auto hotelPipeline = CreatePipelineConfig("scene_hotel_pipeline.json", "scene_hotel_pipeline", hotelTree,
+        "[{\"sourceName\":\"scene_hotel_source\",\"topic\":\"scene.hotel\",\"parameters\":\"{}\"}]",
+        "[]", "manual", 0, "[\"hotel_service\"]");
+
+    ASSERT_EQ(manager.RegisterPlugin(taxiPlugin), E_OK);
+    ASSERT_EQ(manager.RegisterPlugin(hotelPlugin), E_OK);
+    ASSERT_EQ(manager.RegisterPipeline(taxiPipeline), E_OK);
+    ASSERT_EQ(manager.RegisterPipeline(hotelPipeline), E_OK);
+
+    auto taxiSource = std::make_shared<TestSubscribeSource>();
+    auto hotelSource = std::make_shared<TestSubscribeSource>();
+    DataMining::EndpointConfig endpoint;
+    endpoint.kind = DataMining::EndpointKind::LIBRARY;
+
+    manager.pipelines_["scene_taxi_pipeline"].sources["scene_taxi_source"] = {
+        std::make_shared<DataMining::SourceProxy>("scene_taxi_source", endpoint,
+            std::make_shared<DataMining::PluginLoader>(), nullptr, taxiSource),
+        std::make_shared<DataMining::DataMiningManager::SourceNotifier>(
+            manager, "scene_taxi_pipeline", "scene_taxi_source")
+    };
+    manager.pipelines_["scene_taxi_pipeline"].subscriptions = {
+        { "scene_taxi_source", "scene.taxi", "{}" }
+    };
+
+    manager.pipelines_["scene_hotel_pipeline"].sources["scene_hotel_source"] = {
+        std::make_shared<DataMining::SourceProxy>("scene_hotel_source", endpoint,
+            std::make_shared<DataMining::PluginLoader>(), nullptr, hotelSource),
+        std::make_shared<DataMining::DataMiningManager::SourceNotifier>(
+            manager, "scene_hotel_pipeline", "scene_hotel_source")
+    };
+    manager.pipelines_["scene_hotel_pipeline"].subscriptions = {
+        { "scene_hotel_source", "scene.hotel", "{}" }
+    };
+
+    ASSERT_EQ(manager.StartScene("one_touch_taxi"), E_OK);
+    EXPECT_TRUE(manager.pipelines_["scene_taxi_pipeline"].started);
+    EXPECT_FALSE(manager.pipelines_["scene_hotel_pipeline"].started);
+    EXPECT_EQ(taxiSource->subscribeCount_, 1);
+    EXPECT_EQ(hotelSource->subscribeCount_, 0);
+}
+
+HWTEST_F(DataMiningEtlTest, StopSceneStopsOnlyMatchedPipelines018, TestSize.Level1)
+{
+    DataMining::DataMiningManager manager;
+
+    auto taxiPlugin = CreatePluginConfig("stop_scene_taxi_plugin.json", "stop_scene_taxi_source", "source",
+        "libs/libtaxi.so");
+    auto hotelPlugin = CreatePluginConfig("stop_scene_hotel_plugin.json", "stop_scene_hotel_source", "source",
+        "libs/libhotel.so");
+
+    auto taxiTree = "{"
+        "\"opName\":\"stop_scene_taxi_source\"," 
+        "\"mode\":\"subscribe\"," 
+        "\"topic\":\"stop.scene.taxi\"," 
+        "\"children\":[],"
+        "\"output\":[]"
+    "}";
+    auto hotelTree = "{"
+        "\"opName\":\"stop_scene_hotel_source\"," 
+        "\"mode\":\"subscribe\"," 
+        "\"topic\":\"stop.scene.hotel\"," 
+        "\"children\":[],"
+        "\"output\":[]"
+    "}";
+
+    auto taxiPipeline = CreatePipelineConfig("stop_scene_taxi_pipeline.json", "stop_scene_taxi_pipeline", taxiTree,
+        "[{\"sourceName\":\"stop_scene_taxi_source\",\"topic\":\"stop.scene.taxi\",\"parameters\":\"{}\"}]",
+        "[]", "manual", 0, "[\"one_touch_taxi\"]");
+    auto hotelPipeline = CreatePipelineConfig("stop_scene_hotel_pipeline.json", "stop_scene_hotel_pipeline", hotelTree,
+        "[{\"sourceName\":\"stop_scene_hotel_source\",\"topic\":\"stop.scene.hotel\",\"parameters\":\"{}\"}]",
+        "[]", "manual", 0, "[\"hotel_service\"]");
+
+    ASSERT_EQ(manager.RegisterPlugin(taxiPlugin), E_OK);
+    ASSERT_EQ(manager.RegisterPlugin(hotelPlugin), E_OK);
+    ASSERT_EQ(manager.RegisterPipeline(taxiPipeline), E_OK);
+    ASSERT_EQ(manager.RegisterPipeline(hotelPipeline), E_OK);
+
+    auto taxiSource = std::make_shared<TestSubscribeSource>();
+    auto hotelSource = std::make_shared<TestSubscribeSource>();
+    DataMining::EndpointConfig endpoint;
+    endpoint.kind = DataMining::EndpointKind::LIBRARY;
+
+    manager.pipelines_["stop_scene_taxi_pipeline"].sources["stop_scene_taxi_source"] = {
+        std::make_shared<DataMining::SourceProxy>("stop_scene_taxi_source", endpoint,
+            std::make_shared<DataMining::PluginLoader>(), nullptr, taxiSource),
+        std::make_shared<DataMining::DataMiningManager::SourceNotifier>(
+            manager, "stop_scene_taxi_pipeline", "stop_scene_taxi_source")
+    };
+    manager.pipelines_["stop_scene_taxi_pipeline"].subscriptions = {
+        { "stop_scene_taxi_source", "stop.scene.taxi", "{}" }
+    };
+
+    manager.pipelines_["stop_scene_hotel_pipeline"].sources["stop_scene_hotel_source"] = {
+        std::make_shared<DataMining::SourceProxy>("stop_scene_hotel_source", endpoint,
+            std::make_shared<DataMining::PluginLoader>(), nullptr, hotelSource),
+        std::make_shared<DataMining::DataMiningManager::SourceNotifier>(
+            manager, "stop_scene_hotel_pipeline", "stop_scene_hotel_source")
+    };
+    manager.pipelines_["stop_scene_hotel_pipeline"].subscriptions = {
+        { "stop_scene_hotel_source", "stop.scene.hotel", "{}" }
+    };
+
+    ASSERT_EQ(manager.StartPipeline("stop_scene_taxi_pipeline"), E_OK);
+    ASSERT_EQ(manager.StartPipeline("stop_scene_hotel_pipeline"), E_OK);
+
+    ASSERT_EQ(manager.StopScene("one_touch_taxi"), E_OK);
+    EXPECT_FALSE(manager.pipelines_["stop_scene_taxi_pipeline"].started);
+    EXPECT_TRUE(manager.pipelines_["stop_scene_hotel_pipeline"].started);
+    EXPECT_EQ(taxiSource->stopCount_, 1);
+    EXPECT_EQ(hotelSource->stopCount_, 0);
 }
 
 HWTEST_F(DataMiningEtlTest, PipelineRuntimePropagatesOperatorFailure006, TestSize.Level1)

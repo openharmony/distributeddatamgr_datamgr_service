@@ -97,6 +97,9 @@ group("fuzztest") {
   }
 
   if (datamgr_service_data_mining_etl) {
-    deps += [ "dataminingetlservicestub_fuzzer:fuzztest" ]
+    deps += [
+      "dataminingetlservicestub_fuzzer:fuzztest",
+      "dataminingscenefeature_fuzzer:fuzztest",
+    ]
   }
 }
