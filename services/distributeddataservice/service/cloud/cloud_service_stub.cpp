@@ -39,6 +39,8 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnQueryLastSyncInfoBatch,
     &CloudServiceStub::OnSetGlobalCloudStrategy,
     &CloudServiceStub::OnCloudSync,
+    &CloudServiceStub::OnSubscribe,
+    &CloudServiceStub::OnUnsubscribe,
     &CloudServiceStub::OnAllocResourceAndShare,
     &CloudServiceStub::OnShare,
     &CloudServiceStub::OnUnshare,
@@ -376,5 +378,35 @@ int32_t CloudServiceStub::OnInitNotifier(MessageParcel &data, MessageParcel &rep
     }
     auto status = InitNotifier(notifier);
     return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnSubscribe(MessageParcel &data, MessageParcel &reply)
+{
+    CloudSubscribeType type;
+    std::vector<BundleInfo> bundleInfos;
+    if (!ITypesUtil::Unmarshal(data, type, bundleInfos)) {
+        ZLOGE("read subscribe data failed.");
+        return IPC_PARCEL_ERROR;
+    }
+    auto status = Subscribe(type, bundleInfos, nullptr);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        return IPC_PARCEL_ERROR;
+    }
+    return status;
+}
+
+int32_t CloudServiceStub::OnUnsubscribe(MessageParcel &data, MessageParcel &reply)
+{
+    CloudSubscribeType type;
+    std::vector<BundleInfo> bundleInfos;
+    if (!ITypesUtil::Unmarshal(data, type, bundleInfos)) {
+        ZLOGE("read unsubscribe data failed.");
+        return IPC_PARCEL_ERROR;
+    }
+    auto status = Unsubscribe(type, bundleInfos, nullptr);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        return IPC_PARCEL_ERROR;
+    }
+    return status;
 }
 } // namespace OHOS::CloudData

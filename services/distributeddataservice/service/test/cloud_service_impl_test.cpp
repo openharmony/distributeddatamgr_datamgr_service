@@ -94,6 +94,22 @@ protected:
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     static StoreMetaData metaData_;
     static inline AccountDelegateMock *accountDelegateMock = nullptr;
+
+    class SyncInfoObserverMock : public CloudData::ISyncInfoObserver {
+    public:
+        void OnSyncInfoChanged(const std::map<std::string, CloudData::QueryLastResults> &data) override
+        {
+            lastData_ = data;
+        }
+
+        const std::map<std::string, CloudData::QueryLastResults> &GetLastData() const
+        {
+            return lastData_;
+        }
+
+    private:
+        std::map<std::string, CloudData::QueryLastResults> lastData_;
+    };
 };
 std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceImpl_ =
     std::make_shared<CloudData::CloudServiceImpl>();
@@ -1897,6 +1913,162 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_31Items, TestSize.Level1)
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
     EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT_V20);
     EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name: Subscribe_Success
+ * @tc.desc: Test Subscribe with valid parameters
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Subscribe_Success, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Subscribe_Success start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo bundleInfo;
+    bundleInfo.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfo.storeId = TEST_CLOUD_STORE;
+    bundleInfos.push_back(bundleInfo);
+
+    auto observer = std::make_shared<SyncInfoObserverMock>();
+    auto status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: Subscribe_EmptyBundleInfos
+ * @tc.desc: Test Subscribe with empty bundleInfos
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Subscribe_EmptyBundleInfos, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Subscribe_EmptyBundleInfos start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    auto observer = std::make_shared<SyncInfoObserverMock>();
+    auto status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: Subscribe_DuplicateSubscribe
+ * @tc.desc: Test Subscribe with duplicate subscription
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Subscribe_DuplicateSubscribe, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Subscribe_DuplicateSubscribe start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo bundleInfo;
+    bundleInfo.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfo.storeId = TEST_CLOUD_STORE;
+    bundleInfos.push_back(bundleInfo);
+
+    auto observer = std::make_shared<SyncInfoObserverMock>();
+    auto status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+
+    status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: Unsubscribe_Success
+ * @tc.desc: Test Unsubscribe with valid parameters
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Unsubscribe_Success, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Unsubscribe_Success start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo bundleInfo;
+    bundleInfo.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfo.storeId = TEST_CLOUD_STORE;
+    bundleInfos.push_back(bundleInfo);
+
+    auto observer = std::make_shared<SyncInfoObserverMock>();
+    auto status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+
+    status = cloudServiceImpl_->Unsubscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: Unsubscribe_EmptyBundleInfos
+ * @tc.desc: Test Unsubscribe with empty bundleInfos
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Unsubscribe_EmptyBundleInfos, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Unsubscribe_EmptyBundleInfos start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    auto observer = std::make_shared<SyncInfoObserverMock>();
+    auto status = cloudServiceImpl_->Unsubscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: Unsubscribe_NotSubscribed
+ * @tc.desc: Test Unsubscribe when not subscribed
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Unsubscribe_NotSubscribed, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Unsubscribe_NotSubscribed start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo bundleInfo;
+    bundleInfo.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfo.storeId = TEST_CLOUD_STORE;
+    bundleInfos.push_back(bundleInfo);
+
+    auto observer = std::make_shared<SyncInfoObserverMock>();
+    auto status = cloudServiceImpl_->Unsubscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: Unsubscribe_MultipleBundleInfos
+ * @tc.desc: Test Unsubscribe with multiple bundleInfos
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Unsubscribe_MultipleBundleInfos, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Unsubscribe_MultipleBundleInfos start");
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo bundleInfo1;
+    bundleInfo1.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfo1.storeId = TEST_CLOUD_STORE;
+    bundleInfos.push_back(bundleInfo1);
+
+    CloudData::BundleInfo bundleInfo2;
+    bundleInfo2.bundleName = TEST_CLOUD_BUNDLE;
+    bundleInfo2.storeId = "TEST_CLOUD_STORE2";
+    bundleInfos.push_back(bundleInfo2);
+
+    auto observer = std::make_shared<SyncInfoObserverMock>();
+    auto status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        bundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+
+    std::vector<CloudData::BundleInfo> unsubscribeBundleInfos;
+    unsubscribeBundleInfos.push_back(bundleInfo1);
+    status = cloudServiceImpl_->Unsubscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
+        unsubscribeBundleInfos, observer);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
 }
 
 } // namespace DistributedDataTest

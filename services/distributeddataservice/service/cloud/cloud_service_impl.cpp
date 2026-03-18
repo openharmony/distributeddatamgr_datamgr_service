@@ -111,6 +111,9 @@ CloudServiceImpl::CloudServiceImpl()
     EventCenter::GetInstance().Subscribe(CloudEvent::UPGRADE_SCHEMA, [this](const Event &event) {
         DoSync(event);
     });
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC_FINISHED, [this](const Event &event) {
+        OnSyncInfoChanged(event);
+    });
     MetaDataManager::GetInstance().Subscribe(
         Subscription::GetPrefix({ "" }), [this](const std::string &key,
             const std::string &value, int32_t flag) -> auto {
@@ -2119,5 +2122,106 @@ QueryLastResults CloudServiceImpl::AssembleLastResults(const std::vector<Databas
         }
     }
     return results;
+}
+
+int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
+    std::shared_ptr<ISyncInfoObserver> observer)
+{
+    ZLOGI("Subscribe type:%{public}d, bundleInfos size:%{public}zu", static_cast<int32_t>(type), bundleInfos.size());
+    if (bundleInfos.empty()) {
+        ZLOGE("bundleInfos is empty");
+        return INVALID_ARGUMENT;
+    }
+
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    for (const auto &info : bundleInfos) {
+        std::string key = info.bundleName + "_" + std::to_string(user);
+        auto &vec = subscribes_[type][key];
+        auto it = std::find(vec.begin(), vec.end(), tokenId);
+        if (it == vec.end()) {
+            vec.push_back(tokenId);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::Unsubscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
+    std::shared_ptr<ISyncInfoObserver> observer)
+{
+    ZLOGI("Unsubscribe type:%{public}d, bundleInfos size:%{public}zu", static_cast<int32_t>(type), bundleInfos.size());
+
+    if (bundleInfos.empty()) {
+        ZLOGE("bundleInfos is empty");
+        return INVALID_ARGUMENT;
+    }
+
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    auto typeIt = subscribes_.find(type);
+    if (typeIt == subscribes_.end()) {
+        return SUCCESS;
+    }
+
+    for (const auto &info : bundleInfos) {
+        std::string key = info.bundleName + "_" + std::to_string(user);
+        auto it = typeIt->second.find(key);
+        if (it != typeIt->second.end()) {
+            auto &tokenList = it->second;
+            tokenList.erase(std::remove(tokenList.begin(), tokenList.end(), tokenId), tokenList.end());
+            if (tokenList.empty()) {
+                typeIt->second.erase(it);
+            }
+        }
+    }
+    return SUCCESS;
+}
+
+void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
+{
+    auto &syncFinishedEvent = static_cast<const CloudSyncFinishedEvent &>(event);
+    auto &storeInfo = syncFinishedEvent.GetStoreInfo();
+    auto bundleName = storeInfo.bundleName;
+    auto user = storeInfo.user;
+    auto storeId = storeInfo.storeName;
+    auto &syncInfo = syncFinishedEvent.GetSyncInfo();
+
+    ZLOGI("OnSyncInfoChanged: bundleName=%{public}s, user=%{public}d, storeId=%{public}s, code=%{public}d",
+        bundleName.c_str(), user, storeId.c_str(), syncInfo.code);
+
+    std::string bundleKey = bundleName + "_" + std::to_string(user);
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    auto typeIt = subscribes_.find(CloudSubscribeType::SYNC_INFO_CHANGED);
+    if (typeIt == subscribes_.end()) {
+        ZLOGD("No SYNC_INFO_CHANGED subscribers");
+        return;
+    }
+
+    auto subIt = typeIt->second.find(bundleKey);
+    if (subIt == typeIt->second.end()) {
+        ZLOGD("No subscriber for bundleKey=%{public}s", bundleKey.c_str());
+        return;
+    }
+
+    CloudSyncInfo cloudSyncInfo;
+    cloudSyncInfo.startTime = syncInfo.startTime;
+    cloudSyncInfo.finishTime = syncInfo.finishTime;
+    cloudSyncInfo.code = syncInfo.code;
+    cloudSyncInfo.syncStatus = syncInfo.syncStatus;
+    auto &tokenList = subIt->second;
+    for (const auto &tokenId : tokenList) {
+        auto agentIt = syncAgents_.Find(tokenId);
+        if (!agentIt.first || agentIt.second.notifier_ == nullptr) {
+            ZLOGW("No notifier for tokenId=%{public}x", tokenId);
+            continue;
+        }
+        agentIt.second.notifier_->OnSyncInfoNotify(bundleName, storeId, cloudSyncInfo);
+        ZLOGI("Notified tokenId=%{public}x, bundleName=%{public}s, storeId=%{public}s", tokenId, bundleName.c_str(),
+            storeId.c_str());
+    }
 }
 } // namespace OHOS::CloudData

@@ -52,6 +52,8 @@ private:
 
     int32_t OnSetCloudStrategy(MessageParcel &data, MessageParcel &reply);
     int32_t OnInitNotifier(MessageParcel &data, MessageParcel &reply);
+    int32_t OnSubscribe(MessageParcel &data, MessageParcel &reply);
+    int32_t OnUnsubscribe(MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[TRANS_BUTT];
 };
 } // namespace OHOS::CloudData

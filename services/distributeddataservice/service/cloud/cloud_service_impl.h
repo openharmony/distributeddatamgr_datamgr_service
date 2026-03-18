@@ -22,6 +22,7 @@
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_extra_data.h"
 #include "cloud/cloud_info.h"
+#include "cloud/cloud_sync_finished_event.h"
 #include "cloud_notifier_proxy.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sharing_center.h"
@@ -60,6 +61,11 @@ public:
     int32_t CloudSync(const std::string &bundleName, const std::string &storeId, const Option &option,
         const AsyncDetail &async) override;
     int32_t InitNotifier(sptr<IRemoteObject> notifier) override;
+
+    int32_t Subscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
+        std::shared_ptr<ISyncInfoObserver> observer) override;
+    int32_t Unsubscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
+        std::shared_ptr<ISyncInfoObserver> observer) override;
 
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string &storeId,
         const DistributedRdb::PredicatesMemo &predicates, const std::vector<std::string> &columns,
@@ -185,6 +191,7 @@ private:
     void GetSchema(const Event &event);
     void CloudShare(const Event &event);
     void DoSync(const Event &event);
+    void OnSyncInfoChanged(const Event &event);
 
     Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
@@ -235,6 +242,9 @@ private:
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
             .count());
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
+
+    std::mutex subscribeMutex_;
+    std::map<CloudSubscribeType, std::map<std::string, std::vector<uint32_t>>> subscribes_;
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;

@@ -24,6 +24,7 @@
 #include "cloud/cloud_lock_event.h"
 #include "cloud/cloud_report.h"
 #include "cloud/cloud_server.h"
+#include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
 #include "cloud_value_util.h"
 #include "device_manager_adapter.h"
@@ -1169,6 +1170,13 @@ void SyncManager::SaveLastSyncInfo(const QueryKey &queryKey, CloudLastSyncInfo &
         ZLOGE("save cloud last info fail, bundleName: %{public}s, user:%{public}d",
               queryKey.bundleName.c_str(), queryKey.user);
     }
+    StoreInfo storeInfo;
+    storeInfo.user = queryKey.user;
+    storeInfo.bundleName = queryKey.bundleName;
+    storeInfo.storeName = queryKey.storeId;
+
+    auto evt = std::make_unique<CloudSyncFinishedEvent>(storeInfo, info);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
 GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)

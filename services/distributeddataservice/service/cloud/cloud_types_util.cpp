@@ -144,14 +144,23 @@ bool Unmarshalling(DBActionInfo &output, MessageParcel &data)
 }
 
 template<>
-bool Marshalling(const BundleInfo &input, MessageParcel &data)
-{
-    return Marshal(data, input.bundleName, input.storeId);
-}
-
-template<>
 bool Unmarshalling(BundleInfo &output, MessageParcel &data)
 {
     return Unmarshal(data, output.bundleName, output.storeId);
+}
+
+template<>
+bool Unmarshalling(CloudSubscribeType &output, MessageParcel &data)
+{
+    uint32_t result;
+    if (!data.ReadUint32(result)) {
+        return false;
+    }
+    CloudSubscribeType type = static_cast<CloudSubscribeType>(result);
+    if (type < CloudSubscribeType::SYNC_INFO_CHANGED || type >= CloudSubscribeType::SUBSCRIBE_TYPE_MAX) {
+        return false;
+    }
+    output = type;
+    return true;
 }
 } // namespace OHOS::ITypesUtil
