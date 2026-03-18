@@ -486,8 +486,14 @@ int32_t KVDBServiceStub::OnGetBackupPassword(
         ZLOGE("Unmarshal appId:%{public}s baseDir:%{public}s", appId.appId.c_str(), Anonymous::Change(baseDir).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    bool isCustomDir;
+    if (!ITypesUtil::Unmarshal(data, isCustomDir)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     std::vector<std::vector<uint8_t>> passwords;
-    int32_t status = GetBackupPassword(appId, storeId, subUser, passwords, passwordType, baseDir);
+    int32_t status = GetBackupPassword(appId, storeId, subUser, passwords, passwordType, baseDir, isCustomDir);
     if (!ITypesUtil::Marshal(reply, status, passwords)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
