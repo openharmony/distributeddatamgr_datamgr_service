@@ -42,7 +42,7 @@ public:
     static void ProcessFileAuthorization(bool &hasError, uint32_t tokenId, UnifiedData &data, bool isLocal,
         std::map<std::string, unsigned int> &uriPermissions);
     static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-        bool isLocal, std::map<std::string, uint32_t> &uris);
+        bool isLocal, std::vector<std::string> &uris);
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);

@@ -378,7 +378,7 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
 int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
 {
     std::vector<std::string> fileUris;
-    std::map<std::string, uint32_t> htmlUris;
+    std::vector<std::string> htmlUris;
     for (const auto &record : data.GetRecords()) {
         if (record == nullptr) {
             continue;
@@ -414,12 +414,7 @@ int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
     if (status != E_OK) {
         return status;
     }
-    std::vector<std::string> htmlUriVec;
-    htmlUriVec.reserve(htmlUris.size());
-    for (const auto &item : htmlUris) {
-        htmlUriVec.emplace_back(item.first);
-    }
-    return ReadCheckUri(tokenId, data, htmlUriVec, true);
+    return ReadCheckUri(tokenId, data, htmlUris, true);
 }
 
 int32_t PreProcessUtils::ReadCheckUri(uint32_t tokenId, UnifiedData &data, const std::vector<std::string> &uris,
@@ -660,7 +655,7 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
 }
 
 void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-    bool isLocal, std::map<std::string, uint32_t> &uris)
+    bool isLocal, std::vector<std::string> &uris)
 {
     record->ComputeUris([&uris, &isLocal, &tokenId] (UriInfo &uriInfo) {
         std::string newUriStr = "";
@@ -688,11 +683,11 @@ void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, u
         }
         std::string scheme = uri.GetScheme();
         std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (scheme != FILE_SCHEME || uris.find(newUriStr) != uris.end() || !MatchImgExtension(newUriStr)) {
+        if (scheme != FILE_SCHEME || !MatchImgExtension(newUriStr)) {
             return true;
         }
         if (JudgeFileUriExist(newUriStr, tokenId)) {
-            uris.emplace(newUriStr, ToPermissionMaskByLegacyPolicy(uriInfo.permission));
+            uris.emplace_back(newUriStr);
         }
         return true;
     });
@@ -748,7 +743,6 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
                 continue;
             }
             strUris.emplace(uriStr, permissionMask);
-            AppendGrantUriPermission(strUris, uriPermissions);
         }
         auto htmlIter = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
         if (htmlIter != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(htmlIter->second)) {
@@ -773,8 +767,9 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
                 strUris.emplace(uriStr, permissionMask);
                 return true;
             });
-            AppendGrantUriPermission(strUris, uriPermissions);
         }
+        AppendGrantUriPermission(strUris, uriPermissions);
+
         strUris.clear();
     }
     if (isLocal) {

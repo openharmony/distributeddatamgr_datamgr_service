@@ -156,7 +156,7 @@ void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>
 }
 
 void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-    bool isLocal, std::map<std::string, uint32_t> &uris)
+    bool isLocal, std::vector<std::string> &uris)
 {
     return;
 }
