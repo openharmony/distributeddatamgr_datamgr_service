@@ -722,28 +722,6 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
             ZLOGW("GetEntries returns empty!");
             continue;
         }
-        auto fileEntry = entries->find(GENERAL_FILE_URI);
-        if (fileEntry != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(fileEntry->second)) {
-            auto obj = std::get<std::shared_ptr<Object>>(fileEntry->second);
-            bool isValid = ValidateFileEntry(obj, isLocal, hasError);
-            if (hasError) {
-                return;
-            }
-            if (!isValid) {
-                continue;
-            }
-            std::string uriStr;
-            std::string uriKey = isLocal ? ORI_URI : REMOTE_URI;
-            if (!obj->GetValue(uriKey, uriStr) || uriStr.empty()) {
-                ZLOGW("Get uri failed or uri is empty.");
-                continue;
-            }
-            uint32_t permissionMask = ToPermissionMask(obj, permissionVersion);
-            if (permissionMask == 0) {
-                continue;
-            }
-            strUris.emplace(uriStr, permissionMask);
-        }
         auto htmlIter = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
         if (htmlIter != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(htmlIter->second)) {
             record->ComputeUris([&strUris, &isLocal, permissionVersion] (UriInfo &uriInfo) {
@@ -768,8 +746,29 @@ void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId,
                 return true;
             });
         }
+        auto fileEntry = entries->find(GENERAL_FILE_URI);
+        if (fileEntry != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(fileEntry->second)) {
+            auto obj = std::get<std::shared_ptr<Object>>(fileEntry->second);
+            bool isValid = ValidateFileEntry(obj, isLocal, hasError);
+            if (hasError) {
+                return;
+            }
+            if (!isValid) {
+                continue;
+            }
+            std::string uriStr;
+            std::string uriKey = isLocal ? ORI_URI : REMOTE_URI;
+            if (!obj->GetValue(uriKey, uriStr) || uriStr.empty()) {
+                ZLOGW("Get uri failed or uri is empty.");
+                continue;
+            }
+            uint32_t permissionMask = ToPermissionMask(obj, permissionVersion);
+            if (permissionMask == 0) {
+                continue;
+            }
+            strUris.emplace(uriStr, permissionMask);
+        }
         AppendGrantUriPermission(strUris, uriPermissions);
-
         strUris.clear();
     }
     if (isLocal) {
