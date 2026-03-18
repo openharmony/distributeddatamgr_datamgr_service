@@ -1064,6 +1064,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "samgr:samgr_proxy",
   ]
 
   if (dm_part_is_enabled && datamgr_service_distributed) {
@@ -1138,6 +1139,7 @@ ohos_unittest("ObjectManagerTest") {
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 
   if (datamgr_service_object) {
@@ -1210,11 +1212,13 @@ ohos_unittest("ObjectManagerMockTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 
   if (datamgr_service_object) {
