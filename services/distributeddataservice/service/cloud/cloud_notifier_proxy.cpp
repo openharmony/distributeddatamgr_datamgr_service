@@ -57,19 +57,17 @@ int32_t CloudNotifierProxy::OnComplete(uint32_t seqNum, DistributedRdb::Details 
     return status;
 }
 
-int32_t CloudNotifierProxy::OnSyncInfoNotify(
-    const std::string &bundleName, const std::string &storeId, const CloudSyncInfo &syncInfo)
+int32_t CloudNotifierProxy::OnSyncInfoNotify(const BatchQueryLastResults &data)
 {
     MessageParcel parcel;
     if (!parcel.WriteInterfaceToken(GetDescriptor())) {
         ZLOGE("write descriptor failed");
         return CloudService::IPC_PARCEL_ERROR;
     }
-
-    if (!ITypesUtil::Marshal(parcel, bundleName, storeId, syncInfo)) {
+    if (!ITypesUtil::Marshal(parcel, data)) {
+        ZLOGE("marshal data failed");
         return CloudService::IPC_PARCEL_ERROR;
     }
-
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
     auto remote = Remote();

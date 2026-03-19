@@ -78,6 +78,7 @@ static constexpr const char *FT_SERVICE_INIT = "SERVICE_INIT";
 static constexpr const char *FT_SYNC_TASK = "SYNC_TASK";
 static constexpr const char *FT_ENCRYPT_CHANGED = "ENCRYPT_CHANGED";
 static constexpr const char *CLOUD_SCHEMA = "arkdata/cloud/cloud_schema.json";
+static constexpr Duration NOTIFY_DELAY = std::chrono::seconds(2);
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::SaveStrategy CloudServiceImpl::STRATEGY_SAVERS[Strategy::STRATEGY_BUTT] = {
     &CloudServiceImpl::SaveNetworkStrategy
@@ -2185,43 +2186,59 @@ void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
 {
     auto &syncFinishedEvent = static_cast<const CloudSyncFinishedEvent &>(event);
     auto &storeInfo = syncFinishedEvent.GetStoreInfo();
-    auto bundleName = storeInfo.bundleName;
-    auto user = storeInfo.user;
-    auto storeId = storeInfo.storeName;
+    std::string bundleName = storeInfo.bundleName;
+    int32_t user = storeInfo.user;
+    std::string storeId = storeInfo.storeName;
     auto &syncInfo = syncFinishedEvent.GetSyncInfo();
 
-    ZLOGI("OnSyncInfoChanged: bundleName=%{public}s, user=%{public}d, storeId=%{public}s, code=%{public}d",
-        bundleName.c_str(), user, storeId.c_str(), syncInfo.code);
+    ZLOGI("OnSyncInfoChanged: bundleName=%{public}s, user=%{public}d, storeId=%{public}s", bundleName.c_str(), user,
+        Anonymous::Change(storeId).c_str());
 
     std::string bundleKey = bundleName + "_" + std::to_string(user);
-    std::lock_guard<std::mutex> lock(subscribeMutex_);
-    auto typeIt = subscribes_.find(CloudSubscribeType::SYNC_INFO_CHANGED);
-    if (typeIt == subscribes_.end()) {
-        ZLOGD("No SYNC_INFO_CHANGED subscribers");
-        return;
+    std::vector<uint32_t> tokenIds;
+    {
+        std::lock_guard<std::mutex> lock(subscribeMutex_);
+        auto typeIt = subscribes_.find(CloudSubscribeType::SYNC_INFO_CHANGED);
+        if (typeIt == subscribes_.end()) {
+            return;
+        }
+        auto subIt = typeIt->second.find(bundleKey);
+        if (subIt == typeIt->second.end()) {
+            return;
+        }
+        tokenIds = subIt->second;
     }
 
-    auto subIt = typeIt->second.find(bundleKey);
-    if (subIt == typeIt->second.end()) {
-        ZLOGD("No subscriber for bundleKey=%{public}s", bundleKey.c_str());
-        return;
+    CloudSyncInfo cloudSyncInfo{ syncInfo.startTime, syncInfo.finishTime, syncInfo.code, syncInfo.syncStatus };
+
+    std::lock_guard<std::mutex> lock(notifyMutex_);
+    for (const auto &tokenId : tokenIds) {
+        pendingNotifies_[tokenId][bundleName][storeId] = cloudSyncInfo;
     }
 
-    CloudSyncInfo cloudSyncInfo;
-    cloudSyncInfo.startTime = syncInfo.startTime;
-    cloudSyncInfo.finishTime = syncInfo.finishTime;
-    cloudSyncInfo.code = syncInfo.code;
-    cloudSyncInfo.syncStatus = syncInfo.syncStatus;
-    auto &tokenList = subIt->second;
-    for (const auto &tokenId : tokenList) {
+    if (notifyTaskId_ != ExecutorPool::INVALID_TASK_ID) {
+        return;
+    }
+    notifyTaskId_ = executor_->Schedule(NOTIFY_DELAY, [this]() { ExecuteBatchNotify(); });
+}
+
+void CloudServiceImpl::ExecuteBatchNotify()
+{
+    std::map<uint32_t, BatchQueryLastResults> tasks;
+    {
+        std::lock_guard<std::mutex> lock(notifyMutex_);
+        tasks = std::move(pendingNotifies_);
+        pendingNotifies_.clear();
+        notifyTaskId_ = ExecutorPool::INVALID_TASK_ID;
+    }
+    for (const auto &[tokenId, data] : tasks) {
         auto agentIt = syncAgents_.Find(tokenId);
         if (!agentIt.first || agentIt.second.notifier_ == nullptr) {
             ZLOGW("No notifier for tokenId=%{public}x", tokenId);
             continue;
         }
-        agentIt.second.notifier_->OnSyncInfoNotify(bundleName, storeId, cloudSyncInfo);
-        ZLOGI("Notified tokenId=%{public}x, bundleName=%{public}s, storeId=%{public}s", tokenId, bundleName.c_str(),
-            storeId.c_str());
+        agentIt.second.notifier_->OnSyncInfoNotify(data);
+        ZLOGI("Notified tokenId=%{public}x, bundleCount=%{public}zu", tokenId, data.size());
     }
 }
 } // namespace OHOS::CloudData

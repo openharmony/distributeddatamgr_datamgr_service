@@ -192,6 +192,7 @@ private:
     void CloudShare(const Event &event);
     void DoSync(const Event &event);
     void OnSyncInfoChanged(const Event &event);
+    void ExecuteBatchNotify();
 
     Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
@@ -245,6 +246,10 @@ private:
 
     std::mutex subscribeMutex_;
     std::map<CloudSubscribeType, std::map<std::string, std::vector<uint32_t>>> subscribes_;
+
+    std::mutex notifyMutex_;
+    std::map<uint32_t, BatchQueryLastResults> pendingNotifies_;
+    TaskId notifyTaskId_ = ExecutorPool::INVALID_TASK_ID;
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;

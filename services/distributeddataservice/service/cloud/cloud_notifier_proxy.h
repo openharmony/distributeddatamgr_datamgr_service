@@ -33,8 +33,7 @@ public:
     virtual ~CloudNotifierProxy() noexcept;
 
     int32_t OnComplete(uint32_t seqNum, DistributedRdb::Details &&result) override;
-    int32_t OnSyncInfoNotify(
-        const std::string &bundleName, const std::string &storeId, const CloudSyncInfo &syncInfo) override;
+    int32_t OnSyncInfoNotify(const BatchQueryLastResults &data) override;
 
 private:
     static inline BrokerDelegator<CloudNotifierProxy> delegator_;
