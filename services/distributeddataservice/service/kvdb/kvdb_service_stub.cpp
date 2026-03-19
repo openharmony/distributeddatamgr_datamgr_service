@@ -51,6 +51,7 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnUnsubscribeSwitchData,
     &KVDBServiceStub::OnClose,
     &KVDBServiceStub::OnRemoveDeviceData,
+    &KVDBServiceStub::OnDeleteEx,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
@@ -181,13 +182,7 @@ int32_t KVDBServiceStub::OnDelete(const AppId &appId, const StoreId &storeId, Me
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    Options options;
-    if (!ITypesUtil::Unmarshal(data, options)) {
-        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
-              Anonymous::Change(storeId.storeId).c_str());
-        return IPC_STUB_INVALID_DATA_ERR;
-    }
-    int32_t status = Delete(appId, storeId, subUser, options);
+    int32_t status = Delete(appId, storeId, subUser);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
@@ -589,6 +584,24 @@ int32_t KVDBServiceStub::OnRemoveDeviceData(const AppId &appId, const StoreId &s
     int32_t status = RemoveDeviceData(appId, storeId, subUser, device);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s", status, appId.appId.c_str());
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return ERR_NONE;
+}
+
+int32_t KVDBServiceStub::OnDeleteEx(const AppId &appId, const StoreId &storeId, MessageParcel &data,
+    MessageParcel &reply)
+{
+    Options options;
+    if (!ITypesUtil::Unmarshal(data, options)) {
+        ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+              Anonymous::Change(storeId.storeId).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    int32_t status = Delete(appId, storeId, options);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return ERR_NONE;

@@ -182,9 +182,42 @@ Status KVDBServiceImpl::GetStoreIds(const AppId &appId, int32_t subUser, std::ve
     return SUCCESS;
 }
 
-Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32_t subUser, const Options &options)
+Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
+    if (metaData.instanceId < 0) {
+        return ILLEGAL_STATE;
+    }
+    syncAgents_.ComputeIfPresent(metaData.tokenId, [&appId, &storeId](auto &key, SyncAgent &syncAgent) {
+        if (syncAgent.pid_ != IPCSkeleton::GetCallingPid()) {
+            ZLOGW("agent already changed! old pid:%{public}d new pid:%{public}d appId:%{public}s",
+                IPCSkeleton::GetCallingPid(), syncAgent.pid_, appId.appId.c_str());
+            return true;
+        }
+        syncAgent.delayTimes_.erase(storeId);
+        return true;
+    });
+    StoreMetaMapping storeMetaMapping(metaData);
+    MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetKeyWithoutPath());
+    MetaDataManager::GetInstance().DelMeta(metaData.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetStrategyKey());
+    MetaDataManager::GetInstance().DelMeta(metaData.GetBackupSecretKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetAutoLaunchKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetDebugInfoKey(), true);
+    MetaDataManager::GetInstance().DelMeta(metaData.GetCloneSecretKey(), true);
+    PermitDelegate::GetInstance().DelCache(metaData.GetKeyWithoutPath());
+    AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir, storeId);
+    ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
+        Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
+    return SUCCESS;
+}
+
+Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, const Options &options)
+{
+    StoreMetaData metaData = GetStoreMetaData(appId, storeId, options.subUser);
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }

@@ -48,7 +48,8 @@ public:
     Status BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options) override;
     Status AfterCreate(const AppId &appId, const StoreId &storeId, const Options &options,
         const std::vector<uint8_t> &password) override;
-    Status Delete(const AppId &appId, const StoreId &storeId, int32_t subUser, const Options &options = {}) override;
+    Status Delete(const AppId &appId, const StoreId &storeId, int32_t subUser) override;
+    Status Delete(const AppId &appId, const StoreId &storeId, const Options &options) override;
     Status Close(const AppId &appId, const StoreId &storeId, int32_t subUser) override;
     Status CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
     Status Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo) override;
