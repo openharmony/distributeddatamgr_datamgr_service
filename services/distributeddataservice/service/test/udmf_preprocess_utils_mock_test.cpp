@@ -170,7 +170,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, FillRuntimeInfo001, TestSize.Level1)
     PreProcessUtils preProcessUtils;
     auto ret = preProcessUtils.FillRuntimeInfo(data, option);
     EXPECT_EQ(ret, E_OK);
-    EXPECT_EQ(data.GetRuntime()->permissionVersion, PERMISSION_VERSION_CURRENT);
+    EXPECT_EQ(data.GetRuntime()->permissionPolicyMode, PERMISSION_POLICY_MODE_MASK);
 }
 
 /**
@@ -198,6 +198,6 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, FillDelayRuntimeInfo001, TestSize.Level1)
     auto runtime = data.GetRuntime();
     EXPECT_EQ(runtime->recordTotalNum, dataLoadInfo.recordCount);
     EXPECT_EQ(runtime->dataStatus, DataStatus::WAITING);
-    EXPECT_EQ(runtime->permissionVersion, PERMISSION_VERSION_CURRENT);
+    EXPECT_EQ(runtime->permissionPolicyMode, PERMISSION_POLICY_MODE_MASK);
 }
 }; // namespace UDMF

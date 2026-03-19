@@ -60,7 +60,7 @@ int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option
     runtime.tokenId = option.tokenId;
     runtime.visibility = option.visibility;
     runtime.appId = "appId";
-    runtime.permissionVersion = PERMISSION_VERSION_CURRENT;
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_MASK;
     data.SetRuntime(runtime);
     return E_OK;
 }
@@ -83,7 +83,7 @@ int32_t PreProcessUtils::FillDelayRuntimeInfo(UnifiedData &data, CustomOption &o
     runtime.visibility = option.visibility;
     runtime.appId = "appId";
     runtime.dataStatus = DataStatus::WAITING;
-    runtime.permissionVersion = PERMISSION_VERSION_CURRENT;
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_MASK;
     data.SetRuntime(runtime);
     return E_OK;
 }

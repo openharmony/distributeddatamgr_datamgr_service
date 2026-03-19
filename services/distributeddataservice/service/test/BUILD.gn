@@ -1924,6 +1924,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2075,6 +2076,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2184,6 +2186,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/test/mock/access_token_mock.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
     "udmf_preprocess_utils_mock_test.cpp",
   ]
@@ -2870,6 +2873,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
     "${data_service_path}/service/udmf/permission/data_checker.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2964,6 +2968,7 @@ ohos_unittest("UdmfObserverTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
     "${data_service_path}/service/udmf/permission/data_checker.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",

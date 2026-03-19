@@ -445,7 +445,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris003, TestSize.Level1)
 {
     UnifiedData data;
     Runtime runtime;
-    runtime.permissionVersion = PERMISSION_VERSION_CURRENT;
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_MASK;
     data.SetRuntime(runtime);
     std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
     std::map<std::string, uint32_t> permissionUri;
@@ -462,7 +462,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris003, TestSize.Level1)
     EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY, permission));
     EXPECT_EQ(permission, static_cast<int32_t>(PermissionPolicy::READ_WRITE));
     int32_t permissionExt = 0;
-    EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY_EXT, permissionExt));
+    EXPECT_TRUE(obj->GetValue(URI_PERMISSION_MASK, permissionExt));
     EXPECT_EQ(permissionExt, static_cast<int32_t>(UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG));
 }
 
@@ -476,7 +476,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris005, TestSize.Level1)
 {
     UnifiedData data;
     Runtime runtime;
-    runtime.permissionVersion = PERMISSION_VERSION_CURRENT;
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_MASK;
     data.SetRuntime(runtime);
     auto properties = data.GetProperties();
     properties->uriAuthorizationPolicies = { UriPermission::READ };
@@ -497,7 +497,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris005, TestSize.Level1)
     EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY, permission));
     EXPECT_EQ(permission, static_cast<int32_t>(PermissionPolicy::ONLY_READ));
     int32_t permissionExt = 0;
-    EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY_EXT, permissionExt));
+    EXPECT_TRUE(obj->GetValue(URI_PERMISSION_MASK, permissionExt));
     EXPECT_EQ(permissionExt, static_cast<int32_t>(UriPermissionUtil::READ_FLAG));
 }
 
@@ -511,7 +511,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris004, TestSize.Level1)
 {
     UnifiedData data;
     Runtime runtime;
-    runtime.permissionVersion = PERMISSION_VERSION_LEGACY;
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_LEGACY;
     data.SetRuntime(runtime);
     std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
     std::map<std::string, uint32_t> permissionUri;
@@ -528,7 +528,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris004, TestSize.Level1)
     EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY, permission));
     EXPECT_EQ(permission, static_cast<int32_t>(PermissionPolicy::READ_WRITE));
     int32_t permissionExt = 0;
-    EXPECT_TRUE(obj->GetValue(PERMISSION_POLICY_EXT, permissionExt));
+    EXPECT_TRUE(obj->GetValue(URI_PERMISSION_MASK, permissionExt));
     EXPECT_EQ(permissionExt, static_cast<int32_t>(UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG));
 }
 

@@ -1163,11 +1163,12 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData001, TestSize.Level1)
 
     unifiedData.SetRuntime(runtime);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
-    std::vector<Uri> readUris;
-    std::vector<Uri> writeUris;
-    service.ProcessCrossDeviceData(tokenId, unifiedData, readUris, writeUris);
-    EXPECT_EQ(readUris.size(), 1);
-    EXPECT_EQ(writeUris.size(), 0);
+    std::map<unsigned int, std::vector<Uri>> grantUris;
+    service.ProcessCrossDeviceData(tokenId, unifiedData, grantUris);
+    EXPECT_EQ(grantUris[AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION].size(), 1);
+    EXPECT_EQ(grantUris.count(AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
+        AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION |
+        AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION), 0);
 }
 
 /**
@@ -1215,11 +1216,12 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData002, TestSize.Level1)
 
     unifiedData.SetRuntime(runtime);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
-    std::vector<Uri> readUris;
-    std::vector<Uri> writeUris;
-    service.ProcessCrossDeviceData(tokenId, unifiedData, readUris, writeUris);
-    EXPECT_EQ(readUris.size(), 0);
-    EXPECT_EQ(writeUris.size(), 1);
+    std::map<unsigned int, std::vector<Uri>> grantUris;
+    service.ProcessCrossDeviceData(tokenId, unifiedData, grantUris);
+    EXPECT_EQ(grantUris.count(AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION), 0);
+    EXPECT_EQ(grantUris[AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
+        AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION |
+        AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION].size(), 1);
 }
 
 /**
@@ -1242,9 +1244,8 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData003, TestSize.Level1)
 
     unifiedData.SetRuntime(runtime);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
-    std::vector<Uri> readUris;
-    std::vector<Uri> writeUris;
-    auto result = service.ProcessCrossDeviceData(tokenId, unifiedData, readUris, writeUris);
+    std::map<unsigned int, std::vector<Uri>> grantUris;
+    auto result = service.ProcessCrossDeviceData(tokenId, unifiedData, grantUris);
     EXPECT_EQ(result, E_OK);
 }
 
