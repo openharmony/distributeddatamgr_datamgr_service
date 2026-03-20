@@ -452,25 +452,6 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest003, TestSize.Level0)
     EXPECT_EQ(status, DistributedKv::ILLEGAL_STATE);
 }
 
-/**
-* @tc.name: DeleteTest004
-* @tc.desc: Delete Test
-* @tc.type: FUNC
-* @tc.author:
-*/
-HWTEST_F(KvdbServiceImplTest, DeleteTest004, TestSize.Level0)
-{
-    ZLOGI("DeleteTest004 start");
-    AppId appId = { "ohos.kvdbserviceimpl.test" };
-    StoreId storeId = { "meta_test_storeid" };
-    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
-    syncAgent.pid_ = 1;
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto status = kvdbServiceImpl_->Delete(appId, storeId, 0);
-    ZLOGI("DeleteTest002 status = :%{public}d", status);
-    EXPECT_NE(tokenId, syncAgent.pid_);
-    ASSERT_EQ(status, Status::SUCCESS);
-}
 
 /**
 * @tc.name: DeleteTest005
@@ -492,7 +473,7 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest005, TestSize.Level0)
 * @tc.name: DeleteTest006
 * @tc.desc: Delete function test.
 */
-HWTEST_F(KvdbServiceImplTest, DeleteTest006, TestSize.Level0)
+HWTEST_F(KvdbServiceImplTest, DeleteTest005, TestSize.Level0)
 {
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
     .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
@@ -1633,6 +1614,42 @@ HWTEST_F(KvdbServiceImplTest, SubscribeSwitchData, TestSize.Level0)
     kvdbServiceImpl_->syncAgents_.Insert(IPCSkeleton::GetCallingTokenID(), syncAgent);
     EXPECT_EQ(tokenId, syncAgent.pid_);
     status = kvdbServiceImpl_->UnregServiceNotifier(appId);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: DeleteTest004
+* @tc.desc: Delete Test
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteTest004, TestSize.Level0)
+{
+    ZLOGI("DeleteTest004 start");
+    AppId appId = { "ohos.kvdbserviceimpl.test" };
+    StoreId storeId = { "meta_test_storeid" };
+    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
+    syncAgent.pid_ = 1;
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto status = kvdbServiceImpl_->Delete(appId, storeId, 0);
+    ZLOGI("DeleteTest002 status = :%{public}d", status);
+    EXPECT_NE(tokenId, syncAgent.pid_);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: DeleteTest005
+* @tc.desc: DeleteEx Test
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteTest005, TestSize.Level0)
+{
+    Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status1, Status::SUCCESS);
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+    .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
+    .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
+    auto status = kvdbServiceImpl_->Delete(appId, storeId, create);
     ASSERT_EQ(status, Status::SUCCESS);
 }
 } // namespace DistributedDataTest
