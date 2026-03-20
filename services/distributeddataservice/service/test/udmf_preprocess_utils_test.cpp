@@ -310,15 +310,17 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileType001, TestSize.Level1)
     record3->AddEntry("general.file-uri", 1);
     std::vector<std::shared_ptr<UnifiedRecord>> records = { record, record1, record2, record3 };
     std::vector<std::string> uris;
-    PreProcessUtils::ProcessFileType(records, [&uris](std::shared_ptr<Object> obj) {
-        std::string oriUri;
-        obj->GetValue(ORI_URI, oriUri);
-        if (oriUri.empty()) {
-            return false;
-        }
-        uris.push_back(oriUri);
-        return true;
-    });
+    for (const auto &item : records) {
+        PreProcessUtils::ProcessFileType(item, [&uris](std::shared_ptr<Object> obj) {
+            std::string oriUri;
+            obj->GetValue(ORI_URI, oriUri);
+            if (oriUri.empty()) {
+                return false;
+            }
+            uris.push_back(oriUri);
+            return true;
+        });
+    }
     EXPECT_EQ(uris.size(), 1);
 }
 

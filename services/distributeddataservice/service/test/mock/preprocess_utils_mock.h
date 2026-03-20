@@ -36,10 +36,10 @@ public:
     static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);
     static bool IsNetworkingEnabled();
     static std::vector<std::string> GetRemoteDeviceIds();
-    static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
+    static void ProcessFileType(const std::shared_ptr<UnifiedRecord> &record,
         std::function<bool(std::shared_ptr<Object>)> callback);
     static void ClearHtmlDfsUris(UnifiedData &data);
-    static void ProcessFileAuthorization(bool &hasError, uint32_t tokenId, UnifiedData &data, bool isLocal,
+    static void ProcessFileAuthorization(bool &hasError, UnifiedData &data, bool isLocal,
         std::map<std::string, unsigned int> &uriPermissions);
     static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
         bool isLocal, std::vector<std::string> &uris);

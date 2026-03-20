@@ -149,7 +149,7 @@ std::vector<std::string> PreProcessUtils::GetRemoteDeviceIds()
     return deviceIds;
 }
 
-void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
+void PreProcessUtils::ProcessFileType(const std::shared_ptr<UnifiedRecord> &record,
     std::function<bool(std::shared_ptr<Object>)> callback)
 {
     return;
@@ -166,7 +166,7 @@ void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
     return;
 }
 
-void PreProcessUtils::ProcessFileAuthorization(bool &hasError, uint32_t tokenId, UnifiedData &data, bool isLocal,
+void PreProcessUtils::ProcessFileAuthorization(bool &hasError, UnifiedData &data, bool isLocal,
     std::map<std::string, unsigned int> &uriPermissions)
 {
     return;

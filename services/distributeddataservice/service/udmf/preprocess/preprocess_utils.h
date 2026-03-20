@@ -36,10 +36,10 @@ public:
     static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);
     static bool IsNetworkingEnabled();
     static std::vector<std::string> GetRemoteDeviceIds();
-    static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
+    static void ProcessFileType(const std::shared_ptr<UnifiedRecord> &record,
         std::function<bool(std::shared_ptr<Object>)> callback);
     static void ClearHtmlDfsUris(UnifiedData &data);
-    static void ProcessFileAuthorization(bool &hasError, uint32_t tokenId, UnifiedData &data, bool isLocal,
+    static void ProcessFileAuthorization(bool &hasError, UnifiedData &data, bool isLocal,
         std::map<std::string, unsigned int> &uriPermissions);
     static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
         bool isLocal, std::vector<std::string> &uris);
@@ -59,6 +59,18 @@ private:
     static void FillUris(UnifiedData &data,
         std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
         std::map<std::string, uint32_t> &permissionUris);
+    static void FillHtmlEntry(const std::shared_ptr<UnifiedRecord> &record,
+        const std::shared_ptr<UnifiedDataProperties> &properties,
+        std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
+        std::map<std::string, uint32_t> &permissionUris);
+    static void FillFileEntry(const std::shared_ptr<UnifiedRecord> &record,
+        const std::shared_ptr<UnifiedDataProperties> &properties,
+        std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
+        std::map<std::string, uint32_t> &permissionUris);
+    static void ProcessHtmlEntryAuthorization(const std::shared_ptr<UnifiedRecord> &record, bool isLocal,
+        int32_t permissionPolicyMode, std::map<std::string, uint32_t> &strUris);
+    static void ProcessFileEntryAuthorization(const std::shared_ptr<UnifiedRecord> &record, bool isLocal,
+        int32_t permissionPolicyMode, bool &hasError, std::map<std::string, uint32_t> &strUris);
     static int32_t ReadCheckUri(uint32_t tokenId, UnifiedData &data, const std::vector<std::string> &uris,
         bool readOnly = false);
     static bool ValidateUriScheme(Uri &uri, bool &hasError);

@@ -400,7 +400,7 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &u
     bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
     bool hasError = false;
     std::map<std::string, unsigned int> uriPermissions;
-    PreProcessUtils::ProcessFileAuthorization(hasError, tokenId, unifiedData, isLocal, uriPermissions);
+    PreProcessUtils::ProcessFileAuthorization(hasError, unifiedData, isLocal, uriPermissions);
     if (hasError) {
         ZLOGE("ProcessFileAuthorization fail");
         return E_INVALID_PARAMETERS;
