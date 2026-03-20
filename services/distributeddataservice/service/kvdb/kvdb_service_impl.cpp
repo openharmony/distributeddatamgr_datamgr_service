@@ -221,9 +221,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, const
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }
-    metaData.storeType = options.kvStoreType;
-    metaData.area = options.area;
-    metaData.dataDir = options.isCustomDir ? options.baseDir : DirectoryManager::GetInstance().GetStorePath(metaData);
+    AddOptions(options, metaData);
     syncAgents_.ComputeIfPresent(metaData.tokenId, [&appId, &storeId](auto &key, SyncAgent &syncAgent) {
         if (syncAgent.pid_ != IPCSkeleton::GetCallingPid()) {
             ZLOGW("agent already changed! old pid:%{public}d new pid:%{public}d appId:%{public}s",
