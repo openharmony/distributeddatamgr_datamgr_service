@@ -431,5 +431,37 @@ HWTEST_F(KVDBServiceStubTest, OnRemoveDeviceData, TestSize.Level1)
     auto status = kvdbServiceStub->OnRemoveDeviceData(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
+
+/**
+ * @tc.name: OnDelete
+ * @tc.desc: Test OnDelete
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnDelete, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    AppId appId = {"appId"};
+    StoreId storeId = {"storeId"};
+    auto status = kvdbServiceStub->OnDelete(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnDeleteEx
+ * @tc.desc: Test OnDeleteEx
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnDeleteEx, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    AppId appId = {"appId"};
+    StoreId storeId = {"storeId"};
+    auto status = kvdbServiceStub->OnDeleteEx(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

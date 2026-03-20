@@ -1603,5 +1603,43 @@ HWTEST_F(KvdbServiceImplTest, SubscribeSwitchData, TestSize.Level0)
     status = kvdbServiceImpl_->UnregServiceNotifier(appId);
     ASSERT_EQ(status, Status::SUCCESS);
 }
+
+/**
+* @tc.name: DeleteExTest001
+* @tc.desc: DeleteEx Test
+* @tc.type: FUNC
+* @tc.author: wangbin
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteExTest001, TestSize.Level0)
+{
+    ZLOGI("DeleteExTest001 start");
+    Status status1 = manager.GetSingleKvStore(create, appId, storeId, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status1, Status::SUCCESS);
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
+    auto status = kvdbServiceImpl_->DeleteEx(appId, storeId, create);
+    ZLOGI("DeleteExTest001 status = :%{public}d", status);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: DeleteTest002
+* @tc.desc: Delete function test.
+* @tc.type: FUNC
+* @tc.author: wangbin
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteTest002, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
+        .WillOnce(testing::Return(-1))
+        .WillRepeatedly(testing::Return(-1));
+    int32_t status = kvdbServiceImpl_->Delete(appId, storeId, create);
+    EXPECT_EQ(status, DistributedKv::ILLEGAL_STATE);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
