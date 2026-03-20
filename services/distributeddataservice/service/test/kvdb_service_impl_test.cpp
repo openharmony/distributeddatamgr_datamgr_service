@@ -492,7 +492,7 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest005, TestSize.Level0)
 * @tc.name: DeleteTest006
 * @tc.desc: Delete function test.
 */
-HWTEST_F(KvdbServiceImplTest, DeleteTest005, TestSize.Level0)
+HWTEST_F(KvdbServiceImplTest, DeleteTest006, TestSize.Level0)
 {
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
     .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_HAP))
