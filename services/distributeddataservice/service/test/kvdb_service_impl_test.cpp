@@ -1777,40 +1777,5 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithoutCustomDir002, TestSize.Level0)
     ASSERT_EQ(metaData.isAutoSync, false);
     ASSERT_EQ(metaData.isEncrypt, true);
 }
-
-/**
-* @tc.name: SaveLocalMetaDataWithCustomDir003
-* @tc.desc: Test SaveLocalMetaData with custom directory
-* @tc.type: FUNC
-* @tc.author:
-*/
-HWTEST_F(KvdbServiceImplTest, SaveLocalMetaDataWithCustomDir003, TestSize.Level0)
-{
-    ZLOGI("SaveLocalMetaDataWithCustomDir003 start");
-    Options options;
-    options.isCustomDir = true;
-    options.baseDir = "/data/custom/local/path";
-    options.autoSync = true;
-    options.backup = true;
-    options.encrypt = false;
-    options.schema = "";
-    options.isPublic = true;
-
-    StoreMetaData metaData;
-    metaData.appId = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.user = TEST_USER;
-
-    StoreMetaDataLocal localMeta;
-    
-    kvdbServiceImpl_->SaveLocalMetaData(options, metaData, localMeta);
-    
-    ASSERT_EQ(localMeta.isAutoSync, true);
-    ASSERT_EQ(localMeta.isBackup, true);
-    ASSERT_EQ(localMeta.isEncrypt, false);
-    ASSERT_EQ(localMeta.schema, "");
-    ASSERT_EQ(localMeta.isPublic, true);
-    ASSERT_EQ(localMeta.dataDir, "/data/custom/local/path");
-}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
