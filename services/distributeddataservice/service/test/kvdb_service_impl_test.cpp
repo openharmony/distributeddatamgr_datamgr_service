@@ -1639,5 +1639,451 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest006, TestSize.Level0)
     auto status = kvdbServiceImpl_->Delete(appId, storeId, create);
     ASSERT_EQ(status, Status::SUCCESS);
 }
+
+/**
+* @tc.name: DeleteTest007
+* @tc.desc: Delete with custom directory
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteTest007, TestSize.Level0)
+{
+    ZLOGI("DeleteTest007 start");
+    Options deleteOptions;
+    deleteOptions.isCustomDir = true;
+    deleteOptions.baseDir = "/data/custom/test";
+    deleteOptions.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    deleteOptions.area = OHOS::DistributedKv::EL1;
+    deleteOptions.subUser = 0;
+
+    std::vector<uint8_t> password{};
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, deleteOptions);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, deleteOptions, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    status = kvdbServiceImpl_->Delete(appId, storeId, deleteOptions);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: DeleteTest008
+* @tc.desc: Delete with non-custom directory
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteTest008, TestSize.Level0)
+{
+    ZLOGI("DeleteTest008 start");
+    Options deleteOptions;
+    deleteOptions.isCustomDir = false;
+    deleteOptions.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    deleteOptions.area = OHOS::DistributedKv::EL1;
+    deleteOptions.subUser = 0;
+
+    std::vector<uint8_t> password{};
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, deleteOptions);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, deleteOptions, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    status = kvdbServiceImpl_->Delete(appId, storeId, deleteOptions);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: DeleteTest009
+* @tc.desc: Delete with invalid instanceId
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteTest009, TestSize.Level0)
+{
+    ZLOGI("DeleteTest009 start");
+    Options deleteOptions;
+    deleteOptions.isCustomDir = false;
+    deleteOptions.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    deleteOptions.area = OHOS::DistributedKv::EL1;
+    deleteOptions.subUser = 0;
+    
+    auto status = kvdbServiceImpl_->Delete(appId, storeId, deleteOptions);
+    ASSERT_EQ(status, Status::ILLEGAL_STATE);
+}
+
+/**
+* @tc.name: AddOptionsWithCustomDir001
+* @tc.desc: Test AddOptions with custom directory
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDir001, TestSize.Level0)
+{
+    ZLOGI("AddOptionsWithCustomDir001 start");
+    Options options;
+    options.isCustomDir = true;
+    options.baseDir = "/data/custom/test/path";
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = OHOS::DistributedKv::EL1;
+    options.subUser = 0;
+    options.hapName = "test.hap";
+    options.autoSync = true;
+    options.encrypt = false;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+    
+    kvdbServiceImpl_->AddOptions(options, metaData);
+    
+    ASSERT_EQ(metaData.customDir, "");
+    ASSERT_EQ(metaData.dataDir, "/data/custom/test/path");
+    ASSERT_EQ(metaData.hapName, "test.hap");
+    ASSERT_EQ(metaData.isAutoSync, true);
+    ASSERT_EQ(metaData.isEncrypt, false);
+}
+
+/**
+* @tc.name: AddOptionsWithoutCustomDir002
+* @tc.desc: Test AddOptions without custom directory
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithoutCustomDir002, TestSize.Level0)
+{
+    ZLOGI("AddOptionsWithoutCustomDir002 start");
+    Options options;
+    options.isCustomDir = false;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = OHOS::DistributedKv::EL1;
+    options.subUser = 0;
+    options.hapName = "test.hap";
+    options.autoSync = false;
+    options.encrypt = true;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+    
+    kvdbServiceImpl_->AddOptions(options, metaData);
+    
+    ASSERT_EQ(metaData.customDir, "");
+    ASSERT_TRUE(metaData.dataDir.find("/data/service/") != std::string::npos);
+    ASSERT_EQ(metaData.hapName, "test.hap");
+    ASSERT_EQ(metaData.isAutoSync, false);
+    ASSERT_EQ(metaData.isEncrypt, true);
+}
+
+/**
+* @tc.name: SaveLocalMetaDataWithCustomDir003
+* @tc.desc: Test SaveLocalMetaData with custom directory
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, SaveLocalMetaDataWithCustomDir003, TestSize.Level0)
+{
+    ZLOGI("SaveLocalMetaDataWithCustomDir003 start");
+    Options options;
+    options.isCustomDir = true;
+    options.baseDir = "/data/custom/local/path";
+    options.autoSync = true;
+    options.backup = true;
+    options.encrypt = false;
+    options.schema = "";
+    options.isPublic = true;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+
+    StoreMetaDataLocal localMeta;
+    
+    kvdbServiceImpl_->SaveLocalMetaData(options, metaData, localMeta);
+    
+    ASSERT_EQ(localMeta.isAutoSync, true);
+    ASSERT_EQ(localMeta.isBackup, true);
+    ASSERT_EQ(localMeta.isEncrypt, false);
+    ASSERT_EQ(localMeta.schema, "");
+    ASSERT_EQ(localMeta.isPublic, true);
+    ASSERT_EQ(localMeta.dataDir, "/data/custom/local/path");
+}
+
+/**
+* @tc.name: SaveLocalMetaDataWithoutCustomDir004
+* @tc.desc: Test SaveLocalMetaData without custom directory
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, SaveLocalMetaDataWithoutCustomDir004, TestSize.Level0)
+{
+    ZLOGI("SaveLocalMetaDataWithoutCustomDir004 start");
+    Options options;
+    options.isCustomDir = false;
+    options.autoSync = false;
+    options.backup = false;
+    options.encrypt = true;
+    options.schema = "test_schema";
+    options.isPublic = false;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+
+    StoreMetaDataLocal localMeta;
+    
+    kvdbServiceImpl_->SaveLocalMetaData(options, metaData, localMeta);
+    
+    ASSERT_EQ(localMeta.isAutoSync, false);
+    ASSERT_EQ(localMeta.isBackup, false);
+    ASSERT_EQ(localMeta.isEncrypt, true);
+    ASSERT_EQ(localMeta.schema, "test_schema");
+    ASSERT_EQ(localMeta.isPublic, false);
+    ASSERT_TRUE(localMeta.dataDir.find("/data/service/") != std::string::npos);
+}
+
+/**
+* @tc.name: DeleteInnerWithSyncAgent001
+* @tc.desc: Test DeleteInner with existing sync agent
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteInnerWithSyncAgent001, TestSize.Level0)
+{
+    ZLOGI("DeleteInnerWithSyncAgent001 start");
+    
+    Options options;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = OHOS::DistributedKv::EL1;
+    options.subUser = 0;
+
+    std::vector<uint8_t> password{};
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, options);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, options, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+
+    StoreMetaData metaData = kvdbServiceImpl_->LoadStoreMetaData(appId, storeId, 0);
+    ASSERT_GE(metaData.instanceId, 0);
+
+    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
+    syncAgent.pid_ = IPCSkeleton::GetCallingPid();
+    syncAgent.appId_ = appId;
+    syncAgent.delayTimes_[storeId] = 100;
+    kvdbServiceImpl_->syncAgents_.Insert(metaData.tokenId, syncAgent);
+    
+    kvdbServiceImpl_->DeleteInner(appId, storeId, metaData);
+    
+    auto [found, agent] = kvdbServiceImpl_->syncAgents_.Find(metaData.tokenId);
+    if (found) {
+        ASSERT_EQ(agent.delayTimes_.count(storeId), 0);
+    }
+    
+    status = kvdbServiceImpl_->Delete(appId, storeId, 0);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: DeleteInnerWithDifferentPid002
+* @tc.desc: Test DeleteInner with different pid in sync agent
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DeleteInnerWithDifferentPid002, TestSize.Level0)
+{
+    ZLOGI("DeleteInnerWithDifferentPid002 start");
+    
+    Options options;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = OHOS::DistributedKv::EL1;
+    options.subUser = 0;
+
+    std::vector<uint8_t> password{};
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, options);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, options, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+
+    StoreMetaData metaData = kvdbServiceImpl_->LoadStoreMetaData(appId, storeId, 0);
+    ASSERT_GE(metaData.instanceId, 0);
+
+    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
+    syncAgent.pid_ = 9999;
+    syncAgent.appId_ = appId;
+    syncAgent.delayTimes_[storeId] = 200;
+    kvdbServiceImpl_->syncAgents_.Insert(metaData.tokenId, syncAgent);
+    
+    kvdbServiceImpl_->DeleteInner(appId, storeId, metaData);
+    
+    status = kvdbServiceImpl_->Delete(appId, storeId, 0);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: BackupInfoWithCustomDirTest001
+* @tc.desc: Test GetBackupPassword with BackupInfo using custom directory
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, BackupInfoWithCustomDirTest001, TestSize.Level0)
+{
+    ZLOGI("BackupInfoWithCustomDirTest001 start");
+    
+    Options options;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = OHOS::DistributedKv::EL1;
+    options.subUser = 0;
+    options.encrypt = false;
+
+    std::vector<uint8_t> password{};
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, options);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, options, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+
+    StoreMetaData metaData = kvdbServiceImpl_->LoadStoreMetaData(appId, storeId, 0);
+    ASSERT_GE(metaData.instanceId, 0);
+
+    BackupInfo backupInfo;
+    backupInfo.name = "test_backup";
+    backupInfo.baseDir = "/data/custom/backup";
+    backupInfo.isCustomDir = true;
+    backupInfo.appId = appId.appId;
+    backupInfo.storeId = storeId.storeId;
+    backupInfo.subUser = 0;
+
+    std::vector<std::vector<uint8_t>> passwords;
+    status = kvdbServiceImpl_->GetBackupPassword(appId, storeId, backupInfo, passwords,
+        DistributedKv::KVDBService::PasswordType::SECRET_KEY);
+    
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    kvdbServiceImpl_->Delete(appId, storeId, 0);
+}
+
+/**
+* @tc.name: BackupInfoWithoutCustomDirTest002
+* @tc.desc: Test GetBackupPassword with BackupInfo using non-custom directory
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, BackupInfoWithoutCustomDirTest002, TestSize.Level0)
+{
+    ZLOGI("BackupInfoWithoutCustomDirTest002 start");
+    
+    Options options;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = OHOS::DistributedKv::EL1;
+    options.subUser = 0;
+    options.encrypt = false;
+
+    std::vector<uint8_t> password{};
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, options);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    status = kvdbServiceImpl_->AfterCreate(appId, storeId, options, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+
+    StoreMetaData metaData = kvdbServiceImpl_->LoadStoreMetaData(appId, storeId, 0);
+    ASSERT_GE(metaData.instanceId, 0);
+
+    BackupInfo backupInfo;
+    backupInfo.name = "test_backup";
+    backupInfo.baseDir = "";
+    backupInfo.isCustomDir = false;
+    backupInfo.appId = appId.appId;
+    backupInfo.storeId = storeId.storeId;
+    backupInfo.subUser = 0;
+
+    std::vector<std::vector<uint8_t>> passwords;
+    status = kvdbServiceImpl_->GetBackupPassword(appId, storeId, backupInfo, passwords,
+        DistributedKv::KVDBService::PasswordType::SECRET_KEY);
+    
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    kvdbServiceImpl_->Delete(appId, storeId, 0);
+}
+
+/**
+* @tc.name: AddOptionsWithMultipleOptions005
+* @tc.desc: Test AddOptions with various options set
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithMultipleOptions005, TestSize.Level0)
+{
+    ZLOGI("AddOptionsWithMultipleOptions005 start");
+    Options options;
+    options.isCustomDir = false;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = OHOS::DistributedKv::EL1;
+    options.subUser = 0;
+    options.hapName = "com.test.hap";
+    options.autoSync = true;
+    options.backup = false;
+    options.encrypt = true;
+    options.isNeedCompress = true;
+    options.securityLevel = OHOS::DistributedKv::S2;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+    
+    kvdbServiceImpl_->AddOptions(options, metaData);
+    
+    ASSERT_EQ(metaData.hapName, "com.test.hap");
+    ASSERT_EQ(metaData.isAutoSync, true);
+    ASSERT_EQ(metaData.isBackup, false);
+    ASSERT_EQ(metaData.isEncrypt, true);
+    ASSERT_EQ(metaData.isNeedCompress, true);
+    ASSERT_EQ(metaData.securityLevel, OHOS::DistributedKv::S2);
+    ASSERT_EQ(metaData.appType, "harmony");
+}
+
+/**
+* @tc.name: SaveLocalMetaDataWithPolicies006
+* @tc.desc: Test SaveLocalMetaData with sync policies
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, SaveLocalMetaDataWithPolicies006, TestSize.Level0)
+{
+    ZLOGI("SaveLocalMetaDataWithPolicies006 start");
+    Options options;
+    options.isCustomDir = false;
+    options.autoSync = true;
+    options.backup = false;
+    options.encrypt = false;
+    options.schema = "";
+    options.isPublic = false;
+    
+    PolicyValue policy1;
+    policy1.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_CHANGE;
+    options.policies.push_back(policy1);
+    
+    PolicyValue policy2;
+    policy2.type = OHOS::DistributedKv::PolicyType::IMMEDIATE_SYNC_ON_ONLINE;
+    options.policies.push_back(policy2);
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+
+    StoreMetaDataLocal localMeta;
+    
+    kvdbServiceImpl_->SaveLocalMetaData(options, metaData, localMeta);
+    
+    ASSERT_TRUE(localMeta.HasPolicy(OHOS::DistributedKv::IMMEDIATE_SYNC_ON_CHANGE));
+    ASSERT_TRUE(localMeta.HasPolicy(OHOS::DistributedKv::IMMEDIATE_SYNC_ON_ONLINE));
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
