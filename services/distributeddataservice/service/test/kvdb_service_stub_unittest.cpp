@@ -449,18 +449,18 @@ HWTEST_F(KVDBServiceStubTest, OnDelete, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnDeleteEx
- * @tc.desc: Test OnDeleteEx
+ * @tc.name: OnDeleteByOptions
+ * @tc.desc: Test OnDeleteByOptions
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(KVDBServiceStubTest, OnDeleteEx, TestSize.Level1)
+HWTEST_F(KVDBServiceStubTest, OnDeleteByOptions, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     AppId appId = {"appId"};
     StoreId storeId = {"storeId"};
-    auto status = kvdbServiceStub->OnDeleteEx(appId, storeId, data, reply);
+    auto status = kvdbServiceStub->OnDeleteByOptions(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 } // namespace DistributedDataTest

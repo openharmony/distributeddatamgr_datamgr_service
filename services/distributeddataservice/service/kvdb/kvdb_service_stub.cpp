@@ -589,7 +589,7 @@ int32_t KVDBServiceStub::OnRemoveDeviceData(const AppId &appId, const StoreId &s
     return ERR_NONE;
 }
 
-int32_t KVDBServiceStub::OnDeleteEx(const AppId &appId, const StoreId &storeId, MessageParcel &data,
+int32_t KVDBServiceStub::OnDeleteByOptions(const AppId &appId, const StoreId &storeId, MessageParcel &data,
     MessageParcel &reply)
 {
     Options options;
