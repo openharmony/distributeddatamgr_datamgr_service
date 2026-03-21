@@ -184,7 +184,7 @@ Status KVDBServiceImpl::GetStoreIds(const AppId &appId, int32_t subUser, std::ve
 
 Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32_t subUser)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, subUser);
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }
@@ -194,7 +194,7 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32
 
 Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, const Options &options)
 {
-    StoreMetaData metaData = GetStoreMetaData(appId, storeId, options.subUser);
+    StoreMetaData metaData = LoadStoreMetaData(appId, storeId, options.subUser);
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
     }

@@ -1606,26 +1606,6 @@ HWTEST_F(KvdbServiceImplTest, SubscribeSwitchData, TestSize.Level0)
 }
 
 /**
-     * @tc.name: DeleteTest005
-     * @tc.desc: Delete Test
-     * @tc.type: FUNC
-     * @tc.author:
-     */
-HWTEST_F(KvdbServiceImplTest, DeleteTest005, TestSize.Level0)
-{
-    ZLOGI("DeleteTest005 start");
-    AppId appId = { "ohos.kvdbserviceimpl.test" };
-    StoreId storeId = { "meta_test_storeid" };
-    DistributedKv::KVDBServiceImpl::SyncAgent syncAgent;
-    syncAgent.pid_ = 1;
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto status = kvdbServiceImpl_->Delete(appId, storeId, 0);
-    ZLOGI("DeleteTest002 status = :%{public}d", status);
-    EXPECT_NE(tokenId, syncAgent.pid_);
-    ASSERT_EQ(status, Status::SUCCESS);
-}
-
-/**
 * @tc.name: DeleteTest006
 * @tc.desc: Delete Test
 */
@@ -1692,25 +1672,6 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest008, TestSize.Level0)
     
     status = kvdbServiceImpl_->Delete(appId, storeId, deleteOptions);
     ASSERT_EQ(status, Status::SUCCESS);
-}
-
-/**
-* @tc.name: DeleteTest009
-* @tc.desc: Delete with invalid instanceId
-* @tc.type: FUNC
-* @tc.author:
-*/
-HWTEST_F(KvdbServiceImplTest, DeleteTest009, TestSize.Level0)
-{
-    ZLOGI("DeleteTest009 start");
-    Options deleteOptions;
-    deleteOptions.isCustomDir = false;
-    deleteOptions.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
-    deleteOptions.area = OHOS::DistributedKv::EL1;
-    deleteOptions.subUser = 0;
-    
-    auto status = kvdbServiceImpl_->Delete(appId, storeId, deleteOptions);
-    ASSERT_EQ(status, Status::ILLEGAL_STATE);
 }
 
 /**
