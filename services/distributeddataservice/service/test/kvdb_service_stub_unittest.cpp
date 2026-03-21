@@ -34,6 +34,7 @@ using KVDBServiceStub = OHOS::DistributedKv::KVDBServiceStub;
 using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
 using Options = OHOS::DistributedKv::Options;
+using BackupInfo = OHOS::DistributedKv::BackupInfo;
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.IKvStoreDataService";
 static const StoreId STOREID = { "kvdb_test_storeid" };
 static const AppId APPID = { "kvdb_test_appid" };

@@ -67,6 +67,7 @@ using SyncEnd = OHOS::DistributedKv::KvStoreSyncManager::SyncEnd;
 using DBResult = std::map<std::string, DistributedDB::DBStatus>;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using DBLaunchParam = OHOS::DistributedKv::KVDBServiceImpl::DBLaunchParam;
+using BackupInfo = OHOS::DistributedKv::BackupInfo;
 static OHOS::DistributedKv::StoreId storeId = { "kvdb_test_storeid" };
 static OHOS::DistributedKv::AppId appId = { "ohos.test.kvdb" };
 static constexpr const char *TEST_USER = "0";

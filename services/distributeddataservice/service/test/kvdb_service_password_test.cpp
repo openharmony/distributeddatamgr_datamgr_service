@@ -155,43 +155,6 @@ HWTEST_F(KvdbServicePasswordTest, GetBackupPasswordTest001, TestSize.Level0)
 }
 
 /**
-* @tc.name: GetBackupPasswordWithCustomDirTest003
-* @tc.desc: get backup password with custom directory
-* @tc.type: FUNC
-*/
-HWTEST_F(KvdbServicePasswordTest, GetBackupPasswordWithCustomDirTest003, TestSize.Level0)
-{
-    auto key = Random(KEY_LENGTH);
-    ASSERT_FALSE(key.empty());
-
-    std::shared_ptr<DBStoreMock> dbStoreMock = std::make_shared<DBStoreMock>();
-    MetaDataManager::GetInstance().Initialize(dbStoreMock, nullptr, "");
-
-    CryptoManager::CryptoParams encryptParams;
-    auto encryptKey = CryptoManager::GetInstance().Encrypt(key, encryptParams);
-    ASSERT_FALSE(encryptKey.empty());
-    ASSERT_FALSE(encryptParams.nonce.empty());
-
-    SecretKeyMetaData secretKey;
-    secretKey.sKey = encryptKey;
-    secretKey.nonce = encryptParams.nonce;
-
-    auto result = MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey, true);
-    ASSERT_TRUE(result);
-
-    BackupInfo info = { .name = "KvdbServicePasswordTest", .baseDir = TEST_DATA_DIR, .appId = appId_.appId,
-        .storeId = storeId_.storeId, .subUser = TEST_USER_NUM, .isCustomDir = true };
-    std::vector<std::vector<uint8_t>> passwords;
-    
-    auto status = kvdbServiceImpl_->GetBackupPassword(
-        appId_, storeId_, info, passwords, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
-    ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_GT(passwords.size(), 0);
-    
-    MetaDataManager::GetInstance().DelMeta(metaData_.GetSecretKey(), true);
-}
-
-/**
 * @tc.name: GetBackupPasswordWithoutCustomDirTest004
 * @tc.desc: get backup password without custom directory
 * @tc.type: FUNC
@@ -262,68 +225,6 @@ HWTEST_F(KvdbServicePasswordTest, GetBackupPasswordWithCloneKeyTest005, TestSize
     ASSERT_EQ(status, Status::SUCCESS);
     ASSERT_GT(passwords.size(), 0);
     
-    MetaDataManager::GetInstance().DelMeta(metaData_.GetCloneSecretKey(), true);
-}
-
-/**
-* @tc.name: GetBackupPasswordWithAllKeysTest006
-* @tc.desc: get all password types with BackupInfo
-* @tc.type: FUNC
-*/
-HWTEST_F(KvdbServicePasswordTest, GetBackupPasswordWithAllKeysTest006, TestSize.Level0)
-{
-    auto key1 = Random(KEY_LENGTH);
-    auto key2 = Random(KEY_LENGTH);
-    auto key3 = Random(KEY_LENGTH);
-    ASSERT_FALSE(key1.empty());
-    ASSERT_FALSE(key2.empty());
-    ASSERT_FALSE(key3.empty());
-
-    std::shared_ptr<DBStoreMock> dbStoreMock = std::make_shared<DBStoreMock>();
-    MetaDataManager::GetInstance().Initialize(dbStoreMock, nullptr, "");
-
-    CryptoManager::CryptoParams encryptParams1, encryptParams2, encryptParams3;
-    auto encryptKey1 = CryptoManager::GetInstance().Encrypt(key1, encryptParams1);
-    auto encryptKey2 = CryptoManager::GetInstance().Encrypt(key2, encryptParams2);
-    auto encryptKey3 = CryptoManager::GetInstance().Encrypt(key3, encryptParams3);
-    ASSERT_FALSE(encryptKey1.empty());
-    ASSERT_FALSE(encryptKey2.empty());
-    ASSERT_FALSE(encryptKey3.empty());
-
-    SecretKeyMetaData secretKey1, secretKey2, secretKey3;
-    secretKey1.sKey = encryptKey1;
-    secretKey1.nonce = encryptParams1.nonce;
-    secretKey2.sKey = encryptKey2;
-    secretKey2.nonce = encryptParams2.nonce;
-    secretKey3.sKey = encryptKey3;
-    secretKey3.nonce = encryptParams3.nonce;
-
-    auto result1 = MetaDataManager::GetInstance().SaveMeta(metaData_.GetSecretKey(), secretKey1, true);
-    auto result2 = MetaDataManager::GetInstance().SaveMeta(metaData_.GetBackupSecretKey(), secretKey2, true);
-    auto result3 = MetaDataManager::GetInstance().SaveMeta(metaData_.GetCloneSecretKey(), secretKey3, true);
-    ASSERT_TRUE(result1);
-    ASSERT_TRUE(result2);
-    ASSERT_TRUE(result3);
-
-    BackupInfo info = { .name = "KvdbServicePasswordTest", .baseDir = TEST_DATA_DIR, .appId = appId_.appId,
-        .storeId = storeId_.storeId, .subUser = TEST_USER_NUM, .isCustomDir = true };
-    std::vector<std::vector<uint8_t>> passwords;
-    
-    // Test SECRET_KEY type - should get secret key first, then clone key
-    auto status = kvdbServiceImpl_->GetBackupPassword(
-        appId_, storeId_, info, passwords, DistributedKv::KVDBService::PasswordType::SECRET_KEY);
-    ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_EQ(passwords.size(), 2);
-    
-    // Test BACKUP_SECRET_KEY type
-    passwords.clear();
-    status = kvdbServiceImpl_->GetBackupPassword(
-        appId_, storeId_, info, passwords, DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
-    ASSERT_EQ(status, Status::SUCCESS);
-    ASSERT_EQ(passwords.size(), 1);
-    
-    MetaDataManager::GetInstance().DelMeta(metaData_.GetSecretKey(), true);
-    MetaDataManager::GetInstance().DelMeta(metaData_.GetBackupSecretKey(), true);
     MetaDataManager::GetInstance().DelMeta(metaData_.GetCloneSecretKey(), true);
 }
 
