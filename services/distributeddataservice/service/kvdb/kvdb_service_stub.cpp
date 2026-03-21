@@ -51,7 +51,7 @@ const KVDBServiceStub::Handler
     &KVDBServiceStub::OnUnsubscribeSwitchData,
     &KVDBServiceStub::OnClose,
     &KVDBServiceStub::OnRemoveDeviceData,
-    &KVDBServiceStub::OnDeleteEx,
+    &KVDBServiceStub::OnDeleteByOptions,
 };
 
 int KVDBServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
