@@ -78,7 +78,6 @@ static constexpr const char *FT_SERVICE_INIT = "SERVICE_INIT";
 static constexpr const char *FT_SYNC_TASK = "SYNC_TASK";
 static constexpr const char *FT_ENCRYPT_CHANGED = "ENCRYPT_CHANGED";
 static constexpr const char *CLOUD_SCHEMA = "arkdata/cloud/cloud_schema.json";
-static constexpr Duration NOTIFY_DELAY = std::chrono::seconds(2);
 __attribute__((used)) CloudServiceImpl::Factory CloudServiceImpl::factory_;
 const CloudServiceImpl::SaveStrategy CloudServiceImpl::STRATEGY_SAVERS[Strategy::STRATEGY_BUTT] = {
     &CloudServiceImpl::SaveNetworkStrategy

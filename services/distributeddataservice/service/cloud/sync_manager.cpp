@@ -895,6 +895,13 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
             syncInfo.storeId = key.storeId;
             syncInfo.startTime = startTime;
             syncInfo.code = 0;
+
+            StoreInfo storeInfo;
+            storeInfo.user = key.user;
+            storeInfo.bundleName = key.bundleName;
+            storeInfo.storeName = key.storeId;
+            auto evt = std::make_unique<CloudSyncFinishedEvent>(storeInfo, syncInfo);
+            EventCenter::GetInstance().PostEvent(std::move(evt));
             val[id] = std::move(syncInfo);
             return !val.empty();
         });

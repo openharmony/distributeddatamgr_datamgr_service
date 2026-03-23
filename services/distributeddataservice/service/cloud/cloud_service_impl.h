@@ -250,6 +250,7 @@ private:
     std::mutex notifyMutex_;
     std::map<uint32_t, BatchQueryLastResults> pendingNotifies_;
     TaskId notifyTaskId_ = ExecutorPool::INVALID_TASK_ID;
+    static constexpr Duration NOTIFY_DELAY = std::chrono::seconds(5);
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
