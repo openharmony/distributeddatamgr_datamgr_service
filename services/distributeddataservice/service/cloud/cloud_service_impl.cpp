@@ -814,24 +814,22 @@ std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBat
             continue;
         }
         auto [ret, storeResults] = syncManager_.QueryLastSyncInfo(user, id, bundleInfo.bundleName);
-        if (ret != SUCCESS) {
+        if (ret != SUCCESS || storeResults.empty()) {
             ZLOGW("QueryLastSyncInfo failed for bundleName: %{public}s, ret: %{public}d",
                 bundleInfo.bundleName.c_str(), ret);
             batchResults[bundleInfo.bundleName] = {};
             continue;
         }
-        if (!storeResults.empty()) {
-            QueryLastResults queryResults;
-            for (const auto &[storeId, syncInfo] : storeResults) {
-                CloudSyncInfo cloudSyncInfo = { .startTime = syncInfo.startTime,
-                    .finishTime = syncInfo.finishTime,
-                    .code = syncInfo.code,
-                    .syncStatus = syncInfo.syncStatus };
-                queryResults[storeId] = std::move(cloudSyncInfo);
-            }
-            batchResults[bundleInfo.bundleName] = std::move(queryResults);
-            successCount++;
+        QueryLastResults queryResults;
+        for (const auto &[storeId, syncInfo] : storeResults) {
+            CloudSyncInfo cloudSyncInfo = { .startTime = syncInfo.startTime,
+                .finishTime = syncInfo.finishTime,
+                .code = syncInfo.code,
+                .syncStatus = syncInfo.syncStatus };
+            queryResults[storeId] = std::move(cloudSyncInfo);
         }
+        batchResults[bundleInfo.bundleName] = std::move(queryResults);
+        successCount++;
     }
     return { successCount == 0 ? ERROR : SUCCESS, batchResults };
 }
