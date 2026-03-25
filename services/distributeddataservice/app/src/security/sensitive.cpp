@@ -26,22 +26,22 @@ namespace OHOS {
 namespace DistributedKv {
 using Anonymous = DistributedData::Anonymous;
 Sensitive::Sensitive(std::string deviceId)
-    : deviceId(std::move(deviceId)), securityLevel(DATA_SEC_LEVEL1)
+    : deviceId_(std::move(deviceId)), securityLevel_(DATA_SEC_LEVEL1)
 {
 }
 
 Sensitive::Sensitive()
-    : deviceId(""), securityLevel(DATA_SEC_LEVEL1)
+    : deviceId_(""), securityLevel_(DATA_SEC_LEVEL1)
 {
 }
 
 uint32_t Sensitive::GetDeviceSecurityLevel()
 {
-    if (securityLevel > DATA_SEC_LEVEL1) {
+    if (securityLevel_ > DATA_SEC_LEVEL1) {
         ZLOGI("the device security level had gotten");
-        return securityLevel;
+        return securityLevel_;
     }
-    return GetSensitiveLevel(deviceId);
+    return GetSensitiveLevel(deviceId_);
 }
 
 bool InitDEVSLQueryParams(DEVSLQueryParams *params, const std::string &udid)
@@ -60,7 +60,7 @@ bool InitDEVSLQueryParams(DEVSLQueryParams *params, const std::string &udid)
 
 Sensitive::operator bool() const
 {
-    return (!deviceId.empty()) && (securityLevel > DATA_SEC_LEVEL1);
+    return (!deviceId_.empty()) && (securityLevel_ > DATA_SEC_LEVEL1);
 }
 
 bool Sensitive::operator >= (const DistributedDB::SecurityOption &option)
@@ -69,10 +69,10 @@ bool Sensitive::operator >= (const DistributedDB::SecurityOption &option)
         return true;
     }
 
-    uint32_t level = securityLevel;
+    uint32_t level = securityLevel_;
     if (level <= DATA_SEC_LEVEL1 && static_cast<uint32_t>(option.securityLabel - 1) > level) {
         ZLOGI("the device security level hadn't gotten");
-        level = GetSensitiveLevel(deviceId);
+        level = GetSensitiveLevel(deviceId_);
     }
     return (level >= static_cast<uint32_t>(option.securityLabel - 1));
 }
@@ -87,8 +87,8 @@ Sensitive &Sensitive::operator=(const Sensitive &sensitive)
     if (this == &sensitive) {
         return *this;
     }
-    deviceId = sensitive.deviceId;
-    securityLevel = sensitive.securityLevel;
+    deviceId_ = sensitive.deviceId_;
+    securityLevel_ = sensitive.securityLevel_;
     return *this;
 }
 
@@ -102,8 +102,8 @@ Sensitive &Sensitive::operator=(Sensitive &&sensitive) noexcept
     if (this == &sensitive) {
         return *this;
     }
-    deviceId = std::move(sensitive.deviceId);
-    securityLevel = sensitive.securityLevel;
+    deviceId_ = std::move(sensitive.deviceId_);
+    securityLevel_ = sensitive.securityLevel_;
     return *this;
 }
 
@@ -118,14 +118,14 @@ uint32_t Sensitive::GetSensitiveLevel(const std::string &udid)
     uint32_t level = DATA_SEC_LEVEL1;
     int32_t result = DATASL_GetHighestSecLevel(&query, &level);
     if (result != DEVSL_SUCCESS) {
-        ZLOGE("get highest level failed(%{public}s)! level: %{public}d, error: %d",
-            Anonymous::Change(udid).c_str(), securityLevel, result);
+        ZLOGE("get highest level failed(%{public}s)! level: %{public}d, error: %{public}d",
+            Anonymous::Change(udid).c_str(), securityLevel_, result);
         return DATA_SEC_LEVEL1;
     }
-    securityLevel = level;
-    ZLOGI("get highest level success(%{public}s)! level: %{public}d, error: %d",
-        Anonymous::Change(udid).c_str(), securityLevel, result);
-    return securityLevel;
+    securityLevel_ = level;
+    ZLOGI("get highest level success(%{public}s)! level: %{public}d, error: %{public}d",
+        Anonymous::Change(udid).c_str(), securityLevel_, result);
+    return securityLevel_;
 }
 } // namespace DistributedKv
 } // namespace OHOS

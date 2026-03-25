@@ -338,6 +338,25 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
     return 0;
 }
 
+bool DataShareServiceStub::IsTemplateRequest(uint32_t requestCode)
+{
+    static uint32_t list[] = {
+        DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE,
+        DATA_SHARE_SERVICE_CMD_DEL_TEMPLATE,
+        DATA_SHARE_SERVICE_CMD_SUBSCRIBE_RDB,
+        DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_RDB,
+        DATA_SHARE_SERVICE_CMD_ENABLE_SUBSCRIBE_RDB,
+        DATA_SHARE_SERVICE_CMD_DISABLE_SUBSCRIBE_RDB,
+    };
+
+    for (auto cmd : list) {
+        if (requestCode == cmd) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     QosManager qos(true);
@@ -351,12 +370,14 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
     auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
     bool isSystemApp = CheckSystemCallingPermission(IPCSkeleton::GetCallingTokenID(), fullTokenId);
     DataShareThreadLocal::SetFromSystemApp(isSystemApp);
-    if (code >= DATA_SHARE_CMD_SYSTEM_CODE) {
+    if (code >= DATA_SHARE_CMD_SYSTEM_CODE || IsTemplateRequest(code)) {
         if (!isSystemApp) {
             ZLOGE("CheckSystemCallingPermission fail, token:%{public}" PRIx64
                 ", callingPid:%{public}d, code:%{public}u", fullTokenId, callingPid, code);
             return E_NOT_SYSTEM_APP;
         }
+    }
+    if (code >= DATA_SHARE_CMD_SYSTEM_CODE) {
         code = code - DATA_SHARE_CMD_SYSTEM_CODE;
     }
     if (code != DATA_SHARE_SERVICE_CMD_QUERY && code != DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS) {
@@ -525,6 +546,22 @@ int32_t DataShareServiceStub::OnUnsubscribeProxyData(MessageParcel& data, Messag
     std::vector<DataProxyResult> results = UnsubscribeProxyData(uris, config);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return 0;
+}
+
+int32_t DataShareServiceStub::OnGetConnectionInterfaceInfo(MessageParcel& data, MessageParcel& reply)
+{
+    int32_t saId;
+    uint32_t waitTime;
+    if (!ITypesUtil::Unmarshal(data, saId, waitTime)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [errCode, info] = GetConnectionInterfaceInfo(saId, waitTime);
+    if (!ITypesUtil::Marshal(reply, errCode, info)) {
+        ZLOGE("ConnectionInterfaceInfo Marshal reply failed");
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return 0;

@@ -181,7 +181,6 @@ HWTEST_F(KvStoreDataServiceTest, Exit001, TestSize.Level1)
     EXPECT_EQ(kvDataService.Exit(""), Status::SUCCESS);
 }
 
-
 /**
 * @tc.name: GetIndentation001
 * @tc.desc:
@@ -1329,7 +1328,6 @@ HWTEST_F(KvStoreDataServiceTest, WriteBackupInfo_FwriteFail, TestSize.Level0)
     EXPECT_FALSE(result);
 }
 
-
 /**
  * @tc.name: OnExtensionRestore_RestoreFial
  * @tc.desc: Test OnRestore returns -1 when Secret key file size exceeds the upper limit
@@ -1355,4 +1353,57 @@ HWTEST_F(KvStoreDataServiceTest, OnExtensionRestore_RestoreFail, TestSize.Level0
     ASSERT_EQ(remove(SECRETKEY_BACKUP_FILE.c_str()), 0);
 }
 
+/**
+ * @tc.name: GetFeatureInterface_ReturnNull
+ * @tc.desc: Test GetFeatureInterface when feature is nullptr.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: Claude
+ */
+HWTEST_F(KvStoreDataServiceTest, GetFeatureInterface_ReturnNull, TestSize.Level1)
+{
+    KvStoreDataService kvStoreDataServiceTest;
+    // Test with an invalid feature name that might cause feature creation to fail
+    std::string invalidFeatureName = "InvalidFeatureName123456";
+    auto result = kvStoreDataServiceTest.GetFeatureInterface(invalidFeatureName);
+    // The result should be nullptr if feature cannot be created
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetSecretKeyBackup_NotEncrypted
+ * @tc.desc: Test GetSecretKeyBackup when store is not encrypted (continue branch)
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: Claude
+ */
+HWTEST_F(KvStoreDataServiceTest, GetSecretKeyBackup_NotEncrypted, TestSize.Level0)
+{
+    // Create a non-encrypted store metadata
+    StoreMetaData testMeta;
+    testMeta.bundleName = "com.example.test";
+    testMeta.storeId = "TestStore";
+    testMeta.user = "100";
+    testMeta.area = CryptoManager::Area::EL1;
+    testMeta.instanceId = 0;
+    testMeta.deviceId = "test_device_id";
+    testMeta.isEncrypt = false;
+    testMeta.dataDir = "TEST_DIR";
+
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(testMeta.GetKey(), testMeta, true), true);
+
+    std::vector<DistributedData::CloneBundleInfo> bundleInfos;
+    DistributedData::CloneBundleInfo bundleInfo;
+    bundleInfo.bundleName = "com.example.test";
+    bundleInfo.accessTokenId = 100;
+    bundleInfos.push_back(bundleInfo);
+
+    std::vector<uint8_t> iv(32, 0);
+    std::string userId = "100";
+    std::string localDeviceId = "test_device_id";
+
+    std::string result = GetSecretKeyBackup(bundleInfos, userId, iv, localDeviceId);
+    // Should return serialized empty backup since store is not encrypted
+    EXPECT_FALSE(result.empty());
+}
 } // namespace OHOS::Test

@@ -1134,37 +1134,40 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
 
     // MetaDataSaver destructor will automatically flush all entries
-    MetaDataSaver saver(true);
-    if (!isCreated || meta != old) {
-        Upgrade(meta, old);
-        ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
-            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-        meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId(old, meta);
-        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
-        saver.Add(meta.GetKey(), meta);
-        AutoLaunchMetaData launchData;
-        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
-            SaveLaunchInfo(meta);
+    {
+        // Search relies on metadata, which needs to be stored in the database before being used by search
+        MetaDataSaver saver(true);
+        if (!isCreated || meta != old) {
+            Upgrade(meta, old);
+            ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+                "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
+                meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+            meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId(old, meta);
+            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+            saver.Add(meta.GetKey(), meta);
+            AutoLaunchMetaData launchData;
+            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
+                SaveLaunchInfo(meta);
+            }
         }
-    }
 
-    StoreMetaMapping metaMapping(meta);
-    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
-    if (meta.isSearchable) {
-        metaMapping.searchPath = meta.dataDir;
-    }
-    metaMapping = meta;
-    saver.Add(metaMapping.GetKey(), metaMapping);
+        StoreMetaMapping metaMapping(meta);
+        MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+        if (meta.isSearchable) {
+            metaMapping.searchPath = meta.dataDir;
+        }
+        metaMapping = meta;
+        saver.Add(metaMapping.GetKey(), metaMapping);
 
-    // Collect metadata entries using batch saver
-    SaveDebugInfo(meta, param, saver);
-    SavePromiseInfo(meta, param, saver);
-    SaveDfxInfo(meta, param, saver);
-    SaveAppIDMeta(meta, old, saver);
+        // Collect metadata entries using batch saver
+        SaveDebugInfo(meta, param, saver);
+        SavePromiseInfo(meta, param, saver);
+        SaveDfxInfo(meta, param, saver);
+        SaveAppIDMeta(meta, old, saver);
 
-    if (param.isEncrypt_ && !param.password_.empty()) {
-        SaveSecretKeyMeta(meta, param.password_, saver);
+        if (param.isEncrypt_ && !param.password_.empty()) {
+            SaveSecretKeyMeta(meta, param.password_, saver);
+        }
     }
     GetCloudSchema(meta);
     return RDB_OK;
