@@ -454,7 +454,7 @@ bool MetaDataManager::SyncBusinessMeta(const DeviceMetaSyncOption &option, OnCom
 }
 
 bool MetaDataManager::SyncWithQuery(const DeviceMetaSyncOption &option,
-    std::set<std::vector<uint8_t>> &queryKeys, OnComplete complete)
+    const std::set<std::vector<uint8_t>> &queryKeys, OnComplete complete)
 {
     DistributedDB::DeviceSyncOption syncOption;
     syncOption.devices = option.devices;

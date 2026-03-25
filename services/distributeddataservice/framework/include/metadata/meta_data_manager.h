@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <set>
 
 #include "concurrent_map.h"
 #include "serializable/serializable.h"
