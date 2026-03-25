@@ -22,6 +22,7 @@
 
 #include "directory/directory_manager.h"
 #include "metadata/capability_meta_data.h"
+#include "metadata/store_meta_data.h"
 #include "metadata/user_meta_data.h"
 #include "kv_store_nb_delegate.h"
 #include "log_print.h"
@@ -379,33 +380,39 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
     return status == DistributedDB::OK;
 }
 
-bool MetaDataManager::SyncMeta(const DeviceMetaSyncOption &option, OnComplete complete)
+void MetaDataManager::CommonSyncComplete(const DeviceMetaSyncOption &option, OnComplete complete,
+    const std::map<std::string, int32_t> &results)
+{
+    std::vector<std::string> successDevices;
+    for (const auto &[uuid, status] : results) {
+        if (status == static_cast<int32_t>(DistributedDB::DBStatus::OK)) {
+            successDevices.emplace_back(uuid);
+        }
+    }
+    ZLOGD("common meta sync finish, total size:%{public}zu, success size:%{public}zu",
+        results.size(), successDevices.size());
+    if (successDevices.empty()) {
+        if (complete != nullptr) {
+            complete(results);
+        }
+        return;
+    }
+    auto result = SyncStoreMeta(option, complete);
+    if (!result) {
+        ZLOGE("business metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
+            option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
+    }
+}
+
+bool MetaDataManager::Sync(const DeviceMetaSyncOption &option, OnComplete complete)
 {
     if (!inited_ || option.devices.empty()) {
         return false;
     }
-    auto metaSyncComplete = [option, complete](const auto &results) {
-        std::vector<std::string> successDevices;
-        for (const auto &[uuid, status] : results) {
-            if (status == static_cast<int32_t>(DistributedDB::DBStatus::OK)) {
-                successDevices.emplace_back(uuid);
-            }
-        }
-        ZLOGD("common meta sync finish, total size:%{public}zu, success size:%{public}zu",
-            results.size(), successDevices.size());
-        if (successDevices.empty()) {
-            if (complete != nullptr) {
-                complete(results);
-            }
-            return;
-        }
-        auto result = MetaDataManager::GetInstance().SyncBusinessMeta(option, complete);
-        if (!result) {
-            ZLOGE("business metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
-                option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
-        }
+    auto metaSyncComplete = [this, option, complete](const auto &results) {
+        CommonSyncComplete(option, complete, results);
     };
-    auto result = MetaDataManager::GetInstance().SyncCommonMeta(option, metaSyncComplete);
+    auto result = SyncCommonMeta(option, metaSyncComplete);
     if (!result) {
         ZLOGE("common metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
             option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
@@ -425,10 +432,10 @@ bool MetaDataManager::SyncCommonMeta(const DeviceMetaSyncOption &option, OnCompl
         auto userKey = UserMetaRow::GetKeyFor(uuid);
         queryKeys.insert({ userKey.begin(), userKey.end() });
     }
-    return SyncWithQuery(option, queryKeys, complete);
+    return SyncWithQueryKeys(option, queryKeys, complete);
 }
 
-bool MetaDataManager::SyncBusinessMeta(const DeviceMetaSyncOption &option, OnComplete complete)
+bool MetaDataManager::SyncStoreMeta(const DeviceMetaSyncOption &option, OnComplete complete)
 {
     std::vector<std::string> allDevices{ option.devices.begin(), option.devices.end() };
     allDevices.emplace_back(option.localDevice);
@@ -450,10 +457,10 @@ bool MetaDataManager::SyncBusinessMeta(const DeviceMetaSyncOption &option, OnCom
     if (queryKeys.empty()) {
         return false;
     }
-    return SyncWithQuery(option, queryKeys, complete);
+    return SyncWithQueryKeys(option, queryKeys, complete);
 }
 
-bool MetaDataManager::SyncWithQuery(const DeviceMetaSyncOption &option,
+bool MetaDataManager::SyncWithQueryKeys(const DeviceMetaSyncOption &option,
     const std::set<std::vector<uint8_t>> &queryKeys, OnComplete complete)
 {
     DistributedDB::DeviceSyncOption syncOption;

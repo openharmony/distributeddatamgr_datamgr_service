@@ -1146,7 +1146,7 @@ Status KVDBServiceImpl::DoSyncInOrder(
         syncOption.bundleName = meta.bundleName;
         syncOption.instanceId = meta.instanceId;
         syncOption.isRetry = info.isRetry;
-        auto result = MetaDataManager::GetInstance().SyncMeta(
+        auto result = MetaDataManager::GetInstance().Sync(
             syncOption, [this, meta, info, complete, type](const auto &results) {
             RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_SUCCESS,
                 SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
