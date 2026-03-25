@@ -411,10 +411,7 @@ bool MetaDataManager::Sync(const DeviceMetaSyncOption &option, OnComplete comple
     if (!inited_ || option.devices.empty()) {
         return false;
     }
-    auto metaSyncComplete = [this, option, complete](const auto &results) {
-        CommonSyncComplete(option, complete, results);
-    };
-    auto result = SyncCommonMeta(option, metaSyncComplete);
+    auto result = SyncCommonMeta(option, CommonSyncComplete(option, complete));
     if (!result) {
         ZLOGE("common metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
             option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
