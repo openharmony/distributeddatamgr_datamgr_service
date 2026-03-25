@@ -380,28 +380,30 @@ bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete c
     return status == DistributedDB::OK;
 }
 
-void MetaDataManager::CommonSyncComplete(const DeviceMetaSyncOption &option, OnComplete complete,
-    const std::map<std::string, int32_t> &results)
+MetaDataManager::OnComplete MetaDataManager::CommonSyncComplete(const DeviceMetaSyncOption &option,
+    OnComplete complete)
 {
-    std::vector<std::string> successDevices;
-    for (const auto &[uuid, status] : results) {
-        if (status == static_cast<int32_t>(DistributedDB::DBStatus::OK)) {
-            successDevices.emplace_back(uuid);
+    return [this, option, complete](const auto &results) {
+        std::vector<std::string> successDevices;
+        for (const auto &[uuid, status] : results) {
+            if (status == static_cast<int32_t>(DistributedDB::DBStatus::OK)) {
+                successDevices.emplace_back(uuid);
+            }
         }
-    }
-    ZLOGD("common meta sync finish, total size:%{public}zu, success size:%{public}zu",
-        results.size(), successDevices.size());
-    if (successDevices.empty()) {
-        if (complete != nullptr) {
-            complete(results);
+        ZLOGD("common meta sync finish, total size:%{public}zu, success size:%{public}zu",
+            results.size(), successDevices.size());
+        if (successDevices.empty()) {
+            if (complete != nullptr) {
+                complete(results);
+            }
+            return;
         }
-        return;
-    }
-    auto result = SyncStoreMeta(option, complete);
-    if (!result) {
-        ZLOGE("business metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
-            option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
-    }
+        auto result = SyncStoreMeta(option, complete);
+        if (!result) {
+            ZLOGE("business metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
+                option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
+        }
+    };
 }
 
 bool MetaDataManager::Sync(const DeviceMetaSyncOption &option, OnComplete complete)

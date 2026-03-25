@@ -132,8 +132,7 @@ private:
     }
 
     void StopSA();
-    void CommonSyncComplete(const DeviceMetaSyncOption &option, OnComplete complete,
-        const std::map<std::string, int32_t> &results);
+    OnComplete CommonSyncComplete(const DeviceMetaSyncOption &option, OnComplete complete);
     bool SyncCommonMeta(const DeviceMetaSyncOption &option, OnComplete complete);
     bool SyncStoreMeta(const DeviceMetaSyncOption &option, OnComplete complete);
     bool SyncWithQueryKeys(const DeviceMetaSyncOption &option, const std::set<std::vector<uint8_t>> &queryKeys,
