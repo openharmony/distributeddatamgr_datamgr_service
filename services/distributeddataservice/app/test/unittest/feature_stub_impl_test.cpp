@@ -580,5 +580,66 @@ HWTEST_F(FeatureStubImplTest, OnScreenUnlocked002, TestSize.Level1)
     auto result = featureStubImpl->OnScreenUnlocked(user);
     EXPECT_EQ(result, E_OK);
 }
+
+/**
+* @tc.name: OnInitialize_MultipleCalls
+* @tc.desc: Test multiple calls to OnInitialize return cached value.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Claude
+*/
+HWTEST_F(FeatureStubImplTest, OnInitialize_MultipleCalls, TestSize.Level1)
+{
+    std::shared_ptr<FeatureSystem::Feature> feature = std::make_shared<MockFeature>();
+    std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
+
+    // First call should initialize
+    auto result1 = featureStubImpl->OnInitialize(executor);
+    EXPECT_EQ(result1, E_OK);
+
+    // Second call should return cached value
+    auto result2 = featureStubImpl->OnInitialize(executor);
+    EXPECT_EQ(result2, E_OK);
+
+    // Third call should also return cached value
+    auto result3 = featureStubImpl->OnInitialize(executor);
+    EXPECT_EQ(result3, E_OK);
+}
+
+/**
+* @tc.name: OnInitialize_ConcurrentCalls
+* @tc.desc: Test concurrent calls to OnInitialize are thread-safe.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: Claude
+*/
+HWTEST_F(FeatureStubImplTest, OnInitialize_ConcurrentCalls, TestSize.Level1)
+{
+    std::shared_ptr<FeatureSystem::Feature> feature = std::make_shared<MockFeature>();
+    std::shared_ptr<FeatureStubImpl> featureStubImpl = std::make_shared<FeatureStubImpl>(feature);
+    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(1, 0);
+
+    const int threadCount = 10;
+    std::vector<std::thread> threads;
+    std::vector<int32_t> results(threadCount);
+
+    // Create multiple threads calling OnInitialize concurrently
+    for (int i = 0; i < threadCount; i++) {
+        threads.emplace_back([&, i]() {
+            results[i] = featureStubImpl->OnInitialize(executor);
+        });
+    }
+
+    // Wait for all threads to complete
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    // All calls should return E_OK
+    for (auto result : results) {
+        EXPECT_EQ(result, E_OK);
+    }
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

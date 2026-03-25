@@ -355,6 +355,14 @@ void EnableSilentProxyFuzz(FuzzedDataProvider &provider)
     dataShareServiceImpl->EnableSilentProxy(uri, enable);
     dataShareServiceImpl->OnConnectDone();
 }
+
+void GetConnectionInterfaceInfoFuzz(FuzzedDataProvider &provider)
+{
+    std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
+    int32_t saId = provider.ConsumeIntegral<int32_t>();
+    uint32_t waitTime = provider.ConsumeIntegral<uint32_t>();
+    dataShareServiceImpl->GetConnectionInterfaceInfo(saId, waitTime);
+}
 } // namespace OHOS
 
 /* Fuzzer entry point */
@@ -391,5 +399,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::SaveLaunchInfoFuzz(provider);
     OHOS::DataShareStaticOnAppUpdate(provider);
     OHOS::EnableSilentProxyFuzz(provider);
+    OHOS::GetConnectionInterfaceInfoFuzz(provider);
     return 0;
 }

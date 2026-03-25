@@ -37,8 +37,8 @@ public:
 
 private:
     uint32_t GetSensitiveLevel(const std::string &udid);
-    std::string deviceId {};
-    uint32_t securityLevel = 0;
+    std::string deviceId_ {};
+    uint32_t securityLevel_ = 0;
 };
 } // namespace DistributedKv
 } // namespace OHOS

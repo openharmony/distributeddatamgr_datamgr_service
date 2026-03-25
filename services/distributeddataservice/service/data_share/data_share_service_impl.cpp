@@ -30,6 +30,7 @@
 #include "config_factory.h"
 #include "data_ability_observer_interface.h"
 #include "data_share_profile_config.h"
+#include "data_share_sa_connection.h"
 #include "dataobs_mgr_client.h"
 #include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
@@ -1439,5 +1440,12 @@ bool DataShareServiceImpl::VerifyPermission(const std::string &bundleName, const
         }
     }
     return true;
+}
+
+std::pair<int32_t, ConnectionInterfaceInfo> DataShareServiceImpl::GetConnectionInterfaceInfo(int32_t saId,
+    uint32_t waitTime)
+{
+    std::shared_ptr<SAConnection> connection = std::make_shared<SAConnection>(saId, waitTime);
+    return connection->GetConnectionInterfaceInfo();
 }
 } // namespace OHOS::DataShare
