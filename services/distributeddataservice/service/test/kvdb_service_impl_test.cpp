@@ -1603,5 +1603,29 @@ HWTEST_F(KvdbServiceImplTest, SubscribeSwitchData, TestSize.Level0)
     status = kvdbServiceImpl_->UnregServiceNotifier(appId);
     ASSERT_EQ(status, Status::SUCCESS);
 }
+
+/**
+* @tc.name: DoSyncInOrderTest001
+* @tc.desc: DoSyncInOrder with meta sync.
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, DoSyncInOrderTest001, TestSize.Level0)
+{
+    ZLOGI("DoSyncInOrderTest001 start");
+    Status status1 = manager.GetSingleKvStore(create, appId, storeId64, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status1, Status::SUCCESS);
+    StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId64);
+    SyncInfo syncInfo;
+    syncInfo.devices = { "device001" };
+    syncInfo.seqId = 1;
+    syncInfo.query = "query";
+    SyncEnd syncEnd = SyncEndCallback;
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillRepeatedly(testing::Return(false));
+    auto status = kvdbServiceImpl_->DoSyncInOrder(meta, syncInfo, syncEnd);
+    ZLOGI("DoSyncInOrderTest001 status = :%{public}d", status);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

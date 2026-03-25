@@ -49,6 +49,12 @@ bool OHOS::DistributedData::MetaDataManager::Sync(const std::vector<std::string>
     return BMetaDataManager::metaDataManager->Sync(devices, complete, wait, isRetry);
 }
 
+bool OHOS::DistributedData::MetaDataManager::Sync(const DeviceMetaSyncOption &option,
+    MetaDataManager::OnComplete complete)
+{
+    return BMetaDataManager::metaDataManager->Sync(option, complete);
+}
+
 template<>
 bool OHOS::DistributedData::MetaDataManager::LoadMeta(
     const std::string &prefix, std::vector<StoreMetaData> &values, bool isLocal)

@@ -27,6 +27,7 @@ class BMetaDataManager {
 public:
     virtual bool LoadMeta(const std::string &, Serializable &, bool) = 0;
     virtual bool Sync(const std::vector<std::string> &, MetaDataManager::OnComplete, bool, bool) = 0;
+    virtual bool Sync(const MetaDataManager::DeviceMetaSyncOption &, MetaDataManager::OnComplete) = 0;
     BMetaDataManager() = default;
     virtual ~BMetaDataManager() = default;
     static inline std::shared_ptr<BMetaDataManager> metaDataManager = nullptr;
@@ -35,6 +36,7 @@ class MetaDataManagerMock : public BMetaDataManager {
 public:
     MOCK_METHOD(bool, LoadMeta, (const std::string &, Serializable &, bool), (override));
     MOCK_METHOD(bool, Sync, (const std::vector<std::string> &, MetaDataManager::OnComplete, bool, bool), (override));
+    MOCK_METHOD(bool, Sync, (const MetaDataManager::DeviceMetaSyncOption &, MetaDataManager::OnComplete), (override));
 };
 
 template<class T> class BMetaData {
