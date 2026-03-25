@@ -22,6 +22,7 @@
 #include "concurrent_map.h"
 #include "serializable/serializable.h"
 #include "lru_bucket.h"
+#include "metadata/store_meta_data.h"
 namespace DistributedDB {
 class KvStoreNbDelegate;
 }
@@ -56,6 +57,15 @@ public:
         std::string key;
         std::string value;
     };
+    struct DeviceMetaSyncOption {
+        std::vector<std::string> devices;
+        std::string localDevice;
+        std::string bundleName;
+        std::string storeId;
+        int32_t instanceId = 0;
+        bool isWait = false;
+        bool isRetry = true;
+    };
     API_EXPORT static MetaDataManager &GetInstance();
     API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string &storeId);
     API_EXPORT void SetSyncer(const Syncer &syncer);
@@ -86,7 +96,7 @@ public:
     API_EXPORT bool Unsubscribe(std::string filter);
     API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait = false,
         bool isRetry = true);
-
+    API_EXPORT bool SyncMeta(const DeviceMetaSyncOption &option, OnComplete complete);
 private:
     MetaDataManager();
     ~MetaDataManager();
@@ -120,9 +130,12 @@ private:
         }
         localdata_.Set(key, data);
     }
-    
-    void StopSA();
 
+    void StopSA();
+    bool SyncCommonMeta(const DeviceMetaSyncOption &option, OnComplete complete);
+    bool SyncBusinessMeta(const DeviceMetaSyncOption &option, OnComplete complete);
+    bool SyncWithQuery(const DeviceMetaSyncOption &option, std::set<std::vector<uint8_t>> &queryKeys,
+        OnComplete complete);
     bool inited_ = false;
     std::mutex mutex_;
     std::shared_ptr<MetaStore> metaStore_;
