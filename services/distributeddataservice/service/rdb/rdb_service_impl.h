@@ -291,7 +291,7 @@ private:
     static StoreInfo GetStoreInfoEx(const StoreMetaData &metaData);
 
     static DeviceMetaSyncOption GetMetaSyncOption(const StoreMetaData &metaData,
-                  const std::vector<std::string> &devices, bool isWait = false);
+        const std::vector<std::string> &devices, bool isWait = false);
 
     static int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
                                  DistributedData::MetaDataSaver &saver);
