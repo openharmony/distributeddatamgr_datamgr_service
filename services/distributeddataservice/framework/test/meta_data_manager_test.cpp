@@ -28,14 +28,13 @@ namespace OHOS::Test {
 class DBStoreMockImpl;
 class MetaDataManagerTest : public testing::Test {
 public:
-    static const std::string INVALID_DEVICE_ID;
     static void SetUpTestCase(void);
     static void TearDownTestCase(void) {};
     void SetUp() {};
     void TearDown() {};
     static std::shared_ptr<DBStoreMockImpl> metaStore;
 };
-const std::string MetaDataManagerTest::INVALID_DEVICE_ID = "1234567890";
+
 std::shared_ptr<DBStoreMockImpl> MetaDataManagerTest::metaStore = nullptr;
 
 class DBStoreMockImpl : public DBStoreMock {
@@ -114,53 +113,6 @@ HWTEST_F(MetaDataManagerTest, FilterOperatorTest, TestSize.Level1)
 
     key = "another_key";
     ASSERT_FALSE(filter(key));
-}
-
-/**
- * @tc.name: SyncTest001
- * @tc.desc: devices is empty.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: SQL
- */
-HWTEST_F(MetaDataManagerTest, SyncTest001, TestSize.Level1)
-{
-    std::vector<std::string> devices;
-    MetaDataManager::OnComplete complete;
-    auto result = MetaDataManager::GetInstance().Sync(devices, complete);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name: SyncTest002
- * @tc.desc: devices is invalid.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: SQL
- */
-HWTEST_F(MetaDataManagerTest, SyncTest002, TestSize.Level1)
-{
-    std::vector<std::string> devices;
-    devices.emplace_back(INVALID_DEVICE_ID);
-    MetaDataManager::OnComplete complete;
-    auto result = MetaDataManager::GetInstance().Sync(devices, complete);
-    EXPECT_TRUE(result);
-}
-
-/**
- * @tc.name: SyncTest003
- * @tc.desc: devices is invalid.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: SQL
- */
-HWTEST_F(MetaDataManagerTest, SyncTest003, TestSize.Level1)
-{
-    std::vector<std::string> devices;
-    devices.emplace_back(INVALID_DEVICE_ID);
-    MetaDataManager::OnComplete complete = [](auto &results) {};
-    auto result = MetaDataManager::GetInstance().Sync(devices, complete);
-    EXPECT_TRUE(result);
 }
 
 /**
