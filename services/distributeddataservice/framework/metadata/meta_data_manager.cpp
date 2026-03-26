@@ -347,39 +347,6 @@ bool MetaDataManager::DelMeta(const std::vector<std::string> &keys, bool isLocal
     return ((status == DistributedDB::DBStatus::OK) || (status == DistributedDB::DBStatus::NOT_FOUND));
 }
 
-bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait, bool isRetry)
-{
-    if (!inited_ || devices.empty()) {
-        return false;
-    }
-    DistributedDB::DeviceSyncOption syncOption;
-    syncOption.devices = devices;
-    syncOption.mode = DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL;
-    syncOption.isWait = wait;
-    syncOption.isRetry = isRetry;
-    auto status = metaStore_->Sync(syncOption,
-        [complete](const std::map<std::string, DistributedDB::DBStatus> &dbResults) {
-            if (complete == nullptr) {
-                return;
-            }
-            std::map<std::string, int32_t> results;
-            for (auto &[uuid, status] : dbResults) {
-                results.insert_or_assign(uuid, static_cast<int32_t>(status));
-            }
-            complete(results);
-        });
-    if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
-        ZLOGE("db corrupted! status:%{public}d", status);
-        CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);
-        StopSA();
-        return false;
-    }
-    if (status != DistributedDB::OK) {
-        ZLOGW("meta data sync error %{public}d.", status);
-    }
-    return status == DistributedDB::OK;
-}
-
 MetaDataManager::OnComplete MetaDataManager::CommonSyncComplete(const DeviceMetaSyncOption &option,
     OnComplete complete)
 {

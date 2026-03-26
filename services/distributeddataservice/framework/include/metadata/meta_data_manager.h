@@ -94,8 +94,6 @@ public:
     API_EXPORT bool DelMeta(const std::vector<std::string> &keys, bool isLocal = false);
     API_EXPORT bool Subscribe(std::string prefix, Observer observer, bool isLocal = false);
     API_EXPORT bool Unsubscribe(std::string filter);
-    API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait = false,
-        bool isRetry = true);
     API_EXPORT bool Sync(const DeviceMetaSyncOption &option, OnComplete complete);
 private:
     MetaDataManager();

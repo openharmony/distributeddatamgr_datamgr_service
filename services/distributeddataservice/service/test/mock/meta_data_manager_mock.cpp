@@ -43,12 +43,6 @@ bool OHOS::DistributedData::MetaDataManager::LoadMeta(const std::string &key, Se
     return BMetaDataManager::metaDataManager->LoadMeta(key, value, isLocal);
 }
 
-bool OHOS::DistributedData::MetaDataManager::Sync(const std::vector<std::string> &devices,
-    MetaDataManager::OnComplete complete, bool wait, bool isRetry)
-{
-    return BMetaDataManager::metaDataManager->Sync(devices, complete, wait, isRetry);
-}
-
 bool OHOS::DistributedData::MetaDataManager::Sync(const DeviceMetaSyncOption &option,
     MetaDataManager::OnComplete complete)
 {
