@@ -1206,7 +1206,7 @@ int32_t ObjectStoreManager::SyncOnStore(
     deviceMetaSyncOption.devices = uuids;
     deviceMetaSyncOption.localDevice = DmAdapter::GetInstance().GetLocalDevice().uuid;
     deviceMetaSyncOption.storeId = meta.storeId;
-    deviceMetaSyncOption.bundleName = meta.bundleName;
+    deviceMetaSyncOption.bundleName = meta.appId;
     deviceMetaSyncOption.instanceId = meta.instanceId;
     bool result = MetaDataManager::GetInstance().Sync(deviceMetaSyncOption,
         [this, prefix, syncDevices, sequenceId](auto &results) {
