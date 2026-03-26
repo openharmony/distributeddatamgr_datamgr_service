@@ -547,7 +547,8 @@ std::pair<int32_t, std::shared_ptr<RdbServiceImpl::ResultSet>> RdbServiceImpl::R
         return { RDB_ERROR, nullptr };
     }
     std::vector<std::string> devices = { DmAdapter::GetInstance().ToUUID(device) };
-    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(devices, [](auto &results) {}, true)) {
+    if (IsNeedMetaSync(meta, devices) && !MetaDataManager::GetInstance().Sync(
+        GetMetaSyncOption(meta, devices, true), [](auto &results) {})) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s. meta sync failed", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
     }
@@ -605,6 +606,19 @@ bool RdbServiceImpl::IsSyncLimitApp(const StoreMetaData &meta)
     return MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true);
 }
 
+MetaDataManager::DeviceMetaSyncOption RdbServiceImpl::GetMetaSyncOption(const StoreMetaData &metaData,
+    const std::vector<std::string> &devices, bool isWait)
+{
+    MetaDataManager::DeviceMetaSyncOption syncOption;
+    syncOption.devices = devices;
+    syncOption.localDevice = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    syncOption.storeId = metaData.storeId;
+    syncOption.bundleName = metaData.bundleName;
+    syncOption.instanceId = metaData.instanceId;
+    syncOption.isWait = isWait;
+    return syncOption;
+}
+
 std::function<int()> RdbServiceImpl::GetSyncTask(const StoreMetaData &metaData, const RdbService::Option &option,
     const PredicatesMemo &predicates, const AsyncDetail &async)
 {
@@ -633,7 +647,7 @@ std::function<int()> RdbServiceImpl::GetSyncTask(const StoreMetaData &metaData, 
             store->Sync(ret.first, rdbQuery, notify, syncParam);
         };
         if (IsNeedMetaSync(metaData, devices)) {
-            auto result = MetaDataManager::GetInstance().Sync(devices, complete);
+            auto result = MetaDataManager::GetInstance().Sync(GetMetaSyncOption(metaData, devices), complete);
             return result ? GeneralError::E_OK : GeneralError::E_ERROR;
         }
         auto [ret, _] = store->Sync(devices, rdbQuery, notify, syncParam);
@@ -1461,7 +1475,7 @@ int RdbServiceImpl::DoAutoSync(const std::vector<std::string> &devices, const St
             store->Sync(ret.first, rdbQuery, DetailAsync(), { 0, 0 });
         };
         if (IsNeedMetaSync(metaData, onDevices)) {
-            MetaDataManager::GetInstance().Sync(onDevices, complete);
+            MetaDataManager::GetInstance().Sync(GetMetaSyncOption(metaData, onDevices), complete);
             return;
         }
         store->Sync(onDevices, rdbQuery, DetailAsync(), { 0, 0 });

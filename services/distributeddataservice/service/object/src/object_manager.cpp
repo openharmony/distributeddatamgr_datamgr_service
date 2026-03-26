@@ -1202,7 +1202,13 @@ int32_t ObjectStoreManager::SyncOnStore(
     if (!isNeedMetaSync) {
         return DoSync(prefix, syncDevices, sequenceId);
     }
-    bool result = MetaDataManager::GetInstance().Sync(uuids, [this, prefix, syncDevices, sequenceId](auto &results) {
+    MetaDataManager::DeviceMetaSyncOption deviceMetaSyncOption;
+    deviceMetaSyncOption.devices = uuids;
+    deviceMetaSyncOption.localDevice = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    deviceMetaSyncOption.storeId = meta.storeId;
+ 	deviceMetaSyncOption.bundleName = meta.bundleName;
+ 	deviceMetaSyncOption.instanceId = meta.instanceId;
+    bool result = MetaDataManager::GetInstance().Sync(deviceMetaSyncOption, [this, prefix, syncDevices, sequenceId](auto &results) {
         auto status = DoSync(prefix, syncDevices, sequenceId);
         ZLOGI("Store sync after meta sync end, status:%{public}d", status);
     });

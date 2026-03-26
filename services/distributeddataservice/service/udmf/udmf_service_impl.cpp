@@ -36,7 +36,6 @@
 #include "log_print.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/store_meta_data.h"
-#include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
 #include "dfx/reporter.h"
 #include "drag_observer.h"
@@ -718,8 +717,13 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
     auto meta = BuildMeta(key.intention, userId);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
     if (IsNeedMetaSync(meta, uuids)) {
-        bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
+        MetaDataManager::DeviceMetaSyncOption syncOption = GetMetaSyncOption(meta, devices);
+        bool res = MetaDataManager::GetInstance().Sync(syncOption, [this, devices, callback, store] (auto &results) {
             auto successRes = ProcessResult(results);
+            if (successRes.empty()) {
+                ZLOGW("No device sync success");
+                return;
+            }
             if (store->Sync(successRes, callback) != E_OK) {
                 ZLOGE("Store sync failed");
                 RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
@@ -1480,8 +1484,13 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
     auto meta = BuildMeta(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), userId);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
     if (IsNeedMetaSync(meta, uuids)) {
-        bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
+        MetaDataManager::DeviceMetaSyncOption syncOption = GetMetaSyncOption(meta, devices);
+        bool res = MetaDataManager::GetInstance().Sync(syncOption, [this, devices, callback, store] (auto &results) {
             auto successRes = ProcessResult(results);
+            if (successRes.empty()) {
+                ZLOGW("No device sync success");
+                return;
+            }
             if (store->PushSync(successRes) != E_OK) {
                 ZLOGE("Store sync failed");
             }
@@ -1499,6 +1508,18 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
         return UDMF::E_DB_ERROR;
     }
     return E_OK;
+}
+
+MetaDataManager::DeviceMetaSyncOption UdmfServiceImpl::GetMetaSyncOption(const StoreMetaData &metaData,
+    const std::vector<std::string> &devices)
+{
+    MetaDataManager::DeviceMetaSyncOption syncOption;
+    syncOption.devices = devices;
+    syncOption.localDevice = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    syncOption.storeId = metaData.storeId;
+    syncOption.bundleName = metaData.bundleName;
+    syncOption.instanceId = metaData.instanceId;
+    return syncOption;
 }
 
 int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string &key)
