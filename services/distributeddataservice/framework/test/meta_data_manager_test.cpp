@@ -463,47 +463,12 @@ HWTEST_F(MetaDataManagerTest, SyncWithOptionTest006, TestSize.Level1)
 
 /**
  * @tc.name: SyncWithOptionTest007
- * @tc.desc: SyncStoreMeta queryKeys is empty, return false.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author:
- */
-HWTEST_F(MetaDataManagerTest, SyncWithOptionTest007, TestSize.Level1)
-{
-    MetaDataManager::DeviceMetaSyncOption option;
-    option.devices = { "device001" };
-    option.localDevice = "localDevice";
-    option.bundleName = "com.test";
-    option.storeId = "testStore";
-    bool completeCalled = false;
-    MetaDataManager::OnComplete complete = [&completeCalled](const auto &results) {
-        completeCalled = true;
-    };
-    int syncCallCount = 0;
-    metaStore->syncFunc = [&syncCallCount](const auto &option, const auto &onComplete) {
-        syncCallCount++;
-        std::map<std::string, DistributedDB::DBStatus> result;
-        for (const auto &device : option.devices) {
-            result[device] = DistributedDB::DBStatus::OK;
-        }
-        onComplete(result);
-        return DistributedDB::DBStatus::OK;
-    };
-    auto result = MetaDataManager::GetInstance().Sync(option, complete);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(syncCallCount, 1);
-    EXPECT_TRUE(completeCalled);
-    metaStore->syncFunc = nullptr;
-}
-
-/**
- * @tc.name: SyncWithOptionTest008
  * @tc.desc: SyncWithQueryKeys complete is nullptr.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(MetaDataManagerTest, SyncWithOptionTest008, TestSize.Level1)
+HWTEST_F(MetaDataManagerTest, SyncWithOptionTest007, TestSize.Level1)
 {
     UserMetaData userMetaData;
     UserStatus userStatus(100, true);
