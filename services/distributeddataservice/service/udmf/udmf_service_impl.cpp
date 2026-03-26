@@ -717,7 +717,7 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
     auto meta = BuildMeta(key.intention, userId);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
     if (IsNeedMetaSync(meta, uuids)) {
-        MetaDataManager::DeviceMetaSyncOption syncOption = GetMetaSyncOption(meta, devices);
+        MetaDataManager::DeviceMetaSyncOption syncOption = GetMetaSyncOption(meta, uuids);
         bool res = MetaDataManager::GetInstance().Sync(syncOption, [this, devices, callback, store] (auto &results) {
             auto successRes = ProcessResult(results);
             if (successRes.empty()) {
@@ -1484,7 +1484,7 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
     auto meta = BuildMeta(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), userId);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
     if (IsNeedMetaSync(meta, uuids)) {
-        MetaDataManager::DeviceMetaSyncOption syncOption = GetMetaSyncOption(meta, devices);
+        MetaDataManager::DeviceMetaSyncOption syncOption = GetMetaSyncOption(meta, uuids);
         bool res = MetaDataManager::GetInstance().Sync(syncOption, [this, devices, callback, store] (auto &results) {
             auto successRes = ProcessResult(results);
             if (successRes.empty()) {
