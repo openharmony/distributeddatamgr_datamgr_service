@@ -1759,7 +1759,7 @@ HWTEST_F(KvdbServiceImplTest, DoSyncInOrderTest001, TestSize.Level0)
     SyncEnd syncEnd = SyncEndCallback;
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
         .WillRepeatedly(testing::Return(false));
-    auto status = kvdbServiceImpl_->DoSyncInOrder(meta, syncInfo, syncEnd);
+    auto status = kvdbServiceImpl_->DoSyncInOrder(meta, syncInfo, syncEnd, DBStatus::OK);
     ZLOGI("DoSyncInOrderTest001 status = :%{public}d", status);
 }
 } // namespace DistributedDataTest
