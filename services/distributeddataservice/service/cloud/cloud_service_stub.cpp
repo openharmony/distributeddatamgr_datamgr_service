@@ -27,6 +27,7 @@
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace OHOS::Security::AccessToken;
+constexpr size_t MAX_BUNDLE_INFO_COUNT = 30;
 const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnEnableCloud,
     &CloudServiceStub::OnDisableCloud,
@@ -180,10 +181,8 @@ int32_t CloudServiceStub::OnQueryLastSyncInfoBatch(MessageParcel &data, MessageP
         ZLOGE("Unmarshal id:%{public}s, size:%{public}zu", Anonymous::Change(id).c_str(), bundleInfos.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    constexpr size_t MAX_BUNDLE_INFO_COUNT = 30;
     if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
-        ZLOGE("BundleInfos size %{public}zu exceeds maximum allowed %{public}zu",
-              bundleInfos.size(), MAX_BUNDLE_INFO_COUNT);
+        ZLOGE("BundleInfos size %{public}zu exceeds maximum", bundleInfos.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [status, results] = QueryLastSyncInfoBatch(id, bundleInfos);
@@ -388,11 +387,12 @@ int32_t CloudServiceStub::OnSubscribe(MessageParcel &data, MessageParcel &reply)
         ZLOGE("read subscribe data failed.");
         return IPC_PARCEL_ERROR;
     }
-    auto status = Subscribe(type, bundleInfos, nullptr);
-    if (!ITypesUtil::Marshal(reply, status)) {
-        return IPC_PARCEL_ERROR;
+    if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
+        ZLOGE("BundleInfos size %{public}zu exceeds maximum", bundleInfos.size());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
-    return status;
+    auto status = Subscribe(type, bundleInfos, nullptr);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
 int32_t CloudServiceStub::OnUnsubscribe(MessageParcel &data, MessageParcel &reply)
@@ -403,10 +403,11 @@ int32_t CloudServiceStub::OnUnsubscribe(MessageParcel &data, MessageParcel &repl
         ZLOGE("read unsubscribe data failed.");
         return IPC_PARCEL_ERROR;
     }
-    auto status = Unsubscribe(type, bundleInfos, nullptr);
-    if (!ITypesUtil::Marshal(reply, status)) {
-        return IPC_PARCEL_ERROR;
+    if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
+        ZLOGE("BundleInfos size %{public}zu exceeds maximum", bundleInfos.size());
+        return IPC_STUB_INVALID_DATA_ERR;
     }
-    return status;
+    auto status = Unsubscribe(type, bundleInfos, nullptr);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData

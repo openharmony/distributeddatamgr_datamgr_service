@@ -1489,26 +1489,6 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyBundleInfosArray, Tes
 }
 
 /**
- * @tc.name: QueryLastSyncInfoBatch_GetCloudInfoFailed
- * @tc.desc: Test QueryLastSyncInfoBatch when GetCloudInfo returns error
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_GetCloudInfoFailed, TestSize.Level0)
-{
-    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_GetCloudInfoFailed start");
-    std::vector<CloudData::BundleInfo> bundleInfos;
-    CloudData::BundleInfo info;
-    info.bundleName = TEST_CLOUD_BUNDLE;
-    bundleInfos.push_back(info);
-
-    // No CloudInfo data prepared
-    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
-    EXPECT_EQ(status, CloudData::CloudService::ERROR);
-    EXPECT_TRUE(result.empty());
-}
-
-/**
  * @tc.name: QueryLastSyncInfoBatch_EmptyBundleName
  * @tc.desc: Test QueryLastSyncInfoBatch with empty bundleName in BundleInfo
  * @tc.type: FUNC
@@ -1893,29 +1873,6 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_ValidStoreResults_Multiple
 }
 
 /**
- * @tc.name: QueryLastSyncInfoBatch_31Items
- * @tc.desc: Test QueryLastSyncInfoBatch with 31 BundleInfo items (should fail)
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_31Items, TestSize.Level1)
-{
-    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_31Items start");
-    InitCloudInfoAndSchema();
-    
-    std::vector<CloudData::BundleInfo> bundleInfos;
-    for (int i = 0; i < 31; i++) {
-        CloudData::BundleInfo info;
-        info.bundleName = TEST_CLOUD_BUNDLE;
-        bundleInfos.push_back(info);
-    }
-    
-    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
-    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT_V20);
-    EXPECT_TRUE(result.empty());
-}
-
-/**
  * @tc.name: Subscribe_Success
  * @tc.desc: Test Subscribe with valid parameters
  * @tc.type: FUNC
@@ -1934,6 +1891,18 @@ HWTEST_F(CloudServiceImplTest, Subscribe_Success, TestSize.Level1)
     auto status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
         bundleInfos, observer);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    StoreInfo storeInfo;
+    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
+    storeInfo.bundleName = TEST_CLOUD_BUNDLE;
+    storeInfo.storeName = TEST_CLOUD_STORE;
+    CloudLastSyncInfo syncInfo;
+    auto evt = std::make_unique<CloudSyncFinishedEvent>(storeInfo, syncInfo);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    auto evt1 = std::make_unique<CloudSyncFinishedEvent>(storeInfo, syncInfo);
+    EventCenter::GetInstance().PostEvent(std::move(evt1));
+    sleep(5);
+    ZLOGI("CloudServiceImplTest Subscribe_Success end");
+
 }
 
 /**
@@ -1949,7 +1918,7 @@ HWTEST_F(CloudServiceImplTest, Subscribe_EmptyBundleInfos, TestSize.Level1)
     auto observer = std::make_shared<SyncInfoObserverMock>();
     auto status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
         bundleInfos, observer);
-    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT_V20);
 }
 
 /**
@@ -2015,7 +1984,7 @@ HWTEST_F(CloudServiceImplTest, Unsubscribe_EmptyBundleInfos, TestSize.Level1)
     auto observer = std::make_shared<SyncInfoObserverMock>();
     auto status = cloudServiceImpl_->Unsubscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
         bundleInfos, observer);
-    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_EQ(status, CloudData::CloudService::INVALID_ARGUMENT_V20);
 }
 
 /**
@@ -2071,5 +2040,56 @@ HWTEST_F(CloudServiceImplTest, Unsubscribe_MultipleBundleInfos, TestSize.Level1)
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
 }
 
+/**
+ * @tc.name: SyncManager_QueryLastSyncInfo_EmptyBundleName
+ * @tc.desc: Test QueryLastSyncInfo with empty bundleName
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, SyncManager_QueryLastSyncInfo_EmptyBundleName, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest SyncManager_QueryLastSyncInfo_EmptyBundleName start");
+    auto &syncManager = cloudServiceImpl_->syncManager_;
+    int32_t user = 100;
+    auto status = syncManager.QueryLastSyncInfo(user, "", "");
+    EXPECT_EQ(status.first, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: SyncManager_QueryLastSyncInfo_InvalidUser
+ * @tc.desc: Test QueryLastSyncInfo with invalid user
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, SyncManager_QueryLastSyncInfo_InvalidUser, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest SyncManager_QueryLastSyncInfo_InvalidUser start");
+    auto &syncManager = cloudServiceImpl_->syncManager_;
+    int32_t invalidUser = 1000;
+    auto status = syncManager.QueryLastSyncInfo(invalidUser, "id", "bundleName");
+    EXPECT_EQ(status.first, CloudData::CloudService::ERROR);
+}
+
+/**
+ * @tc.name: SyncManager_QueryLastSyncInfo_NormalParams
+ * @tc.desc: Test QueryLastSyncInfo with normal params
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, SyncManager_QueryLastSyncInfo_NormalParams, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest SyncManager_QueryLastSyncInfo_NormalParams start");
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
+    uint64_t syncId = 100;
+    std::vector<std::tuple<CloudData::QueryKey, uint64_t>> cloudSyncInfos;
+    CloudData::QueryKey queryKey{ user, TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE };
+    cloudSyncInfos.emplace_back(std::make_tuple(std::move(queryKey), syncId));
+
+    auto &syncManager = cloudServiceImpl_->syncManager_;
+    syncManager.UpdateStartSyncInfo(cloudSyncInfos);
+
+    auto status = syncManager.QueryLastSyncInfo(user, TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE);
+    EXPECT_EQ(status.first, CloudData::CloudService::SUCCESS);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

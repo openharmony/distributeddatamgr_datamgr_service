@@ -791,11 +791,6 @@ std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBat
     if (id.empty() || bundleInfos.empty()) {
         return { INVALID_ARGUMENT_V20, batchResults };
     }
-    constexpr size_t MAX_BUNDLE_INFO_COUNT = 30;
-    if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
-        ZLOGE("BundleInfos size %{public}zu exceeds maximum allowed", bundleInfos.size());
-        return { INVALID_ARGUMENT_V20, batchResults };
-    }
     auto user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
@@ -2128,7 +2123,7 @@ int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<B
     ZLOGI("Subscribe type:%{public}d, bundleInfos size:%{public}zu", static_cast<int32_t>(type), bundleInfos.size());
     if (bundleInfos.empty()) {
         ZLOGE("bundleInfos is empty");
-        return INVALID_ARGUMENT;
+        return INVALID_ARGUMENT_V20;
     }
 
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
@@ -2153,7 +2148,7 @@ int32_t CloudServiceImpl::Unsubscribe(CloudSubscribeType type, const std::vector
 
     if (bundleInfos.empty()) {
         ZLOGE("bundleInfos is empty");
-        return INVALID_ARGUMENT;
+        return INVALID_ARGUMENT_V20;
     }
 
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();

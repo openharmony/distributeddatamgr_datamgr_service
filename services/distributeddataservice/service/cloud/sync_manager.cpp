@@ -846,13 +846,13 @@ std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryL
 {
     std::map<std::string, CloudLastSyncInfo> lastSyncInfoMap;
     if (bundleName.empty()) {
-        return { INVALID_ARGUMENT, lastSyncInfoMap };
+        return { CloudService::INVALID_ARGUMENT, lastSyncInfoMap };
     }
     std::string accountId = id;
     std::string schemaKey = CloudInfo::GetSchemaKey(user, bundleName);
     SchemaMeta schemaMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true) || schemaMeta.databases.empty()) {
-        return { ERROR, lastSyncInfoMap };
+        return { CloudService::ERROR, lastSyncInfoMap };
     }
 
     for (const auto &database : schemaMeta.databases) {
