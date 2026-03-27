@@ -23,6 +23,7 @@
 #include "store_cache.h"
 #include "udmf_notifier_proxy.h"
 #include "udmf_service_stub.h"
+#include "metadata/meta_data_manager.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -101,6 +102,9 @@ private:
     int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
     int32_t FillDelayUnifiedData(const UnifiedKey &key, UnifiedData &unifiedData);
     std::vector<std::string> GetDevicesForDelayData();
+    using DeviceMetaSyncOption = DistributedData::MetaDataManager::DeviceMetaSyncOption;
+    static DeviceMetaSyncOption GetMetaSyncOption(const DistributedData::StoreMetaData &metaData,
+        const std::vector<std::string> &devices);
 
     class UdmfStatic : public StaticActs {
     public:

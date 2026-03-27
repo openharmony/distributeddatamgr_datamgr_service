@@ -54,6 +54,7 @@ public:
     using Database = DistributedData::Database;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using StoreInfo = DistributedData::StoreInfo;
+    using DeviceMetaSyncOption = DistributedData::MetaDataManager::DeviceMetaSyncOption;
     RdbServiceImpl();
     virtual ~RdbServiceImpl();
 
@@ -288,6 +289,9 @@ private:
     static SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
 
     static StoreInfo GetStoreInfoEx(const StoreMetaData &metaData);
+
+    static DeviceMetaSyncOption GetMetaSyncOption(const StoreMetaData &metaData,
+        const std::vector<std::string> &devices, bool isWait = false);
 
     static int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
                                  DistributedData::MetaDataSaver &saver);

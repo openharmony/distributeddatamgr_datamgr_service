@@ -1128,8 +1128,15 @@ Status KVDBServiceImpl::DoSyncInOrder(
         RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_START,
             SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
             std::to_string(info.syncId), DATA_TYPE, meta.dataType, WATER_VERSION, recv.second);
+        MetaDataManager::DeviceMetaSyncOption syncOption;
+        syncOption.devices = uuids;
+        syncOption.localDevice = DMAdapter::GetInstance().GetLocalDevice().uuid;
+        syncOption.storeId = meta.storeId;
+        syncOption.bundleName = meta.bundleName;
+        syncOption.instanceId = meta.instanceId;
+        syncOption.isRetry = info.isRetry;
         auto result = MetaDataManager::GetInstance().Sync(
-            uuids, [this, meta, info, complete, type](const auto &results) {
+            syncOption, [this, meta, info, complete, type](const auto &results) {
             RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_SUCCESS,
                 SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName, CONCURRENT_ID,
                 std::to_string(info.syncId), DATA_TYPE, meta.dataType);
@@ -1141,7 +1148,7 @@ Status KVDBServiceImpl::DoSyncInOrder(
             auto status = DoSyncBegin(ret.first, meta, info, complete, type);
             ZLOGD("data sync status:%{public}d appId:%{public}s, storeId:%{public}s",
                 static_cast<int32_t>(status), meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
-        }, false, info.isRetry);
+        });
         if (!result) {
             RADAR_REPORT(STANDARD_DEVICE_SYNC, STANDARD_META_SYNC, RADAR_FAILED, ERROR_CODE, Status::ERROR,
                 BIZ_STATE, END, SYNC_STORE_ID, Anonymous::Change(meta.storeId), SYNC_APP_ID, meta.bundleName,
