@@ -1902,7 +1902,6 @@ HWTEST_F(CloudServiceImplTest, Subscribe_Success, TestSize.Level1)
     EventCenter::GetInstance().PostEvent(std::move(evt1));
     sleep(5);
     ZLOGI("CloudServiceImplTest Subscribe_Success end");
-
 }
 
 /**
