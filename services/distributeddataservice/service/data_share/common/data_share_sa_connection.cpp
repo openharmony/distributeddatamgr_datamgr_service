@@ -123,7 +123,7 @@ bool SAConnection::InputParaSet(MessageParcel &data)
 bool SAConnection::OutputParaGet(MessageParcel &reply)
 {
     descriptor_ = reply.ReadInterfaceToken();
-    code_ = reply.ReadInt32();
+    code_ = reply.ReadUint32();
     return true;
 }
 } // namespace OHOS::DataShare
