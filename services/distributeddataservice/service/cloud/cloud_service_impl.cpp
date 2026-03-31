@@ -683,7 +683,7 @@ std::string CloudServiceImpl::BuildStatisticSql(const std::string &tableName)
     sql.append("count(case when cloud_gid = '' and flag&(0x1|0x8|0x20) = 0x20 then 1 end) as inserted,");
     sql.append("count(case when cloud_gid <> '' and (flag&0x20 != 0 or (status = 2 or status = 3)) "
         "then 1 end) as updated,");
-    sql.append("count(case when cloud_gid <> '' and flag&(0x1|0x8|0x20) = 0 and status not in (2, 3) "
+    sql.append("count(case when cloud_gid <> '' and flag&(0x1|0x8|0x20) = 0 and status != 2 and status != 3 "
         "then 1 end) as normal");
     sql.append(" from ").append(logTable);
 
