@@ -50,7 +50,6 @@ ohos_fuzztest("SoftBusAdapterFuzzTest") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
-    "datamgr_service:distributeddatasvcfwk",
     "hilog:libhilog",
     "ipc:ipc_single",
     "json:nlohmann_json_static",
