@@ -35,6 +35,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(isBackup)], isBackup);
     SetValue(node[GET_NAME(isEncrypt)], isEncrypt);
     SetValue(node[GET_NAME(isManualClean)], isManualClean);
+    SetValue(node[GET_NAME(isManualCleanDevice)], isManualCleanDevice);
     SetValue(node[GET_NAME(isDirty)], isDirty);
     SetValue(node[GET_NAME(isSearchable)], isSearchable);
     SetValue(node[GET_NAME(isNeedCompress)], isNeedCompress);
@@ -78,6 +79,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(isDirty), isDirty);
     GetValue(node, GET_NAME(isEncrypt), isEncrypt);
     GetValue(node, GET_NAME(isManualClean), isManualClean);
+    GetValue(node, GET_NAME(isManualCleanDevice), isManualCleanDevice);
     GetValue(node, GET_NAME(isSearchable), isSearchable);
     GetValue(node, GET_NAME(isNeedCompress), isNeedCompress);
     GetValue(node, GET_NAME(storeType), storeType);
@@ -142,6 +144,7 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
         Constant::NotEqual(enableCloud, metaData.enableCloud) ||
         Constant::NotEqual(cloudAutoSync, metaData.cloudAutoSync) ||
         Constant::NotEqual(isManualClean, metaData.isManualClean) ||
+        Constant::NotEqual(isManualCleanDevice, metaData.isManualCleanDevice) ||
         Constant::NotEqual(isNeedUpdateDeviceId, metaData.isNeedUpdateDeviceId)) {
         return false;
     }

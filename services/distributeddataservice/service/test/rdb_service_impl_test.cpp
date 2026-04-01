@@ -1481,6 +1481,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables004, TestSize.Level0)
     param.bundleName_ = TEST_BUNDLE;
     param.storeName_ = "SetDistributedTables004";
     param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    param.isAutoCleanDevice_ = true;
     std::vector<std::string> tables;
     std::vector<OHOS::DistributedRdb::Reference> references;
 
@@ -1510,6 +1511,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
     param.area_ = metaData_.area;
     param.level_ = metaData_.securityLevel;
     param.isEncrypt_ = metaData_.isEncrypt;
+    param.isAutoCleanDevice_ = false;
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
     auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
     EXPECT_EQ(result, RDB_ERROR);
