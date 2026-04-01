@@ -1082,6 +1082,9 @@ void RdbServiceImpl::SetReturnParam(const StoreMetaData &metadata, RdbSyncerPara
     param.customDir_ = metadata.customDir;
     param.isEncrypt_ = metadata.isEncrypt;
     param.isAutoClean_ = !metadata.isManualClean;
+    if (TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
+        param.isAutoCleanDevice_ = !metadata.isManualCleanDevice;
+    }
     param.isSearchable_ = metadata.isSearchable;
     param.haMode_ = metadata.haMode;
 }
@@ -1303,6 +1306,9 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isEncrypt = param.isEncrypt_;
     metaData.isManualClean = !param.isAutoClean_;
+    if (TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
+        metaData.isManualCleanDevice = !param.isAutoCleanDevice_;
+    }
     metaData.isSearchable = param.isSearchable_;
     metaData.haMode = param.haMode_;
     metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
