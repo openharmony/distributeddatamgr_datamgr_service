@@ -2183,9 +2183,6 @@ void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
     std::string storeId = storeInfo.storeName;
     auto &syncInfo = syncFinishedEvent.GetSyncInfo();
 
-    ZLOGI("OnSyncInfoChanged: bundleName=%{public}s, user=%{public}d, storeId=%{public}s", bundleName.c_str(), user,
-        Anonymous::Change(storeId).c_str());
-
     std::string bundleKey = bundleName + "_" + std::to_string(user);
     std::vector<uint32_t> tokenIds;
     {
@@ -2200,14 +2197,13 @@ void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
         }
         tokenIds = subIt->second;
     }
-
     CloudSyncInfo cloudSyncInfo{ syncInfo.startTime, syncInfo.finishTime, syncInfo.code, syncInfo.syncStatus };
-
     std::lock_guard<std::mutex> lock(notifyMutex_);
     for (const auto &tokenId : tokenIds) {
         pendingNotifies_[tokenId][bundleName][storeId] = cloudSyncInfo;
     }
-
+    ZLOGI("add pendingNotifies bundleName:%{public}s, storeId:%{public}s, code:%{public}d, SyncStatus:%{public}d",
+        bundleName.c_str(), Anonymous::Change(storeId).c_str(), syncInfo.code, syncInfo.syncStatus);
     if (notifyTaskId_ != ExecutorPool::INVALID_TASK_ID) {
         return;
     }

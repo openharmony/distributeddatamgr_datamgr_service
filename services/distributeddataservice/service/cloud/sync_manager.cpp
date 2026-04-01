@@ -902,6 +902,8 @@ void SyncManager::UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uin
             storeInfo.storeName = key.storeId;
             auto evt = std::make_unique<CloudSyncFinishedEvent>(storeInfo, syncInfo);
             EventCenter::GetInstance().PostEvent(std::move(evt));
+            ZLOGI("UpdateStartSyncInfo bundleName:%{public}s, user=%{public}d, storeId=%{public}s, syncId=%{public}"
+                PRIu64, key.bundleName.c_str(), key.user, Anonymous::Change(key.storeId).c_str(), id);
             val[id] = std::move(syncInfo);
             return !val.empty();
         });
@@ -915,9 +917,11 @@ void SyncManager::UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId
     }
     lastSyncInfos_.ComputeIfPresent(queryKey, [syncId, code](auto &key, std::map<SyncId, CloudLastSyncInfo> &val) {
         auto now = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+        ZLOGI("UpdateFinishSyncInfo bundleName:%{public}s, user=%{public}d, storeId=%{public}s, syncId=%{public}"
+            PRIu64, key.bundleName.c_str(), key.user, Anonymous::Change(key.storeId).c_str(), syncId);
         for (auto iter = val.begin(); iter != val.end();) {
-            bool isExpired = ((now - iter->second.startTime) >= EXPIRATION_TIME) && iter->second.code == -1;
-            if ((iter->first != syncId && ((iter->second.code != -1) || isExpired))) {
+            bool isExpired = ((now - iter->second.startTime) >= EXPIRATION_TIME);
+            if (iter->first != syncId && isExpired) {
                 iter = val.erase(iter);
             } else if (iter->first == syncId) {
                 iter->second.finishTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
