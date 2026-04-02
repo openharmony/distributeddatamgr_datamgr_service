@@ -47,6 +47,11 @@ std::string CloudLastSyncInfo::GetKey(const int32_t user, const std::string &bun
     return GetKey(INFO_PREFIX, { std::to_string(user), bundleName, std::to_string(instanceId), storeId });
 }
 
+std::string CloudLastSyncInfo::GetKey(const int32_t user, const std::string &bundleName)
+{
+    return GetKey(INFO_PREFIX, { std::to_string(user), bundleName });
+}
+
 std::string CloudLastSyncInfo::GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields)
 {
     return Constant::Join(prefix, Constant::KEY_SEPARATOR, fields);
