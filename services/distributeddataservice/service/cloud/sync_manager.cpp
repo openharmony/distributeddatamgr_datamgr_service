@@ -842,8 +842,9 @@ std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryL
 }
 
 std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryLastSyncInfo(
-    int32_t user, const std::string &id, const std::string &bundleName)
+    int32_t user, const std::string &id, const BundleInfo &bundleInfo)
 {
+    auto &bundleName = bundleInfo.bundleName;
     std::map<std::string, CloudLastSyncInfo> lastSyncInfoMap;
     if (bundleName.empty()) {
         return { CloudService::INVALID_ARGUMENT, lastSyncInfoMap };
@@ -857,6 +858,9 @@ std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> SyncManager::QueryL
 
     for (const auto &database : schemaMeta.databases) {
         std::string storeId = database.name;
+        if (!bundleInfo.storeId.empty() && bundleInfo.storeId != storeId) {
+            continue;
+        }
         QueryKey queryKey{ user, accountId, bundleName, storeId };
 
         bool found = false;
@@ -1147,6 +1151,20 @@ void SyncManager::OnScreenUnlocked(int32_t user)
 void SyncManager::CleanCompensateSync(int32_t userId)
 {
     compensateSyncInfos_.Erase(userId);
+}
+
+void SyncManager::ClearLastSyncInfo(int32_t user, const std::string &accountId, const std::string &bundleName)
+{
+    ZLOGI("ClearLastSyncInfo for bundleName:%{public}s, user:%{public}d, accountId:%{public}s", bundleName.c_str(),
+        user, Anonymous::Change(accountId).c_str());
+
+    lastSyncInfos_.EraseIf([user, &accountId, &bundleName](const QueryKey &key, std::map<SyncId, CloudLastSyncInfo> &) {
+        if (key.user != user || key.accountId != accountId) {
+            return false;
+        }
+        return bundleName.empty() || key.bundleName == bundleName;
+    });
+    MetaDataManager::GetInstance().DelMeta(CloudLastSyncInfo::GetKey(user, bundleName), true);
 }
 
 void SyncManager::AddCompensateSync(const StoreMetaData &meta)

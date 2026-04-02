@@ -196,6 +196,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
         }
     }
     Execute(GenTask(0, cloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
+    syncManager_.ClearLastSyncInfo(cloudInfo.user, cloudInfo.id);
     ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
@@ -244,6 +245,9 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     }
     SyncConfig::UpdateConfig(user, bundleName, config.dbInfo);
     Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
+    if (appSwitch == SWITCH_OFF) {
+        syncManager_.ClearLastSyncInfo(cloudInfo.user, cloudInfo.id, bundleName);
+    }
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
         SyncManager::SyncInfo info(cloudInfo.user, bundleName);
         syncManager_.DoCloudSync(info);
@@ -797,7 +801,6 @@ std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBat
         Report(FT_QUERY_INFO, Fault::CSF_CLOUD_INFO, "", "QueryLastSyncInfoBatch ret=" + std::to_string(status));
         return { ERROR, batchResults };
     }
-    int32_t successCount = 0;
     for (const auto &bundleInfo : bundleInfos) {
         if (bundleInfo.bundleName.empty()) {
             batchResults[bundleInfo.bundleName] = {};
@@ -808,9 +811,9 @@ std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBat
             batchResults[bundleInfo.bundleName] = {};
             continue;
         }
-        auto [ret, storeResults] = syncManager_.QueryLastSyncInfo(user, id, bundleInfo.bundleName);
+        auto [ret, storeResults] = syncManager_.QueryLastSyncInfo(user, id, bundleInfo);
         if (ret != SUCCESS || storeResults.empty()) {
-            ZLOGW("QueryLastSyncInfo failed for bundleName: %{public}s, ret: %{public}d",
+            ZLOGE("QueryLastSyncInfo failed for bundleName: %{public}s, ret: %{public}d",
                 bundleInfo.bundleName.c_str(), ret);
             batchResults[bundleInfo.bundleName] = {};
             continue;
@@ -824,9 +827,8 @@ std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBat
             queryResults[storeId] = std::move(cloudSyncInfo);
         }
         batchResults[bundleInfo.bundleName] = std::move(queryResults);
-        successCount++;
     }
-    return { successCount == 0 ? ERROR : SUCCESS, batchResults };
+    return { SUCCESS, batchResults };
 }
 
 int32_t CloudServiceImpl::OnInitialize()
@@ -1289,6 +1291,7 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
         cloudInfo.apps.find(bundleName) != cloudInfo.apps.end()) {
         cloudInfo.apps.erase(bundleName);
         MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+        MetaDataManager::GetInstance().DelMeta(CloudLastSyncInfo::GetKey(user, bundleName), true);
     }
 
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);

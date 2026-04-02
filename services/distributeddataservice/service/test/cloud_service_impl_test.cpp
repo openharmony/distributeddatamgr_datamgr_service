@@ -67,6 +67,7 @@ using DBSwitchInfo = OHOS::CloudData::DBSwitchInfo;
 using SwitchConfig = OHOS::CloudData::SwitchConfig;
 using DBActionInfo = OHOS::CloudData::DBActionInfo;
 using ClearConfig = OHOS::CloudData::ClearConfig;
+using BundleInfo = OHOS::CloudData::BundleInfo;
 
 namespace OHOS::Test {
 namespace DistributedDataTest {
@@ -184,7 +185,7 @@ void CloudServiceImplTest::CheckDelMeta(StoreMetaMapping &metaMapping, StoreMeta
     meta.user = "100";
     auto res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
- 
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
     metaMapping.dataDir = "";
@@ -556,7 +557,7 @@ HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_002, TestSize.Level0)
     appInfo.bundleName = TEST_CLOUD_BUNDLE;
     appInfo.appId = TEST_CLOUD_APPID;
     appInfo.cloudSwitch = true;
-    cloudInfo.apps = {{ TEST_CLOUD_BUNDLE, appInfo }};
+    cloudInfo.apps = { { TEST_CLOUD_BUNDLE, appInfo } };
     auto status = cloudServiceImpl_->UpdateSchemaFromServer(cloudInfo, user);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     CloudServer::instance_ = nullptr;
@@ -678,7 +679,7 @@ HWTEST_F(CloudServiceImplTest, QueryByInvitation001, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, ConfirmInvitation001, TestSize.Level0)
 {
     int32_t confirmation = 0;
-    std::tuple<int32_t, std::string, std::string> result { 0, "", "" };
+    std::tuple<int32_t, std::string, std::string> result{ 0, "", "" };
     std::string invitation;
     auto status = cloudServiceImpl_->ConfirmInvitation(invitation, confirmation, result);
     EXPECT_EQ(status, GeneralError::E_ERROR);
@@ -833,7 +834,7 @@ HWTEST_F(CloudServiceImplTest, GetStoreMetaData_004, TestSize.Level1)
     bool res = cloudServiceImpl_->GetStoreMetaData(meta);
     EXPECT_EQ(res, false);
     CheckDelMeta(metaMapping, meta, meta1);
- 
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKey(), meta1, true), true);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta1.GetKeyLocal(), localMetaData, true), true);
@@ -1505,7 +1506,8 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyBundleName, TestSize.
     bundleInfos.push_back(info);
 
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
-    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result[info.bundleName].empty());
 }
 
 /**
@@ -1525,29 +1527,8 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_InvalidBundleName, TestSiz
     bundleInfos.push_back(info);
 
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
-    EXPECT_EQ(status, CloudData::CloudService::ERROR);
-}
-
-/**
- * @tc.name: QueryLastSyncInfoBatch_QueryFailed
- * @tc.desc: Test QueryLastSyncInfoBatch when SyncManager::QueryLastSyncInfo returns error
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_QueryFailed, TestSize.Level0)
-{
-    ZLOGI("CloudServiceImplTest QueryLastSyncInfoBatch_QueryFailed start");
-    InitCloudInfoAndSchema();
-
-    std::vector<CloudData::BundleInfo> bundleInfos;
-    CloudData::BundleInfo info;
-    info.bundleName = TEST_CLOUD_BUNDLE;
-    bundleInfos.push_back(info);
-
-    // Mock SyncManager to return error
-    auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
-    // Since we don't have mock for SyncManager, it will return empty result
-    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result[info.bundleName].empty());
 }
 
 /**
@@ -1568,7 +1549,8 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_EmptyStoreResults, TestSiz
 
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
     // QueryLastSyncInfo will return empty results without actual sync data
-    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result[info.bundleName].empty());
 }
 
 /**
@@ -1630,7 +1612,9 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_AllBundlesFailed, TestSize
     bundleInfos.push_back(info2);
 
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
-    EXPECT_EQ(status, CloudData::CloudService::ERROR);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(result[info1.bundleName].empty());
+    EXPECT_TRUE(result[info2.bundleName].empty());
 }
 
 /**
@@ -1940,8 +1924,7 @@ HWTEST_F(CloudServiceImplTest, Subscribe_DuplicateSubscribe, TestSize.Level1)
         bundleInfos, observer);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
 
-    status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED,
-        bundleInfos, observer);
+    status = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED, bundleInfos, observer);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
 }
 
@@ -2050,7 +2033,8 @@ HWTEST_F(CloudServiceImplTest, SyncManager_QueryLastSyncInfo_EmptyBundleName, Te
     ZLOGI("CloudServiceImplTest SyncManager_QueryLastSyncInfo_EmptyBundleName start");
     auto &syncManager = cloudServiceImpl_->syncManager_;
     int32_t user = 100;
-    auto status = syncManager.QueryLastSyncInfo(user, "", "");
+    BundleInfo info;
+    auto status = syncManager.QueryLastSyncInfo(user, "", info);
     EXPECT_EQ(status.first, CloudData::CloudService::INVALID_ARGUMENT);
 }
 
@@ -2065,7 +2049,8 @@ HWTEST_F(CloudServiceImplTest, SyncManager_QueryLastSyncInfo_InvalidUser, TestSi
     ZLOGI("CloudServiceImplTest SyncManager_QueryLastSyncInfo_InvalidUser start");
     auto &syncManager = cloudServiceImpl_->syncManager_;
     int32_t invalidUser = 1000;
-    auto status = syncManager.QueryLastSyncInfo(invalidUser, "id", "bundleName");
+    BundleInfo info = { .bundleName = "bundleName" };
+    auto status = syncManager.QueryLastSyncInfo(invalidUser, "id", info);
     EXPECT_EQ(status.first, CloudData::CloudService::ERROR);
 }
 
@@ -2086,9 +2071,18 @@ HWTEST_F(CloudServiceImplTest, SyncManager_QueryLastSyncInfo_NormalParams, TestS
 
     auto &syncManager = cloudServiceImpl_->syncManager_;
     syncManager.UpdateStartSyncInfo(cloudSyncInfos);
-
-    auto status = syncManager.QueryLastSyncInfo(user, TEST_CLOUD_APPID, TEST_CLOUD_BUNDLE);
-    EXPECT_EQ(status.first, CloudData::CloudService::SUCCESS);
+    BundleInfo info = { .bundleName = TEST_CLOUD_BUNDLE };
+    auto [status, results] = syncManager.QueryLastSyncInfo(user, TEST_CLOUD_APPID, info);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(!results.empty());
+    info.storeId = TEST_CLOUD_STORE;
+    std::tie(status, results) = syncManager.QueryLastSyncInfo(user, TEST_CLOUD_APPID, info);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(!results.empty());
+    info.storeId = "test";
+    std::tie(status, results) = syncManager.QueryLastSyncInfo(user, TEST_CLOUD_APPID, info);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+    EXPECT_TRUE(results.empty());
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
