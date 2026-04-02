@@ -2001,6 +2001,47 @@ ohos_unittest("UdmfServiceImplMockTest") {
   }
 }
 
+ohos_unittest("UdmfPermissionPolicyUtilsTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
+    "udmf_permission_policy_utils_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  external_deps = [
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "kv_store:datamgr_common",
+    "udmf:udmf_client",
+  ]
+}
+
+
 ohos_unittest("UdmfServiceStubTest") {
   module_out_path = module_output_path
   sources = [ "udmf_service_stub_test.cpp" ]

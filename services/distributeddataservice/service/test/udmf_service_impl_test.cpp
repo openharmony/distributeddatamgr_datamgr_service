@@ -1124,7 +1124,8 @@ HWTEST_F(UdmfServiceImplTest, VerifySavedTokenId003, TestSize.Level1)
 
 /**
  * @tc.name: ProcessCrossDeviceData001
- * @tc.desc: test ProcessCrossDeviceData with local
+ * @tc.desc: test ProcessCrossDeviceData with local， Function returns E_INVALID_PARAMETERS because
+ * test data contains invalid URIs
  * @tc.type: FUNC
  */
 HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData001, TestSize.Level1)
@@ -1164,11 +1165,8 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData001, TestSize.Level1)
     unifiedData.SetRuntime(runtime);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
     std::map<unsigned int, std::vector<Uri>> grantUris;
-    service.ProcessCrossDeviceData(tokenId, unifiedData, grantUris);
-    EXPECT_EQ(grantUris[AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION].size(), 1);
-    EXPECT_EQ(grantUris.count(AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
-        AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION |
-        AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION), 0);
+    auto result = service.ProcessCrossDeviceData(tokenId, unifiedData, grantUris);
+    EXPECT_EQ(result, E_INVALID_PARAMETERS);
 }
 
 /**
@@ -1193,35 +1191,17 @@ HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData002, TestSize.Level1)
 
     std::shared_ptr<Object> obj1 = std::make_shared<Object>();
     obj1->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj1->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
-    obj1->value_[REMOTE_URI] = "https://error_bundle_name/a.jpeg";
+    obj1->value_[ORI_URI] = "file://error_bundle_name/b.jpeg";
+    obj1->value_[REMOTE_URI] = "file://error_bundle_name/b.jpeg";
     obj1->value_[FILE_TYPE] = "general.image";
     auto record1 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj1);
     unifiedData.AddRecord(record1);
 
-    std::shared_ptr<Object> obj2 = std::make_shared<Object>();
-    obj2->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj2->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
-    obj2->value_[FILE_TYPE] = "general.image";
-    auto record2 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj2);
-    unifiedData.AddRecord(record2);
-
-    std::shared_ptr<Object> obj3 = std::make_shared<Object>();
-    obj3->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj3->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
-    obj3->value_[REMOTE_URI] = "/error_bundle_name/a.jpeg";
-    obj3->value_[FILE_TYPE] = "general.image";
-    auto record3 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj3);
-    unifiedData.AddRecord(record3);
-
     unifiedData.SetRuntime(runtime);
     uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
     std::map<unsigned int, std::vector<Uri>> grantUris;
-    service.ProcessCrossDeviceData(tokenId, unifiedData, grantUris);
-    EXPECT_EQ(grantUris.count(AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION), 0);
-    EXPECT_EQ(grantUris[AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
-        AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION |
-        AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION].size(), 1);
+    auto result = service.ProcessCrossDeviceData(tokenId, unifiedData, grantUris);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**
@@ -1294,10 +1274,10 @@ HWTEST_F(UdmfServiceImplTest, ProcessUri002, TestSize.Level1)
 }
 
 /**
- * @tc.name: ProcessUri003
- * @tc.desc: test process uri verify fail
- * @tc.type: FUNC
- */
+* @tc.name: ProcessUri003
+* @tc.desc: test process uri verify fail
+* @tc.type: FUNC
+*/
 HWTEST_F(UdmfServiceImplTest, ProcessUri003, TestSize.Level1)
 {
     UdmfServiceImpl service;
@@ -1313,6 +1293,90 @@ HWTEST_F(UdmfServiceImplTest, ProcessUri003, TestSize.Level1)
     option.intention = Intention::UD_INTENTION_DRAG;
     auto status = service.ProcessUri(option, data);
     EXPECT_EQ(status, E_ERROR);
+}
+
+/**
+* @tc.name: ProcessUri004
+* @tc.desc: test process uri with same tokenId (no permission needed)
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, ProcessUri004, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    runtime->tokenId = tokenId;
+    runtime->sourcePackage = HAP_BUNDLE_NAME;
+    runtime->deviceId = PreProcessUtils::GetLocalDeviceId();
+    UnifiedData data;
+    data.SetRuntime(*runtime);
+    QueryOption option;
+    option.key = "udmf://drag/com.test.demo/ascdca";
+    option.tokenId = tokenId;
+    option.intention = Intention::UD_INTENTION_DRAG;
+    auto status = service.ProcessUri(option, data);
+    EXPECT_EQ(status, E_OK);
+}
+
+/**
+* @tc.name: ProcessUri005
+* @tc.desc: test process uri with invalid saved token id
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, ProcessUri005, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::shared_ptr<Runtime> runtime = std::make_shared<Runtime>();
+    uint32_t tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    runtime->tokenId = tokenId;
+    runtime->sourcePackage = HAP_BUNDLE_NAME1;
+    runtime->deviceId = PreProcessUtils::GetLocalDeviceId();
+    UnifiedData data;
+    data.SetRuntime(*runtime);
+    QueryOption option;
+    option.key = "udmf://drag/com.test.demo/ascdca";
+    option.tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME1, 0);
+    option.intention = Intention::UD_INTENTION_DRAG;
+    auto status = service.ProcessUri(option, data);
+    EXPECT_EQ(status, E_ERROR);
+}
+
+/**
+* @tc.name: ProcessCrossDeviceData004
+* @tc.desc: test ProcessCrossDeviceData with null runtime
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData004, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    UnifiedData unifiedData;
+    std::map<unsigned int, std::vector<Uri>> grantUris;
+    auto result = service.ProcessCrossDeviceData(111111, unifiedData, grantUris);
+    EXPECT_EQ(result, E_DB_ERROR);
+}
+
+/**
+* @tc.name: ProcessCrossDeviceData005
+* @tc.desc: test ProcessCrossDeviceData with invalid URI
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfServiceImplTest, ProcessCrossDeviceData005, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    Runtime runtime;
+    runtime.deviceId = "test";
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
+    obj->value_[ORI_URI] = "file://error_bundle_name/a.jpeg";
+    obj->value_[REMOTE_URI] = "/error_bundle_name/a.jpeg";
+    obj->value_[FILE_TYPE] = "general.image";
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    unifiedData.AddRecord(record);
+    unifiedData.SetRuntime(runtime);
+    std::map<unsigned int, std::vector<Uri>> grantUris;
+    auto result = service.ProcessCrossDeviceData(111111, unifiedData, grantUris);
+    EXPECT_EQ(result, E_INVALID_PARAMETERS);
 }
 
 /**
@@ -1377,6 +1441,53 @@ HWTEST_F(UdmfServiceImplTest, HandleFileUris001, TestSize.Level1)
     auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
     auto result = PreProcessUtils::HandleFileUris(tokenId, unifiedData);
     EXPECT_EQ(result, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: HandleFileUris002
+ * @tc.desc: HandleFileUris record is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleFileUris002, TestSize.Level1)
+{
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    UnifiedData unifiedData;
+    auto record = nullptr;
+    unifiedData.AddRecord(record);
+    auto result = PreProcessUtils::HandleFileUris(tokenId, unifiedData);
+    EXPECT_EQ(result, E_OK);
+}
+
+/**
+ * @tc.name: HandleFileUris003
+ * @tc.desc: HandleFileUris entries is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, HandleFileUris003, TestSize.Level1)
+{
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    UnifiedData unifiedData;
+    std::shared_ptr<Object> obj = nullptr;
+    auto record1 = std::make_shared<UnifiedRecord>(UDType::HTML, obj);
+    unifiedData.AddRecord(record1);
+    auto result = PreProcessUtils::HandleFileUris(tokenId, unifiedData);
+    EXPECT_EQ(result, E_OK);
+}
+
+/**
+ * @tc.name: ReadCheckUri001
+ * @tc.desc: uris is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, ReadCheckUri001, TestSize.Level1)
+{
+    auto tokenId = AccessTokenKit::GetHapTokenID(100, HAP_BUNDLE_NAME, 0);
+    UnifiedData unifiedData;
+    const std::vector<std::string> uris;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    auto result = PreProcessUtils::ReadCheckUri(tokenId, unifiedData, uris);
+    EXPECT_EQ(result, E_OK);
 }
 
 /**

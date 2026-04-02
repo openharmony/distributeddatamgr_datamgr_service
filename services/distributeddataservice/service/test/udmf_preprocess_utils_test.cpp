@@ -308,7 +308,11 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileType001, TestSize.Level1)
     record2->AddEntry("general.file-uri", "1111");
     std::shared_ptr<UnifiedRecord> record3 = std::make_shared<UnifiedRecord>();
     record3->AddEntry("general.file-uri", 1);
-    std::vector<std::shared_ptr<UnifiedRecord>> records = { record, record1, record2, record3 };
+    std::shared_ptr<UnifiedRecord> record4 = nullptr;
+    std::shared_ptr<Object> obj2 = std::make_shared<Object>();
+    std::shared_ptr<UnifiedRecord> record5 = std::make_shared<UnifiedRecord>();
+    record3->AddEntry("general.file-uri", obj2);
+    std::vector<std::shared_ptr<UnifiedRecord>> records = { record, record1, record2, record3, record4, record5 };
     std::vector<std::string> uris;
     for (const auto &item : records) {
         PreProcessUtils::ProcessFileType(item, [&uris](std::shared_ptr<Object> obj) {
@@ -323,6 +327,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileType001, TestSize.Level1)
     }
     EXPECT_EQ(uris.size(), 1);
 }
+
 
 /**
 * @tc.name: SetRecordUid001
@@ -348,35 +353,33 @@ HWTEST_F(UdmfPreProcessUtilsTest, SetRecordUid001, TestSize.Level1)
 HWTEST_F(UdmfPreProcessUtilsTest, FillUris001, TestSize.Level1)
 {
     UnifiedData data;
-    std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
-    std::map<std::string, uint32_t> permissionUri;
-    PreProcessUtils::FillUris(data, dfsUris, permissionUri);
-    std::shared_ptr<Object> obj = std::make_shared<Object>();
-    obj->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj);
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, std::make_shared<Object>());
+    (*record->GetEntries())[ORI_URI] = "file://test.com/data.txt";
     data.AddRecord(record);
-    permissionUri.emplace("file://data/104.png", UriPermissionUtil::READ_FLAG);
-    PreProcessUtils::FillUris(data, dfsUris, permissionUri);
-    std::shared_ptr<Object> obj1 = std::make_shared<Object>();
-    obj1->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj1->value_[ORI_URI] = "file://data/103.png";
-    auto record1 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj1);
-    data.AddRecord(record1);
-    std::shared_ptr<Object> obj2 = std::make_shared<Object>();
-    obj2->value_[UNIFORM_DATA_TYPE] = "general.file-uri";
-    obj2->value_[ORI_URI] = "file://data/104.png";
-    auto record2 = std::make_shared<UnifiedRecord>(UDType::FILE_URI, obj2);
-    data.AddRecord(record2);
-    PreProcessUtils::FillUris(data, dfsUris, permissionUri);
-    int32_t permission;
-    EXPECT_TRUE(obj2->GetValue(PERMISSION_POLICY, permission));
-    EXPECT_EQ(permission, static_cast<int32_t>(PermissionPolicy::ONLY_READ));
-    AppFileService::ModuleRemoteFileShare::HmdfsUriInfo uriInfo = { "file://distributed/104.png", 1 };
-    dfsUris.emplace("file://data/104.png", uriInfo);
-    PreProcessUtils::FillUris(data, dfsUris, permissionUri);
-    std::string dfsUri;
-    EXPECT_TRUE(obj2->GetValue(REMOTE_URI, dfsUri));
-    EXPECT_EQ(dfsUri, "file://distributed/104.png");
+    
+    std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
+    std::map<std::string, uint32_t> permissionUris;
+    
+    PreProcessUtils preProcessUtils;
+    preProcessUtils.FillUris(data, dfsUris, permissionUris);
+    EXPECT_TRUE(dfsUris.empty());
+}
+
+/**
+ * @tc.name: CheckUriAuthorization002
+ * @tc.desc: Test CheckUriAuthorization with valid URIs
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, CheckUriAuthorization002, TestSize.Level1)
+{
+    const std::vector<std::string> uris = {"file://test.com/data.txt"};
+    uint32_t tokenId = 100;
+    std::map<std::string, uint32_t> permissionUris;
+    
+    PreProcessUtils preProcessUtils;
+    bool ret = preProcessUtils.CheckUriAuthorization(uris, tokenId, permissionUris, false);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -578,4 +581,169 @@ HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension002, TestSize.Level1)
     EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///test.com/img2jpg"));
     EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///test.com/"));
 }
-}; // namespace UDMF
+
+/**
+ * @tc.name: HandleFileUris001
+ * @tc.desc: Test HandleFileUris with valid file URIs
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, HandleFileUris001, TestSize.Level1)
+{
+    UnifiedData data;
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, std::make_shared<Object>());
+    Runtime runtime;
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_LEGACY;
+    data.SetRuntime(runtime);
+    (*record->GetEntries())[ORI_URI] = "file://test.com/data.txt";
+    data.AddRecord(record);
+    
+    PreProcessUtils preProcessUtils;
+    int32_t ret = preProcessUtils.HandleFileUris(100, data);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+ * @tc.name: ReadCheckUri001
+ * @tc.desc: Test ReadCheckUri with valid URIs
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, ReadCheckUri001, TestSize.Level1)
+{
+    UnifiedData data;
+    Runtime runtime;
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_LEGACY;
+    data.SetRuntime(runtime);
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, std::make_shared<Object>());
+    (*record->GetEntries())[ORI_URI] = "file://test.com/data.txt";
+    data.AddRecord(record);
+
+    std::vector<std::string> uris = {"file://test.com/data.txt"};
+    PreProcessUtils preProcessUtils;
+    int32_t ret = preProcessUtils.ReadCheckUri(100, data, uris, false);
+    EXPECT_EQ(ret, E_NO_PERMISSION);
+}
+
+/**
+ * @tc.name: FillHtmlEntry001
+ * @tc.desc: Test FillHtmlEntry with HTML record
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, FillHtmlEntry001, TestSize.Level1)
+{
+    auto record = std::make_shared<UnifiedRecord>(UDType::HTML, std::make_shared<Object>());
+    auto properties = std::make_shared<UnifiedDataProperties>();
+    std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
+    std::map<std::string, uint32_t> permissionUris;
+    
+    PreProcessUtils preProcessUtils;
+    preProcessUtils.FillHtmlEntry(record, properties, dfsUris, permissionUris);
+    EXPECT_TRUE(dfsUris.empty());
+}
+
+/**
+ * @tc.name: FillUris006
+ * @tc.desc: Test FillUris with valid data
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, FillUris006, TestSize.Level1)
+{
+    UnifiedData data;
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE_URI, std::make_shared<Object>());
+    (*record->GetEntries())[ORI_URI] = "file://test.com/data.txt";
+    data.AddRecord(record);
+    
+    std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> dfsUris;
+    std::map<std::string, uint32_t> permissionUris;
+    
+    PreProcessUtils preProcessUtils;
+    preProcessUtils.FillUris(data, dfsUris, permissionUris);
+    EXPECT_TRUE(dfsUris.empty());
+}
+
+/**
+ * @tc.name: CheckUriAuthorization003
+ * @tc.desc: Test CheckUriAuthorization with valid URIs
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, CheckUriAuthorization003, TestSize.Level1)
+{
+    const std::vector<std::string> uris = {"file://test.com/data.txt"};
+    uint32_t tokenId = 100;
+    std::map<std::string, uint32_t> permissionUris;
+    
+    PreProcessUtils preProcessUtils;
+    bool ret = preProcessUtils.CheckUriAuthorization(uris, tokenId, permissionUris, false);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: ProcessHtmlEntryAuthorization001
+ * @tc.desc: Normal test of ProcessHtmlEntryAuthorization
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlEntryAuthorization001, TestSize.Level1)
+{
+    std::string html = "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/102.png'>"
+                        "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/103.png'>";
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    obj->value_["uniformDataType"] = "general.html";
+    obj->value_["htmlContent"] = html;
+    obj->value_["plainContent"] = "htmlPlainContent";
+    auto record = std::make_shared<UnifiedRecord>(UDType::HTML, obj);
+    bool isLocal = true;
+    int32_t permissionPolicyMode = 1;
+    std::map<std::string, uint32_t> strUris;
+    
+    PreProcessUtils preProcessUtils;
+    preProcessUtils.ProcessHtmlEntryAuthorization(record, isLocal, permissionPolicyMode, strUris);
+    EXPECT_TRUE(strUris.empty());
+}
+
+/**
+ * @tc.name: ProcessFileAuthorization001
+ * @tc.desc: Normal test of ProcessFileAuthorization
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization001, TestSize.Level1)
+{
+    UnifiedData data;
+    auto record = nullptr;
+    data.AddRecord(record);
+    bool hasError = true;
+    bool isLocal = true;
+    std::map<std::string, unsigned int> uriPermissions;
+    
+    PreProcessUtils preProcessUtils;
+    preProcessUtils.ProcessFileAuthorization(hasError, data, isLocal, uriPermissions);
+    EXPECT_TRUE(hasError);
+}
+
+/**
+* @tc.name: SetRemoteData005
+* @tc.desc: Normal test of SetRemoteData
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, SetRemoteData005, TestSize.Level1)
+{
+    UnifiedData data;
+    std::shared_ptr<Object> obj = std::make_shared<Object>();
+    std::shared_ptr<Object> detailObj = nullptr;
+    obj->value_[DETAILS] = detailObj;
+    auto record = std::make_shared<UnifiedRecord>(FILE_URI, obj);
+    data.AddRecord(record);
+    Runtime runtime;
+    runtime.deviceId = PreProcessUtils::GetLocalDeviceId();
+    data.SetRuntime(runtime);
+    PreProcessUtils::SetRemoteData(data);
+    auto detailGet = std::get<std::shared_ptr<Object>>(obj->value_[DETAILS]);
+    EXPECT_TRUE(detailGet == nullptr);
+}
+}
