@@ -58,6 +58,7 @@
 #include "network/network_delegate.h"
 #include "permission_validator.h"
 #include "permit_delegate.h"
+#include "power_manager/power_manager.h"
 #include "process_communicator_impl.h"
 #include "qos_manager.h"
 #include "runtime_config.h"
@@ -411,6 +412,10 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
         Installer::GetInstance().Init(this, executors_);
         ScreenManager::GetInstance()->SubscribeScreenEvent();
+        auto manager = PowerManger::GetInstance();
+        if (manager != nullptr) {
+            manager->SubscribePowerEvent();
+        }
     } else if (systemAbilityId == SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN) {
         AccountDelegate::GetInstance()->SubscribeAccountEvent();
     } else if (systemAbilityId == MEMORY_MANAGER_SA_ID) {
@@ -441,6 +446,10 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
     }
     ScreenManager::GetInstance()->UnsubscribeScreenEvent();
     Installer::GetInstance().UnsubscribeEvent();
+    auto manager = PowerManger::GetInstance();
+    if (manager != nullptr) {
+        manager->UnsubscribePowerEvent();
+    }
 }
 
 int32_t KvStoreDataService::OnExtension(const std::string &extension, MessageParcel &data, MessageParcel &reply)
