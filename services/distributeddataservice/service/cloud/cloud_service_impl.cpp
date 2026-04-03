@@ -792,7 +792,12 @@ std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBat
     if (id.empty() || bundleInfos.empty()) {
         return { INVALID_ARGUMENT_V20, batchResults };
     }
-    auto user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    auto instance = AccountDelegate::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("Get AccountDelegate instance failed");
+        return { ERROR, batchResults };
+    }
+    auto user = instance->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS) {
         Report(FT_QUERY_INFO, Fault::CSF_CLOUD_INFO, "", "QueryLastSyncInfoBatch ret=" + std::to_string(status));
@@ -800,7 +805,6 @@ std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBat
     }
     for (const auto &bundleInfo : bundleInfos) {
         if (bundleInfo.bundleName.empty()) {
-            batchResults[bundleInfo.bundleName] = {};
             continue;
         }
         if (cloudInfo.apps.find(bundleInfo.bundleName) == cloudInfo.apps.end()) {
@@ -2125,9 +2129,13 @@ int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<B
         ZLOGE("bundleInfos is empty");
         return INVALID_ARGUMENT_V20;
     }
-
+    auto instance = AccountDelegate::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("Get AccountDelegate instance failed");
+        return ERROR;
+    }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    int32_t user = instance->GetUserByToken(tokenId);
 
     std::lock_guard<std::mutex> lock(subscribeMutex_);
     for (const auto &info : bundleInfos) {
@@ -2150,24 +2158,28 @@ int32_t CloudServiceImpl::Unsubscribe(CloudSubscribeType type, const std::vector
         ZLOGE("bundleInfos is empty");
         return INVALID_ARGUMENT_V20;
     }
-
+    auto instance = AccountDelegate::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("Get AccountDelegate instance failed");
+        return ERROR;
+    }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    int32_t user = instance->GetUserByToken(tokenId);
 
     std::lock_guard<std::mutex> lock(subscribeMutex_);
-    auto typeIt = subscribes_.find(type);
-    if (typeIt == subscribes_.end()) {
+    auto subscribe = subscribes_.find(type);
+    if (subscribe == subscribes_.end()) {
         return SUCCESS;
     }
 
     for (const auto &info : bundleInfos) {
         std::string key = info.bundleName + "_" + std::to_string(user);
-        auto it = typeIt->second.find(key);
-        if (it != typeIt->second.end()) {
+        auto it = subscribe->second.find(key);
+        if (it != subscribe->second.end()) {
             auto &tokenList = it->second;
             tokenList.erase(std::remove(tokenList.begin(), tokenList.end(), tokenId), tokenList.end());
             if (tokenList.empty()) {
-                typeIt->second.erase(it);
+                subscribe->second.erase(it);
             }
         }
     }
@@ -2187,12 +2199,12 @@ void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
     std::vector<uint32_t> tokenIds;
     {
         std::lock_guard<std::mutex> lock(subscribeMutex_);
-        auto typeIt = subscribes_.find(CloudSubscribeType::SYNC_INFO_CHANGED);
-        if (typeIt == subscribes_.end()) {
+        auto subscribe = subscribes_.find(CloudSubscribeType::SYNC_INFO_CHANGED);
+        if (subscribe == subscribes_.end()) {
             return;
         }
-        auto subIt = typeIt->second.find(bundleKey);
-        if (subIt == typeIt->second.end()) {
+        auto subIt = subscribe->second.find(bundleKey);
+        if (subIt == subscribe->second.end()) {
             return;
         }
         tokenIds = subIt->second;
