@@ -2222,7 +2222,6 @@ ohos_unittest("UdmfPreProcessUtilsTest") {
     "udmf:udmf_client",
   ]
 }
-
 ohos_unittest("UdmfPreProcessUtilsMockTest") {
   module_out_path = module_output_path
   sources = [
@@ -2234,6 +2233,7 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
 
   include_dirs = [
     "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/service/udmf/store",

@@ -28,7 +28,8 @@
 #include "file_mount_manager.h"
 #include "iservice_registry.h"
 #include "log_print.h"
-#include "../permission/permission_policy_utils.h"
+#include "permission_policy_utils.h"
+#include "uri_permission_util.h"
 #include "sandbox_helper.h"
 #include "system_ability_definition.h"
 #include "udmf_radar_reporter.h"
@@ -254,7 +255,8 @@ int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
             if (obj == nullptr) {
                 continue;
             }
-            obj->value_[REMOTE_URI] = ""; // To ensure remoteUri is empty before write it!
+            // To ensure remoteUri is empty before write it!
+            obj->value_[REMOTE_URI] = "";
             // To ensure permission-policy is empty before write it!
             obj->value_[PERMISSION_POLICY] = static_cast<int32_t>(NO_PERMISSION);
             obj->value_[URI_PERMISSION_MASK] = 0;
@@ -895,7 +897,7 @@ bool PreProcessUtils::MatchImgExtension(const std::string &uri)
         i++;
     }
     std::string ext = fileName.substr(posDot, i - posDot);
-    
+
     std::vector<std::string> dataTypes;
     auto status = UtdClient::GetInstance().GetUniformDataTypesByFilenameExtension(
         ext, dataTypes, UtdUtils::GetUtdIdFromUtdEnum(UDType::IMAGE));
