@@ -16,13 +16,12 @@
 #include "screenlock/screen_lock.h"
 
 #include <gtest/gtest.h>
-
 #include "common_event_manager_mock.h"
 
 namespace {
 using namespace OHOS::DistributedData;
+using namespace testing;
 using namespace testing::ext;
-using namespace EventFwk;
 class ScreenLockObserver : public ScreenManager::Observer {
 public:
     void OnScreenUnlocked(int32_t user) override
@@ -114,7 +113,7 @@ HWTEST_F(ScreenLockTest, SubscribeScreenEvent001, TestSize.Level0)
     screenLock_->SubscribeScreenEvent();
     EXPECT_NE(screenLock_->eventSubscriber_, nullptr);
 
-    auto executor = std::make_shared<ExecutorPool>(1, 0);
+    auto executor = std::make_shared<OHOS::ExecutorPool>(1, 0);
     screenLock_->BindExecutor(executor);
 
     bool subscribed = false;
@@ -195,7 +194,7 @@ HWTEST_F(ScreenLockTest, GetTask002, TestSize.Level0)
         subscribed = true;
         return false;
     });
-    auto executor = std::make_shared<ExecutorPool>(1, 0);
+    auto executor = std::make_shared<OHOS::ExecutorPool>(1, 0);
     screenLock_->BindExecutor(executor);
     screenLock_->GetTask(ScreenLock::MAX_RETRY_TIMES)();
     ASSERT_TRUE(subscribed);
@@ -219,7 +218,7 @@ HWTEST_F(ScreenLockTest, GetTask003, TestSize.Level0)
         scheduled = true;
         return false;
     });
-    auto executor = std::make_shared<ExecutorPool>(1, 0);
+    auto executor = std::make_shared<OHOS::ExecutorPool>(1, 0);
     screenLock_->BindExecutor(executor);
     screenLock_->GetTask(ScreenLock::MAX_RETRY_TIMES - 1)();
     int elapsed = 0;
