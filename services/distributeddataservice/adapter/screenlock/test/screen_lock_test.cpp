@@ -60,7 +60,7 @@ public:
 protected:
     static std::shared_ptr<CommonEventManagerMock> mock_;
     static std::shared_ptr<ScreenLock> screenLock_;
-    static constexpr int WAIT_TIMEOUT_S = 3;
+    static constexpr int maxWaitTime = 3;
 };
 
 std::shared_ptr<CommonEventManagerMock> ScreenLockTest::mock_;
@@ -123,7 +123,7 @@ HWTEST_F(ScreenLockTest, SubscribeScreenEvent001, TestSize.Level0)
     });
     screenLock_->SubscribeScreenEvent();
     int elapsed = 0;
-    while (!subscribed && elapsed < WAIT_TIMEOUT_S) {
+    while (!subscribed && elapsed < maxWaitTime) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         elapsed++;
     }
@@ -222,7 +222,7 @@ HWTEST_F(ScreenLockTest, GetTask003, TestSize.Level0)
     screenLock_->BindExecutor(executor);
     screenLock_->GetTask(ScreenLock::MAX_RETRY_TIMES - 1)();
     int elapsed = 0;
-    while (!retried && elapsed < WAIT_TIMEOUT_S) {
+    while (!retried && elapsed < maxWaitTime) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         elapsed++;
     }

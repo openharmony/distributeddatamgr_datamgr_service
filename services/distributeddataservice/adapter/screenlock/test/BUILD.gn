@@ -37,7 +37,7 @@ ohos_unittest("ScreenLockTest") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "googletest:gtest_main",
-    "googletest:gmock_main",
+    "googletest:gmock",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:datamgr_common",
