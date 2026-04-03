@@ -38,6 +38,7 @@
 #include "utd_client.h"
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
+#include "uri_permission_util.h"
 #include "ipc_skeleton.h"
 namespace OHOS {
 namespace UDMF {

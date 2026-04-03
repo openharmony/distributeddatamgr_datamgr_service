@@ -18,6 +18,7 @@
 #include "text.h"
 #include "unified_html_record_process.h"
 #include "unified_record.h"
+#include "uri_permission_util.h"
 
 namespace OHOS::UDMF {
 using namespace testing::ext;

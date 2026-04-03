@@ -15,6 +15,7 @@
 #define LOG_TAG "PermissionPolicyUtils"
 
 #include "permission_policy_utils.h"
+#include "uri_permission_util.h"
 
 namespace OHOS {
 namespace UDMF {
