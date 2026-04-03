@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "common_event_manager.h"
 #include "common_event_manager_mock.h"
 
 namespace OHOS::EventFwk {

@@ -20,6 +20,8 @@
 #include <gmock/gmock.h>
 #include <memory>
 
+#include "common_event_manager.h"
+
 namespace OHOS::EventFwk {
 
 class CommonEventSubscriber;
