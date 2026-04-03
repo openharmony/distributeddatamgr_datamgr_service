@@ -16,7 +16,7 @@
 #include "screenlock/screen_lock.h"
 
 #include <gtest/gtest.h>
-#include "common_event_manager_mock.h"
+#include "mock/common_event_manager_mock.h"
 
 namespace {
 using namespace OHOS::DistributedData;

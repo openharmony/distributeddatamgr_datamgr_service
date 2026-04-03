@@ -19,8 +19,8 @@ ohos_unittest("ScreenLockTest") {
   module_out_path = module_output_path
 
   sources = [
+    "mock/common_event_manager_mock.cpp",
     "screen_lock_test.cpp",
-    "${data_service_path}/adapter/screenlock/test/mock/common_event_manager_mock.cpp",
   ]
 
   cflags = [
@@ -28,7 +28,6 @@ ohos_unittest("ScreenLockTest") {
     "-Dprotected=public",
     "-Werror",
   ]
-  include_dirs = [ "${data_service_path}/adapter/screenlock/test/mock" ]
   deps = [
     "${data_service_path}/adapter/screenlock:distributeddata_screenlock",
     "${data_service_path}/framework:distributeddatasvcfwk"
