@@ -2122,7 +2122,7 @@ QueryLastResults CloudServiceImpl::AssembleLastResults(const std::vector<Databas
 }
 
 int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
-    std::shared_ptr<ISyncInfoObserver> observer)
+    __attribute__((unused)) std::shared_ptr<ISyncInfoObserver> observer)
 {
     ZLOGI("Subscribe type:%{public}d, bundleInfos size:%{public}zu", static_cast<int32_t>(type), bundleInfos.size());
     if (bundleInfos.empty()) {
@@ -2139,6 +2139,9 @@ int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<B
 
     std::lock_guard<std::mutex> lock(subscribeMutex_);
     for (const auto &info : bundleInfos) {
+        if (info.bundleName.empty()) {
+            continue;
+        }
         std::string key = info.bundleName + "_" + std::to_string(user);
         auto &vec = subscribes_[type][key];
         auto it = std::find(vec.begin(), vec.end(), tokenId);
@@ -2150,7 +2153,7 @@ int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<B
 }
 
 int32_t CloudServiceImpl::Unsubscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
-    std::shared_ptr<ISyncInfoObserver> observer)
+    __attribute__((unused)) std::shared_ptr<ISyncInfoObserver> observer)
 {
     ZLOGI("Unsubscribe type:%{public}d, bundleInfos size:%{public}zu", static_cast<int32_t>(type), bundleInfos.size());
 
@@ -2173,6 +2176,9 @@ int32_t CloudServiceImpl::Unsubscribe(CloudSubscribeType type, const std::vector
     }
 
     for (const auto &info : bundleInfos) {
+        if (info.bundleName.empty()) {
+            continue;
+        }
         std::string key = info.bundleName + "_" + std::to_string(user);
         auto it = subscribe->second.find(key);
         if (it != subscribe->second.end()) {
@@ -2194,7 +2200,9 @@ void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
     int32_t user = storeInfo.user;
     std::string storeId = storeInfo.storeName;
     auto &syncInfo = syncFinishedEvent.GetSyncInfo();
-
+    if (bundleName.empty()) {
+        return;
+    }
     std::string bundleKey = bundleName + "_" + std::to_string(user);
     std::vector<uint32_t> tokenIds;
     {

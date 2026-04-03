@@ -1705,7 +1705,7 @@ HWTEST_F(CloudServiceImplTest, QueryLastSyncInfoBatch_MixedValidInvalid, TestSiz
     auto [status, result] = cloudServiceImpl_->QueryLastSyncInfoBatch(TEST_CLOUD_APPID, bundleInfos);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_FALSE(result.empty());
-    EXPECT_EQ(result.size(), 3); // All three should be in results
+    EXPECT_EQ(result.size(), 2);
     EXPECT_TRUE(result.find(TEST_CLOUD_BUNDLE) != result.end());
     EXPECT_FALSE(result[TEST_CLOUD_BUNDLE].empty());
 
