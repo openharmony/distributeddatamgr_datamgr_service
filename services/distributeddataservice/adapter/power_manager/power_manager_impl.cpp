@@ -113,7 +113,7 @@ void PowerManagerImpl::Delegate::SetCharging(bool charging)
     isCharging_ = charging;
 }
 
-bool PowerManagerImpl::Delegate::isCharging()
+bool PowerManagerImpl::Delegate::IsCharging()
 {
     return isCharging_;
 }
@@ -189,7 +189,7 @@ void PowerManagerImpl::NotifyPowerChanged(Observer::PowerEvent event)
 
 bool PowerManagerImpl::IsCharging()
 {
-    return delegate_->isCharging();
+    return delegate_->IsCharging();
 }
 
 PowerManagerImpl::~PowerManagerImpl() {}

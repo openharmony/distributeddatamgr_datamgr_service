@@ -54,7 +54,6 @@ public:
 private:
     void NotifyPowerChanged(Observer::PowerEvent event);
 
-
     std::shared_ptr<PowerEventSubscriber> GetSubscriber();
     void SetSubscriber(std::shared_ptr<PowerEventSubscriber> subscriber);
 
@@ -64,7 +63,7 @@ private:
         int32_t Remove(std::shared_ptr<Observer> observer);
         std::list<std::weak_ptr<Observer>> GetObs();
         void SetCharging(bool isCharging);
-        bool isCharging();
+        bool IsCharging();
     private:
         std::mutex mutex_;
         std::list<std::weak_ptr<Observer>> observers_;

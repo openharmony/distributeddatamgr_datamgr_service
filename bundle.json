@@ -152,6 +152,7 @@
                             "metadata/store_meta_data_local.h",
                             "metadata/strategy_meta_data.h",
                             "metadata/user_meta_data.h",
+                            "power_manager/power_manager.h",
                             "screen/screen_manager.h",
                             "serializable/serializable.h",
                             "snapshot/bind_event.h",
