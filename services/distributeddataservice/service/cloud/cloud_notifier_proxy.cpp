@@ -56,4 +56,30 @@ int32_t CloudNotifierProxy::OnComplete(uint32_t seqNum, DistributedRdb::Details 
     }
     return status;
 }
+
+int32_t CloudNotifierProxy::OnSyncInfoNotify(const BatchQueryLastResults &data)
+{
+    MessageParcel parcel;
+    if (!parcel.WriteInterfaceToken(GetDescriptor())) {
+        ZLOGE("write descriptor failed");
+        return CloudService::IPC_PARCEL_ERROR;
+    }
+    if (!ITypesUtil::Marshal(parcel, data)) {
+        ZLOGE("marshal data failed");
+        return CloudService::IPC_PARCEL_ERROR;
+    }
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    auto remote = Remote();
+    if (remote == nullptr) {
+        ZLOGE("get remote failed");
+        return CloudService::IPC_ERROR;
+    }
+    auto status = remote->SendRequest(
+        static_cast<uint32_t>(NotifierCode::CLOUD_NOTIFIER_CMD_SYNC_INFO_NOTIFY), parcel, reply, option);
+    if (status != CloudService::SUCCESS) {
+        ZLOGE("send request failed, status:%{public}d", status);
+    }
+    return status;
+}
 } // namespace OHOS::CloudData

@@ -21,7 +21,6 @@
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "bootstrap.h"
 #include "checker/checker_manager.h"
-#include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
 #include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"

@@ -191,7 +191,9 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "cloud_notifier_proxy_test.cpp",
     "cloud_service_impl_test.cpp",
+    "cloud_service_stub_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]

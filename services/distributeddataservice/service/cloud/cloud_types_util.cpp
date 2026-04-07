@@ -19,29 +19,26 @@ namespace OHOS::ITypesUtil {
 template<>
 bool Marshalling(const Participant &input, MessageParcel &data)
 {
-    return ITypesUtil::Marshal(
-        data, input.identity, input.role, input.state, input.privilege, input.attachInfo);
+    return ITypesUtil::Marshal(data, input.identity, input.role, input.state, input.privilege, input.attachInfo);
 }
 
 template<>
 bool Unmarshalling(Participant &output, MessageParcel &data)
 {
-    return ITypesUtil::Unmarshal(
-        data, output.identity, output.role, output.state, output.privilege, output.attachInfo);
+    return ITypesUtil::Unmarshal(data, output.identity, output.role, output.state, output.privilege, output.attachInfo);
 }
 
 template<>
 bool Marshalling(const Privilege &input, MessageParcel &data)
 {
-    return ITypesUtil::Marshal(data, input.writable, input.readable,
-        input.creatable, input.deletable, input.shareable);
+    return ITypesUtil::Marshal(data, input.writable, input.readable, input.creatable, input.deletable, input.shareable);
 }
 
 template<>
 bool Unmarshalling(Privilege &output, MessageParcel &data)
 {
-    return ITypesUtil::Unmarshal(data, output.writable, output.readable,
-        output.creatable, output.deletable, output.shareable);
+    return ITypesUtil::Unmarshal(
+        data, output.writable, output.readable, output.creatable, output.deletable, output.shareable);
 }
 
 template<>
@@ -144,5 +141,26 @@ template<>
 bool Unmarshalling(DBActionInfo &output, MessageParcel &data)
 {
     return Unmarshal(data, output.action, output.tableInfo);
+}
+
+template<>
+bool Unmarshalling(BundleInfo &output, MessageParcel &data)
+{
+    return Unmarshal(data, output.bundleName, output.storeId);
+}
+
+template<>
+bool Unmarshalling(CloudSubscribeType &output, MessageParcel &data)
+{
+    uint32_t result;
+    if (!data.ReadUint32(result)) {
+        return false;
+    }
+    CloudSubscribeType type = static_cast<CloudSubscribeType>(result);
+    if (type < CloudSubscribeType::SYNC_INFO_CHANGED || type >= CloudSubscribeType::SUBSCRIBE_TYPE_MAX) {
+        return false;
+    }
+    output = type;
+    return true;
 }
 } // namespace OHOS::ITypesUtil

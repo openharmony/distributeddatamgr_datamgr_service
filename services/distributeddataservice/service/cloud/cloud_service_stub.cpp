@@ -27,6 +27,7 @@
 namespace OHOS::CloudData {
 using namespace DistributedData;
 using namespace OHOS::Security::AccessToken;
+constexpr size_t MAX_BUNDLE_INFO_COUNT = 30;
 const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnEnableCloud,
     &CloudServiceStub::OnDisableCloud,
@@ -36,8 +37,11 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnNotifyChange,
     &CloudServiceStub::OnQueryStatistics,
     &CloudServiceStub::OnQueryLastSyncInfo,
+    &CloudServiceStub::OnQueryLastSyncInfoBatch,
     &CloudServiceStub::OnSetGlobalCloudStrategy,
     &CloudServiceStub::OnCloudSync,
+    &CloudServiceStub::OnSubscribe,
+    &CloudServiceStub::OnUnsubscribe,
     &CloudServiceStub::OnAllocResourceAndShare,
     &CloudServiceStub::OnShare,
     &CloudServiceStub::OnUnshare,
@@ -166,6 +170,22 @@ int32_t CloudServiceStub::OnQueryLastSyncInfo(MessageParcel &data, MessageParcel
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [status, results] = QueryLastSyncInfo(id, bundleName, storeId);
+    return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnQueryLastSyncInfoBatch(MessageParcel &data, MessageParcel &reply)
+{
+    std::string id;
+    std::vector<BundleInfo> bundleInfos;
+    if (!ITypesUtil::Unmarshal(data, id, bundleInfos)) {
+        ZLOGE("Unmarshal id:%{public}s, size:%{public}zu", Anonymous::Change(id).c_str(), bundleInfos.size());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
+        ZLOGE("BundleInfos size %{public}zu exceeds maximum", bundleInfos.size());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto [status, results] = QueryLastSyncInfoBatch(id, bundleInfos);
     return ITypesUtil::Marshal(reply, status, results) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
@@ -356,6 +376,38 @@ int32_t CloudServiceStub::OnInitNotifier(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = InitNotifier(notifier);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnSubscribe(MessageParcel &data, MessageParcel &reply)
+{
+    CloudSubscribeType type;
+    std::vector<BundleInfo> bundleInfos;
+    if (!ITypesUtil::Unmarshal(data, type, bundleInfos)) {
+        ZLOGE("read subscribe data failed, type:%{public}d", type);
+        return IPC_PARCEL_ERROR;
+    }
+    if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
+        ZLOGE("BundleInfos size %{public}zu exceeds maximum, type:%{public}d", bundleInfos.size(), type);
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = Subscribe(type, bundleInfos, nullptr);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnUnsubscribe(MessageParcel &data, MessageParcel &reply)
+{
+    CloudSubscribeType type;
+    std::vector<BundleInfo> bundleInfos;
+    if (!ITypesUtil::Unmarshal(data, type, bundleInfos)) {
+        ZLOGE("read unsubscribe data failed, type:%{public}d", type);
+        return IPC_PARCEL_ERROR;
+    }
+    if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
+        ZLOGE("BundleInfos size %{public}zu exceeds maximum, type:%{public}d", bundleInfos.size(), type);
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = Unsubscribe(type, bundleInfos, nullptr);
     return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 } // namespace OHOS::CloudData

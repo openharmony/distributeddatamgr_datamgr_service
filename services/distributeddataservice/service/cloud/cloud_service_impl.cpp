@@ -111,6 +111,9 @@ CloudServiceImpl::CloudServiceImpl()
     EventCenter::GetInstance().Subscribe(CloudEvent::UPGRADE_SCHEMA, [this](const Event &event) {
         DoSync(event);
     });
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC_FINISHED, [this](const Event &event) {
+        OnSyncInfoChanged(event);
+    });
     MetaDataManager::GetInstance().Subscribe(
         Subscription::GetPrefix({ "" }), [this](const std::string &key,
             const std::string &value, int32_t flag) -> auto {
@@ -193,6 +196,7 @@ int32_t CloudServiceImpl::DisableCloud(const std::string &id)
         }
     }
     Execute(GenTask(0, cloudInfo.user, CloudSyncScene::DISABLE_CLOUD, { WORK_STOP_CLOUD_SYNC, WORK_SUB }));
+    syncManager_.ClearLastSyncInfo(cloudInfo.user, cloudInfo.id);
     ZLOGI("DisableCloud success, id:%{public}s", Anonymous::Change(id).c_str());
     return SUCCESS;
 }
@@ -203,10 +207,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     auto user = Account::GetInstance()->GetUserByToken(tokenId);
-    CloudSyncScene scene = CloudSyncScene::SWITCH_OFF;
-    if (appSwitch == SWITCH_ON) {
-        scene = CloudSyncScene::SWITCH_ON;
-    }
+    CloudSyncScene scene = (appSwitch == SWITCH_ON) ? CloudSyncScene::SWITCH_ON : CloudSyncScene::SWITCH_OFF;
     std::lock_guard<decltype(rwMetaMutex_)> lock(rwMetaMutex_);
     auto [status, cloudInfo] = GetCloudInfo(user);
     if (status != SUCCESS || !cloudInfo.enableCloud) {
@@ -241,6 +242,9 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
     }
     SyncConfig::UpdateConfig(user, bundleName, config.dbInfo);
     Execute(GenTask(0, cloudInfo.user, scene, { WORK_CLOUD_INFO_UPDATE, WORK_SCHEMA_UPDATE, WORK_SUB }));
+    if (appSwitch == SWITCH_OFF) {
+        syncManager_.ClearLastSyncInfo(cloudInfo.user, cloudInfo.id, bundleName);
+    }
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
         SyncManager::SyncInfo info(cloudInfo.user, bundleName);
         syncManager_.DoCloudSync(info);
@@ -781,6 +785,53 @@ std::pair<int32_t, QueryLastResults> CloudServiceImpl::QueryLastSyncInfo(const s
     return { ret, AssembleLastResults(databases, lastSyncInfos) };
 }
 
+std::pair<int32_t, BatchQueryLastResults> CloudServiceImpl::QueryLastSyncInfoBatch(
+    const std::string &id, const std::vector<BundleInfo> &bundleInfos)
+{
+    BatchQueryLastResults batchResults;
+    if (id.empty() || bundleInfos.empty()) {
+        return { INVALID_ARGUMENT_V20, batchResults };
+    }
+    auto instance = AccountDelegate::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("Get AccountDelegate instance failed");
+        return { ERROR, batchResults };
+    }
+    auto user = instance->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    auto [status, cloudInfo] = GetCloudInfo(user);
+    if (status != SUCCESS) {
+        Report(FT_QUERY_INFO, Fault::CSF_CLOUD_INFO, "", "QueryLastSyncInfoBatch ret=" + std::to_string(status));
+        return { ERROR, batchResults };
+    }
+    for (const auto &bundleInfo : bundleInfos) {
+        if (bundleInfo.bundleName.empty()) {
+            continue;
+        }
+        if (cloudInfo.apps.find(bundleInfo.bundleName) == cloudInfo.apps.end()) {
+            ZLOGE("Invalid bundleName: %{public}s", bundleInfo.bundleName.c_str());
+            batchResults[bundleInfo.bundleName] = {};
+            continue;
+        }
+        auto [ret, storeResults] = syncManager_.QueryLastSyncInfo(user, id, bundleInfo);
+        if (ret != SUCCESS || storeResults.empty()) {
+            ZLOGE("QueryLastSyncInfo failed for bundleName: %{public}s, ret: %{public}d",
+                bundleInfo.bundleName.c_str(), ret);
+            batchResults[bundleInfo.bundleName] = {};
+            continue;
+        }
+        QueryLastResults queryResults;
+        for (const auto &[storeId, syncInfo] : storeResults) {
+            CloudSyncInfo cloudSyncInfo = { .startTime = syncInfo.startTime,
+                .finishTime = syncInfo.finishTime,
+                .code = syncInfo.code,
+                .syncStatus = syncInfo.syncStatus };
+            queryResults[storeId] = std::move(cloudSyncInfo);
+        }
+        batchResults[bundleInfo.bundleName] = std::move(queryResults);
+    }
+    return { SUCCESS, batchResults };
+}
+
 int32_t CloudServiceImpl::OnInitialize()
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
@@ -1241,6 +1292,7 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
         cloudInfo.apps.find(bundleName) != cloudInfo.apps.end()) {
         cloudInfo.apps.erase(bundleName);
         MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+        MetaDataManager::GetInstance().DelMeta(CloudLastSyncInfo::GetKey(user, bundleName), true);
     }
 
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
@@ -2067,5 +2119,134 @@ QueryLastResults CloudServiceImpl::AssembleLastResults(const std::vector<Databas
         }
     }
     return results;
+}
+
+int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
+    __attribute__((unused)) std::shared_ptr<ISyncInfoObserver> observer)
+{
+    ZLOGI("Subscribe type:%{public}d, bundleInfos size:%{public}zu", static_cast<int32_t>(type), bundleInfos.size());
+    if (bundleInfos.empty()) {
+        ZLOGE("bundleInfos is empty");
+        return INVALID_ARGUMENT_V20;
+    }
+    auto instance = AccountDelegate::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("Get AccountDelegate instance failed");
+        return ERROR;
+    }
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t user = instance->GetUserByToken(tokenId);
+
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    for (const auto &info : bundleInfos) {
+        if (info.bundleName.empty()) {
+            continue;
+        }
+        std::string key = info.bundleName + "_" + std::to_string(user);
+        auto &vec = subscribes_[type][key];
+        auto it = std::find(vec.begin(), vec.end(), tokenId);
+        if (it == vec.end()) {
+            vec.push_back(tokenId);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::Unsubscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
+    __attribute__((unused)) std::shared_ptr<ISyncInfoObserver> observer)
+{
+    ZLOGI("Unsubscribe type:%{public}d, bundleInfos size:%{public}zu", static_cast<int32_t>(type), bundleInfos.size());
+
+    if (bundleInfos.empty()) {
+        ZLOGE("bundleInfos is empty");
+        return INVALID_ARGUMENT_V20;
+    }
+    auto instance = AccountDelegate::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("Get AccountDelegate instance failed");
+        return ERROR;
+    }
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    int32_t user = instance->GetUserByToken(tokenId);
+
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    auto subscribe = subscribes_.find(type);
+    if (subscribe == subscribes_.end()) {
+        return SUCCESS;
+    }
+
+    for (const auto &info : bundleInfos) {
+        if (info.bundleName.empty()) {
+            continue;
+        }
+        std::string key = info.bundleName + "_" + std::to_string(user);
+        auto it = subscribe->second.find(key);
+        if (it != subscribe->second.end()) {
+            auto &tokenList = it->second;
+            tokenList.erase(std::remove(tokenList.begin(), tokenList.end(), tokenId), tokenList.end());
+            if (tokenList.empty()) {
+                subscribe->second.erase(it);
+            }
+        }
+    }
+    return SUCCESS;
+}
+
+void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
+{
+    auto &syncFinishedEvent = static_cast<const CloudSyncFinishedEvent &>(event);
+    auto &storeInfo = syncFinishedEvent.GetStoreInfo();
+    std::string bundleName = storeInfo.bundleName;
+    int32_t user = storeInfo.user;
+    std::string storeId = storeInfo.storeName;
+    auto &syncInfo = syncFinishedEvent.GetSyncInfo();
+    if (bundleName.empty()) {
+        return;
+    }
+    std::string bundleKey = bundleName + "_" + std::to_string(user);
+    std::vector<uint32_t> tokenIds;
+    {
+        std::lock_guard<std::mutex> lock(subscribeMutex_);
+        auto subscribe = subscribes_.find(CloudSubscribeType::SYNC_INFO_CHANGED);
+        if (subscribe == subscribes_.end()) {
+            return;
+        }
+        auto subIt = subscribe->second.find(bundleKey);
+        if (subIt == subscribe->second.end()) {
+            return;
+        }
+        tokenIds = subIt->second;
+    }
+    CloudSyncInfo cloudSyncInfo{ syncInfo.startTime, syncInfo.finishTime, syncInfo.code, syncInfo.syncStatus };
+    std::lock_guard<std::mutex> lock(notifyMutex_);
+    for (const auto &tokenId : tokenIds) {
+        pendingNotifies_[tokenId][bundleName][storeId] = cloudSyncInfo;
+    }
+    ZLOGI("add pendingNotifies bundleName:%{public}s, storeId:%{public}s, code:%{public}d, SyncStatus:%{public}d",
+        bundleName.c_str(), Anonymous::Change(storeId).c_str(), syncInfo.code, syncInfo.syncStatus);
+    if (notifyTaskId_ != ExecutorPool::INVALID_TASK_ID) {
+        return;
+    }
+    notifyTaskId_ = executor_->Schedule(NOTIFY_DELAY, [this]() { ExecuteBatchNotify(); });
+}
+
+void CloudServiceImpl::ExecuteBatchNotify()
+{
+    std::map<uint32_t, BatchQueryLastResults> tasks;
+    {
+        std::lock_guard<std::mutex> lock(notifyMutex_);
+        tasks = std::move(pendingNotifies_);
+        pendingNotifies_.clear();
+        notifyTaskId_ = ExecutorPool::INVALID_TASK_ID;
+    }
+    for (const auto &[tokenId, data] : tasks) {
+        auto agentIt = syncAgents_.Find(tokenId);
+        if (!agentIt.first || agentIt.second.notifier_ == nullptr) {
+            ZLOGW("No notifier for tokenId=%{public}x", tokenId);
+            continue;
+        }
+        agentIt.second.notifier_->OnSyncInfoNotify(data);
+        ZLOGI("Notified tokenId=%{public}x, bundleCount=%{public}zu", tokenId, data.size());
+    }
 }
 } // namespace OHOS::CloudData
