@@ -24,8 +24,7 @@ __attribute__((used)) static bool g_isInit = PowerManagerImpl::Register();
 bool PowerManagerImpl::Register()
 {
     static PowerManagerImpl instance;
-    static std::once_flag onceFlag;
-    std::call_once(onceFlag, [&]() { PowerManager::RegisterInstance(&instance); });
+    PowerManager::RegisterInstance(&instance);
     return true;
 }
 
@@ -146,8 +145,26 @@ std::shared_ptr<PowerEventSubscriber> PowerManagerImpl::GetSubscriber()
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_DISCHARGING);
     CommonEventSubscribeInfo info(matchingSkills);
     eventSubscriber_ = std::make_shared<PowerEventSubscriber>(info);
-    eventSubscriber_->SetEventCallback([this](Observer::PowerEvent event) {
-        NotifyPowerChanged(event);
+    std::weak_ptr<Delegate> weakDelegate = delegate_;
+    eventSubscriber_->SetEventCallback([weakDelegate](Observer::PowerEvent event) {
+        auto delegate = weakDelegate.lock();
+        if (delegate == nullptr) {
+            return;
+        }
+        if (event == Observer::PowerEvent::CHARGING) {
+            delegate->SetCharging(true);
+        } else if (event == Observer::PowerEvent::DIS_CHARGING) {
+            delegate->SetCharging(false);
+        } else {
+            return;
+        }
+        auto observers = delegate->GetObs();
+        for (const auto &weakObs : observers) {
+            auto obs = weakObs.lock();
+            if (obs != nullptr) {
+                obs->OnChange(event);
+            }
+        }
     });
     return eventSubscriber_;
 }
@@ -165,26 +182,8 @@ void PowerManagerImpl::SubscribePowerEvent()
 
 void PowerManagerImpl::UnsubscribePowerEvent()
 {
-    auto res = CommonEventManager::UnSubscribeCommonEvent(eventSubscriber_);
+    auto res = CommonEventManager::UnSubscribeCommonEvent(GetSubscriber());
     ZLOGW("unregister power event res:%d", res);
-}
-
-void PowerManagerImpl::NotifyPowerChanged(Observer::PowerEvent event)
-{
-    if (event == Observer::PowerEvent::CHARGING) {
-        delegate_->SetCharging(true);
-    } else if (event == Observer::PowerEvent::DIS_CHARGING) {
-        delegate_->SetCharging(false);
-    } else {
-        return;
-    }
-    auto observers = delegate_->GetObs();
-    for (const auto &weakObs : observers) {
-        auto obs = weakObs.lock();
-        if (obs != nullptr) {
-            obs->OnChang(event);
-        }
-    }
 }
 
 bool PowerManagerImpl::IsCharging()

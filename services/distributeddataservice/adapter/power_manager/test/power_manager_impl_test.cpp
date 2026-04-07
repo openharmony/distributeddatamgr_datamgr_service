@@ -29,7 +29,7 @@ public:
     PowerManager::Observer::PowerEvent lastEvent = PowerManager::Observer::PowerEvent::BUTT;
     int notifyCount = 0;
 
-    void OnChang(PowerEvent event) override
+    void OnChange(PowerEvent event) override
     {
         lastEvent = event;
         notifyCount++;

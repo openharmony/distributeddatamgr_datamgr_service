@@ -52,8 +52,6 @@ public:
     ~PowerManagerImpl();
     PowerManagerImpl();
 private:
-    void NotifyPowerChanged(Observer::PowerEvent event);
-
     std::shared_ptr<PowerEventSubscriber> GetSubscriber();
     void SetSubscriber(std::shared_ptr<PowerEventSubscriber> subscriber);
 

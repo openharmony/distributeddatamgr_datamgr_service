@@ -34,7 +34,7 @@ public:
         };
 
         virtual ~Observer() = default;
-        virtual void OnChang(PowerEvent event) = 0;
+        virtual void OnChange(PowerEvent event) = 0;
     };
 
     virtual int32_t Subscribe(std::shared_ptr<Observer> observer) = 0;
