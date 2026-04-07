@@ -28,7 +28,7 @@
 
 namespace OHOS::DistributedData {
 using namespace OHOS::EventFwk;
-using PowerEventCallback = std::function<void(PowerManger::Observer::PowerEvent)>;
+using PowerEventCallback = std::function<void(PowerManager::Observer::PowerEvent)>;
 
 class PowerEventSubscriber final : public CommonEventSubscriber {
 public:
@@ -41,7 +41,7 @@ private:
     PowerEventCallback eventCallback_{};
 };
 
-class PowerManagerImpl : public PowerManger {
+class PowerManagerImpl : public PowerManager {
 public:
     static bool Register();
     API_EXPORT int32_t Subscribe(std::shared_ptr<Observer> observer) override;

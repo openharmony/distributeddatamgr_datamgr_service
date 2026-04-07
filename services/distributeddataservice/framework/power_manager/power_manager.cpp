@@ -15,13 +15,13 @@
 
 #include "power_manager/power_manager.h"
 namespace OHOS::DistributedData {
-PowerManger *PowerManger::instance_ = nullptr;
-PowerManger *PowerManger::GetInstance()
+PowerManager *PowerManager::instance_ = nullptr;
+PowerManager *PowerManager::GetInstance()
 {
     return instance_;
 }
 
-bool PowerManger::RegisterInstance(PowerManger *instance)
+bool PowerManager::RegisterInstance(PowerManager *instance)
 {
     if (instance_ != nullptr) {
         return false;

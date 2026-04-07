@@ -69,9 +69,9 @@ HWTEST_F(PowerEventSubscriberTest, OnReceiveEvent_MultipleEvents_AllCallbacksInv
     auto subscriber = CreateSubscriber();
 
     int callCount = 0;
-    PowerManger::Observer::PowerEvent lastEvent = PowerManger::Observer::PowerEvent::BUTT;
+    PowerManager::Observer::PowerEvent lastEvent = PowerManager::Observer::PowerEvent::BUTT;
 
-    auto callback = [&callCount, &lastEvent](PowerManger::Observer::PowerEvent event) {
+    auto callback = [&callCount, &lastEvent](PowerManager::Observer::PowerEvent event) {
         callCount++;
         lastEvent = event;
     };
@@ -82,12 +82,12 @@ HWTEST_F(PowerEventSubscriberTest, OnReceiveEvent_MultipleEvents_AllCallbacksInv
     auto chargingData = CreateEventData(CommonEventSupport::COMMON_EVENT_CHARGING);
     subscriber->OnReceiveEvent(chargingData);
     ASSERT_EQ(callCount, 1);
-    ASSERT_EQ(lastEvent, PowerManger::Observer::PowerEvent::CHARGING);
+    ASSERT_EQ(lastEvent, PowerManager::Observer::PowerEvent::CHARGING);
 
     // Second event
     auto dischargingData = CreateEventData(CommonEventSupport::COMMON_EVENT_DISCHARGING);
     subscriber->OnReceiveEvent(dischargingData);
     ASSERT_EQ(callCount, 2);
-    ASSERT_EQ(lastEvent, PowerManger::Observer::PowerEvent::DIS_CHARGING);
+    ASSERT_EQ(lastEvent, PowerManager::Observer::PowerEvent::DIS_CHARGING);
 }
 } // namespace OHOS::Test

@@ -22,8 +22,8 @@ using namespace testing::ext;
 using namespace OHOS::DistributedData;
 
 namespace OHOS::Test {
-// Simple test implementation of PowerManger for testing registration mechanism
-class TestPowerManager : public PowerManger {
+// Simple test implementation of PowerManager for testing registration mechanism
+class TestPowerManager : public PowerManager {
 public:
     int32_t Subscribe(std::shared_ptr<Observer> observer) override { return 0; }
     int32_t Unsubscribe(std::shared_ptr<Observer> observer) override { return 0; }
@@ -40,7 +40,7 @@ public:
     {
         // Perform first registration in SetUpTestCase
         testInstance_ = new TestPowerManager();
-        bool result = PowerManger::RegisterInstance(testInstance_);
+        bool result = PowerManager::RegisterInstance(testInstance_);
         ASSERT_TRUE(result) << "First registration should succeed";
     }
 
@@ -65,7 +65,7 @@ HWTEST_F(PowerManagerTest, RegisterInstance_DuplicateCall_ReturnsFalse, TestSize
     // After first registration in SetUpTestCase,
     // any additional registration should fail
     TestPowerManager anotherInstance;
-    bool result = PowerManger::RegisterInstance(&anotherInstance);
+    bool result = PowerManager::RegisterInstance(&anotherInstance);
 
     ASSERT_FALSE(result) << "Duplicate registration should return false";
 }
@@ -81,7 +81,7 @@ HWTEST_F(PowerManagerTest, GetInstance_AfterRegistration_ReturnsValidInstance, T
 {
     // After registration in SetUpTestCase,
     // GetInstance should return the registered instance
-    auto *instance = PowerManger::GetInstance();
+    auto *instance = PowerManager::GetInstance();
 
     ASSERT_NE(instance, nullptr) << "GetInstance should return valid instance after registration";
     ASSERT_EQ(instance, testInstance_) << "GetInstance should return the registered instance";

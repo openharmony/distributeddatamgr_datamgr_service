@@ -412,7 +412,7 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
     if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
         Installer::GetInstance().Init(this, executors_);
         ScreenManager::GetInstance()->SubscribeScreenEvent();
-        auto manager = PowerManger::GetInstance();
+        auto manager = PowerManager::GetInstance();
         if (manager != nullptr) {
             manager->SubscribePowerEvent();
         }
@@ -446,7 +446,7 @@ void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const st
     }
     ScreenManager::GetInstance()->UnsubscribeScreenEvent();
     Installer::GetInstance().UnsubscribeEvent();
-    auto manager = PowerManger::GetInstance();
+    auto manager = PowerManager::GetInstance();
     if (manager != nullptr) {
         manager->UnsubscribePowerEvent();
     }

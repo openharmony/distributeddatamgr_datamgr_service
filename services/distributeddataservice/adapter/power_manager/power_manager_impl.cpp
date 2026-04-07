@@ -25,7 +25,7 @@ bool PowerManagerImpl::Register()
 {
     static PowerManagerImpl instance;
     static std::once_flag onceFlag;
-    std::call_once(onceFlag, [&]() { PowerManger::RegisterInstance(&instance); });
+    std::call_once(onceFlag, [&]() { PowerManager::RegisterInstance(&instance); });
     return true;
 }
 
@@ -47,9 +47,9 @@ void PowerEventSubscriber::OnReceiveEvent(const CommonEventData &event)
         return;
     }
     if (action == CommonEventSupport::COMMON_EVENT_CHARGING) {
-        eventCallback_(PowerManger::Observer::PowerEvent::CHARGING);
+        eventCallback_(PowerManager::Observer::PowerEvent::CHARGING);
     } else if (action == CommonEventSupport::COMMON_EVENT_DISCHARGING) {
-        eventCallback_(PowerManger::Observer::PowerEvent::DIS_CHARGING);
+        eventCallback_(PowerManager::Observer::PowerEvent::DIS_CHARGING);
     }
 }
 
@@ -94,7 +94,7 @@ int32_t PowerManagerImpl::Delegate::Remove(std::shared_ptr<Observer> observer)
     return -1;
 }
 
-std::list<std::weak_ptr<PowerManger::Observer>> PowerManagerImpl::Delegate::GetObs()
+std::list<std::weak_ptr<PowerManager::Observer>> PowerManagerImpl::Delegate::GetObs()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = observers_.begin();

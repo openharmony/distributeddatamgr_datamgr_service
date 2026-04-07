@@ -20,10 +20,10 @@
 #include <memory>
 
 namespace OHOS::DistributedData {
-class PowerManger {
+class PowerManager {
 public:
-    API_EXPORT static PowerManger *GetInstance();
-    API_EXPORT static bool RegisterInstance(PowerManger *instance);
+    API_EXPORT static PowerManager *GetInstance();
+    API_EXPORT static bool RegisterInstance(PowerManager *instance);
 
     class Observer {
     public:
@@ -44,7 +44,7 @@ public:
     virtual void UnsubscribePowerEvent() = 0;
 
 private:
-    static PowerManger *instance_;
+    static PowerManager *instance_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_POWER_MANAGER_POWER_MANAGER_H

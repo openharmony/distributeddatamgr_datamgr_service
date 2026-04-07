@@ -24,9 +24,9 @@ using namespace OHOS::DistributedData;
 
 namespace OHOS::Test {
 // Mock Observer for testing
-class MockPowerObserver : public PowerManger::Observer {
+class MockPowerObserver : public PowerManager::Observer {
 public:
-    PowerManger::Observer::PowerEvent lastEvent = PowerManger::Observer::PowerEvent::BUTT;
+    PowerManager::Observer::PowerEvent lastEvent = PowerManager::Observer::PowerEvent::BUTT;
     int notifyCount = 0;
 
     void OnChang(PowerEvent event) override
@@ -37,7 +37,7 @@ public:
 
     void Reset()
     {
-        lastEvent = PowerManger::Observer::PowerEvent::BUTT;
+        lastEvent = PowerManager::Observer::PowerEvent::BUTT;
         notifyCount = 0;
     }
 };
@@ -59,9 +59,9 @@ public:
     }
 
     // Helper to get manager instance
-    PowerManger* GetManager()
+    PowerManager* GetManager()
     {
-        return PowerManger::GetInstance();
+        return PowerManager::GetInstance();
     }
 };
 
