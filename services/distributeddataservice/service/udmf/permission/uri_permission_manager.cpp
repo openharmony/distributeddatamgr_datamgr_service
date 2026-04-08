@@ -23,9 +23,6 @@
 namespace OHOS {
 namespace UDMF {
 constexpr const std::uint32_t GRANT_URI_PERMISSION_MAX_SIZE = 10000;
-constexpr unsigned int READ_PERMISSION = AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION;
-constexpr unsigned int READ_WRITE_PERMISSION = AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
-    AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION | AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION;
 
 UriPermissionManager &UriPermissionManager::GetInstance()
 {
@@ -33,7 +30,7 @@ UriPermissionManager &UriPermissionManager::GetInstance()
     return instance;
 }
 
-Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &readUris, const std::vector<Uri> &writeUris,
+Status UriPermissionManager::GrantUriPermission(const std::map<unsigned int, std::vector<Uri>> &uriPermissions,
     uint32_t dstTokenId, uint32_t srcTokenId, bool isLocal)
 {
     std::string bundleName;
@@ -47,33 +44,28 @@ Status UriPermissionManager::GrantUriPermission(const std::vector<Uri> &readUris
         return E_ERROR;
     }
 
-    //  GrantUriPermission is time-consuming, need recording the begin,end time in log.
-    ZLOGI("GrantUriPermission begin, url size:%{public}zu, instIndex:%{public}d.",
-        readUris.size() + writeUris.size(), instIndex);
-    GrantUriOptions readOptions {
-        .uris = readUris,
-        .bundleName = bundleName,
-        .index = instIndex,
-        .tokenId = srcTokenId,
-        .permission = READ_PERMISSION
-    };
-    auto status = ProcessUriPermission(readOptions, isLocal);
-    if (status != E_OK) {
-        ZLOGE("grant uri read permission failed, status:%{public}d, instIndex:%{public}d.", status, instIndex);
-        return E_NO_PERMISSION;
+    size_t totalUriSize = 0;
+    for (const auto &[permission, uris] : uriPermissions) {
+        totalUriSize += uris.size();
     }
-    ZLOGI("GrantUriPermission with read-write.");
-    GrantUriOptions writeOptions {
-        .uris = writeUris,
-        .bundleName = bundleName,
-        .index = instIndex,
-        .tokenId = srcTokenId,
-        .permission = READ_WRITE_PERMISSION
-    };
-    status = ProcessUriPermission(writeOptions, isLocal);
-    if (status != E_OK) {
-        ZLOGE("grant uri write permission failed, status:%{public}d, instIndex:%{public}d.", status, instIndex);
-        return E_NO_PERMISSION;
+    ZLOGI("GrantUriPermission begin, url size:%{public}zu, instIndex:%{public}d.", totalUriSize, instIndex);
+    for (const auto &[permission, uris] : uriPermissions) {
+        if (permission == 0 || uris.empty()) {
+            continue;
+        }
+        GrantUriOptions options {
+            .uris = uris,
+            .bundleName = bundleName,
+            .index = instIndex,
+            .tokenId = srcTokenId,
+            .permission = permission
+        };
+        auto status = ProcessUriPermission(options, isLocal);
+        if (status != E_OK) {
+            ZLOGE("grant uri permission failed, status:%{public}d, permission:%{public}u, instIndex:%{public}d.",
+                status, permission, instIndex);
+            return E_NO_PERMISSION;
+        }
     }
     ZLOGI("GrantUriPermission end.");
     return E_OK;

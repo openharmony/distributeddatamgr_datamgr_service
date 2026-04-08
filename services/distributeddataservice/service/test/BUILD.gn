@@ -1926,6 +1926,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2002,6 +2003,47 @@ ohos_unittest("UdmfServiceImplMockTest") {
   }
 }
 
+ohos_unittest("UdmfPermissionPolicyUtilsTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
+    "udmf_permission_policy_utils_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  external_deps = [
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "kv_store:datamgr_common",
+    "udmf:udmf_client",
+  ]
+}
+
+
 ohos_unittest("UdmfServiceStubTest") {
   module_out_path = module_output_path
   sources = [ "udmf_service_stub_test.cpp" ]
@@ -2077,6 +2119,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2181,17 +2224,18 @@ ohos_unittest("UdmfPreProcessUtilsTest") {
     "udmf:udmf_client",
   ]
 }
-
 ohos_unittest("UdmfPreProcessUtilsMockTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/test/mock/access_token_mock.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
     "udmf_preprocess_utils_mock_test.cpp",
   ]
 
   include_dirs = [
     "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/service/udmf/store",
@@ -2872,6 +2916,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
     "${data_service_path}/service/udmf/permission/data_checker.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2966,6 +3011,7 @@ ohos_unittest("UdmfObserverTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
     "${data_service_path}/service/udmf/permission/data_checker.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",

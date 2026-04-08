@@ -60,6 +60,7 @@ int32_t PreProcessUtils::FillRuntimeInfo(UnifiedData &data, CustomOption &option
     runtime.tokenId = option.tokenId;
     runtime.visibility = option.visibility;
     runtime.appId = "appId";
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_MASK;
     data.SetRuntime(runtime);
     return E_OK;
 }
@@ -82,6 +83,7 @@ int32_t PreProcessUtils::FillDelayRuntimeInfo(UnifiedData &data, CustomOption &o
     runtime.visibility = option.visibility;
     runtime.appId = "appId";
     runtime.dataStatus = DataStatus::WAITING;
+    runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_MASK;
     data.SetRuntime(runtime);
     return E_OK;
 }
@@ -147,20 +149,14 @@ std::vector<std::string> PreProcessUtils::GetRemoteDeviceIds()
     return deviceIds;
 }
 
-void PreProcessUtils::ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
+void PreProcessUtils::ProcessFileType(const std::shared_ptr<UnifiedRecord> &record,
     std::function<bool(std::shared_ptr<Object>)> callback)
 {
     return;
 }
 
-void PreProcessUtils::ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-    bool isLocal, std::map<std::string, int32_t> &uris)
-{
-    return;
-}
-
-void PreProcessUtils::GetHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-    std::map<std::string, int32_t> &htmlUris)
+void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
+    bool isLocal, std::vector<std::string> &uris)
 {
     return;
 }
@@ -170,15 +166,8 @@ void PreProcessUtils::ClearHtmlDfsUris(UnifiedData &data)
     return;
 }
 
-void PreProcessUtils::ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal,
-    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
-{
-    return;
-}
-
-
-void PreProcessUtils::ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
+void PreProcessUtils::ProcessFileAuthorization(bool &hasError, UnifiedData &data, bool isLocal,
+    std::map<std::string, unsigned int> &uriPermissions)
 {
     return;
 }
