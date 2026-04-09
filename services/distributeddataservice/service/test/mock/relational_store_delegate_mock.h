@@ -82,11 +82,12 @@ public:
         return true;
     }
 
-    DBStatus RemoveExceptDeviceData(const std::map<std::string, std::vector<std::string>> &tableMap) override
+    DBStatus RemoveExceptDeviceData(
+        const std::map<std::string, std::vector<std::string>> &tableMap, int64_t &changeRows) override
     {
         return resRemove;
     }
-    
+
     int32_t GetCloudSyncTaskCount() override
     {
         return cloudSyncTask;

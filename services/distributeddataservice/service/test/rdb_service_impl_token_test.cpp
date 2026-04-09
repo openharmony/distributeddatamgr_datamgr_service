@@ -514,7 +514,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData001, TestSize.Level0)
     GetRdbSyncerParam(param);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbStatus::RDB_NON_SYSTEM_APP);
+    EXPECT_EQ(result.first, RdbStatus::RDB_NON_SYSTEM_APP);
 }
 
 /**
@@ -532,7 +532,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData002, TestSize.Level0)
     GetRdbSyncerParam(param);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbStatus::RDB_DB_NOT_EXIST);
+    EXPECT_EQ(result.first, RdbStatus::RDB_DB_NOT_EXIST);
 }
 
 /**
@@ -553,7 +553,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData003, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbStatus::RDB_DB_NOT_EXIST);
+    EXPECT_EQ(result.first, RdbStatus::RDB_DB_NOT_EXIST);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -578,7 +578,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData004, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
+    EXPECT_EQ(result.first, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -600,7 +600,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData005, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbStatus::RDB_ERROR);
+    EXPECT_EQ(result.first, RdbStatus::RDB_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -628,7 +628,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData006, TestSize.Level0)
     devices.push_back("test");
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -655,7 +655,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData007, TestSize.Level0)
     std::vector<std::string> devices;
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
+    EXPECT_EQ(result.first, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -683,7 +683,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData008, TestSize.Level0)
     devices.push_back("device");
     retainDevices[""] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -711,7 +711,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData009, TestSize.Level0)
     devices.push_back("");
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -740,7 +740,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData010, TestSize.Level0)
     std::map<std::string, std::vector<std::string>> retainDevices;
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
+    EXPECT_EQ(result.first, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -770,7 +770,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData011, TestSize.Level0)
     std::map<std::string, std::vector<std::string>> retainDevices;
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -802,7 +802,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData012, TestSize.Level0)
     std::map<std::string, std::vector<std::string>> retainDevices;
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
