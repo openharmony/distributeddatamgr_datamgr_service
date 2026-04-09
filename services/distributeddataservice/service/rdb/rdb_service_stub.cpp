@@ -175,8 +175,8 @@ int32_t RdbServiceStub::OnRemoteRetainDeviceData(MessageParcel &data, MessagePar
         return IPC_STUB_INVALID_DATA_ERR;
     }
 
-    auto status = RetainDeviceData(param, retainDevices);
-    if (!ITypesUtil::Marshal(reply, status)) {
+    auto [status, changeRows] = RetainDeviceData(param, retainDevices);
+    if (!ITypesUtil::Marshal(reply, status, changeRows)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

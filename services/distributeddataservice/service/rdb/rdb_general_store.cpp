@@ -1171,23 +1171,24 @@ int32_t RdbGeneralStore::SetDistributedTables(const std::vector<std::string> &ta
     return GeneralError::E_OK;
 }
 
-int32_t RdbGeneralStore::RetainDeviceData(
+std::pair<int32_t, int64_t> RdbGeneralStore::RetainDeviceData(
     const std::map<std::string, std::vector<std::string>> &retainDevices)
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
-        return GeneralError::E_ALREADY_CLOSED;
+        return { GeneralError::E_ALREADY_CLOSED, -1 };
     }
     std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
     if (delegate_ == nullptr) {
-        return GeneralError::E_ALREADY_CLOSED;
+        return { GeneralError::E_ALREADY_CLOSED, -1 };
     }
-    auto status = delegate_->RemoveExceptDeviceData(retainDevices);
+    int64_t changedRows = -1;
+    auto status = delegate_->RemoveExceptDeviceData(retainDevices, changedRows);
     if (status != DBStatus::OK) {
         ZLOGE("RetainDeviceData failed, bundleName: %{public}s, storeName: %{public}s, err:%{public}d",
             meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str(), status);
     }
-    return ConvertStatus(status);
+    return { ConvertStatus(status), changedRows };
 }
 
 int32_t RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
