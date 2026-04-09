@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 
+#include "cloud/cloud_conflict_handler.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
 #include "cloud/cloud_last_sync_info.h"
@@ -145,6 +146,7 @@ private:
     using GeneralError = DistributedData::GeneralError;
     using GenProgress = DistributedData::GenProgress;
     using GenDetails = DistributedData::GenDetails;
+    using CloudConflictHandler = DistributedData::CloudConflictHandler;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10);  // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
@@ -203,6 +205,7 @@ private:
     void AddCompensateSync(const StoreMetaData &meta);
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
+    int32_t SetCloudConflictHandler(const AutoCache::Store &store);
 
     static std::vector<std::string> GetStoresIntersection(const SyncInfo::Stores &schemaStores,
         const std::map<std::string, SyncInfo::Tables> &requestedTables);

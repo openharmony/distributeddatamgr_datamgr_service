@@ -53,6 +53,7 @@ public:
     void Bind(std::shared_ptr<ExecutorPool> executor) override;
     bool IsSupportCloud(int32_t userId) override;
     bool CloudDriverUpdated(const std::string &bundleName) override;
+    std::shared_ptr<DistributedData::CloudConflictHandler> GetConflictHandler() override;
 
 private:
     static constexpr uint64_t INTERVAL = 6 * 24;
