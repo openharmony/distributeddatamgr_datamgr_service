@@ -315,7 +315,7 @@ private:
     void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password,
                           DistributedData::MetaDataSaver &saver);
 
-    std::pair<bool, std::map<std::string, std::vector<std::string>>> ValidateAndConvertDevices(
+    std::pair<bool, std::map<std::string, std::vector<std::string>>> ConvertDevices(
         const std::map<std::string, std::vector<std::string>> &retainDevices);
 
     static Factory factory_;

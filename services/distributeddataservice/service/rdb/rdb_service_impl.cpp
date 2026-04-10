@@ -395,7 +395,7 @@ std::pair<int32_t, int64_t> RdbServiceImpl::RetainDeviceData(
     if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
         return { RDB_NON_SYSTEM_APP, -1 };
     }
-    auto [valid, retainDevicesTemp] = ValidateAndConvertDevices(retainDevices);
+    auto [valid, retainDevicesTemp] = ConvertDevices(retainDevices);
     if (!valid) {
         ZLOGE("retainDevices invalid! bundleName:%{public}s, storeName:%{public}s.", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
@@ -416,11 +416,14 @@ std::pair<int32_t, int64_t> RdbServiceImpl::RetainDeviceData(
     if (errCode != GeneralError::E_OK) {
         ZLOGE("bundle:%{public}s, %{public}s retain device data fail:%{public}d.", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str(), errCode);
+    } else {
+        ZLOGI("bundle:%{public}s, %{public}s success remove data:%{public}." PRId64, param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str(), changeRows);
     }
     return { RdbCommonUtils::ConvertGeneralRdbStatus(errCode), changeRows };
 }
 
-std::pair<bool, std::map<std::string, std::vector<std::string>>> RdbServiceImpl::ValidateAndConvertDevices(
+std::pair<bool, std::map<std::string, std::vector<std::string>>> RdbServiceImpl::ConvertDevices(
     const std::map<std::string, std::vector<std::string>> &retainDevices)
 {
     std::map<std::string, std::vector<std::string>> retainDevicesTemp;
