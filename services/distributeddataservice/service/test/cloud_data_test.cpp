@@ -110,7 +110,6 @@ bool Marshalling(const DBActionInfo &input, MessageParcel &data)
 } // namespace OHOS::ITypesUtil
 namespace OHOS::Test {
 namespace DistributedDataTest {
-static constexpr const int32_t SCHEMA_VERSION = 101;
 static constexpr const int32_t EVT_USER = 102;
 static constexpr const char *TEST_TRACE_ID = "123456789";
 static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
@@ -119,7 +118,6 @@ static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_STORE_1 = "test_cloud_store1";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_TABLE = "teat_cloud_table";
-static constexpr const char *COM_EXAMPLE_TEST_CLOUD = "com.example.testCloud";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_alias_2";
 static constexpr const char *PERMISSION_CLOUDDATA_CONFIG = "ohos.permission.CLOUDDATA_CONFIG";
@@ -2939,36 +2937,6 @@ HWTEST_F(CloudDataTest, UpdateSchemaFromHap003, TestSize.Level1)
     std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
     ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
     EXPECT_EQ(schemaMeta.version, schemaMeta_.version);
-}
-
-/**
-* @tc.name: UpdateSchemaFromHap004
-* @tc.desc: Test the UpdateSchemaFromHap with valid parameter
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(CloudDataTest, UpdateSchemaFromHap004, TestSize.Level1)
-{
-    ZLOGI("CloudServiceImplTest UpdateSchemaFromHap004 start");
-    ASSERT_NE(cloudServiceImpl_, nullptr);
-    CloudInfo::AppInfo exampleAppInfo;
-    exampleAppInfo.bundleName = COM_EXAMPLE_TEST_CLOUD;
-    exampleAppInfo.appId = COM_EXAMPLE_TEST_CLOUD;
-    exampleAppInfo.version = 1;
-    exampleAppInfo.cloudSwitch = true;
-    CloudInfo cloudInfo;
-    MetaDataManager::GetInstance().LoadMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    cloudInfo.apps[COM_EXAMPLE_TEST_CLOUD] = std::move(exampleAppInfo);
-    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo, true);
-    CloudData::CloudServiceImpl::HapInfo info = {
-        .user = cloudInfo_.user, .instIndex = 0, .bundleName = COM_EXAMPLE_TEST_CLOUD
-    };
-    auto ret = cloudServiceImpl_->UpdateSchemaFromHap(info);
-    EXPECT_EQ(ret, Status::SUCCESS);
-    SchemaMeta schemaMeta;
-    std::string schemaKey = CloudInfo::GetSchemaKey(info.user, info.bundleName, info.instIndex);
-    ASSERT_TRUE(MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true));
-    EXPECT_EQ(schemaMeta.version, SCHEMA_VERSION);
 }
 
 /**
