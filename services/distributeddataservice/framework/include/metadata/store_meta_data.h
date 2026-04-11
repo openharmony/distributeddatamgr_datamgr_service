@@ -35,6 +35,7 @@ struct API_EXPORT StoreMetaData : public Serializable {
     bool isDirty = false;
     bool isEncrypt = false;
     bool isManualClean = false;
+    bool isManualCleanDevice = false;
     bool isSearchable = false;
     bool isNeedCompress = false;
     bool enableCloud = false;

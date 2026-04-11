@@ -276,6 +276,11 @@ int32_t RdbGeneralStore::InitDelegate()
         PragmaData data = static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta_.isManualClean)));
         delegate_->Pragma(PragmaCmd::LOGIC_DELETE_SYNC_DATA, data);
     }
+    if (meta_.isManualCleanDevice) {
+        PragmaData data =
+            static_cast<PragmaData>(const_cast<void *>(static_cast<const void *>(&meta_.isManualCleanDevice)));
+        delegate_->Pragma(PragmaCmd::LOGIC_DELETE_DEVICE_SYNC_DATA, data);
+    }
     return ConvertStatus(ret);
 }
 
@@ -314,14 +319,16 @@ int32_t RdbGeneralStore::Init()
         ret = InitDelegate();
     }
     if (ret != GenErr::E_OK && !createRequired_ && access(meta_.dataDir.c_str(), F_OK) != 0) {
-        ZLOGE("store[%{public}s,%{public}s,%{public}u,%{public}s], cfg[%{public}d,%{public}d,%{public}d], not exist!",
+        ZLOGE("store[%{public}s, %{public}s, %{public}u, %{public}s],"
+                "cfg[%{public}d, %{public}d, %{public}d, %{public}d], not exist!",
             meta_.user.c_str(), meta_.bundleName.c_str(), meta_.tokenId, Anonymous::Change(meta_.storeId).c_str(),
-            meta_.isEncrypt, meta_.isManualClean, meta_.isSearchable);
+            meta_.isEncrypt, meta_.isManualClean, meta_.isManualCleanDevice, meta_.isSearchable);
         return GenErr::E_FILE_NOT_EXIST;
     }
-    ZLOGI("store[%{public}s,%{public}s,%{public}u,%{public}s], cfg[%{public}d,%{public}d,%{public}d], ret:%{public}d",
+    ZLOGI("store[%{public}s, %{public}s, %{public}u, %{public}s],"
+            "cfg[%{public}d, %{public}d, %{public}d, %{public}d], ret: %{public}d",
         meta_.user.c_str(), meta_.bundleName.c_str(), meta_.tokenId, Anonymous::Change(meta_.storeId).c_str(),
-        meta_.isEncrypt, meta_.isManualClean, meta_.isSearchable, ret);
+        meta_.isEncrypt, meta_.isManualClean, meta_.isManualCleanDevice, meta_.isSearchable, ret);
     return ret;
 }
 
