@@ -59,7 +59,7 @@ public:
     std::vector<OperationResult> Publish(const Data &data, const std::string &bundleNameOfProvider) override;
     Data GetData(const std::string &bundleNameOfProvider, int &errorCode) override;
     std::vector<OperationResult> SubscribeRdbData(const std::vector<std::string> &uris,
-        const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) override;
+        const TemplateId &id, const sptr<IDataProxyRdbObserver> observer, const SubscribeOption &option = {}) override;
     std::vector<OperationResult> UnsubscribeRdbData(
         const std::vector<std::string> &uris, const TemplateId &id) override;
     std::vector<OperationResult> EnableRdbSubs(

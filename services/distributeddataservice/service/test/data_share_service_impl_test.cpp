@@ -579,6 +579,78 @@ HWTEST_F(DataShareServiceImplTest, SubscribeRdbData001, TestSize.Level1)
 }
 
 /**
+* @tc.name: SubscribeRdbData002
+* @tc.desc: Tests the operation of a subscription to a data change of the specified URI and subscribeOption
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribeRdbData002, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    PredicateTemplateNode node("p1", "select name0 as name from TBL00");
+    std::vector<PredicateTemplateNode> nodes;
+    nodes.emplace_back(node);
+    Template tpl(nodes, "select name1 as name from TBL00");
+    auto result1 = dataShareServiceImpl.AddTemplate(SLIENT_ACCESS_URI, TEST_SUB_ID, tpl);
+    EXPECT_TRUE(result1);
+    std::vector<std::string> uris;
+    uris.emplace_back(SLIENT_ACCESS_URI);
+    sptr<IDataProxyRdbObserver> observer;
+    TemplateId tplId;
+    tplId.subscriberId_ = TEST_SUB_ID;
+    tplId.bundleName_ = BUNDLE_NAME;
+    SubscribeOption option;
+    option.subscribeStatus.emplace(SLIENT_ACCESS_URI, false);
+    std::vector<OperationResult> result2 = dataShareServiceImpl.SubscribeRdbData(uris, tplId, observer, option);
+    EXPECT_EQ(result2.size(), uris.size());
+    for (auto const &operationResult : result2) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    std::vector<OperationResult> result3 = dataShareServiceImpl.UnsubscribeRdbData(uris, tplId);
+    EXPECT_EQ(result3.size(), uris.size());
+    for (auto const &operationResult : result3) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+}
+
+/**
+* @tc.name: SubscribeRdbData003
+* @tc.desc: Tests the operation of a subscription to a data change of the specified URI and subscribeOption
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribeRdbData003, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    PredicateTemplateNode node("p1", "select name0 as name from TBL00");
+    std::vector<PredicateTemplateNode> nodes;
+    nodes.emplace_back(node);
+    Template tpl(nodes, "select name1 as name from TBL00");
+    auto result1 = dataShareServiceImpl.AddTemplate(SLIENT_ACCESS_URI, TEST_SUB_ID, tpl);
+    EXPECT_TRUE(result1);
+    std::vector<std::string> uris;
+    uris.emplace_back(SLIENT_ACCESS_URI);
+    sptr<IDataProxyRdbObserver> observer;
+    TemplateId tplId;
+    tplId.subscriberId_ = TEST_SUB_ID;
+    tplId.bundleName_ = BUNDLE_NAME;
+    SubscribeOption option;
+    option.subscribeStatus.emplace(SLIENT_ACCESS_URI + "notContainTest", false);
+    std::vector<OperationResult> result2 = dataShareServiceImpl.SubscribeRdbData(uris, tplId, observer, option);
+    EXPECT_EQ(result2.size(), uris.size());
+    for (auto const &operationResult : result2) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    std::vector<OperationResult> result3 = dataShareServiceImpl.UnsubscribeRdbData(uris, tplId);
+    EXPECT_EQ(result3.size(), uris.size());
+    for (auto const &operationResult : result3) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+}
+
+/**
 * @tc.name: SubscribePublishedData001
 * @tc.desc: test SubscribePublishedData no GetCallerBundleName scene
 * @tc.type: FUNC

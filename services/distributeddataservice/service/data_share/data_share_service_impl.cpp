@@ -419,16 +419,25 @@ Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider, int 
     return getDataStrategy_.Execute(context, errorCode);
 }
 
-std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
-    const std::vector<std::string> &uris, const TemplateId &id, const sptr<IDataProxyRdbObserver> observer)
+std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(const std::vector<std::string> &uris,
+    const TemplateId &id, const sptr<IDataProxyRdbObserver> observer, const SubscribeOption &subscribeOption)
 {
     std::vector<OperationResult> results;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
-        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &observer, &context, this]() {
+        bool enabled = true;
+        if (!subscribeOption.subscribeStatus.empty()) {
+            auto it = subscribeOption.subscribeStatus.find(uri);
+            if (it != subscribeOption.subscribeStatus.end()) {
+                enabled = it->second;
+            } else {
+                ZLOGE("subscribe uri %{public}s missed status", URIUtils::Anonymous(uri).c_str());
+            }
+        }
+        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &observer, &context, enabled, this]() {
             return RdbSubscriberManager::GetInstance().Add(
                 Key(context->uri, id.subscriberId_, id.bundleName_),
-                observer, context, binderInfo_.executors);
+                observer, context, binderInfo_.executors, enabled);
         }));
     }
     return results;
