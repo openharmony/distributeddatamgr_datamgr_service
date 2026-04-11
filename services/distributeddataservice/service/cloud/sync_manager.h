@@ -75,6 +75,9 @@ public:
         void SetCompensation(bool isCompensation);
         void SetTriggerMode(int32_t triggerMode);
         void SetPrepareTraceId(const std::string &prepareTraceId);
+        void SetDownloadOnly(bool isDownloadOnly);
+        void SetEnablePredicate(bool isEnablePredicate);
+
         std::shared_ptr<GenQuery> GenerateQuery(const Tables &tables);
         bool Contains(const std::string &storeName) const;
         std::vector<std::string> GetTables(const Database &database);
@@ -94,6 +97,8 @@ public:
         bool isCompensation_ = false;
         int32_t triggerMode_ = 0;
         std::string prepareTraceId_;
+        bool isDownloadOnly_ = false;
+        bool isEnablePredicate_ = false;
     };
     SyncManager();
     ~SyncManager();

@@ -572,5 +572,33 @@ HWTEST_F(CloudDataMockTest, DoCloudSync_ContainsFalse_MultipleStores_VerifyQuery
     EXPECT_EQ(result[TEST_CLOUD_STORE].code, E_ERROR);
     delegate_.networkType_ = NetworkDelegate::NONE;
 }
+
+/**
+* @tc.name: DownloadOnlySync_DifferentFlowTypes
+* @tc.desc: DownloadOnlySync_DifferentFlowTypes test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, DownloadOnlySync_DifferentFlowTypes, TestSize.Level0)
+{
+    size_t max = 12;
+    size_t min = 5;
+    CloudData::SyncManager syncManager;
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    ASSERT_EQ(syncManager.Bind(executor), E_OK);
+
+    delegate_.networkType_ = NetworkDelegate::WIFI;
+    int32_t user = cloudInfo_.user;
+    CloudData::SyncManager::SyncInfo info(user, TEST_CLOUD_BUNDLE);
+    info.SetDownloadOnly(true);
+    std::vector<std::string> tables;
+    info.tables_.insert_or_assign(TEST_CLOUD_STORE, tables);
+
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    auto ret = syncManager.DoCloudSync(std::move(info));
+    ASSERT_EQ(ret, E_OK);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

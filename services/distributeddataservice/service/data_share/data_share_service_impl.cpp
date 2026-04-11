@@ -630,6 +630,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.appType = "default";
     saveMeta.storeId = "data_share_data_";
     saveMeta.isAutoSync = false;
+    saveMeta.autoSyncSwitch = true;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;
     saveMeta.bundleName =  binderInfo.selfName;

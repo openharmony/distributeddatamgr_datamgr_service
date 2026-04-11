@@ -39,6 +39,7 @@ private:
     int32_t OnQueryLastSyncInfoBatch(MessageParcel &data, MessageParcel &reply);
     int32_t OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply);
     int32_t OnCloudSync(MessageParcel &data, MessageParcel &reply);
+    int32_t OnStopCloudSync(MessageParcel &data, MessageParcel &reply);
 
     int32_t OnAllocResourceAndShare(MessageParcel &data, MessageParcel &reply);
     int32_t OnShare(MessageParcel &data, MessageParcel &reply);
@@ -52,6 +53,8 @@ private:
 
     int32_t OnSetCloudStrategy(MessageParcel &data, MessageParcel &reply);
     int32_t OnInitNotifier(MessageParcel &data, MessageParcel &reply);
+    int32_t OnSubscribeCloudSyncTrigger(MessageParcel &data, MessageParcel &reply);
+    int32_t OnUnSubscribeCloudSyncTrigger(MessageParcel &data, MessageParcel &reply);
     int32_t OnSubscribe(MessageParcel &data, MessageParcel &reply);
     int32_t OnUnsubscribe(MessageParcel &data, MessageParcel &reply);
     static const Handler HANDLERS[TRANS_BUTT];

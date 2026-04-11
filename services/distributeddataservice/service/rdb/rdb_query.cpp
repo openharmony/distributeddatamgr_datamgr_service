@@ -25,7 +25,7 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
     : isPriority_(isPriority), devices_(predicates.devices_), tables_(predicates.tables_)
 {
     ZLOGD("table size:%{public}zu, device size:%{public}zu, op size:%{public}zu", predicates.tables_.size(),
-        predicates.devices_.size(), predicates.operations_.size());
+          predicates.devices_.size(), predicates.operations_.size());
     if (predicates.tables_.size() == 1) {
         if (!isPriority) {
             query_ = DistributedDB::Query::Select(*predicates.tables_.begin());
@@ -41,7 +41,6 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
     if (predicates.operations_.empty() || predicates.tables_.empty()) {
         return;
     }
-
     predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
     for (const auto& operation : predicates.operations_) {
         if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
@@ -119,8 +118,13 @@ void RdbQuery::EqualTo(const RdbPredicateOperation &operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.EqualTo(operation.field_, operation.values_[0]);
-    predicates_->EqualTo(operation.field_, operation.values_[0]);
+    if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
+        query_.EqualTo(operation.field_, *strVal);
+        predicates_->EqualTo(operation.field_, *strVal);
+    } else if (auto intVal = std::get_if<int64_t>(&operation.values_[0])) {
+        query_.EqualTo(operation.field_, *intVal);
+        predicates_->EqualTo(operation.field_, *intVal);
+    }
 }
 
 void RdbQuery::NotEqualTo(const RdbPredicateOperation &operation)
@@ -128,8 +132,13 @@ void RdbQuery::NotEqualTo(const RdbPredicateOperation &operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.NotEqualTo(operation.field_, operation.values_[0]);
-    predicates_->NotEqualTo(operation.field_, operation.values_[0]);
+    if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
+        query_.NotEqualTo(operation.field_, *strVal);
+        predicates_->NotEqualTo(operation.field_, *strVal);
+    } else if (auto intVal = std::get_if<int64_t>(&operation.values_[0])) {
+        query_.NotEqualTo(operation.field_, *intVal);
+        predicates_->NotEqualTo(operation.field_, *intVal);
+    }
 }
 
 void RdbQuery::And(const RdbPredicateOperation &operation)
@@ -149,30 +158,53 @@ void RdbQuery::OrderBy(const RdbPredicateOperation &operation)
     if (operation.values_.empty()) {
         return;
     }
-    bool isAsc = operation.values_[0] == "true";
-    query_.OrderBy(operation.field_, isAsc);
-    isAsc ? predicates_->OrderByAsc(operation.field_) : predicates_->OrderByDesc(operation.field_);
+    if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
+        bool isAsc = *strVal == "true";
+        query_.OrderBy(operation.field_, isAsc);
+        isAsc ? predicates_->OrderByAsc(operation.field_) : predicates_->OrderByDesc(operation.field_);
+    }
 }
 
 void RdbQuery::Limit(const RdbPredicateOperation &operation)
 {
-    char *end = nullptr;
-    int limit = static_cast<int>(strtol(operation.field_.c_str(), &end, DECIMAL_BASE));
-    int offset = static_cast<int>(strtol(operation.values_[0].c_str(), &end, DECIMAL_BASE));
-    if (limit < 0) {
-        limit = 0;
+    if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
+        char *end = nullptr;
+        int limit = static_cast<int>(strtol(operation.field_.c_str(), &end, DECIMAL_BASE));
+        int offset = static_cast<int>(strtol((*strVal).c_str(), &end, DECIMAL_BASE));
+        if (limit < 0) {
+            limit = 0;
+        }
+        if (offset < 0) {
+            offset = 0;
+        }
+        query_.Limit(limit, offset);
+        predicates_->Limit(limit, offset);
     }
-    if (offset < 0) {
-        offset = 0;
-    }
-    query_.Limit(limit, offset);
-    predicates_->Limit(limit, offset);
 }
 
 void RdbQuery::In(const RdbPredicateOperation& operation)
 {
-    query_.In(operation.field_, operation.values_);
-    predicates_->In(operation.field_, operation.values_);
+    std::vector<std::string> vals_string;
+    std::vector<int64_t> vals_int;
+    vals_string.reserve(operation.values_.size());
+    vals_int.reserve(operation.values_.size());
+    bool isString = false;
+    for (const auto &value : operation.values_) {
+        if (auto val = std::get_if<std::string>(&value)) {
+            vals_string.emplace_back(*val);
+            isString = true;
+        } else if (auto val = std::get_if<int64_t>(&value)) {
+            vals_int.emplace_back(*val);
+        } else {
+            return;
+        }
+    }
+    if (isString) {
+        query_.In(operation.field_, vals_string);
+        predicates_->In(operation.field_, vals_string);
+    } else {
+        query_.In(operation.field_, vals_int);
+    }
 }
 
 void RdbQuery::BeginGroup(const RdbPredicateOperation& operation)
@@ -187,10 +219,30 @@ void RdbQuery::EndGroup(const RdbPredicateOperation& operation)
     predicates_->EndWrap();
 }
 
+
 void RdbQuery::NotIn(const RdbPredicateOperation& operation)
 {
-    query_.NotIn(operation.field_, operation.values_);
-    predicates_->NotIn(operation.field_, operation.values_);
+    std::vector<std::string> vals_string;
+    std::vector<int64_t> vals_int;
+    vals_string.reserve(operation.values_.size());
+    vals_int.reserve(operation.values_.size());
+    bool isString = false;
+    for (const auto &value : operation.values_) {
+        if (auto val = std::get_if<std::string>(&value)) {
+            vals_string.emplace_back(*val);
+            isString = true;
+        } else if (auto val = std::get_if<int64_t>(&value)) {
+            vals_int.emplace_back(*val);
+        } else {
+            return;
+        }
+    }
+    if (isString) {
+        query_.NotIn(operation.field_, vals_string);
+        predicates_->NotIn(operation.field_, vals_string);
+    } else {
+        query_.NotIn(operation.field_, vals_int);
+    }
 }
 
 void RdbQuery::Contain(const RdbPredicateOperation& operation)
@@ -198,8 +250,10 @@ void RdbQuery::Contain(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.Like(operation.field_, "%" + operation.values_[0] + "%");
-    predicates_->Contains(operation.field_, operation.values_[0]);
+    if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
+        query_.Like(operation.field_, "%" + *strVal + "%");
+        predicates_->Contains(operation.field_, *strVal);
+    }
 }
 
 void RdbQuery::BeginWith(const RdbPredicateOperation& operation)
@@ -207,8 +261,10 @@ void RdbQuery::BeginWith(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.Like(operation.field_, operation.values_[0] + "%");
-    predicates_->BeginsWith(operation.field_, operation.values_[0]);
+    if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
+        query_.Like(operation.field_, *strVal + "%");
+        predicates_->BeginsWith(operation.field_, *strVal);
+    }
 }
 
 void RdbQuery::EndWith(const RdbPredicateOperation& operation)
@@ -216,8 +272,10 @@ void RdbQuery::EndWith(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.Like(operation.field_, "%" + operation.values_[0]);
-    predicates_->EndsWith(operation.field_, operation.values_[0]);
+    if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
+        query_.Like(operation.field_, "%" + *strVal);
+        predicates_->EndsWith(operation.field_, *strVal);
+    }
 }
 
 void RdbQuery::IsNull(const RdbPredicateOperation& operation)
@@ -237,8 +295,10 @@ void RdbQuery::Like(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.Like(operation.field_, operation.values_[0]);
-    predicates_->Like(operation.field_, operation.values_[0]);
+    if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
+        query_.Like(operation.field_, *strVal);
+        predicates_->Like(operation.field_, *strVal);
+    }
 }
 
 void RdbQuery::Glob(const RdbPredicateOperation& operation)
@@ -246,7 +306,11 @@ void RdbQuery::Glob(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    predicates_->Glob(operation.field_, operation.values_[0]);
+    auto strVal = std::get_if<std::string>(&operation.values_[0]);
+    if (strVal == nullptr) {
+        return;
+    }
+    predicates_->Glob(operation.field_, *strVal);
 }
 
 void RdbQuery::Between(const RdbPredicateOperation& operation)
@@ -254,7 +318,12 @@ void RdbQuery::Between(const RdbPredicateOperation& operation)
     if (operation.values_.size() != 2) { // between a and b 2 args
         return;
     }
-    predicates_->Between(operation.field_, operation.values_[0], operation.values_[1]);
+    auto strVal1 = std::get_if<std::string>(&operation.values_[0]);
+    auto strVal2 = std::get_if<std::string>(&operation.values_[1]);
+    if (strVal2 == nullptr || strVal1 == nullptr) {
+        return;
+    }
+    predicates_->Between(operation.field_, *strVal1, *strVal2);
 }
 
 void RdbQuery::NotBetween(const RdbPredicateOperation& operation)
@@ -262,7 +331,12 @@ void RdbQuery::NotBetween(const RdbPredicateOperation& operation)
     if (operation.values_.size() != 2) { // not between a and b 2 args
         return;
     }
-    predicates_->NotBetween(operation.field_, operation.values_[0], operation.values_[1]);
+    auto strVal_1 = std::get_if<std::string>(&operation.values_[0]);
+    auto strVal_2 = std::get_if<std::string>(&operation.values_[1]);
+    if (strVal_1 == nullptr || strVal_2 == nullptr) {
+        return;
+    }
+    predicates_->NotBetween(operation.field_, *strVal_1, *strVal_2);
 }
 
 void RdbQuery::GreaterThan(const RdbPredicateOperation& operation)
@@ -270,8 +344,10 @@ void RdbQuery::GreaterThan(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.GreaterThan(operation.field_, operation.field_[0]);
-    predicates_->GreaterThan(operation.field_, operation.field_[0]);
+    if (auto intVal = std::get_if<int64_t>(&operation.values_[0])) {
+        query_.GreaterThan(operation.field_, *intVal);
+        predicates_->GreaterThan(operation.field_, *intVal);
+    }
 }
 
 void RdbQuery::GreaterThanOrEqual(const RdbPredicateOperation& operation)
@@ -279,8 +355,10 @@ void RdbQuery::GreaterThanOrEqual(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.GreaterThanOrEqualTo(operation.field_, operation.field_[0]);
-    predicates_->GreaterThanOrEqualTo(operation.field_, operation.field_[0]);
+    if (auto intVal = std::get_if<int64_t>(&operation.values_[0])) {
+        query_.GreaterThanOrEqualTo(operation.field_, *intVal);
+        predicates_->GreaterThanOrEqualTo(operation.field_, *intVal);
+    }
 }
 
 void RdbQuery::LessThan(const RdbPredicateOperation& operation)
@@ -288,8 +366,10 @@ void RdbQuery::LessThan(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.LessThan(operation.field_, operation.field_[0]);
-    predicates_->LessThan(operation.field_, operation.field_[0]);
+    if (auto intVal = std::get_if<int64_t>(&operation.values_[0])) {
+        query_.LessThan(operation.field_, *intVal);
+        predicates_->LessThan(operation.field_, *intVal);
+    }
 }
 
 void RdbQuery::LessThanOrEqual(const RdbPredicateOperation& operation)
@@ -297,8 +377,10 @@ void RdbQuery::LessThanOrEqual(const RdbPredicateOperation& operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.LessThanOrEqualTo(operation.field_, operation.field_[0]);
-    predicates_->LessThanOrEqualTo(operation.field_, operation.field_[0]);
+    if (auto intVal = std::get_if<int64_t>(&operation.values_[0])) {
+        query_.LessThanOrEqualTo(operation.field_, *intVal);
+        predicates_->LessThanOrEqualTo(operation.field_, *intVal);
+    }
 }
 
 void RdbQuery::Distinct(const RdbPredicateOperation& operation)
@@ -342,8 +424,12 @@ void RdbQuery::NotLike(const RdbPredicateOperation &operation)
     if (operation.values_.empty()) {
         return;
     }
-    query_.NotLike(operation.field_, operation.values_[0]);
-    predicates_->NotLike(operation.field_, operation.values_[0]);
+    auto strVal = std::get_if<std::string>(&operation.values_[0]);
+    if (strVal == nullptr) {
+        return;
+    }
+    query_.NotLike(operation.field_, *strVal);
+    predicates_->NotLike(operation.field_, *strVal);
 }
 
 void RdbQuery::AssetsOnly(const RdbPredicateOperation &operation)
@@ -355,8 +441,12 @@ void RdbQuery::AssetsOnly(const RdbPredicateOperation &operation)
     std::vector<NativeRdb::AssetValue> assets;
     std::set<std::string> names;
     for (const auto &value : operation.values_) {
-        names.insert(value);
-        NativeRdb::AssetValue asset{ .name = value };
+        auto strVal = std::get_if<std::string>(&value);
+        if (strVal == nullptr) {
+            return;
+        }
+        names.insert(*strVal);
+        NativeRdb::AssetValue asset{ .name = *strVal };
         assets.push_back(std::move(asset));
     }
     NativeRdb::ValueObject object(assets);

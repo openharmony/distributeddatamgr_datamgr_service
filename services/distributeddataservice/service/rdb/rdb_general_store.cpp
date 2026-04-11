@@ -368,6 +368,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     EventCenter::GetInstance().PostEvent(std::move(evt));
     auto snapshots = GetSnapshots();
     std::shared_ptr<RdbCloud> rdbCloud = std::make_shared<RdbCloud>(bindInfo.db_, snapshots);
+    bindInfo.loader_->SetStoreMetaKey(meta_.GetKey());
     std::shared_ptr<RdbAssetLoader> loader = std::make_shared<RdbAssetLoader>(bindInfo.loader_, std::move(snapshots));
     {
         std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
@@ -734,10 +735,15 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
         auto id = executor->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
         tasks_->Insert(syncId, { id, callback });
     }
+    UpdateCloudConfig(syncParam);
     CloudSyncOption option;
     option.devices = devices;
     option.mode = DistributedDB::SyncMode(syncMode);
     option.query = dbQuery;
+    option.waitTime = syncParam.wait;
+    if (syncParam.isEnablePredicate) {
+        option.queryMode = DistributedDB::QueryMode::UPLOAD_ONLY;
+    }
     option.waitTime = syncParam.wait;
     option.priorityTask = isPriority || highMode == MANUAL_SYNC_MODE;
     option.priorityLevel = GetPriorityLevel(highMode);
@@ -746,6 +752,8 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     option.lockAction = LOCK_ACTION;
     option.prepareTraceId = syncParam.prepareTraceId;
     option.asyncDownloadAssets = syncParam.asyncDownloadAsset;
+    option.syncFlowType = syncParam.isDownloadOnly ? DistributedDB::SyncFlowType::DOWNLOAD_ONLY
+                                                  : DistributedDB::SyncFlowType::NORMAL;
     auto dbStatus = DistributedDB::INVALID_ARGS;
     dbStatus = delegate_->Sync(option, tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
     if (dbStatus == DBStatus::OK || tasks_ == nullptr) {
@@ -1200,6 +1208,25 @@ std::pair<int32_t, int64_t> RdbGeneralStore::RetainDeviceData(
     return { ConvertStatus(status), changedRows };
 }
 
+int32_t RdbGeneralStore::StopCloudSync()
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto status = delegate_->StopTask(DistributedDB::TaskType::ONLY_CLOUD_SYNC_TASK);
+    if (status != DistributedDB::DBStatus::OK) {
+        ZLOGE("Failed to stop cloud data sync, bundleName: %{public}s, storeName: %{public}s, err: %{public}d",
+            meta_.bundleName.c_str(), meta_.GetStoreAlias().c_str(), status);
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
 int32_t RdbGeneralStore::SetConfig(const StoreConfig &storeConfig)
 {
     if (isClosed_) {
@@ -1288,14 +1315,14 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_SYNC_TASK_MERGED;
         case DBStatus::CLOUD_DISABLED:
             return GenErr::E_CLOUD_DISABLED;
-        case DBStatus::TASK_INTERRUPTED:
-            return GeneralError::E_CLOUD_TASK_INTERRUPTED;
         case DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB:
             return GenErr::E_DB_CORRUPT;
         case DBStatus::NOT_SUPPORT:
             return GenErr::E_NOT_SUPPORT;
         case DBStatus::TABLE_NOT_FOUND:
             return GenErr::E_TABLE_NOT_FOUND;
+        case DBStatus::TASK_INTERRUPTED:
+            return GenErr::E_STOP_CLOUD_SYNC;
         case DBStatus::INVALID_ARGS:
             return GenErr::E_INVALID_ARGS;
         case DBStatus::DB_ERROR:
@@ -1842,5 +1869,27 @@ int32_t RdbGeneralStore::SetCloudConflictHandler(const std::shared_ptr<CloudConf
     conflictHandler_ = std::make_shared<RdbCloudConflictHandler>(handler);
     auto ret = delegate_->SetCloudConflictHandler(conflictHandler_);
     return ConvertStatus(ret);
+}
+
+void RdbGeneralStore::UpdateCloudConfig(const DistributedData::SyncParam &syncParam) const
+{
+    delegate_->SetCloudSyncConfig({
+        .skipDownloadAssets = syncParam.assetDownloadOnDemand,
+        .assetPolicy = ConvertPolicy(
+            static_cast<DistributedRdb::AssetConflictPolicy>(syncParam.assetConflictPolicy)),
+    });
+}
+
+DistributedDB::AssetConflictPolicy RdbGeneralStore::ConvertPolicy(DistributedRdb::AssetConflictPolicy policy)
+{
+    switch (policy) {
+        case DistributedRdb::AssetConflictPolicy::CONFLICT_POLICY_TIME_FIRST:
+            return DistributedDB::AssetConflictPolicy::CONFLICT_POLICY_TIME_FIRST ;
+        case DistributedRdb::AssetConflictPolicy::CONFLICT_POLICY_TEMP_PATH :
+            return DistributedDB::AssetConflictPolicy::CONFLICT_POLICY_TEMP_PATH;
+        case DistributedRdb::AssetConflictPolicy::CONFLICT_POLICY_DEFAULT :
+        default:
+            return DistributedDB::AssetConflictPolicy::CONFLICT_POLICY_DEFAULT;
+    }
 }
 } // namespace OHOS::DistributedRdb

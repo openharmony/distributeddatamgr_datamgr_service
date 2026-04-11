@@ -47,6 +47,7 @@
 #include "relational_store_manager.h"
 #include "runtime_config.h"
 #include "store/auto_cache.h"
+#include "store/general_value.h"
 #include "sync_config.h"
 #include "sync_manager.h"
 #include "sync_strategies/network_sync_strategy.h"
@@ -246,8 +247,7 @@ int32_t CloudServiceImpl::ChangeAppSwitch(const std::string &id, const std::stri
         syncManager_.ClearLastSyncInfo(cloudInfo.user, cloudInfo.id, bundleName);
     }
     if (cloudInfo.enableCloud && appSwitch == SWITCH_ON) {
-        SyncManager::SyncInfo info(cloudInfo.user, bundleName);
-        syncManager_.DoCloudSync(info);
+        TriggerAppDatabaseSync(user, bundleName, cloudInfo, scene);
     }
     ZLOGI("ChangeAppSwitch success, id:%{public}s app:%{public}s, switch:%{public}d", Anonymous::Change(id).c_str(),
         bundleName.c_str(), appSwitch);
@@ -540,6 +540,155 @@ bool CloudServiceImpl::DoKvCloudSync(int32_t userId, const std::string &bundleNa
     return found;
 }
 
+void CloudServiceImpl::NotifyCloudSyncTriggerObservers(const std::string &bundleName, int32_t user,
+    int32_t triggerMode)
+{
+    int32_t innerTriggerMode = 0;
+    switch (triggerMode) {
+        case CloudSyncScene::ENABLE_CLOUD:
+            innerTriggerMode = TriggerScene::TRIGGER_ENABLE_CLOUD;
+            break;
+        case CloudSyncScene::SWITCH_ON:
+            innerTriggerMode = TriggerScene::TRIGGER_SWITCH_ON;
+            break;
+        case CloudSyncScene::NETWORK_RECOVERY:
+            innerTriggerMode = TriggerScene::TRIGGER_NETWORK_RECOVERY;
+            break;
+        case CloudSyncScene::PUSH:
+            innerTriggerMode = TriggerScene::TRIGGER_PUSH;
+            break;
+        case CloudSyncScene::USER_CHANGE:
+            innerTriggerMode = TriggerScene::TRIGGER_USER_CHANGE;
+            break;
+        default: {
+            ZLOGE("unknown type mode %{public}d.", triggerMode);
+            return;
+        }
+    }
+    std::string key = bundleName + std::to_string(user);
+    cloudSyncTriggerObservers_.ComputeIfPresent(key, [this, innerTriggerMode](auto, uint32_t &tokenId) {
+        sptr<CloudNotifierProxy> notifier = nullptr;
+        syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &agent) {
+            notifier = agent.notifier_;
+            return true;
+        });
+        if (notifier != nullptr) {
+            notifier->OnCloudSyncTrigger(innerTriggerMode);
+            ZLOGI("Notified tokenId=%{public}x, triggerMode=%{public}d", tokenId, innerTriggerMode);
+        }
+        return true;
+    });
+}
+
+void CloudServiceImpl::ProcessDatabaseSync(DatabaseSyncContext &context)
+{
+    StoreMetaMapping meta;
+    meta.bundleName = context.bundleName;
+    meta.storeId = context.dbName;
+    meta.user = std::to_string(context.user);
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    meta.instanceId = context.instanceId;
+    
+    MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+    if (!meta.cloudPath.empty() && meta.cloudPath != meta.dataDir) {
+        MetaDataManager::GetInstance().LoadMeta(meta.GetCloudStoreMetaKey(), meta, true);
+    }
+    if (!meta.autoSyncSwitch) {
+        NotifyCloudSyncTriggerObservers(context.bundleName, context.user, context.triggerMode);
+    } else {
+        if (context.triggerMode == CloudSyncScene::PUSH) {
+            context.triggerMode = static_cast<int32_t>(DistributedData::MODE_PUSH);
+        }
+        if (context.prepareTraceId.empty()) {
+            SyncManager::SyncInfo info(context.user, context.bundleName, context.dbName,
+                context.tables, context.triggerMode);
+            syncManager_.DoCloudSync(info);
+        } else {
+            syncManager_.DoCloudSync(SyncManager::SyncInfo(
+                { context.user, context.bundleName, context.dbName, context.tables,
+                context.triggerMode, context.prepareTraceId }));
+        }
+    }
+}
+
+void CloudServiceImpl::TriggerAppDatabaseSync(int32_t user, const std::string &bundleName,
+    const CloudInfo &cloudInfo, CloudSyncScene scene)
+{
+    auto it = cloudInfo.apps.find(bundleName);
+    if (it == cloudInfo.apps.end()) {
+        ZLOGE("bundleName:%{public}s is not exist", bundleName.c_str());
+        return;
+    }
+    auto [schemaStatus, schemaMeta] = GetSchemaMeta(user, bundleName, it->second.instanceId);
+    if (schemaStatus != SUCCESS) {
+        ZLOGE("failed to get schema meta, user:%{public}d, bundle:%{public}s", user, bundleName.c_str());
+        return;
+    }
+    
+    int32_t triggerMode = static_cast<int32_t>(scene);
+    
+    for (const auto &database : schemaMeta.databases) {
+        DatabaseSyncContext context{
+            .user = cloudInfo.user,
+            .bundleName = bundleName,
+            .instanceId = it->second.instanceId,
+            .dbName = database.name,
+            .tables = {},
+            .triggerMode = triggerMode,
+            .prepareTraceId = ""
+        };
+        ProcessDatabaseSync(context);
+    }
+}
+
+int32_t CloudServiceImpl::ProcessUserNotifyDataChange(int32_t user, const ExtraData &exData)
+{
+    auto &bundleName = exData.info.bundleName;
+    auto &prepareTraceId = exData.info.context.prepareTraceId;
+    
+    auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
+    if (CheckNotifyConditions(exData.info.accountId, bundleName, cloudInfo) != E_OK) {
+        ZLOGD("invalid user:%{public}d, traceId:%{public}s", user, prepareTraceId.c_str());
+        syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
+        return INVALID_ARGUMENT;
+    }
+    
+    auto schemaKey = CloudInfo::GetSchemaKey(user, bundleName);
+    SchemaMeta schemaMeta;
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        ZLOGE("no exist meta, user:%{public}d, traceId:%{public}s", user, prepareTraceId.c_str());
+        syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
+        return INVALID_ARGUMENT;
+    }
+    
+    auto dbInfos = GetDbInfoFromExtraData(exData, schemaMeta);
+    if (dbInfos.empty()) {
+        ZLOGE("GetDbInfoFromExtraData failed, empty database info. traceId:%{public}s.", prepareTraceId.c_str());
+        syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
+        return INVALID_ARGUMENT;
+    }
+    
+    auto it = cloudInfo.apps.find(bundleName);
+    if (it == cloudInfo.apps.end()) {
+        ZLOGE("bundleName:%{public}s is not exist", bundleName.c_str());
+        return INVALID_ARGUMENT;
+    }
+    for (const auto &dbInfo : dbInfos) {
+        DatabaseSyncContext context{
+            .user = cloudInfo.user,
+            .bundleName = bundleName,
+            .instanceId = it->second.instanceId,
+            .dbName = dbInfo.first,
+            .tables = dbInfo.second,
+            .triggerMode = CloudSyncScene::PUSH,
+            .prepareTraceId = prepareTraceId
+        };
+        ProcessDatabaseSync(context);
+    }
+    
+    return SUCCESS;
+}
+
 int32_t CloudServiceImpl::NotifyDataChange(const std::string &id, const std::string &bundleName)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -571,31 +720,7 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         if (user == DEFAULT_USER) {
             continue;
         }
-        auto &bundleName = exData.info.bundleName;
-        auto &prepareTraceId = exData.info.context.prepareTraceId;
-        auto [status, cloudInfo] = GetCloudInfoFromMeta(user);
-        if (CheckNotifyConditions(exData.info.accountId, bundleName, cloudInfo) != E_OK) {
-            ZLOGD("invalid user:%{public}d, traceId:%{public}s", user, prepareTraceId.c_str());
-            syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
-            return INVALID_ARGUMENT;
-        }
-        auto schemaKey = CloudInfo::GetSchemaKey(user, bundleName);
-        SchemaMeta schemaMeta;
-        if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
-            ZLOGE("no exist meta, user:%{public}d, traceId:%{public}s", user, prepareTraceId.c_str());
-            syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
-            return INVALID_ARGUMENT;
-        }
-        auto dbInfos = GetDbInfoFromExtraData(exData, schemaMeta);
-        if (dbInfos.empty()) {
-            ZLOGE("GetDbInfoFromExtraData failed, empty database info. traceId:%{public}s.", prepareTraceId.c_str());
-            syncManager_.Report({ user, bundleName, prepareTraceId, SyncStage::END, INVALID_ARGUMENT });
-            return INVALID_ARGUMENT;
-        }
-        for (const auto &dbInfo : dbInfos) {
-            syncManager_.DoCloudSync(SyncManager::SyncInfo(
-                { cloudInfo.user, bundleName, dbInfo.first, dbInfo.second, MODE_PUSH, prepareTraceId }));
-        }
+        ProcessUserNotifyDataChange(user, exData);
     }
     return SUCCESS;
 }
@@ -1570,11 +1695,18 @@ int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::st
     };
     auto highMode = GeneralStore::MANUAL_SYNC_MODE;
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
-    SyncParam syncParam = { mixMode, 0, false };
+    SyncParam syncParam = { .mode = mixMode, .wait = 0, .isDownloadOnly = option.isDownloadOnly};
     auto info = ChangeEvent::EventInfo(syncParam, false, nullptr, asyncCallback);
     auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return SUCCESS;
+}
+
+bool CloudServiceImpl::NeedCheckAutoSync(CloudSyncScene scene)
+{
+    return (scene == CloudSyncScene::ENABLE_CLOUD ||
+            scene == CloudSyncScene::SERVICE_INIT ||
+            scene == CloudSyncScene::SWITCH_ON || scene == CloudSyncScene::NETWORK_RECOVERY);
 }
 
 bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
@@ -1584,11 +1716,53 @@ bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
         Report(GetDfxFaultType(scene), Fault::CSF_CLOUD_INFO, "", "DoCloudSync ret=" + std::to_string(status));
         return false;
     }
-    for (const auto &appInfo : cloudInfo.apps) {
-        SyncManager::SyncInfo info(user, appInfo.first);
-        syncManager_.DoCloudSync(info);
+    if (NeedCheckAutoSync(scene)) {
+        for (const auto &appInfo : cloudInfo.apps) {
+            TriggerAppDatabaseSync(user, appInfo.first, cloudInfo, scene);
+        }
+    } else {
+        for (const auto &appInfo : cloudInfo.apps) {
+            SyncManager::SyncInfo info(user, appInfo.first);
+            syncManager_.DoCloudSync(info);
+        }
     }
     return true;
+}
+
+int32_t CloudServiceImpl::StopCloudSyncTask(const std::vector<BundleInfo> &bundleInfos)
+{
+    for (auto &bundleInfo : bundleInfos) {
+        StoreInfo storeInfo;
+        storeInfo.bundleName = bundleInfo.bundleName;
+        storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
+        storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
+        storeInfo.storeName = bundleInfo.storeId;
+        StoreMetaMapping meta(storeInfo);
+        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+            ZLOGE("failed, no store mapping bundleName:%{public}s, storeId:%{public}s",
+                meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+            return E_ERROR;
+        }
+        if (!meta.cloudPath.empty() && meta.dataDir != meta.cloudPath &&
+            !MetaDataManager::GetInstance().LoadMeta(meta.GetCloudStoreMetaKey(), meta, true)) {
+            ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+                meta.GetStoreAlias().c_str());
+            return E_ERROR;
+        }
+        auto [status, store] = SyncManager::GetStore(meta, storeInfo.user, true);
+        if (store == nullptr) {
+            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+            return E_ERROR;
+        }
+        int ret = store->StopCloudSync();
+        if (ret != E_OK) {
+            ZLOGE("failed to StopCloudSync, bundleName:%{public}s, storeId:%{public}s, errCode:%{public}d",
+                meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), ret);
+            return ret;
+        }
+    }
+    return E_OK;
 }
 
 bool CloudServiceImpl::StopCloudSync(int32_t user, CloudSyncScene scene)
@@ -2103,6 +2277,45 @@ int32_t CloudServiceImpl::SaveNetworkStrategy(const std::vector<CommonType::Valu
 int32_t CloudServiceImpl::OnScreenUnlocked(int32_t user)
 {
     syncManager_.OnScreenUnlocked(user);
+    return E_OK;
+}
+    
+int32_t CloudServiceImpl::GetTriggerKey(std::string &key)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    Security::AccessToken::HapTokenInfo hapTokenInfo;
+    auto result = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
+    if (result != Security::AccessToken::RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d", tokenId, result);
+        return E_ERROR;
+    }
+    auto user = Account::GetInstance()->GetUserByToken(tokenId);
+    key = hapTokenInfo.bundleName + std::to_string(user);
+    return E_OK;
+}
+
+int32_t CloudServiceImpl::SubscribeCloudSyncTrigger(std::shared_ptr<ISyncInfoObserver> observer)
+{
+    std::string key;
+    int32_t errCode = GetTriggerKey(key);
+    if (errCode!= E_OK) {
+        return errCode;
+    }
+    cloudSyncTriggerObservers_.Compute(key, [](auto, uint32_t &value) {
+        value = IPCSkeleton::GetCallingTokenID();
+        return true;
+    });
+    return E_OK;
+}
+
+int32_t CloudServiceImpl::UnSubscribeCloudSyncTrigger(std::shared_ptr<ISyncInfoObserver> observer)
+{
+    std::string key;
+    int32_t errCode = GetTriggerKey(key);
+    if (errCode!= E_OK) {
+        return errCode;
+    }
+    cloudSyncTriggerObservers_.Erase(key);
     return E_OK;
 }
 

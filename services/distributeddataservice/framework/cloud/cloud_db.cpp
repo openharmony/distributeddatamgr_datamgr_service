@@ -60,6 +60,11 @@ int32_t CloudDB::Sync(const Devices &devices, int32_t mode, const GenQuery &quer
     return E_NOT_SUPPORT;
 }
 
+int32_t CloudDB::StopCloudSync()
+{
+    return E_NOT_SUPPORT;
+}
+
 int32_t CloudDB::Watch(int32_t origin, Watcher &watcher)
 {
     return E_NOT_SUPPORT;

@@ -896,4 +896,8 @@ std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::Query(GenQuery &qu
 {
     return { GeneralError::E_NOT_SUPPORT, nullptr };
 }
+int32_t KVDBGeneralStore::StopCloudSync()
+{
+    return GeneralError::E_NOT_SUPPORT;
+}
 } // namespace OHOS::DistributedKv

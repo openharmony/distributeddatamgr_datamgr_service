@@ -32,6 +32,7 @@ bool StoreMetaData::Marshal(json &node) const
 {
     SetValue(node[GET_NAME(version)], version);
     SetValue(node[GET_NAME(isAutoSync)], isAutoSync);
+    SetValue(node[GET_NAME(autoSyncSwitch)], autoSyncSwitch);
     SetValue(node[GET_NAME(isBackup)], isBackup);
     SetValue(node[GET_NAME(isEncrypt)], isEncrypt);
     SetValue(node[GET_NAME(isManualClean)], isManualClean);
@@ -61,6 +62,9 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(cloudAutoSync)], cloudAutoSync);
     SetValue(node[GET_NAME(asyncDownloadAsset)], asyncDownloadAsset);
     SetValue(node[GET_NAME(isNeedUpdateDeviceId)], isNeedUpdateDeviceId);
+    SetValue(node[GET_NAME(assetConflictPolicy)], assetConflictPolicy);
+    SetValue(node[GET_NAME(assetTempPath)], assetTempPath);
+    SetValue(node[GET_NAME(assetDownloadOnDemand)], assetDownloadOnDemand);
     // compatible with the versions which lower than VERSION_TAG_0000
     SetValue(node[GET_NAME(kvStoreType)], storeType);
     SetValue(node[GET_NAME(deviceAccountID)], user);
@@ -105,6 +109,9 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(cloudAutoSync), cloudAutoSync);
     GetValue(node, GET_NAME(asyncDownloadAsset), asyncDownloadAsset);
     GetValue(node, GET_NAME(isNeedUpdateDeviceId), isNeedUpdateDeviceId);
+    GetValue(node, GET_NAME(assetConflictPolicy), assetConflictPolicy);
+    GetValue(node, GET_NAME(assetTempPath), assetTempPath);
+    GetValue(node, GET_NAME(assetDownloadOnDemand), assetDownloadOnDemand);
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
         GetValue(node, GET_NAME(kvStoreType), storeType);
@@ -139,7 +146,8 @@ StoreMetaData::StoreMetaData(const StoreInfo &storeInfo)
 
 bool StoreMetaData::operator==(const StoreMetaData &metaData) const
 {
-    if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) || Constant::NotEqual(isBackup, metaData.isBackup) ||
+    if (Constant::NotEqual(isAutoSync, metaData.isAutoSync) ||
+        Constant::NotEqual(isBackup, metaData.isBackup) ||
         Constant::NotEqual(isDirty, metaData.isDirty) || Constant::NotEqual(isEncrypt, metaData.isEncrypt) ||
         Constant::NotEqual(isSearchable, metaData.isSearchable) ||
         Constant::NotEqual(isNeedCompress, metaData.isNeedCompress) ||

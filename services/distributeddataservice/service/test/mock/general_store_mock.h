@@ -72,6 +72,7 @@ public:
     void SetMockCursor(const std::map<std::string, Value> &entry);
     void SetMockDBStatus(int32_t dbStatus);
     int32_t SetConfig(const StoreConfig &storeConfig) override;
+    int32_t StopCloudSync() override;
 
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;

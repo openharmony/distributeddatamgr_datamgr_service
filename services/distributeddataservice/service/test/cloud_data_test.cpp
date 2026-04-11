@@ -62,7 +62,7 @@ using SharingCfm = OHOS::CloudData::SharingUtil::SharingCfm;
 using Confirmation = OHOS::CloudData::Confirmation;
 using CenterCode = OHOS::DistributedData::SharingCenter::SharingCode;
 using Status = OHOS::CloudData::CloudService::Status;
-using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
+using CloudSyncScene = OHOS::CloudData::CloudSyncScene;
 using GenErr = OHOS::DistributedData::GeneralError;
 using RdbGeneralStore = OHOS::DistributedRdb::RdbGeneralStore;
 using RdbQuery = OHOS::CloudData::RdbQuery;
@@ -1406,6 +1406,23 @@ HWTEST_F(CloudDataTest, NotifyDataChange003, TestSize.Level1)
 }
 
 /**
+* @tc.name: NotifyDataChange
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, NotifyDataChangeToTriggerNotify, TestSize.Level1)
+{
+    constexpr const int32_t userId = 100;
+    std::string extraData = "{\"data\":\"{\\\"accountId\\\":\\\"test_cloud_id\\\",\\\"bundleName\\\":\\\"test_cloud_"
+                "bundleName\\\",\\\"containerName\\\":\\\"test_cloud_database_alias_1\\\", \\\"databaseScopes\\\": "
+                "\\\"[\\\\\\\"private\\\\\\\", "
+                "\\\\\\\"shared\\\\\\\"]\\\",\\\"recordTypes\\\":\\\"[\\\\\\\"test_cloud_table_alias\\\\\\\"]\\\"}\"}";
+    auto ret = cloudServiceImpl_->NotifyDataChange(CloudData::DATA_CHANGE_EVENT_ID, extraData, userId);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
 * @tc.name: Offline
 * @tc.desc:
 * @tc.type: FUNC
@@ -1467,6 +1484,68 @@ HWTEST_F(CloudDataTest, OnUserChange001, TestSize.Level0)
     EXPECT_EQ(ret, GeneralError::E_OK);
     ret = cloudServiceImpl_->OnUserChange(ACCOUNT_UNLOCKED, "0", "test");
     EXPECT_EQ(ret, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: SubscribeCloudSyncTrigger
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, SubscribeCloudSyncTrigger001, TestSize.Level0)
+{
+    auto ret = cloudServiceImpl_->SubscribeCloudSyncTrigger(nullptr);
+    EXPECT_EQ(ret, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: UnSubscribeCloudSyncTrigger
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, UnSubscribeCloudSyncTrigger001, TestSize.Level0)
+{
+    auto ret = cloudServiceImpl_->SubscribeCloudSyncTrigger(nullptr);
+    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    ret = cloudServiceImpl_->UnSubscribeCloudSyncTrigger(nullptr);
+    EXPECT_EQ(ret, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: NotifyCloudSyncTriggerObservers
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, NotifyCloudSyncTriggerObservers, TestSize.Level0)
+{
+    std::string bundleName = "com.test.cloudtest";
+    int32_t  user = 100;
+    auto ret = cloudServiceImpl_->SubscribeCloudSyncTrigger(nullptr);
+    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::ENABLE_CLOUD);
+    cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::SWITCH_ON);
+    cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::NETWORK_RECOVERY);
+    cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::PUSH);
+    cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::USER_UNLOCK);
+    ret = cloudServiceImpl_->UnSubscribeCloudSyncTrigger(nullptr);
+    EXPECT_EQ(ret, GeneralError::E_ERROR);
+}
+
+/**
+* @tc.name: NotifyCloudSyncTriggerObservers
+* @tc.desc:
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, NotifyCloudSyncTriggerObservers001, TestSize.Level0)
+{
+    auto ret = cloudServiceImpl_->SubscribeCloudSyncTrigger(nullptr);
+    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    cloudServiceImpl_->NotifyCloudSyncTriggerObservers("123", 111, 1);
+    ret = cloudServiceImpl_->UnSubscribeCloudSyncTrigger(nullptr);
+    EXPECT_EQ(ret, GeneralError::E_ERROR);
 }
 
 /**
@@ -3512,7 +3591,11 @@ HWTEST_F(CloudDataTest, IsPriority002, TestSize.Level1)
     NativeRdb::AssetValue asset{ .name = "name1" };
     assets.push_back(asset);
     NativeRdb::ValueObject object(assets);
-    memo.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
+    std::vector<std::string> names;
+    for (const auto &asset : assets) {
+        names.push_back(asset.name);
+    }
+    memo.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", names);
     auto metaData = DistributedRdb::RdbServiceImpl::GetStoreMetaData(param);
     rdbServiceImpl.DoCloudSync(metaData, option, memo, nullptr);
     EXPECT_TRUE(priority_);

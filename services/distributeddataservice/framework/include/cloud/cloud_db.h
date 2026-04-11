@@ -48,6 +48,8 @@ public:
 
     virtual int32_t Sync(const Devices &devices, int32_t mode, const GenQuery &query, Async async, int32_t wait);
 
+    virtual int32_t StopCloudSync();
+
     virtual int32_t Watch(int32_t origin, Watcher &watcher);
 
     virtual int32_t Unwatch(int32_t origin, Watcher &watcher);

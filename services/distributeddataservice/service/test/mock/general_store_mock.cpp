@@ -234,5 +234,10 @@ std::pair<int32_t, int64_t> GeneralStoreMock::RetainDeviceData(
 {
     return {dbStatus_, 0 };
 }
+
+int32_t GeneralStoreMock::StopCloudSync()
+{
+    return 0;
+}
 } // namespace DistributedData
 } // namespace OHOS
