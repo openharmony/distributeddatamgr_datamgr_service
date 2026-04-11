@@ -229,10 +229,10 @@ int32_t GeneralStoreMock::SetConfig(const StoreConfig &storeConfig)
     return dbStatus_;
 }
 
-int32_t GeneralStoreMock::RetainDeviceData(
+std::pair<int32_t, int64_t> GeneralStoreMock::RetainDeviceData(
     const std::map<std::string, std::vector<std::string>> &retainDevices)
 {
-    return dbStatus_;
+    return {dbStatus_, 0 };
 }
 } // namespace DistributedData
 } // namespace OHOS
