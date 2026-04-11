@@ -1206,7 +1206,7 @@ HWTEST_F(RdbGeneralStoreTest, RetainDeviceData001, TestSize.Level1)
     std::map<std::string, std::vector<std::string>> retainDevices;
     store_->Close(true);
     auto result = store_->RetainDeviceData(retainDevices);
-    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    EXPECT_EQ(result.first, GeneralError::E_ALREADY_CLOSED);
 }
 
 /**
@@ -1222,7 +1222,7 @@ HWTEST_F(RdbGeneralStoreTest, RetainDeviceData002, TestSize.Level1)
     retainDevices["test"] = devices;
     store_->Init();
     auto result = store_->RetainDeviceData(retainDevices);
-    EXPECT_EQ(result, GeneralError::E_OK);
+    EXPECT_EQ(result.first, GeneralError::E_OK);
 }
 
 /**
@@ -1236,7 +1236,7 @@ HWTEST_F(RdbGeneralStoreTest, RetainDeviceData003, TestSize.Level1)
     MockRelationalStoreDelegate::SetResRemove(DBStatus::INVALID_ARGS);
     store_->Init();
     auto result = store_->RetainDeviceData(retainDevices);
-    EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
+    EXPECT_EQ(result.first, GeneralError::E_INVALID_ARGS);
 }
 
 /**

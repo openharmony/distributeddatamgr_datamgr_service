@@ -160,10 +160,10 @@ public:
 
     virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type,
         const std::vector<Reference> &references, int32_t tableType = 0) = 0;
-    virtual int32_t RetainDeviceData(
+    virtual std::pair<int32_t, int64_t> RetainDeviceData(
         const std::map<std::string, std::vector<std::string>> &retainDevices)
     {
-        return 0;
+        return { 0, 0 };
     };
 
     virtual int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
