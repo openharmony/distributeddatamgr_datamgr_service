@@ -314,6 +314,9 @@ uint32_t ValueProxy::Asset::ConvertToDataStatus(const DistributedDB::Asset &asse
         case static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING):
             lowStatus = DistributedData::Asset::STATUS_DOWNLOADING;
             break;
+        case static_cast<uint32_t>(DistributedDB::AssetStatus::TO_DOWNLOAD):
+            lowStatus = DistributedData::Asset::STATUS_TO_DOWNLOAD;
+            break;
         case static_cast<uint32_t>(DistributedDB::AssetStatus::ABNORMAL):
             lowStatus = DistributedData::Asset::STATUS_ABNORMAL;
             break;
@@ -356,6 +359,9 @@ uint32_t ValueProxy::Asset::ConvertToDBStatus(const uint32_t &status)
             break;
         case DistributedData::Asset::STATUS_DOWNLOADING:
             lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::DOWNLOADING);
+            break;
+        case DistributedData::Asset::STATUS_TO_DOWNLOAD:
+            lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::TO_DOWNLOAD);
             break;
         default:
             lowStatus = static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL);

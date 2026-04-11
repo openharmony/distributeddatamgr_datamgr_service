@@ -40,6 +40,7 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnQueryLastSyncInfoBatch,
     &CloudServiceStub::OnSetGlobalCloudStrategy,
     &CloudServiceStub::OnCloudSync,
+    &CloudServiceStub::OnStopCloudSync,
     &CloudServiceStub::OnSubscribe,
     &CloudServiceStub::OnUnsubscribe,
     &CloudServiceStub::OnAllocResourceAndShare,
@@ -53,6 +54,8 @@ const CloudServiceStub::Handler CloudServiceStub::HANDLERS[TRANS_BUTT] = {
     &CloudServiceStub::OnChangeConfirmation,
     &CloudServiceStub::OnSetCloudStrategy,
     &CloudServiceStub::OnInitNotifier,
+    &CloudServiceStub::OnSubscribeCloudSyncTrigger,
+    &CloudServiceStub::OnUnSubscribeCloudSyncTrigger,
 };
 
 int CloudServiceStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply)
@@ -368,6 +371,17 @@ int32_t CloudServiceStub::OnCloudSync(MessageParcel &data, MessageParcel &reply)
     return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 
+int32_t CloudServiceStub::OnStopCloudSync(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<BundleInfo> bundleInfos;
+    if (!ITypesUtil::Unmarshal(data, bundleInfos)) {
+        ZLOGE("Unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = StopCloudSyncTask(bundleInfos);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
 int32_t CloudServiceStub::OnInitNotifier(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> notifier = nullptr;
@@ -376,6 +390,18 @@ int32_t CloudServiceStub::OnInitNotifier(MessageParcel &data, MessageParcel &rep
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = InitNotifier(notifier);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnSubscribeCloudSyncTrigger(MessageParcel &data, MessageParcel &reply)
+{
+    auto status = SubscribeCloudSyncTrigger(nullptr);
+    return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
+}
+
+int32_t CloudServiceStub::OnUnSubscribeCloudSyncTrigger(MessageParcel &data, MessageParcel &reply)
+{
+    auto status = UnSubscribeCloudSyncTrigger(nullptr);
     return ITypesUtil::Marshal(reply, status) ? ERR_NONE : IPC_STUB_WRITE_PARCEL_ERR;
 }
 

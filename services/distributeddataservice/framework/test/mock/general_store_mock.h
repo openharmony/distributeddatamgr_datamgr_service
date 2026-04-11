@@ -81,6 +81,7 @@ public:
     MOCK_METHOD(int32_t, UnLockCloudDB, (), (override));
     MOCK_METHOD(int32_t, UpdateDBStatus, (), (override));
     MOCK_METHOD(int32_t, SetCloudConflictHandler, (const std::shared_ptr<CloudConflictHandler> &handler), (override));
+    MOCK_METHOD(int32_t, StopCloudSync, (), (override));
 };
 
 } // namespace DistributedData

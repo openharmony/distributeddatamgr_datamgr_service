@@ -69,6 +69,7 @@ struct Asset {
         STATUS_DELETE,
         STATUS_ABNORMAL,
         STATUS_DOWNLOADING,
+        STATUS_TO_DOWNLOAD,
         STATUS_SKIP_ASSET,
         STATUS_NOT_FOUND,
         STATUS_BUTT
@@ -103,6 +104,11 @@ struct SyncParam {
     int32_t user;
     bool asyncDownloadAsset = false;
     bool isRetry = true;
+    bool isDownloadOnly = false;
+    bool isEnablePredicate = false;
+    int32_t assetConflictPolicy = 0;
+    std::string assetTempPath = {};
+    bool assetDownloadOnDemand = false;
 };
 
 enum SyncStage : int8_t {

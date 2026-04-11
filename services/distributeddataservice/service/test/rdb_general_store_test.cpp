@@ -976,6 +976,31 @@ HWTEST_F(RdbGeneralStoreTest, Sync002, TestSize.Level1)
 }
 
 /**
+* @tc.name: Sync
+* @tc.desc: RdbGeneralStore Sync AssetConflictPolicy test
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, Sync004, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
+    ASSERT_NE(store_, nullptr);
+
+    GeneralStore::Devices devices;
+    RdbQuery query;
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::CLOUD_TIME_FIRST;
+    syncParam.assetTempPath = "test";
+    for (int i = 0; i <= static_cast<int>(AssetConflictPolicy::CONFLICT_POLICY_TEMP_PATH); i++) {
+        syncParam.assetConflictPolicy = i;
+        auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
+        EXPECT_EQ(result1, GeneralError::E_OK);
+    }
+}
+
+/**
 * @tc.name: PreSharing
 * @tc.desc: RdbGeneralStore PreSharing function test
 * @tc.type: FUNC

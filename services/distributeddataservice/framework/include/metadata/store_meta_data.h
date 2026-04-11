@@ -31,6 +31,7 @@ struct API_EXPORT StoreMetaData : public Serializable {
     static constexpr const char *ROOT_USER = "0";
     uint32_t version = CURRENT_VERSION;
     bool isAutoSync = false;
+    bool autoSyncSwitch = false;
     bool isBackup = false;
     bool isDirty = false;
     bool isEncrypt = false;
@@ -63,6 +64,9 @@ struct API_EXPORT StoreMetaData : public Serializable {
     int32_t authType = 0;
     bool asyncDownloadAsset = false;
     bool isNeedUpdateDeviceId = false;
+    int32_t assetConflictPolicy = 0;
+    std::string assetTempPath;
+    bool assetDownloadOnDemand = false;
 
     enum StoreType {
         STORE_KV_BEGIN = 0,

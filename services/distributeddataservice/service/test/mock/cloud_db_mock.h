@@ -46,6 +46,7 @@ public:
     MOCK_METHOD(int32_t, Close, (), (override));
     MOCK_METHOD((std::pair<int32_t, std::string>), GetEmptyCursor, (const std::string &), (override));
     MOCK_METHOD(void, SetPrepareTraceId, (const std::string &), (override));
+    MOCK_METHOD(int32_t, StopCloudSync, (), (override));
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTEDDATA_SERVICE_CLOUD_DB_MOCK_H

@@ -192,8 +192,11 @@ HWTEST_F(RdbQueryTest, RdbQueryTest005, TestSize.Level1)
     std::vector<NativeRdb::AssetValue> assets;
     NativeRdb::AssetValue asset{ .name = "name1" };
     assets.push_back(asset);
-    NativeRdb::ValueObject object(assets);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", object);
+    std::vector<std::string> names;
+    for (const auto &asset : assets) {
+        names.push_back(asset.name);
+    }
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", names);
     RdbQuery rdbQuery(predicates);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
@@ -211,8 +214,7 @@ HWTEST_F(RdbQueryTest, RdbQueryTest006, TestSize.Level1)
     predicates.tables_.push_back("table");
     std::vector<NativeRdb::AssetValue> assets;
     NativeRdb::AssetValue asset{ .name = "name1" };
-    NativeRdb::ValueObject object(asset);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", object);
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "test", asset.name);
     RdbQuery rdbQuery(predicates);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
@@ -232,8 +234,212 @@ HWTEST_F(RdbQueryTest, RdbQueryTest007, TestSize.Level1)
     std::vector<NativeRdb::AssetValue> assets;
     NativeRdb::AssetValue asset{ .name = "name1" };
     assets.push_back(asset);
-    NativeRdb::ValueObject object(assets);
-    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", object);
+    std::vector<std::string> names;
+    for (const auto &asset : assets) {
+        names.push_back(asset.name);
+    }
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", names);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+
+/**
+* @tc.name: RdbQueryTest008
+* @tc.desc: RdbQuery function operation in int test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest008, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    std::vector<int64_t> vecInt;
+    double val1 = double(1);
+    vecInt.push_back(val1);
+    
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::IN, "test", vecInt);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest009
+* @tc.desc: RdbQuery function operation notin int test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest009, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    std::vector<int64_t> vecInt;
+    int64_t val1 = 1;
+    vecInt.push_back(val1);
+
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::NOT_IN, "test", vecInt);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest010
+* @tc.desc: RdbQuery function operation GREATER_THAN test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest010, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    int64_t val1 = 1;
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::GREATER_THAN, "test", val1);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest011
+* @tc.desc: RdbQuery function operation GREATER_THAN_OR_EQUAL test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest011, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    int64_t val1 = 1;
+
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::GREATER_THAN_OR_EQUAL, "test", val1);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest010
+* @tc.desc: RdbQuery function operation LESS_THAN test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest012, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    std::vector<NativeRdb::ValueObject> vecInt;
+    int64_t val1 = 1;
+   
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LESS_THAN, "test", val1);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest013
+* @tc.desc: RdbQuery function operation LESS_THAN_OR_EQUAL test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest013, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    int64_t val1 = 1;
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LESS_THAN_OR_EQUAL, "test", val1);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest014
+* @tc.desc: RdbQuery function operation ORDER_BY test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest014, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    std::string val1 = "true";
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::ORDER_BY, "test", val1);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest015
+* @tc.desc: RdbQuery function operation LIMIT test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest015, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    std::string val1 = "10";
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LIMIT, "10", val1);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+
+/**
+* @tc.name: RdbQueryTest016
+* @tc.desc: RdbQuery function operation BEGIN_WITH test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest016, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    std::string val1 = "test";
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::BEGIN_WITH, "test", val1);
+    RdbQuery rdbQuery(predicates);
+    RdbQuery cloudQuery1(predicates, true);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+* @tc.name: RdbQueryTest017
+* @tc.desc: RdbQuery function operation EndWith test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest017, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    RdbQuery cloudQuery(predicates, true);
+    std::string val1 = "test";
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::END_WITH, "test", val1);
     RdbQuery rdbQuery(predicates);
     RdbQuery cloudQuery1(predicates, true);
     EXPECT_EQ(predicates.operations_.size(), 1);

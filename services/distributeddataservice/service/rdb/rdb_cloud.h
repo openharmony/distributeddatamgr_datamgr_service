@@ -59,6 +59,7 @@ public:
     GeneralError UnLockCloudDB(FLAG flag);
     void SetPrepareTraceId(const std::string &traceId) override;
     DBStatus QueryAllGid(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data) override;
+    DBStatus StopCloudSync() override;
 
 private:
     static constexpr const char *TYPE_FIELD = "#_type";
