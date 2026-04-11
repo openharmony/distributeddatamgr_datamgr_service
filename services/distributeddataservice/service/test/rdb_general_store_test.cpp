@@ -207,6 +207,7 @@ StoreMetaData RdbGeneralStoreTest::GetStoreMeta(const std::string &storeName, in
         (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
     metaData.securityLevel = DistributedKv::SecurityLevel::S2;
     metaData.isSearchable = true;
+    metaData.isManualCleanDevice = true;
     return metaData;
 }
 
@@ -673,7 +674,7 @@ HWTEST_F(RdbGeneralStoreTest, Insert002, TestSize.Level1)
     DistributedData::VBuckets extends = { { g_RdbVBucket } };
     auto result = store->Insert(table, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
-
+    meta.isManualCleanDevice = false;
     store->Init();
     result = store->Insert(table, std::move(extends));
     EXPECT_EQ(result, GeneralError::E_OK);
