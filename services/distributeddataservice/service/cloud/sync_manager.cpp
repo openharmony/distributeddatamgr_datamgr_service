@@ -453,10 +453,12 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         GenDetails details;
         auto &detail = details[SyncInfo::DEFAULT_ID];
         detail.progress = GenProgress::SYNC_FINISH;
+        auto exCallback = [this, async, &details, &storeInfo, &prepareTraceId](int32_t code, const std::string &msg) {
+            return DoExceptionalCallback(async, details, storeInfo, {0, "", prepareTraceId, SyncStage::END, code, msg});
+        };
         auto [hasMeta, meta] = GetMetaData(storeInfo);
         if (!hasMeta) {
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, GeneralError::E_ERROR, "no meta"});
+            return exCallback(GeneralError::E_ERROR, "no meta");
         }
         auto [code, store] = GetStore(meta, storeInfo.user);
         if (code == E_SCREEN_LOCKED) {
@@ -465,14 +467,18 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         if (store == nullptr) {
             ZLOGE("store null, storeId:%{public}s, prepareTraceId:%{public}s", meta.GetStoreAlias().c_str(),
                 prepareTraceId.c_str());
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, GeneralError::E_ERROR, "store null"});
+            return exCallback(GeneralError::E_ERROR, "store null");
         }
         if (!meta.enableCloud) {
             ZLOGW("meta.enableCloud is false, storeId:%{public}s, prepareTraceId:%{public}s",
                 meta.GetStoreAlias().c_str(), prepareTraceId.c_str());
-            return DoExceptionalCallback(async, details, storeInfo,
-                {0, "", prepareTraceId, SyncStage::END, E_CLOUD_DISABLED, "disable cloud"});
+            return exCallback(E_CLOUD_DISABLED, "disable cloud");
+        }
+        if (meta.customSwitch) {
+            auto ret = SetCloudConflictHandler(store);
+            if (ret != E_OK) {
+                return exCallback(GeneralError::E_ERROR, "SetCloudConflictHandler failed, ret:" + std::to_string(ret));
+            }
         }
         ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
               storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
@@ -1307,6 +1313,28 @@ std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const i
         addApp(std::move(app.bundleName));
     }
     return appList;
+}
+
+int32_t SyncManager::SetCloudConflictHandler(const AutoCache::Store &store)
+{
+    if (store == nullptr) {
+        ZLOGE("Store is null");
+        return E_ERROR;
+    }
+
+    auto instance = CloudServer::GetInstance();
+    if (instance == nullptr) {
+        ZLOGE("CloudServer instance is null");
+        return E_ERROR;
+    }
+
+    auto handler = instance->GetConflictHandler();
+    if (handler == nullptr) {
+        ZLOGE("Conflict handler is null");
+        return E_ERROR;
+    }
+
+    return store->SetCloudConflictHandler(handler);
 }
 
 void SyncManager::HandleSyncError(const ErrorContext &context)

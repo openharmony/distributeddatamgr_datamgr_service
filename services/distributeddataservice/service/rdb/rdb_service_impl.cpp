@@ -330,13 +330,16 @@ int32_t RdbServiceImpl::SetDeviceDistributedTables(int32_t tableType, StoreMetaD
 
 void RdbServiceImpl::SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData)
 {
-    if (metaData.asyncDownloadAsset != param.asyncDownloadAsset_ || metaData.enableCloud != param.enableCloud_) {
+    if ((metaData.asyncDownloadAsset != param.asyncDownloadAsset_) ||
+        (metaData.enableCloud != param.enableCloud_) || (metaData.customSwitch != param.customSwitch_)) {
         ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
-              "%{public}d],enableCloud? [%{public}d -> %{public}d]",
+              "%{public}d],enableCloud? [%{public}d -> %{public}d],customSwitch? [%{public}d -> %{public}d]",
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset,
-            param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_);
+            param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_, metaData.customSwitch,
+            param.customSwitch_);
         metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
         metaData.enableCloud = param.enableCloud_;
+        metaData.customSwitch = param.customSwitch_;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
     }
 }
@@ -1167,6 +1170,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     StoreMetaData old;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
+    meta.customSwitch = isCreated ? old.customSwitch : meta.customSwitch;
 
     // MetaDataSaver destructor will automatically flush all entries
     {

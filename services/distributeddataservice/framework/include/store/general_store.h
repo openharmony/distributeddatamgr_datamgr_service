@@ -21,6 +21,7 @@
 #include <optional>
 #include <set>
 
+#include "cloud/cloud_conflict_handler.h"
 #include "executor_pool.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
@@ -48,6 +49,8 @@ public:
         CLOUD_TIME_FIRST = CLOUD_BEGIN,
         CLOUD_NATIVE_FIRST,
         CLOUD_CLOUD_FIRST,
+        CLOUD_CUSTOM_PUSH,
+        CLOUD_CUSTOM_PULL,
         CLOUD_END,
         NEARBY_SUBSCRIBE_REMOTE,
         NEARBY_UNSUBSCRIBE_REMOTE,
@@ -236,6 +239,10 @@ public:
     virtual int32_t UnLockCloudDB() = 0;
 
     virtual int32_t UpdateDBStatus()
+    {
+        return 0;
+    }
+    virtual int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
     {
         return 0;
     }
