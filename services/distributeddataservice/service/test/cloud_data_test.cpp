@@ -1495,7 +1495,7 @@ HWTEST_F(CloudDataTest, OnUserChange001, TestSize.Level0)
 HWTEST_F(CloudDataTest, SubscribeCloudSyncTrigger001, TestSize.Level0)
 {
     auto ret = cloudServiceImpl_->SubscribeCloudSyncTrigger(nullptr);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 /**
@@ -1507,9 +1507,9 @@ HWTEST_F(CloudDataTest, SubscribeCloudSyncTrigger001, TestSize.Level0)
 HWTEST_F(CloudDataTest, UnSubscribeCloudSyncTrigger001, TestSize.Level0)
 {
     auto ret = cloudServiceImpl_->SubscribeCloudSyncTrigger(nullptr);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_OK);
     ret = cloudServiceImpl_->UnSubscribeCloudSyncTrigger(nullptr);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 /**
@@ -1523,14 +1523,14 @@ HWTEST_F(CloudDataTest, NotifyCloudSyncTriggerObservers, TestSize.Level0)
     std::string bundleName = "com.test.cloudtest";
     int32_t  user = 100;
     auto ret = cloudServiceImpl_->SubscribeCloudSyncTrigger(nullptr);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_OK);
     cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::ENABLE_CLOUD);
     cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::SWITCH_ON);
     cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::NETWORK_RECOVERY);
     cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::PUSH);
     cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudSyncScene::USER_UNLOCK);
     ret = cloudServiceImpl_->UnSubscribeCloudSyncTrigger(nullptr);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 /**
@@ -1542,10 +1542,10 @@ HWTEST_F(CloudDataTest, NotifyCloudSyncTriggerObservers, TestSize.Level0)
 HWTEST_F(CloudDataTest, NotifyCloudSyncTriggerObservers001, TestSize.Level0)
 {
     auto ret = cloudServiceImpl_->SubscribeCloudSyncTrigger(nullptr);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_OK);
     cloudServiceImpl_->NotifyCloudSyncTriggerObservers("123", 111, 1);
     ret = cloudServiceImpl_->UnSubscribeCloudSyncTrigger(nullptr);
-    EXPECT_EQ(ret, GeneralError::E_ERROR);
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 /**

@@ -720,7 +720,10 @@ int32_t CloudServiceImpl::NotifyDataChange(const std::string &eventId, const std
         if (user == DEFAULT_USER) {
             continue;
         }
-        ProcessUserNotifyDataChange(user, exData);
+        int32_t ret = ProcessUserNotifyDataChange(user, exData);
+        if (ret != E_OK) {
+            return ret;
+        }
     }
     return SUCCESS;
 }

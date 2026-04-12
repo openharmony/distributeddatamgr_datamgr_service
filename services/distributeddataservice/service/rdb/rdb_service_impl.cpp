@@ -807,6 +807,8 @@ void RdbServiceImpl::DoCloudSync(const StoreMetaData &metaData, const RdbService
     };
     GenAsync syncCallback = [async, bundleName = storeInfo.bundleName, storeName = storeInfo.storeName](
                                 const GenDetails &details) {
+        ZLOGD("Cloud Sync complete, bundleName:%{public}s, storeName:%{public}s", bundleName.c_str(),
+             Anonymous::Change(storeName).c_str());
         if (async != nullptr) {
             async(HandleGenDetails(details));
         }
