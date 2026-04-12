@@ -692,4 +692,8 @@ bool CloudServerImpl::CloudDriverUpdated(const std::string &bundleName)
 {
     return false;
 }
+std::shared_ptr<DistributedData::CloudConflictHandler> CloudServerImpl::GetConflictHandler()
+{
+    return {};
+}
 } // namespace OHOS::CloudData

@@ -61,6 +61,7 @@ public:
     MOCK_METHOD(void, Bind, (std::shared_ptr<ExecutorPool> executor), (override));
     MOCK_METHOD(bool, IsSupportCloud, (int32_t userId), (override));
     MOCK_METHOD(bool, CloudDriverUpdated, (const std::string &bundleName), (override));
+    MOCK_METHOD(std::shared_ptr<CloudConflictHandler>, GetConflictHandler, (), (override));
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_MOCK_CLOUD_SERVER_H

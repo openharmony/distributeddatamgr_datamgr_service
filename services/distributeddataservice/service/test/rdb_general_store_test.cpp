@@ -173,6 +173,19 @@ void RdbGeneralStoreTest::InitDataBase()
     dataBase_.tables = tables;
 }
 
+class CloudConflictHandlerMock : public CloudConflictHandler {
+public:
+    int32_t HandleConflict(const std::string &table, const OHOS::DistributedData::VBucket &oldData,
+        const OHOS::DistributedData::VBucket &newData, OHOS::DistributedData::VBucket &upsert) override;
+};
+
+int32_t CloudConflictHandlerMock::HandleConflict(const std::string &table,
+    const OHOS::DistributedData::VBucket &oldData, const OHOS::DistributedData::VBucket &newData,
+    OHOS::DistributedData::VBucket &upsert)
+{
+    return 0;
+}
+
 void RdbGeneralStoreTest::InitMetaData()
 {
     metaData_.bundleName = BUNDLE_NAME;
@@ -2923,6 +2936,39 @@ HWTEST_F(RdbGeneralStoreTest, CreateAndOpenEncryptDB, TestSize.Level1)
     store = std::make_shared<RdbGeneralStore>(meta, false);
     code = store->Init();
     EXPECT_EQ(code, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: SetCloudConflictHandle
+* @tc.desc: SetCloudConflictHandle test
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandle, TestSize.Level1)
+{
+    auto handler = std::make_shared<CloudConflictHandlerMock>();
+    auto result = store_->SetCloudConflictHandler(handler);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
+    metaData_.storeId = "mock";
+    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
+    result = store_->SetCloudConflictHandler(handler);
+    EXPECT_EQ(result, E_OK);
+    result = store_->SetCloudConflictHandler(handler);
+    EXPECT_EQ(result, E_OK);
+}
+
+/**
+* @tc.name: SetCloudConflictHandlerDelegateNull
+* @tc.desc: Test SetCloudConflictHandler when delegate_ is nullptr
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandlerDelegateNull, TestSize.Level1)
+{
+    auto handler = std::make_shared<CloudConflictHandlerMock>();
+    metaData_.storeId = "mock_delegate_null";
+    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    auto result = store_->SetCloudConflictHandler(handler);
+    EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

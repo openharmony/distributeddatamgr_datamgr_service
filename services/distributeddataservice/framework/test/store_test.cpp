@@ -15,48 +15,49 @@
 #define LOG_TAG "StoreTest"
 
 #include "access_token.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "account/account_delegate.h"
 #include "mock/account_delegate_mock.h"
 #include "general_store_mock.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "log_print.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_query.h"
 #include "rdb_types.h"
+#include "screen_lock_mock.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
 #include "store/general_watcher.h"
-#include "screen_lock_mock.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 namespace OHOS::Test {
 class GeneralValueTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
-    void SetUp(){};
-    void TearDown(){};
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+    void SetUp() {};
+    void TearDown() {};
 };
 
 class GeneralStoreTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
-    static void TearDownTestCase(void){};
-    void SetUp(){};
-    void TearDown(){};
+    static void SetUpTestCase(void) {};
+    static void TearDownTestCase(void) {};
+    void SetUp() {};
+    void TearDown() {};
 };
 
 class AutoCacheTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    void SetUp(){};
-    void TearDown(){};
+    void SetUp() {};
+    void TearDown() {};
 private:
     static AccountDelegateMock *accountDelegateMock_;
+
 protected:
     static std::shared_ptr<ScreenLockMock> mock_;
 };
@@ -90,14 +91,12 @@ HWTEST_F(GeneralValueTest, SetQueryNodesTest, TestSize.Level2)
     std::string tableName = "test_tableName";
     QueryNode node;
     node.op = OHOS::DistributedData::QueryOperation::EQUAL_TO;
-    node.fieldName =  "test_fieldName";
-    node.fieldValue = {"aaa", "bbb", "ccc"};
-    QueryNodes nodes{
-        {node}
-    };
+    node.fieldName = "test_fieldName";
+    node.fieldValue = { "aaa", "bbb", "ccc" };
+    QueryNodes nodes{ { node } };
     OHOS::DistributedRdb::RdbQuery query;
     query.SetQueryNodes(tableName, std::move(nodes));
-    QueryNodes nodes1 =  query.GetQueryNodes("test_tableName");
+    QueryNodes nodes1 = query.GetQueryNodes("test_tableName");
     EXPECT_EQ(nodes1[0].fieldName, "test_fieldName");
     EXPECT_EQ(nodes1[0].op, OHOS::DistributedData::QueryOperation::EQUAL_TO);
     EXPECT_EQ(nodes1[0].fieldValue.size(), 3);
@@ -135,7 +134,7 @@ HWTEST_F(GeneralStoreTest, GetMixModeTest, TestSize.Level2)
 */
 HWTEST_F(AutoCacheTest, OnChange001, TestSize.Level2)
 {
-    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    GeneralStoreMock *store = new (std::nothrow) GeneralStoreMock();
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     StoreMetaData meta;
@@ -157,7 +156,7 @@ HWTEST_F(AutoCacheTest, OnChange001, TestSize.Level2)
 */
 HWTEST_F(AutoCacheTest, OnChange002, TestSize.Level2)
 {
-    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    GeneralStoreMock *store = new (std::nothrow) GeneralStoreMock();
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     StoreMetaData meta;
@@ -179,7 +178,7 @@ HWTEST_F(AutoCacheTest, OnChange002, TestSize.Level2)
 */
 HWTEST_F(AutoCacheTest, operatorStore, TestSize.Level2)
 {
-    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    GeneralStoreMock *store = new (std::nothrow) GeneralStoreMock();
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     StoreMetaData meta;
@@ -202,7 +201,7 @@ HWTEST_F(AutoCacheTest, operatorStore, TestSize.Level2)
 */
 HWTEST_F(AutoCacheTest, GetMeta, TestSize.Level2)
 {
-    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    GeneralStoreMock *store = new (std::nothrow) GeneralStoreMock();
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     StoreMetaData meta;
@@ -283,7 +282,7 @@ HWTEST_F(AutoCacheTest, GetDBStore, TestSize.Level2)
 */
 HWTEST_F(AutoCacheTest, CloseStore001, TestSize.Level2)
 {
-    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    GeneralStoreMock *store = new (std::nothrow) GeneralStoreMock();
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     mock_->isLocked_ = true;
@@ -312,7 +311,7 @@ HWTEST_F(AutoCacheTest, CloseStore001, TestSize.Level2)
 */
 HWTEST_F(AutoCacheTest, CloseStore002, TestSize.Level2)
 {
-    GeneralStoreMock* store = new (std::nothrow) GeneralStoreMock();
+    GeneralStoreMock *store = new (std::nothrow) GeneralStoreMock();
     ASSERT_NE(store, nullptr);
     AutoCache::Watchers watchers;
     mock_->isLocked_ = true;
@@ -331,5 +330,51 @@ HWTEST_F(AutoCacheTest, CloseStore002, TestSize.Level2)
         });
     autoCache.CloseStore(tokenId, meta.dataDir, storeId);
     EXPECT_FALSE(autoCache.stores_.Empty());
+}
+
+/**
+* @tc.name: SetCloudConflictHandler001
+* @tc.desc: Test the default value of the SetCloudConflictHandler interface
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(AutoCacheTest, SetCloudConflictHandler001, TestSize.Level2)
+{
+    GeneralStoreMock store;
+    auto ret = store.SetCloudConflictHandler(nullptr);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name: StoreMetaDatacustomSwitch
+* @tc.desc: Test StoreMetaData customSwitch field serialization and comparison
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(AutoCacheTest, StoreMetaDatacustomSwitch, TestSize.Level2)
+{
+    StoreMetaData metaData1;
+    metaData1.bundleName = "test_bundle";
+    metaData1.appId = "test_app";
+    metaData1.user = "0";
+    metaData1.storeId = "test_store";
+    metaData1.dataDir = "/data/test";
+    metaData1.enableCloud = true;
+    metaData1.customSwitch = true;
+
+    Serializable::json node;
+    EXPECT_TRUE(metaData1.Marshal(node));
+
+    StoreMetaData metaData2;
+    EXPECT_TRUE(metaData2.Unmarshal(node));
+    EXPECT_TRUE(metaData2.customSwitch);
+
+    StoreMetaData metaData3 = metaData1;
+    EXPECT_TRUE(metaData3 == metaData1);
+
+    metaData3.customSwitch = false;
+    EXPECT_FALSE(metaData3 == metaData1);
 }
 } // namespace OHOS::Test

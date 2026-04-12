@@ -99,6 +99,7 @@ static DBSchema GetDBSchema(const Database &database)
             dbField.type = field.type;
             dbField.primary = field.primary;
             dbField.nullable = field.nullable;
+            dbField.dupCheckCol = field.dupCheckCol;
             dbTable.fields.push_back(std::move(dbField));
         }
     }
@@ -431,6 +432,7 @@ int32_t RdbGeneralStore::Close(bool isForce)
         }
         rdbStore_ = nullptr;
         isClosed_ = true;
+        conflictHandler_ = nullptr;
     }
     RemoveTasks();
     auto cloudDb = GetRdbCloud();
@@ -1286,6 +1288,8 @@ RdbGeneralStore::GenErr RdbGeneralStore::ConvertStatus(DistributedDB::DBStatus s
             return GenErr::E_SYNC_TASK_MERGED;
         case DBStatus::CLOUD_DISABLED:
             return GenErr::E_CLOUD_DISABLED;
+        case DBStatus::TASK_INTERRUPTED:
+            return GeneralError::E_CLOUD_TASK_INTERRUPTED;
         case DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB:
             return GenErr::E_DB_CORRUPT;
         case DBStatus::NOT_SUPPORT:
@@ -1819,5 +1823,24 @@ std::pair<int32_t, std::shared_ptr<Cursor>> RdbGeneralStore::Query(GenQuery &que
         return { GenErr::E_ERROR, nullptr };
     }
     return { GenErr::E_OK, std::make_shared<DistributedRdb::RelationalStoreCursor>(*resultSet, resultSet) };
+}
+
+int32_t RdbGeneralStore::SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GenErr::E_ALREADY_CLOSED;
+    }
+    std::unique_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GenErr::E_ALREADY_CLOSED;
+    }
+    if (conflictHandler_ != nullptr) {
+        return GenErr::E_OK;
+    }
+    conflictHandler_ = std::make_shared<RdbCloudConflictHandler>(handler);
+    auto ret = delegate_->SetCloudConflictHandler(conflictHandler_);
+    return ConvertStatus(ret);
 }
 } // namespace OHOS::DistributedRdb
