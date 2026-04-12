@@ -600,6 +600,9 @@ uint32_t ValueProxy::TempAsset::ConvertToDataStatus(const uint32_t &status)
         case DistributedDB::AssetStatus::DOWNLOADING:
             lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_DOWNLOADING);
             break;
+        case static_cast<uint32_t>(DistributedDB::AssetStatus::TO_DOWNLOAD):
+            lowStatus = DistributedData::Asset::STATUS_TO_DOWNLOAD;
+            break;
         default:
             lowStatus = static_cast<uint32_t>(DistributedData::Asset::STATUS_NORMAL);
     }
