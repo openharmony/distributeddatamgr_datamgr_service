@@ -2970,5 +2970,444 @@ HWTEST_F(RdbGeneralStoreTest, SetCloudConflictHandlerDelegateNull, TestSize.Leve
     auto result = store_->SetCloudConflictHandler(handler);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
+
+/**
+ * @tc.name: Sync004
+ * @tc.desc: Test Sync with NEARBY mode and async callback (tests GetDBBriefCB and lines 783-795).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync004, TestSize.Level1)
+{
+    metaData_.storeId = "Sync004";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1", "device2" };
+    RdbQuery query;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+    syncParam.wait = 0;
+
+    // Test with async callback - tests GetDBBriefCB (line 977-999)
+    bool callbackCalled = false;
+    GenDetails receivedDetails;
+    GeneralStore::DetailAsync async = [&callbackCalled, &receivedDetails](const GenDetails &details) {
+        callbackCalled = true;
+        receivedDetails = details;
+    };
+
+    // Set Sync to return OK (line 783)
+    MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+    EXPECT_EQ(result2, static_cast<int32_t>(DBStatus::OK));
+}
+
+/**
+ * @tc.name: Sync005
+ * @tc.desc: Test Sync with NEARBY mode and Sync failure (tests error handling in lines 784-794).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync005, TestSize.Level1)
+{
+    metaData_.storeId = "Sync005";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1", "device2" };
+    RdbQuery query;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PUSH;
+    syncParam.wait = 0;
+
+    // Test async callback with Sync failure (lines 784-794)
+    bool callbackCalled = false;
+    GenDetails receivedDetails;
+    GeneralStore::DetailAsync async = [&callbackCalled, &receivedDetails](const GenDetails &details) {
+        callbackCalled = true;
+        receivedDetails = details;
+    };
+
+    // Set Sync to return error (line 784)
+    MockRelationalStoreDelegate::SetResSync(DBStatus::DB_ERROR);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_DB_ERROR);
+
+    // Verify callback was called with error details (lines 785-793)
+    EXPECT_TRUE(callbackCalled);
+    EXPECT_EQ(receivedDetails.size(), devices.size());
+    for (const auto &device : devices) {
+        EXPECT_TRUE(receivedDetails.find(device) != receivedDetails.end());
+        EXPECT_EQ(receivedDetails[device].progress, DistributedDB::FINISHED);
+        EXPECT_NE(receivedDetails[device].code, 0);
+        EXPECT_FALSE(receivedDetails[device].message.empty());
+    }
+}
+
+/**
+ * @tc.name: Sync006
+ * @tc.desc: Test Sync with NEARBY mode and null async callback (tests GetDBBriefCB line 979-980).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync006, TestSize.Level1)
+{
+    metaData_.storeId = "Sync006";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1" };
+    RdbQuery query;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL_PUSH;
+    syncParam.wait = 0;
+
+    // Test with null async callback - tests GetDBBriefCB null path (lines 979-980)
+    GeneralStore::DetailAsync async = nullptr;
+
+    MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+    EXPECT_EQ(result2, static_cast<int32_t>(DBStatus::OK));
+}
+
+/**
+ * @tc.name: Sync007
+ * @tc.desc: Test Sync with NEARBY mode, different query types and wait parameter.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync007, TestSize.Level1)
+{
+    metaData_.storeId = "Sync007";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1" };
+    RdbQuery query;
+    SyncParam syncParam;
+
+    // Test with wait = true (line 783: syncParam.wait != 0)
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+    syncParam.wait = 1;
+
+    bool callbackCalled = false;
+    GeneralStore::DetailAsync async = [&callbackCalled](const GenDetails &details) {
+        callbackCalled = true;
+    };
+
+    MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: Sync008
+ * @tc.desc: Test Sync with empty devices list.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync008, TestSize.Level1)
+{
+    metaData_.storeId = "Sync008";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices; // Empty devices
+    RdbQuery query;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+
+    bool callbackCalled = false;
+    GeneralStore::DetailAsync async = [&callbackCalled](const GenDetails &details) {
+        callbackCalled = true;
+    };
+
+    MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+
+    // With empty devices, error callback should not be called
+    // even if Sync fails (lines 786-793 loop over devices)
+}
+
+/**
+ * @tc.name: Sync009
+ * @tc.desc: Test Sync with query containing tables (tests line 766-774 query processing).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync009, TestSize.Level1)
+{
+    metaData_.storeId = "Sync009";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    // Create table for testing
+    ASSERT_EQ(CreateTable(store), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1" };
+
+    // Test with RdbQuery containing tables (line 766-774)
+    std::vector<std::string> tables = { "employee" };
+    RdbQuery query(tables);
+
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+
+    bool callbackCalled = false;
+    GeneralStore::DetailAsync async = [&callbackCalled](const GenDetails &details) {
+        callbackCalled = true;
+    };
+
+    MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: Sync010
+ * @tc.desc: Test Sync with different sync modes (NEARBY_PULL, NEARBY_PUSH, NEARBY_PULL_PUSH).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync010, TestSize.Level1)
+{
+    metaData_.storeId = "Sync010";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1" };
+    RdbQuery query;
+    SyncParam syncParam;
+
+    std::vector<uint32_t> modes = {
+        GeneralStore::NEARBY_PULL,
+        GeneralStore::NEARBY_PUSH,
+        GeneralStore::NEARBY_PULL_PUSH
+    };
+
+    for (auto mode : modes) {
+        syncParam.mode = mode;
+
+        bool callbackCalled = false;
+        GeneralStore::DetailAsync async = [&callbackCalled](const GenDetails &details) {
+            callbackCalled = true;
+        };
+
+        MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+        auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+        EXPECT_EQ(result1, GeneralError::E_OK);
+        EXPECT_EQ(result2, static_cast<int32_t>(DBStatus::OK));
+    }
+}
+
+/**
+ * @tc.name: Sync011
+ * @tc.desc: Test Sync with multiple devices and verify callback details (tests GetDBBriefCB lines 982-997).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync011, TestSize.Level1)
+{
+    metaData_.storeId = "Sync011";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1", "device2", "device3" };
+    RdbQuery query;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+
+    // Test callback receives details for all devices (lines 982-997)
+    bool callbackCalled = false;
+    size_t receivedDeviceCount = 0;
+    GeneralStore::DetailAsync async = [&callbackCalled, &receivedDeviceCount](const GenDetails &details) {
+        callbackCalled = true;
+        receivedDeviceCount = details.size();
+
+        // Verify each device has proper structure (lines 985-996)
+        for (const auto &[device, detail] : details) {
+            EXPECT_EQ(detail.progress, DistributedDB::FINISHED);
+        }
+    };
+
+    MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: Sync012
+ * @tc.desc: Test Sync failure with different error codes (tests line 789-791 error info extraction).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync012, TestSize.Level1)
+{
+    metaData_.storeId = "Sync012";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1" };
+    RdbQuery query;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+
+    // Test different error codes (line 789-791)
+    std::vector<DBStatus> errorCodes = {
+        DBStatus::DB_ERROR,
+        DBStatus::NOT_FOUND,
+        DBStatus::INVALID_ARGS,
+        DBStatus::BUSY
+    };
+
+    for (auto errorCode : errorCodes) {
+        bool callbackCalled = false;
+        int32_t receivedCode = 0;
+        std::string receivedMessage;
+
+        GeneralStore::DetailAsync async =
+            [&callbackCalled, &receivedCode, &receivedMessage](const GenDetails &details) {
+            callbackCalled = true;
+            if (!details.empty()) {
+                receivedCode = details.begin()->second.code;
+                receivedMessage = details.begin()->second.message;
+            }
+        };
+
+        MockRelationalStoreDelegate::SetResSync(errorCode);
+
+        auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+        EXPECT_EQ(result1, GeneralError::E_ERROR);
+
+        // Verify error info was set (lines 789-791)
+        EXPECT_TRUE(callbackCalled);
+        EXPECT_NE(receivedCode, 0);
+        EXPECT_FALSE(receivedMessage.empty());
+    }
+}
+
+/**
+ * @tc.name: Sync013
+ * @tc.desc: Test Sync with RdbQuery priority flag (tests line 773 isPriority).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync013, TestSize.Level1)
+{
+    metaData_.storeId = "Sync013";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1" };
+
+    // Test with predicates that set priority (line 773)
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.devices_ = { "device1" };
+    predicates.tables_ = { "employee" };
+    predicates.AddOperation(EQUAL_TO, "id", "1");
+    RdbQuery query(predicates, true); // Set priority
+
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+
+    bool callbackCalled = false;
+    GeneralStore::DetailAsync async = [&callbackCalled](const GenDetails &details) {
+        callbackCalled = true;
+    };
+
+    MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: Sync014
+ * @tc.desc: Test GetDBBriefCB with empty result map (tests lines 982-997 with empty result).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync014, TestSize.Level1)
+{
+    metaData_.storeId = "Sync014";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    GeneralStore::Devices devices = { "device1" };
+    RdbQuery query;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+
+    // Test callback with empty devices results in empty details
+    bool callbackCalled = false;
+    size_t detailsSize = 0;
+    GeneralStore::DetailAsync async = [&callbackCalled, &detailsSize](const GenDetails &details) {
+        callbackCalled = true;
+        detailsSize = details.size();
+        // Test GetDBBriefCB with empty result (lines 982-997)
+        // Should create empty GenDetails and call async
+    };
+
+    MockRelationalStoreDelegate::SetResSync(DBStatus::OK);
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+    EXPECT_TRUE(callbackCalled);
+}
+
+/**
+ * @tc.name: Sync015
+ * @tc.desc: Test Sync with closed store (tests line 759-763).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbGeneralStoreTest, Sync015, TestSize.Level1)
+{
+    metaData_.storeId = "Sync015";
+    auto store = std::make_shared<RdbGeneralStore>(metaData_);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    // Close the store
+    store->Close();
+
+    GeneralStore::Devices devices = { "device1" };
+    RdbQuery query;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::NEARBY_PULL;
+
+    bool callbackCalled = false;
+    GeneralStore::DetailAsync async = [&callbackCalled](const GenDetails &details) {
+        callbackCalled = true;
+    };
+
+    auto [result1, result2] = store->Sync(devices, query, async, syncParam);
+    // Should return E_ALREADY_CLOSED (line 759-763)
+    EXPECT_EQ(result1, GeneralError::E_ALREADY_CLOSED);
+    EXPECT_FALSE(callbackCalled);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

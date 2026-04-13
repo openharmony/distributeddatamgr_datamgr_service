@@ -134,7 +134,6 @@ public:
     int32_t GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::RdbDfxInfo &dfxInfo) override;
 
     int32_t VerifyPromiseInfo(const RdbSyncerParam &param) override;
-
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
@@ -309,6 +308,8 @@ private:
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);
 
     static bool IsCollaboration(const StoreMetaData &metaData);
+    static void HandleSyncError(const std::vector<std::string> &devices, DistributedDB::DBStatus dbStatus,
+    const DetailAsync &async);
 
     std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
 

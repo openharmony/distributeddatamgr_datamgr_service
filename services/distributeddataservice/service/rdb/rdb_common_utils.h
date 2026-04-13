@@ -20,8 +20,16 @@
 #include <vector>
 
 #include "rdb_types.h"
+#include "store_types.h"
 #include "store/general_value.h"
 namespace OHOS::DistributedRdb {
+using DBStatus = DistributedDB::DBStatus;
+using SyncResultCode = OHOS::DistributedRdb::SyncResultCode;
+struct ErrorInfo {
+    DBStatus dbStatus;
+    SyncResultCode syncResultCode;
+    const char* message;
+};
 class RdbCommonUtils final {
 public:
     static std::vector<std::string> GetSearchableTables(const RdbChangedData &changedData);
@@ -29,6 +37,8 @@ public:
     static std::vector<DistributedData::Reference> Convert(const std::vector<Reference> &references);
     static int32_t ConvertNativeRdbStatus(int32_t status);
     static int32_t ConvertGeneralRdbStatus(int32_t status);
+    static ErrorInfo GetInterfaceErrorString(DistributedDB::DBStatus status);
+    static ErrorInfo GetCallbackErrorString(DistributedDB::DBStatus status);
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_RDB_UTILS_H
