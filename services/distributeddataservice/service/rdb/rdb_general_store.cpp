@@ -797,7 +797,7 @@ std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQue
     }
     auto dbStatus = DistributedDB::INVALID_ARGS;
     if (syncMode < NEARBY_END) {
-        dbStatus = delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0);
+        dbStatus = delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(async), syncParam.wait != 0);
     } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
         return DoCloudSync(devices, dbQuery, syncParam, isPriority, async);
     }
@@ -990,10 +990,15 @@ RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
         for (auto &[key, tables] : result) {
             auto &value = details[key];
             value.progress = FINISHED;
-            value.code = GeneralError::E_OK;
+            // The end-end synchronization of the rdb supports only one table at a time
             for (auto &table : tables) {
                 if (table.status != DBStatus::OK) {
-                    value.code = GeneralError::E_ERROR;
+                    OHOS::DistributedRdb::ErrorInfo errorInfo =
+                        RdbCommonUtils::GetCallbackErrorString(table.status);
+                    value.code = static_cast<int32_t>(errorInfo.syncResultCode);
+                    if (errorInfo.message != nullptr) {
+                        value.message = std::move(errorInfo.message);
+                    }
                 }
             }
         }

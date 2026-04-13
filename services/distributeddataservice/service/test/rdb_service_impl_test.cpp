@@ -141,7 +141,6 @@ void RdbServiceImplTest::SetUpTestCase()
     EXPECT_CALL(*deviceManagerAdapterMock, GetLocalDevice()).WillRepeatedly(Return(deviceInfo));
     EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, CalcClientUuid(_, _)).WillRepeatedly(Return(deviceInfo.uuid));
-    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(deviceInfo.uuid)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, RegDevCallback()).WillRepeatedly(Return([]() {}));
 
     InitMetaData();
@@ -538,6 +537,7 @@ HWTEST_F(RdbServiceImplTest, IsNeedMetaSync001, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTest, IsNeedMetaSync002, TestSize.Level0)
 {
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID("ABCD")).WillRepeatedly(Return("ABCD"));
     CapMetaData capMetaData;
     auto capKey = CapMetaRow::GetKeyFor(metaData_.deviceId);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(std::string(capKey.begin(), capKey.end()), capMetaData), true);
@@ -3737,5 +3737,37 @@ HWTEST_F(RdbServiceImplTest, OnGetSilentAccessStores_BundleUtilsError006, TestSi
     BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
 }
 
+/**
+ * @tc.name: Sync005
+ * @tc.desc: Test Sync with empty predicates (tests GetSyncTask and ConvertToDeviceInfo with empty devices).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbServiceImplTest, Sync005, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "Sync005";
+    param.hapName_ = "test/test";
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    option.seqNum = 1;
+    option.enableErrorDetail = true; // Enable error detail to test ConvertToDeviceInfo
+
+    PredicatesMemo predicates;
+    // Empty predicates - no devices specified, tests GetSyncTask with empty devices
+    // This will trigger ConvertToDeviceInfo with empty networkIds
+
+    // Load and save sync meta like Sync003
+    auto [exists, meta] = RdbServiceImpl::LoadStoreMetaData(param);
+    (void)exists;
+    RdbServiceImpl::SaveSyncMeta(meta);
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
