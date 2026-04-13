@@ -720,7 +720,7 @@ void RdbServiceImpl::HandleSyncError(const std::vector<std::string> &devices, Di
     DistributedData::GenDetails details;
     for (auto &device : devices) {
         auto &value = details[device];
-        value.progress = 2;
+        value.progress = DistributedDB::FINISHED;
         OHOS::DistributedRdb::ErrorInfo errorInfo = RdbCommonUtils::GetInterfaceErrorString(dbStatus);
         value.code = static_cast<int32_t>(errorInfo.syncResultCode);
         if (errorInfo.message != nullptr) {
