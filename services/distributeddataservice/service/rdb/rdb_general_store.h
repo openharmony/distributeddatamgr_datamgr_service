@@ -190,6 +190,7 @@ private:
     std::pair<int32_t, int32_t> DoCloudSync(const Devices &devices, const DistributedDB::Query &dbQuery,
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
+    void HandleSyncError(const Devices &devices, DistributedDB::DBStatus dbStatus, const DetailAsync &async);
     std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> InitRdbStore();
     int32_t SetDeviceDistributedSchema(int32_t tableType);
     int32_t SetCloudReference(const std::vector<Reference> &references);

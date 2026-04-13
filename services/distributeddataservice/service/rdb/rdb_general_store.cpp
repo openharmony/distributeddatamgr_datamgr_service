@@ -789,7 +789,8 @@ std::pair<int32_t, int32_t> RdbGeneralStore::Sync(const Devices &devices, GenQue
     }
     auto dbStatus = DistributedDB::INVALID_ARGS;
     if (syncMode < NEARBY_END) {
-        dbStatus = delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(std::move(async)), syncParam.wait != 0);
+        dbStatus = delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(async), syncParam.wait != 0);
+        ZLOGE("LYY_DEV RdbGeneralStore::Sync dbStatus:%{public}d", dbStatus);
     } else if (syncMode > NEARBY_END && syncMode < CLOUD_END) {
         return DoCloudSync(devices, dbQuery, syncParam, isPriority, async);
     }
@@ -974,21 +975,32 @@ int32_t RdbGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
 
 RdbGeneralStore::DBBriefCB RdbGeneralStore::GetDBBriefCB(DetailAsync async)
 {
+    ZLOGE("LYY_DEV RdbGeneralStore::GetDBBriefCB 111");
     if (!async) {
+        ZLOGE("LYY_DEV RdbGeneralStore::GetDBBriefCB 222");
         return [](auto &) {};
     }
+    ZLOGE("LYY_DEV RdbGeneralStore::GetDBBriefCB 333");
     return [async = std::move(async)](const std::map<std::string, std::vector<TableStatus>> &result) {
         DistributedData::GenDetails details;
+        ZLOGE("LYY_DEV RdbGeneralStore::GetDBBriefCB 444");
         for (auto &[key, tables] : result) {
             auto &value = details[key];
             value.progress = FINISHED;
-            value.code = GeneralError::E_OK;
+            // The end-end synchronization of the rdb supports only one table at a time
             for (auto &table : tables) {
                 if (table.status != DBStatus::OK) {
-                    value.code = GeneralError::E_ERROR;
+                    OHOS::DistributedRdb::ErrorInfo errorInfo =
+                        RdbCommonUtils::GetCallbackErrorString(table.status);
+                    value.code = static_cast<int32_t>(errorInfo.syncResultCode);
+                    if (errorInfo.message != nullptr) {
+                        value.message = std::move(errorInfo.message);
+                    }
+                    ZLOGE("LYY_DEV RdbGeneralStore::GetDBBriefCB 555 table.status:%{public}d", table.status);
                 }
             }
         }
+        ZLOGE("LYY_DEV RdbGeneralStore::GetDBBriefCB 666");
         async(details);
     };
 }

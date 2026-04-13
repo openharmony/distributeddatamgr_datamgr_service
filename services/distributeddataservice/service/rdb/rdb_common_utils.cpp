@@ -99,4 +99,66 @@ int32_t RdbCommonUtils::ConvertGeneralRdbStatus(int32_t status)
     }
     return RdbStatus::RDB_ERROR;
 }
+
+constexpr ErrorInfo LOCAL_DEVICE_ERROR_INFO_ARRAY[] = {
+    { DBStatus::NOT_SUPPORT, SyncResultCode::INVALID_ARGS, "Local Device Not Support." },
+    { DBStatus::INVALID_ARGS, SyncResultCode::INVALID_ARGS, "Local Device Invalid Args." },
+    { DBStatus::DISTRIBUTED_SCHEMA_NOT_FOUND, SyncResultCode::DISTRIBUTED_TABLE_NOT_SET,
+        "Local Device Distributed Schema Not Found." },
+    { DBStatus::DISTRIBUTED_SCHEMA_CHANGED, SyncResultCode::SCHEMA_CHANGED,
+        "Local Device Distributed Schema Changed." },
+    { DBStatus::INVALID_QUERY_FORMAT, SyncResultCode::INVALID_ARGS, "Local Device Invalid Query Format." },
+    { DBStatus::BUSY, SyncResultCode::BUSY, "Local Database Is Busy." },
+    { DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB, SyncResultCode::CORRUPTED,
+        "Local Device Invalid Password Or Corrupted Db." },
+    { DBStatus::INVALID_QUERY_FIELD, SyncResultCode::INVALID_ARGS, "Invalid Query Field." },
+};
+
+constexpr ErrorInfo REMOTE_DEVICE_ERROR_INFO_ARRAY[] = {
+    { DBStatus::TABLE_FIELD_MISMATCH, SyncResultCode::TABLE_FIELD_MISMATCH, "Table Field Mismatch." },
+    { DBStatus::DISTRIBUTED_SCHEMA_MISMATCH, SyncResultCode::DISTRIBUTED_SCHEMA_MISMATCH,
+        "Distributed Schema Mismatch." },
+    { DBStatus::SECURITY_OPTION_CHECK_ERROR, SyncResultCode::FAIL, "Security Option Check Error." },
+    { DBStatus::BUSY, SyncResultCode::BUSY, "Database Is Busy." },
+    { DBStatus::PERMISSION_CHECK_FORBID_SYNC, SyncResultCode::CORRUPTED,
+        "Database Is Corrupted." },
+    { DBStatus::TIME_OUT, SyncResultCode::TIMEOUT, "Timeout." },
+    { DBStatus::INVALID_QUERY_FORMAT, SyncResultCode::INVALID_ARGS, "Invalid Query Format." },
+    { DBStatus::INVALID_QUERY_FIELD, SyncResultCode::INVALID_ARGS, "Invalid Query Field." },
+    { DBStatus::DISTRIBUTED_SCHEMA_CHANGED, SyncResultCode::SCHEMA_CHANGED,
+        "Distributed Schema Changed." },
+    { DBStatus::NO_PERMISSION, SyncResultCode::FAIL, "No Permission." },
+    { DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB, SyncResultCode::CORRUPTED,
+        "Invalid Password Or Corrupted Db." },
+    { DBStatus::NEED_CORRECT_TARGET_USER, SyncResultCode::FAIL, "Need Correct Target User." },
+    { DBStatus::CONSTRAINT, SyncResultCode::CONSTRAINT_VIOLATION, "Violation Of Constraints." },
+    { DBStatus::COMM_FAILURE, SyncResultCode::FAIL, "Communication Failure." },
+    { DBStatus::NOT_SUPPORT, SyncResultCode::INVALID_ARGS, "Invalid Parameter." },
+};
+
+constexpr size_t LOCAL_DEVICE_ERROR_INFO_COUNT =
+    sizeof(LOCAL_DEVICE_ERROR_INFO_ARRAY) / sizeof(LOCAL_DEVICE_ERROR_INFO_ARRAY[0]);
+
+ErrorInfo RdbCommonUtils::GetInterfaceErrorString(DistributedDB::DBStatus status)
+{
+    for (size_t i = 0; i < LOCAL_DEVICE_ERROR_INFO_COUNT; i++) {
+        if (LOCAL_DEVICE_ERROR_INFO_ARRAY[i].dbStatus == status) {
+            return LOCAL_DEVICE_ERROR_INFO_ARRAY[i];
+        }
+    }
+    return ErrorInfo();
+}
+
+constexpr size_t REMOTE_DEVICE_ERROR_INFO_COUNT =
+    sizeof(REMOTE_DEVICE_ERROR_INFO_ARRAY) / sizeof(REMOTE_DEVICE_ERROR_INFO_ARRAY[0]);
+
+ErrorInfo RdbCommonUtils::GetCallbackErrorString(DistributedDB::DBStatus status)
+{
+    for (size_t i = 0; i < REMOTE_DEVICE_ERROR_INFO_COUNT; i++) {
+        if (REMOTE_DEVICE_ERROR_INFO_ARRAY[i].dbStatus == status) {
+            return REMOTE_DEVICE_ERROR_INFO_ARRAY[i];
+        }
+    }
+    return ErrorInfo();
+}
 } // namespace OHOS::DistributedRdb
