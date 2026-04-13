@@ -16,6 +16,7 @@
 #ifndef DATASHARESERVICE_PROXY_DATA_SUBSCRIBER_MANAGER_H
 #define DATASHARESERVICE_PROXY_DATA_SUBSCRIBER_MANAGER_H
 
+#include "bundle_mgr_proxy.h"
 #include "concurrent_map.h"
 #include "data_proxy_observer.h"
 #include "dataproxy_handle_common.h"
@@ -37,7 +38,7 @@ class ProxyDataSubscriberManager {
 public:
     static ProxyDataSubscriberManager &GetInstance();
     DataProxyErrorCode Add(const ProxyDataKey &key, const sptr<IProxyDataObserver> &observer,
-        const std::string &bundleName, const std::string &callerAppIdentifier, const int32_t &userId);
+        const BundleInfo &callerBundleInfo);
     DataProxyErrorCode Delete(const ProxyDataKey &key, const int32_t &userId);
     void Emit(const std::vector<ProxyDataKey> &keys, const std::map<DataShareObserver::ChangeType,
         std::vector<DataShareProxyData>> &datas, const int32_t &userId);
@@ -45,15 +46,14 @@ public:
 
 private:
 struct ObserverNode {
-    ObserverNode(const sptr<IProxyDataObserver> &observer, const uint32_t &callerTokenId,
-        const std::string &bundleName, const std::string &callerAppIdentifier, const int32_t &userId = 0);
-        sptr<IProxyDataObserver> observer;
-        uint32_t callerTokenId;
-        std::string bundleName;
-        std::string callerAppIdentifier;
-        int32_t userId = 0;
-    };
-    
+    ObserverNode(const sptr<IProxyDataObserver> &observer, const BundleInfo &callerBundleInfo);
+    sptr<IProxyDataObserver> observer;
+    uint32_t callerTokenId;
+    std::string bundleName;
+    std::string callerAppIdentifier;
+    int32_t userId;
+};
+
     bool CheckAllowList(const std::vector<std::string> &allowList,
         const std::string &callerAppIdentifier);
     ProxyDataSubscriberManager() = default;
