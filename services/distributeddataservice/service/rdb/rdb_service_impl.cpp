@@ -490,7 +490,6 @@ std::pair<int32_t, std::vector<std::string>> RdbServiceImpl::ObtainUuid(
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
 {
-    ZLOGI("LYY_DEV tokenId=%{public}x, pid=%{public}d, seqnum=%{public}u", tokenId, pid, seqNum);
     sptr<RdbNotifierProxy> notifier = nullptr;
     syncAgents_.ComputeIfPresent(tokenId, [&notifier, pid](auto, SyncAgents &syncAgents) {
         auto it = syncAgents.find(pid);
@@ -718,7 +717,6 @@ DevicesConvertInfo ConvertToDeviceInfo(const std::vector<std::string> &networkId
 void RdbServiceImpl::HandleSyncError(const std::vector<std::string> &devices, DistributedDB::DBStatus dbStatus,
     const DetailAsync &async)
 {
-    ZLOGE("LYY_DEV RdbGeneralStore::HandleSyncError");
     DistributedData::GenDetails details;
     for (auto &device : devices) {
         auto &value = details[device];
