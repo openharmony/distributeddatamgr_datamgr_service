@@ -63,6 +63,7 @@ public:
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) override;
     std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
         const SyncParam &syncParam) override;
+    int32_t StopCloudSync() override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) override;

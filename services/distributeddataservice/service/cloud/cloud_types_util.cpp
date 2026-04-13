@@ -110,13 +110,13 @@ bool Unmarshalling(CloudSyncInfo &output, MessageParcel &data)
 template<>
 bool Marshalling(const Option &input, MessageParcel &data)
 {
-    return Marshal(data, input.syncMode, input.seqNum);
+    return Marshal(data, input.syncMode, input.isDownloadOnly, input.seqNum);
 }
 
 template<>
 bool Unmarshalling(Option &output, MessageParcel &data)
 {
-    return Unmarshal(data, output.syncMode, output.seqNum);
+    return Unmarshal(data, output.syncMode, output.isDownloadOnly, output.seqNum);
 }
 
 template<>

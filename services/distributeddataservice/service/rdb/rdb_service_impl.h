@@ -79,6 +79,8 @@ public:
     int32_t Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async) override;
 
+    int32_t StopCloudSync(const RdbSyncerParam &param) override;
+
     int32_t Subscribe(const RdbSyncerParam &param,
                       const SubscribeOption &option,
                       std::shared_ptr<RdbStoreObserver> observer) override;
