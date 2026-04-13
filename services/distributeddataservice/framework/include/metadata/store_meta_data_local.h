@@ -48,6 +48,7 @@ struct PromiseInfo final : public Serializable {
 
 struct API_EXPORT StoreMetaDataLocal final : public Serializable {
     bool isAutoSync = false;
+    bool autoSyncSwitch = false;
     bool isBackup = false;
     bool isDirty = false;
     bool isEncrypt = false;

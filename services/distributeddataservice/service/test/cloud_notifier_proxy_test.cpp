@@ -212,6 +212,26 @@ HWTEST_F(CloudNotifierProxyTest, OnSyncInfoNotify_SendRequestFailed, TestSize.Le
 }
 
 /**
+ * @tc.name: OnSyncTriggerNotify_SendRequestFailed
+ * @tc.desc: Test OnSyncTriggerNotify with send request failed
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudNotifierProxyTest, OnSyncTriggerNotify_SendRequestFailed, TestSize.Level1)
+{
+    std::u16string descriptor = u"OHOS.CloudData.ICloudNotifier";
+    sptr<IRemoteObject> remote = new (std::nothrow) RemoteObjectErrorTest(descriptor);
+    ASSERT_NE(remote, nullptr);
+    
+    CloudNotifierProxy proxy(remote);
+    
+    int32_t triggerMode = 0;
+    
+    auto result = proxy.OnCloudSyncTrigger(triggerMode);
+    EXPECT_EQ(result, CloudService::IPC_ERROR);
+}
+
+/**
  * @tc.name: OnSyncInfoNotify_MultipleBundles
  * @tc.desc: Test OnSyncInfoNotify with multiple bundles
  * @tc.type: FUNC

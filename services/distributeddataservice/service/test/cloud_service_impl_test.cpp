@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cstdint>
 #define LOG_TAG "CloudServiceImplTest"
 #include "cloud_service_impl.h"
 
@@ -61,7 +62,7 @@ using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 using Confirmation = OHOS::CloudData::Confirmation;
 using Status = OHOS::CloudData::CloudService::Status;
-using CloudSyncScene = OHOS::CloudData::CloudServiceImpl::CloudSyncScene;
+using CloudSyncScene = OHOS::CloudData::CloudSyncScene;
 using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using DBSwitchInfo = OHOS::CloudData::DBSwitchInfo;
 using SwitchConfig = OHOS::CloudData::SwitchConfig;
@@ -102,14 +103,21 @@ protected:
         {
             lastData_ = data;
         }
-
+        void OnSyncInfoChanged(const int32_t triggerMode) override
+        {
+            triggerMode_ = triggerMode;
+        }
         const std::map<std::string, CloudData::QueryLastResults> &GetLastData() const
         {
             return lastData_;
         }
-
+        const int32_t &GetTriggerMode() const
+        {
+            return triggerMode_;
+        }
     private:
         std::map<std::string, CloudData::QueryLastResults> lastData_;
+        int32_t triggerMode_;
     };
 };
 std::shared_ptr<CloudData::CloudServiceImpl> CloudServiceImplTest::cloudServiceImpl_ =

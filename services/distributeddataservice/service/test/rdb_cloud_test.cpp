@@ -521,5 +521,37 @@ HWTEST_F(RdbCloudTest, QueryAllGid_NotEnd, TestSize.Level1)
     auto result = rdbCloud.QueryAllGid(tableName, g_DBVBucket, g_DBVBuckets);
     EXPECT_EQ(result, DBStatus::OK);
 }
+
+/**
+* @tc.name: StopCloudSync_Success
+* @tc.desc: Test RdbCloud StopCloudSync with success.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, StopCloudSync_Success, TestSize.Level1)
+{
+    auto mockCloudDB = std::make_shared<MockCloudDB>();
+    EXPECT_CALL(*mockCloudDB, StopCloudSync()).WillOnce(Return(E_OK));
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
+
+    auto result = rdbCloud.StopCloudSync();
+    EXPECT_EQ(result, DBStatus::OK);
+}
+
+/**
+* @tc.name: StopCloudSync_Failure
+* @tc.desc: Test RdbCloud StopCloudSync with failure.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, StopCloudSync_Failure, TestSize.Level1)
+{
+    auto mockCloudDB = std::make_shared<MockCloudDB>();
+    EXPECT_CALL(*mockCloudDB, StopCloudSync()).WillOnce(Return(E_ERROR));
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockCloudDB, snapshots);
+
+    auto result = rdbCloud.StopCloudSync();
+    EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
