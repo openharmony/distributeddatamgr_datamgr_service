@@ -735,14 +735,12 @@ std::function<int()> RdbServiceImpl::GetSyncTask(const StoreMetaData &metaData, 
 {
     auto pid = IPCSkeleton::GetCallingPid();
     return [metaData, option, predicates, async, pid, this]() -> int {
-        ZLOGI("LYY seqNum1=%{public}u", option.seqNum);
         auto store = GetStore(metaData);
         if (store == nullptr) {
             return RDB_ERROR;
         }
 
         RdbQuery rdbQuery(predicates);
-        ZLOGI("LYY seqNum2=%{public}u, size:%{public}zu", option.seqNum, rdbQuery.GetDevices().size());
         DevicesConvertInfo devicesConvertInfo = ConvertToDeviceInfo(rdbQuery.GetDevices(), option.enableErrorDetail);
         if (!rdbQuery.GetDevices().empty() && !devicesConvertInfo.uuids.empty()) {
             SaveAutoSyncInfo(metaData, devicesConvertInfo.uuids);
@@ -750,7 +748,6 @@ std::function<int()> RdbServiceImpl::GetSyncTask(const StoreMetaData &metaData, 
 
         SyncParam syncParam = { option.mode, 0, option.isCompensation };
         auto tokenId = metaData.tokenId;
-        ZLOGI("LYY seqNum3=%{public}u, size:%{public}zu", option.seqNum, devicesConvertInfo.uuids.size());
 
         auto notify = [this, tokenId, seqNum = option.seqNum, pid, devicesConvertInfo](
                           const GenDetails &result) mutable {
