@@ -25,6 +25,10 @@ public:
     {
     }
 
+    void OnScreenLocked(int32_t user) override
+    {
+    }
+
     std::string GetName() override
     {
         return name_;

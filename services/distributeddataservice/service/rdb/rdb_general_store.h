@@ -92,6 +92,7 @@ public:
         const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
     std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
         const DistributedData::SyncParam &syncParam) override;
+    int32_t StopCloudSync() override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) override;
@@ -200,6 +201,8 @@ private:
     void SetAsync(DetailAsync async);
     BindAssets GetSnapshots() const;
     std::shared_ptr<Executor> GetExecutor() const;
+    void UpdateCloudConfig(const DistributedData::SyncParam &syncParam) const;
+    static DistributedDB::AssetConflictPolicy ConvertPolicy(DistributedRdb::AssetConflictPolicy policy);
 
     std::mutex mutex_;
     int32_t ref_ = 1;

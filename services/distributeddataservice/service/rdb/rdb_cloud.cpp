@@ -94,6 +94,12 @@ DBStatus RdbCloud::QueryAllGid(const std::string &tableName, DBVBucket &extend, 
     return HandleQueryResult(code, cursor, tableName, extend, data);
 }
 
+DBStatus RdbCloud::StopCloudSync()
+{
+    auto error = cloudDB_->StopCloudSync();
+    return ConvertStatus(static_cast<GeneralError>(error));
+}
+
 DBStatus RdbCloud::HandleQueryResult(int32_t code, std::shared_ptr<Cursor> cursor, const std::string &tableName,
     DBVBucket &extend, std::vector<DBVBucket> &data)
 {

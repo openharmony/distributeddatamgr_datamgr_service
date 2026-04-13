@@ -24,8 +24,9 @@ bool Unmarshalling(NotifyConfig &output, MessageParcel &data)
 template<>
 bool Unmarshalling(Option &output, MessageParcel &data)
 {
-    return ITypesUtil::Unmarshal(data, output.mode, output.seqNum, output.isAsync, output.isAutoSync,
-        output.isCompensation, output.enableErrorDetail);
+    return ITypesUtil::Unmarshal(
+        data, output.mode, output.seqNum, output.isAsync, output.isAutoSync, output.isCompensation,
+        output.isEnablePredicate, output.isDownloadOnly,  output.enableErrorDetail);
 }
 
 template<>

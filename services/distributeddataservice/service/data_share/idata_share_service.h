@@ -61,6 +61,7 @@ public:
         DATA_SHARE_SERVICE_CMD_SUBSCRIBE_PROXY_DATA,
         DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_PROXY_DATA,
         DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO,
+        DATA_SHARE_SERVICE_CMD_PROXY_DELETE_ALL,
         DATA_SHARE_SERVICE_CMD_MAX,
         DATA_SHARE_SERVICE_CMD_QUERY_SYSTEM = DATA_SHARE_CMD_SYSTEM_CODE,
         DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE_SYSTEM,
@@ -129,12 +130,12 @@ public:
         const DataProxyConfig &proxyConfig) = 0;
     virtual std::vector<DataProxyResult> DeleteProxyData(const std::vector<std::string> &uris,
         const DataProxyConfig &proxyConfig) = 0;
+    virtual std::vector<DataProxyResult> DeleteAllProxyData(const DataProxyConfig &proxyConfig) = 0;
     virtual std::vector<DataProxyGetResult> GetProxyData(const std::vector<std::string> &uris,
         const DataProxyConfig &proxyConfig) = 0;
     virtual std::vector<DataProxyResult> SubscribeProxyData(const std::vector<std::string> &uris,
-        const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer) = 0;
-    virtual std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris,
-        const DataProxyConfig &proxyConfig) = 0;
+        const sptr<IProxyDataObserver> observer) = 0;
+    virtual std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris) = 0;
     virtual std::pair<int32_t, ConnectionInterfaceInfo> GetConnectionInterfaceInfo(int32_t saId,
         uint32_t waitTime) = 0;
     };

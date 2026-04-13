@@ -189,6 +189,11 @@ int32_t CloudDbImpl::Sync(const Devices &devices, int32_t mode, const DBGenQuery
     return DBErr::E_NOT_SUPPORT;
 }
 
+int32_t CloudDbImpl::StopCloudSync()
+{
+    return DBErr::E_NOT_SUPPORT;
+}
+
 int32_t CloudDbImpl::Watch(int32_t origin, Watcher &watcher)
 {
     return DBErr::E_NOT_SUPPORT;

@@ -1814,7 +1814,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
     database.name = meta.storeId;
     database.user = meta.user;
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
-    dbStatus_ = E_ERROR;
+    RdbServiceImplTest::dbStatus_ = E_ERROR;
     auto result =
         service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
     EXPECT_EQ(result, RDB_ERROR);
@@ -1824,6 +1824,71 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+}
+
+void SetCloudDistributedTableTest(const StoreMetaData &caseMeta, RdbSyncerParam &param)
+{
+    RdbServiceImpl service;
+    auto meta = caseMeta;
+    meta.storeId = "SetCloudDistributedTableTest";
+    meta.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + meta.storeId;
+    param.bundleName_ = meta.bundleName;
+    param.storeName_ = meta.storeId;
+    param.type_ = meta.storeType;
+    param.area_ = meta.area;
+    param.level_ = meta.securityLevel;
+    param.isEncrypt_ = meta.isEncrypt;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    Database database;
+    database.bundleName = meta.bundleName;
+    database.name = meta.storeId;
+    database.user = meta.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    RdbServiceImplTest::dbStatus_ = E_ERROR;
+    auto result =
+        service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    RdbServiceImplTest::dbStatus_ = E_OK;
+    StoreMetaMapping metaMapping(meta);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables007
+ * @tc.desc: Test SetDistributedTables with assetDownloadOnDemand.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zqq
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
+{
+    RdbSyncerParam param;
+    param.assetDownloadOnDemand_ = true;
+    EXPECT_NO_FATAL_FAILURE(SetCloudDistributedTableTest(metaData_, param));
+}
+
+/**
+ * @tc.name: SetDistributedTables008
+ * @tc.desc: Test SetDistributedTables with assetConflictPolicy.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zqq
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables008, TestSize.Level0)
+{
+    RdbSyncerParam param;
+    param.assetConflictPolicy_ = 1;
+    param.assetTempPath_ = "";
+    EXPECT_NO_FATAL_FAILURE(SetCloudDistributedTableTest(metaData_, param));
+    param.assetConflictPolicy_ = 1;
+    param.assetTempPath_ = "test";
+    EXPECT_NO_FATAL_FAILURE(SetCloudDistributedTableTest(metaData_, param));
+    param.assetConflictPolicy_ = 2;
+    param.assetTempPath_ = "test2";
+    EXPECT_NO_FATAL_FAILURE(SetCloudDistributedTableTest(metaData_, param));
 }
 
 /**

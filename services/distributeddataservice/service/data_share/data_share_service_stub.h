@@ -58,6 +58,7 @@ private:
     int32_t OnSubscribeProxyData(MessageParcel& data, MessageParcel& reply);
     int32_t OnUnsubscribeProxyData(MessageParcel& data, MessageParcel& reply);
     int32_t OnGetConnectionInterfaceInfo(MessageParcel& data, MessageParcel& reply);
+    int32_t OnDeleteAllProxyData(MessageParcel& data, MessageParcel& reply);
     using RequestHandle = int (DataShareServiceStub::*)(MessageParcel &, MessageParcel &);
     static constexpr RequestHandle HANDLERS[DATA_SHARE_SERVICE_CMD_MAX] = {
         &DataShareServiceStub::OnQuery,
@@ -87,7 +88,8 @@ private:
         &DataShareServiceStub::OnGetProxyData,
         &DataShareServiceStub::OnSubscribeProxyData,
         &DataShareServiceStub::OnUnsubscribeProxyData,
-        &DataShareServiceStub::OnGetConnectionInterfaceInfo};
+        &DataShareServiceStub::OnGetConnectionInterfaceInfo,
+        &DataShareServiceStub::OnDeleteAllProxyData};
     static constexpr int SLEEP_TIME = 300;
     static constexpr int TRY_TIMES = 5;
     std::atomic<bool> isReady_ = false;

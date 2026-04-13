@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "bundle_mgr_proxy.h"
 #include "log_print.h"
 #include "proxy_data_subscriber_manager.h"
 #include "ipc_skeleton.h"
@@ -31,14 +32,15 @@ namespace OHOS {
 
 void AddFuzz(FuzzedDataProvider &provider)
 {
+    BundleInfo info;
     std::string uri = provider.ConsumeRandomLengthString();
-    std::string bundleName = provider.ConsumeRandomLengthString();
-    ProxyDataKey key(uri, bundleName);
+    info.bundleName = provider.ConsumeRandomLengthString();
+    ProxyDataKey key(uri, info.bundleName);
     sptr<IProxyDataObserver> observer;
-    std::string callerAppIdentifier = provider.ConsumeRandomLengthString();
-    int32_t userId = provider.ConsumeIntegral<int32_t>();
+    info.appIdentifier = provider.ConsumeRandomLengthString();
+    info.userId = provider.ConsumeIntegral<int32_t>();
     auto& manager = ProxyDataSubscriberManager::GetInstance();
-    manager.Add(key, observer, bundleName, callerAppIdentifier, userId);
+    manager.Add(key, observer, info);
 }
 
 void CheckAllowListFuzz(FuzzedDataProvider &provider)
@@ -76,11 +78,12 @@ void EmitFuzz(FuzzedDataProvider &provider)
 void ObserverNodeFuzz(FuzzedDataProvider &provider)
 {
     sptr<IProxyDataObserver> observer;
-    uint32_t tokenId = provider.ConsumeIntegral<uint32_t>();
-    std::string name = provider.ConsumeRandomLengthString();
-    std::string caller = provider.ConsumeRandomLengthString();
-    int32_t userId = provider.ConsumeIntegral<int32_t>();
-    ProxyDataSubscriberManager::ObserverNode observerNode(observer, tokenId, name, caller, userId);
+    BundleInfo info;
+    info.tokenId = provider.ConsumeIntegral<uint32_t>();
+    info.bundleName = provider.ConsumeRandomLengthString();
+    info.appIdentifier = provider.ConsumeRandomLengthString();
+    info.userId = provider.ConsumeIntegral<int32_t>();
+    ProxyDataSubscriberManager::ObserverNode observerNode(observer, info);
 }
 } // namespace OHOS
 

@@ -37,4 +37,8 @@ int32_t AssetLoader::CancelDownload()
 {
     return E_NOT_SUPPORT;
 }
+
+void AssetLoader::SetStoreMetaKey([[gnu::unused]] const std::string &key)
+{
+}
 } // namespace OHOS::DistributedData
