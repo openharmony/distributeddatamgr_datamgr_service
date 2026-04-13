@@ -69,7 +69,7 @@ public:
     static int32_t Delete(const std::string &uri, const BundleInfo &callerBundleInfo, DataShareProxyData &oldProxyData,
         DataShareObserver::ChangeType &type);
     static int32_t Upsert(const DataShareProxyData &proxyData, const BundleInfo &callerBundleInfo,
-        DataShareObserver::ChangeType &type);
+        DataShareObserver::ChangeType &type, const DataProxyConfig &proxyConfig);
     static bool VerifyPermission(const BundleInfo &callerBundleInfo, const ProxyDataNode &data);
     bool HasVersion() const override;
     int GetVersion() const override;
@@ -82,7 +82,9 @@ private:
         const int32_t &user, const uint32_t &tokenId, const DataShareProxyData &proxyData);
     static int32_t PutIntoTable(std::shared_ptr<KvDBDelegate> kvDelegate, int32_t user,
         uint32_t tokenId, const std::vector<std::string> &proxyDataList, const DataShareProxyData &proxyData);
-    static bool CheckAndCorrectProxyData(DataShareProxyData &proxyData);
+    static bool CheckAndCorrectProxyData(DataShareProxyData &proxyData, const DataProxyConfig &proxyConfig);
+    static int32_t UpdateProxyDataList(std::shared_ptr<KvDBDelegate> delegate, const std::string &uri,
+        const BundleInfo &callerBundleInfo);
     ProxyDataNode value;
     static std::mutex mutex_;
 };

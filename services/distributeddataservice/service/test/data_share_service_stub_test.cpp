@@ -20,7 +20,9 @@
 #include <unistd.h>
 
 #include "data_share_service_impl.h"
+#include "dataproxy_handle_common.h"
 #include "ipc_skeleton.h"
+#include "itypes_util.h"
 #include "token_setproc.h"
 #include "log_print.h"
 
@@ -327,5 +329,29 @@ HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo, TestSize.Level1
     int32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO;
     int32_t result = service.OnRemoteRequest(code, data, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
+}
+
+/**
+* @tc.name: OnDeleteAllProxyData
+* @tc.desc: Verify OnDeleteAllProxyData behavior with empty MessageParcel (no proxyConfig)
+* @tc.type: FUNC
+* @tc.precon: DataShareServiceImpl is initialized and MessageParcel is ready
+* @tc.step:
+*   1. Create MessageParcel with only InterfaceToken (no proxyConfig data)
+*   2. Call OnRemoteRequest with DATA_SHARE_SERVICE_CMD_PROXY_DELETE_ALL
+* @tc.expect:
+*   1. Return IPC_STUB_INVALID_DATA_ERR due to Unmarshal failure
+*/
+HWTEST_F(DataShareServiceStubTest, OnDeleteAllProxyData, TestSize.Level1)
+{
+    DataShareServiceImpl service;
+    MessageParcel data;
+    MessageParcel reply;
+    // MessageParcel data has no proxyConfig
+    data.WriteInterfaceToken(IDataShareService::GetDescriptor());
+
+    int32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_PROXY_DELETE_ALL;
+    auto result = service.OnRemoteRequest(code, data, reply);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 }
 } // namespace OHOS::Test

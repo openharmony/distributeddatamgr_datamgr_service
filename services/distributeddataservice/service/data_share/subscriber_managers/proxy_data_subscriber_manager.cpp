@@ -32,15 +32,13 @@ ProxyDataSubscriberManager &ProxyDataSubscriberManager::GetInstance()
 }
 
 DataProxyErrorCode ProxyDataSubscriberManager::Add(const ProxyDataKey &key, const sptr<IProxyDataObserver> &observer,
-    const std::string &bundleName, const std::string &callerAppIdentifier, const int32_t &userId)
+    const BundleInfo &callerBundleInfo)
 {
-    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     ProxyDataCache_.Compute(
-        key, [&observer, callerTokenId, bundleName, callerAppIdentifier, userId](const ProxyDataKey &key,
-        std::vector<ObserverNode> &value) {
+        key, [&observer, &callerBundleInfo](const ProxyDataKey &key, std::vector<ObserverNode> &value) {
             ZLOGI("add proxy data subscriber, uri %{public}s",
                 URIUtils::Anonymous(key.uri).c_str());
-            value.emplace_back(observer, callerTokenId, bundleName, callerAppIdentifier, userId);
+            value.emplace_back(observer, callerBundleInfo);
             return true;
         });
     return SUCCESS;
@@ -157,9 +155,9 @@ bool ProxyDataKey::operator!=(const ProxyDataKey &rhs) const
 }
 
 ProxyDataSubscriberManager::ObserverNode::ObserverNode(const sptr<IProxyDataObserver> &observer,
-    const uint32_t &callerTokenId, const std::string &bundleName,
-    const std::string &callerAppIdentifier, const int32_t &userId) : observer(observer),
-    callerTokenId(callerTokenId), bundleName(bundleName), callerAppIdentifier(callerAppIdentifier), userId(userId)
+    const BundleInfo &callerBundleInfo) : observer(observer),
+    callerTokenId(callerBundleInfo.tokenId), bundleName(callerBundleInfo.bundleName),
+    callerAppIdentifier(callerBundleInfo.appIdentifier), userId(callerBundleInfo.userId)
 {
 }
 } // namespace OHOS::DataShare
