@@ -491,4 +491,24 @@ HWTEST_F(DataShareProxyHandleTest, GetProxyData002, TestSize.Level1)
     SetSelfTokenID(tokenId);
     ZLOGI("DataShareProxyHandleTest GetProxyData002 end");
 }
+
+/**
+* @tc.name: DeleteAll001
+* @tc.desc: test delete all proxyData without permission function
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareProxyHandleTest, DeleteAll001, TestSize.Level1)
+{
+    ZLOGI("DataShareProxyHandleTest DeleteAll001 start");
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, BUNDLE_NAME, 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    DataShareServiceImpl dataShareServiceImpl;
+    DataProxyConfig config;
+    config.type_ = DataProxyType::SHARED_CONFIG;
+    auto results = dataShareServiceImpl.DeleteAll(config);
+    ASSERT_EQ(results.size(), 0);
+    SetSelfTokenID(tokenId);
+    ZLOGI("DataShareProxyHandleTest DeleteAll001 end");
+}
 } // namespace OHOS::Test

@@ -216,7 +216,7 @@ void ProxyDataObserverProxy::OnChangeFromProxyData(std::vector<DataProxyChangeIn
         return;
     }
 
-    if (!ITypesUtil::Marshal(parcel, changeInfo)) {
+    if (!ITypesUtil::MarshalDataProxyChangeInfoVec(changeInfo, parcel)) {
         ZLOGE("failed to WriteParcelable changeNode ");
         return;
     }
