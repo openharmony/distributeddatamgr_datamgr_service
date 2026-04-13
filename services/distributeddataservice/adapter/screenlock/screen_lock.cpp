@@ -41,7 +41,8 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
 {
     const auto want = event.GetWant();
     const auto action = want.GetAction();
-    if (action != CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED) {
+    if (action != CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED && action !=
+        CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED) {
         return;
     }
     ZLOGI("Want Action is %{public}s", action.c_str());
@@ -54,12 +55,22 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
         }
         user = users[0];
     }
-    eventCallback_(user);
+    if (action == CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED) {
+        unLockedEventCallback_(user);
+    }
+    if (action == CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED) {
+        lockedEventCallback_(user);
+    }
 }
 
-void EventSubscriber::SetEventCallback(EventCallback callback)
+void EventSubscriber::SetUnlockedEventCallback(EventCallback callback)
 {
-    eventCallback_ = callback;
+    unLockedEventCallback_ = callback;
+}
+
+void EventSubscriber::SetLockedEventCallback(EventCallback callback)
+{
+    lockedEventCallback_ = callback;
 }
 
 void ScreenLock::Subscribe(std::shared_ptr<Observer> observer)
@@ -87,11 +98,15 @@ void ScreenLock::SubscribeScreenEvent()
     ZLOGI("Subscribe screen event listener start.");
     if (eventSubscriber_ == nullptr) {
         MatchingSkills matchingSkills;
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED);
         matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
         CommonEventSubscribeInfo info(matchingSkills);
         eventSubscriber_ = std::make_shared<EventSubscriber>(info);
-        eventSubscriber_->SetEventCallback([this](int32_t user) {
+        eventSubscriber_->SetUnlockedEventCallback([this](int32_t user) {
             NotifyScreenUnlocked(user);
+        });
+        eventSubscriber_->SetLockedEventCallback([this](int32_t user) {
+            NotifyScreenLocked(user);
         });
     }
     if (executors_ != nullptr) {
@@ -111,6 +126,14 @@ void ScreenLock::NotifyScreenUnlocked(int32_t user)
 {
     observerMap_.ForEach([user](const auto &key, auto &val) {
         val->OnScreenUnlocked(user);
+        return false;
+    });
+}
+
+void ScreenLock::NotifyScreenLocked(int32_t user)
+{
+    observerMap_.ForEach([user](const auto &key, auto &val) {
+        val->OnScreenLocked(user);
         return false;
     });
 }
