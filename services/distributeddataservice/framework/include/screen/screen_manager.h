@@ -29,6 +29,7 @@ public:
     public:
         virtual ~Observer() = default;
         virtual void OnScreenUnlocked(int32_t user) = 0;
+        virtual void OnScreenLocked(int32_t user) {};
         virtual std::string GetName() = 0;
     };
     API_EXPORT static std::shared_ptr<ScreenManager> GetInstance();

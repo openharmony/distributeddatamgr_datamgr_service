@@ -30,12 +30,14 @@ class EventSubscriber final : public CommonEventSubscriber {
 public:
     ~EventSubscriber() {}
     explicit EventSubscriber(const CommonEventSubscribeInfo &info);
-    void SetEventCallback(EventCallback callback);
+    void SetUnlockedEventCallback(EventCallback callback);
+    void SetLockedEventCallback(EventCallback callback);
     void OnReceiveEvent(const CommonEventData &event) override;
 private:
     static constexpr const char *USER_ID = "userId";
     static constexpr int32_t INVALID_USER = -1;
-    EventCallback eventCallback_ {};
+    EventCallback unLockedEventCallback_ {};
+    EventCallback lockedEventCallback_ {};
 };
 
 class ScreenLock : public ScreenManager {
@@ -51,6 +53,7 @@ private:
     static constexpr int32_t MAX_RETRY_TIMES = 300;
     static constexpr int32_t RETRY_WAIT_TIME_S = 1;
     void NotifyScreenUnlocked(int32_t user);
+    void NotifyScreenLocked(int32_t user);
     ExecutorPool::Task GetTask(uint32_t retry);
     ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_{};
     std::shared_ptr<ExecutorPool> executors_;
