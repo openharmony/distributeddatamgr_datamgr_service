@@ -34,6 +34,7 @@ HWTEST_F(AssetLoaderTest, Download, TestSize.Level1)
     std::string gid;
     Value prefix;
     VBucket assets;
+    loader.SetStoreMetaKey("test");
     auto ret = loader.Download(tableName, gid, prefix, assets);
     ASSERT_EQ(ret, E_NOT_SUPPORT);
 }

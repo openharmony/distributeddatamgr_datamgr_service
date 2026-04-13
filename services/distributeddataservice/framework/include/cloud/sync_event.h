@@ -41,6 +41,8 @@ public:
         int32_t triggerMode_ = MODE_DEFAULT;
         std::string prepareTraceId_;
         int32_t user_ = 0;
+        bool isDownloadOnly_ = false;
+        bool isEnablePredicate_ = false;
     };
     SyncEvent(StoreInfo storeInfo, EventInfo info);
     ~SyncEvent() override = default;
@@ -53,6 +55,8 @@ public:
     int32_t GetTriggerMode() const;
     std::string GetPrepareTraceId() const;
     int32_t GetUser() const;
+    bool GetDownloadOnly() const;
+    bool GetEnablePredicate() const;
 
 protected:
     SyncEvent(int32_t evtId, StoreInfo storeInfo, EventInfo info);

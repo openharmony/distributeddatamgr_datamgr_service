@@ -330,16 +330,26 @@ int32_t RdbServiceImpl::SetDeviceDistributedTables(int32_t tableType, StoreMetaD
 
 void RdbServiceImpl::SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData)
 {
-    if ((metaData.asyncDownloadAsset != param.asyncDownloadAsset_) ||
-        (metaData.enableCloud != param.enableCloud_) || (metaData.customSwitch != param.customSwitch_)) {
+    if (metaData.asyncDownloadAsset != param.asyncDownloadAsset_ || metaData.enableCloud != param.enableCloud_ ||
+        metaData.customSwitch != param.customSwitch_ || metaData.assetConflictPolicy != param.assetConflictPolicy_ ||
+        metaData.assetTempPath != param.assetTempPath_ ||
+        metaData.autoSyncSwitch != param.autoSyncSwitch_ ||
+        metaData.assetDownloadOnDemand != param.assetDownloadOnDemand_) {
         ZLOGI("update meta, bundleName:%{public}s, storeName:%{public}s, asyncDownloadAsset? [%{public}d -> "
-              "%{public}d],enableCloud? [%{public}d -> %{public}d],customSwitch? [%{public}d -> %{public}d]",
+              "%{public}d],enableCloud? [%{public}d -> %{public}d], customSwitch? [%{public}d -> %{public}d],"
+              "assetDownloadOnDemand? [%{public}d -> "
+              "%{public}d], metaData.assetConflictPolicy? [%{public}d -> %{public}d]",
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), metaData.asyncDownloadAsset,
             param.asyncDownloadAsset_, metaData.enableCloud, param.enableCloud_, metaData.customSwitch,
-            param.customSwitch_);
+            param.customSwitch_, metaData.assetDownloadOnDemand, param.assetDownloadOnDemand_,
+            metaData.assetConflictPolicy, param.assetConflictPolicy_);
         metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
         metaData.enableCloud = param.enableCloud_;
         metaData.customSwitch = param.customSwitch_;
+        metaData.autoSyncSwitch  = param.autoSyncSwitch_;
+        metaData.assetConflictPolicy = param.assetConflictPolicy_;
+        metaData.assetTempPath = param.assetTempPath_;
+        metaData.assetDownloadOnDemand = param.assetDownloadOnDemand_;
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
     }
 }
@@ -596,7 +606,10 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
             meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
         return RDB_ERROR;
     }
-
+    if (meta.autoSyncSwitch && option.isEnablePredicate) {
+        ZLOGW("please close autoSyncSwitch then try sync with predicate");
+            return RDB_ERROR;
+    }
     if (option.mode < DistributedData::GeneralStore::CLOUD_END &&
         option.mode >= DistributedData::GeneralStore::CLOUD_BEGIN) {
         DoCloudSync(meta, option, predicates, async);
@@ -612,6 +625,27 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
     }
 
     return DoSync(syncMeta, option, predicates, async);
+}
+
+int32_t RdbServiceImpl::StopCloudSync(const RdbSyncerParam &param)
+{
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+
+    auto [exists, meta] = LoadStoreMetaData(param);
+    if (!exists || meta.instanceId != 0) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
+            meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+        return RDB_ERROR;
+    }
+    auto store = GetStore(meta);
+    if (store == nullptr) {
+        return RDB_ERROR;
+    }
+    return store->StopCloudSync();
 }
 
 bool RdbServiceImpl::IsSyncLimitApp(const StoreMetaData &meta)
@@ -785,6 +819,9 @@ void RdbServiceImpl::DoCloudSync(const StoreMetaData &metaData, const RdbService
     auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.mode, highMode));
     SyncParam syncParam = { mixMode, (option.isAsync ? 0 : static_cast<int32_t>(WAIT_TIME)), option.isCompensation };
     syncParam.asyncDownloadAsset = metaData.asyncDownloadAsset;
+    syncParam.isDownloadOnly = option.isDownloadOnly;
+    syncParam.isEnablePredicate = option.isEnablePredicate;
+    syncParam.assetDownloadOnDemand = metaData.assetDownloadOnDemand;
     auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
         option.isAutoSync ? nullptr
         : option.isAsync  ? asyncCallback
@@ -1171,7 +1208,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
     meta.customSwitch = isCreated ? old.customSwitch : meta.customSwitch;
-
+    meta.autoSyncSwitch = isCreated ? old.autoSyncSwitch : meta.autoSyncSwitch;
     // MetaDataSaver destructor will automatically flush all entries
     {
         // Search relies on metadata, which needs to be stored in the database before being used by search
@@ -1334,6 +1371,10 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.isSearchable = param.isSearchable_;
     metaData.haMode = param.haMode_;
     metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
+    metaData.autoSyncSwitch = param.autoSyncSwitch_;
+    metaData.assetConflictPolicy = param.assetConflictPolicy_;
+    metaData.assetTempPath = param.assetTempPath_;
+    metaData.assetDownloadOnDemand = param.assetDownloadOnDemand_;
     return metaData;
 }
 

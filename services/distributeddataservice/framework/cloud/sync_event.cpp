@@ -12,9 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "cloud/sync_event.h"
-
 namespace OHOS::DistributedData {
 SyncEvent::EventInfo::EventInfo(int32_t mode, int32_t wait, bool retry, std::shared_ptr<GenQuery> query, GenAsync async)
     : retry_(retry), mode_(mode), wait_(wait), query_(std::move(query)), asyncDetail_(std::move(async))
@@ -24,7 +22,8 @@ SyncEvent::EventInfo::EventInfo(int32_t mode, int32_t wait, bool retry, std::sha
 SyncEvent::EventInfo::EventInfo(const SyncParam &syncParam, bool retry, std::shared_ptr<GenQuery> query, GenAsync async)
     : retry_(retry), mode_(syncParam.mode), wait_(syncParam.wait), query_(std::move(query)),
       asyncDetail_(std::move(async)), isCompensation_(syncParam.isCompensation), triggerMode_(syncParam.triggerMode),
-      prepareTraceId_(syncParam.prepareTraceId), user_(syncParam.user)
+      prepareTraceId_(syncParam.prepareTraceId), user_(syncParam.user), isDownloadOnly_(syncParam.isDownloadOnly),
+      isEnablePredicate_(syncParam.isEnablePredicate)
 {
 }
 
@@ -47,6 +46,8 @@ SyncEvent::EventInfo &SyncEvent::EventInfo::operator=(SyncEvent::EventInfo &&inf
     triggerMode_ = info.triggerMode_;
     prepareTraceId_ = info.prepareTraceId_;
     user_ = info.user_;
+    isDownloadOnly_ = info.isDownloadOnly_;
+    isEnablePredicate_ = info.isEnablePredicate_;
     return *this;
 }
 
@@ -80,6 +81,16 @@ std::shared_ptr<GenQuery> SyncEvent::GetQuery() const
     return info_.query_;
 }
 
+bool SyncEvent::GetDownloadOnly() const
+{
+    return info_.isDownloadOnly_;
+}
+
+bool SyncEvent::GetEnablePredicate() const
+{
+    return info_.isEnablePredicate_;
+}
+
 GenAsync SyncEvent::GetAsyncDetail() const
 {
     return info_.asyncDetail_;
@@ -104,4 +115,5 @@ int32_t SyncEvent::GetUser() const
 {
     return info_.user_;
 }
+
 } // namespace OHOS::DistributedData

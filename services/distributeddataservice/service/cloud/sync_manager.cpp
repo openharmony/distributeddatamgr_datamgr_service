@@ -132,6 +132,16 @@ void SyncManager::SyncInfo::SetTriggerMode(int32_t triggerMode)
     triggerMode_ = triggerMode;
 }
 
+void SyncManager::SyncInfo::SetDownloadOnly(bool isDownloadOnly)
+{
+    isDownloadOnly_ = isDownloadOnly;
+}
+
+void SyncManager::SyncInfo::SetEnablePredicate(bool isEnablePredicate)
+{
+    isEnablePredicate_ = isEnablePredicate;
+}
+
 void SyncManager::SyncInfo::SetError(int32_t code) const
 {
     if (async_) {
@@ -349,8 +359,9 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                     continue;
                 }
                 auto query = info.GenerateQuery(tables);
+
                 SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_, traceId,
-                    info.user_ };
+                    info.user_, false, true, info.isDownloadOnly_, info.isEnablePredicate_};
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo{ syncParam, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
@@ -426,6 +437,15 @@ void SyncManager::StartCloudSync(const DistributedData::SyncEvent &evt, const St
     ReportSyncEvent(evt, BizState::BEGIN, E_OK);
     SyncParam syncParam = { evt.GetMode(), evt.GetWait(), evt.IsCompensation(), MODE_DEFAULT, prepareTraceId };
     syncParam.asyncDownloadAsset = meta.asyncDownloadAsset;
+    bool isEnablePredicate = evt.GetEnablePredicate();
+    if (!meta.autoSyncSwitch && isEnablePredicate) {
+        syncParam.isEnablePredicate = isEnablePredicate;
+    }
+    syncParam.isDownloadOnly = evt.GetDownloadOnly();
+    syncParam.assetConflictPolicy = meta.assetConflictPolicy;
+    syncParam.assetTempPath = meta.assetTempPath;
+    syncParam.assetDownloadOnDemand = meta.assetDownloadOnDemand;
+
     auto [status, dbCode] = store->Sync({ SyncInfo::DEFAULT_ID }, *(evt.GetQuery()),
         evt.AutoRetry() ? RetryCallback(storeInfo, retryer, evt.GetTriggerMode(), prepareTraceId, user)
                         : GetCallback(async, storeInfo, evt.GetTriggerMode(), prepareTraceId, user), syncParam);
@@ -517,6 +537,8 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetQuery(evt.GetQuery());
         syncInfo.SetCompensation(evt.IsCompensation());
         syncInfo.SetTriggerMode(evt.GetTriggerMode());
+        syncInfo.SetDownloadOnly(evt.GetDownloadOnly());
+        syncInfo.SetEnablePredicate(evt.GetEnablePredicate());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
         executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
     };

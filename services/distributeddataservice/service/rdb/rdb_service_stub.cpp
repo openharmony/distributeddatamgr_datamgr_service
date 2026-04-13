@@ -239,6 +239,22 @@ int32_t RdbServiceStub::OnRemoteDoAsync(MessageParcel &data, MessageParcel &repl
     return RDB_OK;
 }
 
+int32_t RdbServiceStub::OnRemoteStopCloudSync(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal failed, bundleName_:%{public}s, storeName_:%{public}s",
+            param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    auto status = StopCloudSync(param);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
 int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
