@@ -179,7 +179,9 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_DB_ERROR;
     }
     key = unifiedData.GetRuntime()->key.GetUnifiedKey();
-    LifeCycleManager::GetInstance().InsertUdKey(option.tokenId, key);
+    if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        LifeCycleManager::GetInstance().InsertUdKey(option.tokenId, key);
+    }
     ZLOGD("Put unified data successful, key: %{public}s.", key.c_str());
     return E_OK;
 }

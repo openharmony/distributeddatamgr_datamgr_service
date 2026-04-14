@@ -31,7 +31,7 @@ struct API_EXPORT StoreMetaData : public Serializable {
     static constexpr const char *ROOT_USER = "0";
     uint32_t version = CURRENT_VERSION;
     bool isAutoSync = false;
-    bool autoSyncSwitch = false;
+    bool autoSyncSwitch = true;
     bool isBackup = false;
     bool isDirty = false;
     bool isEncrypt = false;
