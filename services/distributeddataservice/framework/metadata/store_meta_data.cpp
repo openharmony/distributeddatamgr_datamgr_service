@@ -80,6 +80,7 @@ bool StoreMetaData::Unmarshal(const json &node)
 {
     GetValue(node, GET_NAME(version), version);
     GetValue(node, GET_NAME(isAutoSync), isAutoSync);
+    GetValue(node, GET_NAME(autoSyncSwitch), autoSyncSwitch);
     GetValue(node, GET_NAME(isBackup), isBackup);
     GetValue(node, GET_NAME(isDirty), isDirty);
     GetValue(node, GET_NAME(isEncrypt), isEncrypt);
