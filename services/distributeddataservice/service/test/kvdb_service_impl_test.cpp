@@ -46,10 +46,11 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 
+using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
-using Action = OHOS::DistributedData::MetaDataManager::Action;
+using MetaAction = OHOS::DistributedData::MetaDataManager::Action;
 using AppId = OHOS::DistributedKv::AppId;
 using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
 using DistributedKvDataManager = OHOS::DistributedKv::DistributedKvDataManager;
@@ -1338,13 +1339,13 @@ HWTEST_F(KvdbServiceImplTest, ConvertType, TestSize.Level0)
 */
 HWTEST_F(KvdbServiceImplTest, ConvertAction, TestSize.Level0)
 {
-    auto status = kvdbServiceImpl_->ConvertAction(Action::INSERT);
+    auto status = kvdbServiceImpl_->ConvertAction(MetaAction::INSERT);
     EXPECT_EQ(status, SwitchState::INSERT);
-    status = kvdbServiceImpl_->ConvertAction(Action::UPDATE);
+    status = kvdbServiceImpl_->ConvertAction(MetaAction::UPDATE);
     EXPECT_EQ(status, SwitchState::UPDATE);
-    status = kvdbServiceImpl_->ConvertAction(Action::DELETE);
+    status = kvdbServiceImpl_->ConvertAction(MetaAction::DELETE);
     EXPECT_EQ(status, SwitchState::DELETE);
-    auto action = static_cast<Action>(Action::DELETE + 1);
+    auto action = static_cast<MetaAction>(MetaAction::DELETE + 1);
     status = kvdbServiceImpl_->ConvertAction(action);
     EXPECT_EQ(status, SwitchState::INSERT);
 }
