@@ -184,6 +184,7 @@ HWTEST_F(RdbCommonUtilsTest, GetInterfaceErrorString_001, TestSize.Level1)
         DBStatus::INVALID_QUERY_FORMAT,
         DBStatus::BUSY,
         DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB,
+        DBStatus::INVALID_QUERY_FIELD,
     };
 
     for (const auto& errorCode : interfaceErrorCodes) {
@@ -198,9 +199,9 @@ HWTEST_F(RdbCommonUtilsTest, GetInterfaceErrorString_001, TestSize.Level1)
 
     // Test unknown error code - should return default ErrorInfo
     auto unknownErrorInfo = RdbCommonUtils::GetInterfaceErrorString(static_cast<DBStatus>(9999));
-    EXPECT_EQ(unknownErrorInfo.dbStatus, static_cast<DBStatus>(0));
-    EXPECT_EQ(unknownErrorInfo.syncResultCode, static_cast<SyncResultCode>(0));
-    EXPECT_EQ(unknownErrorInfo.message, nullptr);
+    EXPECT_EQ(unknownErrorInfo.dbStatus, static_cast<DBStatus>(9999));
+    EXPECT_EQ(unknownErrorInfo.syncResultCode, SyncResultCode::FAIL);
+    EXPECT_EQ(unknownErrorInfo.message, "Sync is failed in Interface");
 }
 
 /**
@@ -229,6 +230,7 @@ HWTEST_F(RdbCommonUtilsTest, GetCallbackErrorString_001, TestSize.Level1)
         DBStatus::CONSTRAINT,
         DBStatus::COMM_FAILURE,
         DBStatus::NOT_SUPPORT,
+        DBStatus::DISTRIBUTED_SCHEMA_NOT_FOUND,
     };
 
     for (const auto& errorCode : callbackErrorCodes) {
@@ -243,8 +245,8 @@ HWTEST_F(RdbCommonUtilsTest, GetCallbackErrorString_001, TestSize.Level1)
 
     // Test unknown error code - should return default ErrorInfo
     auto unknownErrorInfo = RdbCommonUtils::GetCallbackErrorString(static_cast<DBStatus>(9999));
-    EXPECT_EQ(unknownErrorInfo.dbStatus, static_cast<DBStatus>(0));
-    EXPECT_EQ(unknownErrorInfo.syncResultCode, static_cast<SyncResultCode>(0));
-    EXPECT_EQ(unknownErrorInfo.message, nullptr);
+    EXPECT_EQ(unknownErrorInfo.dbStatus, static_cast<DBStatus>(9999));
+    EXPECT_EQ(unknownErrorInfo.syncResultCode, SyncResultCode::FAIL);
+    EXPECT_EQ(unknownErrorInfo.message, "Sync is failed in Callback");
 }
 }

@@ -120,8 +120,7 @@ constexpr ErrorInfo REMOTE_DEVICE_ERROR_INFO_ARRAY[] = {
         "Distributed Schema Mismatch." },
     { DBStatus::SECURITY_OPTION_CHECK_ERROR, SyncResultCode::FAIL, "Security Option Check Error." },
     { DBStatus::BUSY, SyncResultCode::BUSY, "Database Is Busy." },
-    { DBStatus::PERMISSION_CHECK_FORBID_SYNC, SyncResultCode::CORRUPTED,
-        "Database Is Corrupted." },
+    { DBStatus::PERMISSION_CHECK_FORBID_SYNC, SyncResultCode::FAIL, "Permission Check Error." },
     { DBStatus::TIME_OUT, SyncResultCode::TIMEOUT, "Timeout." },
     { DBStatus::INVALID_QUERY_FORMAT, SyncResultCode::INVALID_ARGS, "Invalid Query Format." },
     { DBStatus::INVALID_QUERY_FIELD, SyncResultCode::INVALID_ARGS, "Invalid Query Field." },
@@ -134,6 +133,8 @@ constexpr ErrorInfo REMOTE_DEVICE_ERROR_INFO_ARRAY[] = {
     { DBStatus::CONSTRAINT, SyncResultCode::CONSTRAINT_VIOLATION, "Violation Of Constraints." },
     { DBStatus::COMM_FAILURE, SyncResultCode::FAIL, "Communication Failure." },
     { DBStatus::NOT_SUPPORT, SyncResultCode::INVALID_ARGS, "Invalid Parameter." },
+    { DBStatus::DISTRIBUTED_SCHEMA_NOT_FOUND, SyncResultCode::DISTRIBUTED_TABLE_NOT_SET,
+        "Local Device Distributed Schema Not Found." },
 };
 
 constexpr size_t LOCAL_DEVICE_ERROR_INFO_COUNT =
@@ -146,7 +147,7 @@ ErrorInfo RdbCommonUtils::GetInterfaceErrorString(DistributedDB::DBStatus status
             return LOCAL_DEVICE_ERROR_INFO_ARRAY[i];
         }
     }
-    return ErrorInfo();
+    return { status, SyncResultCode::FAIL, "Sync is failed in Interface" };
 }
 
 constexpr size_t REMOTE_DEVICE_ERROR_INFO_COUNT =
@@ -159,6 +160,6 @@ ErrorInfo RdbCommonUtils::GetCallbackErrorString(DistributedDB::DBStatus status)
             return REMOTE_DEVICE_ERROR_INFO_ARRAY[i];
         }
     }
-    return ErrorInfo();
+    return { status, SyncResultCode::FAIL, "Sync is failed in Callback" };
 }
 } // namespace OHOS::DistributedRdb

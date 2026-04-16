@@ -686,7 +686,7 @@ DevicesConvertInfo ConvertToDeviceInfo(const std::vector<std::string> &networkId
     DevicesConvertInfo info;
     if (networkIds.empty()) {
         auto deviceInfos = DmAdapter::GetInstance().GetRemoteDevices();
-        if (deviceInfos.empty()) {
+        if (deviceInfos.empty() && enableDetail) {
             info.details[""].code = static_cast<int32_t>(SyncResultCode::OFFLINE);
             info.details[""].message = "The device is offline yet";
             info.details[""].progress = DistributedDB::FINISHED;
@@ -787,7 +787,7 @@ int RdbServiceImpl::DoSync(const StoreMetaData &meta, const RdbService::Option &
         !DistributedKv::PermissionValidator::GetInstance().CheckSyncPermission(meta.tokenId)) {
         ZLOGE("Sync permission denied: tokenId=%{public}u, bundleName=%{public}s",
             meta.tokenId, meta.bundleName.c_str());
-        return RDB_PERMISSION_DENIED;
+        return RDB_NO_SYNC_PERMISSION;
     }
 
     auto task = GetSyncTask(meta, option, predicates, async);
