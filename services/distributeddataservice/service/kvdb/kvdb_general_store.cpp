@@ -935,4 +935,47 @@ void KVDBGeneralStore::SetCacheFlag(bool isCache)
 {
     isCacheWatcher_ = isCache;
 }
+
+void KVDBGeneralStore::PublishCacheChange()
+{
+    std::vector<DistributedDB::Entry> entries;
+    Key keyPrefix;
+    delegate_->GetLocalEntries(keyPrefix, entries);
+    if (entries.empty()) {
+        return;
+    }
+    Watcher::ChangeData changeData;
+    std::vector<DistributedDB::Key> keys;
+    for (auto &entry : entries) {
+        std::vector<uint8_t> data(entry.value.begin() + 1, entry.value.end());
+        auto value = std::vector<Value>{ entry.key, data };
+        if (entry.value[0] == DistributedDB::OP_INSERT) {
+            changeData[observer_->storeId_][DistributedDB::OP_INSERT].push_back(value);
+        } else if (entry.value[0] == DistributedDB::OP_DELETE) {
+            changeData[observer_->storeId_][DistributedDB::OP_DELETE].push_back(value);
+        } else if (entry.value[0] == DistributedDB::OP_UPDATE) {
+            changeData[observer_->storeId_][DistributedDB::OP_UPDATE].push_back(value);
+        }
+        keys.push_back(entry.key);
+    }
+    delegate_->DeleteLocalBatch(keys);
+    Watcher::Origin genOrigin;
+    genOrigin.origin = Watcher::Origin::ORIGIN_NEARBY;
+    genOrigin.store = observer_->storeId_;
+    observer_->watcher_->OnChange(genOrigin, {}, std::move(changeData));
+}
+
+void KVDBGeneralStore::PostDataChange()
+{
+    RemoteChangeEvent::DataInfo info;
+    info.userId = meta_.user;
+    info.storeId = meta_.storeId;
+    info.deviceId = meta_.deviceId;
+    info.bundleName = meta_.bundleName;
+    std::vector<std::string> tables;
+    info.tables = tables;
+    info.changeType = 1;
+    auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+}
 } // namespace OHOS::DistributedKv
