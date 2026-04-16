@@ -198,8 +198,9 @@ int32_t DataShareServiceStub::OnSubscribeRdbData(MessageParcel &data, MessagePar
 {
     std::vector<std::string> uris;
     TemplateId templateId;
-    if (!ITypesUtil::Unmarshal(data, uris, templateId)) {
-        ZLOGE("read device list failed.");
+    SubscribeOption subscribeOption;
+    if (!ITypesUtil::Unmarshal(data, uris, templateId, subscribeOption)) {
+        ZLOGE("SubscribeRdbData Unmarshal failed.");
         return -1;
     }
     auto remoteObj = data.ReadRemoteObject();
@@ -208,7 +209,7 @@ int32_t DataShareServiceStub::OnSubscribeRdbData(MessageParcel &data, MessagePar
         ZLOGE("obServer is nullptr");
         return -1;
     }
-    std::vector<OperationResult> results = SubscribeRdbData(uris, templateId, observer);
+    std::vector<OperationResult> results = SubscribeRdbData(uris, templateId, observer, subscribeOption);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return -1;
