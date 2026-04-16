@@ -421,8 +421,6 @@ bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string> &uris
             urisToBeChecked, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION, tokenId);
         auto writeResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
             urisToBeChecked, AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION, tokenId);
-        auto persistResults = AAFwk::UriPermissionManagerClient::GetInstance().CheckUriAuthorization(
-            urisToBeChecked, AAFwk::Want::FLAG_AUTH_PERSISTABLE_URI_PERMISSION, tokenId);
         for (size_t i = 0; i < urisToBeChecked.size(); ++i) {
             uint32_t permissionMask = 0;
             if (i < readResults.size() && readResults[i]) {
@@ -431,7 +429,8 @@ bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string> &uris
             if (!readOnly && i < writeResults.size() && writeResults[i]) {
                 permissionMask |= UriPermissionUtil::WRITE_FLAG;
             }
-            if (!readOnly && i < persistResults.size() && persistResults[i]) {
+            if (!readOnly && ((permissionMask | UriPermissionUtil::READ_FLAG) != 0
+                || (permissionMask | UriPermissionUtil::WRITE_FLAG) != 0)) {
                 permissionMask |= UriPermissionUtil::PERSIST_FLAG;
             }
             if (readOnly && (permissionMask & UriPermissionUtil::READ_FLAG) == 0) {
