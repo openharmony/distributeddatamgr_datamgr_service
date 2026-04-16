@@ -170,6 +170,7 @@ private:
     void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password);
     void SaveAppIdMetaData(const DistributedData::AppIDMetaData &appIdMeta);
     void DeleteInner(const AppId &appId, const StoreId &storeId, const StoreMetaData &metaData);
+    void SaveLaunchInfo(StoreMetaData &meta);
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
     std::shared_ptr<ExecutorPool> executors_;

@@ -20,6 +20,7 @@
 
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "bootstrap.h"
+#include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/schema_meta.h"
 #include "crypto/crypto_manager.h"
@@ -169,9 +170,9 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
 }
 
 KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
-    : observer_(std::make_shared<ObserverProxy>()),
+    : observer_(std::make_shared<ObserverProxy>(this)),
     manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
-        meta.instanceId)
+        meta.instanceId), meta_(meta)
 {
     if (!Constant::IsValidPath(meta.dataDir)) {
         return;
@@ -677,6 +678,7 @@ void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::strin
     if (!HasWatcher()) {
         return;
     }
+    store_->PostDataChange();
     GenOrigin genOrigin;
     genOrigin.origin = (origin == DBOrigin::ORIGIN_CLOUD) ? GenOrigin::ORIGIN_CLOUD : GenOrigin::ORIGIN_NEARBY;
     genOrigin.id.push_back(originalId);
@@ -704,6 +706,7 @@ void KVDBGeneralStore::ObserverProxy::OnChange(const DistributedDB::KvStoreChang
     if (!HasWatcher()) {
         return;
     }
+    store_->PostDataChange();
     const auto &inserts = data.GetEntriesInserted();
     const auto &deletes = data.GetEntriesDeleted();
     const auto &updates = data.GetEntriesUpdated();
@@ -716,6 +719,33 @@ void KVDBGeneralStore::ObserverProxy::OnChange(const DistributedDB::KvStoreChang
     genOrigin.store = storeId_;
 
     watcher_->OnChange(genOrigin, {}, std::move(changeData));
+}
+
+void KVDBGeneralStore::ObserverProxy::SaveChangeData(const DistributedDB::KvStoreChangedData &data)
+{
+    std::vector<DistributedDB::Entry> values;
+    const auto &inserts = data.GetEntriesInserted();
+    for (auto &entry : inserts) {
+        std::vector<uint8_t> data;
+        data.push_back(DistributedDB::OP_INSERT);
+        data.insert(data.end(), entry.value.begin(), entry.value.end());
+        values.push_back({ entry.key, data });
+    }
+    const auto &deletes = data.GetEntriesDeleted();
+    for (auto &entry : deletes) {
+        std::vector<uint8_t> data;
+        data.push_back(DistributedDB::OP_DELETE);
+        data.insert(data.end(), entry.value.begin(), entry.value.end());
+        values.push_back({ entry.key, data });
+    }
+    const auto &updates = data.GetEntriesUpdated();
+    for (auto &entry : updates) {
+        std::vector<uint8_t> data;
+        data.push_back(DistributedDB::OP_UPDATE);
+        data.insert(data.end(), entry.value.begin(), entry.value.end());
+        values.push_back({ entry.key, data });
+    }
+    store_->delegate_->PutLocalBatch(values);
 }
 
 void KVDBGeneralStore::ObserverProxy::ConvertChangeData(const std::list<DBEntry> &entries, std::vector<Values> &values)
@@ -899,5 +929,10 @@ std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::Query(GenQuery &qu
 int32_t KVDBGeneralStore::StopCloudSync()
 {
     return GeneralError::E_NOT_SUPPORT;
+}
+
+void KVDBGeneralStore::SetCacheFlag(bool isCache)
+{
+    isCacheWatcher_ = isCache;
 }
 } // namespace OHOS::DistributedKv
