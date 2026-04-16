@@ -125,12 +125,12 @@ private:
         using DBChangeData = DistributedDB::ChangedData;
         using DBEntry = DistributedDB::Entry;
         using GenOrigin = Watcher::Origin;
-        ObserverProxy(KVDBGeneralStore* store) : store_(store) {}
+        explicit ObserverProxy(KVDBGeneralStore* store) : store_(store) {}
         ~ObserverProxy() = default;
         void OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data) override;
         void OnChange(const DistributedDB::KvStoreChangedData &data) override;
         void ConvertChangeData(const std::list<DBEntry> &entries, std::vector<Values> &values);
-        void saveChangeData(const DistributedDB::KvStoreChangedData &data);
+        void SaveChangeData(const DistributedDB::KvStoreChangedData &data);
         bool HasWatcher() const
         {
             return watcher_ != nullptr;

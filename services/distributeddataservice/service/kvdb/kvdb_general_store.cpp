@@ -172,7 +172,8 @@ KVDBGeneralStore::DBOption KVDBGeneralStore::GetDBOption(const StoreMetaData &da
 KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     : observer_(std::make_shared<ObserverProxy>(this)),
     manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
-        meta.instanceId), meta_(meta)
+        meta.instanceId),
+    meta_(meta)
 {
     if (!Constant::IsValidPath(meta.dataDir)) {
         return;
