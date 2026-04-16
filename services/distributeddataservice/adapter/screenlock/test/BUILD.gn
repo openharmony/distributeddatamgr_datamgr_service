@@ -19,6 +19,7 @@ ohos_unittest("ScreenLockTest") {
   module_out_path = module_output_path
 
   sources = [
+    "${data_service_path}/adapter/screenlock/screen_lock.cpp",
     "mock/common_event_manager_mock.cpp",
     "screen_lock_test.cpp",
   ]
@@ -28,8 +29,11 @@ ohos_unittest("ScreenLockTest") {
     "-Dprotected=public",
     "-Werror",
   ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/screenlock",
+  ]
   deps = [
-    "${data_service_path}/adapter/screenlock:distributeddata_screenlock",
     "${data_service_path}/framework:distributeddatasvcfwk"
   ]
 
@@ -41,6 +45,7 @@ ohos_unittest("ScreenLockTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:datamgr_common",
+    "screenlock_mgr:screenlock_client",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
