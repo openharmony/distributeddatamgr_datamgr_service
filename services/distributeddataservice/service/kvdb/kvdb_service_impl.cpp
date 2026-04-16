@@ -22,6 +22,7 @@
 #include "account/account_delegate.h"
 #include "backup_manager.h"
 #include "bootstrap.h"
+#include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/change_event.h"
 #include "cloud/cloud_server.h"
@@ -38,6 +39,7 @@
 #include "log_print.h"
 #include "matrix_event.h"
 #include "metadata/appid_meta_data.h"
+#include "metadata/auto_launch_meta_data.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/switches_meta_data.h"
@@ -571,6 +573,14 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
         AutoCache::GetInstance().SetObserver(metaData.tokenId,
             GetWatchers(metaData.tokenId, storeId, metaData.user), metaData.dataDir, storeId);
     }
+    AutoLaunchMetaData launchData;
+    if (MetaDataManager::GetInstance().LoadMeta(metaData.GetAutoLaunchKey(), launchData, true)) {
+        auto store = AutoCache::GetInstance().GetStore(metaData, GetWatchers(metaData.tokenId, storeId, metaData.user));
+        store->SetCacheFlag(false);
+        executors_->Execute([store]() {
+            store->PublishCacheChange();
+        });
+    }
     return SUCCESS;
 }
 
@@ -808,6 +818,10 @@ Status KVDBServiceImpl::AfterCreate(
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
         oldMeta = metaData;
         MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
+        AutoLaunchMetaData launchData;
+        if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetAutoLaunchKey(), launchData, true)) {
+            SaveLaunchInfo(metaData);
+        }
     }
 
     AppIDMetaData appIdMeta;
@@ -908,6 +922,11 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers);
         if (isTripleIdentifierEqual && store != nullptr) {
             store->SetEqualIdentifier(storeMeta.appId, storeMeta.storeId, accountId);
+        }
+        AutoLaunchMetaData launchData;
+        if (watchers.empty() && MetaDataManager::GetInstance().LoadMeta(metaData.GetAutoLaunchKey(), launchData,
+            true)) {
+            setCacheFlag(true);
         }
         ZLOGI("isTriple:%{public}d,storeId:%{public}s,appId:%{public}s,size:%{public}zu,user:%{public}s",
             isTripleIdentifierEqual, Anonymous::Change(storeMeta.storeId).c_str(), storeMeta.appId.c_str(),
@@ -1638,5 +1657,20 @@ void KVDBServiceImpl::DeleteInner(const AppId &appId, const StoreId &storeId, co
     AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
           Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
+}
+
+void KVDBServiceImpl::SaveLaunchInfo(StoreMetaData &meta)
+{
+    DistributedData::RemoteChangeEvent::DataInfo info;
+    info.bundleName = meta.bundleName;
+    info.deviceId = meta.deviceId;
+    info.userId = meta.user;
+    if (executors_ != nullptr) {
+        executors_->Schedule(ExecutorPool::INVALID_DELAY, [dataInfo = std::move(info)]() mutable {
+            auto evt = std::make_unique<DistributedData::RemoteChangeEvent>(
+                DistributedData::RemoteChangeEvent::RDB_META_SAVE, std::move(dataInfo));
+            DistributedData::EventCenter::GetInstance().PostEvent(std::move(evt));
+        });
+    }
 }
 } // namespace OHOS::DistributedKv
