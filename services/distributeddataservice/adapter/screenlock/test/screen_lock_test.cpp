@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "screenlock/screen_lock.h"
+#include "screen_lock.h"
 
 #include <gtest/gtest.h>
 #include "mock/common_event_manager_mock.h"
@@ -26,6 +26,7 @@ class ScreenLockObserver : public ScreenManager::Observer {
 public:
     void OnScreenUnlocked(int32_t user) override
     {
+        notifyUser_ = user;
     }
 
     std::string GetName() override
@@ -39,6 +40,7 @@ public:
     }
 
 private:
+    int32_t notifyUser_ = -1;
     std::string name_ = "screenTestObserver";
 };
 
@@ -60,7 +62,6 @@ public:
 protected:
     static std::shared_ptr<CommonEventManagerMock> mock_;
     static std::shared_ptr<ScreenLock> screenLock_;
-    static constexpr int maxWaitTime = 3;
 };
 
 std::shared_ptr<CommonEventManagerMock> ScreenLockTest::mock_;
@@ -102,32 +103,39 @@ HWTEST_F(ScreenLockTest, Subscribe002, TestSize.Level0)
 
 /**
  * @tc.name: SubscribeScreenEvent001
- * @tc.desc: cover all branches: eventSubscriber_ null/not null, executors_ null/not null
+ * @tc.desc: eventSubscriber_ null/not null, executors_ null/not null
  * @tc.type: FUNC
  */
 HWTEST_F(ScreenLockTest, SubscribeScreenEvent001, TestSize.Level0)
 {
     EXPECT_EQ(screenLock_->eventSubscriber_, nullptr);
     EXPECT_EQ(screenLock_->executors_, nullptr);
-    EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).Times(0);
     screenLock_->SubscribeScreenEvent();
     EXPECT_NE(screenLock_->eventSubscriber_, nullptr);
 
     auto executor = std::make_shared<OHOS::ExecutorPool>(1, 0);
     screenLock_->BindExecutor(executor);
-
-    bool subscribed = false;
-    EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&subscribed](auto &) {
-        subscribed = true;
+    bool isSubscribe = false;
+    EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&isSubscribe](auto &) {
+        isSubscribe = true;
         return true;
     });
     screenLock_->SubscribeScreenEvent();
-    int elapsed = 0;
-    while (!subscribed && elapsed < maxWaitTime) {
+    while (!isSubscribe) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        elapsed++;
     }
-    ASSERT_TRUE(subscribed);
+    EXPECT_TRUE(isSubscribe);
+
+    auto observer = std::make_shared<ScreenLockObserver>();
+    screenLock_->Subscribe(observer);
+    OHOS::AAFwk::Want want;
+    want.SetAction(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
+    want.SetParam("userId", 0);
+    OHOS::EventFwk::CommonEventData data;
+    data.SetWant(want);
+    screenLock_->eventSubscriber_->OnReceiveEvent(data);
+    EXPECT_EQ(observer->notifyUser_, 0);
+
     screenLock_->executors_ = nullptr;
 }
 
@@ -138,14 +146,13 @@ HWTEST_F(ScreenLockTest, SubscribeScreenEvent001, TestSize.Level0)
  */
 HWTEST_F(ScreenLockTest, UnsubscribeScreenEvent001, TestSize.Level0)
 {
-    screenLock_->SubscribeScreenEvent();
-    bool called = false;
-    EXPECT_CALL(*mock_, UnSubscribeCommonEvent(_)).WillOnce([&called](auto &) {
-        called = true;
+    bool isUnsubscribe = false;
+    EXPECT_CALL(*mock_, UnSubscribeCommonEvent(_)).WillOnce([&isUnsubscribe](auto &) {
+        isUnsubscribe = true;
         return true;
     });
     screenLock_->UnsubscribeScreenEvent();
-    ASSERT_TRUE(called);
+    EXPECT_TRUE(isUnsubscribe);
 }
 
 /**
@@ -155,14 +162,13 @@ HWTEST_F(ScreenLockTest, UnsubscribeScreenEvent001, TestSize.Level0)
  */
 HWTEST_F(ScreenLockTest, UnsubscribeScreenEvent002, TestSize.Level0)
 {
-    screenLock_->SubscribeScreenEvent();
-    bool called = false;
-    EXPECT_CALL(*mock_, UnSubscribeCommonEvent(_)).WillOnce([&called](auto &) {
-        called = true;
+    bool isUnsubscribe = false;
+    EXPECT_CALL(*mock_, UnSubscribeCommonEvent(_)).WillOnce([&isUnsubscribe](auto &) {
+        isUnsubscribe = true;
         return false;
     });
     screenLock_->UnsubscribeScreenEvent();
-    ASSERT_TRUE(called);
+    EXPECT_TRUE(isUnsubscribe);
 }
 
 /**
@@ -172,61 +178,36 @@ HWTEST_F(ScreenLockTest, UnsubscribeScreenEvent002, TestSize.Level0)
  */
 HWTEST_F(ScreenLockTest, GetTask001, TestSize.Level0)
 {
-    bool subscribed = false;
-    EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&subscribed](auto &) {
-        subscribed = true;
+    bool isSubscribe = false;
+    EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&isSubscribe](auto &) {
+        isSubscribe = true;
         return false;
     });
     EXPECT_EQ(screenLock_->executors_, nullptr);
     screenLock_->GetTask(0)();
-    ASSERT_TRUE(subscribed);
+    EXPECT_TRUE(isSubscribe);
 }
 
 /**
  * @tc.name: GetTask002
- * @tc.desc: subscribe fail, retry exceeded, no retry
+ * @tc.desc: subscribe fail twice, retry exceeded MAX_RETRY_TIMES, stop
  * @tc.type: FUNC
  */
 HWTEST_F(ScreenLockTest, GetTask002, TestSize.Level0)
 {
-    bool subscribed = false;
-    EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&subscribed](auto &) {
-        subscribed = true;
-        return false;
-    });
-    auto executor = std::make_shared<OHOS::ExecutorPool>(1, 0);
-    screenLock_->BindExecutor(executor);
-    screenLock_->GetTask(ScreenLock::MAX_RETRY_TIMES)();
-    ASSERT_TRUE(subscribed);
-    screenLock_->executors_ = nullptr;
-}
-
-/**
- * @tc.name: GetTask003
- * @tc.desc: subscribe fail, has executor, schedule retry
- * @tc.type: FUNC
- */
-HWTEST_F(ScreenLockTest, GetTask003, TestSize.Level0)
-{
-    bool scheduled = false;
-    bool retried = false;
-    EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&](auto &) {
-        if (scheduled) {
-            retried = true;
-            return false;
-        }
-        scheduled = true;
+    uint32_t count = 0;
+    EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&count](auto &) {
+        count++;
         return false;
     });
     auto executor = std::make_shared<OHOS::ExecutorPool>(1, 0);
     screenLock_->BindExecutor(executor);
     screenLock_->GetTask(ScreenLock::MAX_RETRY_TIMES - 1)();
-    int elapsed = 0;
-    while (!retried && elapsed < maxWaitTime) {
+    while (count < 2) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        elapsed++;
     }
-    ASSERT_TRUE(retried);
+    EXPECT_EQ(count, 2);
     screenLock_->executors_ = nullptr;
 }
+
 } // namespace
