@@ -1410,7 +1410,6 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange002, TestSize.Level0)
     store->delegate_ = &mockDelegate;
     ASSERT_NE(store->delegate_, nullptr);
     store->PublishCacheChange();
-    delete store;
 }
 
 /**
@@ -1434,7 +1433,6 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange003, TestSize.Level0)
     mockDelegate.localEntries_.push_back(entry);
     
     store->PublishCacheChange();
-    delete store;
 }
 
 /**
@@ -1458,7 +1456,6 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange004, TestSize.Level0)
     mockDelegate.localEntries_.push_back(entry);
     
     store->PublishCacheChange();
-    delete store;
 }
 
 /**
@@ -1482,7 +1479,6 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange005, TestSize.Level0)
     mockDelegate.localEntries_.push_back(entry);
     
     store->PublishCacheChange();
-    delete store;
 }
 
 /**
@@ -1516,7 +1512,6 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange006, TestSize.Level0)
     mockDelegate.localEntries_.push_back(entry3);
     
     store->PublishCacheChange();
-    delete store;
 }
 
 /**
@@ -1550,7 +1545,6 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange007, TestSize.Level0)
     mockDelegate.localEntries_.push_back(entry3);
     
     store->PublishCacheChange();
-    delete store;
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
