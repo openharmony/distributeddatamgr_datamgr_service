@@ -924,11 +924,11 @@ int32_t KVDBServiceImpl::ResolveAutoLaunch(const std::string &identifier, DBLaun
         auto store = AutoCache::GetInstance().GetStore(storeMeta, watchers);
         if (isTripleIdentifierEqual && store != nullptr) {
             store->SetEqualIdentifier(storeMeta.appId, storeMeta.storeId, accountId);
-        }
-        AutoLaunchMetaData launchData;
-        if (watchers.empty() && MetaDataManager::GetInstance().LoadMeta(storeMeta.GetAutoLaunchKey(), launchData,
-            true)) {
-            store->SetCacheFlag(true);
+            AutoLaunchMetaData launchData;
+            if (watchers.empty() && MetaDataManager::GetInstance().LoadMeta(storeMeta.GetAutoLaunchKey(), launchData,
+                true)) {
+                store->SetCacheFlag(true);
+            }
         }
         ZLOGI("isTriple:%{public}d,storeId:%{public}s,appId:%{public}s,size:%{public}zu,user:%{public}s",
             isTripleIdentifierEqual, Anonymous::Change(storeMeta.storeId).c_str(), storeMeta.appId.c_str(),
