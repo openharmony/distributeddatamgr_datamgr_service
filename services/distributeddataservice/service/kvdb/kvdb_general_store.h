@@ -153,7 +153,7 @@ private:
     int32_t ref_ = 1;
     mutable std::shared_timed_mutex rwMutex_;
     StoreInfo storeInfo_;
-    StoreMetaData meta_;
+    StoreMetaData metaData_;
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;
@@ -161,7 +161,7 @@ private:
     bool enableCloud_ = false;
     bool isPublic_ = false;
     static const std::map<DBStatus, GenErr> dbStatusMap_;
-    bool isCacheWatcher_ = false;
+    std::atomic<bool> isCacheWatcher_ = false;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H
