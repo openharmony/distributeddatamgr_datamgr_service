@@ -1282,10 +1282,10 @@ HWTEST_F(KVDBGeneralStoreTest, SetCacheFlagTest, TestSize.Level0)
     ASSERT_NE(store, nullptr);
 
     store->SetCacheFlag(true);
-    EXPECT_EQ(store->isCacheWatcher_, true);
+    EXPECT_EQ(store->isCacheWatcher_.load(), true);
 
     store->SetCacheFlag(false);
-    EXPECT_EQ(store->isCacheWatcher_, false);
+    EXPECT_EQ(store->isCacheWatcher_.load(), false);
 }
 
 /**

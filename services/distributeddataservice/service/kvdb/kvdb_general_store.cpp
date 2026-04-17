@@ -53,6 +53,7 @@ using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DMAdapter = DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
+using ChangeOp = DistributedData::GeneralWatcher::ChangeOp;
 static constexpr const char *FT_CLOUD_SYNC = "CLOUD_SYNC";
 constexpr int UUID_WIDTH = 4;
 const std::map<DBStatus, KVDBGeneralStore::GenErr> KVDBGeneralStore::dbStatusMap_ = {
@@ -173,7 +174,7 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     : observer_(std::make_shared<ObserverProxy>(this)),
     manager_(meta.appId, meta.appId == Bootstrap::GetInstance().GetProcessLabel() ? defaultAccountId : meta.user,
         meta.instanceId),
-    meta_(meta)
+    metaData_(meta)
 {
     if (!Constant::IsValidPath(meta.dataDir)) {
         return;
@@ -676,7 +677,7 @@ int32_t KVDBGeneralStore::UnregisterDetailProgressObserver()
 
 void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data)
 {
-    if (!HasWatcher()) {
+    if (!HasWatcher() || store_ == nullptr) {
         return;
     }
     store_->PostDataChange();
@@ -685,7 +686,7 @@ void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::strin
     genOrigin.id.push_back(originalId);
     genOrigin.store = storeId_;
     Watcher::ChangeInfo changeInfo;
-    for (uint32_t i = 0; i < DistributedDB::OP_BUTT; ++i) {
+    for (uint32_t i = 0; i < ChangeOp::OP_BUTT; ++i) {
         auto &info = changeInfo[storeId_][i];
         for (auto &priData : data.primaryData[i]) {
             Watcher::PRIValue value;
@@ -704,7 +705,7 @@ void KVDBGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::strin
 
 void KVDBGeneralStore::ObserverProxy::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
-    if (!HasWatcher()) {
+    if (!HasWatcher() || store_ == nullptr) {
         return;
     }
     store_->PostDataChange();
@@ -712,9 +713,9 @@ void KVDBGeneralStore::ObserverProxy::OnChange(const DistributedDB::KvStoreChang
     const auto &deletes = data.GetEntriesDeleted();
     const auto &updates = data.GetEntriesUpdated();
     Watcher::ChangeData changeData;
-    ConvertChangeData(inserts, changeData[storeId_][DistributedDB::OP_INSERT]);
-    ConvertChangeData(deletes, changeData[storeId_][DistributedDB::OP_DELETE]);
-    ConvertChangeData(updates, changeData[storeId_][DistributedDB::OP_UPDATE]);
+    ConvertChangeData(inserts, changeData[storeId_][ChangeOp::OP_INSERT]);
+    ConvertChangeData(deletes, changeData[storeId_][ChangeOp::OP_DELETE]);
+    ConvertChangeData(updates, changeData[storeId_][ChangeOp::OP_UPDATE]);
     GenOrigin genOrigin;
     genOrigin.origin = GenOrigin::ORIGIN_NEARBY;
     genOrigin.store = storeId_;
@@ -728,23 +729,26 @@ void KVDBGeneralStore::ObserverProxy::SaveChangeData(const DistributedDB::KvStor
     const auto &inserts = data.GetEntriesInserted();
     for (auto &entry : inserts) {
         std::vector<uint8_t> data;
-        data.push_back(DistributedDB::OP_INSERT);
+        data.push_back(ChangeOp::OP_INSERT);
         data.insert(data.end(), entry.value.begin(), entry.value.end());
         values.push_back({ entry.key, data });
     }
     const auto &deletes = data.GetEntriesDeleted();
     for (auto &entry : deletes) {
         std::vector<uint8_t> data;
-        data.push_back(DistributedDB::OP_DELETE);
+        data.push_back(ChangeOp::OP_DELETE);
         data.insert(data.end(), entry.value.begin(), entry.value.end());
         values.push_back({ entry.key, data });
     }
     const auto &updates = data.GetEntriesUpdated();
     for (auto &entry : updates) {
         std::vector<uint8_t> data;
-        data.push_back(DistributedDB::OP_UPDATE);
+        data.push_back(ChangeOp::OP_UPDATE);
         data.insert(data.end(), entry.value.begin(), entry.value.end());
         values.push_back({ entry.key, data });
+    }
+    if (store_ == nullptr || !IsValid()) {
+        return;
     }
     store_->delegate_->PutLocalBatch(values);
 }
@@ -934,15 +938,19 @@ int32_t KVDBGeneralStore::StopCloudSync()
 
 void KVDBGeneralStore::SetCacheFlag(bool isCache)
 {
-    isCacheWatcher_ = isCache;
+    isCacheWatcher_.store(isCache);
 }
 
 void KVDBGeneralStore::PublishCacheChange()
 {
+    if (!IsValid()) {
+        return;
+    }
     std::vector<DistributedDB::Entry> entries;
-    Key keyPrefix;
+    Key keyPrefix = {};
     delegate_->GetLocalEntries(keyPrefix, entries);
     if (entries.empty()) {
+        ZLOGI("entries is empey, do not beed publish");
         return;
     }
     Watcher::ChangeData changeData;
@@ -950,12 +958,12 @@ void KVDBGeneralStore::PublishCacheChange()
     for (auto &entry : entries) {
         std::vector<uint8_t> data(entry.value.begin() + 1, entry.value.end());
         auto value = std::vector<Value>{ entry.key, data };
-        if (entry.value[0] == DistributedDB::OP_INSERT) {
-            changeData[observer_->storeId_][DistributedDB::OP_INSERT].push_back(value);
-        } else if (entry.value[0] == DistributedDB::OP_DELETE) {
-            changeData[observer_->storeId_][DistributedDB::OP_DELETE].push_back(value);
-        } else if (entry.value[0] == DistributedDB::OP_UPDATE) {
-            changeData[observer_->storeId_][DistributedDB::OP_UPDATE].push_back(value);
+        if (entry.value[0] == ChangeOp::OP_INSERT) {
+            changeData[observer_->storeId_][ChangeOp::OP_INSERT].push_back(value);
+        } else if (entry.value[0] == ChangeOp::OP_DELETE) {
+            changeData[observer_->storeId_][ChangeOp::OP_DELETE].push_back(value);
+        } else if (entry.value[0] == ChangeOp::OP_UPDATE) {
+            changeData[observer_->storeId_][ChangeOp::OP_UPDATE].push_back(value);
         }
         keys.push_back(entry.key);
     }
@@ -963,18 +971,20 @@ void KVDBGeneralStore::PublishCacheChange()
     Watcher::Origin genOrigin;
     genOrigin.origin = Watcher::Origin::ORIGIN_NEARBY;
     genOrigin.store = observer_->storeId_;
+    if (observer_->watcher_ == nullptr) {
+        return;
+    }
     observer_->watcher_->OnChange(genOrigin, {}, std::move(changeData));
 }
 
 void KVDBGeneralStore::PostDataChange()
 {
     RemoteChangeEvent::DataInfo info;
-    info.userId = meta_.user;
-    info.storeId = meta_.storeId;
-    info.deviceId = meta_.deviceId;
-    info.bundleName = meta_.bundleName;
+    info.userId = metaData_.user;
+    info.storeId = metaData_.storeId;
+    info.deviceId = metaData_.deviceId;
+    info.bundleName = metaData_.bundleName;
     std::vector<std::string> tables;
-    info.tables = tables;
     info.changeType = 1;
     auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
