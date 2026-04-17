@@ -747,7 +747,7 @@ void KVDBGeneralStore::ObserverProxy::SaveChangeData(const DistributedDB::KvStor
         data.insert(data.end(), entry.value.begin(), entry.value.end());
         values.push_back({ entry.key, data });
     }
-    if (store_ == nullptr || !IsValid()) {
+    if (store_ == nullptr || !store_->IsValid()) {
         return;
     }
     store_->delegate_->PutLocalBatch(values);
