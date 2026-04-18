@@ -576,8 +576,11 @@ Status KVDBServiceImpl::Subscribe(const AppId &appId, const StoreId &storeId, in
     AutoLaunchMetaData launchData;
     if (MetaDataManager::GetInstance().LoadMeta(metaData.GetAutoLaunchKey(), launchData, true)) {
         auto store = AutoCache::GetInstance().GetStore(metaData, GetWatchers(metaData.tokenId, storeId, metaData.user));
-        if (store != nullptr && executors_ != nullptr) {
-            store->SetCacheFlag(false);
+        if (store == nullptr) {
+            return;
+        }
+        store->SetCacheFlag(false);
+        if (executors_ != nullptr) {
             executors_->Execute([store]() {
                 store->PublishCacheChange();
             });

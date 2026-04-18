@@ -52,6 +52,7 @@ using DMAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
 using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
+using ChangeOp = GeneralWatcher::ChangeOp;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const char *INVALID_APPID = "invalid_kvdb_store_test";
@@ -1429,7 +1430,7 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange003, TestSize.Level0)
     
     DistributedDB::Entry entry;
     entry.key = {'k', 'e', 'y', '1'};
-    entry.value = {DistributedDB::OP_INSERT, 'd', 'a', 't', 'a'};
+    entry.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a'};
     mockDelegate.localEntries_.push_back(entry);
     
     store->PublishCacheChange();
@@ -1452,7 +1453,7 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange004, TestSize.Level0)
     
     DistributedDB::Entry entry;
     entry.key = {'k', 'e', 'y', '2'};
-    entry.value = {DistributedDB::OP_DELETE, 'd', 'a', 't', 'a'};
+    entry.value = {ChangeOp::OP_DELETE, 'd', 'a', 't', 'a'};
     mockDelegate.localEntries_.push_back(entry);
     
     store->PublishCacheChange();
@@ -1475,7 +1476,7 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange005, TestSize.Level0)
     
     DistributedDB::Entry entry;
     entry.key = {'k', 'e', 'y', '3'};
-    entry.value = {DistributedDB::OP_UPDATE, 'd', 'a', 't', 'a'};
+    entry.value = {ChangeOp::OP_UPDATE, 'd', 'a', 't', 'a'};
     mockDelegate.localEntries_.push_back(entry);
     
     store->PublishCacheChange();
@@ -1498,17 +1499,17 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange006, TestSize.Level0)
     
     DistributedDB::Entry entry1;
     entry1.key = {'k', 'e', 'y', '1'};
-    entry1.value = {DistributedDB::OP_INSERT, 'd', 'a', 't', 'a', '1'};
+    entry1.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a', '1'};
     mockDelegate.localEntries_.push_back(entry1);
     
     DistributedDB::Entry entry2;
     entry2.key = {'k', 'e', 'y', '2'};
-    entry2.value = {DistributedDB::OP_DELETE, 'd', 'a', 't', 'a', '2'};
+    entry2.value = {ChangeOp::OP_DELETE, 'd', 'a', 't', 'a', '2'};
     mockDelegate.localEntries_.push_back(entry2);
     
     DistributedDB::Entry entry3;
     entry3.key = {'k', 'e', 'y', '3'};
-    entry3.value = {DistributedDB::OP_UPDATE, 'd', 'a', 't', 'a', '3'};
+    entry3.value = {ChangeOp::OP_UPDATE, 'd', 'a', 't', 'a', '3'};
     mockDelegate.localEntries_.push_back(entry3);
     
     store->PublishCacheChange();
@@ -1528,20 +1529,20 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange007, TestSize.Level0)
     store->observer_->storeId_ = "test_store";
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
-    
+
     DistributedDB::Entry entry1;
     entry1.key = {'k', 'e', 'y', '1'};
-    entry1.value = {DistributedDB::OP_INSERT, 'd', 'a', 't', 'a', '1'};
+    entry1.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a', '1'};
     mockDelegate.localEntries_.push_back(entry1);
-    
+
     DistributedDB::Entry entry2;
     entry2.key = {'k', 'e', 'y', '2'};
-    entry2.value = {DistributedDB::OP_INSERT, 'd', 'a', 't', 'a', '2'};
+    entry2.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a', '2'};
     mockDelegate.localEntries_.push_back(entry2);
-    
+
     DistributedDB::Entry entry3;
     entry3.key = {'k', 'e', 'y', '3'};
-    entry3.value = {DistributedDB::OP_INSERT, 'd', 'a', 't', 'a', '3'};
+    entry3.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a', '3'};
     mockDelegate.localEntries_.push_back(entry3);
     
     store->PublishCacheChange();

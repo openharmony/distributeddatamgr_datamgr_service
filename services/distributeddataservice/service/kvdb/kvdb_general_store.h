@@ -125,7 +125,8 @@ private:
         using DBChangeData = DistributedDB::ChangedData;
         using DBEntry = DistributedDB::Entry;
         using GenOrigin = Watcher::Origin;
-        explicit ObserverProxy(KVDBGeneralStore* store) : store_(store) {}
+        explicit ObserverProxy(std::shared_ptr<KVDBGeneralStore> store) :
+            store_(std::make_shared<KVDBGeneralStore>(store)) {}
         ~ObserverProxy() = default;
         void OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data) override;
         void OnChange(const DistributedDB::KvStoreChangedData &data) override;
@@ -140,7 +141,7 @@ private:
         friend KVDBGeneralStore;
         Watcher *watcher_ = nullptr;
         std::string storeId_;
-        KVDBGeneralStore* store_ = nullptr;
+        std::shared_ptr<KVDBGeneralStore> store_;
     };
 
     static constexpr uint8_t META_COMPRESS_RATE = 10;
