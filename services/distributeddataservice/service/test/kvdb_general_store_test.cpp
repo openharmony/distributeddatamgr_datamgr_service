@@ -1579,7 +1579,7 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange009, TestSize.Level0)
     entry.value = {DistributedDB::OP_INSERT, 'd', 'a', 't', 'a'};
     mockDelegate.localEntries_.push_back(entry);
     store->observer_->watcher_ = nullptr;
-    ASSERT_NE(store->observer_->watcher_, nullptr);
+    ASSERT_EQ(store->observer_->watcher_, nullptr);
     store->PublishCacheChange();
 }
 } // namespace DistributedDataTest
