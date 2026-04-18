@@ -1547,5 +1547,40 @@ HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange007, TestSize.Level0)
     
     store->PublishCacheChange();
 }
+
+/**
+* @tc.name: PublishCacheChange008
+* @tc.desc: publish cache change data test with empty entries
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange008, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    store->delegate_ = nullptr;
+    ASSERT_EQ(store->delegate_, nullptr);
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange009
+* @tc.desc: publish cache change data test with empty entries
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange009, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    ASSERT_NE(store->delegate_, nullptr);
+    DistributedDB::Entry entry;
+    entry.key = {'k', 'e', 'y', '1'};
+    entry.value = {DistributedDB::OP_INSERT, 'd', 'a', 't', 'a'};
+    mockDelegate.localEntries_.push_back(entry);
+    store->observer_->watcher_ = nullptr;
+    ASSERT_NE(store->observer_->watcher_, nullptr);
+    store->PublishCacheChange();
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
