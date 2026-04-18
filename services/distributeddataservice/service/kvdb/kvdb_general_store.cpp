@@ -942,7 +942,7 @@ void KVDBGeneralStore::SetCacheFlag(bool isCache)
 
 void KVDBGeneralStore::PublishCacheChange()
 {
-    if (!IsValid() || observer_ ==nullptr) {
+    if (!IsValid() || observer_ == nullptr || observer_->watcher_ == nullptr) {
         return;
     }
     std::vector<DistributedDB::Entry> entries;
@@ -950,9 +950,6 @@ void KVDBGeneralStore::PublishCacheChange()
     delegate_->GetLocalEntries(keyPrefix, entries);
     if (entries.empty()) {
         ZLOGW("entries is empty, do not need publish");
-        return;
-    }
-    if (observer_->watcher_ == nullptr) {
         return;
     }
     Watcher::ChangeData changeData;
