@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-#include "screen_lock.h"
-
+#include <atomic>
 #include <gtest/gtest.h>
+
+#include "screen_lock.h"
 #include "mock/common_event_manager_mock.h"
 
 namespace {
@@ -115,7 +116,7 @@ HWTEST_F(ScreenLockTest, SubscribeScreenEvent001, TestSize.Level0)
 
     auto executor = std::make_shared<OHOS::ExecutorPool>(1, 0);
     screenLock_->BindExecutor(executor);
-    bool isSubscribe = false;
+    std::atomic<bool> isSubscribe = false;
     EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&isSubscribe](auto &) {
         isSubscribe = true;
         return true;
@@ -195,7 +196,7 @@ HWTEST_F(ScreenLockTest, GetTask001, TestSize.Level0)
  */
 HWTEST_F(ScreenLockTest, GetTask002, TestSize.Level0)
 {
-    uint32_t count = 0;
+    std::atomic<uint32_t> count = 0;
     EXPECT_CALL(*mock_, SubscribeCommonEvent(_)).WillRepeatedly([&count](auto &) {
         count++;
         return false;
