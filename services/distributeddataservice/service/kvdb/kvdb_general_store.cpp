@@ -942,22 +942,27 @@ void KVDBGeneralStore::SetCacheFlag(bool isCache)
 
 void KVDBGeneralStore::PublishCacheChange()
 {
-    if (!IsValid()) {
+    if (!IsValid() || observer_ ==nullptr) {
         return;
     }
     std::vector<DistributedDB::Entry> entries;
     Key keyPrefix = {};
     delegate_->GetLocalEntries(keyPrefix, entries);
     if (entries.empty()) {
-        ZLOGW("entries is empty, do not beed publish");
+        ZLOGW("entries is empty, do not need publish");
         return;
     }
-    if (observer_ ==nullptr || observer_->watcher_ == nullptr) {
+    if (observer_->watcher_ == nullptr) {
         return;
     }
     Watcher::ChangeData changeData;
     std::vector<DistributedDB::Key> keys;
     for (auto &entry : entries) {
+        if (entry.value.empty()) {
+            keys.push_back(entry.key);
+            ZLOGW("entry value is empty, skip");
+            continue;
+        }
         std::vector<uint8_t> data(entry.value.begin() + 1, entry.value.end());
         auto value = std::vector<Value>{ entry.key, data };
         if (entry.value[0] == ChangeOp::OP_INSERT) {
