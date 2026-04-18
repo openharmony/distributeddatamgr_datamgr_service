@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "bootstrap.h"
+#include "changeevent/remote_change_event.h"
 #include "checker/checker_manager.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_server.h"
@@ -34,6 +35,7 @@
 #include "kvstore_meta_manager.h"
 #include "kvstore_sync_manager.h"
 #include "log_print.h"
+#include "metadata/auto_launch_meta_data.h"
 #include "mock/access_token_mock.h"
 #include "mock/meta_data_manager_mock.h"
 #include "nativetoken_kit.h"
@@ -44,10 +46,11 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 
+using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
-using Action = OHOS::DistributedData::MetaDataManager::Action;
+using MetaAction = OHOS::DistributedData::MetaDataManager::Action;
 using AppId = OHOS::DistributedKv::AppId;
 using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
 using DistributedKvDataManager = OHOS::DistributedKv::DistributedKvDataManager;
@@ -1336,13 +1339,13 @@ HWTEST_F(KvdbServiceImplTest, ConvertType, TestSize.Level0)
 */
 HWTEST_F(KvdbServiceImplTest, ConvertAction, TestSize.Level0)
 {
-    auto status = kvdbServiceImpl_->ConvertAction(Action::INSERT);
+    auto status = kvdbServiceImpl_->ConvertAction(MetaAction::INSERT);
     EXPECT_EQ(status, SwitchState::INSERT);
-    status = kvdbServiceImpl_->ConvertAction(Action::UPDATE);
+    status = kvdbServiceImpl_->ConvertAction(MetaAction::UPDATE);
     EXPECT_EQ(status, SwitchState::UPDATE);
-    status = kvdbServiceImpl_->ConvertAction(Action::DELETE);
+    status = kvdbServiceImpl_->ConvertAction(MetaAction::DELETE);
     EXPECT_EQ(status, SwitchState::DELETE);
-    auto action = static_cast<Action>(Action::DELETE + 1);
+    auto action = static_cast<MetaAction>(MetaAction::DELETE + 1);
     status = kvdbServiceImpl_->ConvertAction(action);
     EXPECT_EQ(status, SwitchState::INSERT);
 }
@@ -1737,6 +1740,274 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithoutCustomDir002, TestSize.Level0)
     ASSERT_EQ(metaData.hapName, "test.hap");
     ASSERT_EQ(metaData.isAutoSync, false);
     ASSERT_EQ(metaData.isEncrypt, true);
+}
+
+/**
+* @tc.name: SubscribeWithAutoLaunchTest
+* @tc.desc: Test Subscribe with AutoLaunchMetaData
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, SubscribeWithAutoLaunchTest, TestSize.Level0)
+{
+    StoreId id;
+    id.storeId = "auto_launch_test";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillOnce(testing::Return(true))
+        .WillRepeatedly(testing::Return(true));
+
+    sptr<OHOS::DistributedKv::IKvStoreObserver> observer;
+    status = kvdbServiceImpl_->Subscribe(appId, id, 0, observer);
+
+    ASSERT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: AfterCreateWithLaunchInfoTest
+* @tc.desc: Test AfterCreate with new launch info logic
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, AfterCreateWithLaunchInfoTest, TestSize.Level0)
+{
+    StoreId id;
+    id.storeId = "launch_info_test";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+    std::vector<uint8_t> password;
+    status = kvdbServiceImpl_->AfterCreate(appId, id, create, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: AfterCreateWithExistingLaunchInfoTest
+* @tc.desc: Test AfterCreate when launch info already exists
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, AfterCreateWithExistingLaunchInfoTest, TestSize.Level0)
+{
+    StoreId id;
+    id.storeId = "existing_launch_info_test";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+
+    std::vector<uint8_t> password;
+
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(_, _, _))
+        .WillOnce(testing::Return(true))
+        .WillRepeatedly(testing::Return(true));
+
+    status = kvdbServiceImpl_->AfterCreate(appId, id, create, password);
+    ASSERT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: ResolveAutoLaunchWithCacheFlagTest
+* @tc.desc: Test ResolveAutoLaunch with cache flag setting
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunchWithCacheFlagTest, TestSize.Level0)
+{
+        StoreId id;
+    id.storeId = "id";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    EXPECT_NE(kvStore, nullptr);
+    EXPECT_EQ(status, Status::SUCCESS);
+    std::string identifier = "identifier";
+    DistributedKv::KVDBServiceImpl::DBLaunchParam launchParam;
+    launchParam.userId = "user1";
+    auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
+    EXPECT_EQ(result, Status::SUCCESS);
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+    std::vector<StoreMetaData> datas;
+    CreateStoreMetaData(datas, launchParam);
+    EXPECT_CALL(*metaDataMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(datas), testing::Return(true)));
+    result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
+    EXPECT_EQ(result, Status::SUCCESS);
+}
+
+/**
+* @tc.name: ResolveAutoLaunchWithoutCacheFlagTest
+* @tc.desc: Test ResolveAutoLaunch without cache flag setting
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunchWithoutCacheFlagTest, TestSize.Level0)
+{
+    StoreId id;
+    id.storeId = "no_cache_flag_test";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    EXPECT_NE(kvStore, nullptr);
+    EXPECT_EQ(status, Status::SUCCESS);
+
+    std::string identifier = "no_cache_identifier";
+    DistributedKv::KVDBServiceImpl::DBLaunchParam launchParam;
+    launchParam.userId = "user1";
+
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+
+    std::vector<StoreMetaData> datas;
+    CreateStoreMetaData(datas, launchParam);
+    auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
+    EXPECT_EQ(result, Status::SUCCESS);
+}
+
+/**
+* @tc.name: SaveLaunchInfoTest
+* @tc.desc: Test SaveLaunchInfo function
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, SaveLaunchInfoTest, TestSize.Level0)
+{
+    StoreMetaData meta;
+    meta.user = "test_user";
+    meta.storeId = "test_store";
+    meta.deviceId = "test_device";
+    meta.bundleName = "test_bundle";
+
+    kvdbServiceImpl_->executors_ = std::make_shared<ExecutorPool>(1, 0);
+
+    auto postResult = EventCenter::GetInstance().PostEvent(
+        std::make_unique<DistributedData::RemoteChangeEvent>(
+        DistributedData::RemoteChangeEvent::RDB_META_SAVE,
+        DistributedData::RemoteChangeEvent::DataInfo{}));
+    EXPECT_EQ(postResult, 1);
+
+    kvdbServiceImpl_->SaveLaunchInfo(meta);
+}
+
+/**
+* @tc.name: ResolveAutoLaunch_StoreTypeOutOfRange
+* @tc.desc: Test ResolveAutoLaunch with store type out of range
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch_StoreTypeOutOfRange, TestSize.Level0)
+{
+    StoreId id;
+    id.storeId = "store_type_test";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    EXPECT_NE(kvStore, nullptr);
+    EXPECT_EQ(status, Status::SUCCESS);
+
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+
+    std::vector<StoreMetaData> datas;
+    StoreMetaData meta;
+    meta.storeType = StoreMetaData::StoreType::STORE_KV_BEGIN - 1;
+    meta.user = "user1";
+    meta.appId = "test_app";
+    meta.storeId = "test_store";
+    meta.tokenId = TOKENID1;
+    datas.push_back(meta);
+
+    EXPECT_CALL(*metaDataMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(datas), testing::Return(true)));
+
+    std::string identifier = "test_identifier";
+    DistributedKv::KVDBServiceImpl::DBLaunchParam launchParam;
+    launchParam.userId = "user1";
+
+    auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
+    EXPECT_EQ(result, Status::SUCCESS);
+}
+
+/**
+* @tc.name: ResolveAutoLaunch_UserIdMismatch
+* @tc.desc: Test ResolveAutoLaunch with user ID mismatch
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch_UserIdMismatch, TestSize.Level0)
+{
+    StoreId id;
+    id.storeId = "user_mismatch_test";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    EXPECT_NE(kvStore, nullptr);
+    EXPECT_EQ(status, Status::SUCCESS);
+
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+
+    std::vector<StoreMetaData> datas;
+    StoreMetaData meta;
+    meta.storeType = StoreMetaData::StoreType::STORE_KV_BEGIN;
+    meta.user = "user2";
+    meta.appId = "test_app";
+    meta.storeId = "test_store";
+    meta.tokenId = TOKENID1;
+    datas.push_back(meta);
+
+    EXPECT_CALL(*metaDataMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(datas), testing::Return(true)));
+
+    std::string identifier = "test_identifier";
+    DistributedKv::KVDBServiceImpl::DBLaunchParam launchParam;
+    launchParam.userId = "user1";
+
+    auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
+    EXPECT_EQ(result, Status::SUCCESS);
+}
+
+/**
+* @tc.name: ResolveAutoLaunch_AppIdProcessLabel
+* @tc.desc: Test ResolveAutoLaunch with appId equal to process label
+* @tc.type: FUNC
+*/
+HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch_AppIdProcessLabel, TestSize.Level0)
+{
+    StoreId id;
+    id.storeId = "app_process_label_test";
+    Status status = manager.GetSingleKvStore(create, appId, id, kvStore);
+    EXPECT_NE(kvStore, nullptr);
+    EXPECT_EQ(status, Status::SUCCESS);
+
+    std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(1, 0);
+    Bootstrap::GetInstance().LoadDirectory();
+    Bootstrap::GetInstance().LoadCheckers();
+    DistributedKv::KvStoreMetaManager::GetInstance().BindExecutor(executors);
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaParameter();
+    DistributedKv::KvStoreMetaManager::GetInstance().InitMetaListener();
+
+    std::vector<StoreMetaData> datas;
+    StoreMetaData meta;
+    meta.storeType = StoreMetaData::StoreType::STORE_KV_BEGIN;
+    meta.user = "user1";
+    meta.appId = DistributedData::Bootstrap::GetInstance().GetProcessLabel();
+    meta.storeId = "test_store";
+    meta.tokenId = TOKENID1;
+    datas.push_back(meta);
+
+    EXPECT_CALL(*metaDataMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(datas), testing::Return(true)));
+
+    std::string identifier = "test_identifier";
+    DistributedKv::KVDBServiceImpl::DBLaunchParam launchParam;
+    launchParam.userId = "user1";
+
+    auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
+    EXPECT_EQ(result, Status::SUCCESS);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
