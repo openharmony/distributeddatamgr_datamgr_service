@@ -248,6 +248,8 @@ public:
     {
         return 0;
     }
+    virtual void SetCacheFlag(bool isCache) {};
+    virtual void PublishCacheChange() {};
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

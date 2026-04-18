@@ -35,6 +35,7 @@ namespace DistributedDB {
 class KvStoreNbDelegateMock : public DistributedDB::KvStoreNbDelegate {
 public:
     int32_t taskCountMock_ = 0;
+    std::vector<Entry> localEntries_;
     ~KvStoreNbDelegateMock() = default;
     DBStatus Get(const Key &key, Value &value) const;
     DBStatus GetEntries(const Key &keyPrefix, std::vector<Entry> &entries) const;
