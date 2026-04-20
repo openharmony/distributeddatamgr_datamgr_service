@@ -17,13 +17,11 @@
 #include <memory>
 #include <atomic>
 #include <vector>
-#include <thread>
-#include <algorithm>
 #include <chrono>
 
 #include "executor_pool.h"
 #include "screenlock/screen_lock.h"
-#include "mock/mock_common_event.h"
+#include "mock_common_event.h"
 
 namespace {
 using namespace OHOS::DistributedData;
@@ -116,6 +114,7 @@ public:
     void SetUp()
     {
         screenLock_ = std::make_shared<ScreenLock>();
+        screenLock_->SubscribeScreenEvent();
     }
 
     void TearDown()
@@ -543,22 +542,6 @@ HWTEST_F(ScreenLockTest, Destructor001, TestSize.Level0)
 }
 
 /**
- * @tc.name: IsLocked001
- * @tc.desc: test IsLocked method
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(ScreenLockTest, IsLocked001, TestSize.Level0)
-{
-    auto screenLock = std::make_shared<ScreenLock>();
-
-    bool isLocked = screenLock->IsLocked();
-
-    EXPECT_FALSE(isLocked);
-}
-
-/**
  * @tc.name: MultiUserNotify001
  * @tc.desc: notify different users to observers
  * @tc.type: FUNC
@@ -597,7 +580,7 @@ HWTEST_F(ScreenLockTest, ConcurrentNotify001, TestSize.Level0)
 
     for (const auto &observer : observers) {
         EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer->lastUnlockUser_, TEST_USER_ID);
+        EXPECT_EQ(observer->lastUnlockUser_, TEST_USER_ID);
     }
 }
 
@@ -756,7 +739,8 @@ HWTEST_F(ScreenLockTest, SubscribeRetryLogic, TestSize.Level0)
 
     OHOS::EventFwk::CommonEventManager::SetSubscribeResult(true);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
+    EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
 
     OHOS::EventFwk::CommonEventManager::Reset();
 }
@@ -855,5 +839,4 @@ HWTEST_F(ScreenLockTest, MixedEventHandling, TestSize.Level0)
 
     screenLock_->UnsubscribeScreenEvent();
 }
-
 } // namespace

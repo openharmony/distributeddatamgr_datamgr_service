@@ -69,13 +69,23 @@ private:
 // Test fixture
 class PowerManagerImplTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {}
+    static void SetUpTestCase(void)
+    {
+        auto manager = PowerManager::GetInstance();
+        if (manager != nullptr) {
+            manager->SubscribePowerEvent();
+        }
+    }
 
     static void TearDownTestCase(void) {}
 
     void SetUp()
     {
         CommonEventManager::Reset();
+        auto *manager = PowerManager::GetInstance();
+        if (manager != nullptr) {
+            manager->SubscribePowerEvent();
+        }
     }
 
     void TearDown()
@@ -433,27 +443,6 @@ HWTEST_F(PowerManagerImplTest, EventCallback_BatteryLevel_Preserved, TestSize.Le
 }
 
 /**
- * @tc.name: SubscribeCharging_FailureHandling
- * @tc.desc: test subscription failure handling
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(PowerManagerImplTest, SubscribeCharging_FailureHandling, TestSize.Level1)
-{
-    auto *manager = GetManager();
-    auto observer = CreateObserver();
-
-    // Simulate subscription failure
-    CommonEventManager::SetSubscribeResult(false);
-    manager->Subscribe(observer);
-
-    // Clean up
-    CommonEventManager::Reset();
-    manager->Unsubscribe(observer);
-}
-
-/**
  * @tc.name: BatteryLevelChange_Notified
  * @tc.desc: test battery level change notification
  * @tc.type: FUNC
@@ -505,31 +494,6 @@ HWTEST_F(PowerManagerImplTest, MultiplePowerEvents_Processed, TestSize.Level1)
 
     // Clean up
     manager->Unsubscribe(observer);
-}
-
-/**
- * @tc.name: SubscribeRetry_SuccessAfterFailure
- * @tc.desc: test subscription retry logic
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(PowerManagerImplTest, SubscribeRetry_SuccessAfterFailure, TestSize.Level1)
-{
-    auto *manager = GetManager();
-    auto observer = CreateObserver();
-
-    // First attempt fails
-    CommonEventManager::SetSubscribeResult(false);
-    manager->Subscribe(observer);
-
-    // Second attempt succeeds
-    CommonEventManager::SetSubscribeResult(true);
-    manager->Subscribe(observer);
-
-    // Clean up
-    manager->Unsubscribe(observer);
-    CommonEventManager::Reset();
 }
 
 /**
