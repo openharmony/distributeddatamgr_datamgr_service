@@ -15,38 +15,58 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
 
 ###############################################################################
+config("module_private_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/adapter/include/autils",
+    "${data_service_path}/adapter/include/log",
+    "${data_service_path}/adapter/include/permission",
+    "${data_service_path}/adapter/include/utils",
+    "..",
+    "mock",
+  ]
+
+  cflags = [
+    "-Werror",
+    "-Werror=vla",
+  ]
+}
+
+###############################################################################
 ohos_unittest("ScreenLockTest") {
   module_out_path = module_output_path
 
   sources = [
-    "${data_service_path}/adapter/screenlock/screen_lock.cpp",
-    "mock/common_event_manager_mock.cpp",
     "screen_lock_test.cpp",
+    "mock/mock_common_event.cpp"
   ]
+
+  configs = [ ":module_private_config" ]
 
   cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-    "-Werror",
+    "-fno-access-control",
+    "-Werror=vla",
   ]
 
-  include_dirs = [
-    "${data_service_path}/adapter/screenlock",
-  ]
   deps = [
+    "${data_service_path}/adapter/screenlock:distributeddata_screenlock",
     "${data_service_path}/framework:distributeddatasvcfwk"
   ]
 
   external_deps = [
+    "ability_base:want",
     "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
     "googletest:gtest_main",
-    "googletest:gmock",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:datamgr_common",
-    "screenlock_mgr:screenlock_client",
   ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
