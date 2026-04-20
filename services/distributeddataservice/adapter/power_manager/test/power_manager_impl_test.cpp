@@ -16,10 +16,7 @@
 #define LOG_TAG "PowerManagerImplTest"
 #include <gtest/gtest.h>
 #include <memory>
-#include <thread>
-#include <chrono>
 #include <vector>
-#include <atomic>
 
 #include "power_manager_impl.h"
 #include "mock_common_event.h"
@@ -97,10 +94,6 @@ public:
     }
 };
 
-// ============================================================================
-// A组：基础API测试（11个测试）
-// ============================================================================
-
 /**
  * @tc.name: Subscribe_NullObserver_ReturnsError
  * @tc.desc: test Subscribe with null observer returns error
@@ -130,7 +123,6 @@ HWTEST_F(PowerManagerImplTest, Subscribe_ValidObserver_ReturnsSuccess, TestSize.
     int32_t result = manager->Subscribe(observer);
     ASSERT_EQ(result, 0);
 
-    // Clean up
     manager->Unsubscribe(observer);
 }
 
@@ -317,10 +309,6 @@ HWTEST_F(PowerManagerImplTest, SubscribeUnsubscribeSubscribe_ResubscribeWorks, T
     manager->Unsubscribe(observer);
 }
 
-// ============================================================================
-// B组：事件处理测试（5个测试）
-// ============================================================================
-
 /**
  * @tc.name: OnReceiveEvent_MultipleEvents_AllCallbacksInvoked
  * @tc.desc: test OnReceiveEvent with multiple events
@@ -336,10 +324,8 @@ HWTEST_F(PowerManagerImplTest, OnReceiveEvent_MultipleEvents_AllCallbacksInvoked
 
     // Publish charging and discharging events
     CommonEventManager::PublishChargingEvent(80);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     CommonEventManager::PublishDisChargingEvent(70);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // Verify observer received both events
     ASSERT_GE(observer->GetNotifyCount(), 2);
@@ -365,12 +351,10 @@ HWTEST_F(PowerManagerImplTest, EventSubscriber_ChargingAndDisCharging_HandleCorr
 
     // Test charging
     CommonEventManager::PublishChargingEvent(50);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     ASSERT_EQ(observer->GetLastEvent(), PowerManager::Observer::PowerEvent::CHARGING);
 
     // Test discharging
     CommonEventManager::PublishDisChargingEvent(40);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     ASSERT_EQ(observer->GetLastEvent(), PowerManager::Observer::PowerEvent::DIS_CHARGING);
 
     // Clean up
@@ -392,7 +376,6 @@ HWTEST_F(PowerManagerImplTest, EventSubscriber_Charging_HandleCorrectly, TestSiz
 
     // Publish charging event
     CommonEventManager::PublishChargingEvent(75);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // Verify charging event was received
     ASSERT_GT(observer->GetNotifyCount(), 0);
@@ -417,7 +400,6 @@ HWTEST_F(PowerManagerImplTest, EventSubscriber_DisCharging_HandleCorrectly, Test
 
     // Publish discharging event
     CommonEventManager::PublishDisChargingEvent(65);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // Verify discharging event was received
     ASSERT_GT(observer->GetNotifyCount(), 0);
@@ -442,7 +424,6 @@ HWTEST_F(PowerManagerImplTest, EventCallback_BatteryLevel_Preserved, TestSize.Le
 
     // Publish charging event with battery level
     CommonEventManager::PublishChargingEvent(90);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // Verify event was received
     ASSERT_GT(observer->GetNotifyCount(), 0);
@@ -450,10 +431,6 @@ HWTEST_F(PowerManagerImplTest, EventCallback_BatteryLevel_Preserved, TestSize.Le
     // Clean up
     manager->Unsubscribe(observer);
 }
-
-// ============================================================================
-// C组：充电状态和通知测试（7个测试）
-// ============================================================================
 
 /**
  * @tc.name: SubscribeCharging_FailureHandling
@@ -491,13 +468,10 @@ HWTEST_F(PowerManagerImplTest, BatteryLevelChange_Notified, TestSize.Level1)
 
     // Publish charging events with different battery levels
     CommonEventManager::PublishChargingEvent(50);
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
     CommonEventManager::PublishChargingEvent(60);
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
     CommonEventManager::PublishChargingEvent(70);
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
     // Verify notifications were received
     ASSERT_GE(observer->GetNotifyCount(), 3);
@@ -522,10 +496,8 @@ HWTEST_F(PowerManagerImplTest, MultiplePowerEvents_Processed, TestSize.Level1)
     // Send multiple charging and discharging events
     for (int i = 0; i < 3; i++) {
         CommonEventManager::PublishChargingEvent(80 + i);
-        std::this_thread::sleep_for(std::chrono::milliseconds(15));
 
         CommonEventManager::PublishDisChargingEvent(70 - i);
-        std::this_thread::sleep_for(std::chrono::milliseconds(15));
     }
 
     // Verify observer received notifications
@@ -578,17 +550,14 @@ HWTEST_F(PowerManagerImplTest, ChargingStateTransition_Successful, TestSize.Leve
 
     // Transition to charging
     CommonEventManager::PublishChargingEvent(50);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     ASSERT_TRUE(manager->IsCharging());
 
     // Transition to discharging
     CommonEventManager::PublishDisChargingEvent(40);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     ASSERT_FALSE(manager->IsCharging());
 
     // Transition back to charging
     CommonEventManager::PublishChargingEvent(60);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     ASSERT_TRUE(manager->IsCharging());
 
     // Clean up
@@ -613,7 +582,6 @@ HWTEST_F(PowerManagerImplTest, ObserverUnsubscribe_StopsNotification, TestSize.L
 
     // Publish first event
     CommonEventManager::PublishChargingEvent(80);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     int32_t count1 = observer1->GetNotifyCount();
     int32_t count2 = observer2->GetNotifyCount();
@@ -623,7 +591,6 @@ HWTEST_F(PowerManagerImplTest, ObserverUnsubscribe_StopsNotification, TestSize.L
 
     // Publish second event
     CommonEventManager::PublishChargingEvent(85);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // observer1 count should not change
     ASSERT_EQ(observer1->GetNotifyCount(), count1);
@@ -634,10 +601,6 @@ HWTEST_F(PowerManagerImplTest, ObserverUnsubscribe_StopsNotification, TestSize.L
     // Clean up
     manager->Unsubscribe(observer2);
 }
-
-// ============================================================================
-// D组：集成和场景测试（5个测试）
-// ============================================================================
 
 /**
  * @tc.name: CompletePowerLifecycle_Successful
@@ -657,14 +620,12 @@ HWTEST_F(PowerManagerImplTest, CompletePowerLifecycle_Successful, TestSize.Level
 
     // Start charging
     CommonEventManager::PublishChargingEvent(50);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ASSERT_TRUE(manager->IsCharging());
     ASSERT_EQ(observer->GetChargingCount(), 1);
     ASSERT_EQ(observer->GetLastEvent(), PowerManager::Observer::PowerEvent::CHARGING);
 
     // Stop charging
     CommonEventManager::PublishDisChargingEvent(40);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ASSERT_FALSE(manager->IsCharging());
     ASSERT_EQ(observer->GetDisChargingCount(), 1);
     ASSERT_EQ(observer->GetLastEvent(), PowerManager::Observer::PowerEvent::DIS_CHARGING);
@@ -689,7 +650,6 @@ HWTEST_F(PowerManagerImplTest, ChargingCycleScenario_Realistic, TestSize.Level1)
     // Simulate charging from 20% to 100%
     for (int level = 20; level <= 100; level += 10) {
         CommonEventManager::PublishChargingEvent(level);
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
 
     // Should receive multiple charging events
@@ -699,7 +659,6 @@ HWTEST_F(PowerManagerImplTest, ChargingCycleScenario_Realistic, TestSize.Level1)
     // Simulate discharging from 100% to 20%
     for (int level = 100; level >= 20; level -= 10) {
         CommonEventManager::PublishDisChargingEvent(level);
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
 
     // Should receive multiple discharging events
@@ -732,7 +691,6 @@ HWTEST_F(PowerManagerImplTest, ConcurrentPowerEvents_HandledCorrectly, TestSize.
     // Publish concurrent charging events
     for (int i = 0; i < 10; i++) {
         CommonEventManager::PublishChargingEvent(80 + i);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     // Verify all observers received notifications
@@ -744,7 +702,6 @@ HWTEST_F(PowerManagerImplTest, ConcurrentPowerEvents_HandledCorrectly, TestSize.
     // Publish concurrent discharging events
     for (int i = 0; i < 10; i++) {
         CommonEventManager::PublishDisChargingEvent(70 - i);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     // Verify all observers received discharging notifications
@@ -780,7 +737,6 @@ HWTEST_F(PowerManagerImplTest, PowerStateConsistency_MultipleObservers, TestSize
 
     // All observers should see consistent state
     CommonEventManager::PublishChargingEvent(75);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     for (const auto &observer : observers) {
         ASSERT_GT(observer->GetChargingCount(), 0);
@@ -789,7 +745,6 @@ HWTEST_F(PowerManagerImplTest, PowerStateConsistency_MultipleObservers, TestSize
 
     // Change to discharging
     CommonEventManager::PublishDisChargingEvent(65);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     for (const auto &observer : observers) {
         ASSERT_GT(observer->GetDisChargingCount(), 0);
@@ -823,7 +778,6 @@ HWTEST_F(PowerManagerImplTest, MultipleObserversNotification_AllReceive, TestSiz
 
     // Publish charging event
     CommonEventManager::PublishChargingEvent(90);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     // Verify all observers received notification
     for (const auto &observer : observers) {
