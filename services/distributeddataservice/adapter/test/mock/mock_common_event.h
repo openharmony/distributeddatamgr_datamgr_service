@@ -146,7 +146,15 @@ class CommonEventManager {
 public:
     static bool SubscribeCommonEvent(const std::shared_ptr<CommonEventSubscriber> &subscriber)
     {
-        subscribers_.push_back(subscriber);
+        // Skip duplicate subscriptions (matches real CommonEventManager behavior)
+        auto it = std::find_if(subscribers_.begin(), subscribers_.end(),
+            [&subscriber](const std::weak_ptr<CommonEventSubscriber> &weak) {
+                auto locked = weak.lock();
+                return locked && locked.get() == subscriber.get();
+            });
+        if (it == subscribers_.end()) {
+            subscribers_.push_back(subscriber);
+        }
         return subscribeResult_;
     }
 
@@ -176,6 +184,10 @@ public:
 
     static void Reset()
     {
+        // Publish cleanup events to reset subscriber internal state before clearing.
+        // Use valid user IDs to avoid triggering AccountDelegate calls in OnReceiveEvent.
+        PublishScreenLockedEvent(0);
+        PublishDisChargingEvent(0);
         subscribeResult_ = true;
         unsubscribeResult_ = true;
         subscribers_.clear();

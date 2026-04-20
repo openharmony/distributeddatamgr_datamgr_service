@@ -22,13 +22,6 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "${data_service_path}/framework/include",
-    "${data_service_path}/framework/include/power_manager",
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/adapter/include/autils",
-    "${data_service_path}/adapter/include/log",
-    "${data_service_path}/adapter/include/permission",
-    "${data_service_path}/adapter/include/utils",
     "${data_service_path}/adapter/test/mock",
     "..",
   ]
@@ -45,6 +38,7 @@ ohos_unittest("PowerManagerImplTest") {
   module_out_path = module_output_path
 
   sources = [
+    "../power_manager_impl.cpp",
     "power_manager_impl_test.cpp",
   ]
 
@@ -64,7 +58,6 @@ ohos_unittest("PowerManagerImplTest") {
 
   deps = [
     "${data_service_path}/adapter/test:common_event_mock",
-    "${data_service_path}/adapter/power_manager:distributeddata_power_manager",
     "${data_service_path}/framework:distributeddatasvcfwk",
   ]
 

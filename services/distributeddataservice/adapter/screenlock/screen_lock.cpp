@@ -111,6 +111,8 @@ void ScreenLock::SubscribeScreenEvent()
     }
     if (executors_ != nullptr) {
         executors_->Execute(GetTask(0));
+    } else {
+        GetTask(0)();
     }
 }
 
@@ -165,6 +167,7 @@ ExecutorPool::Task ScreenLock::GetTask(uint32_t retry)
 
 ScreenLock::~ScreenLock()
 {
+    UnsubscribeScreenEvent();
     // Assign the value of executors_ to nullptr here to ensure that ScreenLock is valid before the asynchronous
     // task of GetTask ends.
     executors_ = nullptr;
