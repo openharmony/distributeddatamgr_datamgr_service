@@ -30,7 +30,6 @@
 
 namespace OHOS {
 namespace DistributedData {
-using namespace OHOS::AAFwk;
 using namespace OHOS::DistributedData;
 using namespace Security::AccessToken;
 __attribute__((used)) static bool g_isInit = AccountDelegateNormalImpl::Init();
