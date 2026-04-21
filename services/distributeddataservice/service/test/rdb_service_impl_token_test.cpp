@@ -982,10 +982,13 @@ HWTEST_F(RdbServiceImplTokenTest, BeforeOpen002, TestSize.Level0)
 HWTEST_F(RdbServiceImplTokenTest, BeforeOpen003, TestSize.Level0)
 {
     EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(false));
+    EXPECT_CALL(*accTokenMock, GetTokenType(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
-    param.dbPath_ = "/data/service/el2/100/rdb_test/rdbtest.db";
+    param.dbPath_ = "/data/service/el2/100/test_rdb_service_impl_bundleName/rdbtest.db";
     auto meta = service.GetStoreMetaData(param);
     auto result = service.BeforeOpen(param);
     EXPECT_EQ(result, RDB_NO_META);
