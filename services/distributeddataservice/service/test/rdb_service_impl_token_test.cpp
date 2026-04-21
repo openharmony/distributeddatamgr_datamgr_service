@@ -982,9 +982,9 @@ HWTEST_F(RdbServiceImplTokenTest, BeforeOpen002, TestSize.Level0)
 HWTEST_F(RdbServiceImplTokenTest, BeforeOpen003, TestSize.Level0)
 {
     EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(false));
-    EXPECT_CALL(*accTokenMock, GetTokenType(testing::_))
-        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
