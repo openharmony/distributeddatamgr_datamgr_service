@@ -78,6 +78,7 @@ using RdbSchemaConfig = OHOS::DistributedRdb::RdbSchemaConfig;
 using DumpManager = OHOS::DistributedData::DumpManager;
 using system_clock = std::chrono::system_clock;
 
+constexpr char const *INVALID_PATH_PART = "..";
 constexpr uint32_t ITERATE_TIMES = 10000;
 constexpr uint32_t ALLOW_ONLINE_AUTO_SYNC = 8;
 constexpr int32_t VALID_PARAM_LENGTH = 2;
@@ -1426,7 +1427,8 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.bundleName = param.bundleName_;
     metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData.storeId = RemoveSuffix(param.storeName_);
-    if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) != TOKEN_HAP && param.subUser_ != 0) {
+    auto type = AccessTokenKit::GetTokenTypeFlag(metaData.tokenId);
+    if (type != TOKEN_HAP && param.subUser_ != 0) {
         metaData.user = std::to_string(param.subUser_);
     } else {
         metaData.user = std::to_string(user);
@@ -1439,6 +1441,11 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     metaData.hapName = param.hapName_;
     metaData.customDir = param.customDir_;
     metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData) + "/" + param.storeName_;
+    if (!param.dbPath_.empty() && type == TOKEN_NATIVE &&
+        (param.dbPath_.find(param.bundleName_) != std::string::npos) &&
+        (param.dbPath_.find(INVALID_PATH_PART) == std::string::npos)) {
+        metaData.dataDir = param.dbPath_;
+    }
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     metaData.isEncrypt = param.isEncrypt_;
     metaData.isManualClean = !param.isAutoClean_;

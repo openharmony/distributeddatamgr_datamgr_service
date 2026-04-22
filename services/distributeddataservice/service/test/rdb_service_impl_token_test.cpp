@@ -948,6 +948,7 @@ HWTEST_F(RdbServiceImplTokenTest, BeforeOpen001, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     auto result = service.BeforeOpen(param);
     EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
 /**
@@ -968,6 +969,29 @@ HWTEST_F(RdbServiceImplTokenTest, BeforeOpen002, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     auto result = service.BeforeOpen(param);
     EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: BeforeOpen003
+ * @tc.desc: Test BeforeOpen success app is not system app but no meta.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, BeforeOpen003, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(false));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.dbPath_ = "/data/service/el2/100/test_rdb_service_impl_bundleName/rdbtest.db";
+    auto meta = service.GetStoreMetaData(param);
+    auto result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_NO_META);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
