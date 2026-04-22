@@ -126,6 +126,43 @@ store->Insert("table_name", std::move(value));
 - **New external interfaces must have FUZZ test coverage**: External interfaces need FUZZ test coverage to prevent malicious input
 - **Prohibit directly testing private methods**: Should treat as implementation details, cover through public interfaces. If not possible, consider optimizing code testability
 - **Use unified mock classes when mocking**: Cases needing different implementations can inherit unified mock class to implement independent logic, common logic goes in mock class, avoid too much duplicate mock code
+- **Test cases must contain assertions**: Every test case must include explicit assertions (EXPECT_XXX, ASSERT_XXX) to verify results. Prohibit test cases without assertions:
+  - ❌ **Wrong**: Test case only calls methods without any assertions
+  - ❌ **Wrong**: All assertions are hidden in helper methods; test case has no direct assertions
+  - ✅ **Correct**: Test case includes explicit assertions like `EXPECT_EQ`, `EXPECT_TRUE`, etc.
+  - ✅ **Correct**: Helper methods return values that are asserted in the test case
+  - **Rationale**: Tests without assertions provide no verification value and create false confidence
+- **Helper method assertion requirements**: When using helper methods (fixture methods, utility functions), assertions must be in the test case, not in the helper:
+  - ❌ **Wrong**: Helper method contains `EXPECT_EQ(result, expected)` internally
+  - ✅ **Correct**: Helper method returns `result`, test case asserts `EXPECT_EQ(helper(), expected)`
+  - ✅ **Correct**: Helper method returns `bool`, test case asserts `EXPECT_TRUE(helper())`
+  - **Rationale**: Keeps assertions visible in test cases where they belong, making tests easier to understand and debug
+- **Simplicity over encapsulation**: Prefer simple, readable test code over excessive method encapsulation. Common patterns like `CreateAndSubscribeObserver()` are acceptable, but complex assertion helpers should be avoided when possible.
+  - **Example**: In ScreenLock tests, `CreateAndSubscribeObserver()` is acceptable because it only prepares data without assertions
+  - **Rationale**: Tests should be self-documenting; excessive encapsulation hides test intent
+- **Prohibit non-failing assertions**: Test cases must not use assertions that always pass (e.g., `EXPECT_TRUE(true)`, `EXPECT_FALSE(false)`). All assertions must verify actual behavior:
+  - ❌ **Wrong**: `EXPECT_TRUE(true)` - This assertion never fails
+  - ❌ **Wrong**: `EXPECT_FALSE(false)` - This assertion never fails
+  - ❌ **Wrong**: `EXPECT_NO_THROW(statement)` - Not allowed in OpenHarmony (exceptions disabled)
+  - ✅ **Correct**: `EXPECT_EQ(actual, expected)` - Verifies actual vs expected
+  - ✅ **Correct**: `EXPECT_NE(ptr, nullptr)` - Verifies pointer is not null
+  - ✅ **Correct**: Call the function and verify observable behavior or state changes
+  - **Rationale**: Tests that cannot fail provide no value and create false confidence in code quality
+- **Test case author attribution**: All test cases must include `@tc.author: agent` in the test documentation header to indicate AI-generated or AI-modified tests. This applies to:
+  - Newly created test cases
+  - Modified test cases (including refactored, optimized, or enhanced tests)
+  - Test cases generated or modified by AI agents (Claude Code, etc.)
+
+  Example test header:
+  ```cpp
+  /**
+   * @tc.name: Subscribe001
+   * @tc.desc: subscribe with null observer should return without adding
+   * @tc.type: FUNC
+   * @tc.require:
+   * @tc.author: agent
+   */
+  ```
 
 ## Recommended Rules (SHOULD)
 
@@ -211,11 +248,6 @@ Project uses OpenHarmony's GN-based build system, BUILD.gn files define build ta
 
 # Fast build (if no gn files modified)
 ./build.sh --product-name <product> --build-target datamgr_service --fast-rebuild
-
-# Build specific layer
-./build.sh --product-name <product> --build-target //foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:build_module
-./build.sh --product-name <product> --build-target //foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:build_module
-./build.sh --product-name <product> --build-target //foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/app:build_module
 
 # Build all unit tests
 ./build.sh --product-name <product> --build-target datamgr_service_test
