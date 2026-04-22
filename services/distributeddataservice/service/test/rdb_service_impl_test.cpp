@@ -40,6 +40,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/device_manager_adapter_mock.h"
+#include "mock/device_matrix_mock.h"
 #include "mock/general_store_mock.h"
 #include "mock/tokenid_kit_mock.h"
 #include "rdb_general_store.h"
@@ -508,6 +509,29 @@ HWTEST_F(RdbServiceImplTest, DoSync003, TestSize.Level0)
     EXPECT_EQ(result, RDB_OK);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: DoSync_004
+ * @tc.desc: Test DoSync when enableErrorDetail is true and CheckSyncPermission returns false.
+ *           Covers branch: enableErrorDetail=true && CheckSyncPermission()=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, DoSync_004, TestSize.Level0)
+{
+    StoreMetaData invalidMeta = metaData_;
+    invalidMeta.tokenId = 0; // Invalid tokenId to trigger permission denial
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    option.enableErrorDetail = true; // Enable error detail to trigger permission check
+    PredicatesMemo predicates;
+    predicates.devices_ = { "device1" };
+
+    auto result = service.DoSync(invalidMeta, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_NO_SYNC_PERMISSION);
 }
 
 /**
@@ -3768,6 +3792,294 @@ HWTEST_F(RdbServiceImplTest, Sync005, TestSize.Level0)
     int32_t result = service.Sync(param, option, predicates, nullptr);
     EXPECT_EQ(result, RDB_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_001
+ * @tc.desc: Test ConvertToDeviceInfo with empty networkIds, empty GetRemoteDevices, and enableDetail=true.
+ *           Covers branch: networkIds.empty()=true, deviceInfos.empty()=true, enableDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_001, TestSize.Level0)
+{
+    // Mock GetRemoteDevices to return empty vector
+    std::vector<DeviceInfo> emptyDevices;
+    EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillOnce(Return(emptyDevices));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_002
+ * @tc.desc: Test ConvertToDeviceInfo with empty networkIds, empty GetRemoteDevices, and enableDetail=false.
+ *           Covers branch: networkIds.empty()=true, deviceInfos.empty()=true, enableDetail=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_002, TestSize.Level0)
+{
+    // Mock GetRemoteDevices to return empty vector
+    std::vector<DeviceInfo> emptyDevices;
+    EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillOnce(Return(emptyDevices));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = false;
+    PredicatesMemo predicates;
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_003
+ * @tc.desc: Test ConvertToDeviceInfo with empty networkIds, non-empty GetRemoteDevices, and enableDetail=true.
+ *           Covers branch: networkIds.empty()=true, deviceInfos not empty, enableDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_003, TestSize.Level0)
+{
+    // Mock GetRemoteDevices to return devices
+    std::vector<DeviceInfo> deviceInfos;
+    DeviceInfo devInfo1;
+    devInfo1.uuid = "uuid1";
+    devInfo1.networkId = "networkId1";
+    DeviceInfo devInfo2;
+    devInfo2.uuid = "uuid2";
+    devInfo2.networkId = "networkId2";
+    deviceInfos.push_back(devInfo1);
+    deviceInfos.push_back(devInfo2);
+    EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillOnce(Return(deviceInfos));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_004
+ * @tc.desc: Test ConvertToDeviceInfo with empty networkIds, non-empty GetRemoteDevices, and enableDetail=false.
+ *           Covers branch: networkIds.empty()=true, deviceInfos not empty, enableDetail=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_004, TestSize.Level0)
+{
+    // Mock GetRemoteDevices to return devices
+    std::vector<DeviceInfo> deviceInfos;
+    DeviceInfo devInfo1;
+    devInfo1.uuid = "uuid1";
+    devInfo1.networkId = "networkId1";
+    deviceInfos.push_back(devInfo1);
+    EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillOnce(Return(deviceInfos));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = false;
+    PredicatesMemo predicates;
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_005
+ * @tc.desc: Test ConvertToDeviceInfo with non-empty networkIds, ToUUID returns empty, and enableDetail=true.
+ *           Covers branch: networkIds not empty, uuid.empty()=true, enableDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_005, TestSize.Level0)
+{
+    // Mock ToUUID to return empty string (invalid device)
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>())).WillOnce(Return(""));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "invalid_device" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_006
+ * @tc.desc: Test ConvertToDeviceInfo with non-empty networkIds, ToUUID returns empty, and enableDetail=false.
+ *           Covers branch: networkIds not empty, uuid.empty()=true, enableDetail=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_006, TestSize.Level0)
+{
+    // Mock ToUUID to return empty string (invalid device)
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>())).WillOnce(Return(""));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = false;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "invalid_device" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_007
+ * @tc.desc: Test ConvertToDeviceInfo with non-empty networkIds, ToUUID returns valid uuid, and enableDetail=true.
+ *           Covers branch: networkIds not empty, uuid not empty, enableDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_007, TestSize.Level0)
+{
+    // Mock ToUUID to return valid uuid
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>())).WillOnce(Return("valid_uuid"));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "network_id_1" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_008
+ * @tc.desc: Test ConvertToDeviceInfo with non-empty networkIds, ToUUID returns valid uuid, and enableDetail=false.
+ *           Covers branch: networkIds not empty, uuid not empty, enableDetail=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_008, TestSize.Level0)
+{
+    // Mock ToUUID to return valid uuid
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>())).WillOnce(Return("valid_uuid"));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = false;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "network_id_1" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: GetSyncTask_001
+ * @tc.desc: Test GetSyncTask when IsNeedMetaSync returns true.
+ *           Covers branch: IsNeedMetaSync() = true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, GetSyncTask_001, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+
+    // IsNeedMetaSync returns true when CapMetaData is not loaded
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>()))
+        .WillRepeatedly(Return("device_uuid"));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "device1" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: GetSyncTask_002
+ * @tc.desc: Test GetSyncTask when IsNeedMetaSync returns false, store->Sync fails, and enableErrorDetail is true.
+ *           Covers branch: IsNeedMetaSync()=false && ret!=E_OK && enableErrorDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, GetSyncTask_002, TestSize.Level0)
+{
+    // Ensure dbStatus_ is E_ERROR so that store->Sync returns not-OK
+    dbStatus_ = GeneralError::E_ERROR;
+
+    // Close any cached store to ensure we get a fresh store with the new dbStatus_
+    AutoCache::GetInstance().CloseStore(metaData_.tokenId, metaData_.dataDir, metaData_.storeId);
+
+    StoreMetaData savedMeta = metaData_;
+    savedMeta.deviceId = "device_uuid";  // Must match the uuid that will be used in IsNeedMetaSync
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(savedMeta.GetKeyWithoutPath(), savedMeta, false), true);
+
+    // IsNeedMetaSync returns false (no metadata sync needed)
+    CapMetaData capMetaData;
+    auto capKey = CapMetaRow::GetKeyFor("device_uuid");
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(std::string(capKey.begin(), capKey.end()), capMetaData), true);
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>()))
+        .WillRepeatedly(Return("device_uuid"));
+    auto deviceMatrixMock = std::make_shared<OHOS::DistributedData::DeviceMatrixMock>();
+    BDeviceMatrix::deviceMatrix = deviceMatrixMock;
+    EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(testing::A<const std::string &>(), testing::_))
+        .WillRepeatedly(testing::Return(std::make_pair(true, static_cast<uint16_t>(0))));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    option.enableErrorDetail = true; // Enable error detail to trigger HandleSyncError
+    PredicatesMemo predicates;
+    predicates.devices_ = { "device1" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK); // Should return OK after HandleSyncError is called
+
+    // Close cached store again to ensure subsequent tests get fresh stores
+    AutoCache::GetInstance().CloseStore(metaData_.tokenId, metaData_.dataDir, metaData_.storeId);
+
+    // Restore DeviceMatrix
+    BDeviceMatrix::deviceMatrix = nullptr;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(savedMeta.GetKeyWithoutPath(), false), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(std::string(capKey.begin(), capKey.end()), true), true);
+
+    // Restore dbStatus_ to avoid affecting other tests
+    dbStatus_ = E_OK;
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
