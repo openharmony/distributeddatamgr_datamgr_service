@@ -22,13 +22,7 @@ config("module_private_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
-    "${data_service_path}/framework/include",
-    "${data_service_path}/framework/include/power_manager",
-    "${data_service_path}/adapter/include",
-    "${data_service_path}/adapter/include/autils",
-    "${data_service_path}/adapter/include/log",
-    "${data_service_path}/adapter/include/permission",
-    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/adapter/test/mock",
     "..",
   ]
 
@@ -39,102 +33,31 @@ config("module_private_config") {
 }
 
 ###############################################################################
-# PowerManagerDelegateTest - Test for Delegate class
-ohos_unittest("PowerManagerDelegateTest") {
-  module_out_path = module_output_path
-
-  sources = [
-    "power_manager_delegate_test.cpp",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  cflags = [
-    "-fno-access-control",
-    "-Werror=vla",
-  ]
-
-  external_deps = [
-    "ability_base:want",
-    "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "kv_store:datamgr_common",
-  ]
-
-  deps = [
-    "${data_service_path}/adapter/power_manager:distributeddata_power_manager",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-  ]
-
-  subsystem_name = "distributeddatamgr"
-  part_name = "datamgr_service"
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
-}
-
-###############################################################################
-# PowerEventSubscriberTest - Test for PowerEventSubscriber class
-ohos_unittest("PowerEventSubscriberTest") {
-  module_out_path = module_output_path
-
-  sources = [
-    "power_event_subscriber_test.cpp",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  cflags = [
-    "-fno-access-control",
-    "-Werror=vla",
-  ]
-
-  external_deps = [
-    "ability_base:want",
-    "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "kv_store:datamgr_common",
-  ]
-
-  deps = [
-    "${data_service_path}/adapter/power_manager:distributeddata_power_manager",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-  ]
-
-  subsystem_name = "distributeddatamgr"
-  part_name = "datamgr_service"
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
-}
-
-###############################################################################
-# PowerManagerImplTest - Test for PowerManagerImpl class
+# PowerManagerImplTest - Unified test for PowerManager implementation
 ohos_unittest("PowerManagerImplTest") {
   module_out_path = module_output_path
 
   sources = [
+    "../power_manager_impl.cpp",
     "power_manager_impl_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
 
   cflags = [
-    "-fno-access-control",
     "-Werror=vla",
   ]
 
   external_deps = [
     "ability_base:want",
     "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
     "googletest:gtest_main",
     "hilog:libhilog",
     "kv_store:datamgr_common",
   ]
 
   deps = [
-    "${data_service_path}/adapter/power_manager:distributeddata_power_manager",
+    "${data_service_path}/adapter/test:common_event_mock",
     "${data_service_path}/framework:distributeddatasvcfwk",
   ]
 
@@ -148,8 +71,6 @@ group("unittest") {
   testonly = true
 
   deps = [
-    ":PowerManagerDelegateTest",
-    ":PowerEventSubscriberTest",
     ":PowerManagerImplTest",
   ]
 }
