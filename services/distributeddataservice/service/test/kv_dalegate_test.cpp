@@ -27,14 +27,13 @@
 #include "kv_delegate.h"
 #include "log_print.h"
 #include "proxy_data_manager.h"
-#include "parameters.h"
 
 namespace OHOS::Test {
 using namespace testing::ext;
 using namespace OHOS::DataShare;
 class KvDelegateTest : public testing::Test {
 public:
-    static void SetUpTestCase(void);
+    static void SetUpTestCase(void){};
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
@@ -48,23 +47,7 @@ const char* g_backupFiles[] = {
 };
 const char* BACKUP_SUFFIX = ".backup";
 std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(5, 3);
-bool g_isRK3568 = false;
 static void *g_library = nullptr;
-
-void KvDelegateTest::SetUpTestCase(void)
-{
-    static std::once_flag flag;
-    static std::string product;
-    const std::string invalidProduct { "default" };
-    std::call_once(flag, []() {
-        product = OHOS::system::GetParameter("const.build.product", "");
-    });
-    if (product == invalidProduct)  {
-        std::cout << "This test is not for " << invalidProduct << ", skip it." << std::endl;
-        g_isRK3568 = true;
-        return;
-    }
-}
 
 bool FileComparison(const std::string& file1, const std::string& file2)
 {
@@ -439,7 +422,7 @@ HWTEST_F(KvDelegateTest, KVDelegateGetInstanceTest003, TestSize.Level0) {
 * @tc.experct: backup file should be the same as original file.
 */
 HWTEST_F(KvDelegateTest, KVDelegateResetBackupTest001, TestSize.Level0) {
-    if (g_isRK3568 || !IsUsingArkData()) {
+    if (!IsUsingArkData()) {
         GTEST_SKIP();
     }
     ZLOGI("KVDelegateResetBackupTest001 start");
@@ -489,7 +472,7 @@ HWTEST_F(KvDelegateTest, KVDelegateResetBackupTest001, TestSize.Level0) {
 * @tc.experct: Successfully Get the dataset previously inserted.
 */
 HWTEST_F(KvDelegateTest, KVDelegateRestoreTest001, TestSize.Level1) {
-    if (g_isRK3568 || !IsUsingArkData()) {
+    if (!IsUsingArkData()) {
         GTEST_SKIP();
     }
     ZLOGI("KVDelegateRestoreTest001 start");
