@@ -2345,117 +2345,7 @@ ohos_unittest("DataHandlerTest") {
   ]
 }
 
-ohos_unittest("PermissionValidatorTest") {
-  module_out_path = module_output_path
-
-  include_dirs = [
-    "${data_service_path}/service/permission/include",
-    "${data_service_path}/framework/include",
-  ]
-
-  sources = [
-    "${data_service_path}/service/permission/src/permission_validator.cpp",
-    "unittest/permission/permission_validator_test.cpp",
-  ]
-
-  deps = [
-    "${data_service_path}/adapter/utils:distributeddata_utils",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "kv_store:distributeddata_inner",
-  ]
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
-}
-
-ohos_unittest("PermissionValidatorMockTest") {
-  module_out_path = module_output_path
-
-  include_dirs = [
-    "${data_service_path}/service/permission/include",
-    "${data_service_path}/service/test/mock",
-  ]
-
-  sources = [
-    "${data_service_path}/service/permission/src/permission_validator.cpp",
-    "mock/access_token_mock.cpp",
-    "unittest/permission/permission_validator_mock_test.cpp",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  deps = [
-    "${data_service_path}/adapter/utils:distributeddata_utils",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "c_utils:utils",
-    "googletest:gmock_main",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "kv_store:distributeddata_inner",
-  ]
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
-}
-
-ohos_unittest("PermitDelegateMockTest") {
-  module_out_path = module_output_path
-
-  include_dirs = [
-    "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/framework/include",
-    "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/permission/include",
-    "${data_service_path}/service/test/mock",
-  ]
-
-  sources = [
-    "${data_service_path}/service/kvdb/user_delegate.cpp",
-    "${data_service_path}/service/permission/src/permission_validator.cpp",
-    "${data_service_path}/service/permission/src/permit_delegate.cpp",
-    "mock/access_token_mock.cpp",
-    "mock/meta_data_manager_mock.cpp",
-    "unittest/permission/permit_delegate_mock_test.cpp",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  cflags_cc = cflags
-  defines = [
-    "TEST_ON_DEVICE",
-    "OPENSSL_SUPPRESS_DEPRECATED",
-  ]
-
-  deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "c_utils:utils",
-    "googletest:gmock_main",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-  ]
-}
+# PermissionValidatorTest, PermissionValidatorMockTest, PermitDelegateMockTest moved to unittest/permission/BUILD.gn
 
 # BootStrapMockTest moved to unittest/bootstrap/BUILD.gn
 
@@ -2544,45 +2434,7 @@ ohos_unittest("AuthDelegateMockTest") {
 }
 
 # UpgradeMockTest moved to unittest/bootstrap/BUILD.gn
-
-ohos_unittest("UserDelegateMockTest") {
-  module_out_path = module_output_path
-
-  include_dirs = [
-    "${data_service_path}/adapter/include/communicator/",
-    "${data_service_path}/framework/include/",
-    "${data_service_path}/service/kvdb/",
-    "${data_service_path}/service/test/mock",
-    "${data_service_path}/framework/test/mock",
-  ]
-
-  sources = [
-    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
-    "${data_service_path}/service/kvdb/user_delegate.cpp",
-    "mock/device_manager_adapter_mock.cpp",
-    "unittest/permission/user_delegate_mock_test.cpp",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "c_utils:utils",
-    "googletest:gmock_main",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "json:nlohmann_json_static",
-    "kv_store:datamgr_common",
-    "kv_store:distributeddb",
-  ]
-
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  cflags_cc = cflags
-}
+# UserDelegateMockTest moved to unittest/permission/BUILD.gn
 
 # BackupManagerServiceTest definition moved to unittest/backup/BUILD.gn
 
@@ -2941,7 +2793,7 @@ group("unittest") {
       ":KvdbServicePasswordTest",
       ":QueryHelperUnitTest",
       # ":UpgradeMockTest",  # 已迁移到 unittest/bootstrap/BUILD.gn
-      ":UserDelegateMockTest",
+      # ":UserDelegateMockTest",  # 已迁移到 unittest/permission/BUILD.gn
     ]
   }
 
@@ -2961,9 +2813,7 @@ group("unittest") {
     ":DumpHelperTest",
     ":LifeCycleManagerTest",
     ":MetaDataTest",
-    ":PermissionValidatorMockTest",
-    ":PermissionValidatorTest",
-    ":PermitDelegateMockTest",
+    "unittest/permission:unittests",
     ":ValueProxyServiceTest",
   ]
 }
