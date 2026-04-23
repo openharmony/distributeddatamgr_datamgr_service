@@ -1,0 +1,390 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos_var.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
+
+###############################################################################
+# Object 单元测试定义
+###############################################################################
+
+ohos_unittest("ObjectAssetLoaderTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/object/src/object_asset_loader.cpp",
+    "${data_service_path}/service/object/src/object_asset_machine.cpp",
+    "${data_service_path}/service/object/src/object_snapshot.cpp",
+    "object_asset_loader_test.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+  ]
+
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner" ]
+  }
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
+ohos_unittest("ObjectAssetSyncManagerTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/object/asset_loader/asset_sync_manager.cpp",
+    "${data_service_path}/service/object/src/object_asset_loader.cpp",
+    "${data_service_path}/service/object/src/object_asset_machine.cpp",
+    "${data_service_path}/service/object/src/object_snapshot.cpp",
+    "object_asset_sync_manager_test.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+  ]
+
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner" ]
+  }
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
+ohos_unittest("ObjectAssetMachineTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/object/src/object_asset_loader.cpp",
+    "${data_service_path}/service/object/src/object_asset_machine.cpp",
+    "object_asset_machine_test.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+  ]
+
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner" ]
+  }
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+}
+
+ohos_unittest("ObjectDmsHandlerTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/object/src/object_dms_handler.cpp",
+    "object_dms_handler_test.cpp",
+  ]
+
+  include_dirs = []
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "samgr:samgr_proxy",
+  ]
+
+  if (dm_part_is_enabled && datamgr_service_distributed) {
+    external_deps += [ "dmsfwk:distributed_sdk" ]
+  }
+
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
+ohos_unittest("ObjectManagerTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/service/common/common_types_utils.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
+    "${data_service_path}/service/object/src/object_asset_loader.cpp",
+    "${data_service_path}/service/object/src/object_asset_machine.cpp",
+    "${data_service_path}/service/object/src/object_callback_proxy.cpp",
+    "${data_service_path}/service/object/src/object_data_listener.cpp",
+    "${data_service_path}/service/object/src/object_dms_handler.cpp",
+    "${data_service_path}/service/object/src/object_manager.cpp",
+    "${data_service_path}/service/object/src/object_service_impl.cpp",
+    "${data_service_path}/service/object/src/object_service_stub.cpp",
+    "${data_service_path}/service/object/src/object_snapshot.cpp",
+    "${data_service_path}/service/object/src/object_types_utils.cpp",
+    "../../mock/device_manager_adapter_mock.cpp",
+    "../../mock/kv_store_nb_delegate_mock.cpp",
+    "object_manager_test.cpp",
+    "object_service_impl_test.cpp",
+    "object_service_stub_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/test/mock",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  if (datamgr_service_object) {
+    external_deps += [
+      "data_object:data_object_inner",
+      "data_object:distributeddataobject_impl",
+    ]
+  }
+
+  if (dm_part_is_enabled && datamgr_service_distributed) {
+    external_deps += [ "dmsfwk:distributed_sdk" ]
+  }
+
+  deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
+ohos_unittest("ObjectManagerMockTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
+    "${data_service_path}/service/common/common_types_utils.cpp",
+    "${data_service_path}/service/common/value_proxy.cpp",
+    "${data_service_path}/service/object/src/object_asset_loader.cpp",
+    "${data_service_path}/service/object/src/object_asset_machine.cpp",
+    "${data_service_path}/service/object/src/object_callback_proxy.cpp",
+    "${data_service_path}/service/object/src/object_data_listener.cpp",
+    "${data_service_path}/service/object/src/object_dms_handler.cpp",
+    "${data_service_path}/service/object/src/object_manager.cpp",
+    "${data_service_path}/service/object/src/object_service_impl.cpp",
+    "${data_service_path}/service/object/src/object_service_stub.cpp",
+    "${data_service_path}/service/object/src/object_snapshot.cpp",
+    "${data_service_path}/service/object/src/object_types_utils.cpp",
+    "../../mock/access_token_mock.cpp",
+    "../../mock/device_manager_adapter_mock.cpp",
+    "../../mock/device_matrix_mock.cpp",
+    "../../mock/distributed_file_daemon_manager_mock.cpp",
+    "../../mock/kv_store_nb_delegate_mock.cpp",
+    "../../mock/meta_data_manager_mock.cpp",
+    "object_manager_mock_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/test/mock",
+    "${data_service_path}/framework/test/mock",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gmock_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  if (datamgr_service_object) {
+    external_deps += [
+      "data_object:data_object_inner",
+      "data_object:distributeddataobject_impl",
+    ]
+  }
+
+  if (dm_part_is_enabled && datamgr_service_distributed) {
+    external_deps += [ "dmsfwk:distributed_sdk" ]
+  }
+
+  deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+}
+
+ohos_unittest("ObjectSnapshotTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/object/src/object_asset_loader.cpp",
+    "${data_service_path}/service/object/src/object_asset_machine.cpp",
+    "${data_service_path}/service/object/src/object_snapshot.cpp",
+    "object_snapshot_test.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "dfs_service:cloudsync_asset_kit_inner",
+    "dfs_service:distributed_file_daemon_kit_inner",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+
+  if (datamgr_service_object) {
+    external_deps += [ "data_object:data_object_inner" ]
+  }
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+}
+
+###############################################################################
+# Object 测试收集group
+###############################################################################
+
+group("unittests") {
+  testonly = true
+  deps = [
+    ":ObjectAssetLoaderTest",
+    ":ObjectAssetMachineTest",
+    ":ObjectAssetSyncManagerTest",
+    ":ObjectDmsHandlerTest",
+    ":ObjectManagerMockTest",
+    ":ObjectManagerTest",
+    ":ObjectSnapshotTest",
+  ]
+}
