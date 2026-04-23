@@ -68,70 +68,9 @@ config("module_private_config") {
 
 # DirectoryManagerTest moved to unittest/bootstrap/BUILD.gn
 
-ohos_unittest("CryptoManagerTest") {
-  module_out_path = module_output_path
-  sources = [ "unittest/common/crypto_manager_test.cpp" ]
+# CryptoManagerTest moved to unittest/common/BUILD.gn
 
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "ability_base:base",
-    "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "huks:libhukssdk",
-    "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-  ]
-
-  deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service:distributeddatasvc",
-    "mock:distributeddata_mock_static",
-  ]
-}
-
-ohos_unittest("DeviceMatrixTest") {
-  module_out_path = module_output_path
-  sources = [
-    "unittest/common/device_matrix_test.cpp",
-    "mock/checker_mock.cpp",
-    "mock/db_change_data_mock.cpp",
-    "mock/db_store_mock.cpp",
-    "${data_service_path}/service/matrix/src/device_matrix.cpp",
-    "${data_service_path}/service/matrix/src/matrix_event.cpp",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  external_deps = [
-    "ability_base:base",
-    "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-  ]
-}
+# DeviceMatrixTest moved to unittest/common/BUILD.gn
 
 # KVDBGeneralStoreTest and KVDBGeneralStoreAbnormalTest moved to unittest/kvdb/BUILD.gn
 
@@ -877,53 +816,7 @@ ohos_unittest("ObjectSnapshotTest") {
   ]
 }
 
-ohos_unittest("MetaDataTest") {
-  module_out_path = module_output_path
-  sources = [
-    "${data_service_path}/adapter/account/src/account_delegate_default_impl.cpp",
-    "${data_service_path}/adapter/account/src/account_delegate_impl.cpp",
-    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "unittest/common/meta_data_test.cpp",
-  ]
-
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
-
-  include_dirs = [
-    "${data_service_path}/app/src",
-    "${data_service_path}/service/kvdb",
-    "${data_service_path}/adapter/include/account",
-    "${data_service_path}/adapter/include/communicator",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
-    "access_token:libtoken_setproc",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_core",
-    "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddata_mgr",
-    "kv_store:distributeddb",
-    "kv_store:kvdb_inner_lite",
-    "safwk:system_ability_fwk",
-  ]
-
-  deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/kvdb:distributeddata_kvdb",
-  ]
-}
+# MetaDataTest moved to unittest/common/BUILD.gn
 
 ohos_unittest("UdmfRunTimeStoreTest") {
   sanitize = {
@@ -1288,37 +1181,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
 
 # KvdbServicePasswordTest and KvdbServiceImplTest moved to unittest/kvdb/BUILD.gn
 
-ohos_unittest("DumpHelperTest") {
-  module_out_path = module_output_path
-  sources = [
-    "${data_service_path}/service/dumper/src/dump_helper.cpp",
-    "unittest/common/dump_helper_test.cpp",
-  ]
-
-  include_dirs = [ "${data_service_path}/service/dumper/include" ]
-
-  configs = [ ":module_private_config" ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "json:nlohmann_json_static",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-    "relational_store:native_rdb",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-  ]
-}
+# DumpHelperTest moved to unittest/common/BUILD.gn
 
 ohos_unittest("UdmfServiceImplTest") {
   module_out_path = module_output_path
@@ -1808,75 +1671,9 @@ ohos_unittest("UdmfCheckerManagerTest") {
   ]
 }
 
-ohos_unittest("LifeCycleManagerTest") {
-  module_out_path = module_output_path
-  sources = [ "unittest/udmf/lifecycle_manager_test.cpp" ]
+# LifeCycleManagerTest moved to unittest/common/BUILD.gn
 
-  include_dirs = [
-    "${data_service_path}/service/udmf/lifecycle",
-    "${data_service_path}/service/udmf/store",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-    "-Werror=vla",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/udmf:udmf_server",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "kv_store:distributeddata_inner",
-    "samgr:samgr_proxy",
-    "udmf:udmf_client",
-    "udmf:utd_client",
-  ]
-}
-
-ohos_unittest("DataHandlerTest") {
-  module_out_path = module_output_path
-  sources = [ "unittest/data_share/data_handler_test.cpp" ]
-
-  include_dirs = [
-    "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/service/udmf",
-    "${data_service_path}/service/udmf/preprocess",
-    "${data_service_path}/service/udmf/permission",
-    "${data_service_path}/service/udmf/store",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-    "-Werror=vla",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/udmf:udmf_server",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "app_file_service:remote_file_share_native",
-    "bundle_framework:appexecfwk_base",
-    "c_utils:utils",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "kv_store:datamgr_common",
-    "kv_store:distributeddb",
-    "samgr:samgr_proxy",
-    "udmf:udmf_client",
-    "udmf:utd_client",
-  ]
-}
+# DataHandlerTest moved to unittest/common/BUILD.gn
 
 # PermissionValidatorTest, PermissionValidatorMockTest, PermitDelegateMockTest moved to unittest/permission/BUILD.gn
 
@@ -2292,12 +2089,7 @@ group("unittest") {
   deps += [
     "unittest/bootstrap:unittests",
     "unittest/clone:unittests",
-    ":CryptoManagerTest",
-    ":DataHandlerTest",
-    ":DeviceMatrixTest",
-    ":DumpHelperTest",
-    ":LifeCycleManagerTest",
-    ":MetaDataTest",
+    "unittest/common:unittests",
     "unittest/permission:unittests",
     "unittest/cloud:unittests",
   ]
