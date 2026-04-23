@@ -23,6 +23,7 @@ group("unittest") {
     "clone:unittests",
     "cloud:unittests",
     "common:unittests",
+    "data_share:unittests",
     "kvdb:unittests",
     "object:unittests",
     "permission:unittests",

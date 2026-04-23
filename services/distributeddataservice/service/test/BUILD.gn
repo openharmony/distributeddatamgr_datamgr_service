@@ -134,10 +134,7 @@ group("unittest") {
   }
 
   if (datamgr_service_data_share) {
-    deps += [
-      # ":DataShareServiceImplMockTest",  # TODO: To be migrated to data_share feature
-      # ":DataShareServiceImplTest",  # TODO: To be migrated to data_share feature
-    ]
+    deps += [ "unittest/data_share:unittests" ]
   }
 
   deps += [
