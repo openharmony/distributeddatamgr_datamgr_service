@@ -11,24 +11,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
 ###############################################################################
 # Unit test group - manages all unit test cases
 ###############################################################################
 
 group("unittest") {
   testonly = true
+
   deps = [
     "backup:unittests",
-    "bootstrap:unittests",
     "clone:unittests",
-    "cloud:unittests",
-    "common:unittests",
-    "data_share:unittests",
-    "kvdb:unittests",
-    "object:unittests",
-    "permission:unittests",
-    "rdb:unittests",
-    "udmf:unittests",
-    "utd:unittests",
   ]
+
+  if (datamgr_service_config) {
+    deps += [ "bootstrap:unittests" ]
+  }
+
+  if (datamgr_service_cloud) {
+    deps += [ "cloud:unittests" ]
+  }
+
+  if (datamgr_service_data_share) {
+    deps += [ "data_share:unittests" ]
+  }
+
+  if (datamgr_service_kvdb) {
+    deps += [ "kvdb:unittests" ]
+  }
+
+  if (datamgr_service_object) {
+    deps += [ "object:unittests" ]
+  }
+
+  # Permission feature always included
+  deps += [ "permission:unittests" ]
+
+  if (datamgr_service_rdb) {
+    deps += [ "rdb:unittests" ]
+  }
+
+  if (datamgr_service_udmf) {
+    deps += [
+      "udmf:unittests",
+      "utd:unittests",
+    ]
+  }
+
+  deps += [ "common:unittests" ]
 }
