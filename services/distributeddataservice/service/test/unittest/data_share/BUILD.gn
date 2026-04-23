@@ -15,7 +15,7 @@ import("//build/ohos_var.gni")
 import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
+module_output_path = "datamgr_service/datamgr_service/service/data_share"
 
 ###############################################################################
 # Data_share 单元测试定义
