@@ -26,6 +26,7 @@ group("unittest") {
     "kvdb:unittests",
     "object:unittests",
     "permission:unittests",
+    "rdb:unittests",
     "udmf:unittests",
     "utd:unittests",
   ]
