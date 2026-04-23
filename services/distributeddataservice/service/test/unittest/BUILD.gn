@@ -21,6 +21,7 @@ group("unittest") {
     "backup:unittests",
     "bootstrap:unittests",
     "clone:unittests",
+    "kvdb:unittests",
     "permission:unittests",
     "utd:unittests",
   ]
