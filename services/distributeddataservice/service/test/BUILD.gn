@@ -57,4 +57,10 @@ group("unittest") {
   testonly = true
   deps = [ "unittest:unittest" ]
 }
+
+###############################################################################
+group("fuzztest") {
+  testonly = true
+  deps = [ "fuzztest:fuzztest" ]
+}
 ###############################################################################

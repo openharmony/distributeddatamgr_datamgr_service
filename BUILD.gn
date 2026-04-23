@@ -31,7 +31,7 @@ group("fuzztest") {
   deps += [
     "services/distributeddataservice/adapter/test:fuzztest",
     "services/distributeddataservice/app/test/fuzztest:fuzztest",
-    "services/distributeddataservice/service/test/fuzztest:fuzztest",
+    "services/distributeddataservice/service/test:fuzztest",
     "services/distributeddataservice/framework/test/fuzztest:fuzztest",
   ]
 }
