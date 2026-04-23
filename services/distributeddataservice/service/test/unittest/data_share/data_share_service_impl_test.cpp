@@ -1,0 +1,1201 @@
+/*
+* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+#define LOG_TAG "DataShareServiceImplTest"
+
+#include "data_share_service_impl.h"
+
+#include <gtest/gtest.h>
+#include <unistd.h>
+
+#include "accesstoken_kit.h"
+#include "account_delegate_mock.h"
+#include "bundle_mgr_proxy.h"
+#include "bundle_utils.h"
+#include "data_share_service_stub.h"
+#include "device_manager_adapter.h"
+#include "dump/dump_manager.h"
+#include "hap_token_info.h"
+#include "ipc_skeleton.h"
+#include "iservice_registry.h"
+#include "log_print.h"
+#include "metadata/meta_data_manager.h"
+#include "system_ability_definition.h"
+#include "token_setproc.h"
+
+using namespace testing::ext;
+using namespace OHOS::DataShare;
+using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
+std::string SLIENT_ACCESS_URI = "datashareproxy://com.acts.ohos.data.datasharetest/test";
+std::string SA_SLIENT_ACCESS_URI = "datashareproxy://com.acts.ohos.data.datasharetest/SAID=12321/storeName/tableName";
+std::string TBL_NAME0 = "name0";
+std::string TBL_NAME1 = "name1";
+std::string BUNDLE_NAME = "ohos.datasharetest.demo";
+namespace OHOS::Test {
+using OHOS::DataShare::LogLabel;
+class DataShareServiceImplTest : public testing::Test {
+public:
+    static constexpr int64_t USER_TEST = 100;
+    static constexpr int64_t TEST_SUB_ID = 100;
+    static constexpr uint32_t CUREEENT_USER_ID = 123;
+    static constexpr uint32_t NATIVE_USER_ID = 0;
+    static constexpr int32_t TEST_SA_ID = 12321;
+    static void SetUpTestCase(void)
+    {
+        accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+        if (accountDelegateMock != nullptr) {
+            AccountDelegate::instance_ = nullptr;
+            AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+        }
+    }
+    static void TearDownTestCase(void)
+    {
+        if (accountDelegateMock != nullptr) {
+            delete accountDelegateMock;
+            accountDelegateMock = nullptr;
+        }
+    }
+    void SetSelfTokenInfo(int32_t user);
+    void SetUp();
+    void TearDown();
+    static inline AccountDelegateMock *accountDelegateMock = nullptr;
+};
+
+void DataShareServiceImplTest::SetSelfTokenInfo(int32_t user)
+{
+    HapInfoParams info = { .userID = user,
+        .bundleName = "ohos.datasharetest.demo",
+        .instIndex = 0,
+        .appIDDesc = "ohos.datasharetest.demo" };
+    HapPolicyParams policy = { .apl = APL_NORMAL,
+        .domain = "test.domain",
+        .permList = { { .permissionName = "ohos.permission.test",
+            .bundleName = "ohos.datasharetest.demo",
+            .grantMode = 1,
+            .availableLevel = APL_NORMAL,
+            .label = "label",
+            .labelId = 1,
+            .description = "ohos.datasharetest.demo",
+            .descriptionId = 1 } },
+        .permStateList = { { .permissionName = "ohos.permission.test",
+            .isGeneral = true,
+            .resDeviceID = { "local" },
+            .grantStatus = { PermissionState::PERMISSION_GRANTED },
+            .grantFlags = { 1 } } } };
+    AccessTokenKit::AllocHapToken(info, policy);
+    auto testTokenId =
+        Security::AccessToken::AccessTokenKit::GetHapTokenID(info.userID, info.bundleName, info.instIndex);
+    SetSelfTokenID(testTokenId);
+}
+void DataShareServiceImplTest::SetUp(void)
+{
+    SetSelfTokenInfo(USER_TEST);
+}
+
+void DataShareServiceImplTest::TearDown(void)
+{
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+}
+
+/**
+* @tc.name: DataShareServiceImpl001
+* @tc.desc: test InsertEx UpdateEx Query DeleteEx abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, DataShareServiceImpl001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = "";
+    bool enable = true;
+    auto resultA = dataShareServiceImpl.EnableSilentProxy(uri, enable);
+    EXPECT_EQ(resultA, DataShare::E_OK);
+
+    DataShare::DataShareValuesBucket valuesBucket;
+    std::string name0 = "";
+    valuesBucket.Put("", name0);
+    auto [errCode, result] = dataShareServiceImpl.InsertEx(uri, "", valuesBucket);
+    EXPECT_EQ((errCode != 0), true);
+
+    DataShare::DataSharePredicates predicates;
+    std::string selections = "";
+    predicates.SetWhereClause(selections);
+    auto [errCode1, result1] = dataShareServiceImpl.UpdateEx(uri, "", predicates, valuesBucket);
+    EXPECT_EQ((errCode1 != 0), true);
+
+    predicates.EqualTo("", "");
+    std::vector<std::string> columns;
+    int errVal = 0;
+    auto resQuery = dataShareServiceImpl.Query(uri, "", predicates, columns, errVal);
+    int resultSet = 0;
+    if (resQuery != nullptr) {
+        resQuery->GetRowCount(resultSet);
+    }
+    EXPECT_EQ(resultSet, 0);
+
+    predicates.SetWhereClause(selections);
+    auto [errCode2, result2] = dataShareServiceImpl.DeleteEx(uri, "", predicates);
+    EXPECT_EQ((errCode2 != 0), true);
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_001
+ * @tc.desc: Verify predicates for normal, invalid, and illegal predicates
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify normal predicates
+ *     2. Create and verify invalid predicates
+ *     3. Create and verify illegal predicates
+ * @tc.experct:
+ *     1. Normal predicates validation returns true
+ *     2. Invalid predicates validation returns true
+ *     3. Illegal predicates validation returns false
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify normal predciates
+    DataSharePredicates dp1;
+    dp1.EqualTo("name", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.EqualTo(" name ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify invalid predsicates
+    DataSharePredicates dp3;
+    dp3.EqualTo("name1 and name", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    // verify illegal predsicates
+    DataSharePredicates dp4;
+    dp4.NotEqualTo("true as name", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp5;
+    dp5.NotEqualTo("(1 = 1) or name", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates001 end");
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_002
+ * @tc.desc: Verify predicates for colName, (colName), [colName], and "colName" with leading/trailing spaces
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify predicates with colName format
+ *     2. Create and verify predicates with (colName) format
+ *     3. Create and verify predicates with [colName] format
+ *     4. Create and verify predicates with "colName" format
+ * @tc.experct:
+ *     1. Predicates with normal spaces pass validation
+ *     2. Predicates with abnormal spaces fail validation
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates002, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates002 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify predciates field case (colName) with normal/abnormal spaces
+    DataSharePredicates dp1;
+    dp1.NotEqualTo(" (name) ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.NotEqualTo("(name )", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case [colName] with normal/abnormal spaces
+    DataSharePredicates dp3;
+    dp3.NotEqualTo("[name]  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp4;
+    dp4.NotEqualTo("[na me]", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case "colName" with normal/abnormal spaces
+    DataSharePredicates dp5;
+    dp5.NotEqualTo(" \"name\" ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp6;
+    dp6.NotEqualTo("\" name\"", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp6, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates002 end");
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_003
+ * @tc.desc: Verify predicates for (table.colName), [table.colName], and "table.colName" with leading/trailing spaces
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify predicates with (table.colName) format
+ *     2. Create and verify predicates with [table.colName] format
+ *     3. Create and verify predicates with "table.colName" format
+ * @tc.experct:
+ *     1. Predicates with normal spaces pass validation
+ *     2. Predicates with abnormal spaces fail validation
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates003, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates003 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify predciates field case (table.colName) with normal/abnormal spaces
+    DataSharePredicates dp1;
+    dp1.LessThan(" (table1.name)", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.LessThan("(table1 . name)", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case [table.colName] with normal/abnormal spaces
+    DataSharePredicates dp3;
+    dp3.LessThan("   [table1.name]  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp4;
+    dp4.LessThan("[ table1 . name ]", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case "table.colName" with normal/abnormal spaces
+    DataSharePredicates dp5;
+    dp5.LessThan("   \"table1.name\"  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp6;
+    dp6.LessThan("\" table 1. name\"", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp6, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates003 end");
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_004
+ * @tc.desc: Verify predicates validation for ($.colName), [$.colName], and "$.colName" with leading/trailing spaces
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify predicates with ($.colName) format
+ *     2. Create and verify predicates with [$.colName] format
+ *     3. Create and verify predicates with "$.colName" format
+ * @tc.experct:
+ *     1. Predicates with normal spaces pass validation
+ *     2. Predicates with abnormal spaces fail validation
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates004, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates004 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify predciates field case ($.colName) with normal/abnormal spaces
+    DataSharePredicates dp1;
+    dp1.GreaterThan(" ($.name)", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.GreaterThan("($ . name)", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case [$.colName] with normal/abnormal spaces
+    DataSharePredicates dp3;
+    dp3.GreaterThan("   [$.name]  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp4;
+    dp4.GreaterThan("[ $ . name ]", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case "$.colName" with normal/abnormal spaces
+    DataSharePredicates dp5;
+    dp5.GreaterThan("   \"$.name\"  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp6;
+    dp6.GreaterThan("\" $. name\"", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp6, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates004 end");
+}
+
+/**
+ * @tc.name: VERIFY_PREDICATES_Test_005
+ * @tc.desc: Verify predicates for (store.table.colName), [store.table.colName], and "store.table.colName" with
+ *     leading/trailing spaces
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create and verify predicates with (store.table.colName) format
+ *     2. Create and verify predicates with [store.table.colName] format
+ *     3. Create and verify predicates with "store.table.colName" format
+ * @tc.experct:
+ *     1. Predicates with normal spaces pass validation
+ *     2. Predicates with abnormal spaces fail validation
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates005, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates005 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // verify predciates field case (store.table.colName) with normal/abnormal spaces
+    DataSharePredicates dp1;
+    dp1.Like(" (store.table.name)", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp2;
+    dp2.Like("(store.table . name)", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case [store.table.colName] with normal/abnormal spaces
+    DataSharePredicates dp3;
+    dp3.Like("   [store.table.name]  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp4;
+    dp4.Like("[ store .table . name ]", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // verify predciates field case "store.table.colName" with normal/abnormal spaces
+    DataSharePredicates dp5;
+    dp5.Like("   \"store.table.name\"  ", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp5, tokenId, providerConfig.providerInfo_, func));
+
+    DataSharePredicates dp6;
+    dp6.Like("\" store.table. name\"", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp6, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates005 end");
+}
+
+/**
+* @tc.name: NotifyChange001
+* @tc.desc: test NotifyChange function and abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, NotifyChange001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = SLIENT_ACCESS_URI;
+    // this uri not exist
+    auto result = dataShareServiceImpl.NotifyChange(uri, USER_TEST);
+    EXPECT_EQ(result, false);
+
+    result = dataShareServiceImpl.NotifyChange("", USER_TEST);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name: AddTemplate001
+* @tc.desc: test AddTemplate function and abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, AddTemplate001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = SLIENT_ACCESS_URI;
+    int64_t subscriberId = 0;
+    PredicateTemplateNode node1("p1", "select name0 as name from TBL00");
+    PredicateTemplateNode node2("p2", "select name1 as name from TBL00");
+    std::vector<PredicateTemplateNode> nodes;
+    nodes.emplace_back(node1);
+    nodes.emplace_back(node2);
+    Template tpl(nodes, "select name1 as name from TBL00");
+
+    auto result = dataShareServiceImpl.AddTemplate(uri, subscriberId, tpl);
+    EXPECT_EQ((result > 0), true);
+    result = dataShareServiceImpl.DelTemplate(uri, subscriberId);
+    EXPECT_EQ((result > 0), true);
+
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    result = dataShareServiceImpl.AddTemplate(uri, subscriberId, tpl);
+    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
+    result = dataShareServiceImpl.DelTemplate(uri, subscriberId);
+    EXPECT_EQ(result, DataShareServiceImpl::ERROR);
+}
+
+/**
+* @tc.name: GetCallerBundleName001
+* @tc.desc: test GetCallerBundleName function and abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, GetCallerBundleName001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    auto result = dataShareServiceImpl.GetCallerBundleName(BUNDLE_NAME);
+    EXPECT_EQ(result, true);
+
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    result = dataShareServiceImpl.GetCallerBundleName(BUNDLE_NAME);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name: Publish001
+* @tc.desc: test Publish and GetData no GetCallerBundleName scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, Publish001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    DataShare::Data data;
+    std::string bundleName = "com.acts.ohos.data.datasharetest";
+    data.datas_.emplace_back("datashareproxy://com.acts.ohos.data.datasharetest/test", TEST_SUB_ID, "value1");
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    std::vector<OperationResult> result = dataShareServiceImpl.Publish(data, bundleName);
+    EXPECT_NE(result.size(), data.datas_.size());
+    for (auto const &results : result) {
+        EXPECT_NE(results.errCode_, 0);
+    }
+
+    int errCode = 0;
+    auto getData = dataShareServiceImpl.GetData(bundleName, errCode);
+    EXPECT_EQ(errCode, 0);
+    EXPECT_NE(getData.datas_.size(), data.datas_.size());
+}
+
+/**
+* @tc.name: Publish002
+* @tc.desc: test Publish uri and GetData bundleName is error
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, Publish002, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    DataShare::Data data;
+    std::string bundleName = "com.acts.ohos.error";
+    data.datas_.emplace_back("datashareproxy://com.acts.ohos.error", TEST_SUB_ID, "value1");
+    std::vector<OperationResult> result = dataShareServiceImpl.Publish(data, bundleName);
+    EXPECT_EQ(result.size(), data.datas_.size());
+    for (auto const &results : result) {
+        EXPECT_EQ(results.errCode_, E_URI_NOT_EXIST);
+    }
+
+    int errCode = 0;
+    auto getData = dataShareServiceImpl.GetData(bundleName, errCode);
+    EXPECT_EQ(errCode, 0);
+    EXPECT_NE(getData.datas_.size(), data.datas_.size());
+}
+
+/**
+* @tc.name: SubscribeRdbData001
+* @tc.desc: Tests the operation of a subscription to a data change of the specified URI
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribeRdbData001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    PredicateTemplateNode node("p1", "select name0 as name from TBL00");
+    std::vector<PredicateTemplateNode> nodes;
+    nodes.emplace_back(node);
+    Template tpl(nodes, "select name1 as name from TBL00");
+    auto result1 = dataShareServiceImpl.AddTemplate(SLIENT_ACCESS_URI, TEST_SUB_ID, tpl);
+    EXPECT_TRUE(result1);
+    std::vector<std::string> uris;
+    uris.emplace_back(SLIENT_ACCESS_URI);
+    sptr<IDataProxyRdbObserver> observer;
+    TemplateId tplId;
+    tplId.subscriberId_ = TEST_SUB_ID;
+    tplId.bundleName_ = BUNDLE_NAME;
+    std::vector<OperationResult> result2 = dataShareServiceImpl.SubscribeRdbData(uris, tplId, observer);
+    EXPECT_EQ(result2.size(), uris.size());
+    for (auto const &operationResult : result2) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    std::vector<OperationResult> result3 = dataShareServiceImpl.EnableRdbSubs(uris, tplId);
+    for (auto const &operationResult : result3) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    std::string uri = SLIENT_ACCESS_URI;
+    DataShare::DataShareValuesBucket valuesBucket1, valuesBucket2;
+    std::string name0 = "wang";
+    valuesBucket1.Put(TBL_NAME0, name0);
+    auto [errCode4, result4] = dataShareServiceImpl.InsertEx(uri, "", valuesBucket1);
+    EXPECT_EQ((errCode4 != 0), true);
+
+    std::vector<OperationResult> result5 = dataShareServiceImpl.UnsubscribeRdbData(uris, tplId);
+    EXPECT_EQ(result5.size(), uris.size());
+    for (auto const &operationResult : result5) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    std::string name1 = "wu";
+    valuesBucket2.Put(TBL_NAME1, name1);
+    auto [errCode6, result6] = dataShareServiceImpl.InsertEx(uri, "", valuesBucket2);
+    EXPECT_EQ((errCode6 != 0), true);
+
+    std::vector<OperationResult> result7 = dataShareServiceImpl.DisableRdbSubs(uris, tplId);
+    for (auto const &operationResult : result7) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+}
+
+/**
+* @tc.name: SubscribeRdbData002
+* @tc.desc: Tests the operation of a subscription to a data change of the specified URI and subscribeOption
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribeRdbData002, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    PredicateTemplateNode node("p1", "select name0 as name from TBL00");
+    std::vector<PredicateTemplateNode> nodes;
+    nodes.emplace_back(node);
+    Template tpl(nodes, "select name1 as name from TBL00");
+    auto result1 = dataShareServiceImpl.AddTemplate(SLIENT_ACCESS_URI, TEST_SUB_ID, tpl);
+    EXPECT_TRUE(result1);
+    std::vector<std::string> uris;
+    uris.emplace_back(SLIENT_ACCESS_URI);
+    sptr<IDataProxyRdbObserver> observer;
+    TemplateId tplId;
+    tplId.subscriberId_ = TEST_SUB_ID;
+    tplId.bundleName_ = BUNDLE_NAME;
+    SubscribeOption option;
+    option.subscribeStatus.emplace(SLIENT_ACCESS_URI, false);
+    std::vector<OperationResult> result2 = dataShareServiceImpl.SubscribeRdbData(uris, tplId, observer, option);
+    EXPECT_EQ(result2.size(), uris.size());
+    for (auto const &operationResult : result2) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    std::vector<OperationResult> result3 = dataShareServiceImpl.UnsubscribeRdbData(uris, tplId);
+    EXPECT_EQ(result3.size(), uris.size());
+    for (auto const &operationResult : result3) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+}
+
+/**
+* @tc.name: SubscribeRdbData003
+* @tc.desc: Tests the operation of a subscription to a data change of the specified URI and subscribeOption
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribeRdbData003, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    PredicateTemplateNode node("p1", "select name0 as name from TBL00");
+    std::vector<PredicateTemplateNode> nodes;
+    nodes.emplace_back(node);
+    Template tpl(nodes, "select name1 as name from TBL00");
+    auto result1 = dataShareServiceImpl.AddTemplate(SLIENT_ACCESS_URI, TEST_SUB_ID, tpl);
+    EXPECT_TRUE(result1);
+    std::vector<std::string> uris;
+    uris.emplace_back(SLIENT_ACCESS_URI);
+    sptr<IDataProxyRdbObserver> observer;
+    TemplateId tplId;
+    tplId.subscriberId_ = TEST_SUB_ID;
+    tplId.bundleName_ = BUNDLE_NAME;
+    SubscribeOption option;
+    option.subscribeStatus.emplace(SLIENT_ACCESS_URI + "notContainTest", false);
+    std::vector<OperationResult> result2 = dataShareServiceImpl.SubscribeRdbData(uris, tplId, observer, option);
+    EXPECT_EQ(result2.size(), uris.size());
+    for (auto const &operationResult : result2) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    std::vector<OperationResult> result3 = dataShareServiceImpl.UnsubscribeRdbData(uris, tplId);
+    EXPECT_EQ(result3.size(), uris.size());
+    for (auto const &operationResult : result3) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+}
+
+/**
+* @tc.name: SubscribePublishedData001
+* @tc.desc: test SubscribePublishedData no GetCallerBundleName scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribePublishedData001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::vector<std::string> uris;
+    uris.emplace_back(SLIENT_ACCESS_URI);
+    sptr<IDataProxyPublishedDataObserver> observer;
+    int64_t subscriberId = TEST_SUB_ID;
+
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    std::vector<OperationResult> result = dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
+    EXPECT_NE(result.size(), uris.size());
+    for (auto const &operationResult : result) {
+        EXPECT_EQ(operationResult.errCode_, 0);
+    }
+
+    result = dataShareServiceImpl.UnsubscribePublishedData(uris, subscriberId);
+    EXPECT_NE(result.size(), uris.size());
+    for (auto const &operationResult : result) {
+        EXPECT_EQ(operationResult.errCode_, 0);
+    }
+}
+
+/**
+* @tc.name: SubscribePublishedData002
+* @tc.desc: test SubscribePublishedData abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribePublishedData002, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::vector<std::string> uris;
+    uris.emplace_back("");
+    sptr<IDataProxyPublishedDataObserver> observer;
+    int64_t subscriberId = 0;
+    std::vector<OperationResult> result = dataShareServiceImpl.SubscribePublishedData(uris, subscriberId, observer);
+    EXPECT_EQ(result.size(), uris.size());
+    for (auto const &operationResult : result) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    result = dataShareServiceImpl.UnsubscribePublishedData(uris, subscriberId);
+    EXPECT_EQ(result.size(), uris.size());
+    for (auto const &operationResult : result) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+}
+
+/**
+* @tc.name: EnablePubSubs001
+* @tc.desc: test EnablePubSubs no GetCallerBundleName scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, EnablePubSubs001, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::vector<std::string> uris;
+    uris.emplace_back(SLIENT_ACCESS_URI);
+    int64_t subscriberId = TEST_SUB_ID;
+
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    dataShareServiceImpl.OnConnectDone();
+    std::vector<OperationResult> result = dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
+    for (auto const &operationResult : result) {
+        EXPECT_EQ(operationResult.errCode_, 0);
+    }
+
+    result = dataShareServiceImpl.DisablePubSubs(uris, subscriberId);
+    for (auto const &operationResult : result) {
+        EXPECT_EQ(operationResult.errCode_, 0);
+    }
+}
+
+/**
+* @tc.name: EnablePubSubs002
+* @tc.desc: test EnablePubSubs abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, EnablePubSubs002, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    std::vector<std::string> uris;
+    uris.emplace_back("");
+    int64_t subscriberId = 0;
+    std::vector<OperationResult> result = dataShareServiceImpl.EnablePubSubs(uris, subscriberId);
+    for (auto const &operationResult : result) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+
+    result = dataShareServiceImpl.DisablePubSubs(uris, subscriberId);
+    for (auto const &operationResult : result) {
+        EXPECT_NE(operationResult.errCode_, 0);
+    }
+}
+
+/**
+* @tc.name: OnAppUninstall
+* @tc.desc: Test the operation of the app
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, OnAppUninstall, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    pid_t uid = 1;
+    pid_t pid = 2;
+    int32_t user = USER_TEST;
+    int32_t index = 0;
+    uint32_t tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, BUNDLE_NAME, 0);
+
+    auto result = dataShareServiceImpl.OnAppUpdate(BUNDLE_NAME, user, index);
+    EXPECT_EQ(result, GeneralError::E_OK);
+
+    result = dataShareServiceImpl.OnAppExit(uid, pid, tokenId, BUNDLE_NAME);
+    EXPECT_EQ(result, GeneralError::E_OK);
+
+    result = dataShareServiceImpl.OnAppUninstall(BUNDLE_NAME, user, index);
+    EXPECT_EQ(result, GeneralError::E_OK);
+
+    DataShareServiceImpl::DataShareStatic dataShareStatic;
+    result = dataShareStatic.OnAppUninstall(BUNDLE_NAME, user, index);
+    EXPECT_EQ(result, GeneralError::E_OK);
+}
+
+/**
+* @tc.name: OnInitialize
+* @tc.desc: test OnInitialize function
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, OnInitialize, TestSize.Level1)
+{
+    DataShareServiceImpl dataShareServiceImpl;
+    int fd = 1;
+    std::map<std::string, std::vector<std::string>> params;
+    dataShareServiceImpl.DumpDataShareServiceInfo(fd, params);
+    auto result = dataShareServiceImpl.OnInitialize();
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name: GetCallerInfo001
+* @tc.desc: test GetCallerInfo function when succeeded in getting tokenID
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, GetCallerInfo001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetCallerInfo001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    int32_t appIndex = 1;
+    auto result = dataShareServiceImpl.GetCallerInfo(BUNDLE_NAME, appIndex);
+    EXPECT_EQ(result.first, true);
+    ZLOGI("DataShareServiceImplTest GetCallerInfo001 end");
+}
+
+/**
+* @tc.name: GetCallerInfo002
+* @tc.desc: test GetCallerInfo function when failed to get tokenID
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceImplTest, GetCallerInfo002, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetCallerInfo002 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    int32_t appIndex = 1;
+    auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
+    AccessTokenKit::DeleteToken(tokenId);
+    auto result = dataShareServiceImpl.GetCallerInfo(BUNDLE_NAME, appIndex);
+    EXPECT_EQ(result.first, false);
+    ZLOGI("DataShareServiceImplTest GetCallerInfo002 end");
+}
+
+/**
+ * @tc.name: GetCallerInfo003
+ * @tc.desc: Verify GetCallerInfo behavior with TOKEN_HAP
+ * @tc.type: FUNC
+ * @tc.precon: DataShareServiceImpl is initialized
+ * @tc.step:
+ *   1. Set bundleName to empty
+ *   2. Call GetCallerInfo with TOKEN_HAP, expect bundleName to be set
+ * @tc.expect:
+ *   1. Return true
+ *   2. bundleName is "ohos.datasharetest.demo"
+ */
+HWTEST_F(DataShareServiceImplTest, GetCallerInfo003, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetCallerInfo003 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    int32_t appIndex = 1;
+    std::string bundleName = "";
+    // TOKEN_HAP bundleName is ohos.datasharetest.demo
+    auto result = dataShareServiceImpl.GetCallerInfo(bundleName, appIndex, TEST_SA_ID);
+    EXPECT_TRUE(result.first);
+    EXPECT_EQ(bundleName, "ohos.datasharetest.demo");
+    ZLOGI("DataShareServiceImplTest GetCallerInfo003 end");
+}
+
+/**
+ * @tc.name: CheckAllowList001
+ * @tc.desc: Verify CheckAllowList behavior with specific allow list configuration
+ * @tc.type: FUNC
+ * @tc.precon: DataShareServiceImpl is initialized
+ * @tc.step:
+ *   1. Set testTokenId with valid HAP token ID
+ *   2. Create allowLists with onlyMain set to true
+ *   3. Call CheckAllowList and verify result
+ * @tc.expect:
+ *   1. Return false
+ */
+HWTEST_F(DataShareServiceImplTest, CheckAllowList001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest CheckAllowList001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(NATIVE_USER_ID, BUNDLE_NAME, 0);
+    AllowList procAllowList;
+    procAllowList.appIdentifier = "processName";
+    procAllowList.onlyMain = true;
+    std::vector<AllowList> allowLists = { procAllowList };
+    // TOKEN_HAP and systemAbilityId is valid
+    auto result = dataShareServiceImpl.CheckAllowList(USER_TEST, testTokenId, allowLists, TEST_SA_ID);
+    EXPECT_FALSE(result);
+    ZLOGI("DataShareServiceImplTest CheckAllowList001 end");
+}
+
+/**
+ * @tc.name: CheckAllowList002
+ * @tc.desc: Verify CheckAllowList behavior with specific allow list configuration
+ * @tc.type: FUNC
+ * @tc.precon: DataShareServiceImpl is initialized
+ * @tc.step:
+ *   1. Set testTokenId with valid HAP token ID
+ *   2. Create allowLists with one entry, onlyMain set to true
+ *   3. Call CheckAllowList and verify result
+ * @tc.expect:
+ *   1. Return false
+ */
+HWTEST_F(DataShareServiceImplTest, CheckAllowList002, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest CheckAllowList002 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(NATIVE_USER_ID, BUNDLE_NAME, 0);
+    AllowList procAllowList;
+    procAllowList.appIdentifier = "processName";
+    procAllowList.onlyMain = true;
+    std::vector<AllowList> allowLists = { procAllowList };
+    // TOKEN_HAP and systemAbilityId is INVALID_SA_ID(0)
+    auto result = dataShareServiceImpl.CheckAllowList(USER_TEST, testTokenId, allowLists, 0);
+    EXPECT_FALSE(result);
+    ZLOGI("DataShareServiceImplTest CheckAllowList002 end");
+}
+
+/**
+* @tc.name: GetSilentProxyStatus001
+* @tc.desc: test GetSilentProxyStatus001 function while creating helper
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, GetSilentProxyStatus001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus001 start");
+    SetSelfTokenInfo(NATIVE_USER_ID);
+    DataShareServiceImpl dataShareServiceImpl;
+    auto result = dataShareServiceImpl.GetSilentProxyStatus(SLIENT_ACCESS_URI, true);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+
+    result = dataShareServiceImpl.GetSilentProxyStatus(SLIENT_ACCESS_URI + "?user=100", true);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+    SetSelfTokenInfo(USER_TEST);
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus001 end");
+}
+
+/**
+* @tc.name: DataProviderConfig001
+* @tc.desc: test get provider info function
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, DataProviderConfig001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest DataProviderConfig001 start");
+    SetSelfTokenInfo(NATIVE_USER_ID);
+    auto testTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(NATIVE_USER_ID, BUNDLE_NAME, 0);
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(testing::_)).Times(1).WillOnce(testing::Return(false));
+    DataProviderConfig config(SLIENT_ACCESS_URI, testTokenId);
+    EXPECT_EQ(config.providerInfo_.uri, SLIENT_ACCESS_URI);
+    EXPECT_EQ(config.providerInfo_.currentUserId, NATIVE_USER_ID);
+    EXPECT_EQ(config.providerInfo_.visitedUserId, NATIVE_USER_ID);
+    SetSelfTokenInfo(USER_TEST);
+    ZLOGI("DataShareServiceImplTest DataProviderConfig001 end");
+}
+
+/**
+* @tc.name: UpdateLaunchInfoMock001
+* @tc.desc: mock GetInstance return nullptr
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, UpdateLaunchInfo001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest UpdateLaunchInfo001 start");
+
+    DataShareServiceImpl dataShareServiceImpl;
+    // cover branch of config is nullptr
+    dataShareServiceImpl.UpdateLaunchInfo();
+
+    std::string prefix = StoreMetaData::GetPrefix({ DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid });
+    std::vector<StoreMetaData> storeMetaData;
+    MetaDataManager::GetInstance().LoadMeta(prefix, storeMetaData, true);
+    EXPECT_EQ(storeMetaData.size(), 0);
+    ZLOGI("DataShareServiceImplTest UpdateLaunchInfo001 end");
+}
+
+/**
+* @tc.name: BundleMgrProxyTest_GetSilentAccessStores
+* @tc.desc: Test the GetSilentAccessStores method of BundleMgrProxy
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_GetSilentAccessStores, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_GetSilentAccessStores start");
+    int32_t user = static_cast<int32_t>(USER_TEST);
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+    auto [err1, stores1] = bundleMgr->GetSilentAccessStores(BUNDLE_NAME, user);
+    EXPECT_EQ(err1, OHOS::DataShare::E_OK);
+    EXPECT_EQ(stores1.size(), 0);
+    auto [err2, stores2] = bundleMgr->GetSilentAccessStores("", user);
+    EXPECT_NE(err2, OHOS::DataShare::E_OK);
+    EXPECT_EQ(stores2.size(), 0);
+
+    std::string storeName = "test";
+    std::vector<std::string> storesTest;
+    storesTest.push_back(storeName);
+    DataShare::SilentBundleInfo silentBundleInfo(BUNDLE_NAME, user);
+    bundleMgr->silentAccessStores_.Set(silentBundleInfo, storesTest);
+    EXPECT_EQ(bundleMgr->silentAccessStores_.Size(), 1);
+    auto [err3, stores3] = bundleMgr->GetSilentAccessStores(BUNDLE_NAME, user);
+    EXPECT_EQ(err3, OHOS::DataShare::E_OK);
+    EXPECT_EQ(stores3.size(), 1);
+    EXPECT_EQ(stores3[0], storeName);
+
+    bundleMgr->silentAccessStores_.Delete(silentBundleInfo);
+    EXPECT_EQ(bundleMgr->silentAccessStores_.Size(), 0);
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_GetSilentAccessStores end");
+}
+
+/**
+* @tc.name: BundleMgrProxyTest_ErrorCases
+* @tc.desc: Test GetSilentAccessStores with various error cases
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_ErrorCases, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_ErrorCases start");
+
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+
+    int32_t user = static_cast<int32_t>(USER_TEST);
+
+    auto [err1, stores1] = bundleMgr->GetSilentAccessStores("", user);
+    EXPECT_NE(err1, OHOS::DataShare::E_OK);
+    EXPECT_EQ(stores1.size(), 0);
+
+    auto [err2, stores2] = bundleMgr->GetSilentAccessStores("com.nonexistent.bundle", user);
+    EXPECT_EQ(err2, OHOS::DataShare::E_OK);
+    EXPECT_EQ(stores2.size(), 0);
+
+    auto [err3, stores3] = bundleMgr->GetSilentAccessStores(BUNDLE_NAME, 0);
+    EXPECT_EQ(err3, OHOS::DataShare::E_OK);
+
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_ErrorCases end");
+}
+
+/**
+* @tc.name: BundleMgrProxyTest_BMSNull
+* @tc.desc: Test GetSilentAccessStores when BMS client is nullptr
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_BMSNull, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_BMSNull start");
+
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+
+    int32_t user = static_cast<int32_t>(USER_TEST);
+    auto [err, stores] = bundleMgr->GetSilentAccessStores("", user);
+    EXPECT_NE(err, OHOS::DataShare::E_OK);
+    EXPECT_EQ(stores.size(), 0);
+
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_BMSNull end");
+}
+
+/**
+* @tc.name: BundleMgrProxyTest_EmptyStoresResult
+* @tc.desc: Test GetSilentAccessStores returns empty list when no stores found
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_EmptyStoresResult, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_EmptyStoresResult start");
+
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+
+    int32_t user = static_cast<int32_t>(USER_TEST);
+    auto [err, stores] = bundleMgr->GetSilentAccessStores(BUNDLE_NAME, user);
+    EXPECT_EQ(err, OHOS::DataShare::E_OK);
+    EXPECT_EQ(stores.size(), 0);
+
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_EmptyStoresResult end");
+}
+
+/**
+* @tc.name: BundleMgrProxyTest_NonEmptyStoresResult
+* @tc.desc: Test GetSilentAccessStores returns E_OK when stores found
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_NonEmptyStoresResult, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_NonEmptyStoresResult start");
+
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+
+    int32_t user = static_cast<int32_t>(USER_TEST);
+
+    std::vector<std::string> storesTest = {"store1", "store2"};
+    DataShare::SilentBundleInfo silentBundleInfo(BUNDLE_NAME, user);
+    bundleMgr->silentAccessStores_.Set(silentBundleInfo, storesTest);
+
+    auto [err, stores] = bundleMgr->GetSilentAccessStores(BUNDLE_NAME, user);
+    EXPECT_EQ(err, OHOS::DataShare::E_OK);
+    EXPECT_EQ(stores.size(), 2);
+    EXPECT_EQ(stores, storesTest);
+
+    bundleMgr->silentAccessStores_.Delete(silentBundleInfo);
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_NonEmptyStoresResult end");
+}
+
+/**
+* @tc.name: BundleUtilsTest001
+* @tc.desc: Test the SetBundleInfoCallback and GetSilentAccessStores methods of BundleUtils
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleUtilsTest001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleUtilsTest001 start");
+    auto [err, stores] = BundleUtils::GetInstance().GetSilentAccessStores("", 0);
+    EXPECT_EQ(err, -1);
+    EXPECT_TRUE(stores.empty());
+
+    auto task = [](const std::string &bundleName, int32_t userId) {
+        std::vector<std::string> stores = { "test" };
+        return std::make_pair(0, std::move(stores));
+    };
+    BundleUtils::GetInstance().SetBundleInfoCallback(task);
+    auto [err2, stores2] = BundleUtils::GetInstance().GetSilentAccessStores("", 0);
+    EXPECT_EQ(err2, 0);
+    std::vector<std::string> expectedStores = { "test" };
+    EXPECT_EQ(stores2, expectedStores);
+    ZLOGI("DataShareServiceImplTest BundleUtilsTest001 end");
+}
+
+/**
+* @tc.name: SetCriticalTask001
+* @tc.desc: Test the SetCriticalTask methods of DataShareServiceImpl
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, SetCriticalTask001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest SetCriticalTask001 start");
+    size_t max = 12;
+    size_t min = 5;
+    auto executor = std::make_shared<ExecutorPool>(max, min);
+    ASSERT_NE(executor, nullptr);
+    DataShareServiceImpl dataShareServiceImpl;
+    dataShareServiceImpl.binderInfo_.executors = executor;
+    dataShareServiceImpl.SetCriticalTask();
+
+    dataShareServiceImpl.binderInfo_.executors = nullptr;
+    dataShareServiceImpl.SetCriticalTask();
+    ZLOGI("DataShareServiceImplTest SetCriticalTask001 end");
+}
+
+/**
+* @tc.name: SubscribeTimeChanged001
+* @tc.desc: Test the SubscribeTimeChanged methods of DataShareServiceImpl
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, SubscribeTimeChanged001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest SubscribeTimeChanged001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    EXPECT_EQ(dataShareServiceImpl.timerReceiver_, nullptr);
+    bool ret = dataShareServiceImpl.SubscribeTimeChanged();
+    EXPECT_TRUE(ret);
+    EXPECT_NE(dataShareServiceImpl.timerReceiver_, nullptr);
+    ret = dataShareServiceImpl.SubscribeTimeChanged();
+    EXPECT_TRUE(ret);
+    EXPECT_NE(dataShareServiceImpl.timerReceiver_, nullptr);
+    ZLOGI("DataShareServiceImplTest SubscribeTimeChanged001 end");
+}
+
+/**
+* @tc.name: BundleMgrProxyTest_GetSilentAccessStoresWithStores
+* @tc.desc: Test GetSilentAccessStores when cache miss and BMS returns stores
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_GetSilentAccessStoresWithStores, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_GetSilentAccessStoresWithStores start");
+
+    auto bundleMgr = BundleMgrProxy::GetInstance();
+    ASSERT_NE(bundleMgr, nullptr);
+
+    int32_t user = static_cast<int32_t>(USER_TEST);
+
+    std::string testBundle = "com.test.bundle";
+    auto [err, stores] = bundleMgr->GetSilentAccessStores(testBundle, user);
+
+    EXPECT_EQ(err, OHOS::DataShare::E_OK);
+    EXPECT_TRUE(stores.empty());
+
+    ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_GetSilentAccessStoresWithStores end");
+}
+} // namespace OHOS::Test

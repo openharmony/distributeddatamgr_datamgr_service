@@ -19,6 +19,5 @@ group("unittest") {
   testonly = true
   deps = [
     "backup:unittests",
-    "..:unittest",  # 引用父目录中未迁移的测试
   ]
 }
