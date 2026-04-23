@@ -294,67 +294,9 @@ ohos_unittest("ValueProxyServiceTest") {
   ]
 }
 
-ohos_unittest("ConfigFactoryTest") {
-  module_out_path = module_output_path
-  sources = [ "unittest/bootstrap/config_factory_test.cpp" ]
+# ConfigFactoryTest moved to unittest/bootstrap/BUILD.gn
 
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "ability_base:base",
-    "ability_base:want",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-    "openssl:libcrypto_shared",
-  ]
-
-  deps = [
-    "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/config:distributeddata_config",
-  ]
-}
-
-ohos_unittest("DirectoryManagerTest") {
-  module_out_path = module_output_path
-  sources = [
-    "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
-    "${data_service_path}/service/config/src/config_factory.cpp",
-    "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
-    "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
-    "${data_service_path}/service/config/src/model/auto_sync_app_config.cpp",
-    "${data_service_path}/service/config/src/model/backup_config.cpp",
-    "${data_service_path}/service/config/src/model/checker_config.cpp",
-    "${data_service_path}/service/config/src/model/cloud_config.cpp",
-    "${data_service_path}/service/config/src/model/component_config.cpp",
-    "${data_service_path}/service/config/src/model/datashare_config.cpp",
-    "${data_service_path}/service/config/src/model/directory_config.cpp",
-    "${data_service_path}/service/config/src/model/double_sync_config.cpp",
-    "${data_service_path}/service/config/src/model/global_config.cpp",
-    "${data_service_path}/service/config/src/model/network_config.cpp",
-    "${data_service_path}/service/config/src/model/protocol_config.cpp",
-    "${data_service_path}/service/config/src/model/thread_config.cpp",
-    "unittest/bootstrap/directory_manager_test.cpp",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "ability_base:base",
-    "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-  ]
-
-  deps = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/framework:distributeddatasvcfwk" ]
-}
+# DirectoryManagerTest moved to unittest/bootstrap/BUILD.gn
 
 ohos_unittest("CryptoManagerTest") {
   module_out_path = module_output_path
@@ -2515,68 +2457,7 @@ ohos_unittest("PermitDelegateMockTest") {
   ]
 }
 
-ohos_unittest("BootStrapMockTest") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
-
-  include_dirs = [
-    "${data_service_path}/service/backup/include",
-    "${data_service_path}/service/bootstrap/include/",
-    "${data_service_path}/service/config/include/",
-    "${data_service_path}/service/config/include/model",
-  ]
-
-  module_out_path = module_output_path
-  sources = [
-    "${data_service_path}/service/bootstrap/src/bootstrap.cpp",
-    "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
-    "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
-    "${data_service_path}/service/config/src/model/auto_sync_app_config.cpp",
-    "${data_service_path}/service/config/src/model/backup_config.cpp",
-    "${data_service_path}/service/config/src/model/checker_config.cpp",
-    "${data_service_path}/service/config/src/model/cloud_config.cpp",
-    "${data_service_path}/service/config/src/model/component_config.cpp",
-    "${data_service_path}/service/config/src/model/datashare_config.cpp",
-    "${data_service_path}/service/config/src/model/directory_config.cpp",
-    "${data_service_path}/service/config/src/model/double_sync_config.cpp",
-    "${data_service_path}/service/config/src/model/global_config.cpp",
-    "${data_service_path}/service/config/src/model/network_config.cpp",
-    "${data_service_path}/service/config/src/model/protocol_config.cpp",
-    "${data_service_path}/service/config/src/model/thread_config.cpp",
-    "unittest/bootstrap/bootstrap_mock_test.cpp",
-    "mock/config_factory_mock.cpp",
-  ]
-
-  external_deps = [
-    "bundle_framework:appexecfwk_core",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "kv_store:distributeddata_inner",
-  ]
-
-  deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/backup:distributeddata_backup",
-  ]
-
-  cflags = [
-    "-Werror",
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  cflags_cc = cflags
-
-  defines = [
-    "TEST_ON_DEVICE",
-    "OPENSSL_SUPPRESS_DEPRECATED",
-  ]
-}
+# BootStrapMockTest moved to unittest/bootstrap/BUILD.gn
 
 ohos_unittest("QueryHelperUnitTest") {
   module_out_path = module_output_path
@@ -2662,56 +2543,7 @@ ohos_unittest("AuthDelegateMockTest") {
   ]
 }
 
-ohos_unittest("UpgradeMockTest") {
-  module_out_path = module_output_path
-
-  include_dirs = [
-    "${data_service_path}/adapter/include/communicator/",
-    "${data_service_path}/framework/include/",
-    "${data_service_path}/service/bootstrap/include/",
-    "${data_service_path}/service/crypto/include/",
-    "${data_service_path}/service/kvdb/",
-    "${data_service_path}/service/matrix/include/",
-    "${data_service_path}/service/rdb/",
-    "${data_service_path}/service/test/mock",
-  ]
-
-  sources = [
-    "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
-    "${data_service_path}/service/kvdb/upgrade.cpp",
-    "mock/access_token_mock.cpp",
-    "unittest/bootstrap/upgrade_mock_test.cpp",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "c_utils:utils",
-    "googletest:gmock_main",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "huks:libhukssdk",
-    "json:nlohmann_json_static",
-    "kv_store:datamgr_common",
-    "kv_store:distributeddb",
-  ]
-
-  deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
-    "${data_service_path}/adapter/utils:distributeddata_utils",
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
-    "${data_service_path}/service/matrix:distributeddata_matrix",
-    "${data_service_path}/service/rdb:distributeddata_rdb",
-    "${data_service_path}/service/test/mock:distributeddata_mock_static",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  cflags_cc = cflags
-}
+# UpgradeMockTest moved to unittest/bootstrap/BUILD.gn
 
 ohos_unittest("UserDelegateMockTest") {
   module_out_path = module_output_path
@@ -3049,7 +2881,7 @@ group("unittest") {
   ]
 
   if (datamgr_service_config) {
-    deps += [ ":ConfigFactoryTest" ]
+    deps += [ "unittest/bootstrap:unittests" ]
   }
 
   if (datamgr_service_cloud) {
@@ -3108,7 +2940,7 @@ group("unittest") {
       ":KvdbServiceImplTest",
       ":KvdbServicePasswordTest",
       ":QueryHelperUnitTest",
-      ":UpgradeMockTest",
+      # ":UpgradeMockTest",  # 已迁移到 unittest/bootstrap/BUILD.gn
       ":UserDelegateMockTest",
     ]
   }
@@ -3121,12 +2953,11 @@ group("unittest") {
   }
 
   deps += [
-    ":BootStrapMockTest",
+    "unittest/bootstrap:unittests",
     "unittest/clone:unittests",
     ":CryptoManagerTest",
     ":DataHandlerTest",
     ":DeviceMatrixTest",
-    ":DirectoryManagerTest",
     ":DumpHelperTest",
     ":LifeCycleManagerTest",
     ":MetaDataTest",
