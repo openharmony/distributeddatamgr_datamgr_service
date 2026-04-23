@@ -3037,97 +3037,7 @@ ohos_unittest("UdmfObserverTest") {
   ]
 }
 
-ohos_unittest("UtdServiceStubTest") {
-  module_out_path = module_output_path
-  sources = [ "unittest/utd/utd_service_stub_test.cpp" ]
-
-  include_dirs = [
-    "${data_service_path}/service/utd",
-    "${data_service_path}/framework/include",
-  ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/utd:utd_server",
-  ]
-
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-    "samgr:samgr_proxy",
-    "udmf:utd_client",
-  ]
-}
-
-ohos_unittest("UtdServiceImplTest") {
-  module_out_path = module_output_path
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
-  }
-  sources = [
-    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "${data_service_path}/framework/feature/feature_system.cpp",
-    "unittest/utd/utd_service_impl_test.cpp",
-  ]
-
-  include_dirs = [
-    "${data_service_path}/adapter/include/account",
-    "${data_service_path}/adapter/include/communicator",
-    "${data_service_path}/app/src",
-    "${data_service_path}/service/kvdb",
-    "${data_service_path}/service/utd",
-  ]
-
-  configs = [ ":module_private_config" ]
-
-  external_deps = [
-    "ability_base:base",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
-    "access_token:libtoken_setproc",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddata_mgr",
-    "kv_store:distributeddb",
-    "openssl:libcrypto_shared",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-    "udmf:utd_client",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-    "${data_service_path}/service/utd:utd_server",
-  ]
-
-  defines = [
-    "private=public",
-    "protected=public",
-  ]
-}
-
+# UtdServiceStubTest and UtdServiceImplTest moved to unittest/utd/BUILD.gn
 # CloneManagerTest definition moved to unittest/clone/BUILD.gn
 
 ###############################################################################
@@ -3163,8 +3073,7 @@ group("unittest") {
       ":UdmfServiceImplTest",
       ":UdmfServiceStubMockTest",
       ":UdmfServiceStubTest",
-      ":UtdServiceImplTest",
-      ":UtdServiceStubTest",
+      "unittest/utd:unittests",
     ]
   }
 

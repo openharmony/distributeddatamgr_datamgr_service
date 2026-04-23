@@ -20,5 +20,6 @@ group("unittest") {
   deps = [
     "backup:unittests",
     "clone:unittests",
+    "utd:unittests",
   ]
 }
