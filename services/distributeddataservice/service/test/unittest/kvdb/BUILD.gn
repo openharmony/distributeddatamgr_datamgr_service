@@ -18,7 +18,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/service/kvdb"
 
 ###############################################################################
-# KVDB 单元测试定义
+# KVDB Unit Tests Definition
 ###############################################################################
 
 ohos_unittest("KVDBGeneralStoreTest") {
@@ -303,7 +303,7 @@ ohos_unittest("QueryHelperUnitTest") {
 }
 
 ###############################################################################
-# KVDB 测试收集group
+# KVDB Test Collection Group
 ###############################################################################
 
 group("unittests") {

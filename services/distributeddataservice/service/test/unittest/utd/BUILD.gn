@@ -18,7 +18,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/service/utd"
 
 ###############################################################################
-# UTD 单元测试定义
+# UTD Unit Tests Definition
 ###############################################################################
 
 ohos_unittest("UtdServiceStubTest") {
@@ -113,7 +113,7 @@ ohos_unittest("UtdServiceImplTest") {
 }
 
 ###############################################################################
-# UTD 测试收集group
+# UTD Test Collection Group
 ###############################################################################
 
 group("unittests") {

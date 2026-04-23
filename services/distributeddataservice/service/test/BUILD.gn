@@ -14,8 +14,6 @@ import("//build/ohos_var.gni")
 import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-# module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"  # No longer used here, defined in feature BUILD.gn files
-
 ###############################################################################
 config("module_private_config") {
   visibility = [ ":*", "unittest:*", "unittest/*:*" ]
@@ -53,44 +51,6 @@ config("module_private_config") {
     "OPENSSL_SUPPRESS_DEPRECATED",
   ]
 }
-
-# CloudDataTest moved to unittest/cloud/BUILD.gn
-
-# CloudDataMockTest moved to unittest/cloud/BUILD.gn
-
-# CloudServiceImplTest moved to unittest/cloud/BUILD.gn
-
-# CloudTest moved to unittest/cloud/BUILD.gn
-
-# ValueProxyServiceTest moved to unittest/cloud/BUILD.gn
-
-# ConfigFactoryTest moved to unittest/bootstrap/BUILD.gn
-
-# DirectoryManagerTest moved to unittest/bootstrap/BUILD.gn
-
-# CryptoManagerTest moved to unittest/common/BUILD.gn
-
-# DeviceMatrixTest moved to unittest/common/BUILD.gn
-
-# KVDBGeneralStoreTest and KVDBGeneralStoreAbnormalTest moved to unittest/kvdb/BUILD.gn
-
-# RdbResultSetImplTest moved to unittest/rdb/BUILD.gn
-
-# RdbServiceTest moved to unittest/rdb/BUILD.gn
-
-# RdbFlowControlManagerTest moved to unittest/rdb/BUILD.gn
-
-# RdbServiceImplTest moved to unittest/rdb/BUILD.gn
-
-# RdbServiceImplTokenTest moved to unittest/rdb/BUILD.gn
-
-# Object tests moved to unittest/object/BUILD.gn
-
-# MetaDataTest moved to unittest/common/BUILD.gn
-
-# UDMF tests moved to unittest/udmf/BUILD.gn
-# UtdServiceStubTest and UtdServiceImplTest moved to unittest/utd/BUILD.gn
-# CloneManagerTest definition moved to unittest/clone/BUILD.gn
 
 ###############################################################################
 group("unittest") {

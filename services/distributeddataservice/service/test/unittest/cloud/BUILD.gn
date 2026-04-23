@@ -18,7 +18,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/service/cloud"
 
 ###############################################################################
-# Cloud 单元测试定义
+# Cloud Unit Tests Definition
 ###############################################################################
 
 ohos_unittest("CloudDataTest") {
@@ -262,7 +262,7 @@ ohos_unittest("ValueProxyServiceTest") {
 }
 
 ###############################################################################
-# Cloud 测试收集group
+# Cloud Test Collection Group
 ###############################################################################
 
 group("unittests") {
