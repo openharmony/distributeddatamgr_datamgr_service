@@ -95,54 +95,6 @@ config("module_private_config") {
 ###############################################################################
 group("unittest") {
   testonly = true
-
-  deps = [
-    "unittest/backup:unittests",  # 引用test/unittest/backup/BUILD.gn
-  ]
-
-  if (datamgr_service_config) {
-    deps += [ "unittest/bootstrap:unittests" ]
-  }
-
-  if (datamgr_service_cloud) {
-    deps += [ "unittest/cloud:unittests" ]
-  }
-
-  if (datamgr_service_udmf) {
-    deps += [
-      "unittest/udmf:unittests",
-      "unittest/utd:unittests",
-    ]
-  }
-
-  if (datamgr_service_object) {
-    deps += [ "unittest/object:unittests" ]
-  }
-
-  if (datamgr_service_rdb) {
-    deps += [ "unittest/rdb:unittests" ]
-  }
-
-  if (datamgr_service_kvdb) {
-    deps += [
-      # ":AuthDelegateMockTest",  # Test not found
-      # ":BackupManagerServiceTest",  # 已迁移到 unittest/backup/BUILD.gn
-      "unittest/kvdb:unittests",
-      # ":UpgradeMockTest",  # 已迁移到 unittest/bootstrap/BUILD.gn
-      # ":UserDelegateMockTest",  # 已迁移到 unittest/permission/BUILD.gn
-    ]
-  }
-
-  if (datamgr_service_data_share) {
-    deps += [ "unittest/data_share:unittests" ]
-  }
-
-  deps += [
-    "unittest/bootstrap:unittests",
-    "unittest/clone:unittests",
-    "unittest/common:unittests",
-    "unittest/permission:unittests",
-    "unittest/cloud:unittests",
-  ]
+  deps = [ "unittest:unittest" ]
 }
 ###############################################################################
