@@ -18,7 +18,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/service/rdb"
 
 ###############################################################################
-# RDB 单元测试定义
+# RDB Unit Tests Definition
 ###############################################################################
 
 ohos_unittest("RdbResultSetImplTest") {
@@ -413,7 +413,7 @@ ohos_unittest("RdbServiceImplTokenTest") {
 }
 
 ###############################################################################
-# RDB 测试收集group
+# RDB Test Collection Group
 ###############################################################################
 
 group("unittests") {

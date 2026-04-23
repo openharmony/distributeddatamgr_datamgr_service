@@ -18,7 +18,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/service/object"
 
 ###############################################################################
-# Object 单元测试定义
+# Object Unit Tests Definition
 ###############################################################################
 
 ohos_unittest("ObjectAssetLoaderTest") {
@@ -373,7 +373,7 @@ ohos_unittest("ObjectSnapshotTest") {
 }
 
 ###############################################################################
-# Object 测试收集group
+# Object Test Collection Group
 ###############################################################################
 
 group("unittests") {

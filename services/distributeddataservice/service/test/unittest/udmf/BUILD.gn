@@ -18,7 +18,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/service/udmf"
 
 ###############################################################################
-# UDMF 单元测试定义
+# UDMF Unit Tests Definition
 ###############################################################################
 
 ohos_unittest("UdmfRunTimeStoreTest") {
@@ -864,7 +864,7 @@ ohos_unittest("UdmfObserverTest") {
 }
 
 ###############################################################################
-# UDMF 测试收集group
+# UDMF Test Collection Group
 ###############################################################################
 
 group("unittests") {

@@ -18,7 +18,7 @@ import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 module_output_path = "datamgr_service/datamgr_service/service/permission"
 
 ###############################################################################
-# Permission 单元测试定义
+# Permission Unit Tests Definition
 ###############################################################################
 
 ohos_unittest("PermissionValidatorTest") {
@@ -173,7 +173,7 @@ ohos_unittest("UserDelegateMockTest") {
 }
 
 ###############################################################################
-# Permission 测试收集group
+# Permission Test Collection Group
 ###############################################################################
 
 group("unittests") {
