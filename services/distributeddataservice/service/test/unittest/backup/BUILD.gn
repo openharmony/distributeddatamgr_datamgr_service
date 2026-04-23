@@ -11,7 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("../../../../../datamgr_service.gni")
+import("//build/ohos_var.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+module_output_path = "datamgr_service/datamgr_service/distributeddatafwk"
 
 ###############################################################################
 # Backup 单元测试定义
@@ -26,7 +30,7 @@ ohos_unittest("BackupManagerServiceTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "unittest/backup/backup_manager_service_test.cpp",
+    "backup_manager_service_test.cpp",
   ]
 
   include_dirs = [
