@@ -2761,7 +2761,7 @@ ohos_unittest("BackupManagerServiceTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
-    "backup_manager_service_test.cpp",
+    "unittest/backup/backup_manager_service_test.cpp",
   ]
 
   include_dirs = [
@@ -3224,7 +3224,9 @@ ohos_unittest("CloneManagerTest") {
 group("unittest") {
   testonly = true
 
-  deps = []
+  deps = [
+    "unittest:BackupManagerServiceTest",  # 引用test/unittest/BUILD.gn中已迁移的测试
+  ]
 
   if (datamgr_service_config) {
     deps += [ ":ConfigFactoryTest" ]
@@ -3281,7 +3283,7 @@ group("unittest") {
   if (datamgr_service_kvdb) {
     deps += [
       ":AuthDelegateMockTest",
-      ":BackupManagerServiceTest",
+      # ":BackupManagerServiceTest",  # 已迁移到 unittest/backup/BUILD.gn
       ":KVDBGeneralStoreAbnormalTest",
       ":KVDBGeneralStoreTest",
       ":KvdbServiceImplTest",
