@@ -24,7 +24,9 @@ group("unittest") {
     "cloud:unittests",
     "common:unittests",
     "kvdb:unittests",
+    "object:unittests",
     "permission:unittests",
+    "udmf:unittests",
     "utd:unittests",
   ]
 }
