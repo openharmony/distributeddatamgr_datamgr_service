@@ -19,5 +19,6 @@ group("unittest") {
   testonly = true
   deps = [
     "backup:unittests",
+    "clone:unittests",
   ]
 }
