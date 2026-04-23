@@ -1,0 +1,83 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("../../../../../datamgr_service.gni")
+
+###############################################################################
+# Backup 单元测试定义
+###############################################################################
+
+ohos_unittest("BackupManagerServiceTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "unittest/backup/backup_manager_service_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/bootstrap/include/",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/matrix/include/",
+    "${data_service_path}/service/rdb",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/backup/include/",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "safwk:system_ability_fwk",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service/backup:distributeddata_backup",
+    "${data_service_path}/service/kvdb:distributeddata_kvdb",
+  ]
+}
+
+###############################################################################
+# Backup 测试收集group
+###############################################################################
+
+group("unittests") {
+  testonly = true
+  deps = [
+    ":BackupManagerServiceTest",
+  ]
+}
