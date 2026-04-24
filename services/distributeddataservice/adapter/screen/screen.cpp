@@ -44,8 +44,8 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
     const auto action = want.GetAction();
     if (action != CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED && action !=
         CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED &&
-        action != CommonEventSupport::COMMON_EVENT_SCREEN_ON &&     // 新增
-        action != CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {      // 新增
+        action != CommonEventSupport::COMMON_EVENT_SCREEN_ON &&
+        action != CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
         return;
     }
     ZLOGI("Want Action is %{public}s", action.c_str());
@@ -82,12 +82,12 @@ void EventSubscriber::SetLockedEventCallback(EventCallback callback)
     lockedEventCallback_ = callback;
 }
 
-void EventSubscriber::SetScreenOnEventCallback(EventCallback callback)  // 新增
+void EventSubscriber::SetScreenOnEventCallback(EventCallback callback)
 {
     screenOnEventCallback_ = callback;
 }
 
-void EventSubscriber::SetScreenOffEventCallback(EventCallback callback)  // 新增
+void EventSubscriber::SetScreenOffEventCallback(EventCallback callback)
 {
     screenOffEventCallback_ = callback;
 }
@@ -119,8 +119,8 @@ void Screen::SubscribeEvent()
         MatchingSkills matchingSkills;
         matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED);
         matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
-        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_ON);    // 新增
-        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);   // 新增
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_ON);
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
         CommonEventSubscribeInfo info(matchingSkills);
         eventSubscriber_ = std::make_shared<EventSubscriber>(info);
         eventSubscriber_->SetUnlockedEventCallback([this](int32_t user) {
@@ -129,10 +129,10 @@ void Screen::SubscribeEvent()
         eventSubscriber_->SetLockedEventCallback([this](int32_t user) {
             NotifyLocked(user);
         });
-        eventSubscriber_->SetScreenOnEventCallback([this](int32_t user) {    // 新增
+        eventSubscriber_->SetScreenOnEventCallback([this](int32_t user) {
             NotifyScreenOn(user);
         });
-        eventSubscriber_->SetScreenOffEventCallback([this](int32_t user) {   // 新增
+        eventSubscriber_->SetScreenOffEventCallback([this](int32_t user) {
             NotifyScreenOff(user);
         });
     }
@@ -165,7 +165,7 @@ void Screen::NotifyLocked(int32_t user)
     });
 }
 
-void Screen::NotifyScreenOn(int32_t user)  // 新增
+void Screen::NotifyScreenOn(int32_t user)
 {
     observerMap_.ForEach([user](const auto &key, auto &val) {
         val->OnScreenOn(user);
@@ -173,7 +173,7 @@ void Screen::NotifyScreenOn(int32_t user)  // 新增
     });
 }
 
-void Screen::NotifyScreenOff(int32_t user)  // 新增
+void Screen::NotifyScreenOff(int32_t user)
 {
     observerMap_.ForEach([user](const auto &key, auto &val) {
         val->OnScreenOff(user);
