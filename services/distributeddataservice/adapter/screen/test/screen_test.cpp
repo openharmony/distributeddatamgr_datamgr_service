@@ -27,7 +27,7 @@
 #include "account_delegate_mock.h"
 #include "screenlock_manager.h"
 
-namespace {
+namespace OHOS::Test{
 using namespace OHOS::DistributedData;
 using namespace testing::ext;
 using namespace OHOS;
@@ -35,6 +35,8 @@ using namespace testing;
 using namespace OHOS::ScreenLock;
 
 static AccountDelegateMock *accountDelegateMock_ = nullptr;
+static constexpr size_t THREAD_MIN = 5;
+static constexpr size_t THREAD_MAX = 12;
 
 // Mock Observer for testing callback behavior
 class MockScreenObserver : public ScreenManager::Observer {
@@ -186,7 +188,7 @@ public:
         screen_ = std::make_shared<Screen>();
         ScreenManager::RegisterInstance(screen_);
         
-        executor_ = std::make_shared<ExecutorPool>(12, 5);
+        executor_ = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
         screen_->BindExecutor(executor_);
         screen_->SubscribeEvent();
         
@@ -504,7 +506,7 @@ HWTEST_F(ScreenTest, NotifyScreen003, TestSize.Level0)
  */
 HWTEST_F(ScreenTest, BindExecutor001, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
 
     screen_->BindExecutor(executor);
 
@@ -521,7 +523,7 @@ HWTEST_F(ScreenTest, BindExecutor001, TestSize.Level0)
  */
 HWTEST_F(ScreenTest, BindExecutor002, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
 
     screen_->BindExecutor(executor);
     auto task1 = ScreenTestHelper::GetTask(*screen_, 0);
@@ -558,7 +560,7 @@ HWTEST_F(ScreenTest, GetTask001, TestSize.Level0)
  */
 HWTEST_F(ScreenTest, GetTask002, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
     screen_->BindExecutor(executor);
 
     auto task = ScreenTestHelper::GetTask(*screen_, MAX_RETRY_TIMES + 1);
@@ -576,7 +578,7 @@ HWTEST_F(ScreenTest, GetTask002, TestSize.Level0)
  */
 HWTEST_F(ScreenTest, GetTask003, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
     screen_->BindExecutor(executor);
 
     auto task = ScreenTestHelper::GetTask(*screen_, 0);
@@ -594,7 +596,7 @@ HWTEST_F(ScreenTest, GetTask003, TestSize.Level0)
  */
 HWTEST_F(ScreenTest, GetTask004, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
     screen_->BindExecutor(executor);
 
     auto task = ScreenTestHelper::GetTask(*screen_, MAX_RETRY_TIMES);
@@ -613,7 +615,7 @@ HWTEST_F(ScreenTest, GetTask004, TestSize.Level0)
 HWTEST_F(ScreenTest, Destructor001, TestSize.Level0)
 {
     auto screenLock = std::make_shared<Screen>();
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
 
     screenLock->BindExecutor(executor);
 
@@ -767,7 +769,7 @@ HWTEST_F(ScreenTest, MixedNotify001, TestSize.Level0)
 HWTEST_F(ScreenTest, SubscribeRetryLogic, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver();
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
     screen_->BindExecutor(executor);
 
     OHOS::EventFwk::CommonEventManager::SetSubscribeResult(false);
@@ -788,7 +790,7 @@ HWTEST_F(ScreenTest, SubscribeRetryLogic, TestSize.Level0)
 HWTEST_F(ScreenTest, ExecutorLifecycle, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver();
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
     screen_->BindExecutor(executor);
 
     screen_->SubscribeEvent();
@@ -922,4 +924,4 @@ HWTEST_F(ScreenTest, InvalidEventFiltered, TestSize.Level0)
 
 
 
-} // namespace
+} // namespace OHOS::Test
