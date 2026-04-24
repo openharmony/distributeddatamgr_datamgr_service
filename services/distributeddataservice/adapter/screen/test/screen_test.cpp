@@ -755,10 +755,6 @@ HWTEST_F(ScreenTest, MixedNotify001, TestSize.Level0)
     EXPECT_EQ(observer->lastLockUser_, 200);
 }
 
-
-
-
-
 /**
  * @tc.name: SubscribeRetryLogic
  * @tc.desc: verify retry logic when subscribe fails initially
@@ -850,8 +846,6 @@ HWTEST_F(ScreenTest, ConcurrentObserverModification, TestSize.Level0)
     screen_->UnsubscribeEvent();
 }
 
-
-
 /**
  * @tc.name: NotifyScreenOn001
  * @tc.desc: notify screen on should call observer OnScreenOn callback
@@ -871,8 +865,6 @@ HWTEST_F(ScreenTest, NotifyScreenOn001, TestSize.Level0)
     EXPECT_EQ(observer->GetLockCalledCount(), 0);
     EXPECT_EQ(observer->GetScreenOffCalledCount(), 0);
 }
-
-
 
 /**
  * @tc.name: NotifyScreenOff001
@@ -894,14 +886,6 @@ HWTEST_F(ScreenTest, NotifyScreenOff001, TestSize.Level0)
     EXPECT_EQ(observer->GetScreenOnCalledCount(), 0);
 }
 
-
-
-
-
-
-
-
-
 /**
  * @tc.name: InvalidEventFiltered
  * @tc.desc: invalid events should be filtered and not trigger any callback
@@ -921,7 +905,4 @@ HWTEST_F(ScreenTest, InvalidEventFiltered, TestSize.Level0)
     EXPECT_EQ(observer->GetScreenOnCalledCount(), 0);
     EXPECT_EQ(observer->GetScreenOffCalledCount(), 0);
 }
-
-
-
 } // namespace OHOS::Test
