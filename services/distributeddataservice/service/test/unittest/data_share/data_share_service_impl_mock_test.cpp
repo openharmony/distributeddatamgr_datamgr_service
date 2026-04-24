@@ -30,7 +30,7 @@
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "../../mock/native_and_hap_token_mock.h"
+#include "native_and_hap_token_mock.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
 

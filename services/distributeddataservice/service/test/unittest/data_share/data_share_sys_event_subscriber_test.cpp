@@ -22,7 +22,7 @@
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "log_print.h"
-#include "../../mock/meta_data_manager_mock.h"
+#include "meta_data_manager_mock.h"
 #include "proxy_data_manager.h"
 
 namespace OHOS::Test {
