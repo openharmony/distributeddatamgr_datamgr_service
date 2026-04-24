@@ -27,7 +27,7 @@
 #include "account_delegate_mock.h"
 #include "screenlock_manager.h"
 
-namespace OHOS::Test{
+namespace OHOS::Test {
 using namespace OHOS::DistributedData;
 using namespace testing::ext;
 using namespace OHOS;
