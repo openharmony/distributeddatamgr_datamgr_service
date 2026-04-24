@@ -24,10 +24,10 @@
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "../../mock/access_token_mock.h"
+#include "access_token_mock.h"
 #include "account_delegate_mock.h"
-#include "../../mock/db_store_mock.h"
-#include "../../mock/device_manager_adapter_mock.h"
+#include "db_store_mock.h"
+#include "device_manager_adapter_mock.h"
 #include "network_delegate_mock.h"
 
 using namespace testing::ext;

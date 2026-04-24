@@ -24,8 +24,8 @@
 #include "matrix_event.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data_local.h"
-#include "../../mock/checker_mock.h"
-#include "../../mock/db_store_mock.h"
+#include "checker_mock.h"
+#include "db_store_mock.h"
 #include "types.h"
 #include "gtest/gtest.h"
 using namespace testing::ext;

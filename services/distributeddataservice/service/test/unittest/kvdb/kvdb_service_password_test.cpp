@@ -21,7 +21,7 @@
 
 #include "device_manager_adapter.h"
 #include "ipc_skeleton.h"
-#include "../../mock/db_store_mock.h"
+#include "db_store_mock.h"
 #include "account/account_delegate.h"
 #include "account_delegate_mock.h"
 

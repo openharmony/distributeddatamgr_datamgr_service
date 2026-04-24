@@ -22,7 +22,7 @@
 #include "gtest/gtest.h"
 #include "ipc_skeleton.h"
 #include "metadata/meta_data_manager.h"
-#include "../../mock/db_store_mock.h"
+#include "db_store_mock.h"
 #include "sync_config.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;

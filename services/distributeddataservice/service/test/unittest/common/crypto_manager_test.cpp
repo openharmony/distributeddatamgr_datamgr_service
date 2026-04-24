@@ -27,7 +27,7 @@
 #include "metadata/meta_data_saver.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
-#include "../../mock/db_store_mock.h"
+#include "db_store_mock.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 
