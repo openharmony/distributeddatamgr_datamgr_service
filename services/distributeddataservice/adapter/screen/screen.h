@@ -32,16 +32,16 @@ public:
     explicit EventSubscriber(const CommonEventSubscribeInfo &info);
     void SetUnlockedEventCallback(EventCallback callback);
     void SetLockedEventCallback(EventCallback callback);
-    void SetScreenOnEventCallback(EventCallback callback);  // 新增
-    void SetScreenOffEventCallback(EventCallback callback);  // 新增
+    void SetScreenOnEventCallback(EventCallback callback);
+    void SetScreenOffEventCallback(EventCallback callback);
     void OnReceiveEvent(const CommonEventData &event) override;
 private:
     static constexpr const char *USER_ID = "userId";
     static constexpr int32_t INVALID_USER = -1;
     EventCallback unLockedEventCallback_ {};
     EventCallback lockedEventCallback_ {};
-    EventCallback screenOnEventCallback_ {};   // 新增
-    EventCallback screenOffEventCallback_ {};   // 新增
+    EventCallback screenOnEventCallback_ {};
+    EventCallback screenOffEventCallback_ {};
 };
 
 class Screen : public ScreenManager {
