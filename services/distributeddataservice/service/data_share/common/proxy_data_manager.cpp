@@ -109,11 +109,18 @@ bool ProxyDataListNode::Unmarshal(const DistributedData::Serializable::json &nod
 
 bool PublishedProxyData::VerifyPermission(const BundleInfo &callerBundleInfo, const ProxyDataNode &data)
 {
+    // 1. Publisher access: check tokenId
     if (callerBundleInfo.tokenId == data.tokenId) {
         return true;
     }
 
+    // 2. allowList check
     for (const auto &item : data.proxyData.allowList) {
+        // 2.1 Global public config check
+        if (item == ALLOW_ALL) {
+            return true;
+        }
+        // 2.2 Specific app check
         if (callerBundleInfo.appIdentifier == item) {
             return true;
         }
