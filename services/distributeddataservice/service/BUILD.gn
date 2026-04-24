@@ -94,7 +94,7 @@ ohos_shared_library("distributeddatasvc") {
   if (defined(global_parts_info) &&
       defined(global_parts_info.theme_screenlock_mgr)) {
     deps +=
-        [ "${data_service_path}/adapter/screenlock:distributeddata_screenlock" ]
+        [ "${data_service_path}/adapter/screen:distributeddata_screen" ]
   }
 
   if (datamgr_service_cloud) {

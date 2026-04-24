@@ -14,12 +14,12 @@
  */
 
 #include <fuzzer/FuzzedDataProvider.h>
-#include "screenlock_fuzzer.h"
-#include "screenlock/screen_lock.h"
+#include "screen_fuzzer.h"
+#include "screen/screen.h"
 
 using namespace OHOS::DistributedData;
 namespace OHOS {
-class ScreenLockObserver : public ScreenManager::Observer {
+class ScreenObserver : public ScreenManager::Observer {
 public:
     void OnScreenUnlocked(int32_t user) override
     {
@@ -41,38 +41,38 @@ private:
 
 void SubscribeFuzz(FuzzedDataProvider &provider)
 {
-    auto screenLock = std::make_shared<ScreenLock>();
-    screenLock->Subscribe(nullptr);
-    auto observer = std::make_shared<ScreenLockObserver>();
+    auto screen = std::make_shared<Screen>();
+    screen->Subscribe(nullptr);
+    auto observer = std::make_shared<ScreenObserver>();
     std::string name = provider.ConsumeRandomLengthString();
     observer->SetName(name);
-    screenLock->Subscribe(observer);
-    screenLock->IsLocked();
+    screen->Subscribe(observer);
+    screen->IsLocked();
 }
 
 void UnsubscribeFuzz(FuzzedDataProvider &provider)
 {
-    auto screenLock = std::make_shared<ScreenLock>();
-    auto observer = std::make_shared<ScreenLockObserver>();
+    auto screen = std::make_shared<Screen>();
+    auto observer = std::make_shared<ScreenObserver>();
     std::string name = provider.ConsumeRandomLengthString();
     observer->SetName(name);
-    screenLock->Subscribe(observer);
-    screenLock->Unsubscribe(observer);
-    screenLock->UnsubscribeScreenEvent();
+    screen->Subscribe(observer);
+    screen->Unsubscribe(observer);
+    screen->UnsubscribeEvent();
 }
 
 void GetTaskFuzz(FuzzedDataProvider &provider)
 {
-    auto screenLock = std::make_shared<ScreenLock>();
+    auto screen = std::make_shared<Screen>();
     int retry = provider.ConsumeIntegralInRange<int>(1, 20);
-    screenLock->GetTask(retry);
+    screen->GetTask(retry);
 }
 
 void NotifyScreenUnlockedFuzz(FuzzedDataProvider &provider)
 {
-    auto screenLock = std::make_shared<ScreenLock>();
+    auto screen = std::make_shared<Screen>();
     int user = provider.ConsumeIntegral<int>();
-    screenLock->NotifyScreenUnlocked(user);
+    screen->NotifyUnlocked(user);
 }
 
 void OnReceiveEventFuzz(FuzzedDataProvider &provider)

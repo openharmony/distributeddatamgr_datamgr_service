@@ -54,12 +54,12 @@ void ScreenManager::BindExecutor(std::shared_ptr<ExecutorPool> executors)
     return;
 }
 
-void ScreenManager::SubscribeScreenEvent()
+void ScreenManager::SubscribeEvent()
 {
     return;
 }
 
-void ScreenManager::UnsubscribeScreenEvent()
+void ScreenManager::UnsubscribeEvent()
 {
     return;
 }

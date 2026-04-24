@@ -12,38 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "screen_lock_mock.h"
+#ifndef OHOS_SCREEN_MOCK_H
+#define OHOS_SCREEN_MOCK_H
+
+#include "screen/screen_manager.h"
 
 namespace OHOS {
 namespace DistributedData {
-bool ScreenLockMock::IsLocked()
-{
-    return isLocked_;
-}
+class ScreenMock : public ScreenManager {
+public:
+    bool IsLocked();
+    void Subscribe(std::shared_ptr<Observer> observer);
+    void Unsubscribe(std::shared_ptr<Observer> observer);
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors);
+    void SubscribeEvent();
+    void UnsubscribeEvent();
 
-void ScreenLockMock::Subscribe(std::shared_ptr<Observer> observer)
-{
-    return;
-}
-
-void ScreenLockMock::Unsubscribe(std::shared_ptr<Observer> observer)
-{
-    return;
-}
-
-void ScreenLockMock::BindExecutor(std::shared_ptr<ExecutorPool> executors)
-{
-    return;
-}
-
-void ScreenLockMock::SubscribeScreenEvent()
-{
-    return;
-}
-
-void ScreenLockMock::UnsubscribeScreenEvent()
-{
-    return;
-}
+    bool isLocked_ = false;
+};
 } // namespace DistributedData
 } // namespace OHOS
+#endif //OHOS_SCREEN_LOCK_MOCK_H

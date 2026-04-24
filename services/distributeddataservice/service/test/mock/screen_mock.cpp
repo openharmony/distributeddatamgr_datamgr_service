@@ -12,10 +12,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "screen_mock.h"
 
-#ifndef SCREENLOCK_FUZZER_H
-#define SCREENLOCK_FUZZER_H
+namespace OHOS {
+namespace DistributedData {
+bool ScreenMock::IsLocked()
+{
+    return isLocked_;
+}
 
-#define FUZZ_PROJECT_NAME "screenlock_fuzzer"
+void ScreenMock::Subscribe(std::shared_ptr<Observer> observer)
+{
+    return;
+}
 
-#endif // SCREENLOCK_FUZZER_H
+void ScreenMock::Unsubscribe(std::shared_ptr<Observer> observer)
+{
+    return;
+}
+
+void ScreenMock::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+{
+    return;
+}
+
+void ScreenMock::SubscribeEvent()
+{
+    return;
+}
+
+void ScreenMock::UnsubscribeEvent()
+{
+    return;
+}
+} // namespace DistributedData
+} // namespace OHOS

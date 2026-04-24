@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_LOCK_H
-#define DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_LOCK_H
+#ifndef DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_MANAGER_H
+#define DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_MANAGER_H
 
 #include <memory>
 #include <mutex>
@@ -30,6 +30,8 @@ public:
         virtual ~Observer() = default;
         virtual void OnScreenUnlocked(int32_t user) = 0;
         virtual void OnScreenLocked(int32_t user) {};
+        virtual void OnScreenOn(int32_t user) {};
+        virtual void OnScreenOff(int32_t user) {};
         virtual std::string GetName() = 0;
     };
     API_EXPORT static std::shared_ptr<ScreenManager> GetInstance();
@@ -40,8 +42,8 @@ public:
     virtual void Subscribe(std::shared_ptr<Observer> observer);
     virtual void Unsubscribe(std::shared_ptr<Observer> observer);
     virtual void BindExecutor(std::shared_ptr<ExecutorPool> executors);
-    virtual void SubscribeScreenEvent();
-    virtual void UnsubscribeScreenEvent();
+    virtual void SubscribeEvent();
+    virtual void UnsubscribeEvent();
 
 private:
     static std::mutex mutex_;
@@ -49,4 +51,4 @@ private:
 };
 } // namespace DistributedData
 } // namespace OHOS
-#endif //DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_LOCK_H
+#endif //DISTRIBUTEDDATAMGR_FRAMEWORK_SCREEN_MANAGER_H
