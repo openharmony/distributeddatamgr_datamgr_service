@@ -31,12 +31,12 @@ config("module_private_config") {
 }
 
 ###############################################################################
-ohos_unittest("ScreenLockTest") {
+ohos_unittest("ScreenTest") {
   module_out_path = module_output_path
 
   sources = [
-    "../screen_lock.cpp",
-    "screen_lock_test.cpp"
+    "../screen.cpp",
+    "screen_test.cpp"
   ]
 
   configs = [ ":module_private_config" ]
@@ -46,19 +46,26 @@ ohos_unittest("ScreenLockTest") {
     "-Werror=vla",
   ]
 
+  include_dirs = [
+    "${data_service_path}/framework/test/mock",
+    "${data_service_path}/framework/include/account",
+  ]
+
   deps = [
     "${data_service_path}/adapter/test:common_event_mock",
+    "${data_service_path}/adapter/test:account_delegate_mock_static",
+    "${data_service_path}/adapter/test:screenlock_manager_mock",
     "${data_service_path}/framework:distributeddatasvcfwk"
   ]
 
   external_deps = [
     "ability_base:want",
     "c_utils:utils",
+    "googletest:gmock",
     "googletest:gtest_main",
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:datamgr_common",
-    "screenlock_mgr:screenlock_client",
   ]
 
   subsystem_name = "distributeddatamgr"
@@ -72,6 +79,6 @@ group("unittest") {
 
   deps = []
 
-  deps += [ ":ScreenLockTest" ]
+  deps += [ ":ScreenTest" ]
 }
 ###############################################################################

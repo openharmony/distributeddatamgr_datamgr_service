@@ -13,18 +13,19 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "ScreenLock"
-#include "screen_lock.h"
+#define LOG_TAG "Screen"
+#include "screen.h"
 
 #include "account/account_delegate.h"
 #include "log_print.h"
+#include "screen/screen_manager.h"
 #include "screenlock_manager.h"
 
 namespace OHOS::DistributedData {
 using namespace OHOS::ScreenLock;
 __attribute__((used)) static bool g_init =
-    ScreenManager::RegisterInstance(std::static_pointer_cast<ScreenManager>(std::make_shared<ScreenLock>()));
-bool ScreenLock::IsLocked()
+    ScreenManager::RegisterInstance(std::static_pointer_cast<ScreenManager>(std::make_shared<Screen>()));
+bool Screen::IsLocked()
 {
     auto manager = ScreenLockManager::GetInstance();
     if (manager == nullptr) {
@@ -42,7 +43,9 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
     const auto want = event.GetWant();
     const auto action = want.GetAction();
     if (action != CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED && action !=
-        CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED) {
+        CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED &&
+        action != CommonEventSupport::COMMON_EVENT_SCREEN_ON &&     // 新增
+        action != CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {      // 新增
         return;
     }
     ZLOGI("Want Action is %{public}s", action.c_str());
@@ -55,11 +58,17 @@ void EventSubscriber::OnReceiveEvent(const CommonEventData &event)
         }
         user = users[0];
     }
-    if (action == CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED) {
+    if (action == CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED && unLockedEventCallback_) {
         unLockedEventCallback_(user);
     }
-    if (action == CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED) {
+    if (action == CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED && lockedEventCallback_) {
         lockedEventCallback_(user);
+    }
+    if (action == CommonEventSupport::COMMON_EVENT_SCREEN_ON && screenOnEventCallback_) {
+        screenOnEventCallback_(user);
+    }
+    if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF && screenOffEventCallback_) {
+        screenOffEventCallback_(user);
     }
 }
 
@@ -73,7 +82,17 @@ void EventSubscriber::SetLockedEventCallback(EventCallback callback)
     lockedEventCallback_ = callback;
 }
 
-void ScreenLock::Subscribe(std::shared_ptr<Observer> observer)
+void EventSubscriber::SetScreenOnEventCallback(EventCallback callback)  // 新增
+{
+    screenOnEventCallback_ = callback;
+}
+
+void EventSubscriber::SetScreenOffEventCallback(EventCallback callback)  // 新增
+{
+    screenOffEventCallback_ = callback;
+}
+
+void Screen::Subscribe(std::shared_ptr<Observer> observer)
 {
     if (observer == nullptr || observer->GetName().empty() || observerMap_.Contains(observer->GetName())) {
         return;
@@ -83,7 +102,7 @@ void ScreenLock::Subscribe(std::shared_ptr<Observer> observer)
     }
 }
 
-void ScreenLock::Unsubscribe(std::shared_ptr<Observer> observer)
+void Screen::Unsubscribe(std::shared_ptr<Observer> observer)
 {
     if (observer == nullptr || observer->GetName().empty() || !observerMap_.Contains(observer->GetName())) {
         return;
@@ -93,30 +112,36 @@ void ScreenLock::Unsubscribe(std::shared_ptr<Observer> observer)
     }
 }
 
-void ScreenLock::SubscribeScreenEvent()
+void Screen::SubscribeEvent()
 {
     ZLOGI("Subscribe screen event listener start.");
     if (eventSubscriber_ == nullptr) {
         MatchingSkills matchingSkills;
         matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED);
         matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_ON);    // 新增
+        matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);   // 新增
         CommonEventSubscribeInfo info(matchingSkills);
         eventSubscriber_ = std::make_shared<EventSubscriber>(info);
         eventSubscriber_->SetUnlockedEventCallback([this](int32_t user) {
-            NotifyScreenUnlocked(user);
+            NotifyUnlocked(user);
         });
         eventSubscriber_->SetLockedEventCallback([this](int32_t user) {
-            NotifyScreenLocked(user);
+            NotifyLocked(user);
+        });
+        eventSubscriber_->SetScreenOnEventCallback([this](int32_t user) {    // 新增
+            NotifyScreenOn(user);
+        });
+        eventSubscriber_->SetScreenOffEventCallback([this](int32_t user) {   // 新增
+            NotifyScreenOff(user);
         });
     }
     if (executors_ != nullptr) {
         executors_->Execute(GetTask(0));
-    } else {
-        GetTask(0)();
     }
 }
 
-void ScreenLock::UnsubscribeScreenEvent()
+void Screen::UnsubscribeEvent()
 {
     auto res = CommonEventManager::UnSubscribeCommonEvent(eventSubscriber_);
     if (!res) {
@@ -124,7 +149,7 @@ void ScreenLock::UnsubscribeScreenEvent()
     }
 }
 
-void ScreenLock::NotifyScreenUnlocked(int32_t user)
+void Screen::NotifyUnlocked(int32_t user)
 {
     observerMap_.ForEach([user](const auto &key, auto &val) {
         val->OnScreenUnlocked(user);
@@ -132,7 +157,7 @@ void ScreenLock::NotifyScreenUnlocked(int32_t user)
     });
 }
 
-void ScreenLock::NotifyScreenLocked(int32_t user)
+void Screen::NotifyLocked(int32_t user)
 {
     observerMap_.ForEach([user](const auto &key, auto &val) {
         val->OnScreenLocked(user);
@@ -140,12 +165,28 @@ void ScreenLock::NotifyScreenLocked(int32_t user)
     });
 }
 
-void ScreenLock::BindExecutor(std::shared_ptr<ExecutorPool> executors)
+void Screen::NotifyScreenOn(int32_t user)  // 新增
+{
+    observerMap_.ForEach([user](const auto &key, auto &val) {
+        val->OnScreenOn(user);
+        return false;
+    });
+}
+
+void Screen::NotifyScreenOff(int32_t user)  // 新增
+{
+    observerMap_.ForEach([user](const auto &key, auto &val) {
+        val->OnScreenOff(user);
+        return false;
+    });
+}
+
+void Screen::BindExecutor(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;
 }
 
-ExecutorPool::Task ScreenLock::GetTask(uint32_t retry)
+ExecutorPool::Task Screen::GetTask(uint32_t retry)
 {
     return [this, retry] {
         auto result = CommonEventManager::SubscribeCommonEvent(eventSubscriber_);
@@ -165,11 +206,9 @@ ExecutorPool::Task ScreenLock::GetTask(uint32_t retry)
     };
 }
 
-ScreenLock::~ScreenLock()
+Screen::~Screen()
 {
-    UnsubscribeScreenEvent();
-    // Assign the value of executors_ to nullptr here to ensure that ScreenLock is valid before the asynchronous
-    // task of GetTask ends.
+    UnsubscribeEvent();
     executors_ = nullptr;
 }
 } // namespace OHOS::DistributedData
