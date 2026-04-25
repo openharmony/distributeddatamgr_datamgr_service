@@ -40,7 +40,6 @@ ohos_unittest("DistributeddataDfxUTTest") {
 
   external_deps = [
     "c_utils:utils",
-    "datamgr_service:distributeddatasvcfwk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -52,6 +51,7 @@ ohos_unittest("DistributeddataDfxUTTest") {
   deps = [
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
@@ -68,7 +68,6 @@ ohos_unittest("HiViewAdapterDfxTest") {
 
   external_deps = [
     "c_utils:utils",
-    "datamgr_service:distributeddatasvcfwk",
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -82,6 +81,7 @@ ohos_unittest("HiViewAdapterDfxTest") {
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/utils:distributeddata_utils",
+    "${data_service_path}/framework:distributeddatasvcfwk",
   ]
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }

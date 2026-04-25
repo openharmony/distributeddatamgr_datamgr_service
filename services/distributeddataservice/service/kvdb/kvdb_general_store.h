@@ -63,6 +63,7 @@ public:
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(const std::string &table, GenQuery &query) override;
     std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
         const SyncParam &syncParam) override;
+    int32_t StopCloudSync() override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) override;
@@ -96,7 +97,8 @@ public:
         bool preCount = false) override;
     std::pair<int32_t, std::shared_ptr<Cursor>> Query(GenQuery &query, const std::vector<std::string> &columns = {},
         bool preCount = false) override;
-
+    void SetCacheFlag(bool isCache) override;
+    void PublishCacheChange() override;
 private:
     using KvDelegate = DistributedDB::KvStoreNbDelegate;
     using KvManager = DistributedDB::KvStoreDelegateManager;
@@ -116,16 +118,19 @@ private:
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
     void RegisterObservers();
     void SetDeviceMatrix(const StoreMetaData &meta);
+    void PostDataChange();
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;
         using DBChangeData = DistributedDB::ChangedData;
         using DBEntry = DistributedDB::Entry;
         using GenOrigin = Watcher::Origin;
+        explicit ObserverProxy(KVDBGeneralStore* store) : store_(store) {}
         ~ObserverProxy() = default;
         void OnChange(DBOrigin origin, const std::string &originalId, DBChangeData &&data) override;
         void OnChange(const DistributedDB::KvStoreChangedData &data) override;
         void ConvertChangeData(const std::list<DBEntry> &entries, std::vector<Values> &values);
+        void SaveChangeData(const DistributedDB::KvStoreChangedData &data);
         bool HasWatcher() const
         {
             return watcher_ != nullptr;
@@ -135,6 +140,7 @@ private:
         friend KVDBGeneralStore;
         Watcher *watcher_ = nullptr;
         std::string storeId_;
+        KVDBGeneralStore* store_;
     };
 
     static constexpr uint8_t META_COMPRESS_RATE = 10;
@@ -147,6 +153,7 @@ private:
     int32_t ref_ = 1;
     mutable std::shared_timed_mutex rwMutex_;
     StoreInfo storeInfo_;
+    StoreMetaData metaData_;
 
     static constexpr int32_t NO_ACCOUNT = 0;
     static constexpr int32_t IDENTICAL_ACCOUNT = 1;
@@ -154,6 +161,7 @@ private:
     bool enableCloud_ = false;
     bool isPublic_ = false;
     static const std::map<DBStatus, GenErr> dbStatusMap_;
+    std::atomic<bool> isCacheWatcher_ = false;
 };
 } // namespace OHOS::DistributedKv
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_KVDB_GENERAL_STORE_H

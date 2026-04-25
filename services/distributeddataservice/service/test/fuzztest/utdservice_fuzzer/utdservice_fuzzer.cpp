@@ -32,66 +32,6 @@ constexpr size_t NUM_MIN = 5;
 constexpr size_t NUM_MAX = 12;
 const std::u16string INTERFACE_TOKEN = u"OHOS.UDMF.UtdService";
 
-void OnRegisterTypeDescriptorsFuzz(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<UtdServiceImpl> utdServiceImpl = std::make_shared<UtdServiceImpl>();
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    utdServiceImpl->OnBind({ "UtdServiceFuzzTest",
-        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    std::string str = provider.ConsumeRandomLengthString();
-    std::vector<std::string> vec;
-    size_t dataSize = provider.ConsumeIntegralInRange<size_t>(1, 50);
-    for (size_t i = 0; i < dataSize; i++) {
-        vec.push_back(str);
-    }
-
-    std::vector<TypeDescriptorCfg> descriptors;
-    for (size_t i = 0; i < dataSize; i++) {
-        TypeDescriptorCfg descriptor;
-        descriptor.typeId = str;
-        descriptor.filenameExtensions = vec;
-        descriptor.belongingToTypes = vec;
-        descriptor.mimeTypes = vec;
-        descriptor.description = str;
-        descriptor.ownerBundle = str;
-        descriptors.push_back(descriptor);
-    }
-    
-    MessageParcel request;
-    request.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(request, descriptors);
-    MessageParcel reply;
-    utdServiceImpl->OnRemoteRequest(
-        static_cast<uint32_t>(UtdServiceInterfaceCode::REGISTER_UTD_TYPES), request, reply);
-    utdServiceImpl->OnBind(
-        { "UtdServiceFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
-    executor = nullptr;
-}
-
-void OnUnregisterTypeDescriptorsFuzz(FuzzedDataProvider &provider)
-{
-    std::shared_ptr<UtdServiceImpl> utdServiceImpl = std::make_shared<UtdServiceImpl>();
-    std::shared_ptr<ExecutorPool> executor = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-    utdServiceImpl->OnBind({ "UtdServiceFuzzTest",
-        static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), std::move(executor) });
-    std::string str = provider.ConsumeRandomLengthString();
-    std::vector<std::string> vec;
-    size_t dataSize = provider.ConsumeIntegralInRange<size_t>(1, 50);
-    for (size_t i = 0; i < dataSize; i++) {
-        vec.push_back(str);
-    }
-
-    MessageParcel request;
-    request.WriteInterfaceToken(INTERFACE_TOKEN);
-    ITypesUtil::Marshal(request, vec);
-    MessageParcel reply;
-    utdServiceImpl->OnRemoteRequest(
-        static_cast<uint32_t>(UtdServiceInterfaceCode::UNREGISTER_UTD_TYPES), request, reply);
-    utdServiceImpl->OnBind(
-        { "UtdServiceFuzzTest", static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()), nullptr });
-    executor = nullptr;
-}
-
 void OnRegServiceNotifierFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UtdServiceImpl> utdServiceImpl = std::make_shared<UtdServiceImpl>();
@@ -178,8 +118,6 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
-    OHOS::OnRegisterTypeDescriptorsFuzz(provider);
-    OHOS::OnUnregisterTypeDescriptorsFuzz(provider);
     OHOS::OnRegServiceNotifierFuzz(provider);
     OHOS::NotifyUtdClientsFuzz(provider);
     OHOS::GetHapBundleNameByTokenFuzz(provider);

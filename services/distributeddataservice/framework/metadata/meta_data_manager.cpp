@@ -21,6 +21,9 @@
 #define LOG_TAG "MetaDataManager"
 
 #include "directory/directory_manager.h"
+#include "metadata/capability_meta_data.h"
+#include "metadata/store_meta_data.h"
+#include "metadata/user_meta_data.h"
 #include "kv_store_nb_delegate.h"
 #include "log_print.h"
 #include "utils/anonymous.h"
@@ -344,27 +347,106 @@ bool MetaDataManager::DelMeta(const std::vector<std::string> &keys, bool isLocal
     return ((status == DistributedDB::DBStatus::OK) || (status == DistributedDB::DBStatus::NOT_FOUND));
 }
 
-bool MetaDataManager::Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait, bool isRetry)
+MetaDataManager::OnComplete MetaDataManager::CommonSyncComplete(const DeviceMetaSyncOption &option,
+    OnComplete complete)
 {
-    if (!inited_ || devices.empty()) {
+    return [this, option, complete](const auto &results) {
+        std::vector<std::string> successDevices;
+        for (const auto &[uuid, status] : results) {
+            if (status == static_cast<int32_t>(DistributedDB::DBStatus::OK)) {
+                successDevices.emplace_back(uuid);
+            }
+        }
+        ZLOGD("common meta sync finish, total size:%{public}zu, success size:%{public}zu",
+            results.size(), successDevices.size());
+        if (successDevices.empty()) {
+            if (complete != nullptr) {
+                complete(results);
+            }
+            return;
+        }
+        auto result = SyncStoreMeta(option, complete);
+        if (!result) {
+            ZLOGE("business metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
+                option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
+        }
+    };
+}
+
+bool MetaDataManager::Sync(const DeviceMetaSyncOption &option, OnComplete complete)
+{
+    if (!inited_ || option.devices.empty()) {
         return false;
     }
+    auto result = SyncCommonMeta(option, CommonSyncComplete(option, complete));
+    if (!result) {
+        ZLOGE("common metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
+            option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
+        return false;
+    }
+    return true;
+}
+
+bool MetaDataManager::SyncCommonMeta(const DeviceMetaSyncOption &option, OnComplete complete)
+{
+    std::vector<std::string> allDevices{ option.devices.begin(), option.devices.end() };
+    allDevices.emplace_back(option.localDevice);
+    std::set<std::vector<uint8_t>> queryKeys;
+    for (const auto &uuid : allDevices) {
+        auto capKey = CapMetaRow::GetKeyFor(uuid);
+        queryKeys.insert(capKey);
+        auto userKey = UserMetaRow::GetKeyFor(uuid);
+        queryKeys.insert({ userKey.begin(), userKey.end() });
+    }
+    return SyncWithQueryKeys(option, queryKeys, complete);
+}
+
+bool MetaDataManager::SyncStoreMeta(const DeviceMetaSyncOption &option, OnComplete complete)
+{
+    std::vector<std::string> allDevices{ option.devices.begin(), option.devices.end() };
+    allDevices.emplace_back(option.localDevice);
+    std::set<std::vector<uint8_t>> queryKeys;
+    for (const auto &uuid : allDevices) {
+        UserMetaData userMetaData;
+        MetaDataManager::GetInstance().LoadMeta(UserMetaRow::GetKeyFor(uuid), userMetaData);
+        for (const auto &user : userMetaData.users) {
+            StoreMetaData storeMeta;
+            storeMeta.deviceId = uuid;
+            storeMeta.user = std::to_string(user.id);
+            storeMeta.bundleName = option.bundleName;
+            storeMeta.instanceId = option.instanceId;
+            storeMeta.storeId = option.storeId;
+            auto key = storeMeta.GetKeyWithoutPath();
+            queryKeys.insert({ key.begin(), key.end() });
+        }
+    }
+    if (queryKeys.empty()) {
+        return false;
+    }
+    return SyncWithQueryKeys(option, queryKeys, complete);
+}
+
+bool MetaDataManager::SyncWithQueryKeys(const DeviceMetaSyncOption &option,
+    const std::set<std::vector<uint8_t>> &queryKeys, OnComplete complete)
+{
     DistributedDB::DeviceSyncOption syncOption;
-    syncOption.devices = devices;
+    syncOption.devices = option.devices;
     syncOption.mode = DistributedDB::SyncMode::SYNC_MODE_PUSH_PULL;
-    syncOption.isWait = wait;
-    syncOption.isRetry = isRetry;
-    auto status = metaStore_->Sync(syncOption,
-        [complete](const std::map<std::string, DistributedDB::DBStatus> &dbResults) {
-            if (complete == nullptr) {
-                return;
-            }
-            std::map<std::string, int32_t> results;
-            for (auto &[uuid, status] : dbResults) {
-                results.insert_or_assign(uuid, static_cast<int32_t>(status));
-            }
-            complete(results);
-        });
+    syncOption.isWait = option.isWait;
+    syncOption.isRetry = option.isRetry;
+    syncOption.isQuery = true;
+    syncOption.query = DistributedDB::Query::Select().InKeys(queryKeys);
+    auto syncCallback = [complete](const std::map<std::string, DistributedDB::DBStatus> &dbResults) {
+        if (complete == nullptr) {
+            return;
+        }
+        std::map<std::string, int32_t> results;
+        for (auto &[uuid, status] : dbResults) {
+            results.insert_or_assign(uuid, static_cast<int32_t>(status));
+        }
+        complete(results);
+    };
+    auto status = metaStore_->Sync(syncOption, syncCallback);
     if (status == DistributedDB::DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB) {
         ZLOGE("db corrupted! status:%{public}d", status);
         CorruptReporter::CreateCorruptedFlag(DirectoryManager::GetInstance().GetMetaStorePath(), storeId_);

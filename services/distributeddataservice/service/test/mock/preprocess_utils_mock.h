@@ -16,6 +16,7 @@
 #define UDMF_PREPROCESS_UTILS_H
 
 #include "bundlemgr/bundle_mgr_proxy.h"
+#include "remote_file_share.h"
 #include "unified_data.h"
 
 namespace OHOS {
@@ -35,19 +36,18 @@ public:
     static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);
     static bool IsNetworkingEnabled();
     static std::vector<std::string> GetRemoteDeviceIds();
-    static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
+    static void ProcessFileType(const std::shared_ptr<UnifiedRecord> &record,
         std::function<bool(std::shared_ptr<Object>)> callback);
-    static void GetHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<std::string> &uris);
     static void ClearHtmlDfsUris(UnifiedData &data);
-    static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal, std::vector<Uri> &uris);
-    static void ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
+    static void ProcessFileAuthorization(bool &hasError, UnifiedData &data, bool isLocal,
+        std::map<std::string, unsigned int> &uriPermissions);
+    static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
         bool isLocal, std::vector<std::string> &uris);
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
     static bool GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
         std::string &bundleName);
-    static std::string GetAppId(const std::string &bundleName);
     static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();
 };
 } // namespace UDMF

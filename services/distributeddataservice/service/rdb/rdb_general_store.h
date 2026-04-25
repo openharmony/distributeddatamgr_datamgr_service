@@ -22,6 +22,7 @@
 #include "concurrent_map.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_asset_loader.h"
+#include "rdb_cloud_conflict_handler.h"
 #include "rdb_cloud.h"
 #include "rdb_store.h"
 #include "rdb_store_config.h"
@@ -46,6 +47,7 @@ public:
     using DBPassword = DistributedDB::CipherPassword;
     using Snapshot = DistributedData::Snapshot;
     using BindAssets = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
+    using CloudConflictHandler = DistributedData::CloudConflictHandler;
 
     explicit RdbGeneralStore(const StoreMetaData &, bool createRequired = false);
     ~RdbGeneralStore();
@@ -84,12 +86,13 @@ public:
 
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
         const std::vector<Reference> &references, int32_t tableType) override;
-    int32_t RetainDeviceData(
+    std::pair<int32_t, int64_t> RetainDeviceData(
         const std::map<std::string, std::vector<std::string>> &retainDevices) override;
     int32_t SetTrackerTable(const std::string& tableName, const std::set<std::string>& trackerColNames,
         const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
     std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query, DetailAsync async,
         const DistributedData::SyncParam &syncParam) override;
+    int32_t StopCloudSync() override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
     int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) override;
@@ -103,10 +106,11 @@ public:
     std::pair<int32_t, uint32_t> LockCloudDB() override;
     int32_t UnLockCloudDB() override;
     int32_t UpdateDBStatus() override;
+    int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler) override;
 
 private:
-    RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore);
-    RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore);
+    RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore) = delete;
+    RdbGeneralStore& operator=(const RdbGeneralStore& rdbGeneralStore) = delete;
     using RdbDelegate = DistributedDB::RelationalStoreDelegate;
     using RdbManager = DistributedDB::RelationalStoreManager;
     using SyncProcess = DistributedDB::SyncProcess;
@@ -187,6 +191,7 @@ private:
     std::pair<int32_t, int32_t> DoCloudSync(const Devices &devices, const DistributedDB::Query &dbQuery,
         const DistributedData::SyncParam &syncParam, bool isPriority, DetailAsync async);
     void Report(const std::string &faultType, int32_t errCode, const std::string &appendix);
+    void HandleSyncError(const Devices &devices, DistributedDB::DBStatus dbStatus, const DetailAsync &async);
     std::pair<int32_t, std::shared_ptr<NativeRdb::RdbStore>> InitRdbStore();
     int32_t SetDeviceDistributedSchema(int32_t tableType);
     int32_t SetCloudReference(const std::vector<Reference> &references);
@@ -196,6 +201,8 @@ private:
     void SetAsync(DetailAsync async);
     BindAssets GetSnapshots() const;
     std::shared_ptr<Executor> GetExecutor() const;
+    void UpdateCloudConfig(const DistributedData::SyncParam &syncParam) const;
+    static DistributedDB::AssetConflictPolicy ConvertPolicy(DistributedRdb::AssetConflictPolicy policy);
 
     std::mutex mutex_;
     int32_t ref_ = 1;
@@ -226,6 +233,7 @@ private:
     DistributedDB::DBStatus lastError_ = DistributedDB::DBStatus::OK;
     static constexpr uint32_t PRINT_ERROR_CNT = 150;
     uint32_t lastErrCnt_ = 0;
+    std::shared_ptr<RdbCloudConflictHandler> conflictHandler_;
 };
 } // namespace OHOS::DistributedRdb
 #endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_GENERAL_STORE_H

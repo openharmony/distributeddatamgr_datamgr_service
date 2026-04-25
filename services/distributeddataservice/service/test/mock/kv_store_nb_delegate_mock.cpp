@@ -79,11 +79,16 @@ DBStatus KvStoreNbDelegateMock::GetLocal(const Key &key, Value &value) const
 
 DBStatus KvStoreNbDelegateMock::GetLocalEntries(const Key &keyPrefix, std::vector<Entry> &entries) const
 {
+    entries = localEntries_;
     return DBStatus::OK;
 }
 
 DBStatus KvStoreNbDelegateMock::PutLocal(const Key &key, const Value &value)
 {
+    Entry entry;
+    entry.key = key;
+    entry.value = value;
+    localEntries_.push_back(entry);
     return DBStatus::OK;
 }
 
@@ -181,6 +186,7 @@ DBStatus KvStoreNbDelegateMock::PutLocalBatch(const std::vector<Entry> &entries)
 
 DBStatus KvStoreNbDelegateMock::DeleteLocalBatch(const std::vector<Key> &keys)
 {
+    localEntries_.clear();
     return DBStatus::OK;
 }
 

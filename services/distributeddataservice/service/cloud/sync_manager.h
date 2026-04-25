@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 
+#include "cloud/cloud_conflict_handler.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
 #include "cloud/cloud_last_sync_info.h"
@@ -74,6 +75,9 @@ public:
         void SetCompensation(bool isCompensation);
         void SetTriggerMode(int32_t triggerMode);
         void SetPrepareTraceId(const std::string &prepareTraceId);
+        void SetDownloadOnly(bool isDownloadOnly);
+        void SetEnablePredicate(bool isEnablePredicate);
+
         std::shared_ptr<GenQuery> GenerateQuery(const Tables &tables);
         bool Contains(const std::string &storeName) const;
         std::vector<std::string> GetTables(const Database &database);
@@ -93,6 +97,8 @@ public:
         bool isCompensation_ = false;
         int32_t triggerMode_ = 0;
         std::string prepareTraceId_;
+        bool isDownloadOnly_ = false;
+        bool isEnablePredicate_ = false;
     };
     SyncManager();
     ~SyncManager();
@@ -103,11 +109,14 @@ public:
     int32_t StopCloudSync(int32_t user = 0);
     std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> QueryLastSyncInfo(
         const std::vector<QueryKey> &queryKeys);
+    std::pair<int32_t, std::map<std::string, CloudLastSyncInfo>> QueryLastSyncInfo(
+        int32_t user, const std::string &id, const BundleInfo &bundleInfo);
     void OnScreenUnlocked(int32_t user);
     void CleanCompensateSync(int32_t userId);
     static std::string GetPath(const StoreMetaData &meta);
     void OnNetworkDisconnected();
     void OnNetworkConnected(const std::vector<int32_t> &users);
+    void ClearLastSyncInfo(int32_t user, const std::string &accountId, const std::string &bundleName = "");
 
 private:
     class NetworkRecoveryManager {
@@ -142,6 +151,7 @@ private:
     using GeneralError = DistributedData::GeneralError;
     using GenProgress = DistributedData::GenProgress;
     using GenDetails = DistributedData::GenDetails;
+    using CloudConflictHandler = DistributedData::CloudConflictHandler;
 
     static constexpr ExecutorPool::Duration RETRY_INTERVAL = std::chrono::seconds(10);  // second
     static constexpr ExecutorPool::Duration LOCKED_INTERVAL = std::chrono::seconds(30); // second
@@ -200,6 +210,7 @@ private:
     void AddCompensateSync(const StoreMetaData &meta);
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
+    int32_t SetCloudConflictHandler(const AutoCache::Store &store);
 
     static std::vector<std::string> GetStoresIntersection(const SyncInfo::Stores &schemaStores,
         const std::map<std::string, SyncInfo::Tables> &requestedTables);

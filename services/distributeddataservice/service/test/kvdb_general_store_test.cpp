@@ -21,14 +21,17 @@
 #include <thread>
 
 #include "bootstrap.h"
+#include "changeevent/remote_change_event.h"
 #include "cloud/asset_loader.h"
 #include "cloud/cloud_db.h"
 #include "cloud/schema_meta.h"
 #include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
+#include "eventcenter/event_center.h"
 #include "kv_store_nb_delegate_mock.h"
 #include "kvdb_query.h"
 #include "log_print.h"
+#include "metadata/auto_launch_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -49,6 +52,7 @@ using DMAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 using DBInterceptedData = DistributedDB::InterceptedData;
 using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
+using ChangeOp = GeneralWatcher::ChangeOp;
 namespace OHOS::Test {
 namespace DistributedDataTest {
 static constexpr const char *INVALID_APPID = "invalid_kvdb_store_test";
@@ -1266,6 +1270,317 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest002, TestSize.Level0)
     ASSERT_NE(invalidStore, nullptr);
     EXPECT_EQ(invalidStore->delegate_, nullptr);
     delete invalidStore;
+}
+
+/**
+* @tc.name: SetCacheFlagTest
+* @tc.desc: Test SetCacheFlag function with different parameters
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, SetCacheFlagTest, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+
+    store->SetCacheFlag(true);
+    EXPECT_EQ(store->isCacheWatcher_.load(), true);
+
+    store->SetCacheFlag(false);
+    EXPECT_EQ(store->isCacheWatcher_.load(), false);
+}
+
+/**
+* @tc.name: PostDataChangeTest
+* @tc.desc: Test PostDataChange function
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PostDataChangeTest, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+
+    auto postResult = EventCenter::GetInstance().PostEvent(
+        std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE,
+        DistributedData::RemoteChangeEvent::DataInfo{}));
+    EXPECT_EQ(postResult, 1);
+
+    store->PostDataChange();
+}
+
+/**
+* @tc.name: OnChangeWithPostDataChange002
+* @tc.desc: Test ObserverProxy::OnChange second overload calls PostDataChange
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, OnChangeWithPostDataChange002, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+
+    MockGeneralWatcher mockWatcher;
+    store->observer_->watcher_ = &mockWatcher;
+    store->observer_->storeId_ = "test_store";
+
+    MockKvStoreChangedData mockData;
+    DistributedDB::Entry entry;
+    entry.key = {1, 2, 3};
+    entry.value = {4, 5, 6};
+    mockData.entriesInserted.push_back(entry);
+
+    auto postResult = EventCenter::GetInstance().PostEvent(
+        std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE,
+        DistributedData::RemoteChangeEvent::DataInfo{}));
+    EXPECT_EQ(postResult, 1);
+    store->observer_->OnChange(mockData);
+}
+
+/**
+* @tc.name: OnChangeWithoutWatcher
+* @tc.desc: Test OnChange without watcher set (should not call PostDataChange)
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, OnChangeWithoutWatcher, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    store->observer_->watcher_ = nullptr;
+    store->observer_->storeId_ = "test_store";
+    DistributedDB::ChangedData changedData;
+    std::list<DistributedDB::Entry> entries;
+    MockKvStoreChangedData mockData;
+    DistributedDB::Entry entry;
+    entry.key = {1, 2, 3};
+    entry.value = {4, 5, 6};
+    mockData.entriesInserted.push_back(entry);
+    store->observer_->OnChange(mockData);
+}
+
+/**
+* @tc.name: SaveChangeDataInsertTest
+* @tc.desc: Test ObserverProxy::SaveChangeData with insert entries
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, SaveChangeDataInsertTest, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+
+    MockKvStoreChangedData mockData;
+    DistributedDB::Entry entry;
+    entry.key = {1, 2, 3};
+    entry.value = {4, 5, 6};
+    mockData.entriesInserted.push_back(entry);
+    store->observer_->SaveChangeData(mockData);
+}
+
+/**
+* @tc.name: PublishCacheChange001
+* @tc.desc: publish cache change data test
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange001, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockGeneralWatcher mockWatcher;
+    store->observer_->watcher_ = &mockWatcher;
+    store->observer_->storeId_ = "test_store";
+    KvStoreNbDelegateMock mockDelegate;
+    mockDelegate.taskCountMock_ = 1;
+    store->delegate_ = &mockDelegate;
+    EXPECT_NE(store->delegate_, nullptr);
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange002
+* @tc.desc: publish cache change data test with empty entries
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange002, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockGeneralWatcher mockWatcher;
+    store->observer_->watcher_ = &mockWatcher;
+    store->observer_->storeId_ = "test_store";
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    ASSERT_NE(store->delegate_, nullptr);
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange003
+* @tc.desc: publish cache change data test with OP_INSERT
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange003, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockGeneralWatcher mockWatcher;
+    store->observer_->watcher_ = &mockWatcher;
+    store->observer_->storeId_ = "test_store";
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    
+    DistributedDB::Entry entry;
+    entry.key = {'k', 'e', 'y', '1'};
+    entry.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a'};
+    mockDelegate.localEntries_.push_back(entry);
+    
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange004
+* @tc.desc: publish cache change data test with OP_DELETE
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange004, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockGeneralWatcher mockWatcher;
+    store->observer_->watcher_ = &mockWatcher;
+    store->observer_->storeId_ = "test_store";
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    
+    DistributedDB::Entry entry;
+    entry.key = {'k', 'e', 'y', '2'};
+    entry.value = {ChangeOp::OP_DELETE, 'd', 'a', 't', 'a'};
+    mockDelegate.localEntries_.push_back(entry);
+    
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange005
+* @tc.desc: publish cache change data test with OP_UPDATE
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange005, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockGeneralWatcher mockWatcher;
+    store->observer_->watcher_ = &mockWatcher;
+    store->observer_->storeId_ = "test_store";
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    
+    DistributedDB::Entry entry;
+    entry.key = {'k', 'e', 'y', '3'};
+    entry.value = {ChangeOp::OP_UPDATE, 'd', 'a', 't', 'a'};
+    mockDelegate.localEntries_.push_back(entry);
+    
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange006
+* @tc.desc: publish cache change data test with mixed operations
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange006, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockGeneralWatcher mockWatcher;
+    store->observer_->watcher_ = &mockWatcher;
+    store->observer_->storeId_ = "test_store";
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    
+    DistributedDB::Entry entry1;
+    entry1.key = {'k', 'e', 'y', '1'};
+    entry1.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a', '1'};
+    mockDelegate.localEntries_.push_back(entry1);
+    
+    DistributedDB::Entry entry2;
+    entry2.key = {'k', 'e', 'y', '2'};
+    entry2.value = {ChangeOp::OP_DELETE, 'd', 'a', 't', 'a', '2'};
+    mockDelegate.localEntries_.push_back(entry2);
+    
+    DistributedDB::Entry entry3;
+    entry3.key = {'k', 'e', 'y', '3'};
+    entry3.value = {ChangeOp::OP_UPDATE, 'd', 'a', 't', 'a', '3'};
+    mockDelegate.localEntries_.push_back(entry3);
+    
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange007
+* @tc.desc: publish cache change data test with multiple entries of same operation
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange007, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    MockGeneralWatcher mockWatcher;
+    store->observer_->watcher_ = &mockWatcher;
+    store->observer_->storeId_ = "test_store";
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+
+    DistributedDB::Entry entry1;
+    entry1.key = {'k', 'e', 'y', '1'};
+    entry1.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a', '1'};
+    mockDelegate.localEntries_.push_back(entry1);
+
+    DistributedDB::Entry entry2;
+    entry2.key = {'k', 'e', 'y', '2'};
+    entry2.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a', '2'};
+    mockDelegate.localEntries_.push_back(entry2);
+
+    DistributedDB::Entry entry3;
+    entry3.key = {'k', 'e', 'y', '3'};
+    entry3.value = {ChangeOp::OP_INSERT, 'd', 'a', 't', 'a', '3'};
+    mockDelegate.localEntries_.push_back(entry3);
+    
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange008
+* @tc.desc: publish cache change data test with empty entries
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange008, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    store->delegate_ = nullptr;
+    ASSERT_EQ(store->delegate_, nullptr);
+    store->PublishCacheChange();
+}
+
+/**
+* @tc.name: PublishCacheChange009
+* @tc.desc: publish cache change data test with empty entries
+* @tc.type: FUNC
+*/
+HWTEST_F(KVDBGeneralStoreTest, PublishCacheChange009, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    ASSERT_NE(store->delegate_, nullptr);
+    DistributedDB::Entry entry;
+    entry.key = {'k', 'e', 'y', '1'};
+    entry.value = {DistributedDB::OP_INSERT, 'd', 'a', 't', 'a'};
+    mockDelegate.localEntries_.push_back(entry);
+    store->observer_->watcher_ = nullptr;
+    ASSERT_EQ(store->observer_->watcher_, nullptr);
+    store->PublishCacheChange();
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

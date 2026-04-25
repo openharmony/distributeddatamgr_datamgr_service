@@ -136,7 +136,6 @@ ohos_fuzztest("DataShareServiceImplFuzzTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
-    "init:libbegetutil",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",

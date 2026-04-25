@@ -14,6 +14,32 @@ import("//build/ohos.gni")
 import("//build/ohos_var.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
+ohos_static_library("common_event_mock") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
+  sources = [
+    "mock/mock_common_event.cpp"
+  ]
+
+  include_dirs = [
+    "mock",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}
+
 group("unittest") {
   testonly = true
   deps = []
@@ -22,6 +48,7 @@ group("unittest") {
     "../account/test:unittest",
     "../communicator/test:unittest",
     "../dfx/test:unittest",
+    "../power_manager/test:unittest",
     "../qos/test:unittest",
   ]
 

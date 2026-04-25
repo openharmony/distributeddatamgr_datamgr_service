@@ -33,6 +33,7 @@ public:
     API_LOCAL bool Unmarshal(const json &node) override;
     static std::string GetKey(const int32_t user, const std::string &bundleName,
                               const std::string &storeId, int32_t instanceId = 0);
+    static std::string GetKey(const int32_t user, const std::string &bundleName = "");
 private:
     static constexpr const char *INFO_PREFIX = "CLOUD_LAST_SYNC_INFO";
     API_LOCAL static std::string GetKey(const std::string &prefix, const std::initializer_list<std::string> &fields);

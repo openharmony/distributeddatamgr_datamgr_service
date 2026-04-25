@@ -44,6 +44,7 @@ public:
     std::pair<int32_t, std::shared_ptr<DBCursor>> Query(DBGenQuery &query, const DBVBucket &extend) override;
     int32_t PreSharing(const std::string &table, DBVBuckets &extend) override;
     int32_t Sync(const Devices &devices, int32_t mode, const DBGenQuery &query, Async async, int32_t wait) override;
+    int32_t StopCloudSync() override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t Lock() override;

@@ -59,7 +59,7 @@ public:
     std::vector<OperationResult> Publish(const Data &data, const std::string &bundleNameOfProvider) override;
     Data GetData(const std::string &bundleNameOfProvider, int &errorCode) override;
     std::vector<OperationResult> SubscribeRdbData(const std::vector<std::string> &uris,
-        const TemplateId &id, const sptr<IDataProxyRdbObserver> observer) override;
+        const TemplateId &id, const sptr<IDataProxyRdbObserver> observer, const SubscribeOption &option = {}) override;
     std::vector<OperationResult> UnsubscribeRdbData(
         const std::vector<std::string> &uris, const TemplateId &id) override;
     std::vector<OperationResult> EnableRdbSubs(
@@ -97,12 +97,12 @@ public:
         const DataProxyConfig &proxyConfig) override;
     std::vector<DataProxyResult> DeleteProxyData(const std::vector<std::string> &uris,
         const DataProxyConfig &proxyConfig) override;
+    std::vector<DataProxyResult> DeleteAllProxyData(const DataProxyConfig &proxyConfig) override;
     std::vector<DataProxyGetResult> GetProxyData(const std::vector<std::string> &uris,
         const DataProxyConfig &proxyConfig) override;
     std::vector<DataProxyResult> SubscribeProxyData(const std::vector<std::string> &uris,
-        const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer) override;
-    std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris,
-        const DataProxyConfig &proxyConfig) override;
+        const sptr<IProxyDataObserver> observer) override;
+    std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris) override;
     std::pair<int32_t, ConnectionInterfaceInfo> GetConnectionInterfaceInfo(int32_t saId, uint32_t waitTime) override;
     static void UpdateLaunchInfo();
 private:
@@ -163,6 +163,8 @@ private:
     bool VerifyPredicates(const DataSharePredicates &predicates, uint32_t callingTokenId,
         DataProviderConfig::ProviderInfo &providerInfo, std::string &func);
     std::shared_ptr<DataShareServiceImpl::TimerReceiver> GetTimerReceiver();
+    std::vector<DataProxyResult> DeleteAndNotifyProxyData(const std::vector<std::string> &uris,
+        const BundleInfo &callerBundleInfo);
     static Factory factory_;
     static constexpr int32_t ERROR = -1;
     static constexpr int32_t ERROR_PERMISSION_DENIED = -2;

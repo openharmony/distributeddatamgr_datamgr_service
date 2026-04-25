@@ -23,6 +23,7 @@
 #include "store_cache.h"
 #include "udmf_notifier_proxy.h"
 #include "udmf_service_stub.h"
+#include "metadata/meta_data_manager.h"
 namespace OHOS {
 namespace UDMF {
 /*
@@ -69,7 +70,7 @@ private:
     bool IsPermissionInCache(const QueryOption &query);
     bool IsReadAndKeep(const std::vector<Privilege> &privileges, const QueryOption &query);
     int32_t ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
-        std::vector<Uri> &readUris, std::vector<Uri> &writeUris);
+        std::map<unsigned int, std::vector<Uri>> &grantUris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
     bool HasDatahubPriviledge(const std::string &bundleName);
     void RegisterAsyncProcessInfo(const std::string &businessUdKey);
@@ -101,6 +102,9 @@ private:
     int32_t PushDelayDataToRemote(const QueryOption &query, const std::vector<std::string> &devices);
     int32_t FillDelayUnifiedData(const UnifiedKey &key, UnifiedData &unifiedData);
     std::vector<std::string> GetDevicesForDelayData();
+    using DeviceMetaSyncOption = DistributedData::MetaDataManager::DeviceMetaSyncOption;
+    static DeviceMetaSyncOption GetMetaSyncOption(const DistributedData::StoreMetaData &metaData,
+        const std::vector<std::string> &devices);
 
     class UdmfStatic : public StaticActs {
     public:

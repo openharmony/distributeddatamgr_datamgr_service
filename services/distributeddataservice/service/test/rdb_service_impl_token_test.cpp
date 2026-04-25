@@ -91,6 +91,7 @@ void RdbServiceImplTokenTest::InitMetaData()
     metaData_.area = OHOS::DistributedKv::EL1;
     metaData_.instanceId = 0;
     metaData_.isAutoSync = true;
+    metaData_.isManualCleanDevice = true;
     metaData_.storeType = DistributedRdb::RDB_DEVICE_COLLABORATION;
     metaData_.storeId = TEST_STORE;
     metaData_.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData_) + "/" + TEST_STORE;
@@ -171,6 +172,7 @@ void RdbServiceImplTokenTest::GetRdbSyncerParam(RdbSyncerParam &param)
     param.isSearchable_ = metaData_.isSearchable;
     param.haMode_ = metaData_.haMode;
     param.asyncDownloadAsset_ = metaData_.asyncDownloadAsset;
+    param.isAutoCleanDevice_ = !metaData_.isManualCleanDevice;
     param.user_ = metaData_.user;
 }
 
@@ -508,13 +510,13 @@ HWTEST_F(RdbServiceImplTokenTest, IsSupportAutoSyncDeviceType003, TestSize.Level
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData001, TestSize.Level0)
 {
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(false));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(false));
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbStatus::RDB_NON_SYSTEM_APP);
+    EXPECT_EQ(result.first, RdbStatus::RDB_NON_SYSTEM_APP);
 }
 
 /**
@@ -526,13 +528,13 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData001, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData002, TestSize.Level0)
 {
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbStatus::RDB_DB_NOT_EXIST);
+    EXPECT_EQ(result.first, RdbStatus::RDB_DB_NOT_EXIST);
 }
 
 /**
@@ -544,7 +546,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData002, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData003, TestSize.Level0)
 {
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     RdbServiceImpl service;
     RdbSyncerParam param;
     GetRdbSyncerParam(param);
@@ -553,7 +555,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData003, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbStatus::RDB_DB_NOT_EXIST);
+    EXPECT_EQ(result.first, RdbStatus::RDB_DB_NOT_EXIST);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -566,7 +568,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData003, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData004, TestSize.Level0)
 {
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
@@ -578,7 +580,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData004, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
+    EXPECT_EQ(result.first, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -600,7 +602,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData005, TestSize.Level0)
     EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
     std::map<std::string, std::vector<std::string>> retainDevices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbStatus::RDB_ERROR);
+    EXPECT_EQ(result.first, RdbStatus::RDB_ERROR);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -613,7 +615,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData005, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData006, TestSize.Level0)
 {
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
@@ -628,7 +630,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData006, TestSize.Level0)
     devices.push_back("test");
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -641,7 +643,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData006, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData007, TestSize.Level0)
 {
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
@@ -655,7 +657,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData007, TestSize.Level0)
     std::vector<std::string> devices;
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
+    EXPECT_EQ(result.first, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -668,7 +670,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData007, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData008, TestSize.Level0)
 {
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
@@ -683,7 +685,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData008, TestSize.Level0)
     devices.push_back("device");
     retainDevices[""] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -696,7 +698,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData008, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData009, TestSize.Level0)
 {
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_SHELL));
@@ -711,7 +713,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData009, TestSize.Level0)
     devices.push_back("");
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -726,7 +728,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData010, TestSize.Level0)
 {
     std::vector<std::string> devices;
     devices.push_back("test");
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(devices)).WillRepeatedly(Return(devices));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
@@ -740,7 +742,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData010, TestSize.Level0)
     std::map<std::string, std::vector<std::string>> retainDevices;
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
+    EXPECT_EQ(result.first, RdbCommonUtils::ConvertGeneralRdbStatus(GeneralError::E_OK));
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -756,7 +758,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData011, TestSize.Level0)
     std::vector<std::string> devices;
     devices.push_back("test");
     std::vector<std::string> devices1;
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(devices)).WillRepeatedly(Return(devices1));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
@@ -770,7 +772,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData011, TestSize.Level0)
     std::map<std::string, std::vector<std::string>> retainDevices;
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -788,7 +790,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData012, TestSize.Level0)
     std::vector<std::string> devices1;
     devices1.push_back("test");
     devices1.push_back("test1");
-    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillOnce(testing::Return(true));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(devices)).WillRepeatedly(Return(devices1));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_SHELL))
@@ -802,7 +804,7 @@ HWTEST_F(RdbServiceImplTokenTest, RetainDeviceData012, TestSize.Level0)
     std::map<std::string, std::vector<std::string>> retainDevices;
     retainDevices["employee"] = devices;
     auto result = service.RetainDeviceData(param, retainDevices);
-    EXPECT_EQ(result, RDB_INVALID_ARGS);
+    EXPECT_EQ(result.first, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
 }
 
@@ -926,6 +928,70 @@ HWTEST_F(RdbServiceImplTokenTest, ObtainUuid006, TestSize.Level0)
     GetRdbSyncerParam(param);
     auto [result, uuids] = service.ObtainUuid(param, devices1);
     EXPECT_EQ(result, RDB_INVALID_ARGS);
+}
+
+/**
+ * @tc.name: BeforeOpen001
+ * @tc.desc: Test BeforeOpen success app is system app.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, BeforeOpen001, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    auto meta = service.GetStoreMetaData(param);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
+    auto result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: BeforeOpen002
+ * @tc.desc: Test BeforeOpen success app is not system app.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, BeforeOpen002, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(false));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    auto meta = service.GetStoreMetaData(param);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true), true);
+    auto result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: BeforeOpen003
+ * @tc.desc: Test BeforeOpen success app is not system app but no meta.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zd
+ */
+HWTEST_F(RdbServiceImplTokenTest, BeforeOpen003, TestSize.Level0)
+{
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(false));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.dbPath_ = "/data/service/el2/100/test_rdb_service_impl_bundleName/rdbtest.db";
+    auto meta = service.GetStoreMetaData(param);
+    auto result = service.BeforeOpen(param);
+    EXPECT_EQ(result, RDB_NO_META);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

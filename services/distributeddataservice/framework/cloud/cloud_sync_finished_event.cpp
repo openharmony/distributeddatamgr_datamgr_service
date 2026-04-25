@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,13 +16,13 @@
 #include "cloud/cloud_sync_finished_event.h"
 
 namespace OHOS::DistributedData {
-CloudSyncFinishedEvent::CloudSyncFinishedEvent(int32_t evtId, const StoreMetaData &storeMetaData)
-    : CloudEvent(CLOUD_SYNC_FINISHED, storeMetaData.GetStoreInfo()), metaData_(storeMetaData)
+CloudSyncFinishedEvent::CloudSyncFinishedEvent(StoreInfo storeInfo, const CloudLastSyncInfo &syncInfo)
+    : CloudEvent(CLOUD_SYNC_FINISHED, std::move(storeInfo)), syncInfo_(syncInfo)
 {
 }
 
-StoreMetaData CloudSyncFinishedEvent::GetStoreMeta() const
+const CloudLastSyncInfo &CloudSyncFinishedEvent::GetSyncInfo() const
 {
-    return metaData_;
+    return syncInfo_;
 }
 } // namespace OHOS::DistributedData

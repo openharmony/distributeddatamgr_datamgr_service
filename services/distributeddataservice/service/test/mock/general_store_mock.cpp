@@ -73,14 +73,14 @@ std::pair<int32_t, int32_t> GeneralStoreMock::Sync(const Devices &devices, GenQu
     DetailAsync async, const SyncParam &syncParm)
 {
     if (!async) {
-        return { GeneralError::E_OK, 0 };
+        return { dbStatus_, 0 };
     }
     std::map<std::string, GenProgressDetail> details;
     for (auto &device : devices) {
         details[device] = { .progress = SYNC_FINISH, .code = 0, .dbCode = 0 };
     }
     async(details);
-    return { GeneralError::E_OK, 0 };
+    return { dbStatus_, 0 };
 }
 
 std::pair<int32_t, std::shared_ptr<Cursor>> GeneralStoreMock::PreSharing(GenQuery &query)
@@ -229,10 +229,15 @@ int32_t GeneralStoreMock::SetConfig(const StoreConfig &storeConfig)
     return dbStatus_;
 }
 
-int32_t GeneralStoreMock::RetainDeviceData(
+std::pair<int32_t, int64_t> GeneralStoreMock::RetainDeviceData(
     const std::map<std::string, std::vector<std::string>> &retainDevices)
 {
-    return dbStatus_;
+    return {dbStatus_, 0 };
+}
+
+int32_t GeneralStoreMock::StopCloudSync()
+{
+    return 0;
 }
 } // namespace DistributedData
 } // namespace OHOS

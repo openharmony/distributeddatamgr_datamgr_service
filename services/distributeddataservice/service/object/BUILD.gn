@@ -84,6 +84,9 @@ ohos_source_set("distributeddata_object") {
     "ipc:ipc_single",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
+    "json:nlohmann_json_static",
+    "relational_store:native_rdb",
+    "samgr:samgr_proxy",
   ]
 
   if (dm_part_is_enabled && datamgr_service_distributed) {

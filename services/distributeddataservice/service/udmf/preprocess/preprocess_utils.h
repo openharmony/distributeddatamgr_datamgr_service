@@ -36,17 +36,13 @@ public:
     static bool GetInstIndex(uint32_t tokenId, int32_t &instIndex);
     static bool IsNetworkingEnabled();
     static std::vector<std::string> GetRemoteDeviceIds();
-    static void ProcessFileType(std::vector<std::shared_ptr<UnifiedRecord>> records,
+    static void ProcessFileType(const std::shared_ptr<UnifiedRecord> &record,
         std::function<bool(std::shared_ptr<Object>)> callback);
-    static void GetHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-        std::map<std::string, int32_t> &htmlUris);
     static void ClearHtmlDfsUris(UnifiedData &data);
-    static void ProcessHtmlFileUris(uint32_t tokenId, UnifiedData &data, bool isLocal,
-        std::vector<Uri> &readUris, std::vector<Uri> &writeUris);
-    static void ProcessFiles(bool &hasError, UnifiedData &data, bool isLocal,
-        std::vector<Uri> &readUris, std::vector<Uri> &writeUris);
-    static void ProcessRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-        bool isLocal, std::map<std::string, int32_t> &uris);
+    static void ProcessFileAuthorization(bool &hasError, UnifiedData &data, bool isLocal,
+        std::map<std::string, unsigned int> &uriPermissions);
+    static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
+        bool isLocal, std::vector<std::string> &uris);
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
@@ -54,17 +50,31 @@ public:
         std::string &bundleName);
     static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();
 private:
-    static bool CheckUriAuthorization(const std::vector<std::string>& uris, uint32_t tokenId,
-        std::map<std::string, int32_t> &permissionUris);
+    static bool CheckUriAuthorization(const std::vector<std::string> &uris, uint32_t tokenId,
+        std::map<std::string, uint32_t> &permissionUris, bool readOnly = false);
     static int32_t GetDfsUrisFromLocal(const std::vector<std::string> &uris, int32_t userId,
         std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris);
     static std::string GetSdkVersionByToken(uint32_t tokenId);
     static bool GetSpecificBundleName(const std::string &bundleName, int32_t appIndex, std::string &specificBundleName);
     static void FillUris(UnifiedData &data,
         std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
-        std::map<std::string, int32_t> &permissionUris);
-    static int32_t ReadCheckUri(uint32_t tokenId, UnifiedData &data, std::vector<std::string> &uris);
+        std::map<std::string, uint32_t> &permissionUris);
+    static void FillHtmlEntry(const std::shared_ptr<UnifiedRecord> &record,
+        const std::shared_ptr<UnifiedDataProperties> &properties,
+        std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
+        std::map<std::string, uint32_t> &permissionUris);
+    static void FillFileEntry(const std::shared_ptr<UnifiedRecord> &record,
+        const std::shared_ptr<UnifiedDataProperties> &properties,
+        std::unordered_map<std::string, AppFileService::ModuleRemoteFileShare::HmdfsUriInfo> &dfsUris,
+        std::map<std::string, uint32_t> &permissionUris);
+    static void ProcessHtmlEntryAuthorization(const std::shared_ptr<UnifiedRecord> &record, bool isLocal,
+        int32_t permissionPolicyMode, std::map<std::string, uint32_t> &strUris);
+    static void ProcessFileEntryAuthorization(const std::shared_ptr<UnifiedRecord> &record, bool isLocal,
+        int32_t permissionPolicyMode, bool &hasError, std::map<std::string, uint32_t> &strUris);
+    static int32_t ReadCheckUri(uint32_t tokenId, UnifiedData &data, const std::vector<std::string> &uris,
+        bool readOnly = false);
     static bool ValidateUriScheme(Uri &uri, bool &hasError);
+    static bool ValidateFileEntry(std::shared_ptr<Object> obj, bool isLocal, bool &hasError);
     static bool JudgeFileUriExist(const std::string &uri, uint32_t tokenId);
     static bool MatchImgExtension(const std::string &uri);
 };

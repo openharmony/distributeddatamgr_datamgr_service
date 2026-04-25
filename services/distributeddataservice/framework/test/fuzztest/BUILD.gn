@@ -20,6 +20,7 @@ group("fuzztest") {
 
   deps = [
     "flowcontrolmanager_fuzzer:fuzztest",
+    "powermanager_fuzzer:fuzztest",
     "storedebuginfo_fuzzer:fuzztest",
   ]
 }

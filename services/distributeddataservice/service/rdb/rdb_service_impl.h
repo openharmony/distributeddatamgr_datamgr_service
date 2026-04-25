@@ -54,6 +54,7 @@ public:
     using Database = DistributedData::Database;
     using Handler = std::function<void(int, std::map<std::string, std::vector<std::string>> &)>;
     using StoreInfo = DistributedData::StoreInfo;
+    using DeviceMetaSyncOption = DistributedData::MetaDataManager::DeviceMetaSyncOption;
     RdbServiceImpl();
     virtual ~RdbServiceImpl();
 
@@ -66,7 +67,7 @@ public:
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
         const std::vector<Reference> &references, bool isRebuild, int32_t type = DISTRIBUTED_DEVICE) override;
 
-    int32_t RetainDeviceData(
+    std::pair<int32_t, int64_t> RetainDeviceData(
         const RdbSyncerParam &param, const std::map<std::string, std::vector<std::string>> &retainDevices) override;
 
     std::pair<int32_t, std::vector<std::string>> ObtainUuid(
@@ -77,6 +78,8 @@ public:
 
     int32_t Sync(const RdbSyncerParam &param, const Option &option, const PredicatesMemo &predicates,
         const AsyncDetail &async) override;
+
+    int32_t StopCloudSync(const RdbSyncerParam &param) override;
 
     int32_t Subscribe(const RdbSyncerParam &param,
                       const SubscribeOption &option,
@@ -133,7 +136,6 @@ public:
     int32_t GetDfxInfo(const RdbSyncerParam &param, DistributedRdb::RdbDfxInfo &dfxInfo) override;
 
     int32_t VerifyPromiseInfo(const RdbSyncerParam &param) override;
-
 private:
     using Watchers = DistributedData::AutoCache::Watchers;
     using StaticActs = DistributedData::StaticActs;
@@ -289,6 +291,9 @@ private:
 
     static StoreInfo GetStoreInfoEx(const StoreMetaData &metaData);
 
+    static DeviceMetaSyncOption GetMetaSyncOption(const StoreMetaData &metaData,
+        const std::vector<std::string> &devices, bool isWait = false);
+
     static int32_t SaveDebugInfo(const StoreMetaData &metaData, const RdbSyncerParam &param,
                                  DistributedData::MetaDataSaver &saver);
 
@@ -305,11 +310,16 @@ private:
         DistributedData::SetSearchableEvent::EventInfo &eventInfo);
 
     static bool IsCollaboration(const StoreMetaData &metaData);
+    static void HandleSyncError(const std::vector<std::string> &devices, DistributedDB::DBStatus dbStatus,
+    const DetailAsync &async);
 
     std::vector<uint8_t> LoadSecretKey(const StoreMetaData &metaData, CryptoManager::SecretKeyType secretKeyType);
 
     void SaveSecretKeyMeta(const StoreMetaData &metaData, const std::vector<uint8_t> &password,
                           DistributedData::MetaDataSaver &saver);
+
+    std::pair<bool, std::map<std::string, std::vector<std::string>>> ConvertDevices(
+        const std::map<std::string, std::vector<std::string>> &retainDevices);
 
     static Factory factory_;
     ConcurrentMap<uint32_t, SyncAgents> syncAgents_;

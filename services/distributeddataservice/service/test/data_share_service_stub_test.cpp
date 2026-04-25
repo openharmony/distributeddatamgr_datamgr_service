@@ -20,17 +20,20 @@
 #include <unistd.h>
 
 #include "data_share_service_impl.h"
+#include "dataproxy_handle_common.h"
 #include "ipc_skeleton.h"
+#include "itypes_util.h"
+#include "token_setproc.h"
 #include "log_print.h"
 
 using namespace testing::ext;
 using namespace OHOS::DataShare;
-using namespace OHOS::DistributedData;
 const std::u16string INTERFACE_TOKEN = u"OHOS.DataShare.IDataShareService";
 constexpr uint32_t CODE_MIN = 0;
 constexpr size_t TEST_SIZE = 1;
 constexpr uint8_t TEST_DATA = 1;
 constexpr uint32_t CODE_MAX = IDataShareService::DATA_SHARE_SERVICE_CMD_MAX + 1;
+constexpr uint64_t SYSTEM_TOKENID = static_cast<uint64_t>(1) << 32;
 namespace OHOS::Test {
 class DataShareServiceStubTest : public testing::Test {
 public:
@@ -50,6 +53,9 @@ std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImp
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 {
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest001 start");
+    auto originalToken = GetSelfTokenID();
+    SetSelfTokenID(SYSTEM_TOKENID);
     uint8_t value = TEST_DATA;
     uint8_t *data = &value;
     size_t size = TEST_SIZE;
@@ -64,6 +70,8 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 
     result = dataShareServiceStub->OnNotifyConnectDone(request, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
+    SetSelfTokenID(originalToken);
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest001 end");
 }
 
 /**
@@ -74,6 +82,9 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest001, TestSize.Level1)
 */
 HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
 {
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest002 start");
+    auto originalToken = GetSelfTokenID();
+    SetSelfTokenID(SYSTEM_TOKENID);
     uint8_t value = TEST_DATA;
     uint8_t *data = &value;
     uint32_t code = static_cast<uint32_t>(*data) % (CODE_MAX - CODE_MIN + 1) + CODE_MIN;
@@ -84,6 +95,80 @@ HWTEST_F(DataShareServiceStubTest, OnRemoteRequest002, TestSize.Level1)
 
     result = dataShareServiceStub->OnNotifyConnectDone(request, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
+    SetSelfTokenID(originalToken);
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest002 end");
+}
+
+/**
+* @tc.name: OnRemoteRequest003
+* @tc.desc: test OnRemoteRequest abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceStubTest, OnRemoteRequest003, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest003 start");
+    uint32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE;
+    MessageParcel request;
+    MessageParcel reply;
+    auto result = dataShareServiceStub->OnRemoteRequest(code, request, reply);
+    EXPECT_EQ(result, E_NOT_SYSTEM_APP);
+
+    code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE_SYSTEM;
+    result = dataShareServiceStub->OnRemoteRequest(code, request, reply);
+    EXPECT_EQ(result, E_NOT_SYSTEM_APP);
+
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest003 end");
+}
+
+/**
+* @tc.name: OnRemoteRequest004
+* @tc.desc: test OnRemoteRequest abnormal scene
+* @tc.type: FUNC
+* @tc.require:SQL
+*/
+HWTEST_F(DataShareServiceStubTest, OnRemoteRequest004, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest004 start");
+    auto originalToken = GetSelfTokenID();
+    SetSelfTokenID(SYSTEM_TOKENID);
+    uint32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_QUERY_SYSTEM;
+    MessageParcel request;
+    MessageParcel reply;
+    auto result = dataShareServiceStub->OnRemoteRequest(code, request, reply);
+    EXPECT_EQ(result, IDataShareService::DATA_SHARE_ERROR);
+
+    SetSelfTokenID(originalToken);
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest004 end");
+}
+
+HWTEST_F(DataShareServiceStubTest, IsTemplateRequest001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceStubTest::IsTemplateRequest001 start");
+    static uint32_t list[] = {
+        DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE,
+        DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_DEL_TEMPLATE,
+        DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_SUBSCRIBE_RDB,
+        DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_RDB,
+        DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_ENABLE_SUBSCRIBE_RDB,
+        DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_DISABLE_SUBSCRIBE_RDB,
+    };
+    for (auto code : list) {
+        auto result = dataShareServiceStub->IsTemplateRequest(code);
+        EXPECT_EQ(result, true);
+    }
+
+    auto result = dataShareServiceStub->IsTemplateRequest(
+        DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_QUERY);
+    EXPECT_EQ(result, false);
+
+    // code out of range is false
+    for (int32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_DISABLE_SUBSCRIBE_RDB + 1;
+        code <= DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_MAX; code++) {
+        auto result = dataShareServiceStub->IsTemplateRequest(code);
+        EXPECT_EQ(result, false);
+    }
+    ZLOGI("DataShareServiceStubTest::IsTemplateRequest001 end");
 }
 
 /**
@@ -244,5 +329,29 @@ HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo, TestSize.Level1
     int32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO;
     int32_t result = service.OnRemoteRequest(code, data, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
+}
+
+/**
+* @tc.name: OnDeleteAllProxyData
+* @tc.desc: Verify OnDeleteAllProxyData behavior with empty MessageParcel (no proxyConfig)
+* @tc.type: FUNC
+* @tc.precon: DataShareServiceImpl is initialized and MessageParcel is ready
+* @tc.step:
+*   1. Create MessageParcel with only InterfaceToken (no proxyConfig data)
+*   2. Call OnRemoteRequest with DATA_SHARE_SERVICE_CMD_PROXY_DELETE_ALL
+* @tc.expect:
+*   1. Return IPC_STUB_INVALID_DATA_ERR due to Unmarshal failure
+*/
+HWTEST_F(DataShareServiceStubTest, OnDeleteAllProxyData, TestSize.Level1)
+{
+    DataShareServiceImpl service;
+    MessageParcel data;
+    MessageParcel reply;
+    // MessageParcel data has no proxyConfig
+    data.WriteInterfaceToken(IDataShareService::GetDescriptor());
+
+    int32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_PROXY_DELETE_ALL;
+    auto result = service.OnRemoteRequest(code, data, reply);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 }
 } // namespace OHOS::Test

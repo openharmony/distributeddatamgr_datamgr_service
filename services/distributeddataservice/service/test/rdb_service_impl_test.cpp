@@ -40,6 +40,7 @@
 #include "metadata/store_meta_data_local.h"
 #include "mock/db_store_mock.h"
 #include "mock/device_manager_adapter_mock.h"
+#include "mock/device_matrix_mock.h"
 #include "mock/general_store_mock.h"
 #include "mock/tokenid_kit_mock.h"
 #include "rdb_general_store.h"
@@ -141,7 +142,6 @@ void RdbServiceImplTest::SetUpTestCase()
     EXPECT_CALL(*deviceManagerAdapterMock, GetLocalDevice()).WillRepeatedly(Return(deviceInfo));
     EXPECT_CALL(*deviceManagerAdapterMock, GetUuidByNetworkId(_)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, CalcClientUuid(_, _)).WillRepeatedly(Return(deviceInfo.uuid));
-    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(deviceInfo.uuid)).WillRepeatedly(Return(deviceInfo.uuid));
     EXPECT_CALL(*deviceManagerAdapterMock, RegDevCallback()).WillRepeatedly(Return([]() {}));
 
     InitMetaData();
@@ -512,6 +512,29 @@ HWTEST_F(RdbServiceImplTest, DoSync003, TestSize.Level0)
 }
 
 /**
+ * @tc.name: DoSync_004
+ * @tc.desc: Test DoSync when enableErrorDetail is true and CheckSyncPermission returns false.
+ *           Covers branch: enableErrorDetail=true && CheckSyncPermission()=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, DoSync_004, TestSize.Level0)
+{
+    StoreMetaData invalidMeta = metaData_;
+    invalidMeta.tokenId = 0; // Invalid tokenId to trigger permission denial
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    option.enableErrorDetail = true; // Enable error detail to trigger permission check
+    PredicatesMemo predicates;
+    predicates.devices_ = { "device1" };
+
+    auto result = service.DoSync(invalidMeta, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_NO_SYNC_PERMISSION);
+}
+
+/**
  * @tc.name: IsNeedMetaSync001
  * @tc.desc: Test IsNeedMetaSync when LoadMeta fails for CapMetaData.
  * @tc.type: FUNC
@@ -538,6 +561,7 @@ HWTEST_F(RdbServiceImplTest, IsNeedMetaSync001, TestSize.Level0)
  */
 HWTEST_F(RdbServiceImplTest, IsNeedMetaSync002, TestSize.Level0)
 {
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID("ABCD")).WillRepeatedly(Return("ABCD"));
     CapMetaData capMetaData;
     auto capKey = CapMetaRow::GetKeyFor(metaData_.deviceId);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(std::string(capKey.begin(), capKey.end()), capMetaData), true);
@@ -1481,6 +1505,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables004, TestSize.Level0)
     param.bundleName_ = TEST_BUNDLE;
     param.storeName_ = "SetDistributedTables004";
     param.type_ = StoreMetaData::StoreType::STORE_RELATIONAL_BEGIN;
+    param.isAutoCleanDevice_ = true;
     std::vector<std::string> tables;
     std::vector<OHOS::DistributedRdb::Reference> references;
 
@@ -1510,6 +1535,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
     param.area_ = metaData_.area;
     param.level_ = metaData_.securityLevel;
     param.isEncrypt_ = metaData_.isEncrypt;
+    param.isAutoCleanDevice_ = false;
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
     auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
     EXPECT_EQ(result, RDB_ERROR);
@@ -1527,6 +1553,263 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
 }
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithAsyncFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when asyncDownloadAsset is false but metadata is true
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAsyncFalse, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = false;
+    param.enableCloud_ = true;
+    param.customSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = true;
+    metaData_.customSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithCloudFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when enableCloud is false but metadata is true
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithCloudFalse, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = false;
+    param.customSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = true;
+    metaData_.customSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithSyncFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when customSwitch is false but metadata is true
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithSyncFalse, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = true;
+    param.customSwitch_ = false;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = true;
+    metaData_.customSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithAllFalse
+ * @tc.desc: Test SetDistributedTables with cloud type when all parameters are false
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAllFalse, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = false;
+    param.enableCloud_ = false;
+    param.customSwitch_ = false;
+    metaData_.asyncDownloadAsset = false;
+    metaData_.enableCloud = false;
+    metaData_.customSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithCloudMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when enableCloud parameter differs from metadata
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithCloudMismatch, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = true;
+    param.customSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = false;
+    metaData_.customSwitch = true;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithSyncMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when customSwitch parameter differs from metadata
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithSyncMismatch, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = true;
+    param.customSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = true;
+    metaData_.customSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithAsyncMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when asyncDownloadAsset parameter differs from metadata
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAsyncMismatch, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = false;
+    param.customSwitch_ = true;
+    metaData_.asyncDownloadAsset = true;
+    metaData_.enableCloud = false;
+    metaData_.customSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTablesCloudWithAllMismatch
+ * @tc.desc: Test SetDistributedTables with cloud type when all parameters differ from metadata
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTablesCloudWithAllMismatch, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.isEncrypt_ = metaData_.isEncrypt;
+    param.asyncDownloadAsset_ = true;
+    param.enableCloud_ = true;
+    param.customSwitch_ = true;
+    metaData_.asyncDownloadAsset = false;
+    metaData_.enableCloud = false;
+    metaData_.customSwitch = false;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    StoreMetaMapping metaMapping(metaData_);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
 
 /**
  * @tc.name: SetDistributedTables006
@@ -1555,7 +1838,7 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
     database.name = meta.storeId;
     database.user = meta.user;
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
-    dbStatus_ = E_ERROR;
+    RdbServiceImplTest::dbStatus_ = E_ERROR;
     auto result =
         service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
     EXPECT_EQ(result, RDB_ERROR);
@@ -1565,6 +1848,71 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables006, TestSize.Level0)
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+}
+
+void SetCloudDistributedTableTest(const StoreMetaData &caseMeta, RdbSyncerParam &param)
+{
+    RdbServiceImpl service;
+    auto meta = caseMeta;
+    meta.storeId = "SetCloudDistributedTableTest";
+    meta.dataDir = DirectoryManager::GetInstance().GetStorePath(meta) + "/" + meta.storeId;
+    param.bundleName_ = meta.bundleName;
+    param.storeName_ = meta.storeId;
+    param.type_ = meta.storeType;
+    param.area_ = meta.area;
+    param.level_ = meta.securityLevel;
+    param.isEncrypt_ = meta.isEncrypt;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true), true);
+    Database database;
+    database.bundleName = meta.bundleName;
+    database.name = meta.storeId;
+    database.user = meta.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    RdbServiceImplTest::dbStatus_ = E_ERROR;
+    auto result =
+        service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_CLOUD);
+    EXPECT_EQ(result, RDB_OK);
+    RdbServiceImplTest::dbStatus_ = E_OK;
+    StoreMetaMapping metaMapping(meta);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: SetDistributedTables007
+ * @tc.desc: Test SetDistributedTables with assetDownloadOnDemand.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zqq
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables007, TestSize.Level0)
+{
+    RdbSyncerParam param;
+    param.assetDownloadOnDemand_ = true;
+    EXPECT_NO_FATAL_FAILURE(SetCloudDistributedTableTest(metaData_, param));
+}
+
+/**
+ * @tc.name: SetDistributedTables008
+ * @tc.desc: Test SetDistributedTables with assetConflictPolicy.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: zqq
+ */
+HWTEST_F(RdbServiceImplTest, SetDistributedTables008, TestSize.Level0)
+{
+    RdbSyncerParam param;
+    param.assetConflictPolicy_ = 1;
+    param.assetTempPath_ = "";
+    EXPECT_NO_FATAL_FAILURE(SetCloudDistributedTableTest(metaData_, param));
+    param.assetConflictPolicy_ = 1;
+    param.assetTempPath_ = "test";
+    EXPECT_NO_FATAL_FAILURE(SetCloudDistributedTableTest(metaData_, param));
+    param.assetConflictPolicy_ = 2;
+    param.assetTempPath_ = "test2";
+    EXPECT_NO_FATAL_FAILURE(SetCloudDistributedTableTest(metaData_, param));
 }
 
 /**
@@ -3413,5 +3761,325 @@ HWTEST_F(RdbServiceImplTest, OnGetSilentAccessStores_BundleUtilsError006, TestSi
     BundleUtils::GetInstance().SetBundleInfoCallback(nullptr);
 }
 
+/**
+ * @tc.name: Sync005
+ * @tc.desc: Test Sync with empty predicates (tests GetSyncTask and ConvertToDeviceInfo with empty devices).
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: luyangyang7
+ */
+HWTEST_F(RdbServiceImplTest, Sync005, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = TEST_BUNDLE;
+    param.storeName_ = "Sync005";
+    param.hapName_ = "test/test";
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    option.seqNum = 1;
+    option.enableErrorDetail = true; // Enable error detail to test ConvertToDeviceInfo
+
+    PredicatesMemo predicates;
+    // Empty predicates - no devices specified, tests GetSyncTask with empty devices
+    // This will trigger ConvertToDeviceInfo with empty networkIds
+
+    // Load and save sync meta like Sync003
+    auto [exists, meta] = RdbServiceImpl::LoadStoreMetaData(param);
+    (void)exists;
+    RdbServiceImpl::SaveSyncMeta(meta);
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_001
+ * @tc.desc: Test ConvertToDeviceInfo with empty networkIds, empty GetRemoteDevices, and enableDetail=true.
+ *           Covers branch: networkIds.empty()=true, deviceInfos.empty()=true, enableDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_001, TestSize.Level0)
+{
+    // Mock GetRemoteDevices to return empty vector
+    std::vector<DeviceInfo> emptyDevices;
+    EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillOnce(Return(emptyDevices));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_002
+ * @tc.desc: Test ConvertToDeviceInfo with empty networkIds, empty GetRemoteDevices, and enableDetail=false.
+ *           Covers branch: networkIds.empty()=true, deviceInfos.empty()=true, enableDetail=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_002, TestSize.Level0)
+{
+    // Mock GetRemoteDevices to return empty vector
+    std::vector<DeviceInfo> emptyDevices;
+    EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillOnce(Return(emptyDevices));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = false;
+    PredicatesMemo predicates;
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_003
+ * @tc.desc: Test ConvertToDeviceInfo with empty networkIds, non-empty GetRemoteDevices, and enableDetail=true.
+ *           Covers branch: networkIds.empty()=true, deviceInfos not empty, enableDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_003, TestSize.Level0)
+{
+    // Mock GetRemoteDevices to return devices
+    std::vector<DeviceInfo> deviceInfos;
+    DeviceInfo devInfo1;
+    devInfo1.uuid = "uuid1";
+    devInfo1.networkId = "networkId1";
+    DeviceInfo devInfo2;
+    devInfo2.uuid = "uuid2";
+    devInfo2.networkId = "networkId2";
+    deviceInfos.push_back(devInfo1);
+    deviceInfos.push_back(devInfo2);
+    EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillOnce(Return(deviceInfos));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_004
+ * @tc.desc: Test ConvertToDeviceInfo with empty networkIds, non-empty GetRemoteDevices, and enableDetail=false.
+ *           Covers branch: networkIds.empty()=true, deviceInfos not empty, enableDetail=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_004, TestSize.Level0)
+{
+    // Mock GetRemoteDevices to return devices
+    std::vector<DeviceInfo> deviceInfos;
+    DeviceInfo devInfo1;
+    devInfo1.uuid = "uuid1";
+    devInfo1.networkId = "networkId1";
+    deviceInfos.push_back(devInfo1);
+    EXPECT_CALL(*deviceManagerAdapterMock, GetRemoteDevices()).WillOnce(Return(deviceInfos));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = false;
+    PredicatesMemo predicates;
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_005
+ * @tc.desc: Test ConvertToDeviceInfo with non-empty networkIds, ToUUID returns empty, and enableDetail=true.
+ *           Covers branch: networkIds not empty, uuid.empty()=true, enableDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_005, TestSize.Level0)
+{
+    // Mock ToUUID to return empty string (invalid device)
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>())).WillOnce(Return(""));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "invalid_device" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_006
+ * @tc.desc: Test ConvertToDeviceInfo with non-empty networkIds, ToUUID returns empty, and enableDetail=false.
+ *           Covers branch: networkIds not empty, uuid.empty()=true, enableDetail=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_006, TestSize.Level0)
+{
+    // Mock ToUUID to return empty string (invalid device)
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>())).WillOnce(Return(""));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = false;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "invalid_device" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_007
+ * @tc.desc: Test ConvertToDeviceInfo with non-empty networkIds, ToUUID returns valid uuid, and enableDetail=true.
+ *           Covers branch: networkIds not empty, uuid not empty, enableDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_007, TestSize.Level0)
+{
+    // Mock ToUUID to return valid uuid
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>())).WillOnce(Return("valid_uuid"));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "network_id_1" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: ConvertToDeviceInfo_008
+ * @tc.desc: Test ConvertToDeviceInfo with non-empty networkIds, ToUUID returns valid uuid, and enableDetail=false.
+ *           Covers branch: networkIds not empty, uuid not empty, enableDetail=false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, ConvertToDeviceInfo_008, TestSize.Level0)
+{
+    // Mock ToUUID to return valid uuid
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>())).WillOnce(Return("valid_uuid"));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.enableErrorDetail = false;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "network_id_1" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: GetSyncTask_001
+ * @tc.desc: Test GetSyncTask when IsNeedMetaSync returns true.
+ *           Covers branch: IsNeedMetaSync() = true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, GetSyncTask_001, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+
+    // IsNeedMetaSync returns true when CapMetaData is not loaded
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>()))
+        .WillRepeatedly(Return("device_uuid"));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    PredicatesMemo predicates;
+    predicates.devices_ = { "device1" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_ERROR);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: GetSyncTask_002
+ * @tc.desc: Test GetSyncTask when IsNeedMetaSync returns false, store->Sync fails, and enableErrorDetail is true.
+ *           Covers branch: IsNeedMetaSync()=false && ret!=E_OK && enableErrorDetail=true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbServiceImplTest, GetSyncTask_002, TestSize.Level0)
+{
+    // Ensure dbStatus_ is E_ERROR so that store->Sync returns not-OK
+    dbStatus_ = GeneralError::E_ERROR;
+
+    // Close any cached store to ensure we get a fresh store with the new dbStatus_
+    AutoCache::GetInstance().CloseStore(metaData_.tokenId, metaData_.dataDir, metaData_.storeId);
+
+    StoreMetaData savedMeta = metaData_;
+    savedMeta.deviceId = "device_uuid";  // Must match the uuid that will be used in IsNeedMetaSync
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(savedMeta.GetKeyWithoutPath(), savedMeta, false), true);
+
+    // IsNeedMetaSync returns false (no metadata sync needed)
+    CapMetaData capMetaData;
+    auto capKey = CapMetaRow::GetKeyFor("device_uuid");
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(std::string(capKey.begin(), capKey.end()), capMetaData), true);
+    EXPECT_CALL(*deviceManagerAdapterMock, ToUUID(testing::A<const std::string &>()))
+        .WillRepeatedly(Return("device_uuid"));
+    auto deviceMatrixMock = std::make_shared<OHOS::DistributedData::DeviceMatrixMock>();
+    BDeviceMatrix::deviceMatrix = deviceMatrixMock;
+    EXPECT_CALL(*deviceMatrixMock, GetRemoteMask(testing::A<const std::string &>(), testing::_))
+        .WillRepeatedly(testing::Return(std::make_pair(true, static_cast<uint16_t>(0))));
+
+    RdbServiceImpl service;
+    RdbService::Option option;
+    option.mode = DistributedData::GeneralStore::AUTO_SYNC_MODE;
+    option.enableErrorDetail = true; // Enable error detail to trigger HandleSyncError
+    PredicatesMemo predicates;
+    predicates.devices_ = { "device1" };
+
+    auto task = service.GetSyncTask(metaData_, option, predicates, nullptr);
+    ASSERT_NE(task, nullptr);
+    auto result = task();
+    EXPECT_EQ(result, RDB_OK); // Should return OK after HandleSyncError is called
+
+    // Close cached store again to ensure subsequent tests get fresh stores
+    AutoCache::GetInstance().CloseStore(metaData_.tokenId, metaData_.dataDir, metaData_.storeId);
+
+    // Restore DeviceMatrix
+    BDeviceMatrix::deviceMatrix = nullptr;
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(savedMeta.GetKeyWithoutPath(), false), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(std::string(capKey.begin(), capKey.end()), true), true);
+
+    // Restore dbStatus_ to avoid affecting other tests
+    dbStatus_ = E_OK;
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

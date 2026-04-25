@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <set>
 
 #include "concurrent_map.h"
 #include "serializable/serializable.h"
@@ -56,6 +57,15 @@ public:
         std::string key;
         std::string value;
     };
+    struct DeviceMetaSyncOption {
+        std::vector<std::string> devices;
+        std::string localDevice;
+        std::string bundleName;
+        std::string storeId;
+        int32_t instanceId = 0;
+        bool isWait = false;
+        bool isRetry = true;
+    };
     API_EXPORT static MetaDataManager &GetInstance();
     API_EXPORT void Initialize(std::shared_ptr<MetaStore> metaStore, const Backup &backup, const std::string &storeId);
     API_EXPORT void SetSyncer(const Syncer &syncer);
@@ -84,9 +94,7 @@ public:
     API_EXPORT bool DelMeta(const std::vector<std::string> &keys, bool isLocal = false);
     API_EXPORT bool Subscribe(std::string prefix, Observer observer, bool isLocal = false);
     API_EXPORT bool Unsubscribe(std::string filter);
-    API_EXPORT bool Sync(const std::vector<std::string> &devices, OnComplete complete, bool wait = false,
-        bool isRetry = true);
-
+    API_EXPORT bool Sync(const DeviceMetaSyncOption &option, OnComplete complete);
 private:
     MetaDataManager();
     ~MetaDataManager();
@@ -120,9 +128,13 @@ private:
         }
         localdata_.Set(key, data);
     }
-    
-    void StopSA();
 
+    void StopSA();
+    OnComplete CommonSyncComplete(const DeviceMetaSyncOption &option, OnComplete complete);
+    bool SyncCommonMeta(const DeviceMetaSyncOption &option, OnComplete complete);
+    bool SyncStoreMeta(const DeviceMetaSyncOption &option, OnComplete complete);
+    bool SyncWithQueryKeys(const DeviceMetaSyncOption &option, const std::set<std::vector<uint8_t>> &queryKeys,
+        OnComplete complete);
     bool inited_ = false;
     std::mutex mutex_;
     std::shared_ptr<MetaStore> metaStore_;

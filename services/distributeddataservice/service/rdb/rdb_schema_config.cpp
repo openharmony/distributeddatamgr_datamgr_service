@@ -71,7 +71,7 @@ bool RdbSchemaConfig::InitBundleInfo(
         return false;
     }
     bool ret = bundleMgrProxy->GetBundleInfo(
-        bundleName, OHOS::AppExecFwk::BundleFlag::GET_BUNDLE_WITH_EXTENSION_INFO, bundleInfo, userId);
+        bundleName, OHOS::AppExecFwk::BundleFlag::GET_BUNDLE_INFO_EXCLUDE_EXT, bundleInfo, userId);
     if (!ret || bundleInfo.moduleDirs.size() == 0) {
         ZLOGE("Get bundle info failed, bundleName: %{public}s.", bundleName.c_str());
         return false;

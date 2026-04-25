@@ -73,6 +73,7 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "${data_service_path}/service/test/mock/general_store_mock.cpp",
     "cloud_data_test.cpp",
   ]
 
@@ -105,8 +106,6 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/common:distributeddata_common",
     "${data_service_path}/service/rdb:distributeddata_rdb",
     "mock:distributeddata_mock_static",
-    "ohos_test:copy_ohos_test",
-    "testCloud:testCloud",
   ]
 
   cflags = [
@@ -191,7 +190,9 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
     "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "cloud_notifier_proxy_test.cpp",
     "cloud_service_impl_test.cpp",
+    "cloud_service_stub_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -952,6 +953,7 @@ ohos_unittest("ObjectAssetLoaderTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   if (datamgr_service_object) {
@@ -992,6 +994,7 @@ ohos_unittest("ObjectAssetSyncManagerTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   if (datamgr_service_object) {
@@ -1029,6 +1032,7 @@ ohos_unittest("ObjectAssetMachineTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
   ]
 
   if (datamgr_service_object) {
@@ -1064,6 +1068,7 @@ ohos_unittest("ObjectDmsHandlerTest") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
+    "samgr:samgr_proxy",
   ]
 
   if (dm_part_is_enabled && datamgr_service_distributed) {
@@ -1138,6 +1143,7 @@ ohos_unittest("ObjectManagerTest") {
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 
   if (datamgr_service_object) {
@@ -1203,7 +1209,6 @@ ohos_unittest("ObjectManagerMockTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
-    "cJSON:cjson",
     "c_utils:utils",
     "dfs_service:cloudsync_asset_kit_inner",
     "dfs_service:distributed_file_daemon_kit_inner",
@@ -1211,11 +1216,13 @@ ohos_unittest("ObjectManagerMockTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
+    "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 
   if (datamgr_service_object) {
@@ -1262,6 +1269,7 @@ ohos_unittest("ObjectSnapshotTest") {
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
     "relational_store:native_rdb",
   ]
 
@@ -1371,7 +1379,6 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "image_framework:image",
     "ipc:ipc_core",
     "kv_store:datamgr_common",
     "kv_store:distributeddata_inner",
@@ -1476,6 +1483,7 @@ ohos_unittest("DataShareServiceImplTest") {
     "data_share_types_util_test.cpp",
     "data_share_uri_utils_test.cpp",
     "kv_dalegate_test.cpp",
+    "data_share_proxy_data_manager_test.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -1516,7 +1524,6 @@ ohos_unittest("DataShareServiceImplTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
-    "init:libbegetutil",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
@@ -1653,7 +1660,6 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "access_token:libtokenid_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
-    "cJSON:cjson",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
@@ -1665,10 +1671,8 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
-    "init:libbegetutil",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
     "kv_store:distributeddb",
     "memmgr:memmgrclient",
     "qos_manager:concurrent_task_client",
@@ -1886,7 +1890,6 @@ ohos_unittest("UdmfServiceImplTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
@@ -1924,6 +1927,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2000,6 +2004,47 @@ ohos_unittest("UdmfServiceImplMockTest") {
   }
 }
 
+ohos_unittest("UdmfPermissionPolicyUtilsTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
+    "udmf_permission_policy_utils_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf/permission",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  external_deps = [
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "hitrace:libhitracechain",
+    "kv_store:datamgr_common",
+    "udmf:udmf_client",
+  ]
+}
+
+
 ohos_unittest("UdmfServiceStubTest") {
   module_out_path = module_output_path
   sources = [ "udmf_service_stub_test.cpp" ]
@@ -2075,6 +2120,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_manager.cpp",
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2179,17 +2225,18 @@ ohos_unittest("UdmfPreProcessUtilsTest") {
     "udmf:udmf_client",
   ]
 }
-
 ohos_unittest("UdmfPreProcessUtilsMockTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/test/mock/access_token_mock.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
     "udmf_preprocess_utils_mock_test.cpp",
   ]
 
   include_dirs = [
     "${data_service_path}/service/matrix/include",
+    "${data_service_path}/service/udmf/permission",
     "${data_service_path}/service/udmf/preprocess",
     "${data_service_path}/service/test/mock",
     "${data_service_path}/service/udmf/store",
@@ -2278,7 +2325,6 @@ ohos_unittest("UdmfCheckerManagerTest") {
     "googletest:gtest_main",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "openssl:libcrypto_shared",
@@ -2871,6 +2917,7 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
     "${data_service_path}/service/udmf/permission/data_checker.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
@@ -2965,6 +3012,7 @@ ohos_unittest("UdmfObserverTest") {
     "${data_service_path}/service/udmf/lifecycle/lifecycle_policy.cpp",
     "${data_service_path}/service/udmf/permission/checker_manager.cpp",
     "${data_service_path}/service/udmf/permission/data_checker.cpp",
+    "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/permission/uri_permission_manager.cpp",
     "${data_service_path}/service/udmf/preprocess/data_handler.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",

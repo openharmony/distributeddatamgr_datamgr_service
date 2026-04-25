@@ -165,4 +165,88 @@ HWTEST_F(RdbCommonUtilsTest, RdbCommonUtilsTest002, TestSize.Level1)
     ret = RdbCommonUtils::ConvertGeneralRdbStatus(DistributedData::GeneralError::E_ALREADY_CLOSED);
     EXPECT_EQ(ret, RdbStatus::RDB_ERROR);
 }
+
+/**
+* @tc.name: GetInterfaceErrorString_001
+* @tc.desc: Test GetInterfaceErrorString with all interface error codes.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbCommonUtilsTest, GetInterfaceErrorString_001, TestSize.Level1)
+{
+    // Test all defined interface error codes
+    std::vector<DBStatus> interfaceErrorCodes = {
+        DBStatus::NOT_SUPPORT,
+        DBStatus::INVALID_ARGS,
+        DBStatus::DISTRIBUTED_SCHEMA_NOT_FOUND,
+        DBStatus::DISTRIBUTED_SCHEMA_CHANGED,
+        DBStatus::INVALID_QUERY_FORMAT,
+        DBStatus::BUSY,
+        DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB,
+        DBStatus::INVALID_QUERY_FIELD,
+    };
+
+    for (const auto& errorCode : interfaceErrorCodes) {
+        auto errorInfo = RdbCommonUtils::GetInterfaceErrorString(errorCode);
+        // Verify the returned dbStatus matches the input
+        EXPECT_EQ(errorInfo.dbStatus, errorCode);
+        // Verify message is not null for defined error codes
+        EXPECT_NE(errorInfo.message, nullptr);
+        // Verify syncResultCode is not the default value (0)
+        EXPECT_NE(errorInfo.syncResultCode, static_cast<SyncResultCode>(0));
+    }
+
+    // Test unknown error code - should return default ErrorInfo
+    auto unknownErrorInfo = RdbCommonUtils::GetInterfaceErrorString(static_cast<DBStatus>(9999));
+    EXPECT_EQ(unknownErrorInfo.dbStatus, static_cast<DBStatus>(9999));
+    EXPECT_EQ(unknownErrorInfo.syncResultCode, SyncResultCode::FAIL);
+    EXPECT_EQ(unknownErrorInfo.message, "Sync is failed in Interface");
+}
+
+/**
+* @tc.name: GetCallbackErrorString_001
+* @tc.desc: Test GetCallbackErrorString with all callback error codes.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbCommonUtilsTest, GetCallbackErrorString_001, TestSize.Level1)
+{
+    // Test all defined callback error codes
+    std::vector<DBStatus> callbackErrorCodes = {
+        DBStatus::TABLE_FIELD_MISMATCH,
+        DBStatus::DISTRIBUTED_SCHEMA_MISMATCH,
+        DBStatus::SECURITY_OPTION_CHECK_ERROR,
+        DBStatus::BUSY,
+        DBStatus::PERMISSION_CHECK_FORBID_SYNC,
+        DBStatus::TIME_OUT,
+        DBStatus::INVALID_QUERY_FORMAT,
+        DBStatus::INVALID_QUERY_FIELD,
+        DBStatus::DISTRIBUTED_SCHEMA_CHANGED,
+        DBStatus::NO_PERMISSION,
+        DBStatus::INVALID_PASSWD_OR_CORRUPTED_DB,
+        DBStatus::NEED_CORRECT_TARGET_USER,
+        DBStatus::CONSTRAINT,
+        DBStatus::COMM_FAILURE,
+        DBStatus::NOT_SUPPORT,
+        DBStatus::DISTRIBUTED_SCHEMA_NOT_FOUND,
+    };
+
+    for (const auto& errorCode : callbackErrorCodes) {
+        auto errorInfo = RdbCommonUtils::GetCallbackErrorString(errorCode);
+        // Verify the returned dbStatus matches the input
+        EXPECT_EQ(errorInfo.dbStatus, errorCode);
+        // Verify message is not null for defined error codes
+        EXPECT_NE(errorInfo.message, nullptr);
+        // Verify syncResultCode is not the default value (0)
+        EXPECT_NE(errorInfo.syncResultCode, static_cast<SyncResultCode>(0));
+    }
+
+    // Test unknown error code - should return default ErrorInfo
+    auto unknownErrorInfo = RdbCommonUtils::GetCallbackErrorString(static_cast<DBStatus>(9999));
+    EXPECT_EQ(unknownErrorInfo.dbStatus, static_cast<DBStatus>(9999));
+    EXPECT_EQ(unknownErrorInfo.syncResultCode, SyncResultCode::FAIL);
+    EXPECT_EQ(unknownErrorInfo.message, "Sync is failed in Callback");
+}
 }

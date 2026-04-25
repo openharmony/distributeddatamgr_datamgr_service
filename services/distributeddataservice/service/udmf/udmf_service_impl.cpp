@@ -36,7 +36,6 @@
 #include "log_print.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/store_meta_data.h"
-#include "metadata/meta_data_manager.h"
 #include "preprocess_utils.h"
 #include "dfx/reporter.h"
 #include "drag_observer.h"
@@ -180,7 +179,9 @@ int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData
         return E_DB_ERROR;
     }
     key = unifiedData.GetRuntime()->key.GetUnifiedKey();
-    LifeCycleManager::GetInstance().InsertUdKey(option.tokenId, key);
+    if (intention == UD_INTENTION_MAP.at(UD_INTENTION_DRAG)) {
+        LifeCycleManager::GetInstance().InsertUdKey(option.tokenId, key);
+    }
     ZLOGD("Put unified data successful, key: %{public}s.", key.c_str());
     return E_OK;
 }
@@ -357,9 +358,8 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
         ZLOGW("No uri permissions needed,queryKey=%{public}s", query.key.c_str());
         return E_OK;
     }
-    std::vector<Uri> readUris;
-    std::vector<Uri> writeUris;
-    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, readUris, writeUris);
+    std::map<unsigned int, std::vector<Uri>> grantUris;
+    int32_t verifyRes = ProcessCrossDeviceData(query.tokenId, unifiedData, grantUris);
     if (verifyRes != E_OK) {
         ZLOGE("verify unifieddata fail, key=%{public}s, stauts=%{public}d", query.key.c_str(), verifyRes);
         return verifyRes;
@@ -370,7 +370,7 @@ int32_t UdmfServiceImpl::ProcessUri(const QueryOption &query, UnifiedData &unifi
     }
     uint32_t sourceTokenId = unifiedData.GetRuntime()->tokenId;
     if (UriPermissionManager::GetInstance().GrantUriPermission(
-        readUris, writeUris, query.tokenId, sourceTokenId, isLocal) != E_OK) {
+        grantUris, query.tokenId, sourceTokenId, isLocal) != E_OK) {
         ZLOGE("GrantUriPermission fail, bundleName=%{public}s, key=%{public}s.",
             bundleName.c_str(), query.key.c_str());
         return E_NO_PERMISSION;
@@ -393,7 +393,7 @@ bool UdmfServiceImpl::VerifySavedTokenId(std::shared_ptr<Runtime> runtime)
 }
 
 int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &unifiedData,
-    std::vector<Uri> &readUris, std::vector<Uri> &writeUris)
+    std::map<unsigned int, std::vector<Uri>> &grantUris)
 {
     if (unifiedData.GetRuntime() == nullptr) {
         ZLOGE("Get runtime empty!");
@@ -401,12 +401,18 @@ int32_t UdmfServiceImpl::ProcessCrossDeviceData(uint32_t tokenId, UnifiedData &u
     }
     bool isLocal = PreProcessUtils::GetLocalDeviceId() == unifiedData.GetRuntime()->deviceId;
     bool hasError = false;
-    PreProcessUtils::ProcessFiles(hasError, unifiedData, isLocal, readUris, writeUris);
+    std::map<std::string, unsigned int> uriPermissions;
+    PreProcessUtils::ProcessFileAuthorization(hasError, unifiedData, isLocal, uriPermissions);
     if (hasError) {
-        ZLOGE("ProcessFiles fail");
+        ZLOGE("ProcessFileAuthorization fail");
         return E_INVALID_PARAMETERS;
     }
-    PreProcessUtils::ProcessHtmlFileUris(tokenId, unifiedData, isLocal, readUris, writeUris);
+    for (const auto &[uri, permission] : uriPermissions) {
+        if (permission == 0) {
+            continue;
+        }
+        grantUris[permission].emplace_back(Uri(uri));
+    }
     return E_OK;
 }
 
@@ -718,8 +724,13 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
     auto meta = BuildMeta(key.intention, userId);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
     if (IsNeedMetaSync(meta, uuids)) {
-        bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
+        MetaDataManager::DeviceMetaSyncOption syncOption = GetMetaSyncOption(meta, uuids);
+        bool res = MetaDataManager::GetInstance().Sync(syncOption, [this, devices, callback, store] (auto &results) {
             auto successRes = ProcessResult(results);
+            if (successRes.empty()) {
+                ZLOGW("No device sync success");
+                return;
+            }
             if (store->Sync(successRes, callback) != E_OK) {
                 ZLOGE("Store sync failed");
                 RadarReporterAdapter::ReportFail(std::string(__FUNCTION__),
@@ -1480,8 +1491,13 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
     auto meta = BuildMeta(UD_INTENTION_MAP.at(UD_INTENTION_DRAG), userId);
     auto uuids = DmAdapter::GetInstance().ToUUID(devices);
     if (IsNeedMetaSync(meta, uuids)) {
-        bool res = MetaDataManager::GetInstance().Sync(uuids, [this, devices, callback, store] (auto &results) {
+        MetaDataManager::DeviceMetaSyncOption syncOption = GetMetaSyncOption(meta, uuids);
+        bool res = MetaDataManager::GetInstance().Sync(syncOption, [this, devices, callback, store] (auto &results) {
             auto successRes = ProcessResult(results);
+            if (successRes.empty()) {
+                ZLOGW("No device sync success");
+                return;
+            }
             if (store->PushSync(successRes) != E_OK) {
                 ZLOGE("Store sync failed");
             }
@@ -1499,6 +1515,18 @@ int32_t UdmfServiceImpl::PushDelayDataToRemote(const QueryOption &query, const s
         return UDMF::E_DB_ERROR;
     }
     return E_OK;
+}
+
+MetaDataManager::DeviceMetaSyncOption UdmfServiceImpl::GetMetaSyncOption(const StoreMetaData &metaData,
+    const std::vector<std::string> &devices)
+{
+    MetaDataManager::DeviceMetaSyncOption syncOption;
+    syncOption.devices = devices;
+    syncOption.localDevice = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    syncOption.storeId = metaData.storeId;
+    syncOption.bundleName = metaData.bundleName;
+    syncOption.instanceId = metaData.instanceId;
+    return syncOption;
 }
 
 int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string &key)

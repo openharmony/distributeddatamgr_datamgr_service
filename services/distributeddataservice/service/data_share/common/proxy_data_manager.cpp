@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cstdint>
 #define LOG_TAG "ProxyDataManager"
 
 #include "datashare_observer.h"
@@ -108,11 +109,18 @@ bool ProxyDataListNode::Unmarshal(const DistributedData::Serializable::json &nod
 
 bool PublishedProxyData::VerifyPermission(const BundleInfo &callerBundleInfo, const ProxyDataNode &data)
 {
+    // 1. Publisher access: check tokenId
     if (callerBundleInfo.tokenId == data.tokenId) {
         return true;
     }
 
+    // 2. allowList check
     for (const auto &item : data.proxyData.allowList) {
+        // 2.1 Global public config check
+        if (item == ALLOW_ALL) {
+            return true;
+        }
+        // 2.2 Specific app check
         if (callerBundleInfo.appIdentifier == item) {
             return true;
         }
@@ -120,12 +128,19 @@ bool PublishedProxyData::VerifyPermission(const BundleInfo &callerBundleInfo, co
     return false;
 }
 
-bool PublishedProxyData::CheckAndCorrectProxyData(DataShareProxyData &proxyData)
+bool PublishedProxyData::CheckAndCorrectProxyData(DataShareProxyData &proxyData, const DataProxyConfig &proxyConfig)
 {
+    if (proxyConfig.maxValueLength_ != DataProxyMaxValueLength::MAX_LENGTH_4K &&
+        proxyConfig.maxValueLength_ != DataProxyMaxValueLength::MAX_LENGTH_100K) {
+        ZLOGE("Invalid maxValueLength");
+        return false;
+    }
+    size_t maxLength = static_cast<size_t>(proxyConfig.maxValueLength_);
+
     // the upper limit of value is 4096 bytes, only string type is possible to exceed the limit
     if (proxyData.value_.index() == DataProxyValueType::VALUE_STRING) {
         std::string valueStr = std::get<std::string>(proxyData.value_);
-        if (valueStr.size() > VALUE_MAX_SIZE) {
+        if (valueStr.size() > maxLength) {
             ZLOGE("value of proxyData %{public}s is over limit, size %{public}zu",
                 URIUtils::Anonymous(proxyData.uri_).c_str(), valueStr.size());
             return false;
@@ -268,7 +283,7 @@ int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &call
 }
 
 int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const BundleInfo &callerBundleInfo,
-    DataShareObserver::ChangeType &type)
+    DataShareObserver::ChangeType &type, const DataProxyConfig &proxyConfig)
 {
     type = DataShareObserver::ChangeType::INVAILD;
     auto delegate = KvDBDelegate::GetInstance();
@@ -278,7 +293,7 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
     }
 
     auto data = proxyData;
-    if (!CheckAndCorrectProxyData(data)) {
+    if (!CheckAndCorrectProxyData(data, proxyConfig)) {
         return OVER_LIMIT;
     }
     std::string filter = Id(data.uri_, callerBundleInfo.userId);
@@ -313,6 +328,42 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
         return UpdateProxyData(delegate, callerBundleInfo.bundleName,
             callerBundleInfo.userId, callerBundleInfo.tokenId, data);
     }
+}
+
+int32_t PublishedProxyData::UpdateProxyDataList(std::shared_ptr<KvDBDelegate> delegate, const std::string &uri,
+    const BundleInfo &callerBundleInfo)
+{
+    if (delegate == nullptr) {
+        ZLOGE("delegate is null");
+        return INNER_ERROR;
+    }
+    std::vector<std::string> uris;
+    if (ProxyDataList::Query(callerBundleInfo.tokenId, callerBundleInfo.userId, uris) <= 0) {
+        ZLOGI("get bundle %{public}s's proxyData failed", callerBundleInfo.bundleName.c_str());
+        return INNER_ERROR;
+    }
+    
+    auto it = std::find(uris.begin(), uris.end(), uri);
+    if (it != uris.end()) {
+        uris.erase(it);
+    }
+
+    if (uris.empty()) {
+        std::string filter = Id(std::to_string(callerBundleInfo.tokenId), callerBundleInfo.userId);
+        auto ret = delegate->Delete(KvDBDelegate::PROXYDATA_TABLE, filter);
+        if (ret.first != E_OK) {
+            ZLOGE("db Delete failed, %{public}x %{public}d", callerBundleInfo.tokenId, ret.first);
+            return INNER_ERROR;
+        }
+    } else {
+        auto ret = delegate->Upsert(KvDBDelegate::PROXYDATA_TABLE, ProxyDataList(ProxyDataListNode(
+            uris, callerBundleInfo.userId, callerBundleInfo.tokenId)));
+        if (ret.first != E_OK) {
+            ZLOGE("db Upsert failed, %{public}x %{public}d", callerBundleInfo.tokenId, ret.first);
+            return INNER_ERROR;
+        }
+    }
+    return E_OK;
 }
 
 int32_t PublishedProxyData::Delete(const std::string &uri, const BundleInfo &callerBundleInfo,
@@ -350,21 +401,12 @@ int32_t PublishedProxyData::Delete(const std::string &uri, const BundleInfo &cal
         ZLOGE("db Delete failed, %{public}s %{public}d", URIUtils::Anonymous(uri).c_str(), ret.first);
         return INNER_ERROR;
     }
-    std::vector<std::string> uris;
-    if (ProxyDataList::Query(callerBundleInfo.tokenId, callerBundleInfo.userId, uris) <= 0) {
-        ZLOGI("get bundle %{public}s's proxyData failed", callerBundleInfo.bundleName.c_str());
-        return INNER_ERROR;
+
+    int32_t errCode = UpdateProxyDataList(delegate, uri, callerBundleInfo);
+    if (errCode != E_OK) {
+        return errCode;
     }
-    auto it = std::find(uris.begin(), uris.end(), uri);
-    if (it != uris.end()) {
-        uris.erase(it);
-    }
-    ret = delegate->Upsert(KvDBDelegate::PROXYDATA_TABLE, ProxyDataList(ProxyDataListNode(
-        uris, callerBundleInfo.userId, callerBundleInfo.tokenId)));
-    if (ret.first != E_OK) {
-        ZLOGE("db Upsert failed, %{public}x %{public}d", callerBundleInfo.tokenId, ret.first);
-        return INNER_ERROR;
-    }
+
     oldProxyData = DataShareProxyData(oldData.proxyData.uri, oldData.proxyData.value, oldData.proxyData.allowList);
     type = DataShareObserver::ChangeType::DELETE;
     return SUCCESS;
@@ -436,9 +478,12 @@ void ProxyDataManager::OnAppInstall(const std::string &bundleName, int32_t user,
         return;
     }
     DataShareObserver::ChangeType type;
+    DataProxyConfig config;
+    config.type_ = DataProxyType::SHARED_CONFIG;
+    config.maxValueLength_ = DataProxyMaxValueLength::MAX_LENGTH_100K;
     std::for_each(proxyDatas.begin(), proxyDatas.end(),
-        [user, bundleName, callerBundleInfo, &type](const DataShareProxyData proxyData) {
-        PublishedProxyData::Upsert(proxyData, callerBundleInfo, type);
+        [user, bundleName, callerBundleInfo, &type, config](const DataShareProxyData proxyData) {
+        PublishedProxyData::Upsert(proxyData, callerBundleInfo, type, config);
     });
 }
 
@@ -461,12 +506,15 @@ void ProxyDataManager::OnAppUpdate(const std::string &bundleName, int32_t user, 
         ZLOGI("bundle %{public}s has no proxyData", bundleName.c_str());
     }
     DataShareProxyData oldProxyData;
+    DataProxyConfig config;
+    config.type_ = DataProxyType::SHARED_CONFIG;
+    config.maxValueLength_ = DataProxyMaxValueLength::MAX_LENGTH_100K;
     for (const auto &uri : uris) {
         PublishedProxyData::Delete(uri, callerBundleInfo, oldProxyData, type);
     }
     std::for_each(proxyDatas.begin(), proxyDatas.end(),
-        [user, bundleName, callerBundleInfo, &type](const DataShareProxyData proxyData) {
-        PublishedProxyData::Upsert(proxyData, callerBundleInfo, type);
+        [user, bundleName, callerBundleInfo, &type, config](const DataShareProxyData proxyData) {
+        PublishedProxyData::Upsert(proxyData, callerBundleInfo, type, config);
     });
 }
 

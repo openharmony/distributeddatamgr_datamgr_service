@@ -49,6 +49,8 @@ private:
 
     int32_t OnRemoteDoAsync(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnRemoteStopCloudSync(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnRemoteDoSubscribe(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteDoUnSubscribe(MessageParcel& data, MessageParcel& reply);
@@ -135,6 +137,8 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
             &RdbServiceStub::OnRemoteRetainDeviceData,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_OBTAIN_UUID)] =
             &RdbServiceStub::OnRemoteObtainUuid,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_STOP_CLOUD_SYNC)] =
+            &RdbServiceStub::OnRemoteStopCloudSync,
     };
 RDB_UTILS_POP_WARNING
 };
