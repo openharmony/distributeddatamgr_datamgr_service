@@ -887,6 +887,74 @@ HWTEST_F(ScreenTest, NotifyScreenOff001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: IsScreenOff001
+ * @tc.desc: test IsScreenOff method returns false initially
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsScreenOff001, TestSize.Level0)
+{
+    EXPECT_FALSE(screen_->IsScreenOff());
+}
+
+/**
+ * @tc.name: IsScreenOff002
+ * @tc.desc: test IsScreenOff returns true after screen off event
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsScreenOff002, TestSize.Level0)
+{
+    EXPECT_FALSE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(TEST_USER_ID);
+
+    EXPECT_TRUE(screen_->IsScreenOff());
+}
+
+/**
+ * @tc.name: IsScreenOff003
+ * @tc.desc: test IsScreenOff returns false after screen on event
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsScreenOff003, TestSize.Level0)
+{
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(TEST_USER_ID);
+    EXPECT_TRUE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOnEvent(TEST_USER_ID);
+    EXPECT_FALSE(screen_->IsScreenOff());
+}
+
+/**
+ * @tc.name: IsScreenOff004
+ * @tc.desc: test IsScreenOff state changes correctly with multiple events
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsScreenOff004, TestSize.Level0)
+{
+    EXPECT_FALSE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(100);
+    EXPECT_TRUE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOnEvent(100);
+    EXPECT_FALSE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(200);
+    EXPECT_TRUE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOnEvent(200);
+    EXPECT_FALSE(screen_->IsScreenOff());
+}
+
+/**
  * @tc.name: InvalidEventFiltered
  * @tc.desc: invalid events should be filtered and not trigger any callback
  * @tc.type: FUNC

@@ -21,6 +21,8 @@
 #include "concurrent_map.h"
 #include "screen/screen_manager.h"
 
+#include <atomic>
+
 namespace OHOS {
 namespace DistributedData {
 using namespace OHOS::EventFwk;
@@ -47,6 +49,7 @@ private:
 class Screen : public ScreenManager {
 public:
     bool IsLocked();
+    bool IsScreenOff();
     void Subscribe(std::shared_ptr<Observer> observer) __attribute__((no_sanitize("cfi")));
     void Unsubscribe(std::shared_ptr<Observer> observer) __attribute__((no_sanitize("cfi")));
     void BindExecutor(std::shared_ptr<ExecutorPool> executors);
@@ -61,6 +64,7 @@ private:
     void NotifyScreenOn(int32_t user);
     void NotifyScreenOff(int32_t user);
     ExecutorPool::Task GetTask(uint32_t retry);
+    std::atomic<bool> isScreenOff_{false};
     ConcurrentMap<std::string, std::shared_ptr<Observer>> observerMap_{};
     std::shared_ptr<ExecutorPool> executors_;
     std::shared_ptr<EventSubscriber> eventSubscriber_{};

@@ -21,6 +21,11 @@ bool ScreenMock::IsLocked()
     return isLocked_;
 }
 
+bool ScreenMock::IsScreenOff()
+{
+    return false;
+}
+
 void ScreenMock::Subscribe(std::shared_ptr<Observer> observer)
 {
     return;
