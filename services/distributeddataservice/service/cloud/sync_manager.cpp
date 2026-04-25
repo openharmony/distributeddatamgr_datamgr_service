@@ -27,6 +27,7 @@
 #include "cloud/cloud_sync_finished_event.h"
 #include "cloud/schema_meta.h"
 #include "cloud_value_util.h"
+#include "store/general_value.h"
 #include "device_manager_adapter.h"
 #include "dfx/dfx_types.h"
 #include "dfx/reporter.h"
@@ -411,7 +412,7 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
             if (schemas.empty()) {
                 auto it = traceIds.find(info.bundleName_);
                 retryer(RETRY_INTERVAL, E_RETRY_TIMEOUT, GenStore::CLOUD_ERR_OFFSET + E_CLOUD_DISABLED,
-                    it == traceIds.end() ? "" : it->second);
+                    it == traceIds.end() ? "" : it->second, CloudErrorAction::ACTION_DEFAULT);
                 BatchUpdateFinishState(cloudSyncInfos, E_CLOUD_DISABLED);
                 BatchReport(info.user_, traceIds, SyncStage::END, E_CLOUD_DISABLED, "empty schema:" + info.bundleName_);
                 return;
@@ -579,16 +580,17 @@ SyncManager::Retryer SyncManager::GetRetryer(int32_t times, const SyncInfo &sync
 {
     if (times >= RETRY_TIMES) {
         return [this, user, info = SyncInfo(syncInfo)](Duration, int32_t code, int32_t dbCode,
-                   const std::string &prepareTraceId) mutable {
+                   const std::string &prepareTraceId, CloudErrorAction cloudAction) mutable {
             return HandleRetryFinished(info, user, code, dbCode, prepareTraceId);
         };
     }
     return [this, times, user, info = SyncInfo(syncInfo)](Duration interval, int32_t code, int32_t dbCode,
-               const std::string &prepareTraceId) mutable {
+               const std::string &prepareTraceId, CloudErrorAction cloudAction) mutable {
         if (code == E_OK || code == E_SYNC_TASK_MERGED) {
             return true;
         }
-        if (code != E_NETWORK_ERROR) {
+        if (code != E_NETWORK_ERROR &&
+            cloudAction != CloudErrorAction::ACTION_RETRY_SYNC_TASK) {
             info.SetError(ConvertValidGeneralCode(code));
             RadarReporter::Report({ info.bundleName_.c_str(), CLOUD_SYNC, FINISH_SYNC, info.syncId_, info.triggerMode_,
                                     dbCode },
@@ -1100,7 +1102,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
                     dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "RetryCallback" });
             }
         }
-        retryer(GetInterval(code), code, dbCode, prepareTraceId);
+        retryer(GetInterval(code), code, dbCode, prepareTraceId, details.begin()->second.cloudErrorInfo.cloudAction);
     };
 }
 

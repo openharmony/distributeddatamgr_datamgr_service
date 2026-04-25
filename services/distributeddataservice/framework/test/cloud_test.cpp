@@ -642,6 +642,10 @@ HWTEST_F(ServicesCloudDBTest, CloudDB, TestSize.Level0)
     EXPECT_EQ(result1, GeneralError::E_NOT_SUPPORT);
     result1 = cloudDB.PreSharing(table, values);
     EXPECT_EQ(result1, GeneralError::E_NOT_SUPPORT);
+    result1 = cloudDB.StopCloudSync();
+    EXPECT_EQ(result1, GeneralError::E_NOT_SUPPORT);
+    auto ret = cloudDB.HasCloudUpdate("", "");
+    EXPECT_EQ(ret, true);
 
     CloudDB::Devices devices;
     MockQuery query;

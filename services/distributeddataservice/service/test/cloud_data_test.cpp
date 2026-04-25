@@ -2399,16 +2399,19 @@ HWTEST_F(CloudDataTest, GetRetryer001, TestSize.Level0)
     CloudData::SyncManager sync;
     CloudData::SyncManager::Duration duration;
     std::string prepareTraceId;
-    auto ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(duration, E_OK, E_OK, prepareTraceId);
+    auto ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(duration, E_OK, E_OK, prepareTraceId,
+        CloudErrorAction::ACTION_DEFAULT);
     EXPECT_TRUE(ret);
     ret = sync.GetRetryer(CloudData::SyncManager::RETRY_TIMES, info, user)(
-        duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
+        duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId, CloudErrorAction::ACTION_DEFAULT);
     EXPECT_TRUE(ret);
-    ret = sync.GetRetryer(0, info, user)(duration, E_OK, E_OK, prepareTraceId);
+    ret = sync.GetRetryer(0, info, user)(duration, E_OK, E_OK, prepareTraceId, CloudErrorAction::ACTION_DEFAULT);
     EXPECT_TRUE(ret);
-    ret = sync.GetRetryer(0, info, user)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId);
+    ret = sync.GetRetryer(0, info, user)(duration, E_SYNC_TASK_MERGED, E_SYNC_TASK_MERGED, prepareTraceId,
+        CloudErrorAction::ACTION_DEFAULT);
     EXPECT_TRUE(ret);
-    ret = sync.GetRetryer(0, info, user)(duration, E_CLOUD_DISABLED, E_CLOUD_DISABLED, prepareTraceId);
+    ret = sync.GetRetryer(0, info, user)(duration, E_CLOUD_DISABLED, E_CLOUD_DISABLED, prepareTraceId,
+        CloudErrorAction::ACTION_DEFAULT);
     EXPECT_TRUE(ret);
 }
 
@@ -2430,7 +2433,8 @@ HWTEST_F(CloudDataTest, GetRetryer002, TestSize.Level0)
     handler(*event);
     CloudData::SyncManager::Duration duration;
     CloudData::SyncManager::SyncInfo info(user);
-    auto ret = sync.GetRetryer(0, info, user)(duration, E_NETWORK_ERROR, E_NETWORK_ERROR, prepareTraceId);
+    auto ret = sync.GetRetryer(0, info, user)(duration, E_NETWORK_ERROR, E_NETWORK_ERROR, prepareTraceId,
+        CloudErrorAction::ACTION_DEFAULT);
     EXPECT_FALSE(ret);
 }
 
@@ -2522,7 +2526,7 @@ HWTEST_F(CloudDataTest, RetryCallback, TestSize.Level0)
     StoreInfo storeInfo;
     int32_t retCode = -1;
     CloudData::SyncManager::Retryer retry = [&retCode](CloudData::SyncManager::Duration interval, int32_t code,
-                                                int32_t dbCode, const std::string &prepareTraceId) {
+        int32_t dbCode, const std::string &prepareTraceId, CloudErrorAction cloudAction) {
         retCode = code;
         return true;
     };
