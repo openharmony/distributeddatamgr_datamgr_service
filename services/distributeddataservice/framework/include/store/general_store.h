@@ -21,6 +21,7 @@
 #include <optional>
 #include <set>
 
+#include "cloud/cloud_conflict_handler.h"
 #include "executor_pool.h"
 #include "store/cursor.h"
 #include "store/general_value.h"
@@ -48,6 +49,8 @@ public:
         CLOUD_TIME_FIRST = CLOUD_BEGIN,
         CLOUD_NATIVE_FIRST,
         CLOUD_CLOUD_FIRST,
+        CLOUD_CUSTOM_PUSH,
+        CLOUD_CUSTOM_PULL,
         CLOUD_END,
         NEARBY_SUBSCRIBE_REMOTE,
         NEARBY_UNSUBSCRIBE_REMOTE,
@@ -160,10 +163,10 @@ public:
 
     virtual int32_t SetDistributedTables(const std::vector<std::string> &tables, int type,
         const std::vector<Reference> &references, int32_t tableType = 0) = 0;
-    virtual int32_t RetainDeviceData(
+    virtual std::pair<int32_t, int64_t> RetainDeviceData(
         const std::map<std::string, std::vector<std::string>> &retainDevices)
     {
-        return 0;
+        return { 0, 0 };
     };
 
     virtual int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
@@ -197,6 +200,8 @@ public:
 
     virtual std::pair<int32_t, int32_t> Sync(const Devices &devices, GenQuery &query,
         DetailAsync async, const SyncParam &syncParam) = 0;
+
+    virtual int32_t StopCloudSync() = 0;
 
     virtual std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) = 0;
 
@@ -239,6 +244,12 @@ public:
     {
         return 0;
     }
+    virtual int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler)
+    {
+        return 0;
+    }
+    virtual void SetCacheFlag(bool isCache) {};
+    virtual void PublishCacheChange() {};
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H

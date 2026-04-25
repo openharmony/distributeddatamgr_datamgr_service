@@ -21,6 +21,7 @@
 #include <cinttypes>
 #include "common_utils.h"
 #include "data_share_obs_proxy.h"
+#include "datashare_itypes_utils.h"
 #include "hiview_adapter.h"
 #include "hiview_fault_adapter.h"
 #include "ipc_skeleton.h"
@@ -197,8 +198,9 @@ int32_t DataShareServiceStub::OnSubscribeRdbData(MessageParcel &data, MessagePar
 {
     std::vector<std::string> uris;
     TemplateId templateId;
-    if (!ITypesUtil::Unmarshal(data, uris, templateId)) {
-        ZLOGE("read device list failed.");
+    SubscribeOption subscribeOption;
+    if (!ITypesUtil::Unmarshal(data, uris, templateId, subscribeOption)) {
+        ZLOGE("SubscribeRdbData Unmarshal failed.");
         return -1;
     }
     auto remoteObj = data.ReadRemoteObject();
@@ -207,7 +209,7 @@ int32_t DataShareServiceStub::OnSubscribeRdbData(MessageParcel &data, MessagePar
         ZLOGE("obServer is nullptr");
         return -1;
     }
-    std::vector<OperationResult> results = SubscribeRdbData(uris, templateId, observer);
+    std::vector<OperationResult> results = SubscribeRdbData(uris, templateId, observer, subscribeOption);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return -1;
@@ -338,6 +340,25 @@ int32_t DataShareServiceStub::OnNotifyConnectDone(MessageParcel &data, MessagePa
     return 0;
 }
 
+bool DataShareServiceStub::IsTemplateRequest(uint32_t requestCode)
+{
+    static uint32_t list[] = {
+        DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE,
+        DATA_SHARE_SERVICE_CMD_DEL_TEMPLATE,
+        DATA_SHARE_SERVICE_CMD_SUBSCRIBE_RDB,
+        DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_RDB,
+        DATA_SHARE_SERVICE_CMD_ENABLE_SUBSCRIBE_RDB,
+        DATA_SHARE_SERVICE_CMD_DISABLE_SUBSCRIBE_RDB,
+    };
+
+    for (auto cmd : list) {
+        if (requestCode == cmd) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     QosManager qos(true);
@@ -351,12 +372,14 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
     auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
     bool isSystemApp = CheckSystemCallingPermission(IPCSkeleton::GetCallingTokenID(), fullTokenId);
     DataShareThreadLocal::SetFromSystemApp(isSystemApp);
-    if (code >= DATA_SHARE_CMD_SYSTEM_CODE) {
+    if (code >= DATA_SHARE_CMD_SYSTEM_CODE || IsTemplateRequest(code)) {
         if (!isSystemApp) {
             ZLOGE("CheckSystemCallingPermission fail, token:%{public}" PRIx64
                 ", callingPid:%{public}d, code:%{public}u", fullTokenId, callingPid, code);
             return E_NOT_SYSTEM_APP;
         }
+    }
+    if (code >= DATA_SHARE_CMD_SYSTEM_CODE) {
         code = code - DATA_SHARE_CMD_SYSTEM_CODE;
     }
     if (code != DATA_SHARE_SERVICE_CMD_QUERY && code != DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS) {
@@ -448,8 +471,13 @@ int32_t DataShareServiceStub::OnPublishProxyData(MessageParcel& data, MessagePar
 {
     std::vector<DataShareProxyData> proxyDatas;
     DataProxyConfig config;
-    if (!ITypesUtil::Unmarshal(data, proxyDatas, config)) {
-        ZLOGE("OnPublishProxyData unmarshal failed");
+
+    if (!ITypesUtil::UnmarshalProxyDataVec(proxyDatas, data)) {
+        ZLOGE("OnPublishProxyData unmarshal proxyDatas failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    if (!ITypesUtil::Unmarshal(data, config)) {
+        ZLOGE("OnPublishProxyData unmarshal config failed");
         return IPC_STUB_INVALID_DATA_ERR;
     }
     std::vector<DataProxyResult> results = PublishProxyData(proxyDatas, config);
@@ -476,6 +504,21 @@ int32_t DataShareServiceStub::OnDeleteProxyData(MessageParcel& data, MessageParc
     return E_OK;
 }
 
+int32_t DataShareServiceStub::OnDeleteAllProxyData(MessageParcel& data, MessageParcel& reply)
+{
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, config)) {
+        ZLOGE("unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::vector<DataProxyResult> results = DeleteAllProxyData(config);
+    if (!ITypesUtil::Marshal(reply, results)) {
+        ZLOGE("OnPublishProxyData marshal reply failed.");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
 int32_t DataShareServiceStub::OnGetProxyData(MessageParcel& data, MessageParcel& reply)
 {
     std::vector<std::string> uris;
@@ -485,7 +528,7 @@ int32_t DataShareServiceStub::OnGetProxyData(MessageParcel& data, MessageParcel&
         return IPC_STUB_INVALID_DATA_ERR;
     }
     std::vector<DataProxyGetResult> results = GetProxyData(uris, config);
-    if (!ITypesUtil::Marshal(reply, results)) {
+    if (!ITypesUtil::MarshalDataProxyGetResultVec(results, reply)) {
         ZLOGE("OnPublishProxyData marshal reply failed.");
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
@@ -495,7 +538,6 @@ int32_t DataShareServiceStub::OnGetProxyData(MessageParcel& data, MessageParcel&
 int32_t DataShareServiceStub::OnSubscribeProxyData(MessageParcel& data, MessageParcel& reply)
 {
     std::vector<std::string> uris;
-    DataProxyConfig config;
     if (!ITypesUtil::Unmarshal(data, uris)) {
         ZLOGE("unmarshal failed");
         return IPC_STUB_INVALID_DATA_ERR;
@@ -506,7 +548,7 @@ int32_t DataShareServiceStub::OnSubscribeProxyData(MessageParcel& data, MessageP
         ZLOGE("observer is nullptr");
         return DATA_SHARE_ERROR;
     }
-    std::vector<DataProxyResult> results = SubscribeProxyData(uris, config, observer);
+    std::vector<DataProxyResult> results = SubscribeProxyData(uris, observer);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return IPC_STUB_WRITE_PARCEL_ERR;
@@ -517,12 +559,11 @@ int32_t DataShareServiceStub::OnSubscribeProxyData(MessageParcel& data, MessageP
 int32_t DataShareServiceStub::OnUnsubscribeProxyData(MessageParcel& data, MessageParcel& reply)
 {
     std::vector<std::string> uris;
-    DataProxyConfig config;
     if (!ITypesUtil::Unmarshal(data, uris)) {
         ZLOGE("unmarshal failed");
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    std::vector<DataProxyResult> results = UnsubscribeProxyData(uris, config);
+    std::vector<DataProxyResult> results = UnsubscribeProxyData(uris);
     if (!ITypesUtil::Marshal(reply, results)) {
         ZLOGE("ITypesUtil::Marshal(reply, results) failed");
         return IPC_STUB_WRITE_PARCEL_ERR;

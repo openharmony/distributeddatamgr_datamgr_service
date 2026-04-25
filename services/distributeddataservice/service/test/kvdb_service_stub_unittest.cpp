@@ -34,6 +34,7 @@ using KVDBServiceStub = OHOS::DistributedKv::KVDBServiceStub;
 using StoreId = OHOS::DistributedKv::StoreId;
 using AppId = OHOS::DistributedKv::AppId;
 using Options = OHOS::DistributedKv::Options;
+using BackupInfo = OHOS::DistributedKv::BackupInfo;
 const std::u16string INTERFACE_TOKEN = u"OHOS.DistributedKv.IKvStoreDataService";
 static const StoreId STOREID = { "kvdb_test_storeid" };
 static const AppId APPID = { "kvdb_test_appid" };
@@ -429,6 +430,38 @@ HWTEST_F(KVDBServiceStubTest, OnRemoveDeviceData, TestSize.Level1)
     AppId appId = {"appId"};
     StoreId storeId = {"storeId"};
     auto status = kvdbServiceStub->OnRemoveDeviceData(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnDelete
+ * @tc.desc: Test OnDelete
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnDelete, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    AppId appId = {"appId"};
+    StoreId storeId = {"storeId"};
+    auto status = kvdbServiceStub->OnDelete(appId, storeId, data, reply);
+    EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnDeleteByOptions
+ * @tc.desc: Test OnDeleteByOptions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(KVDBServiceStubTest, OnDeleteByOptions, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    AppId appId = {"appId"};
+    StoreId storeId = {"storeId"};
+    auto status = kvdbServiceStub->OnDeleteByOptions(appId, storeId, data, reply);
     EXPECT_EQ(status, IPC_STUB_INVALID_DATA_ERR);
 }
 } // namespace DistributedDataTest

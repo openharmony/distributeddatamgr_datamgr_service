@@ -48,6 +48,7 @@ ohos_source_set("udmf_server") {
     "lifecycle/lifecycle_policy.cpp",
     "permission/checker_manager.cpp",
     "permission/data_checker.cpp",
+    "permission/permission_policy_utils.cpp",
     "permission/uri_permission_manager.cpp",
     "preprocess/data_handler.cpp",
     "preprocess/preprocess_utils.cpp",

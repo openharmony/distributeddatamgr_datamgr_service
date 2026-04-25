@@ -419,16 +419,25 @@ Data DataShareServiceImpl::GetData(const std::string &bundleNameOfProvider, int 
     return getDataStrategy_.Execute(context, errorCode);
 }
 
-std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(
-    const std::vector<std::string> &uris, const TemplateId &id, const sptr<IDataProxyRdbObserver> observer)
+std::vector<OperationResult> DataShareServiceImpl::SubscribeRdbData(const std::vector<std::string> &uris,
+    const TemplateId &id, const sptr<IDataProxyRdbObserver> observer, const SubscribeOption &subscribeOption)
 {
     std::vector<OperationResult> results;
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
-        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &observer, &context, this]() {
+        bool enabled = true;
+        if (!subscribeOption.subscribeStatus.empty()) {
+            auto it = subscribeOption.subscribeStatus.find(uri);
+            if (it != subscribeOption.subscribeStatus.end()) {
+                enabled = it->second;
+            } else {
+                ZLOGE("subscribe uri %{public}s missed status", URIUtils::Anonymous(uri).c_str());
+            }
+        }
+        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&id, &observer, &context, enabled, this]() {
             return RdbSubscriberManager::GetInstance().Add(
                 Key(context->uri, id.subscriberId_, id.bundleName_),
-                observer, context, binderInfo_.executors);
+                observer, context, binderInfo_.executors, enabled);
         }));
     }
     return results;
@@ -630,6 +639,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     saveMeta.appType = "default";
     saveMeta.storeId = "data_share_data_";
     saveMeta.isAutoSync = false;
+    saveMeta.autoSyncSwitch = true;
     saveMeta.isBackup = false;
     saveMeta.isEncrypt = false;
     saveMeta.bundleName =  binderInfo.selfName;
@@ -1118,7 +1128,7 @@ std::vector<DataProxyResult> DataShareServiceImpl::PublishProxyData(const std::v
     std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> datas;
     for (const auto &data : proxyDatas) {
         DataShareObserver::ChangeType type;
-        auto ret = PublishedProxyData::Upsert(data, callerBundleInfo, type);
+        auto ret = PublishedProxyData::Upsert(data, callerBundleInfo, type, proxyConfig);
         result.emplace_back(data.uri_, static_cast<DataProxyErrorCode>(ret));
         if (ret == SUCCESS &&
             (type == DataShareObserver::ChangeType::INSERT || type == DataShareObserver::ChangeType::UPDATE)) {
@@ -1133,12 +1143,35 @@ std::vector<DataProxyResult> DataShareServiceImpl::PublishProxyData(const std::v
 std::vector<DataProxyResult> DataShareServiceImpl::DeleteProxyData(const std::vector<std::string> &uris,
     const DataProxyConfig &proxyConfig)
 {
-    std::vector<DataProxyResult> result;
     BundleInfo callerBundleInfo;
     if (!GetCallerBundleInfo(callerBundleInfo)) {
         ZLOGE("get callerBundleInfo failed");
-        return result;
+        return std::vector<DataProxyResult>();
     }
+    return DeleteAndNotifyProxyData(uris, callerBundleInfo);
+}
+
+std::vector<DataProxyResult> DataShareServiceImpl::DeleteAllProxyData(const DataProxyConfig &proxyConfig)
+{
+    BundleInfo callerBundleInfo;
+    if (!GetCallerBundleInfo(callerBundleInfo)) {
+        ZLOGE("get callerBundleInfo failed");
+        return std::vector<DataProxyResult>();
+    }
+
+    std::vector<std::string> uris;
+    auto count = ProxyDataList::Query(callerBundleInfo.tokenId, callerBundleInfo.userId, uris);
+    if (count <= 0) {
+        ZLOGI("bundle %{public}s has no proxyData", callerBundleInfo.bundleName.c_str());
+        return std::vector<DataProxyResult>();
+    }
+    return DeleteAndNotifyProxyData(uris, callerBundleInfo);
+}
+
+std::vector<DataProxyResult> DataShareServiceImpl::DeleteAndNotifyProxyData(const std::vector<std::string> &uris,
+    const BundleInfo &callerBundleInfo)
+{
+    std::vector<DataProxyResult> result;
     std::vector<ProxyDataKey> keys;
     std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> datas;
     for (const auto &uri : uris) {
@@ -1164,16 +1197,31 @@ std::vector<DataProxyGetResult> DataShareServiceImpl::GetProxyData(const std::ve
         ZLOGE("get callerBundleInfo failed");
         return result;
     }
+    if (proxyConfig.maxValueLength_ != DataProxyMaxValueLength::MAX_LENGTH_4K &&
+        proxyConfig.maxValueLength_ != DataProxyMaxValueLength::MAX_LENGTH_100K) {
+        ZLOGE("Invalid maxValueLength");
+        return result;
+    }
+    size_t maxLength = static_cast<size_t>(proxyConfig.maxValueLength_);
     for (const auto &uri : uris) {
         DataShareProxyData proxyData;
         auto ret = PublishedProxyData::Query(uri, callerBundleInfo, proxyData);
+        if (ret == SUCCESS && proxyData.value_.index() == DataProxyValueType::VALUE_STRING) {
+            std::string valueStr = std::get<std::string>(proxyData.value_);
+            if (valueStr.size() > maxLength) {
+                ZLOGE("value of proxyData %{public}s is over limit, size %{public}zu",
+                    URIUtils::Anonymous(proxyData.uri_).c_str(), valueStr.size());
+                result.emplace_back(uri, DataProxyErrorCode::OVER_LIMIT);
+                continue;
+            }
+        }
         result.emplace_back(uri, static_cast<DataProxyErrorCode>(ret), proxyData.value_, proxyData.allowList_);
     }
     return result;
 }
 
 std::vector<DataProxyResult> DataShareServiceImpl::SubscribeProxyData(const std::vector<std::string> &uris,
-    const DataProxyConfig &proxyConfig, const sptr<IProxyDataObserver> observer)
+    const sptr<IProxyDataObserver> observer)
 {
     std::vector<DataProxyResult> results = {};
     BundleInfo callerBundleInfo;
@@ -1187,16 +1235,14 @@ std::vector<DataProxyResult> DataShareServiceImpl::SubscribeProxyData(const std:
             static_cast<DataProxyErrorCode>(PublishedProxyData::Query(uri, callerBundleInfo, proxyData));
         if (ret == SUCCESS) {
             ret = ProxyDataSubscriberManager::GetInstance().Add(
-                ProxyDataKey(uri, callerBundleInfo.bundleName), observer, callerBundleInfo.bundleName,
-                callerBundleInfo.appIdentifier, callerBundleInfo.userId);
+                ProxyDataKey(uri, callerBundleInfo.bundleName), observer, callerBundleInfo);
         }
         results.emplace_back(uri, ret);
     }
     return results;
 }
 
-std::vector<DataProxyResult> DataShareServiceImpl::UnsubscribeProxyData(const std::vector<std::string> &uris,
-    const DataProxyConfig &proxyConfig)
+std::vector<DataProxyResult> DataShareServiceImpl::UnsubscribeProxyData(const std::vector<std::string> &uris)
 {
     std::string bundleName;
     GetCallerBundleName(bundleName);

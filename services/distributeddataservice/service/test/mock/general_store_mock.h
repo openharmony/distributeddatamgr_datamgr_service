@@ -27,7 +27,7 @@ public:
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
         const std::vector<Reference> &references, int32_t tableType) override;
-    int32_t RetainDeviceData(
+    std::pair<int32_t, int64_t> RetainDeviceData(
         const std::map<std::string, std::vector<std::string>> &retainDevices) override;
     int32_t SetTrackerTable(const std::string &tableName, const std::set<std::string> &trackerColNames,
         const std::set<std::string> &extendColNames, bool isForceUpgrade = false) override;
@@ -72,6 +72,7 @@ public:
     void SetMockCursor(const std::map<std::string, Value> &entry);
     void SetMockDBStatus(int32_t dbStatus);
     int32_t SetConfig(const StoreConfig &storeConfig) override;
+    int32_t StopCloudSync() override;
 
 private:
     std::shared_ptr<Cursor> cursor_ = nullptr;

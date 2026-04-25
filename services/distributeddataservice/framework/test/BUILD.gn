@@ -280,6 +280,7 @@ ohos_unittest("CloudInfoTest") {
     "c_utils:utils",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
+    "kv_store:distributeddb",
   ]
 }
 
@@ -300,6 +301,7 @@ ohos_unittest("GeneralStoreTest") {
   external_deps = [
     "c_utils:utils",
     "kv_store:datamgr_common",
+    "kv_store:distributeddb",
   ]
 }
 
@@ -444,6 +446,25 @@ ohos_unittest("ScreenManagerTest") {
   external_deps = [ "kv_store:datamgr_common" ]
 }
 
+ohos_unittest("PowerManagerTest") {
+  module_out_path = module_output_path
+  sources = [ "power_manager_test.cpp" ]
+  configs = [ ":module_private_config" ]
+
+  cflags = [
+    "-Werror=vla",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:datamgr_common",
+  ]
+
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
+}
+
 ohos_unittest("AppIdMappingConfigManagerTest") {
   module_out_path = module_output_path
   sources = [ "app_id_mapping_config_manager_test.cpp" ]
@@ -548,6 +569,7 @@ group("unittest") {
     ":GeneralStoreTest",
     ":MetaDataManagerTest",
     ":MetaDataSaverTest",
+    ":PowerManagerTest",
     ":ScreenManagerTest",
     ":SerializableTest",
     ":ServiceMetaDataTest",

@@ -22,6 +22,7 @@
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_extra_data.h"
 #include "cloud/cloud_info.h"
+#include "cloud/cloud_sync_finished_event.h"
 #include "cloud_notifier_proxy.h"
 #include "cloud/schema_meta.h"
 #include "cloud/sharing_center.h"
@@ -54,10 +55,18 @@ public:
         const std::string &id, const std::string &bundleName, const std::string &storeId) override;
     std::pair<int32_t, QueryLastResults> QueryLastSyncInfo(
         const std::string &id, const std::string &bundleName, const std::string &storeId) override;
+    std::pair<int32_t, BatchQueryLastResults> QueryLastSyncInfoBatch(
+        const std::string &id, const std::vector<BundleInfo> &bundleInfos) override;
     int32_t SetGlobalCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values) override;
     int32_t CloudSync(const std::string &bundleName, const std::string &storeId, const Option &option,
         const AsyncDetail &async) override;
+    int32_t StopCloudSyncTask(const std::vector<BundleInfo> &bundleInfos) override;
     int32_t InitNotifier(sptr<IRemoteObject> notifier) override;
+
+    int32_t Subscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
+        std::shared_ptr<ISyncInfoObserver> observer) override;
+    int32_t Unsubscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,
+        std::shared_ptr<ISyncInfoObserver> observer) override;
 
     std::pair<int32_t, std::vector<NativeRdb::ValuesBucket>> AllocResourceAndShare(const std::string &storeId,
         const DistributedRdb::PredicatesMemo &predicates, const std::vector<std::string> &columns,
@@ -74,7 +83,8 @@ public:
         const std::string &sharingRes, int32_t confirmation, std::pair<int32_t, std::string> &result) override;
 
     int32_t SetCloudStrategy(Strategy strategy, const std::vector<CommonType::Value> &values) override;
-
+    int32_t SubscribeCloudSyncTrigger(std::shared_ptr<ISyncInfoObserver> observer) override;
+    int32_t UnSubscribeCloudSyncTrigger(std::shared_ptr<ISyncInfoObserver> observer) override;
     int32_t OnInitialize() override;
     int32_t OnBind(const BindInfo &info) override;
     int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
@@ -104,18 +114,6 @@ private:
         std::shared_ptr<CloudStatic> staticActs_;
     };
     static Factory factory_;
-    enum class CloudSyncScene {
-        ENABLE_CLOUD = 0,
-        DISABLE_CLOUD = 1,
-        SWITCH_ON = 2,
-        SWITCH_OFF = 3,
-        QUERY_SYNC_INFO = 4,
-        USER_CHANGE = 5,
-        USER_UNLOCK = 6,
-        NETWORK_RECOVERY = 7,
-        SERVICE_INIT = 8,
-        ACCOUNT_STOP = 9,
-    };
 
     using Database = DistributedData::Database;
     using CloudInfo = DistributedData::CloudInfo;
@@ -129,6 +127,7 @@ private:
     using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
     using AutoCache = DistributedData::AutoCache;
+    using CloudSyncTriggerObservers = ConcurrentMap<std::string, uint32_t>;
 
     struct HapInfo {
         int32_t user;
@@ -139,6 +138,16 @@ private:
     struct SyncAgent {
         SyncAgent() = default;
         sptr<CloudNotifierProxy> notifier_;
+    };
+
+    struct DatabaseSyncContext {
+        int32_t user = 0;
+        std::string bundleName;
+        int32_t instanceId = 0;
+        std::string dbName;
+        std::vector<std::string> tables;
+        int32_t triggerMode = 0;
+        std::string prepareTraceId;
     };
 
     static std::map<std::string, int32_t> ConvertAction(const std::map<std::string, int32_t> &actions);
@@ -183,6 +192,8 @@ private:
     void GetSchema(const Event &event);
     void CloudShare(const Event &event);
     void DoSync(const Event &event);
+    void OnSyncInfoChanged(const Event &event);
+    void ExecuteBatchNotify();
 
     Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
@@ -207,7 +218,13 @@ private:
     std::shared_ptr<DistributedData::SharingCenter> GetSharingHandle(const HapInfo &hapInfo);
     bool GetStoreMetaData(StoreMetaData &meta);
     bool DoKvCloudSync(int32_t userId, const std::string &bundleName = "", int32_t triggerMode = 0);
-
+    void NotifyCloudSyncTriggerObservers(const std::string &bundleName, int32_t user, int32_t triggerMode);
+    void ProcessDatabaseSync(DatabaseSyncContext &context);
+    void TriggerAppDatabaseSync(int32_t user, const std::string &bundleName, const CloudInfo &cloudInfo,
+        CloudSyncScene scene);
+    int32_t GetTriggerKey(std::string &key);
+    int32_t ProcessUserNotifyDataChange(int32_t user, const DistributedData::ExtraData &exData);
+    bool NeedCheckAutoSync(CloudSyncScene scene);
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
@@ -233,6 +250,15 @@ private:
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
             .count());
     ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
+    CloudSyncTriggerObservers cloudSyncTriggerObservers_;
+
+    std::mutex subscribeMutex_;
+    std::map<CloudSubscribeType, std::map<std::string, std::vector<uint32_t>>> subscribes_;
+
+    std::mutex notifyMutex_;
+    std::map<uint32_t, BatchQueryLastResults> pendingNotifies_;
+    TaskId notifyTaskId_ = ExecutorPool::INVALID_TASK_ID;
+    static constexpr Duration NOTIFY_DELAY = std::chrono::seconds(5);
 
     static constexpr Handle WORK_CLOUD_INFO_UPDATE = &CloudServiceImpl::UpdateCloudInfo;
     static constexpr Handle WORK_SCHEMA_UPDATE = &CloudServiceImpl::UpdateSchema;
