@@ -67,4 +67,9 @@ bool ScreenManager::IsLocked()
 {
     return false;
 }
+
+bool ScreenManager::IsScreenOff()
+{
+    return false;
+}
 } // namespace OHOS::DistributedData

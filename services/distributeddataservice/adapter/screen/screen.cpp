@@ -34,6 +34,11 @@ bool Screen::IsLocked()
     return manager->IsScreenLocked();
 }
 
+bool Screen::IsScreenOff()
+{
+    return isScreenOff_.load();
+}
+
 EventSubscriber::EventSubscriber(const CommonEventSubscribeInfo &info) : CommonEventSubscriber(info)
 {
 }
@@ -167,6 +172,7 @@ void Screen::NotifyLocked(int32_t user)
 
 void Screen::NotifyScreenOn(int32_t user)
 {
+    isScreenOff_ = false;
     observerMap_.ForEach([user](const auto &key, auto &val) {
         val->OnScreenOn(user);
         return false;
@@ -175,6 +181,7 @@ void Screen::NotifyScreenOn(int32_t user)
 
 void Screen::NotifyScreenOff(int32_t user)
 {
+    isScreenOff_ = true;
     observerMap_.ForEach([user](const auto &key, auto &val) {
         val->OnScreenOff(user);
         return false;

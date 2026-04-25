@@ -22,6 +22,7 @@ namespace DistributedData {
 class ScreenMock : public ScreenManager {
 public:
     bool IsLocked();
+    bool IsScreenOff();
     void Subscribe(std::shared_ptr<Observer> observer);
     void Unsubscribe(std::shared_ptr<Observer> observer);
     void BindExecutor(std::shared_ptr<ExecutorPool> executors);
