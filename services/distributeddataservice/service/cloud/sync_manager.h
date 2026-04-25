@@ -142,8 +142,10 @@ private:
     using Task = ExecutorPool::Task;
     using TaskId = ExecutorPool::TaskId;
     using Duration = ExecutorPool::Duration;
+    using CloudErrorAction = DistributedData::CloudErrorAction;
     using Retryer =
-        std::function<bool(Duration interval, int32_t status, int32_t dbCode, const std::string &prepareTraceId)>;
+        std::function<bool(Duration interval, int32_t status, int32_t dbCode, const std::string &prepareTraceId,
+            CloudErrorAction cloudAction)>;
     using CloudInfo = DistributedData::CloudInfo;
     using StoreInfo = DistributedData::StoreInfo;
     using SyncStrategy = DistributedData::SyncStrategy;

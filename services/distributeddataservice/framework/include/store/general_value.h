@@ -57,6 +57,7 @@ struct GenProgressDetail {
     int32_t code;
     int32_t dbCode;
     uint64_t changeCount = 0;
+    CloudErrorInfo cloudErrorInfo;
     std::string message;
     std::map<std::string, GenTableDetail> details;
 };
