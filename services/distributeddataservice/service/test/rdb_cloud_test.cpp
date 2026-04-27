@@ -553,5 +553,58 @@ HWTEST_F(RdbCloudTest, StopCloudSync_Failure, TestSize.Level1)
     auto result = rdbCloud.StopCloudSync();
     EXPECT_EQ(result, DBStatus::CLOUD_ERROR);
 }
+
+/**
+* @tc.name: HasCloudUpdate_NullCloudDB
+* @tc.desc: Test RdbCloud HasCloudUpdate when cloudDB_ is nullptr.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, HasCloudUpdate_NullCloudDB, TestSize.Level1)
+{
+    BindAssets snapshots;
+    std::shared_ptr<CloudDB> nullCloudDB = nullptr;
+    RdbCloud rdbCloud(nullCloudDB, snapshots);
+    std::string tableName = "testTable";
+    const std::string localWaterMark = "100";
+
+    auto result = rdbCloud.HasCloudUpdate(tableName, localWaterMark);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: HasCloudUpdate_HasUpdate
+* @tc.desc: Test RdbCloud HasCloudUpdate when cloud has update.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, HasCloudUpdate_HasUpdate, TestSize.Level1)
+{
+    auto mockDB = std::make_shared<MockCloudDB>();
+    std::string tableName = "testTable";
+    const std::string localWaterMark = "100";
+    EXPECT_CALL(*mockDB, HasCloudUpdate(tableName, localWaterMark)).WillOnce(Return(true));
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockDB, snapshots);
+
+    auto result = rdbCloud.HasCloudUpdate(tableName, localWaterMark);
+    EXPECT_EQ(result, true);
+}
+
+/**
+* @tc.name: HasCloudUpdate_NoUpdate
+* @tc.desc: Test RdbCloud HasCloudUpdate when cloud has no update.
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbCloudTest, HasCloudUpdate_NoUpdate, TestSize.Level1)
+{
+    auto mockDB = std::make_shared<MockCloudDB>();
+    std::string tableName = "testTable";
+    const std::string localWaterMark = "100";
+    EXPECT_CALL(*mockDB, HasCloudUpdate(tableName, localWaterMark)).WillOnce(Return(false));
+    BindAssets snapshots;
+    RdbCloud rdbCloud(mockDB, snapshots);
+
+    auto result = rdbCloud.HasCloudUpdate(tableName, localWaterMark);
+    EXPECT_EQ(result, false);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

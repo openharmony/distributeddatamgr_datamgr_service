@@ -67,6 +67,8 @@ public:
     virtual std::pair<int32_t, std::string> GetEmptyCursor(const std::string &tableName);
 
     virtual void SetPrepareTraceId(const std::string &prepareTraceId);
+
+    virtual bool HasCloudUpdate(const std::string &tableName, const std::string &localWaterMark);
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_DB_H

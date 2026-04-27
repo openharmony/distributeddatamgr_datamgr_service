@@ -73,5 +73,14 @@ enum GeneralError : int32_t {
     E_TABLE_NOT_FOUND,
     E_BUTT,
 };
+
+enum class CloudErrorAction : uint32_t {
+    ACTION_DEFAULT = 0,
+    ACTION_RETRY_SYNC_TASK = 1,
+};
+
+struct CloudErrorInfo {
+    CloudErrorAction cloudAction = CloudErrorAction::ACTION_DEFAULT;
+};
 }
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_ERROR_H

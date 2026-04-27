@@ -60,6 +60,7 @@ public:
     void SetPrepareTraceId(const std::string &traceId) override;
     DBStatus QueryAllGid(const std::string &tableName, DBVBucket &extend, std::vector<DBVBucket> &data) override;
     DBStatus StopCloudSync() override;
+    bool HasCloudUpdate(const std::string &tableName, const std::string &localWaterMark) override;
 
 private:
     static constexpr const char *TYPE_FIELD = "#_type";

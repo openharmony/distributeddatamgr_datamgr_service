@@ -100,6 +100,11 @@ DBStatus RdbCloud::StopCloudSync()
     return ConvertStatus(static_cast<GeneralError>(error));
 }
 
+bool RdbCloud::HasCloudUpdate(const std::string &tableName, const std::string &localWaterMark)
+{
+    return cloudDB_->HasCloudUpdate(tableName, localWaterMark);
+}
+
 DBStatus RdbCloud::HandleQueryResult(int32_t code, std::shared_ptr<Cursor> cursor, const std::string &tableName,
     DBVBucket &extend, std::vector<DBVBucket> &data)
 {
@@ -352,13 +357,22 @@ void RdbCloud::ConvertErrorField(DistributedData::VBuckets& extends)
     for (auto& extend : extends) {
         auto errorField = extend.find(SchemaMeta::ERROR_FIELD);
         if (errorField == extend.end()) {
+            extend[SchemaMeta::CLOUD_ERROR_ACTION_FIELD] = static_cast<int64_t>(CloudErrorAction::ACTION_DEFAULT);
             continue;
         }
         auto errCode = Traits::get_if<int64_t>(&(errorField->second));
         if (errCode == nullptr) {
+            extend[SchemaMeta::CLOUD_ERROR_ACTION_FIELD] = static_cast<int64_t>(CloudErrorAction::ACTION_DEFAULT);
             continue;
         }
         errorField->second = ConvertStatus(static_cast<GeneralError>(*errCode));
+        auto actionField = extend.find(SchemaMeta::CLOUD_ERROR_ACTION_FIELD);
+        if (actionField != extend.end()) {
+            auto actionCode = Traits::get_if<int64_t>(&(actionField->second));
+            if (actionCode != nullptr) {
+                actionField->second = *actionCode;
+            }
+        }
     }
 }
 
@@ -390,6 +404,13 @@ int32_t RdbCloud::Convert(std::shared_ptr<DistributedData::Cursor> cursor, std::
             auto errCode = Traits::get_if<int64_t>(&(errorField->second));
             if (errCode != nullptr) {
                 entry[SchemaMeta::ERROR_FIELD] = ConvertStatus(static_cast<GeneralError>(*errCode));
+            }
+        }
+        auto actionField = entry.find(SchemaMeta::CLOUD_ERROR_ACTION_FIELD);
+        if (actionField != entry.end()) {
+            auto actionCode = Traits::get_if<int64_t>(&(actionField->second));
+            if (actionCode != nullptr) {
+                entry[SchemaMeta::CLOUD_ERROR_ACTION_FIELD] = *actionCode;
             }
         }
         data.emplace_back(ValueProxy::Convert(std::move(entry)));

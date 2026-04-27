@@ -109,4 +109,9 @@ void CloudDB::SetPrepareTraceId(const std::string &prepareTraceId)
 {
     (void)prepareTraceId;
 }
+
+bool CloudDB::HasCloudUpdate(const std::string &tableName, const std::string &localWaterMark)
+{
+    return true;
+}
 } // namespace OHOS::DistributedData

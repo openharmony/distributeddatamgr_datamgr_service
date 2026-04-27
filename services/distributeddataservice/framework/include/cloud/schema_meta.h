@@ -73,6 +73,7 @@ public:
     static constexpr const char *MODIFY_FIELD = "#_modifyTime";
     static constexpr const char *CURSOR_FIELD = "#_cursor";
     static constexpr const char *ERROR_FIELD = "#_error";
+    static constexpr const char *CLOUD_ERROR_ACTION_FIELD = "#_cloud_error_action";
     static constexpr const char *VERSION_FIELD = "#_version";
     static constexpr const char *REFERENCE_FIELD = "#_reference";
     static constexpr const char *CLOUD_OWNER = "cloud_owner";
