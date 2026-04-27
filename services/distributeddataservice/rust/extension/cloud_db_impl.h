@@ -54,6 +54,7 @@ public:
     int32_t Close() override;
     std::pair<int32_t, std::string> GetEmptyCursor(const std::string &tableName) override;
     void SetPrepareTraceId(const std::string &prepareTraceId) override;
+    bool HasCloudUpdate(const std::string &tableName, const std::string &localWaterMark) override;
 private:
 
     OhCloudExtCloudDatabase *database_ = nullptr;
