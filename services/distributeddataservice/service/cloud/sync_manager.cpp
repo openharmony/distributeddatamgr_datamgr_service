@@ -310,12 +310,12 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
     }
     if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         info.SetError(E_NETWORK_ERROR);
-        ZLOGE("network unavailable");
+        ZLOGE("network unavailable, bundleName:%{public}s", info.bundleName_.c_str());
         return E_NETWORK_ERROR;
     }
     if (!Account::GetInstance()->IsVerified(info.user_)) {
         info.SetError(E_USER_LOCKED);
-        ZLOGE("user unverified");
+        ZLOGE("user unverified, bundleName:%{public}s", info.bundleName_.c_str());
         return E_ERROR;
     }
     return E_OK;
@@ -386,7 +386,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
 
         auto cloudSyncInfos = GetCloudSyncInfo(info, cloud);
         if (cloudSyncInfos.empty()) {
-            ZLOGE("get cloud info failed, user: %{public}d.", cloud.user);
+            ZLOGE("get cloud info failed, user: %{public}d, bundleName:%{public}s",
+                cloud.user, info.bundleName_.c_str());
             info.SetError(E_CLOUD_DISABLED);
             return;
         }
