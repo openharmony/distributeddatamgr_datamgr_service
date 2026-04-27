@@ -315,7 +315,7 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
     }
     if (!Account::GetInstance()->IsVerified(info.user_)) {
         info.SetError(E_USER_LOCKED);
-        ZLOGE("user unverified, bundleName:%{public}s", info.bundleName_.c_str());
+        ZLOGE("user unverified, bundleName:%{public}s, user:%{public}d", info.bundleName_.c_str(), info.user_);
         return E_ERROR;
     }
     return E_OK;
