@@ -40,6 +40,64 @@ ohos_static_library("common_event_mock") {
   part_name = "datamgr_service"
 }
 
+ohos_static_library("account_delegate_mock_static") {
+  testonly = true
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
+  sources = [
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp"
+  ]
+
+  include_dirs = [
+    "${data_service_path}/framework/test/mock",
+    "${data_service_path}/framework/include",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}
+
+ohos_static_library("screenlock_manager_mock") {
+  testonly = true
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    boundary_sanitize = true
+    ubsan = true
+  }
+  sources = [
+    "mock/screenlock_manager.cpp"
+  ]
+
+  include_dirs = [
+    "mock",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+
+  subsystem_name = "distributeddatamgr"
+  part_name = "datamgr_service"
+}
+
 group("unittest") {
   testonly = true
   deps = []
@@ -54,7 +112,7 @@ group("unittest") {
 
   if (defined(global_parts_info) &&
       defined(global_parts_info.theme_screenlock_mgr)) {
-    deps += [ "${data_service_path}/adapter/screenlock/test:unittest" ]
+    deps += [ "${data_service_path}/adapter/screen/test:unittest" ]
   }
 
   if (datamgr_service_cloud) {
@@ -72,6 +130,6 @@ group("fuzztest") {
 
   if (defined(global_parts_info) &&
       defined(global_parts_info.theme_screenlock_mgr)) {
-    deps += [ "../screenlock/test/fuzztest/screenlock_fuzzer:fuzztest" ]
+    deps += [ "../screen/test/fuzztest/screen_fuzzer:fuzztest" ]
   }
 }

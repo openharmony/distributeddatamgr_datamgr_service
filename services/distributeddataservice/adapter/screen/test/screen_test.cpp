@@ -14,28 +14,42 @@
  */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <memory>
 #include <atomic>
 #include <vector>
 #include <chrono>
 
 #include "executor_pool.h"
-#include "screenlock/screen_lock.h"
+#include "screen/screen.h"
 #include "mock_common_event.h"
+#include "account/account_delegate.h"
+#include "account_delegate_mock.h"
+#include "screenlock_manager.h"
 
-namespace {
+namespace OHOS::Test {
 using namespace OHOS::DistributedData;
 using namespace testing::ext;
 using namespace OHOS;
+using namespace testing;
+using namespace OHOS::ScreenLock;
+
+static AccountDelegateMock *accountDelegateMock_ = nullptr;
+static constexpr size_t THREAD_MIN = 5;
+static constexpr size_t THREAD_MAX = 12;
 
 // Mock Observer for testing callback behavior
-class MockScreenLockObserver : public ScreenManager::Observer {
+class MockScreenObserver : public ScreenManager::Observer {
 public:
     std::string name_ = "mockObserver";
     std::atomic<int> unlockCalledCount_{0};
     std::atomic<int> lockCalledCount_{0};
+    std::atomic<int> screenOnCalledCount_{0};
+    std::atomic<int> screenOffCalledCount_{0};
     int32_t lastUnlockUser_{-1};
     int32_t lastLockUser_{-1};
+    int32_t lastScreenOnUser_{-1};
+    int32_t lastScreenOffUser_{-1};
 
     void OnScreenUnlocked(int32_t user) override
     {
@@ -47,6 +61,18 @@ public:
     {
         lockCalledCount_++;
         lastLockUser_ = user;
+    }
+
+    void OnScreenOn(int32_t user) override
+    {
+        screenOnCalledCount_++;
+        lastScreenOnUser_ = user;
+    }
+
+    void OnScreenOff(int32_t user) override
+    {
+        screenOffCalledCount_++;
+        lastScreenOffUser_ = user;
     }
 
     std::string GetName() override
@@ -63,8 +89,12 @@ public:
     {
         unlockCalledCount_ = 0;
         lockCalledCount_ = 0;
+        screenOnCalledCount_ = 0;
+        screenOffCalledCount_ = 0;
         lastUnlockUser_ = -1;
         lastLockUser_ = -1;
+        lastScreenOnUser_ = -1;
+        lastScreenOffUser_ = -1;
     }
 
     bool IsUnlockCalled() const
@@ -77,6 +107,16 @@ public:
         return lockCalledCount_ > 0;
     }
 
+    bool IsScreenOnCalled() const
+    {
+        return screenOnCalledCount_ > 0;
+    }
+
+    bool IsScreenOffCalled() const
+    {
+        return screenOffCalledCount_ > 0;
+    }
+
     int GetUnlockCalledCount() const
     {
         return unlockCalledCount_;
@@ -86,69 +126,114 @@ public:
     {
         return lockCalledCount_;
     }
+
+    int GetScreenOnCalledCount() const
+    {
+        return screenOnCalledCount_;
+    }
+
+    int GetScreenOffCalledCount() const
+    {
+        return screenOffCalledCount_;
+    }
 };
 
 // Test helper class to access private members for critical testing only
 // NOTE: Private member access should be minimized. Only access private methods
 // when testing core business logic that cannot be verified through public APIs.
-class ScreenLockTestHelper {
+class ScreenTestHelper {
 public:
     // GetTask is critical for testing retry logic - this is core business logic
     // that requires verification of internal retry behavior
-    static ExecutorPool::Task GetTask(ScreenLock &screenLock, uint32_t retry)
+    static ExecutorPool::Task GetTask(Screen &screenLock, uint32_t retry)
     {
         return screenLock.GetTask(retry);
     }
 };
 
-class ScreenLockTest : public testing::Test {
+class ScreenTest : public testing::Test {
 public:
     static void SetUpTestCase(void)
     {
+        accountDelegateMock_ = new (std::nothrow) AccountDelegateMock();
+        if (accountDelegateMock_ != nullptr) {
+            AccountDelegate::instance_ = nullptr;
+            AccountDelegate::RegisterAccountInstance(accountDelegateMock_);
+            EXPECT_CALL(*accountDelegateMock_, QueryForegroundUsers(_))
+                .WillRepeatedly([](std::vector<int> &users) {
+                    users = { 100 };
+                    return true;
+                });
+            EXPECT_CALL(*accountDelegateMock_, IsDeactivating(_))
+                .WillRepeatedly(Return(false));
+        }
+        ScreenLockManager::Reset();
     }
 
     static void TearDownTestCase(void)
     {
+        if (accountDelegateMock_ != nullptr) {
+            delete accountDelegateMock_;
+            accountDelegateMock_ = nullptr;
+        }
+        ScreenManager::RegisterInstance(nullptr);
+        ScreenLockManager::Reset();
     }
 
     void SetUp()
     {
-        screenLock_ = std::make_shared<ScreenLock>();
-        screenLock_->SubscribeScreenEvent();
+        OHOS::EventFwk::CommonEventManager::Reset();
+        ScreenLockManager::Reset();
+        
+        screen_ = std::make_shared<Screen>();
+        ScreenManager::RegisterInstance(screen_);
+        
+        executor_ = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
+        screen_->BindExecutor(executor_);
+        screen_->SubscribeEvent();
+        
+        auto task = ScreenTestHelper::GetTask(*screen_, 0);
+        if (task) {
+            task();
+        }
     }
 
     void TearDown()
     {
-        // Reset mock state after each test
+        screen_->UnsubscribeEvent();
         OHOS::EventFwk::CommonEventManager::Reset();
+        ScreenLockManager::Reset();
+        screen_.reset();
+        executor_.reset();
     }
 
 protected:
-    std::shared_ptr<MockScreenLockObserver> CreateObserver(const std::string &name = "testObserver")
+    std::shared_ptr<MockScreenObserver> CreateObserver(const std::string &name = "testObserver")
     {
-        auto observer = std::make_shared<MockScreenLockObserver>();
+        auto observer = std::make_shared<MockScreenObserver>();
         observer->SetName(name);
         return observer;
     }
 
-    std::shared_ptr<MockScreenLockObserver> CreateAndSubscribeObserver(
+    std::shared_ptr<MockScreenObserver> CreateAndSubscribeObserver(
         const std::string &name = "testObserver")
     {
         auto observer = CreateObserver(name);
-        screenLock_->Subscribe(observer);
+        screen_->Subscribe(observer);
         return observer;
     }
 
-    std::vector<std::shared_ptr<MockScreenLockObserver>> CreateAndSubscribeObservers(int count)
+    std::vector<std::shared_ptr<MockScreenObserver>> CreateAndSubscribeObservers(int count)
     {
-        std::vector<std::shared_ptr<MockScreenLockObserver>> observers;
+        std::vector<std::shared_ptr<MockScreenObserver>> observers;
         for (int i = 0; i < count; i++) {
             observers.push_back(CreateAndSubscribeObserver("observer" + std::to_string(i)));
         }
         return observers;
     }
 
-    std::shared_ptr<ScreenLock> screenLock_;
+    std::shared_ptr<Screen> screen_;
+    std::shared_ptr<ExecutorPool> executor_;
     static constexpr int32_t MAX_RETRY_TIMES = 300;
     static constexpr int32_t TEST_USER_ID = 100;
 };
@@ -160,11 +245,11 @@ protected:
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Subscribe001, TestSize.Level0)
+HWTEST_F(ScreenTest, Subscribe001, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver();
 
-    screenLock_->Subscribe(nullptr);
+    screen_->Subscribe(nullptr);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
@@ -178,11 +263,11 @@ HWTEST_F(ScreenLockTest, Subscribe001, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Subscribe002, TestSize.Level0)
+HWTEST_F(ScreenTest, Subscribe002, TestSize.Level0)
 {
     auto observer = CreateObserver("");
 
-    screenLock_->Subscribe(observer);
+    screen_->Subscribe(observer);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 0);
@@ -195,7 +280,7 @@ HWTEST_F(ScreenLockTest, Subscribe002, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Subscribe003, TestSize.Level0)
+HWTEST_F(ScreenTest, Subscribe003, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver("validObserver");
 
@@ -211,11 +296,11 @@ HWTEST_F(ScreenLockTest, Subscribe003, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Subscribe004, TestSize.Level0)
+HWTEST_F(ScreenTest, Subscribe004, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver("duplicateObserver");
 
-    screenLock_->Subscribe(observer);
+    screen_->Subscribe(observer);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
@@ -229,7 +314,7 @@ HWTEST_F(ScreenLockTest, Subscribe004, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Subscribe005, TestSize.Level0)
+HWTEST_F(ScreenTest, Subscribe005, TestSize.Level0)
 {
     auto observers = CreateAndSubscribeObservers(3);
 
@@ -247,11 +332,11 @@ HWTEST_F(ScreenLockTest, Subscribe005, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Unsubscribe001, TestSize.Level0)
+HWTEST_F(ScreenTest, Unsubscribe001, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver();
 
-    screenLock_->Unsubscribe(nullptr);
+    screen_->Unsubscribe(nullptr);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
@@ -265,13 +350,13 @@ HWTEST_F(ScreenLockTest, Unsubscribe001, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Unsubscribe002, TestSize.Level0)
+HWTEST_F(ScreenTest, Unsubscribe002, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver("testObserver");
 
     // Empty name cannot unsubscribe
     observer->SetName("");
-    screenLock_->Unsubscribe(observer);
+    screen_->Unsubscribe(observer);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
@@ -285,11 +370,11 @@ HWTEST_F(ScreenLockTest, Unsubscribe002, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Unsubscribe003, TestSize.Level0)
+HWTEST_F(ScreenTest, Unsubscribe003, TestSize.Level0)
 {
     auto observer = CreateObserver("nonExistent");
 
-    screenLock_->Unsubscribe(observer);
+    screen_->Unsubscribe(observer);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 0);
@@ -302,11 +387,11 @@ HWTEST_F(ScreenLockTest, Unsubscribe003, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Unsubscribe004, TestSize.Level0)
+HWTEST_F(ScreenTest, Unsubscribe004, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver("toRemove");
 
-    screenLock_->Unsubscribe(observer);
+    screen_->Unsubscribe(observer);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 0);
@@ -319,16 +404,16 @@ HWTEST_F(ScreenLockTest, Unsubscribe004, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Unsubscribe005, TestSize.Level0)
+HWTEST_F(ScreenTest, Unsubscribe005, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver("resubscribeTest");
 
-    screenLock_->Unsubscribe(observer);
+    screen_->Unsubscribe(observer);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 0);
 
-    screenLock_->Subscribe(observer);
+    screen_->Subscribe(observer);
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(TEST_USER_ID);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
@@ -342,7 +427,7 @@ HWTEST_F(ScreenLockTest, Unsubscribe005, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, NotifyScreenUnlocked001, TestSize.Level0)
+HWTEST_F(ScreenTest, NotifyScreenUnlocked001, TestSize.Level0)
 {
     auto observer1 = CreateAndSubscribeObserver("observer1");
     auto observer2 = CreateAndSubscribeObserver("observer2");
@@ -356,13 +441,13 @@ HWTEST_F(ScreenLockTest, NotifyScreenUnlocked001, TestSize.Level0)
 }
 
 /**
- * @tc.name: NotifyScreenLocked001
+ * @tc.name: NotifyScreened001
  * @tc.desc: notify screen locked should call all observers
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, NotifyScreenLocked001, TestSize.Level0)
+HWTEST_F(ScreenTest, NotifyScreened001, TestSize.Level0)
 {
     auto observer1 = CreateAndSubscribeObserver("observer1");
     auto observer2 = CreateAndSubscribeObserver("observer2");
@@ -382,7 +467,7 @@ HWTEST_F(ScreenLockTest, NotifyScreenLocked001, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, NotifyScreen002, TestSize.Level0)
+HWTEST_F(ScreenTest, NotifyScreen002, TestSize.Level0)
 {
     auto observer = CreateObserver("notSubscribed");
 
@@ -400,7 +485,7 @@ HWTEST_F(ScreenLockTest, NotifyScreen002, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, NotifyScreen003, TestSize.Level0)
+HWTEST_F(ScreenTest, NotifyScreen003, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver("multiCallObserver");
 
@@ -419,13 +504,13 @@ HWTEST_F(ScreenLockTest, NotifyScreen003, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, BindExecutor001, TestSize.Level0)
+HWTEST_F(ScreenTest, BindExecutor001, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
 
-    screenLock_->BindExecutor(executor);
+    screen_->BindExecutor(executor);
 
-    auto task = ScreenLockTestHelper::GetTask(*screenLock_, 0);
+    auto task = ScreenTestHelper::GetTask(*screen_, 0);
     EXPECT_TRUE(task != nullptr);
 }
 
@@ -436,17 +521,17 @@ HWTEST_F(ScreenLockTest, BindExecutor001, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, BindExecutor002, TestSize.Level0)
+HWTEST_F(ScreenTest, BindExecutor002, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
 
-    screenLock_->BindExecutor(executor);
-    auto task1 = ScreenLockTestHelper::GetTask(*screenLock_, 0);
+    screen_->BindExecutor(executor);
+    auto task1 = ScreenTestHelper::GetTask(*screen_, 0);
     EXPECT_TRUE(task1 != nullptr);
 
-    screenLock_->BindExecutor(nullptr);
+    screen_->BindExecutor(nullptr);
 
-    auto task2 = ScreenLockTestHelper::GetTask(*screenLock_, 0);
+    auto task2 = ScreenTestHelper::GetTask(*screen_, 0);
     EXPECT_TRUE(task2 != nullptr);
 }
 
@@ -457,9 +542,9 @@ HWTEST_F(ScreenLockTest, BindExecutor002, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, GetTask001, TestSize.Level0)
+HWTEST_F(ScreenTest, GetTask001, TestSize.Level0)
 {
-    auto task = ScreenLockTestHelper::GetTask(*screenLock_, 0);
+    auto task = ScreenTestHelper::GetTask(*screen_, 0);
 
     EXPECT_TRUE(task != nullptr);
 
@@ -473,12 +558,12 @@ HWTEST_F(ScreenLockTest, GetTask001, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, GetTask002, TestSize.Level0)
+HWTEST_F(ScreenTest, GetTask002, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
-    screenLock_->BindExecutor(executor);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
+    screen_->BindExecutor(executor);
 
-    auto task = ScreenLockTestHelper::GetTask(*screenLock_, MAX_RETRY_TIMES + 1);
+    auto task = ScreenTestHelper::GetTask(*screen_, MAX_RETRY_TIMES + 1);
 
     EXPECT_TRUE(task != nullptr);
     task();
@@ -491,12 +576,12 @@ HWTEST_F(ScreenLockTest, GetTask002, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, GetTask003, TestSize.Level0)
+HWTEST_F(ScreenTest, GetTask003, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
-    screenLock_->BindExecutor(executor);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
+    screen_->BindExecutor(executor);
 
-    auto task = ScreenLockTestHelper::GetTask(*screenLock_, 0);
+    auto task = ScreenTestHelper::GetTask(*screen_, 0);
 
     EXPECT_TRUE(task != nullptr);
     task();
@@ -509,12 +594,12 @@ HWTEST_F(ScreenLockTest, GetTask003, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, GetTask004, TestSize.Level0)
+HWTEST_F(ScreenTest, GetTask004, TestSize.Level0)
 {
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
-    screenLock_->BindExecutor(executor);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
+    screen_->BindExecutor(executor);
 
-    auto task = ScreenLockTestHelper::GetTask(*screenLock_, MAX_RETRY_TIMES);
+    auto task = ScreenTestHelper::GetTask(*screen_, MAX_RETRY_TIMES);
 
     EXPECT_TRUE(task != nullptr);
     task();
@@ -527,18 +612,69 @@ HWTEST_F(ScreenLockTest, GetTask004, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, Destructor001, TestSize.Level0)
+HWTEST_F(ScreenTest, Destructor001, TestSize.Level0)
 {
-    auto screenLock = std::make_shared<ScreenLock>();
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
+    auto screenLock = std::make_shared<Screen>();
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
 
     screenLock->BindExecutor(executor);
 
-    std::weak_ptr<ScreenLock> weakPtr = screenLock;
+    std::weak_ptr<Screen> weakPtr = screenLock;
 
     screenLock.reset();
 
     EXPECT_TRUE(weakPtr.expired());
+}
+
+/**
+ * @tc.name: IsLocked001
+ * @tc.desc: test IsLocked method when screen is not locked
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsLocked001, TestSize.Level0)
+{
+    ScreenLockManager::SetScreenLocked(false);
+
+    bool isLocked = screen_->IsLocked();
+
+    EXPECT_FALSE(isLocked);
+}
+
+/**
+ * @tc.name: IsLocked002
+ * @tc.desc: test IsLocked method when screen is locked
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsLocked002, TestSize.Level0)
+{
+    ScreenLockManager::SetScreenLocked(true);
+
+    bool isLocked = screen_->IsLocked();
+
+    EXPECT_TRUE(isLocked);
+}
+
+/**
+ * @tc.name: IsLocked003
+ * @tc.desc: test IsLocked method returns correct value after state change
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsLocked003, TestSize.Level0)
+{
+    ScreenLockManager::SetScreenLocked(false);
+    EXPECT_FALSE(screen_->IsLocked());
+
+    ScreenLockManager::SetScreenLocked(true);
+    EXPECT_TRUE(screen_->IsLocked());
+
+    ScreenLockManager::SetScreenLocked(false);
+    EXPECT_FALSE(screen_->IsLocked());
 }
 
 /**
@@ -548,7 +684,7 @@ HWTEST_F(ScreenLockTest, Destructor001, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, MultiUserNotify001, TestSize.Level0)
+HWTEST_F(ScreenTest, MultiUserNotify001, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver("multiUserObserver");
 
@@ -572,7 +708,7 @@ HWTEST_F(ScreenLockTest, MultiUserNotify001, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, ConcurrentNotify001, TestSize.Level0)
+HWTEST_F(ScreenTest, ConcurrentNotify001, TestSize.Level0)
 {
     auto observers = CreateAndSubscribeObservers(10);
 
@@ -591,7 +727,7 @@ HWTEST_F(ScreenLockTest, ConcurrentNotify001, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, MixedNotify001, TestSize.Level0)
+HWTEST_F(ScreenTest, MixedNotify001, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver("mixedObserver");
 
@@ -620,127 +756,22 @@ HWTEST_F(ScreenLockTest, MixedNotify001, TestSize.Level0)
 }
 
 /**
- * @tc.name: ObserverReuse001
- * @tc.desc: observer can be reused after unsubscribe
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(ScreenLockTest, ObserverReuse001, TestSize.Level0)
-{
-    auto observer = CreateAndSubscribeObserver("reuseObserver");
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer->lastUnlockUser_, 100);
-
-    screenLock_->Unsubscribe(observer);
-
-    observer->Reset();
-
-    screenLock_->Subscribe(observer);
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(200);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer->lastUnlockUser_, 200);
-}
-
-/**
- * @tc.name: CompleteEventLifecycle
- * @tc.desc: complete event lifecycle from subscribe to unsubscribe
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(ScreenLockTest, CompleteEventLifecycle, TestSize.Level0)
-{
-    auto observer = CreateAndSubscribeObserver("lifecycleObserver");
-
-    screenLock_->SubscribeScreenEvent();
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer->lastUnlockUser_, 100);
-
-    screenLock_->UnsubscribeScreenEvent();
-
-    observer->Reset();
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(200);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 0);
-}
-
-/**
- * @tc.name: UserSwitchScenario
- * @tc.desc: simulate user switch with different user IDs
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(ScreenLockTest, UserSwitchScenario, TestSize.Level0)
-{
-    auto observer = CreateAndSubscribeObserver("userSwitchObserver");
-    screenLock_->SubscribeScreenEvent();
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer->lastUnlockUser_, 100);
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(200);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 2);
-    EXPECT_EQ(observer->lastUnlockUser_, 200);
-
-    screenLock_->UnsubscribeScreenEvent();
-}
-
-/**
- * @tc.name: DynamicObserverManagement
- * @tc.desc: add observers while events are being published
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(ScreenLockTest, DynamicObserverManagement, TestSize.Level0)
-{
-    auto observer1 = CreateAndSubscribeObserver("observer1");
-    screenLock_->SubscribeScreenEvent();
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
-    EXPECT_EQ(observer1->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer1->lastUnlockUser_, 100);
-
-    auto observer2 = CreateAndSubscribeObserver("observer2");
-
-    observer1->Reset();
-    observer2->Reset();
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(200);
-    EXPECT_EQ(observer1->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer1->lastUnlockUser_, 200);
-    EXPECT_EQ(observer2->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer2->lastUnlockUser_, 200);
-
-    screenLock_->UnsubscribeScreenEvent();
-}
-
-/**
  * @tc.name: SubscribeRetryLogic
  * @tc.desc: verify retry logic when subscribe fails initially
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, SubscribeRetryLogic, TestSize.Level0)
+HWTEST_F(ScreenTest, SubscribeRetryLogic, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver();
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
-    screenLock_->BindExecutor(executor);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
+    screen_->BindExecutor(executor);
 
     OHOS::EventFwk::CommonEventManager::SetSubscribeResult(false);
-    screenLock_->SubscribeScreenEvent();
+    screen_->SubscribeEvent();
 
     OHOS::EventFwk::CommonEventManager::SetSubscribeResult(true);
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
 
     OHOS::EventFwk::CommonEventManager::Reset();
 }
@@ -752,25 +783,25 @@ HWTEST_F(ScreenLockTest, SubscribeRetryLogic, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, ExecutorLifecycle, TestSize.Level0)
+HWTEST_F(ScreenTest, ExecutorLifecycle, TestSize.Level0)
 {
     auto observer = CreateAndSubscribeObserver();
-    auto executor = std::make_shared<ExecutorPool>(12, 5);
-    screenLock_->BindExecutor(executor);
+    auto executor = std::make_shared<ExecutorPool>(THREAD_MAX, THREAD_MIN);
+    screen_->BindExecutor(executor);
 
-    screenLock_->SubscribeScreenEvent();
+    screen_->SubscribeEvent();
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
     EXPECT_EQ(observer->lastUnlockUser_, 100);
 
-    screenLock_->BindExecutor(nullptr);
+    screen_->BindExecutor(nullptr);
 
     observer->Reset();
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(200);
     EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
     EXPECT_EQ(observer->lastUnlockUser_, 200);
 
-    screenLock_->UnsubscribeScreenEvent();
+    screen_->UnsubscribeEvent();
 }
 
 /**
@@ -780,63 +811,166 @@ HWTEST_F(ScreenLockTest, ExecutorLifecycle, TestSize.Level0)
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, ConcurrentObserverModification, TestSize.Level0)
+HWTEST_F(ScreenTest, ConcurrentObserverModification, TestSize.Level0)
 {
     auto observers = CreateAndSubscribeObservers(10);
-    screenLock_->SubscribeScreenEvent();
+    screen_->SubscribeEvent();
 
-    std::thread unsubscribeThread([this, &observers]() {
-        screenLock_->Unsubscribe(observers[5]);
-    });
-    unsubscribeThread.join();
+    std::atomic<bool> ready{false};
+    std::atomic<int> completedCount{0};
+    std::vector<std::thread> threads;
+
+    for (size_t i = 0; i < observers.size(); i++) {
+        threads.emplace_back([this, &observers, &ready, &completedCount, i]() {
+            while (!ready.load()) {
+                std::this_thread::yield();
+            }
+            screen_->Unsubscribe(observers[i]);
+            screen_->Subscribe(observers[i]);
+            completedCount++;
+        });
+    }
+
+    ready.store(true);
+    for (auto &thread : threads) {
+        thread.join();
+    }
 
     OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
 
-    for (size_t i = 0; i < observers.size(); i++) {
-        if (i != 5) {
-            EXPECT_EQ(observers[i]->GetUnlockCalledCount(), 1);
-            EXPECT_EQ(observers[i]->lastUnlockUser_, 100);
-        }
+    for (const auto &observer : observers) {
+        EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
+        EXPECT_EQ(observer->lastUnlockUser_, 100);
     }
 
-    screenLock_->UnsubscribeScreenEvent();
+    screen_->UnsubscribeEvent();
 }
 
 /**
- * @tc.name: MixedEventHandling
- * @tc.desc: verify correct handling of mixed lock and unlock events
+ * @tc.name: NotifyScreenOn001
+ * @tc.desc: notify screen on should call observer OnScreenOn callback
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: agent
  */
-HWTEST_F(ScreenLockTest, MixedEventHandling, TestSize.Level0)
+HWTEST_F(ScreenTest, NotifyScreenOn001, TestSize.Level0)
 {
-    auto observer = CreateAndSubscribeObserver();
-    screenLock_->SubscribeScreenEvent();
+    auto observer = CreateAndSubscribeObserver("screenOnObserver");
 
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(100);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer->lastUnlockUser_, 100);
+    OHOS::EventFwk::CommonEventManager::PublishScreenOnEvent(TEST_USER_ID);
+
+    EXPECT_EQ(observer->GetScreenOnCalledCount(), 1);
+    EXPECT_EQ(observer->lastScreenOnUser_, TEST_USER_ID);
+    EXPECT_EQ(observer->GetUnlockCalledCount(), 0);
     EXPECT_EQ(observer->GetLockCalledCount(), 0);
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenLockedEvent(100);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 1);
-    EXPECT_EQ(observer->lastUnlockUser_, 100);
-    EXPECT_EQ(observer->GetLockCalledCount(), 1);
-    EXPECT_EQ(observer->lastLockUser_, 100);
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenUnlockEvent(200);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 2);
-    EXPECT_EQ(observer->lastUnlockUser_, 200);
-    EXPECT_EQ(observer->GetLockCalledCount(), 1);
-    EXPECT_EQ(observer->lastLockUser_, 100);
-
-    OHOS::EventFwk::CommonEventManager::PublishScreenLockedEvent(200);
-    EXPECT_EQ(observer->GetUnlockCalledCount(), 2);
-    EXPECT_EQ(observer->lastUnlockUser_, 200);
-    EXPECT_EQ(observer->GetLockCalledCount(), 2);
-    EXPECT_EQ(observer->lastLockUser_, 200);
-
-    screenLock_->UnsubscribeScreenEvent();
+    EXPECT_EQ(observer->GetScreenOffCalledCount(), 0);
 }
-} // namespace
+
+/**
+ * @tc.name: NotifyScreenOff001
+ * @tc.desc: notify screen off should call observer OnScreenOff callback
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, NotifyScreenOff001, TestSize.Level0)
+{
+    auto observer = CreateAndSubscribeObserver("screenOffObserver");
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(TEST_USER_ID);
+
+    EXPECT_EQ(observer->GetScreenOffCalledCount(), 1);
+    EXPECT_EQ(observer->lastScreenOffUser_, TEST_USER_ID);
+    EXPECT_EQ(observer->GetUnlockCalledCount(), 0);
+    EXPECT_EQ(observer->GetLockCalledCount(), 0);
+    EXPECT_EQ(observer->GetScreenOnCalledCount(), 0);
+}
+
+/**
+ * @tc.name: IsScreenOff001
+ * @tc.desc: test IsScreenOff method returns false initially
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsScreenOff001, TestSize.Level0)
+{
+    EXPECT_FALSE(screen_->IsScreenOff());
+}
+
+/**
+ * @tc.name: IsScreenOff002
+ * @tc.desc: test IsScreenOff returns true after screen off event
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsScreenOff002, TestSize.Level0)
+{
+    EXPECT_FALSE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(TEST_USER_ID);
+
+    EXPECT_TRUE(screen_->IsScreenOff());
+}
+
+/**
+ * @tc.name: IsScreenOff003
+ * @tc.desc: test IsScreenOff returns false after screen on event
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsScreenOff003, TestSize.Level0)
+{
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(TEST_USER_ID);
+    EXPECT_TRUE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOnEvent(TEST_USER_ID);
+    EXPECT_FALSE(screen_->IsScreenOff());
+}
+
+/**
+ * @tc.name: IsScreenOff004
+ * @tc.desc: test IsScreenOff state changes correctly with multiple events
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, IsScreenOff004, TestSize.Level0)
+{
+    EXPECT_FALSE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(100);
+    EXPECT_TRUE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOnEvent(100);
+    EXPECT_FALSE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOffEvent(200);
+    EXPECT_TRUE(screen_->IsScreenOff());
+
+    OHOS::EventFwk::CommonEventManager::PublishScreenOnEvent(200);
+    EXPECT_FALSE(screen_->IsScreenOff());
+}
+
+/**
+ * @tc.name: InvalidEventFiltered
+ * @tc.desc: invalid events should be filtered and not trigger any callback
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ScreenTest, InvalidEventFiltered, TestSize.Level0)
+{
+    auto observer = CreateAndSubscribeObserver("invalidEventObserver");
+
+    OHOS::EventFwk::CommonEventManager::PublishChargingEvent(100);
+    OHOS::EventFwk::CommonEventManager::PublishDisChargingEvent(0);
+
+    EXPECT_EQ(observer->GetUnlockCalledCount(), 0);
+    EXPECT_EQ(observer->GetLockCalledCount(), 0);
+    EXPECT_EQ(observer->GetScreenOnCalledCount(), 0);
+    EXPECT_EQ(observer->GetScreenOffCalledCount(), 0);
+}
+} // namespace OHOS::Test

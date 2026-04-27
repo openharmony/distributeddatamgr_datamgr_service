@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,24 +12,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef OHOS_SCREEN_LOCK_MOCK_H
-#define OHOS_SCREEN_LOCK_MOCK_H
 
-#include "screen/screen_manager.h"
+#ifndef MOCK_SCREENLOCK_MANAGER_H
+#define MOCK_SCREENLOCK_MANAGER_H
+
+#include <mutex>
+#include <string>
 
 namespace OHOS {
-namespace DistributedData {
-class ScreenLockMock : public ScreenManager {
-public:
-    bool IsLocked();
-    void Subscribe(std::shared_ptr<Observer> observer);
-    void Unsubscribe(std::shared_ptr<Observer> observer);
-    void BindExecutor(std::shared_ptr<ExecutorPool> executors);
-    void SubscribeScreenEvent();
-    void UnsubscribeScreenEvent();
+namespace ScreenLock {
 
-    bool isLocked_ = false;
+class ScreenLockManager {
+public:
+    static ScreenLockManager* GetInstance();
+    bool IsScreenLocked();
+    
+    static void SetScreenLocked(bool locked);
+    static void Reset();
+
+private:
+    ScreenLockManager() = default;
+    ~ScreenLockManager() = default;
+    
+    static std::mutex instanceLock_;
+    static ScreenLockManager* instance_;
+    static bool isScreenLocked_;
 };
-} // namespace DistributedData
+
+} // namespace ScreenLock
 } // namespace OHOS
-#endif //OHOS_SCREEN_LOCK_MOCK_H
+
+#endif // MOCK_SCREENLOCK_MANAGER_H

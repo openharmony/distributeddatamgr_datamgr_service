@@ -24,7 +24,7 @@
 #include "metadata/store_meta_data.h"
 #include "rdb_query.h"
 #include "rdb_types.h"
-#include "screen_lock_mock.h"
+#include "screen_mock.h"
 #include "store/auto_cache.h"
 #include "store/general_store.h"
 #include "store/general_value.h"
@@ -59,7 +59,7 @@ private:
     static AccountDelegateMock *accountDelegateMock_;
 
 protected:
-    static std::shared_ptr<ScreenLockMock> mock_;
+    static std::shared_ptr<ScreenMock> mock_;
 };
 
 AccountDelegateMock *AutoCacheTest::accountDelegateMock_ = nullptr;
@@ -78,7 +78,7 @@ void AutoCacheTest::TearDownTestCase(void)
     accountDelegateMock_ = nullptr;
 }
 
-std::shared_ptr<ScreenLockMock> AutoCacheTest::mock_ = std::make_shared<ScreenLockMock>();
+std::shared_ptr<ScreenMock> AutoCacheTest::mock_ = std::make_shared<ScreenMock>();
 /**
  * @tc.name: SetQueryNodesTest
  * @tc.desc: Set and query nodes.
