@@ -306,17 +306,17 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
     }
     if (!cloud.enableCloud || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
         info.SetError(E_CLOUD_DISABLED);
-        ZLOGD("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
+        ZLOGE("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
         return E_CLOUD_DISABLED;
     }
     if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         info.SetError(E_NETWORK_ERROR);
-        ZLOGD("network unavailable");
+        ZLOGE("network unavailable, bundleName:%{public}s", info.bundleName_.c_str());
         return E_NETWORK_ERROR;
     }
     if (!Account::GetInstance()->IsVerified(info.user_)) {
         info.SetError(E_USER_LOCKED);
-        ZLOGD("user unverified");
+        ZLOGE("user unverified, bundleName:%{public}s, user:%{public}d", info.bundleName_.c_str(), info.user_);
         return E_ERROR;
     }
     return E_OK;
@@ -387,7 +387,8 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
 
         auto cloudSyncInfos = GetCloudSyncInfo(info, cloud);
         if (cloudSyncInfos.empty()) {
-            ZLOGD("get cloud info failed, user: %{public}d.", cloud.user);
+            ZLOGE("get cloud info failed, user: %{public}d, bundleName:%{public}s",
+                cloud.user, info.bundleName_.c_str());
             info.SetError(E_CLOUD_DISABLED);
             return;
         }
