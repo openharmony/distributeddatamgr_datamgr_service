@@ -12,10 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef OHOS_SCREEN_MOCK_H
+#define OHOS_SCREEN_MOCK_H
 
-#ifndef SCREENLOCK_FUZZER_H
-#define SCREENLOCK_FUZZER_H
+#include "screen/screen_manager.h"
 
-#define FUZZ_PROJECT_NAME "screenlock_fuzzer"
+namespace OHOS {
+namespace DistributedData {
+class ScreenMock : public ScreenManager {
+public:
+    bool IsLocked();
+    bool IsScreenOff();
+    void Subscribe(std::shared_ptr<Observer> observer);
+    void Unsubscribe(std::shared_ptr<Observer> observer);
+    void BindExecutor(std::shared_ptr<ExecutorPool> executors);
+    void SubscribeEvent();
+    void UnsubscribeEvent();
 
-#endif // SCREENLOCK_FUZZER_H
+    bool isLocked_ = false;
+};
+} // namespace DistributedData
+} // namespace OHOS
+#endif //OHOS_SCREEN_LOCK_MOCK_H

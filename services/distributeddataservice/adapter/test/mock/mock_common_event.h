@@ -36,6 +36,8 @@ public:
     // Screen lock events
     static constexpr const char* COMMON_EVENT_SCREEN_UNLOCKED = "usual.event.SCREEN_UNLOCKED";
     static constexpr const char* COMMON_EVENT_SCREEN_LOCKED = "usual.event.SCREEN_LOCKED";
+    static constexpr const char* COMMON_EVENT_SCREEN_ON = "usual.event.SCREEN_ON";
+    static constexpr const char* COMMON_EVENT_SCREEN_OFF = "usual.event.SCREEN_OFF";
 
     // Power manager events
     static constexpr const char* COMMON_EVENT_CHARGING = "usual.event.CHARGING";
@@ -227,6 +229,24 @@ public:
     {
         Want want;
         want.SetAction(CommonEventSupport::COMMON_EVENT_SCREEN_LOCKED);
+        want.SetParam("userId", userId);
+        PublishEvent(CommonEventData(want));
+    }
+
+    // Helper method to publish screen on event
+    static void PublishScreenOnEvent(int32_t userId)
+    {
+        Want want;
+        want.SetAction(CommonEventSupport::COMMON_EVENT_SCREEN_ON);
+        want.SetParam("userId", userId);
+        PublishEvent(CommonEventData(want));
+    }
+
+    // Helper method to publish screen off event
+    static void PublishScreenOffEvent(int32_t userId)
+    {
+        Want want;
+        want.SetAction(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
         want.SetParam("userId", userId);
         PublishEvent(CommonEventData(want));
     }

@@ -24,11 +24,12 @@ namespace DistributedData {
 class ScreenManagerMock : public ScreenManager {
 public:
     MOCK_METHOD(bool, IsLocked, (), (override));
+    MOCK_METHOD(bool, IsScreenOff, (), (override));
     MOCK_METHOD(void, Subscribe, (std::shared_ptr<Observer> observer), (override));
     MOCK_METHOD(void, Unsubscribe, (std::shared_ptr<Observer> observer), (override));
     MOCK_METHOD(void, BindExecutor, (std::shared_ptr<ExecutorPool> executors), (override));
-    MOCK_METHOD(void, SubscribeScreenEvent, (), (override));
-    MOCK_METHOD(void, UnsubscribeScreenEvent, (), (override));
+    MOCK_METHOD(void, SubscribeEvent, (), (override));
+    MOCK_METHOD(void, UnsubscribeEvent, (), (override));
 };
 } // namespace DistributedData
 } // namespace OHOS
