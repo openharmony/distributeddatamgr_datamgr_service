@@ -429,8 +429,8 @@ bool PreProcessUtils::CheckUriAuthorization(const std::vector<std::string> &uris
             if (!readOnly && i < writeResults.size() && writeResults[i]) {
                 permissionMask |= UriPermissionUtil::WRITE_FLAG;
             }
-            if (!readOnly && ((permissionMask | UriPermissionUtil::READ_FLAG) != 0
-                || (permissionMask | UriPermissionUtil::WRITE_FLAG) != 0)) {
+            if (!readOnly && ((permissionMask & UriPermissionUtil::READ_FLAG) != 0
+                || (permissionMask & UriPermissionUtil::WRITE_FLAG) != 0)) {
                 permissionMask |= UriPermissionUtil::PERSIST_FLAG;
             }
             if (readOnly && (permissionMask & UriPermissionUtil::READ_FLAG) == 0) {
