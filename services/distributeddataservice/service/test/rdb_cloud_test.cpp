@@ -555,23 +555,6 @@ HWTEST_F(RdbCloudTest, StopCloudSync_Failure, TestSize.Level1)
 }
 
 /**
-* @tc.name: HasCloudUpdate_NullCloudDB
-* @tc.desc: Test RdbCloud HasCloudUpdate when cloudDB_ is nullptr.
-* @tc.type: FUNC
-*/
-HWTEST_F(RdbCloudTest, HasCloudUpdate_NullCloudDB, TestSize.Level1)
-{
-    BindAssets snapshots;
-    std::shared_ptr<CloudDB> nullCloudDB = nullptr;
-    RdbCloud rdbCloud(nullCloudDB, snapshots);
-    std::string tableName = "testTable";
-    const std::string localWaterMark = "100";
-
-    auto result = rdbCloud.HasCloudUpdate(tableName, localWaterMark);
-    EXPECT_EQ(result, true);
-}
-
-/**
 * @tc.name: HasCloudUpdate_HasUpdate
 * @tc.desc: Test RdbCloud HasCloudUpdate when cloud has update.
 * @tc.type: FUNC

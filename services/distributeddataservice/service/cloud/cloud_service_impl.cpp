@@ -1734,38 +1734,61 @@ bool CloudServiceImpl::DoCloudSync(int32_t user, CloudSyncScene scene)
 
 int32_t CloudServiceImpl::StopCloudSyncTask(const std::vector<BundleInfo> &bundleInfos)
 {
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     for (auto &bundleInfo : bundleInfos) {
-        StoreInfo storeInfo;
-        storeInfo.bundleName = bundleInfo.bundleName;
-        storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-        storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
-        storeInfo.storeName = bundleInfo.storeId;
-        StoreMetaMapping meta(storeInfo);
-        meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
-        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
-            ZLOGE("failed, no store mapping bundleName:%{public}s, storeId:%{public}s",
-                meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
-            return E_ERROR;
+        if (bundleInfo.bundleName.empty()) {
+            continue;
         }
-        if (!meta.cloudPath.empty() && meta.dataDir != meta.cloudPath &&
-            !MetaDataManager::GetInstance().LoadMeta(meta.GetCloudStoreMetaKey(), meta, true)) {
-            ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                meta.GetStoreAlias().c_str());
-            return E_ERROR;
-        }
-        auto [status, store] = SyncManager::GetStore(meta, storeInfo.user, true);
-        if (store == nullptr) {
-            ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
-            return E_ERROR;
-        }
-        int ret = store->StopCloudSync();
-        if (ret != E_OK) {
-            ZLOGE("failed to StopCloudSync, bundleName:%{public}s, storeId:%{public}s, errCode:%{public}d",
-                meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), ret);
-            return ret;
+        if (bundleInfo.storeId.empty()) {
+            auto schemaKey = CloudInfo::GetSchemaKey(user, bundleInfo.bundleName);
+            SchemaMeta schemaMeta;
+            if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true) ||
+                schemaMeta.databases.empty()) {
+                ZLOGE("no schema meta, bundleName:%{public}s", bundleInfo.bundleName.c_str());
+                continue;
+            }
+            for (const auto &database : schemaMeta.databases) {
+                StopCloudSyncForStore(bundleInfo.bundleName, database.name, tokenId, user);
+            }
+        } else {
+            StopCloudSyncForStore(bundleInfo.bundleName, bundleInfo.storeId, tokenId, user);
         }
     }
     return E_OK;
+}
+
+void CloudServiceImpl::StopCloudSyncForStore(const std::string &bundleName, const std::string &storeId,
+    uint32_t tokenId, int32_t user)
+{
+    StoreInfo storeInfo;
+    storeInfo.bundleName = bundleName;
+    storeInfo.tokenId = tokenId;
+    storeInfo.user = user;
+    storeInfo.storeName = storeId;
+    StoreMetaMapping meta(storeInfo);
+    meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true)) {
+        ZLOGE("failed, no store mapping bundleName:%{public}s, storeId:%{public}s",
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        return;
+    }
+    if (!meta.cloudPath.empty() && meta.dataDir != meta.cloudPath &&
+        !MetaDataManager::GetInstance().LoadMeta(meta.GetCloudStoreMetaKey(), meta, true)) {
+        ZLOGE("failed, no store meta bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+            meta.GetStoreAlias().c_str());
+        return;
+    }
+    auto [status, store] = SyncManager::GetStore(meta, storeInfo.user, true);
+    if (store == nullptr) {
+        ZLOGE("store null, storeId:%{public}s", meta.GetStoreAlias().c_str());
+        return;
+    }
+    int ret = store->StopCloudSync();
+    if (ret != E_OK) {
+        ZLOGE("failed to StopCloudSync, bundleName:%{public}s, storeId:%{public}s, errCode:%{public}d",
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), ret);
+    }
 }
 
 bool CloudServiceImpl::StopCloudSync(int32_t user, CloudSyncScene scene)
