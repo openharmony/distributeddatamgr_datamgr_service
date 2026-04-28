@@ -1624,5 +1624,53 @@ HWTEST_F(UdmfServiceImplTest, OnAppUninstall001, TestSize.Level1)
     EXPECT_EQ(0, LifeCycleManager::GetInstance().udKeys_.Size());
 }
 
+/**
+ * @tc.name: IsDraggable001
+ * @tc.desc: Test IsDraggable with valid tokenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsDraggable001, TestSize.Level1)
+{
+    uint32_t tokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME, instIndex);
+    bool result = UdmfServiceImpl::IsDraggable(tokenId);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: IsDraggable002
+ * @tc.desc: Test IsDraggable with zero tokenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsDraggable002, TestSize.Level1)
+{
+    uint32_t tokenId = 0;
+    bool result = UdmfServiceImpl::IsDraggable(tokenId);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: IsDraggable003
+ * @tc.desc: Test IsDraggable with invalid tokenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsDraggable003, TestSize.Level1)
+{
+    uint32_t tokenId = 999999;
+    bool result = UdmfServiceImpl::IsDraggable(tokenId);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: IsDraggable004
+ * @tc.desc: Test IsDraggable with IPCSkeleton tokenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, IsDraggable004, TestSize.Level1)
+{
+    uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    bool result = UdmfServiceImpl::IsDraggable(tokenId);
+    EXPECT_TRUE(result);
+}
+
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
