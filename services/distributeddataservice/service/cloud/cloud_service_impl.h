@@ -61,6 +61,8 @@ public:
     int32_t CloudSync(const std::string &bundleName, const std::string &storeId, const Option &option,
         const AsyncDetail &async) override;
     int32_t StopCloudSyncTask(const std::vector<BundleInfo> &bundleInfos) override;
+    void StopCloudSyncForStore(const std::string &bundleName, const std::string &storeId,
+        uint32_t tokenId, int32_t user);
     int32_t InitNotifier(sptr<IRemoteObject> notifier) override;
 
     int32_t Subscribe(CloudSubscribeType type, const std::vector<BundleInfo> &bundleInfos,

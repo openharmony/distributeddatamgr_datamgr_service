@@ -70,6 +70,7 @@ using DBSwitchInfo = OHOS::CloudData::DBSwitchInfo;
 using SwitchConfig = OHOS::CloudData::SwitchConfig;
 using DBActionInfo = OHOS::CloudData::DBActionInfo;
 using ClearConfig = OHOS::CloudData::ClearConfig;
+using BundleInfo = OHOS::CloudData::BundleInfo;
 uint64_t g_selfTokenID = 0;
 
 void AllocHapToken(const HapPolicyParams &policy)
@@ -3706,6 +3707,182 @@ HWTEST_F(CloudDataTest, DoCloudSync_customSwitchFailed, TestSize.Level1)
     EXPECT_EQ(ret, GenErr::E_OK);
 
     CloudServer::RegisterCloudInstance(&cloudServerMock_);
+}
+
+
+/**
+* @tc.name: StopCloudSyncTask001
+* @tc.desc: Test StopCloudSyncTask with empty bundleInfos
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, StopCloudSyncTask001, TestSize.Level0)
+{
+    std::vector<BundleInfo> bundleInfos;
+    auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: StopCloudSyncTask002
+* @tc.desc: Test StopCloudSyncTask with empty bundleName, should skip and continue
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, StopCloudSyncTask002, TestSize.Level0)
+{
+    BundleInfo info;
+    info.bundleName = "";
+    info.storeId = TEST_CLOUD_STORE;
+    std::vector<BundleInfo> bundleInfos = { info };
+    auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: StopCloudSyncTask003
+* @tc.desc: Test StopCloudSyncTask with valid bundleName and storeId
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, StopCloudSyncTask003, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
+
+    BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    info.storeId = TEST_CLOUD_STORE;
+    std::vector<BundleInfo> bundleInfos = { info };
+    auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: StopCloudSyncTask004
+* @tc.desc: Test StopCloudSyncTask with empty storeId, should iterate all databases from SchemaMeta
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, StopCloudSyncTask004, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
+
+    BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    info.storeId = "";
+    std::vector<BundleInfo> bundleInfos = { info };
+    auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: StopCloudSyncTask005
+* @tc.desc: Test StopCloudSyncTask with empty storeId but no SchemaMeta, should skip and continue
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, StopCloudSyncTask005, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
+
+    BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    info.storeId = "";
+    std::vector<BundleInfo> bundleInfos = { info };
+    auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: StopCloudSyncTask006
+* @tc.desc: Test StopCloudSyncTask with multiple bundleInfos, one invalid should not block others
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, StopCloudSyncTask006, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
+
+    BundleInfo invalidInfo;
+    invalidInfo.bundleName = "";
+    invalidInfo.storeId = TEST_CLOUD_STORE;
+
+    BundleInfo validInfo;
+    validInfo.bundleName = TEST_CLOUD_BUNDLE;
+    validInfo.storeId = TEST_CLOUD_STORE;
+
+    std::vector<BundleInfo> bundleInfos = { invalidInfo, validInfo };
+    auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: StopCloudSyncTask007
+* @tc.desc: Test StopCloudSyncTask with no store mapping meta, should skip and continue
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, StopCloudSyncTask007, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true);
+
+    BundleInfo info;
+    info.bundleName = TEST_CLOUD_BUNDLE;
+    info.storeId = TEST_CLOUD_STORE;
+    std::vector<BundleInfo> bundleInfos = { info };
+    auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
+    EXPECT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: StopCloudSyncTask008
+* @tc.desc: Test StopCloudSyncTask with mixed valid and invalid bundleInfos, all should be processed
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, StopCloudSyncTask008, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetKey(), cloudInfo_, true);
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    StoreMetaMapping storeMetaMapping(metaData_);
+    MetaDataManager::GetInstance().SaveMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), schemaMeta_, true);
+
+    BundleInfo emptyBundleName;
+    emptyBundleName.bundleName = "";
+    emptyBundleName.storeId = TEST_CLOUD_STORE;
+
+    BundleInfo withStoreId;
+    withStoreId.bundleName = TEST_CLOUD_BUNDLE;
+    withStoreId.storeId = TEST_CLOUD_STORE;
+
+    BundleInfo withoutStoreId;
+    withoutStoreId.bundleName = TEST_CLOUD_BUNDLE;
+    withoutStoreId.storeId = "";
+
+    BundleInfo noSchemaBundle;
+    noSchemaBundle.bundleName = "non_existent_bundle";
+    noSchemaBundle.storeId = "";
+
+    std::vector<BundleInfo> bundleInfos = { emptyBundleName, withStoreId, withoutStoreId, noSchemaBundle };
+    auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
+    EXPECT_EQ(ret, E_OK);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
