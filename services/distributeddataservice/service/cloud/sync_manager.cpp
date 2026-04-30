@@ -306,17 +306,29 @@ GeneralError SyncManager::IsValid(SyncInfo &info, CloudInfo &cloud)
     }
     if (!cloud.enableCloud || (!info.bundleName_.empty() && !cloud.IsOn(info.bundleName_))) {
         info.SetError(E_CLOUD_DISABLED);
-        ZLOGE("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
+        if (!info.IsAutoSync()) {
+            ZLOGE("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
+        } else {
+            ZLOGD("enable:%{public}d, bundleName:%{public}s", cloud.enableCloud, info.bundleName_.c_str());
+        }
         return E_CLOUD_DISABLED;
     }
     if (!NetworkDelegate::GetInstance()->IsNetworkAvailable()) {
         info.SetError(E_NETWORK_ERROR);
-        ZLOGE("network unavailable, bundleName:%{public}s", info.bundleName_.c_str());
+        if (!info.IsAutoSync()) {
+            ZLOGE("network unavailable, bundleName:%{public}s", info.bundleName_.c_str());
+        } else {
+            ZLOGD("network unavailable, bundleName:%{public}s", info.bundleName_.c_str());
+        }
         return E_NETWORK_ERROR;
     }
     if (!Account::GetInstance()->IsVerified(info.user_)) {
         info.SetError(E_USER_LOCKED);
-        ZLOGE("user unverified, bundleName:%{public}s, user:%{public}d", info.bundleName_.c_str(), info.user_);
+        if (!info.IsAutoSync()) {
+            ZLOGE("user unverified, bundleName:%{public}s, user:%{public}d", info.bundleName_.c_str(), info.user_);
+        } else {
+            ZLOGD("user unverified, bundleName:%{public}s, user:%{public}d", info.bundleName_.c_str(), info.user_);
+        }
         return E_ERROR;
     }
     return E_OK;
@@ -387,8 +399,13 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
 
         auto cloudSyncInfos = GetCloudSyncInfo(info, cloud);
         if (cloudSyncInfos.empty()) {
-            ZLOGE("get cloud info failed, user: %{public}d, bundleName:%{public}s",
-                cloud.user, info.bundleName_.c_str());
+            if (!info.IsAutoSync()) {
+                ZLOGE("get cloud info failed, user: %{public}d, bundleName:%{public}s",
+                    cloud.user, info.bundleName_.c_str());
+            } else {
+                ZLOGD("get cloud info failed, user: %{public}d, bundleName:%{public}s",
+                    cloud.user, info.bundleName_.c_str());
+            }
             info.SetError(E_CLOUD_DISABLED);
             return;
         }
@@ -502,9 +519,11 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
                 return exCallback(GeneralError::E_ERROR, "SetCloudConflictHandler failed, ret:" + std::to_string(ret));
             }
         }
-        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, asyncDownloadAsset?[%{public}d]",
-              storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
-              meta.asyncDownloadAsset);
+        ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, aDA?[%{public}d], "
+            "mode?[%{public}d], isAutoSync?[%{public}d]",
+            storeInfo.user, storeInfo.bundleName.c_str(), meta.GetStoreAlias().c_str(), prepareTraceId.c_str(),
+            meta.asyncDownloadAsset, evt.GetTriggerMode(),
+            GenStore::GetHighMode(evt.GetMode()) == GenStore::AUTO_SYNC_MODE ? 1 : 0);
         StartCloudSync(evt, meta, store, retryer, details);
     };
 }
