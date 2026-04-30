@@ -81,6 +81,10 @@ public:
         std::shared_ptr<GenQuery> GenerateQuery(const Tables &tables);
         bool Contains(const std::string &storeName) const;
         std::vector<std::string> GetTables(const Database &database);
+        bool IsAutoSync() const
+        {
+            return GenStore::GetHighMode(mode_) == GenStore::AUTO_SYNC_MODE;
+        }
         static constexpr const char *DEFAULT_ID = "default";
 
     private:
