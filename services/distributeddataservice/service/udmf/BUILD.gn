@@ -95,6 +95,12 @@ ohos_source_set("udmf_server") {
     "udmf:udmf_client",
     "udmf:utd_client",
   ]
+
+  if (udmf_dlp_part_enabled) {
+    external_deps += [ "dlp_permission_service:libdlp_permission_sdk" ]
+    defines = [ "WITH_DLP" ]
+  }
+
   cflags_cc = [
     "-fvisibility=hidden",
     "-Oz",

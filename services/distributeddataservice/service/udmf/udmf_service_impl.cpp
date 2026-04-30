@@ -31,6 +31,10 @@
 #include "delay_data_prepare_container.h"
 #include "device_manager_adapter.h"
 #include "device_matrix.h"
+#ifdef WITH_DLP
+#include "dlp_permission_kit.h"
+#include "dlp_permission.h"
+#endif // WITH_DLP
 #include "iservice_registry.h"
 #include "lifecycle/lifecycle_manager.h"
 #include "log_print.h"
@@ -103,10 +107,26 @@ UdmfServiceImpl::UdmfServiceImpl()
     CheckerManager::GetInstance().LoadCheckers();
 }
 
+bool UdmfServiceImpl::IsDraggable(uint32_t tokenId)
+{
+#ifdef WITH_DLP
+    bool draggable = false;
+    auto ret = Security::DlpPermission::DlpPermissionKit::QueryDlpFileCopyableByTokenId(draggable, tokenId);
+    if (ret != Security::DlpPermission::DLP_OK || !draggable) {
+        ZLOGE("tokenId = 0x%{public}x ret = %{public}d, draggable = %{public}d.", tokenId, ret, draggable);
+        return false;
+    }
+#endif
+    return true;
+}
+
 int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
     Summary &summary, std::string &key)
 {
     ZLOGD("start");
+    if (!IsDraggable(option.tokenId)) {
+        return E_NO_PERMISSION;
+    }
     int32_t res = E_OK;
     UdmfBehaviourMsg msg;
     std::string types;

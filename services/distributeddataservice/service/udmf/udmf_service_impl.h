@@ -105,6 +105,7 @@ private:
     using DeviceMetaSyncOption = DistributedData::MetaDataManager::DeviceMetaSyncOption;
     static DeviceMetaSyncOption GetMetaSyncOption(const DistributedData::StoreMetaData &metaData,
         const std::vector<std::string> &devices);
+    static bool IsDraggable(uint32_t tokenId);
 
     class UdmfStatic : public StaticActs {
     public:
