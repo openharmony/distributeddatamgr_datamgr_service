@@ -3884,5 +3884,238 @@ HWTEST_F(CloudDataTest, StopCloudSyncTask008, TestSize.Level0)
     auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
     EXPECT_EQ(ret, E_OK);
 }
+/**
+* @tc.name: IsAutoSync_AutoMode
+* @tc.desc: Test IsAutoSync returns true with default mode (AUTO_SYNC_MODE)
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsAutoSync_AutoMode, TestSize.Level0)
+{
+    CloudData::SyncManager::SyncInfo info(100, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    EXPECT_TRUE(info.IsAutoSync());
+}
+
+/**
+* @tc.name: IsAutoSync_ManualMode
+* @tc.desc: Test IsAutoSync returns false with MANUAL_SYNC_MODE
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsAutoSync_ManualMode, TestSize.Level0)
+{
+    CloudData::SyncManager::SyncInfo info(100, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    info.SetMode(GenStore::MixMode(GenStore::CLOUD_TIME_FIRST, GenStore::MANUAL_SYNC_MODE));
+    EXPECT_FALSE(info.IsAutoSync());
+}
+
+/**
+* @tc.name: IsValid_AutoSync_EnableCloudDisabled
+* @tc.desc: Test IsValid with auto sync mode when cloud is disabled
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_AutoSync_EnableCloudDisabled, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.enableCloud = false;
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: IsValid_ManualSync_EnableCloudDisabled
+* @tc.desc: Test IsValid with manual sync mode when cloud is disabled
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_ManualSync_EnableCloudDisabled, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    info.SetMode(GenStore::MixMode(GenStore::CLOUD_TIME_FIRST, GenStore::MANUAL_SYNC_MODE));
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.enableCloud = false;
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: IsValid_AutoSync_BundleNotOn
+* @tc.desc: Test IsValid with auto sync mode when bundle is not enabled
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_AutoSync_BundleNotOn, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.enableCloud = true;
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: IsValid_ManualSync_BundleNotOn
+* @tc.desc: Test IsValid with manual sync mode when bundle is not enabled
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_ManualSync_BundleNotOn, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    info.SetMode(GenStore::MixMode(GenStore::CLOUD_TIME_FIRST, GenStore::MANUAL_SYNC_MODE));
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.enableCloud = true;
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: IsValid_AutoSync_NetworkUnavailable
+* @tc.desc: Test IsValid with auto sync mode when network is unavailable
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_AutoSync_NetworkUnavailable, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.id = TEST_CLOUD_ID;
+    cloud.enableCloud = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    cloud.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    delegate_.isNetworkAvailable_ = false;
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_NETWORK_ERROR);
+    delegate_.isNetworkAvailable_ = true;
+}
+
+/**
+* @tc.name: IsValid_ManualSync_NetworkUnavailable
+* @tc.desc: Test IsValid with manual sync mode when network is unavailable
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_ManualSync_NetworkUnavailable, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    info.SetMode(GenStore::MixMode(GenStore::CLOUD_TIME_FIRST, GenStore::MANUAL_SYNC_MODE));
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.id = TEST_CLOUD_ID;
+    cloud.enableCloud = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    cloud.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    delegate_.isNetworkAvailable_ = false;
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_NETWORK_ERROR);
+    delegate_.isNetworkAvailable_ = true;
+}
+
+/**
+* @tc.name: IsValid_AutoSync_UserUnverified
+* @tc.desc: Test IsValid with auto sync mode when user is unverified
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_AutoSync_UserUnverified, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    int32_t unverifiedUser = 9999;
+    CloudData::SyncManager::SyncInfo info(unverifiedUser, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    CloudInfo cloud;
+    cloud.user = unverifiedUser;
+    cloud.id = TEST_CLOUD_ID;
+    cloud.enableCloud = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    cloud.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_ERROR);
+}
+
+/**
+* @tc.name: IsValid_ManualSync_UserUnverified
+* @tc.desc: Test IsValid with manual sync mode when user is unverified
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_ManualSync_UserUnverified, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    int32_t unverifiedUser = 9999;
+    CloudData::SyncManager::SyncInfo info(unverifiedUser, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    info.SetMode(GenStore::MixMode(GenStore::CLOUD_TIME_FIRST, GenStore::MANUAL_SYNC_MODE));
+    CloudInfo cloud;
+    cloud.user = unverifiedUser;
+    cloud.id = TEST_CLOUD_ID;
+    cloud.enableCloud = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    cloud.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_ERROR);
+}
+
+/**
+* @tc.name: DoCloudSync_AutoSync_NoCloudInfo
+* @tc.desc: Test DoCloudSync with auto sync mode when cloud info is empty
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, DoCloudSync_AutoSync_NoCloudInfo, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user, "non_existent_bundle", TEST_CLOUD_STORE);
+    size_t max = 12;
+    size_t min = 5;
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
+    auto ret = sync.DoCloudSync(info);
+    sleep(2);
+    EXPECT_EQ(ret, GenErr::E_OK);
+}
+
+/**
+* @tc.name: DoCloudSync_ManualSync_NoCloudInfo
+* @tc.desc: Test DoCloudSync with manual sync mode when cloud info is empty
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, DoCloudSync_ManualSync_NoCloudInfo, TestSize.Level0)
+{
+    int32_t user = 100;
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(user, "non_existent_bundle", TEST_CLOUD_STORE);
+    info.SetMode(GenStore::MixMode(GenStore::CLOUD_TIME_FIRST, GenStore::MANUAL_SYNC_MODE));
+    size_t max = 12;
+    size_t min = 5;
+    sync.executor_ = std::make_shared<ExecutorPool>(max, min);
+    auto ret = sync.DoCloudSync(info);
+    sleep(2);
+    EXPECT_EQ(ret, GenErr::E_OK);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
