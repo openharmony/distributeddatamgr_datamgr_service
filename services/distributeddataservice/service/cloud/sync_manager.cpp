@@ -388,6 +388,36 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
     };
 }
 
+bool SyncManager::PrepareForCloudSync(SyncInfo &info, CloudInfo &cloud, CloudSyncInfos &cloudSyncInfos,
+    TraceIds &traceIds)
+{
+    cloudSyncInfos = GetCloudSyncInfo(info, cloud);
+    if (cloudSyncInfos.empty()) {
+        if (!info.IsAutoSync()) {
+            ZLOGE("get cloud info failed, user: %{public}d, bundleName:%{public}s",
+                cloud.user, info.bundleName_.c_str());
+        } else {
+            ZLOGD("get cloud info failed, user: %{public}d, bundleName:%{public}s",
+                cloud.user, info.bundleName_.c_str());
+        }
+        info.SetError(E_CLOUD_DISABLED);
+        return false;
+    }
+    traceIds = SyncManager::GetPrepareTraceId(info, cloud);
+    BatchReport(info.user_, traceIds, SyncStage::PREPARE, E_OK);
+    UpdateStartSyncInfo(cloudSyncInfos);
+    auto code = IsValid(info, cloud);
+    if (code != E_OK) {
+        if (code == E_NETWORK_ERROR) {
+            networkRecoveryManager_.RecordSyncApps(info.user_, info.bundleName_);
+        }
+        BatchUpdateFinishState(cloudSyncInfos, code);
+        BatchReport(info.user_, traceIds, SyncStage::END, code, "!IsValid");
+        return false;
+    }
+    return true;
+}
+
 ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount ref, SyncInfo &&syncInfo)
 {
     times++;
@@ -396,32 +426,11 @@ ExecutorPool::Task SyncManager::GetSyncTask(int32_t times, bool retry, RefCount 
         bool createdByDefaultUser = InitDefaultUser(info.user_);
         CloudInfo cloud;
         cloud.user = info.user_;
-
-        auto cloudSyncInfos = GetCloudSyncInfo(info, cloud);
-        if (cloudSyncInfos.empty()) {
-            if (!info.IsAutoSync()) {
-                ZLOGE("get cloud info failed, user: %{public}d, bundleName:%{public}s",
-                    cloud.user, info.bundleName_.c_str());
-            } else {
-                ZLOGD("get cloud info failed, user: %{public}d, bundleName:%{public}s",
-                    cloud.user, info.bundleName_.c_str());
-            }
-            info.SetError(E_CLOUD_DISABLED);
+        CloudSyncInfos cloudSyncInfos;
+        TraceIds traceIds;
+        if (!PrepareForCloudSync(info, cloud, cloudSyncInfos, traceIds)) {
             return;
         }
-        auto traceIds = SyncManager::GetPrepareTraceId(info, cloud);
-        BatchReport(info.user_, traceIds, SyncStage::PREPARE, E_OK);
-        UpdateStartSyncInfo(cloudSyncInfos);
-        auto code = IsValid(info, cloud);
-        if (code != E_OK) {
-            if (code == E_NETWORK_ERROR) {
-                networkRecoveryManager_.RecordSyncApps(info.user_, info.bundleName_);
-            }
-            BatchUpdateFinishState(cloudSyncInfos, code);
-            BatchReport(info.user_, traceIds, SyncStage::END, code, "!IsValid");
-            return;
-        }
-
         auto retryer = GetRetryer(times, info, cloud.user);
         auto schemas = GetSchemaMeta(cloud, info);
         if (schemas.empty()) {

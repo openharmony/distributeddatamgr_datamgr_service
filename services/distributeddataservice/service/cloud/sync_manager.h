@@ -41,6 +41,7 @@ public:
     using GenStore = DistributedData::GeneralStore;
     using GenQuery = DistributedData::GenQuery;
     using RefCount = DistributedData::RefCount;
+    using CloudSyncInfos = std::vector<std::tuple<QueryKey, uint64_t>>;
     using AutoCache = DistributedData::AutoCache;
     using StoreMetaData = DistributedData::StoreMetaData;
     using SchemaMeta = DistributedData::SchemaMeta;
@@ -174,6 +175,7 @@ private:
         const StoreMetaData &meta, const std::vector<int32_t> &users, const DistributedData::Database &schemaDatabase);
     static std::string GetAccountId(int32_t user);
     static std::vector<std::tuple<QueryKey, uint64_t>> GetCloudSyncInfo(const SyncInfo &info, CloudInfo &cloud);
+    bool PrepareForCloudSync(SyncInfo &info, CloudInfo &cloud, CloudSyncInfos &cloudSyncInfos, TraceIds &traceIds);
     static std::vector<SchemaMeta> GetSchemaMeta(const CloudInfo &cloud, const SyncInfo &info);
     static bool NeedGetCloudInfo(CloudInfo &cloud);
     static GeneralError IsValid(SyncInfo &info, CloudInfo &cloud);
@@ -197,7 +199,7 @@ private:
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
-    void UpdateStartSyncInfo(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos);
+    void UpdateStartSyncInfo(const CloudSyncInfos &cloudSyncInfos);
     void UpdateFinishSyncInfo(const QueryKey &queryKey, uint64_t syncId, int32_t code);
     std::function<void(const DistributedData::GenDetails &result)> GetCallback(const GenAsync &async,
         const StoreInfo &storeInfo, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
@@ -208,7 +210,7 @@ private:
     bool InitDefaultUser(int32_t &user);
     std::function<void(const DistributedData::GenDetails &result)> RetryCallback(const StoreInfo &storeInfo,
         Retryer retryer, int32_t triggerMode, const std::string &prepareTraceId, int32_t user);
-    void BatchUpdateFinishState(const std::vector<std::tuple<QueryKey, uint64_t>> &cloudSyncInfos, int32_t code);
+    void BatchUpdateFinishState(const CloudSyncInfos &cloudSyncInfos, int32_t code);
     bool NeedSaveSyncInfo(const QueryKey &queryKey);
     void StartCloudSync(const DistributedData::SyncEvent &evt, const StoreMetaData &meta,
         const AutoCache::Store &store, Retryer retryer, DistributedData::GenDetails &details);
