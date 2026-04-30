@@ -69,6 +69,7 @@
                 "device_auth",
                 "device_manager",
                 "dfs_service",
+                "dlp_permission_service",
                 "dsoftbus",
                 "hicollie",
                 "hilog",
