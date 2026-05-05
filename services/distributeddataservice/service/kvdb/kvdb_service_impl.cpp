@@ -688,6 +688,7 @@ Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, co
     }
     meta.enableCloud = storeConfig.cloudConfig.enableCloud;
     meta.cloudAutoSync = storeConfig.cloudConfig.autoSync;
+    meta.filterMode = storeConfig.cloudConfig.filterMode;
     if (!MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true)) {
         return Status::ERROR;
     }
@@ -709,8 +710,9 @@ Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, co
             store->SetConfig({ storeConfig.cloudConfig.enableCloud });
         }
     }
-    ZLOGI("appId:%{public}s storeId:%{public}s enable:%{public}d", appId.appId.c_str(),
-        Anonymous::Change(storeId.storeId).c_str(), storeConfig.cloudConfig.enableCloud);
+    ZLOGI("appId:%{public}s storeId:%{public}s enable:%{public}d filterMode:%{public}d",
+        appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(),
+        storeConfig.cloudConfig.enableCloud, storeConfig.cloudConfig.filterMode);
     return Status::SUCCESS;
 }
 

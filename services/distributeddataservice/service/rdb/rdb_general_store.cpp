@@ -342,13 +342,13 @@ int32_t RdbGeneralStore::BindSnapshots(BindAssets bindAssets)
     return GenErr::E_OK;
 }
 
-int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+int32_t RdbGeneralStore::Bind(const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos,
     const CloudConfig &config)
 {
     if (bindInfos.empty()) {
         return GeneralError::E_OK;
     }
-    auto bindInfo = bindInfos.begin()->second;
+    auto [database, bindInfo, _] = bindInfos.begin()->second;
     if (bindInfo.db_ == nullptr || bindInfo.loader_ == nullptr) {
         return GeneralError::E_INVALID_ARGS;
     }
@@ -400,7 +400,7 @@ int32_t RdbGeneralStore::Bind(const Database &database, const std::map<uint32_t,
     return GeneralError::E_OK;
 }
 
-bool RdbGeneralStore::IsBound(uint32_t user)
+bool RdbGeneralStore::IsBound(uint32_t user, const std::string &id)
 {
     return isBound_;
 }
@@ -933,7 +933,8 @@ int32_t RdbGeneralStore::Clean(const std::vector<std::string> &devices, int32_t 
     return status == DistributedDB::OK ? GeneralError::E_OK : GeneralError::E_ERROR;
 }
 
-int32_t RdbGeneralStore::Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList)
+int32_t RdbGeneralStore::Clean(const std::string &device, const std::string &user, int32_t mode,
+    const std::vector<std::string> &tableList)
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed! devices :%{public}s, mode:%{public}d, tables count:%{public}zu",

@@ -15,6 +15,7 @@
 #ifndef LDBPROJ_GENERAL_STORE_MOCK_H
 #define LDBPROJ_GENERAL_STORE_MOCK_H
 
+#include "cloud/schema_meta.h"
 #include "store/general_store.h"
 #include <gmock/gmock.h>
 namespace OHOS {
@@ -23,9 +24,10 @@ class GeneralStoreMock : public GeneralStore {
 public:
     ~GeneralStoreMock() override = default;
     MOCK_METHOD(void, SetExecutor, (std::shared_ptr<Executor> executor), (override));
-    MOCK_METHOD3(Bind,
-        int32_t(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos, const CloudConfig &config));
-    MOCK_METHOD(bool, IsBound, (uint32_t user), (override));
+    MOCK_METHOD2(Bind,
+        int32_t(const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos,
+        const CloudConfig &config));
+    MOCK_METHOD(bool, IsBound, (uint32_t user, const std::string &id), (override));
     MOCK_METHOD(int32_t, Execute, (const std::string &table, const std::string &sql), (override));
     MOCK_METHOD(int32_t, SetDistributedTables,
         (const std::vector<std::string> &tables, int type, const std::vector<Reference> &references, int32_t tableType),
@@ -62,8 +64,8 @@ public:
     MOCK_METHOD((std::pair<int32_t, std::shared_ptr<Cursor>>), PreSharing, (GenQuery & query), (override));
     MOCK_METHOD(int32_t, Clean, (const std::vector<std::string> &devices, int32_t mode, const std::string &tableName),
         (override));
-    MOCK_METHOD(int32_t, Clean, (const std::string &device, int32_t mode, const std::vector<std::string> &tableList),
-        (override));
+    MOCK_METHOD(int32_t, Clean, (const std::string &device, const std::string &user, int32_t mode,
+        const std::vector<std::string> &tableList), (override));
     MOCK_METHOD(int32_t, Watch, (int32_t origin, Watcher &watcher), (override));
     MOCK_METHOD(int32_t, Unwatch, (int32_t origin, Watcher &watcher), (override));
     MOCK_METHOD(int32_t, RegisterDetailProgressObserver, (DetailAsync async), (override));

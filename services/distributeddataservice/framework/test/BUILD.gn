@@ -26,6 +26,7 @@ config("module_private_config") {
     "${data_service_path}/service/rdb/",
     "${data_service_path}/adapter/include",
     "${data_service_path}/framework/include",
+    "${data_service_path}/framework/include/cloud",
     "${data_service_path}/service/config/include",
     "${data_service_path}/app/src",
     "${data_service_path}/adapter/include/account",

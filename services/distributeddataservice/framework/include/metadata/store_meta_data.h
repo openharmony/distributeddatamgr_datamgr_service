@@ -67,6 +67,7 @@ struct API_EXPORT StoreMetaData : public Serializable {
     int32_t assetConflictPolicy = 0;
     std::string assetTempPath;
     bool assetDownloadOnDemand = false;
+    uint32_t filterMode = 0;
 
     enum StoreType {
         STORE_KV_BEGIN = 0,
