@@ -232,7 +232,8 @@ KVDBGeneralStore::~KVDBGeneralStore()
     }
     {
         std::unique_lock<decltype(bindMutex_)> lock(bindMutex_);
-        for (auto &[userId, bindInfo] : bindInfos_) {
+        for (auto &[userId, item] : bindInfos_) {
+            auto &[bindInfo, schema, id] = item;
             if (bindInfo.db_ != nullptr) {
                 bindInfo.db_->Close();
             }
@@ -265,25 +266,30 @@ int32_t KVDBGeneralStore::BindSnapshots(std::shared_ptr<std::map<std::string, st
     return GenErr::E_NOT_SUPPORT;
 }
 
-int32_t KVDBGeneralStore::Bind(
-    const Database &database, const std::map<uint32_t, BindInfo> &bindInfos, const CloudConfig &config)
+int32_t KVDBGeneralStore::Bind(const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos,
+    const CloudConfig &config)
 {
     if (bindInfos.empty()) {
         ZLOGW("No cloudDB!");
         return GeneralError::E_OK;
     }
+    auto ret = CheckBindInfos(bindInfos);
+    if (ret != GeneralError::E_OK) {
+        return ret;
+    }
     std::map<std::string, DataBaseSchema> schemas;
     std::map<std::string, std::shared_ptr<DistributedDB::ICloudDb>> dbClouds{};
-    auto dbSchema = GetDBSchema(database);
     {
         std::unique_lock<decltype(bindMutex_)> lock(bindMutex_);
-        for (auto &[userId, bindInfo] : bindInfos) {
-            if (bindInfo.db_ == nullptr) {
-                return GeneralError::E_INVALID_ARGS;
-            }
+        for (auto &[userId, item] : bindInfos) {
+            auto &[database, bindInfo, id] = item;
+            auto dbSchema = GetDBSchema(database);
+            bindInfos_[userId] = std::make_tuple(bindInfo, dbSchema, id);
+        }
+        for (auto &[userId, item] : bindInfos_) {
+            auto &[bindInfo, dbSchema, _] = item;
             dbClouds.insert({ std::to_string(userId),
                 std::make_shared<DistributedRdb::RdbCloud>(bindInfo.db_, nullptr) });
-            bindInfos_.insert(std::make_pair(userId, std::move(bindInfo)));
             schemas.insert({ std::to_string(userId), dbSchema });
         }
     }
@@ -302,10 +308,38 @@ int32_t KVDBGeneralStore::Bind(
     return GeneralError::E_OK;
 }
 
-bool KVDBGeneralStore::IsBound(uint32_t user)
+int32_t KVDBGeneralStore::CheckBindInfos(
+    const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos)
+{
+    for (auto &[userId, item] : bindInfos) {
+        auto &[database, bindInfo, id] = item;
+        if (bindInfo.db_ == nullptr) {
+            return GeneralError::E_INVALID_ARGS;
+        }
+    }
+    return GeneralError::E_OK;
+}
+
+bool KVDBGeneralStore::IsBound(uint32_t user, const std::string &id)
 {
     std::shared_lock<std::shared_mutex> lock(bindMutex_);
-    return bindInfos_.find(user) != bindInfos_.end();
+    auto iter = bindInfos_.find(user);
+    if (iter == bindInfos_.end()) {
+        return false;
+    }
+    auto &[bind, schema, cachedId] = iter->second;
+    return cachedId == id;
+}
+
+std::string KVDBGeneralStore::GetId(uint32_t user)
+{
+    std::shared_lock<std::shared_mutex> lock(bindMutex_);
+    auto iter = bindInfos_.find(user);
+    if (iter == bindInfos_.end()) {
+        return "";
+    }
+    auto &[bind, schema, cachedId] = iter->second;
+    return cachedId;
 }
 
 int32_t KVDBGeneralStore::Close(bool isForce)
@@ -407,18 +441,45 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     syncOption.waitTime = wait;
     syncOption.prepareTraceId = prepareTraceId;
     syncOption.lockAction = DistributedDB::LockAction::NONE;
+
+    StoreMetaData meta;
+    bool isFilterAccount = false;
+    if (MetaDataManager::GetInstance().LoadMeta(metaData_.GetKey(), meta, true)) {
+        isFilterAccount = meta.filterMode == FilterMode::ACCOUNT;
+    } else {
+        ZLOGW("not found meta record, cloud sync with default filter");
+    }
+    std::vector<int32_t> users;
     if (storeInfo_.user == 0) {
-        std::vector<int32_t> users;
         auto ret = AccountDelegate::GetInstance()->QueryUsers(users);
         if (!ret || users.empty()) {
             ZLOGE("failed to query os accounts, ret:%{public}d", ret);
             return DBStatus::DB_ERROR;
         }
-        syncOption.users.push_back(std::to_string(users[0]));
     } else {
-        syncOption.users.push_back(std::to_string(storeInfo_.user));
+        users.push_back(storeInfo_.user);
     }
-    return delegate_->Sync(syncOption, GetDBProcessCB(async));
+    for (int32_t user : users) {
+        syncOption.users = { std::to_string(user) };
+        if (isFilterAccount) {
+            auto id = GetId(user);
+            if (id.empty()) {
+                ZLOGW("failed to get cache id, user:%{public}d", user);
+                continue;
+            }
+            std::string prefix = id + "#";
+            syncOption.query = Query::Select().PrefixKey(std::vector<uint8_t>(prefix.begin(), prefix.end()));
+            syncOption.queryMode = QueryMode::UPLOAD_ONLY;
+        } else {
+            syncOption.query = Query::Select();
+            syncOption.queryMode = QueryMode::UPLOAD_AND_DOWNLOAD;
+        }
+        auto status = delegate_->Sync(syncOption, GetDBProcessCB(async));
+        if (status != DBStatus::OK) {
+            return status;
+        }
+    }
+    return DBStatus::OK;
 }
 
 void KVDBGeneralStore::Report(const std::string &faultType, int32_t errCode, const std::string &appendix)
@@ -542,6 +603,12 @@ std::pair<int32_t, std::shared_ptr<Cursor>> KVDBGeneralStore::PreSharing(GenQuer
 
 int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName)
 {
+    return Clean(devices, "", mode, tableName);
+}
+
+int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, const std::string &user, int32_t mode,
+    const std::string &tableName)
+{
     if (mode < 0 || mode > CLEAN_MODE_BUTT) {
         return GeneralError::E_INVALID_ARGS;
     }
@@ -554,12 +621,9 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
     DBStatus status = OK;
     ClearKvMetaDataOption option;
     switch (mode) {
-        case CLOUD_INFO:
-            status = delegate_->RemoveDeviceData(
-                "", isPublic_ ? static_cast<ClearMode>(CLOUD_DATA) : static_cast<ClearMode>(CLOUD_INFO));
-            break;
+        case CLOUD_INFO: // fallthrough
         case CLOUD_DATA:
-            status = delegate_->RemoveDeviceData("", static_cast<ClearMode>(CLOUD_DATA));
+            status = CleanCloud(user, mode);
             break;
         case CLEAN_WATER:
             option.type = ClearKvMetaOpType::CLEAN_CLOUD_WATERMARK;
@@ -580,7 +644,24 @@ int32_t KVDBGeneralStore::Clean(const std::vector<std::string> &devices, int32_t
     return ConvertStatus(status);
 }
 
-int32_t KVDBGeneralStore::Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList)
+DBStatus KVDBGeneralStore::CleanCloud(const std::string &user, int32_t mode)
+{
+    if (mode == CLOUD_INFO) {
+        if (user.empty()) {
+            return delegate_->RemoveDeviceData(
+                "", isPublic_ ? ClearMode::FLAG_AND_DATA : ClearMode::FLAG_ONLY);
+        }
+        return delegate_->RemoveDeviceData(
+            "", user, isPublic_ ? ClearMode::FLAG_AND_DATA : ClearMode::FLAG_ONLY);
+    }
+    if (user.empty()) {
+        return delegate_->RemoveDeviceData("", ClearMode::FLAG_AND_DATA);
+    }
+    return delegate_->RemoveDeviceData("", user, ClearMode::FLAG_AND_DATA);
+}
+
+int32_t KVDBGeneralStore::Clean(const std::string &device, const std::string &user, int32_t mode,
+    const std::vector<std::string> &tableList)
 {
     return Clean({}, mode, "");
 }

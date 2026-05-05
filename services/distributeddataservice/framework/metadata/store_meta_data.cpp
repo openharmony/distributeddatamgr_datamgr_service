@@ -65,6 +65,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(assetConflictPolicy)], assetConflictPolicy);
     SetValue(node[GET_NAME(assetTempPath)], assetTempPath);
     SetValue(node[GET_NAME(assetDownloadOnDemand)], assetDownloadOnDemand);
+    SetValue(node[GET_NAME(filterMode)], filterMode);
     // compatible with the versions which lower than VERSION_TAG_0000
     SetValue(node[GET_NAME(kvStoreType)], storeType);
     SetValue(node[GET_NAME(deviceAccountID)], user);
@@ -113,6 +114,7 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(assetConflictPolicy), assetConflictPolicy);
     GetValue(node, GET_NAME(assetTempPath), assetTempPath);
     GetValue(node, GET_NAME(assetDownloadOnDemand), assetDownloadOnDemand);
+    GetValue(node, GET_NAME(filterMode), filterMode);
     // compatible with the older versions
     if (version < FIELD_CHANGED_TAG) {
         GetValue(node, GET_NAME(kvStoreType), storeType);

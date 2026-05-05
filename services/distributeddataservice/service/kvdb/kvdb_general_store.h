@@ -44,9 +44,9 @@ public:
 
     explicit KVDBGeneralStore(const StoreMetaData &meta);
     ~KVDBGeneralStore();
-    int32_t Bind(const Database &database,
-        const std::map<uint32_t, BindInfo> &bindInfos, const CloudConfig &config) override;
-    bool IsBound(uint32_t user) override;
+    int32_t Bind(const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos,
+        const CloudConfig &config) override;
+    bool IsBound(uint32_t user, const std::string &id) override;
     bool IsValid();
     int32_t Execute(const std::string &table, const std::string &sql) override;
     int32_t SetDistributedTables(const std::vector<std::string> &tables, int32_t type,
@@ -66,7 +66,8 @@ public:
     int32_t StopCloudSync() override;
     std::pair<int32_t, std::shared_ptr<Cursor>> PreSharing(GenQuery &query) override;
     int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) override;
-    int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) override;
+    int32_t Clean(const std::string &device, const std::string &user, int32_t mode,
+        const std::vector<std::string> &tableList) override;
     int32_t Watch(int32_t origin, Watcher &watcher) override;
     int32_t Unwatch(int32_t origin, Watcher &watcher) override;
     int32_t RegisterDetailProgressObserver(DetailAsync async) override;
@@ -119,6 +120,9 @@ private:
     void RegisterObservers();
     void SetDeviceMatrix(const StoreMetaData &meta);
     void PostDataChange();
+    int32_t Clean(const std::vector<std::string> &devices, const std::string &user, int32_t mode,
+        const std::string &tableName);
+    DBStatus CleanCloud(const std::string &user, int32_t mode);
     class ObserverProxy : public DistributedDB::KvStoreObserver {
     public:
         using DBOrigin = DistributedDB::Origin;
@@ -142,13 +146,15 @@ private:
         std::string storeId_;
         KVDBGeneralStore* store_;
     };
+    std::string GetId(uint32_t user);
+    static int32_t CheckBindInfos(const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos);
 
     static constexpr uint8_t META_COMPRESS_RATE = 10;
     const std::shared_ptr<ObserverProxy> observer_;
     KvManager manager_;
     KvDelegate *delegate_ = nullptr;
     std::shared_mutex bindMutex_;
-    std::map<uint32_t, BindInfo> bindInfos_{};
+    std::map<uint32_t, std::tuple<BindInfo, DistributedDB::DataBaseSchema, std::string>> bindInfos_;
     std::mutex mutex_;
     int32_t ref_ = 1;
     mutable std::shared_timed_mutex rwMutex_;
