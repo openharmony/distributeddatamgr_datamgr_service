@@ -1,0 +1,73 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos_var.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+module_output_path = "datamgr_service/datamgr_service/service/clone"
+
+###############################################################################
+# Clone Unit Tests Definition
+###############################################################################
+
+ohos_unittest("CloneManagerTest") {
+  module_out_path = module_output_path
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "clone_manager_test.cpp",
+    "${data_service_path}/service/clone/clone_manager.cpp",
+    "${data_service_path}/service/clone/clone_backup_info.cpp",
+    "${data_service_path}/service/clone/secret_key_backup_data.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "kv_store:kvdb_inner_lite",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/clone:distributeddata_clone",
+  ]
+}
+
+###############################################################################
+# Clone Test Collection Group
+###############################################################################
+
+group("unittests") {
+  testonly = true
+  deps = [
+    ":CloneManagerTest",
+  ]
+}

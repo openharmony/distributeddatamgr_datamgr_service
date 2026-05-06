@@ -1,0 +1,125 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos_var.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+module_output_path = "datamgr_service/datamgr_service/service/utd"
+
+###############################################################################
+# UTD Unit Tests Definition
+###############################################################################
+
+ohos_unittest("UtdServiceStubTest") {
+  module_out_path = module_output_path
+  sources = [ "utd_service_stub_test.cpp" ]
+
+  include_dirs = [
+    "${data_service_path}/service/utd",
+    "${data_service_path}/framework/include",
+  ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/utd:utd_server",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "samgr:samgr_proxy",
+    "udmf:utd_client",
+  ]
+}
+
+ohos_unittest("UtdServiceImplTest") {
+  module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  sources = [
+    "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/framework/feature/feature_system.cpp",
+    "utd_service_impl_test.cpp",
+  ]
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/adapter/include/communicator",
+    "${data_service_path}/app/src",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/utd",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtoken_setproc",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddata_mgr",
+    "kv_store:distributeddb",
+    "openssl:libcrypto_shared",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "udmf:utd_client",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/utd:utd_server",
+  ]
+
+  defines = [
+    "private=public",
+    "protected=public",
+  ]
+}
+
+###############################################################################
+# UTD Test Collection Group
+###############################################################################
+
+group("unittests") {
+  testonly = true
+  deps = [
+    ":UtdServiceStubTest",
+    ":UtdServiceImplTest",
+  ]
+}

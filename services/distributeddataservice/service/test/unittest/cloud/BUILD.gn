@@ -1,0 +1,277 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos_var.gni")
+import("//build/test.gni")
+import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
+
+module_output_path = "datamgr_service/datamgr_service/service/cloud"
+
+###############################################################################
+# Cloud Unit Tests Definition
+###############################################################################
+
+ohos_unittest("CloudDataTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/cloud/cloud_data_translate.cpp",
+    "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
+    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
+    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/cloud_types_util.cpp",
+    "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_config.cpp",
+    "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
+    "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "${data_service_path}/service/test/mock/general_store_mock.cpp",
+    "cloud_data_test.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/rdb:distributeddata_rdb",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
+  ]
+
+  cflags = [
+    "-fno-access-control",  # Ignore Private Member Access Control
+  ]
+
+  cflags_cc = cflags
+}
+
+ohos_unittest("CloudDataMockTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/cloud/cloud_data_translate.cpp",
+    "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
+    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
+    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/cloud_types_util.cpp",
+    "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_config.cpp",
+    "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
+    "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "cloud_data_mock_test.cpp",
+    "../../mock/access_token_mock.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/rdb:distributeddata_rdb",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+}
+
+ohos_unittest("CloudServiceImplTest") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/cloud/cloud_data_translate.cpp",
+    "${data_service_path}/service/cloud/cloud_notifier_proxy.cpp",
+    "${data_service_path}/service/cloud/cloud_service_impl.cpp",
+    "${data_service_path}/service/cloud/cloud_service_stub.cpp",
+    "${data_service_path}/service/cloud/cloud_types_util.cpp",
+    "${data_service_path}/service/cloud/cloud_value_util.cpp",
+    "${data_service_path}/service/cloud/sync_config.cpp",
+    "${data_service_path}/service/cloud/sync_manager.cpp",
+    "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
+    "${data_service_path}/service/test/mock/checker_mock.cpp",
+    "cloud_notifier_proxy_test.cpp",
+    "cloud_service_impl_test.cpp",
+    "cloud_service_stub_test.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+
+  deps = [
+    "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/communicator:distributeddata_communicator",
+    "${data_service_path}/adapter/dfx:distributeddata_dfx",
+    "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/adapter/schema_helper:distributeddata_schema_helper",
+    "${data_service_path}/framework:distributeddatasvcfwk_src",
+    "${data_service_path}/service/bootstrap:distributeddata_bootstrap",
+    "${data_service_path}/service/common:distributeddata_common",
+    "${data_service_path}/service/rdb:distributeddata_rdb",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
+  ]
+
+  cflags = [
+    "-fno-access-control",  # Ignore Private Member Access Control
+  ]
+
+  cflags_cc = cflags
+}
+
+ohos_unittest("CloudTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/cloud/sync_config.cpp",
+    "cloud_test.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:cloud_data_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+    "${data_service_path}/service/test/mock:distributeddata_mock_static",
+  ]
+}
+
+ohos_unittest("ValueProxyServiceTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/service/common/value_proxy.cpp",
+    "../common/value_proxy_test.cpp",
+  ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+    "-Wno-multichar",
+    "-Wno-c99-designator",
+  ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+    "relational_store:native_rdb",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+}
+
+###############################################################################
+# Cloud Test Collection Group
+###############################################################################
+
+group("unittests") {
+  testonly = true
+  deps = [
+    ":CloudDataMockTest",
+    ":CloudDataTest",
+    ":CloudServiceImplTest",
+    ":CloudTest",
+    ":ValueProxyServiceTest",
+  ]
+}
