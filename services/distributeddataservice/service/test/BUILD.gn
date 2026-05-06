@@ -2180,6 +2180,7 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
+    "openssl:libcrypto_shared",
     "relational_store:native_rdb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
