@@ -26,7 +26,7 @@
 #include "executor_pool.h"
 namespace OHOS::DataShare {
 struct PublishedDataKey {
-    PublishedDataKey(const std::string &key, const std::string &bundleName,
+    PublishedDataKey(const std::string &key, const std::string &bundle,
         int64_t subscriberId);
     bool operator<(const PublishedDataKey &rhs) const;
     bool operator>(const PublishedDataKey &rhs) const;
