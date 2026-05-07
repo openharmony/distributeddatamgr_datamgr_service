@@ -3913,7 +3913,7 @@ HWTEST_F(CloudDataTest, IsValid_ManualSync_EnableCloudDisabled, TestSize.Level0)
 {
     CloudData::SyncManager sync;
     CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
-    info.SetMode(GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
+    info.SetMode(CloudData::SyncManager::GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
         CloudData::SyncManager::GenStore::MANUAL_SYNC_MODE));
     CloudInfo cloud;
     cloud.user = cloudInfo_.user;
@@ -3958,7 +3958,7 @@ HWTEST_F(CloudDataTest, IsValid_ManualSync_NetworkUnavailable, TestSize.Level0)
 {
     CloudData::SyncManager sync;
     CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
-    info.SetMode(GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
+    info.SetMode(CloudData::SyncManager::GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
         CloudData::SyncManager::GenStore::MANUAL_SYNC_MODE));
     CloudInfo cloud;
     cloud.user = cloudInfo_.user;
@@ -4010,7 +4010,7 @@ HWTEST_F(CloudDataTest, IsValid_ManualSync_UserUnverified, TestSize.Level0)
     CloudData::SyncManager sync;
     int32_t unverifiedUser = 9999;
     CloudData::SyncManager::SyncInfo info(unverifiedUser, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
-    info.SetMode(GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
+    info.SetMode(CloudData::SyncManager::GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
         CloudData::SyncManager::GenStore::MANUAL_SYNC_MODE));
     CloudInfo cloud;
     cloud.user = unverifiedUser;
@@ -4054,7 +4054,7 @@ HWTEST_F(CloudDataTest, PrepareForCloudSync_ManualSync_EmptyCloudInfo, TestSize.
 {
     CloudData::SyncManager sync;
     CloudData::SyncManager::SyncInfo info(100, "non_existent_bundle", TEST_CLOUD_STORE);
-    info.SetMode(GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
+    info.SetMode(CloudData::SyncManager::GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
         CloudData::SyncManager::GenStore::MANUAL_SYNC_MODE));
     CloudInfo cloud;
     cloud.user = 100;
