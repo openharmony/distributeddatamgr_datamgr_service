@@ -358,13 +358,13 @@ int RdbResultSetImpl::GetRow(NativeRdb::RowEntity& rowEntity)
     return NativeRdb::E_NOT_SUPPORT;
 }
 
-int RdbResultSetImpl::GetSize(int col, size_t& size)
+int RdbResultSetImpl::GetSize(int columnIndex, size_t& size)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     if (resultSet_ == nullptr) {
         return NativeRdb::E_ALREADY_CLOSED;
     }
-    auto [errCode, value] = GetValue(col);
+    auto [errCode, value] = GetValue(columnIndex);
     if (errCode != NativeRdb::E_OK) {
         return errCode;
     }
