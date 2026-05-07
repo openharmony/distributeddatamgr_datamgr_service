@@ -1351,7 +1351,7 @@ std::vector<std::string> SyncManager::NetworkRecoveryManager::GetAppList(const i
     appList.reserve(totalCount);
     std::unordered_set<std::string> uniqueSet;
     uniqueSet.reserve(totalCount);
-    auto addApp = [&](std::string bundleName) {
+    auto addApp = [&appList, &uniqueSet](std::string bundleName) {
         if (uniqueSet.insert(bundleName).second) {
             appList.push_back(std::move(bundleName));
         }
