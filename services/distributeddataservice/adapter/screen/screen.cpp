@@ -215,7 +215,6 @@ ExecutorPool::Task Screen::GetTask(uint32_t retry)
 
 Screen::~Screen()
 {
-    UnsubscribeEvent();
     executors_ = nullptr;
 }
 } // namespace OHOS::DistributedData
