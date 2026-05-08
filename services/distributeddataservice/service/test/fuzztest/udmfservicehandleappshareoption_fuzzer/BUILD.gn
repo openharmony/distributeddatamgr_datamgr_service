@@ -61,6 +61,7 @@ ohos_fuzztest("UdmfServiceHandleAppShareOptionFuzzTest") {
 
   external_deps = [
     "ability_base:zuri",
+    "ability_base:want",
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
@@ -70,6 +71,7 @@ ohos_fuzztest("UdmfServiceHandleAppShareOptionFuzzTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
+    "image_framework:image",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
