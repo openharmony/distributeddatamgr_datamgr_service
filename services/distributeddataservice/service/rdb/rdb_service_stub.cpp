@@ -255,6 +255,11 @@ int32_t RdbServiceStub::OnRemoteStopCloudSync(MessageParcel &data, MessageParcel
     return RDB_OK;
 }
 
+int32_t RdbServiceStub::OnRemoteEnableSearchBinlog(MessageParcel &data, MessageParcel &reply)
+{
+    return RDB_OK;
+}
+
 int32_t RdbServiceStub::OnRemoteDoSubscribe(MessageParcel &data, MessageParcel &reply)
 {
     RdbSyncerParam param;
