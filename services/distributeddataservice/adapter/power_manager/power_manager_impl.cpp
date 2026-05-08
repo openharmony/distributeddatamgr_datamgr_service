@@ -107,9 +107,9 @@ std::list<std::weak_ptr<PowerManager::Observer>> PowerManagerImpl::Delegate::Get
     return observers_;
 }
 
-void PowerManagerImpl::Delegate::SetCharging(bool charging)
+void PowerManagerImpl::Delegate::SetCharging(bool isCharging)
 {
-    isCharging_ = charging;
+    isCharging_ = isCharging;
 }
 
 bool PowerManagerImpl::Delegate::IsCharging()
