@@ -43,6 +43,7 @@ ohos_source_set("distributeddata_schema_helper") {
     "kv_store:datamgr_common",
     "resource_management:global_resmgr",
     "samgr:samgr_proxy",
+    "icu:shared_icuuc",
   ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

@@ -96,7 +96,8 @@
                 "openssl",
                 "json",
                 "dmsfwk",
-                "data_object"
+                "data_object",
+                "icu"
             ],
             "third_party": [
                 "libuv",
