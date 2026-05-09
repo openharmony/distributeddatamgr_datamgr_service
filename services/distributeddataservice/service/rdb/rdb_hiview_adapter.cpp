@@ -107,7 +107,7 @@ void RdbHiViewAdapter::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
     StartTimerThread();
 }
 
-void RdbHiViewAdapter::ReportRdbFault(const RdbFaultEvent &rdbFaultEvent)
+void RdbHiViewAdapter::ReportRdbFault(const RdbFaultEvent &stat)
 {
     auto now = std::chrono::system_clock::now();
     std::time_t time = std::chrono::system_clock::to_time_t(now);
@@ -120,9 +120,9 @@ void RdbHiViewAdapter::ReportRdbFault(const RdbFaultEvent &rdbFaultEvent)
     oss << buffer << '.' << std::setfill('0') << std::setw(MILLISECONDS_LEN)
         << (nsec.count() / NANO_TO_MILLI) % MILLI_PRE_SEC;
     std::string occurTime = oss.str();
-    std::string bundleName = rdbFaultEvent.bundleName;
-    std::string faultType = rdbFaultEvent.faultType;
-    std::string appendInfo = rdbFaultEvent.custLog;
+    std::string bundleName = stat.bundleName;
+    std::string faultType = stat.faultType;
+    std::string appendInfo = stat.custLog;
     if (bundleName.empty()) {
         return;
     }
@@ -132,7 +132,7 @@ void RdbHiViewAdapter::ReportRdbFault(const RdbFaultEvent &rdbFaultEvent)
         {.name = "BUNDLE_NAME", .t = HISYSEVENT_STRING, .v = {.s = bundleName.data()}, .arraySize = 0},
         {.name = "ERROR_CODE",
             .t = HISYSEVENT_INT32,
-            .v = {.ui32 = static_cast<uint32_t>(rdbFaultEvent.errorCode)},
+            .v = {.ui32 = static_cast<uint32_t>(stat.errorCode)},
             .arraySize = 0},
         {.name = "APPENDIX", .t = HISYSEVENT_STRING, .v = {.s = appendInfo.data()}, .arraySize = 0},
     };
