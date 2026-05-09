@@ -598,7 +598,7 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
     if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
             Anonymous::Change(param.storeName_).c_str());
-        return RDB_ERROR;
+        return RDB_INVALID_ARGS;
     }
 
     auto [exists, meta] = LoadStoreMetaData(param);

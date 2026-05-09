@@ -1930,7 +1930,7 @@ HWTEST_F(RdbServiceImplTest, Sync001, TestSize.Level0)
     PredicatesMemo predicates;
 
     int32_t result = service.Sync(param, option, predicates, nullptr);
-    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
 }
 
 /**
@@ -1951,7 +1951,7 @@ HWTEST_F(RdbServiceImplTest, Sync002, TestSize.Level0)
     PredicatesMemo predicates;
 
     int32_t result = service.Sync(param, option, predicates, nullptr);
-    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
 }
 
 /**
@@ -3790,8 +3790,27 @@ HWTEST_F(RdbServiceImplTest, Sync005, TestSize.Level0)
     RdbServiceImpl::SaveSyncMeta(meta);
 
     int32_t result = service.Sync(param, option, predicates, nullptr);
-    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(meta.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: Sync006
+ * @tc.desc: Test Sync when enableErrorDetail is true.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, Sync006, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    RdbService::Option option{};
+    option.enableErrorDetail = true;
+    PredicatesMemo predicates;
+
+    int32_t result = service.Sync(param, option, predicates, nullptr);
+    EXPECT_EQ(result, RDB_INVALID_ARGS);
 }
 
 /**
