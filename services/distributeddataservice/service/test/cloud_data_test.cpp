@@ -3884,5 +3884,185 @@ HWTEST_F(CloudDataTest, StopCloudSyncTask008, TestSize.Level0)
     auto ret = cloudServiceImpl_->StopCloudSyncTask(bundleInfos);
     EXPECT_EQ(ret, E_OK);
 }
+
+/**
+* @tc.name: IsValid_AutoSync_EnableCloudDisabled
+* @tc.desc: Test IsValid with auto sync mode when cloud is disabled, covers ZLOGD branch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_AutoSync_EnableCloudDisabled, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.enableCloud = false;
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: IsValid_ManualSync_EnableCloudDisabled
+* @tc.desc: Test IsValid with manual sync mode when cloud is disabled, covers ZLOGE branch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_ManualSync_EnableCloudDisabled, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    info.SetMode(CloudData::SyncManager::GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
+        CloudData::SyncManager::GenStore::MANUAL_SYNC_MODE));
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.enableCloud = false;
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: IsValid_AutoSync_NetworkUnavailable
+* @tc.desc: Test IsValid with auto sync mode when network is unavailable, covers ZLOGD branch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_AutoSync_NetworkUnavailable, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.id = TEST_CLOUD_ID;
+    cloud.enableCloud = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    cloud.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    delegate_.isNetworkAvailable_ = false;
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_NETWORK_ERROR);
+    delegate_.isNetworkAvailable_ = true;
+}
+
+/**
+* @tc.name: IsValid_ManualSync_NetworkUnavailable
+* @tc.desc: Test IsValid with manual sync mode when network is unavailable, covers ZLOGE branch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_ManualSync_NetworkUnavailable, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(cloudInfo_.user, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    info.SetMode(CloudData::SyncManager::GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
+        CloudData::SyncManager::GenStore::MANUAL_SYNC_MODE));
+    CloudInfo cloud;
+    cloud.user = cloudInfo_.user;
+    cloud.id = TEST_CLOUD_ID;
+    cloud.enableCloud = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    cloud.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    delegate_.isNetworkAvailable_ = false;
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_NETWORK_ERROR);
+    delegate_.isNetworkAvailable_ = true;
+}
+
+/**
+* @tc.name: IsValid_AutoSync_UserUnverified
+* @tc.desc: Test IsValid with auto sync mode when user is unverified, covers ZLOGD branch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_AutoSync_UserUnverified, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    int32_t unverifiedUser = 9999;
+    CloudData::SyncManager::SyncInfo info(unverifiedUser, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    CloudInfo cloud;
+    cloud.user = unverifiedUser;
+    cloud.id = TEST_CLOUD_ID;
+    cloud.enableCloud = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    cloud.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_ERROR);
+}
+
+/**
+* @tc.name: IsValid_ManualSync_UserUnverified
+* @tc.desc: Test IsValid with manual sync mode when user is unverified, covers ZLOGE branch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, IsValid_ManualSync_UserUnverified, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    int32_t unverifiedUser = 9999;
+    CloudData::SyncManager::SyncInfo info(unverifiedUser, TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE);
+    info.SetMode(CloudData::SyncManager::GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
+        CloudData::SyncManager::GenStore::MANUAL_SYNC_MODE));
+    CloudInfo cloud;
+    cloud.user = unverifiedUser;
+    cloud.id = TEST_CLOUD_ID;
+    cloud.enableCloud = true;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    cloud.apps[TEST_CLOUD_BUNDLE] = std::move(appInfo);
+    MetaDataManager::GetInstance().SaveMeta(cloud.GetKey(), cloud, true);
+    auto code = sync.IsValid(info, cloud);
+    EXPECT_EQ(code, E_ERROR);
+}
+
+/**
+* @tc.name: PrepareForCloudSync_AutoSync_EmptyCloudInfo
+* @tc.desc: Test PrepareForCloudSync with auto sync mode when cloud info is empty, covers ZLOGD branch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, PrepareForCloudSync_AutoSync_EmptyCloudInfo, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(100, "non_existent_bundle", TEST_CLOUD_STORE);
+    CloudInfo cloud;
+    cloud.user = 100;
+    CloudData::SyncManager::CloudSyncInfos cloudSyncInfos;
+    CloudData::SyncManager::TraceIds traceIds;
+    auto ret = sync.PrepareForCloudSync(info, cloud, cloudSyncInfos, traceIds);
+    EXPECT_FALSE(ret);
+    EXPECT_TRUE(cloudSyncInfos.empty());
+}
+
+/**
+* @tc.name: PrepareForCloudSync_ManualSync_EmptyCloudInfo
+* @tc.desc: Test PrepareForCloudSync with manual sync mode when cloud info is empty, covers ZLOGE branch
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, PrepareForCloudSync_ManualSync_EmptyCloudInfo, TestSize.Level0)
+{
+    CloudData::SyncManager sync;
+    CloudData::SyncManager::SyncInfo info(100, "non_existent_bundle", TEST_CLOUD_STORE);
+    info.SetMode(CloudData::SyncManager::GenStore::MixMode(CloudData::SyncManager::GenStore::CLOUD_TIME_FIRST,
+        CloudData::SyncManager::GenStore::MANUAL_SYNC_MODE));
+    CloudInfo cloud;
+    cloud.user = 100;
+    CloudData::SyncManager::CloudSyncInfos cloudSyncInfos;
+    CloudData::SyncManager::TraceIds traceIds;
+    auto ret = sync.PrepareForCloudSync(info, cloud, cloudSyncInfos, traceIds);
+    EXPECT_FALSE(ret);
+    EXPECT_TRUE(cloudSyncInfos.empty());
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
