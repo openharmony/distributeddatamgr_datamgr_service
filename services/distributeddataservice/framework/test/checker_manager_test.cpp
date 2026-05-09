@@ -184,3 +184,49 @@ HWTEST_F(CheckerManagerTest, IsStatic, TestSize.Level0)
     storeInfo.bundleName = "ohos.test.demo";
     ASSERT_FALSE(CheckerManager::GetInstance().IsStatic(storeInfo));
 }
+
+/**
+* @tc.name: ClearCache
+* @tc.desc: test ClearCache function of CheckerManager.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CheckerManagerTest, ClearCache, TestSize.Level0)
+{
+    CheckerManager::StoreInfo storeInfo;
+    storeInfo.uid = 2000000;
+    storeInfo.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    storeInfo.bundleName = "ohos.test.demo";
+
+    std::string appId = CheckerManager::GetInstance().GetAppId(storeInfo);
+
+    CheckerManager::GetInstance().ClearCache();
+    std::string appIdAfterClear = CheckerManager::GetInstance().GetAppId(storeInfo);
+
+    ASSERT_EQ(appId, appIdAfterClear);
+}
+
+/**
+* @tc.name: BundleCheckerClearCache
+* @tc.desc: test ClearCache function of BundleChecker.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CheckerManagerTest, BundleCheckerClearCache, TestSize.Level0)
+{
+    auto *checker = CheckerManager::GetInstance().GetChecker("BundleChecker");
+    ASSERT_NE(checker, nullptr);
+    CheckerManager::StoreInfo storeInfo;
+    storeInfo.uid = 2000000;
+    storeInfo.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    storeInfo.bundleName = "ohos.test.demo";
+
+    std::string appId = checker->GetAppId(storeInfo);
+
+    checker->ClearCache();
+    std::string appIdAfterClear = checker->GetAppId(storeInfo);
+
+    ASSERT_EQ(appId, appIdAfterClear);
+}
