@@ -51,6 +51,8 @@ private:
 
     int32_t OnRemoteStopCloudSync(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnRemoteEnableSearchBinlog(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnRemoteDoSubscribe(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnRemoteDoUnSubscribe(MessageParcel& data, MessageParcel& reply);
@@ -139,6 +141,8 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
             &RdbServiceStub::OnRemoteObtainUuid,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_STOP_CLOUD_SYNC)] =
             &RdbServiceStub::OnRemoteStopCloudSync,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CND_ENABLE_SEARCH_BINLOG)] =
+            &RdbServiceStub::OnRemoteEnableSearchBinlog,
     };
 RDB_UTILS_POP_WARNING
 };
