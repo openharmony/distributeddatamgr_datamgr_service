@@ -4100,5 +4100,93 @@ HWTEST_F(RdbServiceImplTest, GetSyncTask_002, TestSize.Level0)
     // Restore dbStatus_ to avoid affecting other tests
     dbStatus_ = E_OK;
 }
+
+/**
+ * @tc.name: GetStoreMetaDataWithInvalidAreaLessThanEL0
+ * @tc.desc: Test GetStoreMetaData with invalid area value less than EL0
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, GetStoreMetaDataWithInvalidAreaLessThanEL0, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.storeName_ = "invalid_area_test";
+    param.bundleName_ = TEST_BUNDLE;
+    param.user_ = "100";
+    param.hapName_ = "test_hap";
+    param.area_ = -1; // Invalid area: less than EL0
+
+    auto metaData = service.GetStoreMetaData(param);
+    
+    EXPECT_EQ(metaData.area, 0xff);
+}
+
+/**
+ * @tc.name: GetStoreMetaDataWithInvalidAreaGreaterThanEL5
+ * @tc.desc: Test GetStoreMetaData with invalid area value greater than EL5
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, GetStoreMetaDataWithInvalidAreaGreaterThanEL5, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.storeName_ = "invalid_area_test";
+    param.bundleName_ = TEST_BUNDLE;
+    param.user_ = "100";
+    param.hapName_ = "test_hap";
+    param.area_ = 10; // Invalid area: greater than EL5
+
+    auto metaData = service.GetStoreMetaData(param);
+    
+    EXPECT_EQ(metaData.area, 0xff);
+}
+
+/**
+ * @tc.name: GetStoreMetaDataWithValidAreaEL0
+ * @tc.desc: Test GetStoreMetaData with valid area value EL0
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, GetStoreMetaDataWithValidAreaEL0, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.storeName_ = "valid_area_el0_test";
+    param.bundleName_ = TEST_BUNDLE;
+    param.user_ = "100";
+    param.hapName_ = "test_hap";
+    param.area_ = DistributedData::GeneralStore::EL0; // Valid area: EL0
+
+    auto metaData = service.GetStoreMetaData(param);
+    
+    EXPECT_EQ(metaData.area, DistributedData::GeneralStore::EL0);
+}
+
+/**
+ * @tc.name: GetStoreMetaDataWithValidAreaEL5
+ * @tc.desc: Test GetStoreMetaData with valid area value EL5
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(RdbServiceImplTest, GetStoreMetaDataWithValidAreaEL5, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.storeName_ = "valid_area_el5_test";
+    param.bundleName_ = TEST_BUNDLE;
+    param.user_ = "100";
+    param.hapName_ = "test_hap";
+    param.area_ = DistributedData::GeneralStore::EL5; // Valid area: EL5
+
+    auto metaData = service.GetStoreMetaData(param);
+    
+    EXPECT_EQ(metaData.area, DistributedData::GeneralStore::EL5);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

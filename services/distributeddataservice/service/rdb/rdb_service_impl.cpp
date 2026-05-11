@@ -1440,7 +1440,13 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     }
     metaData.storeType = param.type_;
     metaData.securityLevel = param.level_;
-    metaData.area = param.area_;
+    // Normalize invalid area to 0xff to prevent invalid area value
+    if (param.area_ < GeneralStore::EL0 || param.area_ > GeneralStore::EL5) {
+        ZLOGW("area is invalid %{public}d, normalize to 0xff", param.area_);
+        metaData.area = 0xff;
+    } else {
+        metaData.area = param.area_;
+    }
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = param.hapName_;
