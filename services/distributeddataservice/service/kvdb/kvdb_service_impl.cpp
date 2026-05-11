@@ -972,7 +972,13 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.isEncrypt = options.encrypt;
     metaData.storeType = options.kvStoreType;
     metaData.securityLevel = options.securityLevel;
-    metaData.area = options.area;
+    // Normalize invalid area to 0xff to prevent invalid area value
+    if (options.area < GeneralStore::EL0 || options.area > GeneralStore::EL5) {
+        ZLOGW("area is invalid %{public}d, normalize to 0xff", options.area);
+        metaData.area = 0xff;
+    } else {
+        metaData.area = options.area;
+    }
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = options.hapName;
