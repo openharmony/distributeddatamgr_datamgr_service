@@ -154,10 +154,10 @@ public:
 
     virtual void SetExecutor(std::shared_ptr<Executor> executor) = 0;
 
-    virtual int32_t Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+    virtual int32_t Bind(const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos,
         const CloudConfig &config) = 0;
 
-    virtual bool IsBound(uint32_t user) = 0;
+    virtual bool IsBound(uint32_t user, const std::string &id) = 0;
 
     virtual int32_t Execute(const std::string &table, const std::string &sql) = 0;
 
@@ -207,7 +207,8 @@ public:
 
     virtual int32_t Clean(const std::vector<std::string> &devices, int32_t mode, const std::string &tableName) = 0;
 
-    virtual int32_t Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList) = 0;
+    virtual int32_t Clean(const std::string &device, const std::string &user, int32_t mode,
+        const std::vector<std::string> &tableList) = 0;
 
     virtual int32_t Watch(int32_t origin, Watcher &watcher) = 0;
 

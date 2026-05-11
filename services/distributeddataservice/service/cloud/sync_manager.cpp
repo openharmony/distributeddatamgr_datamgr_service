@@ -728,41 +728,91 @@ std::pair<int32_t, AutoCache::Store> SyncManager::GetStore(const StoreMetaData &
     } else if (store == nullptr) {
         return { E_ERROR, nullptr };
     }
-    CloudInfo info;
-    info.user = user;
-    std::vector<int32_t> users{};
-    if (info.user == SYSTEM_USER_ID) {
-        AccountDelegate::GetInstance()->QueryForegroundUsers(users);
-        info.user = users.empty() ? SYSTEM_USER_ID : users[0];
-    } else {
-        users.push_back(user);
-    }
-    if (info.user == SYSTEM_USER_ID) {
+    auto infos = GetCloudInfos(user);
+    if (infos.empty()) {
         ZLOGE("invalid cloud users, bundleName:%{public}s", meta.bundleName.c_str());
         return { E_ERROR, nullptr };
     }
-    if (!store->IsBound(info.user)) {
-        SchemaMeta schemaMeta;
-        std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
-        if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
-            ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
-                meta.GetStoreAlias().c_str());
-            return { E_ERROR, nullptr };
+    UserBindInfo bindInfos;
+    for (auto &info : infos) {
+        status = FillUserBindInfos(store, meta, mustBind, info, bindInfos);
+        if (status != E_OK) {
+            return { status, nullptr };
         }
-        auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
-        std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, dbMeta);
-        if (mustBind && bindInfos.size() != users.size()) {
-            return { E_ERROR, nullptr };
-        }
-        GeneralStore::CloudConfig config;
-        if (MetaDataManager::GetInstance().LoadMeta(info.GetKey(), info, true)) {
-            config.maxNumber = info.maxNumber;
-            config.maxSize = info.maxSize;
-            config.isSupportEncrypt = schemaMeta.e2eeEnable;
-        }
-        store->Bind(dbMeta, bindInfos, config);
     }
-    return { E_OK, store };
+    BindInfos(store, bindInfos, meta.storeId);
+    return { status, store };
+}
+
+std::vector<CloudInfo> SyncManager::GetCloudInfos(int32_t user)
+{
+    std::vector<CloudInfo> infos;
+    if (user == SYSTEM_USER_ID) {
+        std::vector<int32_t> users;
+        AccountDelegate::GetInstance()->QueryForegroundUsers(users);
+        if (users.empty()) {
+            return infos;
+        }
+        for (int32_t infoUser : users) {
+            CloudInfo info;
+            info.user = infoUser;
+            infos.emplace_back(info);
+        }
+    } else {
+        CloudInfo info;
+        info.user = user;
+        infos.emplace_back(info);
+    }
+    return infos;
+}
+
+int32_t SyncManager::FillUserBindInfos(const AutoCache::Store &store, const StoreMetaData &meta,
+    bool mustBind, CloudInfo &info, UserBindInfo &infos)
+{
+    GeneralStore::CloudConfig config;
+    if (MetaDataManager::GetInstance().LoadMeta(info.GetKey(), info, true)) {
+        config.maxNumber = info.maxNumber;
+        config.maxSize = info.maxSize;
+    }
+    if (store->IsBound(info.user, info.id)) {
+        return E_OK;
+    }
+    SchemaMeta schemaMeta;
+    std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
+    if (!MetaDataManager::GetInstance().LoadMeta(schemaKey, schemaMeta, true)) {
+        ZLOGE("failed, no schema bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
+            meta.GetStoreAlias().c_str());
+        return E_ERROR;
+    }
+    config.isSupportEncrypt = schemaMeta.e2eeEnable;
+    auto dbMeta = schemaMeta.GetDataBase(meta.storeId);
+    std::vector<int32_t> users = { info.user };
+    std::map<uint32_t, GeneralStore::BindInfo> bindInfos = GetBindInfos(meta, users, dbMeta);
+    if (mustBind && bindInfos.size() != users.size()) {
+        return E_ERROR;
+    }
+    for (const auto &[user, bindInfo] : bindInfos) {
+        infos[user] = std::make_tuple(schemaMeta, bindInfo, config, info.id);
+    }
+    return E_OK;
+}
+
+void SyncManager::BindInfos(const AutoCache::Store &store, const UserBindInfo &userBindInfo,
+    const std::string &storeId)
+{
+    std::map<uint32_t, std::tuple<Database, GeneralStore::BindInfo, std::string>> bindInfos;
+    GeneralStore::CloudConfig config;
+    for (const auto &[user, item] : userBindInfo) {
+        auto [schemaMeta, bindInfo, userConfig, id] = item;
+        auto dbMeta = schemaMeta.GetDataBase(storeId);
+        bindInfos[user] = std::make_tuple(dbMeta, bindInfo, id);
+        config.maxNumber = config.maxNumber == 0 ? userConfig.maxNumber:
+            std::min(config.maxNumber, userConfig.maxNumber);
+        config.maxSize = config.maxSize == 0 ? userConfig.maxSize :
+            std::min(config.maxSize, userConfig.maxSize);
+        config.isSupportEncrypt = config.isSupportEncrypt && schemaMeta.e2eeEnable;
+    }
+    store->Bind(bindInfos, config);
 }
 
 void SyncManager::Report(const ReportParam &reportParam)

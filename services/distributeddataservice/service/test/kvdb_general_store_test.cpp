@@ -443,37 +443,37 @@ HWTEST_F(KVDBGeneralStoreTest, BindTest, TestSize.Level0)
     auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
     ASSERT_NE(store, nullptr);
     DistributedData::Database database;
-    std::map<uint32_t, GeneralStore::BindInfo> bindInfos;
+    std::map<uint32_t, std::tuple<Database, GeneralStore::BindInfo, std::string>> bindInfos;
     GeneralStore::CloudConfig config;
     EXPECT_EQ(bindInfos.empty(), true);
-    auto ret = store->Bind(database, bindInfos, config);
+    auto ret = store->Bind(bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_OK);
 
     std::shared_ptr<CloudDB> db;
     std::shared_ptr<AssetLoader> loader;
     GeneralStore::BindInfo bindInfo1(db, loader);
     uint32_t key = 1;
-    bindInfos[key] = bindInfo1;
-    ret = store->Bind(database, bindInfos, config);
+    bindInfos[key] = std::make_tuple(database, bindInfo1, "");
+    ret = store->Bind(bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_INVALID_ARGS);
     std::shared_ptr<CloudDB> dbs = std::make_shared<CloudDB>();
     std::shared_ptr<AssetLoader> loaders = std::make_shared<AssetLoader>();
     GeneralStore::BindInfo bindInfo2(dbs, loaders);
-    bindInfos[key] = bindInfo2;
-    EXPECT_EQ(store->IsBound(key), false);
-    ret = store->Bind(database, bindInfos, config);
+    bindInfos[key] = std::make_tuple(database, bindInfo2, "");
+    EXPECT_EQ(store->IsBound(key, ""), false);
+    ret = store->Bind(bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_ALREADY_CLOSED);
 
     store->bindInfos_.clear();
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     EXPECT_NE(store->delegate_, nullptr);
-    EXPECT_EQ(store->IsBound(key), false);
-    ret = store->Bind(database, bindInfos, config);
+    EXPECT_EQ(store->IsBound(key, ""), false);
+    ret = store->Bind(bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_OK);
 
-    EXPECT_EQ(store->IsBound(key), true);
-    ret = store->Bind(database, bindInfos, config);
+    EXPECT_EQ(store->IsBound(key, ""), true);
+    ret = store->Bind(bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
@@ -493,7 +493,7 @@ HWTEST_F(KVDBGeneralStoreTest, BindWithDifferentUsersTest, TestSize.Level0)
     EXPECT_NE(store->delegate_, nullptr);
     ASSERT_NE(store, nullptr);
     DistributedData::Database database;
-    std::map<uint32_t, GeneralStore::BindInfo> bindInfos;
+    std::map<uint32_t, std::tuple<Database, GeneralStore::BindInfo, std::string>> bindInfos;
     GeneralStore::CloudConfig config;
 
     std::shared_ptr<CloudDB> dbs = std::make_shared<CloudDB>();
@@ -501,21 +501,21 @@ HWTEST_F(KVDBGeneralStoreTest, BindWithDifferentUsersTest, TestSize.Level0)
     GeneralStore::BindInfo bindInfo(dbs, loaders);
     uint32_t key0 = 100;
     uint32_t key1 = 101;
-    bindInfos[key0] = bindInfo;
-    bindInfos[key1] = bindInfo;
-    EXPECT_EQ(store->IsBound(key0), false);
-    EXPECT_EQ(store->IsBound(key1), false);
-    auto ret = store->Bind(database, bindInfos, config);
+    bindInfos[key0] = std::make_tuple(database, bindInfo, "");
+    bindInfos[key1] = std::make_tuple(database, bindInfo, "");
+    EXPECT_EQ(store->IsBound(key0, ""), false);
+    EXPECT_EQ(store->IsBound(key1, ""), false);
+    auto ret = store->Bind(bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_OK);
-    EXPECT_EQ(store->IsBound(key0), true);
-    EXPECT_EQ(store->IsBound(key1), true);
+    EXPECT_EQ(store->IsBound(key0, ""), true);
+    EXPECT_EQ(store->IsBound(key1, ""), true);
 
     uint32_t key2 = 102;
-    bindInfos[key2] = bindInfo;
-    EXPECT_EQ(store->IsBound(key2), false);
-    ret = store->Bind(database, bindInfos, config);
+    bindInfos[key2] = std::make_tuple(database, bindInfo, "");
+    EXPECT_EQ(store->IsBound(key2, ""), false);
+    ret = store->Bind(bindInfos, config);
     EXPECT_EQ(ret, GeneralError::E_OK);
-    EXPECT_EQ(store->IsBound(key2), true);
+    EXPECT_EQ(store->IsBound(key2, ""), true);
 }
 
 /**
@@ -632,6 +632,50 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync003, TestSize.Level0)
             SetArgReferee<0>(users),
             Return(true)));
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
+    EXPECT_EQ(ret, DBStatus::OK);
+    store->delegate_ = nullptr;
+    delete store;
+}
+
+/**
+* @tc.name: CloudSync004
+* @tc.desc: Test cloud sync with filter user.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(KVDBGeneralStoreTest, CloudSync004, TestSize.Level0)
+{
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
+    KvStoreNbDelegateMock mockDelegate;
+    store->delegate_ = &mockDelegate;
+    std::vector<std::string> devices = { "device1", "device2" };
+    auto asyncs = [](const GenDetails &result) {};
+    store->storeInfo_.user = 0;
+    auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
+    metaData_.filterMode = DistributedKv::FilterMode::ACCOUNT;
+    MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
+    std::string prepareTraceId;
+    std::vector<int> users = {0, 1};
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
+        .Times(1)
+        .WillOnce(DoAll(
+            SetArgReferee<0>(users),
+            Return(true)));
+    DistributedData::Database database;
+    std::map<uint32_t, std::tuple<Database, GeneralStore::BindInfo, std::string>> bindInfos;
+    GeneralStore::CloudConfig config;
+    std::shared_ptr<CloudDB> dbs = std::make_shared<CloudDB>();
+    std::shared_ptr<AssetLoader> loaders = std::make_shared<AssetLoader>();
+    GeneralStore::BindInfo bindInfo(dbs, loaders);
+    uint32_t key = 1;
+    bindInfos[key] = std::make_tuple(database, bindInfo, "");
+    EXPECT_EQ(store->IsBound(key, "1"), false);
+    auto ret = store->Bind(bindInfos, config);
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::OK);
     store->delegate_ = nullptr;
     delete store;
@@ -770,8 +814,12 @@ HWTEST_F(KVDBGeneralStoreTest, Clean, TestSize.Level0)
     store->delegate_ = &mockDelegate;
     ret = store->Clean(devices, GeneralStore::CleanMode::CLOUD_INFO, tableName);
     EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = store->Clean(devices, "user", GeneralStore::CleanMode::CLOUD_INFO, tableName);
+    EXPECT_EQ(ret, GeneralError::E_OK);
 
     ret = store->Clean(devices, GeneralStore::CleanMode::CLOUD_DATA, tableName);
+    EXPECT_EQ(ret, GeneralError::E_OK);
+    ret = store->Clean(devices, "user", GeneralStore::CleanMode::CLOUD_DATA, tableName);
     EXPECT_EQ(ret, GeneralError::E_OK);
 
     ret = store->Clean({}, GeneralStore::CleanMode::NEARBY_DATA, tableName);

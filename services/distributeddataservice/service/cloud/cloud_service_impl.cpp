@@ -384,7 +384,7 @@ void CloudServiceImpl::ExecuteDatabaseClean(const StoreMetaData &meta, int32_t a
         storeInfo.path = meta.dataDir;
         EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAN_DATA, storeInfo));
     }
-    auto status = store->Clean("", action, tableList);
+    auto status = store->Clean("", meta.user, action, tableList);
     if (status != E_OK) {
         ZLOGW("clean data status:%{public}d, user:%{public}s, bundleName:%{public}s, storeId:%{public}s", status,
             meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());

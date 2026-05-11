@@ -15,13 +15,13 @@
 #include "general_store_mock.h"
 namespace OHOS {
 namespace DistributedData {
-int32_t GeneralStoreMock::Bind(const Database &database, const std::map<uint32_t, BindInfo> &bindInfos,
+int32_t GeneralStoreMock::Bind(const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos,
     const CloudConfig &config)
 {
     return 0;
 }
 
-bool GeneralStoreMock::IsBound(uint32_t user)
+bool GeneralStoreMock::IsBound(uint32_t user, const std::string &id)
 {
     return false;
 }
@@ -96,9 +96,11 @@ int32_t GeneralStoreMock::Clean(const std::vector<std::string> &devices, int32_t
     return 0;
 }
 
-int32_t GeneralStoreMock::Clean(const std::string &device, int32_t mode, const std::vector<std::string> &tableList)
+int32_t GeneralStoreMock::Clean(const std::string &device, const std::string &user, int32_t mode,
+    const std::vector<std::string> &tableList)
 {
     (void)device;
+    (void)user;
     (void)mode;
     (void)tableList;
     return 0;
