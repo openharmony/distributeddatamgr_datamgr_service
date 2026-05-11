@@ -27,6 +27,7 @@ struct SAConfigProxyData final : public DistributedData::Serializable {
     std::string uri;
     std::string requiredReadPermission;
     std::string requiredWritePermission;
+    bool normalAppAccessible = false;
     ProfileInfo  profile;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;

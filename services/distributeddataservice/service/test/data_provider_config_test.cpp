@@ -41,17 +41,17 @@ public:
 
 /**
  * @tc.name: GetDataShareSAConfigInfo001
- * @tc.desc: Verify GetDataShareSAConfigInfo behavior with different URI configurations
+ * @tc.desc: Verify GetDataShareSAConfigInfo behavior with different URI configurations (no system app check now)
  * @tc.type: FUNC
  * @tc.precon: DataProviderConfig is initialized
  * @tc.step:
  *   1. Set from system app to false, authority and pathSegments empty, expect E_URI_NOT_EXIST
- *   2. Set from system app to false, authority empty, pathSegments not empty, expect E_NOT_SYSTEM_APP
- *   3. Set from system app to false, authority not empty, expect E_NOT_SYSTEM_APP
+ *   2. Set from system app to false, authority empty, pathSegments not empty, expect E_ERROR
+ *   3. Set from system app to false, authority not empty, expect E_ERROR
  * @tc.expect:
  *   1. Return E_URI_NOT_EXIST, bundleName empty
- *   2. Return E_NOT_SYSTEM_APP, bundleName set to pathSegments
- *   3. Return E_NOT_SYSTEM_APP, bundleName set to authority
+ *   2. Return E_ERROR (no system app check, LoadConfigInfo failed)
+ *   3. Return E_ERROR (no system app check, LoadConfigInfo failed)
  */
 HWTEST_F(DataProviderConfigTest, GetDataShareSAConfigInfo001, TestSize.Level1)
 {
@@ -69,13 +69,13 @@ HWTEST_F(DataProviderConfigTest, GetDataShareSAConfigInfo001, TestSize.Level1)
     // uriConfig_.authority is empty but uriConfig_.pathSegments is not empty
     providerConfig.uriConfig_.pathSegments.push_back("bundleName");
     auto [errCode2, configInfo2] = providerConfig.GetDataShareSAConfigInfo();
-    EXPECT_EQ(errCode2, E_NOT_SYSTEM_APP);
+    EXPECT_EQ(errCode2, E_ERROR);
     EXPECT_EQ(providerConfig.providerInfo_.bundleName, "bundleName");
 
     // uriConfig_.authority is not empty
     providerConfig.uriConfig_.authority = "test";
     auto [errCode3, configInfo3] = providerConfig.GetDataShareSAConfigInfo();
-    EXPECT_EQ(errCode3, E_NOT_SYSTEM_APP);
+    EXPECT_EQ(errCode3, E_ERROR);
     EXPECT_EQ(providerConfig.providerInfo_.bundleName, "test");
     ZLOGI("DataProviderConfigTest GetDataShareSAConfigInfo001 end");
 }
@@ -135,5 +135,167 @@ HWTEST_F(DataProviderConfigTest, GetProviderInfo001, TestSize.Level1)
     EXPECT_EQ(errCode, E_ERROR);
     EXPECT_EQ(providerInfo.systemAbilityId, URIUtils::INVALID_SA_ID);
     ZLOGI("DataProviderConfigTest GetProviderInfo001 end");
+}
+
+/**
+ * @tc.name: GetFromDataShareConfig_NormalAppAccessible001
+ * @tc.desc: Verify GetFromDataShareConfig behavior with normalAppAccessible=false and non-system app
+ * @tc.type: FUNC
+ * @tc.precon: DataProviderConfig is initialized with cached config info
+ * @tc.step:
+ *   1. Set from system app to false
+ *   2. Insert config cache with proxyData (normalAppAccessible=false)
+ *   3. Call GetFromDataShareConfig and verify E_NOT_SYSTEM_APP is returned
+ * @tc.expect:
+ *   1. Return E_NOT_SYSTEM_APP when non-system app accesses normalAppAccessible=false proxyData
+ */
+HWTEST_F(DataProviderConfigTest, GetFromDataShareConfig_NormalAppAccessible001, TestSize.Level1)
+{
+    ZLOGI("DataProviderConfigTest GetFromDataShareConfig_NormalAppAccessible001 start");
+    DataShareThreadLocal::SetFromSystemApp(false);
+    std::string testUri = "datashareproxy://com.acts.datasharetest/SAID=12321/test";
+    DataProviderConfig providerConfig(testUri, CALLERTOKENID);
+    providerConfig.providerInfo_.systemAbilityId = 12321;
+
+    SAConfigProxyData configProxyData;
+    configProxyData.uri = "datashareproxy://com.acts.datasharetest/SAID=12321/t";
+    configProxyData.normalAppAccessible = false;
+    DataShareSAConfigInfo cacheInfo;
+    cacheInfo.proxyData.push_back(configProxyData);
+
+    auto configInfoMgr = DataShareSAConfigInfoManager::GetInstance();
+    std::string cacheKey = "com.acts.datasharetest12321";
+    configInfoMgr->configCache_.Insert(cacheKey, cacheInfo);
+
+    auto errCode = providerConfig.GetFromDataShareConfig();
+    EXPECT_EQ(errCode, E_NOT_SYSTEM_APP);
+
+    configInfoMgr->configCache_.Erase(cacheKey);
+    ZLOGI("DataProviderConfigTest GetFromDataShareConfig_NormalAppAccessible001 end");
+}
+
+/**
+ * @tc.name: GetFromDataShareConfig_NormalAppAccessible002
+ * @tc.desc: Verify GetFromDataShareConfig behavior with normalAppAccessible=true and non-system app
+ * @tc.type: FUNC
+ * @tc.precon: DataProviderConfig is initialized with cached config info
+ * @tc.step:
+ *   1. Set from system app to false
+ *   2. Insert config cache with proxyData (normalAppAccessible=true)
+ *   3. Call GetFromDataShareConfig and verify E_OK is returned
+ * @tc.expect:
+ *   1. Return E_OK when non-system app accesses normalAppAccessible=true proxyData
+ */
+HWTEST_F(DataProviderConfigTest, GetFromDataShareConfig_NormalAppAccessible002, TestSize.Level1)
+{
+    ZLOGI("DataProviderConfigTest GetFromDataShareConfig_NormalAppAccessible002 start");
+    DataShareThreadLocal::SetFromSystemApp(false);
+    std::string testUri = "datashareproxy://com.acts.datasharetest/SAID=12321/test_access";
+    DataProviderConfig providerConfig(testUri, CALLERTOKENID);
+    providerConfig.providerInfo_.systemAbilityId = 12321;
+
+    SAConfigProxyData configProxyData;
+    configProxyData.uri = "datashareproxy://com.acts.datasharetest/SAID=12321/test_access";
+    configProxyData.normalAppAccessible = true;
+    DataShareSAConfigInfo cacheInfo;
+    cacheInfo.proxyData.push_back(configProxyData);
+
+    auto configInfoMgr = DataShareSAConfigInfoManager::GetInstance();
+    std::string cacheKey = "com.acts.datasharetest12321";
+    configInfoMgr->configCache_.Insert(cacheKey, cacheInfo);
+
+    auto errCode = providerConfig.GetFromDataShareConfig();
+    EXPECT_EQ(errCode, E_OK);
+
+    configInfoMgr->configCache_.Erase(cacheKey);
+    ZLOGI("DataProviderConfigTest GetFromDataShareConfig_NormalAppAccessible002 end");
+}
+
+/**
+ * @tc.name: GetFromDataShareConfig_NormalAppAccessible003
+ * @tc.desc: Verify GetFromDataShareConfig behavior with normalAppAccessible=false and system app
+ * @tc.type: FUNC
+ * @tc.precon: DataProviderConfig is initialized with cached config info
+ * @tc.step:
+ *   1. Set from system app to true
+ *   2. Insert config cache with proxyData (normalAppAccessible=false)
+ *   3. Call GetFromDataShareConfig and verify E_OK is returned
+ * @tc.expect:
+ *   1. Return E_OK when system app accesses any proxyData regardless of normalAppAccessible
+ */
+HWTEST_F(DataProviderConfigTest, GetFromDataShareConfig_NormalAppAccessible003, TestSize.Level1)
+{
+    ZLOGI("DataProviderConfigTest GetFromDataShareConfig_NormalAppAccessible003 start");
+    DataShareThreadLocal::SetFromSystemApp(true);
+    std::string testUri = "datashareproxy://com.acts.datasharetest/SAID=12321/test";
+    DataProviderConfig providerConfig(testUri, CALLERTOKENID);
+    providerConfig.providerInfo_.systemAbilityId = 12321;
+
+    SAConfigProxyData configProxyData;
+    configProxyData.uri = "datashareproxy://com.acts.datasharetest/SAID=12321/t";
+    configProxyData.normalAppAccessible = false;
+    DataShareSAConfigInfo cacheInfo;
+    cacheInfo.proxyData.push_back(configProxyData);
+
+    auto configInfoMgr = DataShareSAConfigInfoManager::GetInstance();
+    std::string cacheKey = "com.acts.datasharetest12321";
+    configInfoMgr->configCache_.Insert(cacheKey, cacheInfo);
+
+    auto errCode = providerConfig.GetFromDataShareConfig();
+    EXPECT_EQ(errCode, E_OK);
+
+    configInfoMgr->configCache_.Erase(cacheKey);
+    ZLOGI("DataProviderConfigTest GetFromDataShareConfig_NormalAppAccessible003 end");
+}
+
+/**
+ * @tc.name: VerifyProvider_NormalAppAccessible001
+ * @tc.desc: Verify VerifyProvider returns true when normalAppAccessible=true and non-system app
+ * @tc.type: FUNC
+ * @tc.precon: ProviderInfo has normalAppAccessible=true
+ * @tc.step:
+ *   1. Set from system app to false
+ *   2. Create ProviderInfo with normalAppAccessible=true
+ *   3. Call VerifyProvider and verify true is returned
+ * @tc.expect:
+ *   1. Return true when normalAppAccessible=true regardless of allowlist
+ */
+HWTEST_F(DataProviderConfigTest, VerifyProvider_NormalAppAccessible001, TestSize.Level1)
+{
+    ZLOGI("DataProviderConfigTest VerifyProvider_NormalAppAccessible001 start");
+    DataShareThreadLocal::SetFromSystemApp(false);
+    DataProviderConfig::ProviderInfo providerInfo;
+    providerInfo.normalAppAccessible = true;
+    providerInfo.bundleName = "testBundle";
+    providerInfo.appIdentifier = "";
+
+    bool result = VerifyProvider(providerInfo, 0);
+    EXPECT_TRUE(result);
+    ZLOGI("DataProviderConfigTest VerifyProvider_NormalAppAccessible001 end");
+}
+
+/**
+ * @tc.name: VerifyProvider_NormalAppAccessible002
+ * @tc.desc: Verify VerifyProvider returns true when IsFromSystemApp=true
+ * @tc.type: FUNC
+ * @tc.precon: IsFromSystemApp is true
+ * @tc.step:
+ *   1. Set from system app to true
+ *   2. Create ProviderInfo with normalAppAccessible=false
+ *   3. Call VerifyProvider and verify true is returned
+ * @tc.expect:
+ *   1. Return true when system app regardless of normalAppAccessible
+ */
+HWTEST_F(DataProviderConfigTest, VerifyProvider_NormalAppAccessible002, TestSize.Level1)
+{
+    ZLOGI("DataProviderConfigTest VerifyProvider_NormalAppAccessible002 start");
+    DataShareThreadLocal::SetFromSystemApp(true);
+    DataProviderConfig::ProviderInfo providerInfo;
+    providerInfo.normalAppAccessible = false;
+    providerInfo.bundleName = "testBundle";
+
+    bool result = VerifyProvider(providerInfo, 0);
+    EXPECT_TRUE(result);
+    ZLOGI("DataProviderConfigTest VerifyProvider_NormalAppAccessible002 end");
 }
 }  // namespace OHOS::Test

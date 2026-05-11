@@ -37,6 +37,7 @@ bool SAConfigProxyData::Marshal(json &node) const
     SetValue(node[GET_NAME(uri)], uri);
     SetValue(node[GET_NAME(requiredReadPermission)], requiredReadPermission);
     SetValue(node[GET_NAME(requiredWritePermission)], requiredWritePermission);
+    SetValue(node[GET_NAME(normalAppAccessible)], normalAppAccessible);
     SetValue(node[GET_NAME(profile)], profile);
     return true;
 }
@@ -61,6 +62,7 @@ bool SAConfigProxyData::Unmarshal(const json &node)
         requiredWritePermission = "";
         return false;
     }
+    GetValue(node, GET_NAME(normalAppAccessible), normalAppAccessible);
     GetValue(node, GET_NAME(profile), profile);
     return true;
 }
@@ -113,11 +115,6 @@ int32_t DataShareSAConfigInfoManager::LoadConfigInfo(const std::string &pathName
 int32_t DataShareSAConfigInfoManager::GetDataShareSAConfigInfo(const std::string &bundleName, int32_t systemAbilityId,
     DataShareSAConfigInfo &info)
 {
-    if (!DataShareThreadLocal::IsFromSystemApp()) {
-        ZLOGE("Not allow normal app visit SA, bundle:%{public}s, callingPid:%{public}d, systemAbilityId:%{public}d",
-            bundleName.c_str(), IPCSkeleton::GetCallingPid(), systemAbilityId);
-        return E_NOT_SYSTEM_APP;
-    }
     std::string configKey = bundleName + std::to_string(systemAbilityId);
     auto it = configCache_.Find(configKey);
     if (it.first) {
