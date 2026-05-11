@@ -25,6 +25,7 @@
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "mock/access_token_mock.h"
+#include "mock/general_store_mock.h"
 #include "account_delegate_mock.h"
 #include "mock/db_store_mock.h"
 #include "mock/device_manager_adapter_mock.h"
@@ -51,6 +52,16 @@ static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_2 = "test_cloud_database_
 static constexpr const char *TEST_CLOUD_PATH = "/data/app/el2/100/database/test_cloud_bundleName/entry/rdb/"
                                                "test_cloud_store";
 static constexpr const int32_t TEST_TOKEN_FLAG_USER_ID = 100;
+static constexpr const int32_t MOCK_STORE_TYPE = 21;
+class CloudTestGeneralStoreMock : public GeneralStoreMock {
+public:
+    StoreMetaData meta_;
+    bool createRequired_ = false;
+    std::atomic_int32_t ref_ = 0;
+    CloudTestGeneralStoreMock() : ref_(1) {};
+    explicit CloudTestGeneralStoreMock(const StoreMetaData &meta, bool createRequired = false)
+        : meta_(meta), createRequired_(createRequired), ref_(1) {};
+};
 class CloudDataMockTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -262,6 +273,7 @@ void CloudDataMockTest::TearDown()
     StoreMetaMapping storeMetaMapping(metaData_);
     MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true);
     MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
+    AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE, nullptr);
 }
 
 /**
@@ -599,6 +611,154 @@ HWTEST_F(CloudDataMockTest, DownloadOnlySync_DifferentFlowTypes, TestSize.Level0
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
     auto ret = syncManager.DoCloudSync(std::move(info));
     ASSERT_EQ(ret, E_OK);
+}
+
+/**
+* @tc.name: GetStore001
+* @tc.desc: Get store test with invalid user
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, GetStore001, TestSize.Level0)
+{
+    CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    std::vector<int> users;
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
+        .Times(1)
+        .WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
+    auto mock = std::make_shared<CloudTestGeneralStoreMock>();
+    auto result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE,
+        [mock](const StoreMetaData &, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore*> {
+            if (mock == nullptr) {
+                return { GeneralError::E_ERROR, nullptr };
+            }
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+    auto meta = metaData_;
+    meta.storeType = MOCK_STORE_TYPE;
+    auto [ret, store] = syncManager.GetStore(meta, 0, true); // 0 is SYSTEM_USER
+    EXPECT_EQ(ret, E_ERROR);
+    result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE, nullptr);
+    EXPECT_EQ(result, E_OK);
+    AutoCache::GetInstance().CloseStore([&meta](const StoreMetaData &closeMeta) {
+        return meta == closeMeta;
+    });
+}
+
+/**
+* @tc.name: GetStore002
+* @tc.desc: Get store test with foreground user by system user
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, GetStore002, TestSize.Level0)
+{
+    CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    std::vector<int> users = {1};
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
+        .Times(1)
+        .WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
+    auto mock = std::make_shared<CloudTestGeneralStoreMock>();
+    auto result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE,
+        [mock](const StoreMetaData &, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore*> {
+            if (mock == nullptr) {
+                return { GeneralError::E_ERROR, nullptr };
+            }
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+    auto meta = metaData_;
+    meta.storeType = MOCK_STORE_TYPE;
+    auto [ret, store] = syncManager.GetStore(meta, 0, true); // 0 is SYSTEM_USER
+    // fail because no cloud info schema in meta
+    EXPECT_EQ(ret, E_ERROR);
+    result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE, nullptr);
+    EXPECT_EQ(result, E_OK);
+    AutoCache::GetInstance().CloseStore([&meta](const StoreMetaData &closeMeta) {
+        return meta == closeMeta;
+    });
+}
+
+/**
+* @tc.name: GetStore003
+* @tc.desc: Get store test with foreground user by foreground user
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, GetStore003, TestSize.Level0)
+{
+    CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    auto mock = std::make_shared<CloudTestGeneralStoreMock>();
+    auto result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE,
+        [mock](const StoreMetaData &, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore*> {
+            if (mock == nullptr) {
+                return { GeneralError::E_ERROR, nullptr };
+            }
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+    auto meta = metaData_;
+    meta.storeType = MOCK_STORE_TYPE;
+    auto [ret, store] = syncManager.GetStore(meta, 1, true); // 1 is user id
+    // fail because no cloud info schema in meta
+    EXPECT_EQ(ret, E_ERROR);
+    result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE, nullptr);
+    EXPECT_EQ(result, E_OK);
+    AutoCache::GetInstance().CloseStore([&meta](const StoreMetaData &closeMeta) {
+        return meta == closeMeta;
+    });
+}
+
+/**
+* @tc.name: GetStore004
+* @tc.desc: Get store test with foreground user without cloud server
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(CloudDataMockTest, GetStore004, TestSize.Level0)
+{
+    CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
+    auto mock = std::make_shared<CloudTestGeneralStoreMock>();
+    auto result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE,
+        [mock](const StoreMetaData &, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore*> {
+            if (mock == nullptr) {
+                return { GeneralError::E_ERROR, nullptr };
+            }
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+    CloudInfo info = cloudInfo_;
+    info.user = 1;
+    MetaDataManager::GetInstance().SaveMeta(info.GetKey(), info, true);
+    auto meta = metaData_;
+    std::string schemaKey = info.GetSchemaKey(meta.bundleName, meta.instanceId);
+    SchemaMeta schemaMeta;
+    MetaDataManager::GetInstance().SaveMeta(schemaKey, schemaMeta, true);
+    meta.storeType = MOCK_STORE_TYPE;
+    auto [ret, store] = syncManager.GetStore(meta, info.user, false);
+    // ok because cloud info schema in meta
+    EXPECT_EQ(ret, E_OK);
+    std::tie(ret, store) = syncManager.GetStore(meta, 1, true); // 1 is user id
+    // fail because no cloud info schema in meta
+    EXPECT_EQ(ret, E_ERROR);
+    result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE, nullptr);
+    EXPECT_EQ(result, E_OK);
+    AutoCache::GetInstance().CloseStore([&meta](const StoreMetaData &closeMeta) {
+        return meta == closeMeta;
+    });
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

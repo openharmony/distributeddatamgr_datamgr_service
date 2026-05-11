@@ -219,9 +219,17 @@ private:
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
     int32_t SetCloudConflictHandler(const AutoCache::Store &store);
+    static std::vector<CloudInfo> GetCloudInfos(int32_t user);
+    using UserBindInfo =
+        std::map<uint32_t, std::tuple<SchemaMeta, DistributedData::GeneralStore::BindInfo,
+        DistributedData::GeneralStore::CloudConfig, std::string>>;
+    static int32_t FillUserBindInfos(const AutoCache::Store &store, const StoreMetaData &meta,
+        bool mustBind, CloudInfo &info, UserBindInfo &infos);
 
     static std::vector<std::string> GetStoresIntersection(const SyncInfo::Stores &schemaStores,
         const std::map<std::string, SyncInfo::Tables> &requestedTables);
+    static void BindInfos(const AutoCache::Store &store, const UserBindInfo &userBindInfo,
+        const std::string &storeId);
 
     struct ErrorContext {
         const CloudInfo &cloud;

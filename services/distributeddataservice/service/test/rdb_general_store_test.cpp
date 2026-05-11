@@ -416,8 +416,8 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
 {
     DistributedData::Database database;
     GeneralStore::CloudConfig config;
-    std::map<uint32_t, DistributedData::GeneralStore::BindInfo> bindInfos;
-    auto result = store_->Bind(database, bindInfos, config);
+    std::map<uint32_t, std::tuple<Database, GeneralStore::BindInfo, std::string>> bindInfos;
+    auto result = store_->Bind(bindInfos, config);
     EXPECT_TRUE(bindInfos.empty());
     EXPECT_EQ(result, GeneralError::E_OK);
 
@@ -426,18 +426,18 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
 
     GeneralStore::BindInfo bindInfo(nullptr, nullptr);
     uint32_t key = 1;
-    bindInfos[key] = bindInfo;
-    result = store_->Bind(database, bindInfos, config);
+    bindInfos[key] = std::make_tuple(database, bindInfo, "");
+    result = store_->Bind(bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
     GeneralStore::BindInfo bindInfo1(dbs, nullptr);
-    bindInfos[key] = bindInfo1;
-    result = store_->Bind(database, bindInfos, config);
+    bindInfos[key] = std::make_tuple(database, bindInfo1, "");
+    result = store_->Bind(bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 
     GeneralStore::BindInfo bindInfo2(nullptr, loaders);
-    bindInfos[key] = bindInfo2;
-    result = store_->Bind(database, bindInfos, config);
+    bindInfos[key] = std::make_tuple(database, bindInfo2, "");
+    result = store_->Bind(bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 }
 
@@ -449,18 +449,18 @@ HWTEST_F(RdbGeneralStoreTest, Bind001, TestSize.Level1)
 HWTEST_F(RdbGeneralStoreTest, Bind002, TestSize.Level1)
 {
     DistributedData::Database database;
-    std::map<uint32_t, DistributedData::GeneralStore::BindInfo> bindInfos;
+    std::map<uint32_t, std::tuple<Database, GeneralStore::BindInfo, std::string>> bindInfos;
     std::shared_ptr<CloudDB> db = mockCloudDB;
     std::shared_ptr<AssetLoader> loader = std::make_shared<AssetLoader>();
     GeneralStore::BindInfo bindInfo(db, loader);
     uint32_t key = 1;
-    bindInfos[key] = bindInfo;
+    bindInfos[key] = std::make_tuple(database, bindInfo, "");
     GeneralStore::CloudConfig config;
-    auto result = store_->Bind(database, bindInfos, config);
+    auto result = store_->Bind(bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 
     store_->isBound_ = true;
-    result = store_->Bind(database, bindInfos, config);
+    result = store_->Bind(bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_OK);
 }
 
@@ -472,22 +472,22 @@ HWTEST_F(RdbGeneralStoreTest, Bind002, TestSize.Level1)
 HWTEST_F(RdbGeneralStoreTest, Bind003, TestSize.Level1)
 {
     DistributedData::Database database;
-    std::map<uint32_t, DistributedData::GeneralStore::BindInfo> bindInfos;
+    std::map<uint32_t, std::tuple<Database, GeneralStore::BindInfo, std::string>> bindInfos;
 
     std::shared_ptr<CloudDB> db = mockCloudDB;
     std::shared_ptr<AssetLoader> loader = std::make_shared<AssetLoader>();
     GeneralStore::BindInfo bindInfo(db, loader);
     uint32_t key = 1;
-    bindInfos[key] = bindInfo;
+    bindInfos[key] = std::make_tuple(database, bindInfo, "");
 
     std::string storeId = "Bind003.db";
     auto[store, meta] = InitRdbStore(storeId, "");
 
-    EXPECT_FALSE(store->IsBound(std::atoi(meta.user.c_str())));
+    EXPECT_FALSE(store->IsBound(std::atoi(meta.user.c_str()), ""));
     GeneralStore::CloudConfig config;
-    auto result = store->Bind(database, bindInfos, config);
+    auto result = store->Bind(bindInfos, config);
     EXPECT_EQ(result, GeneralError::E_OK);
-    EXPECT_TRUE(store->IsBound(std::atoi(meta.user.c_str())));
+    EXPECT_TRUE(store->IsBound(std::atoi(meta.user.c_str()), ""));
     remove(meta.dataDir.c_str());
 }
 
@@ -2889,7 +2889,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean_ReturnDatabaseClosed, TestSize.Level1)
     std::string device = "device1";
     std::vector<std::string> tableList = { "tableName1", "tableName2" };
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
-    auto result = store->Clean(device, -1, tableList);
+    auto result = store->Clean(device, "", -1, tableList);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
 
@@ -2903,7 +2903,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean_ReturnInvalidArgs, TestSize.Level1)
     std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
     std::string device = "device1";
     std::vector<std::string> tableList = { "tableName1", "tableName2" };
-    auto result = store->Clean(device, GeneralStore::CLEAN_MODE_BUTT + 1, tableList);
+    auto result = store->Clean(device, "", GeneralStore::CLEAN_MODE_BUTT + 1, tableList);
     EXPECT_EQ(result, GeneralError::E_INVALID_ARGS);
 }
 
@@ -2917,7 +2917,7 @@ HWTEST_F(RdbGeneralStoreTest, Clean_DelegateIsNull, TestSize.Level1)
     std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
     std::string device = "device1";
     std::vector<std::string> tableList = { "tableName1", "tableName2" };
-    auto result = store->Clean(device, GeneralStore::CLOUD_INFO, tableList);
+    auto result = store->Clean(device, "", GeneralStore::CLOUD_INFO, tableList);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
 
@@ -2933,9 +2933,9 @@ HWTEST_F(RdbGeneralStoreTest, Clean_ReturnOk, TestSize.Level1)
     std::vector<std::string> tableList = { "tableName1", "tableName2" };
     store->Init();
     MockRelationalStoreDelegate::gTestResult = false;
-    auto result = store->Clean(device, GeneralStore::CLOUD_INFO, tableList);
+    auto result = store->Clean(device, "", GeneralStore::CLOUD_INFO, tableList);
     EXPECT_EQ(result, GeneralError::E_OK);
-    result = store->Clean(device, GeneralStore::CLOUD_DATA, tableList);
+    result = store->Clean(device, "", GeneralStore::CLOUD_DATA, tableList);
     EXPECT_EQ(result, GeneralError::E_OK);
     MockRelationalStoreDelegate::gTestResult = true;
 }
