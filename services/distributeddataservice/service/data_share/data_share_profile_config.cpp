@@ -140,6 +140,12 @@ bool SerialDataShareProxyData::Marshal(json &node) const
     SetValue(node[GET_NAME(uri)], uri);
     SetValue(node[GET_NAME(value)], value);
     SetValue(node[GET_NAME(allowList)], allowList);
+    SetValue(node[GET_NAME(maxValueLength)], static_cast<int32_t>(maxValueLength));
+    if (isMultiValues) {
+        SetValue(node[GET_NAME(multiValues)], multiValues);
+        SetValue(node[GET_NAME(trustProviders)], trustProviders);
+        SetValue(node[GET_NAME(isMultiValues)], isMultiValues);
+    }
     return true;
 }
 
@@ -154,6 +160,12 @@ bool SerialDataShareProxyData::Unmarshal(const json &node)
         value = valueStr;
     }
     GetValue(node, GET_NAME(allowList), allowList);
+    GetValue(node, GET_NAME(multiValues), multiValues);
+    GetValue(node, GET_NAME(trustProviders), trustProviders);
+    GetValue(node, GET_NAME(isMultiValues), isMultiValues);
+    int32_t maxValueLength = static_cast<int32_t>(DataProxyMaxValueLength::MAX_LENGTH_100K);
+    GetValue(node, GET_NAME(maxValueLength), maxValueLength);
+    this->maxValueLength = static_cast<DataProxyMaxValueLength>(maxValueLength);
     return ret;
 }
 

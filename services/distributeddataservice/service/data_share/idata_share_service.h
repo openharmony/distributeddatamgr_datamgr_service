@@ -62,6 +62,10 @@ public:
         DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_PROXY_DATA,
         DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO,
         DATA_SHARE_SERVICE_CMD_PROXY_DELETE_ALL,
+        DATA_SHARE_SERVICE_CMD_PROXY_APPEND,
+        DATA_SHARE_SERVICE_CMD_PROXY_PUT_VALUES,
+        DATA_SHARE_SERVICE_CMD_PROXY_REMOVE_VALUE,
+        DATA_SHARE_SERVICE_CMD_PROXY_GET_VALUES,
         DATA_SHARE_SERVICE_CMD_MAX,
         DATA_SHARE_SERVICE_CMD_QUERY_SYSTEM = DATA_SHARE_CMD_SYSTEM_CODE,
         DATA_SHARE_SERVICE_CMD_ADD_TEMPLATE_SYSTEM,
@@ -138,6 +142,15 @@ public:
     virtual std::vector<DataProxyResult> UnsubscribeProxyData(const std::vector<std::string> &uris) = 0;
     virtual std::pair<int32_t, ConnectionInterfaceInfo> GetConnectionInterfaceInfo(int32_t saId,
         uint32_t waitTime) = 0;
+
+    virtual DataProxyResult PutValues(const std::string &uri, const std::string &key,
+        const DataProxyValue &value, const DataProxyConfig &proxyConfig) = 0;
+
+    virtual DataProxyResult RemoveValue(const std::string &uri, const std::string &key,
+        const DataProxyConfig &proxyConfig) = 0;
+
+    virtual DataProxyGetResult GetValues(const std::string &uri,
+        const DataProxyConfig &proxyConfig) = 0;
     };
 } // namespace OHOS::DataShare
 #endif // DISTRIBUTEDDATAFWK_IDATA_SHARE_SERVICE_H

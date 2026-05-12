@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include <cstdint>
 #define LOG_TAG "ProxyDataManager"
 
@@ -128,16 +129,69 @@ bool PublishedProxyData::VerifyPermission(const BundleInfo &callerBundleInfo, co
     return false;
 }
 
-bool PublishedProxyData::CheckAndCorrectProxyData(DataShareProxyData &proxyData, const DataProxyConfig &proxyConfig)
+
+/**
+ * @brief Get the serialized length of a DataProxyValue.
+ * @param value The DataProxyValue to calculate length for.
+ * @return The length of value when serialized to string.
+ */
+static size_t GetValueLength(const DataProxyValue &value)
+{
+    switch (value.index()) {
+        case DataProxyValueType::VALUE_INT: {
+            int64_t val = std::get<int64_t>(value);
+            return std::to_string(val).size();
+        }
+        case DataProxyValueType::VALUE_DOUBLE:
+            return std::to_string(std::get<double>(value)).size();
+        case DataProxyValueType::VALUE_STRING:
+            return std::get<std::string>(value).size();
+        case DataProxyValueType::VALUE_BOOL: {
+            bool val = std::get<bool>(value);
+            // boolean value when converted to string will have length of 4 or 5
+            return val ? 4 : 5;
+        }
+        default:
+            return 0;
+    }
+}
+
+static void CheckAndCorrectAppIdentifierList(std::vector<std::string> &list,
+    const std::string &fieldName, const std::string &uri)
+{
+    int32_t count = 1;
+    auto it = list.begin();
+    while (it != list.end()) {
+        if (it->size() > APPIDENTIFIER_MAX_SIZE) {
+            ZLOGW("%{public}s appidentifier of proxyData %{public}s is over limit, size %{public}zu",
+                fieldName.c_str(), URIUtils::Anonymous(uri).c_str(), it->size());
+            it = list.erase(it);
+        } else {
+            if (count++ > ALLOW_LIST_MAX_COUNT) {
+                break;
+            }
+            it++;
+        }
+    }
+    if (list.size() > ALLOW_LIST_MAX_COUNT) {
+        ZLOGW("%{public}s of proxyData %{public}s is over limit, size %{public}zu",
+            fieldName.c_str(), URIUtils::Anonymous(uri).c_str(), list.size());
+        list.resize(ALLOW_LIST_MAX_COUNT);
+    }
+}
+
+bool PublishedProxyData::CheckAndCorrectProxyData(DataShareProxyData &proxyData, const DataProxyConfig &proxyConfig,
+    ProxyDataUpsertMode mode)
 {
     if (proxyConfig.maxValueLength_ != DataProxyMaxValueLength::MAX_LENGTH_4K &&
         proxyConfig.maxValueLength_ != DataProxyMaxValueLength::MAX_LENGTH_100K) {
         ZLOGE("Invalid maxValueLength");
         return false;
     }
+    proxyData.maxValueLength_ = proxyConfig.maxValueLength_;
+    // maxValueLength is int32_t enum but always positive, safe to cast to size_t for comparison
     size_t maxLength = static_cast<size_t>(proxyConfig.maxValueLength_);
 
-    // the upper limit of value is 4096 bytes, only string type is possible to exceed the limit
     if (proxyData.value_.index() == DataProxyValueType::VALUE_STRING) {
         std::string valueStr = std::get<std::string>(proxyData.value_);
         if (valueStr.size() > maxLength) {
@@ -146,30 +200,16 @@ bool PublishedProxyData::CheckAndCorrectProxyData(DataShareProxyData &proxyData,
             return false;
         }
     }
+
     if (proxyData.uri_.size() > URI_MAX_SIZE) {
         ZLOGE("uri of proxyData %{public}s is over limit, size %{public}zu",
             URIUtils::Anonymous(proxyData.uri_).c_str(), proxyData.uri_.size());
         return false;
     }
-    int32_t allowListCount = 1;
-    auto it = proxyData.allowList_.begin();
-    while (it != proxyData.allowList_.end()) {
-        if (it->size() > APPIDENTIFIER_MAX_SIZE) {
-            ZLOGW("appidentifier of proxyData %{public}s is over limit, size %{public}zu",
-                URIUtils::Anonymous(proxyData.uri_).c_str(), it->size());
-            it = proxyData.allowList_.erase(it);
-        } else {
-            if (allowListCount++ > ALLOW_LIST_MAX_COUNT) {
-                break;
-            }
-            it++;
-        }
-    }
-    if (proxyData.allowList_.size() > ALLOW_LIST_MAX_COUNT) {
-        ZLOGW("allowList of proxyData %{public}s is over limit, size %{public}zu",
-            URIUtils::Anonymous(proxyData.uri_).c_str(), proxyData.allowList_.size());
-        proxyData.allowList_.resize(ALLOW_LIST_MAX_COUNT);
-    }
+
+    CheckAndCorrectAppIdentifierList(proxyData.allowList_, "allowList", proxyData.uri_);
+    CheckAndCorrectAppIdentifierList(proxyData.trustProviders_, "trustProviders", proxyData.uri_);
+
     return true;
 }
 
@@ -182,6 +222,13 @@ int32_t PublishedProxyData::PutIntoTable(std::shared_ptr<KvDBDelegate> kvDelegat
     }
 
     SerialDataShareProxyData serialProxyData(proxyData.uri_, proxyData.value_, proxyData.allowList_);
+    serialProxyData.maxValueLength = proxyData.maxValueLength_;
+    serialProxyData.isMultiValues = proxyData.isMultiValues_;
+    if (proxyData.isMultiValues_) {
+        serialProxyData.multiValues = proxyData.multiValues_;
+    }
+    serialProxyData.trustProviders = proxyData.trustProviders_;
+
     auto ret = kvDelegate->Upsert(KvDBDelegate::PROXYDATA_TABLE, PublishedProxyData(ProxyDataNode(
         serialProxyData, user, tokenId)));
     if (ret.first != E_OK) {
@@ -252,7 +299,7 @@ int32_t PublishedProxyData::UpdateProxyData(std::shared_ptr<KvDBDelegate> kvDele
 }
 
 int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &callerBundleInfo,
-    DataShareProxyData &proxyData)
+    DataShareProxyData &proxyData, QueryMode mode)
 {
     auto delegate = KvDBDelegate::GetInstance();
     if (delegate == nullptr) {
@@ -270,20 +317,42 @@ int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &call
         ZLOGE("Unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
         return INNER_ERROR;
     }
-    DataShareProxyData tempProxyData(data.proxyData.uri, data.proxyData.value, data.proxyData.allowList);
-    if (callerBundleInfo.tokenId != data.tokenId) {
-        tempProxyData.allowList_ = {};
+    // Type compatibility check based on query mode
+    if (mode == QUERY_VALUE && data.proxyData.isMultiValues) {
+        ZLOGE("QUERY_VALUE expects non-MultiValues, but got MultiValues, uri=%{public}s",
+            URIUtils::Anonymous(uri).c_str());
+        return INCOMPATIBLE_CONFIG_TYPE;
+    }
+    if (mode == QUERY_MULTIVALUES && !data.proxyData.isMultiValues) {
+        ZLOGE("QUERY_MULTIVALUES expects MultiValues, but got non-MultiValues, uri=%{public}s",
+            URIUtils::Anonymous(uri).c_str());
+        return INCOMPATIBLE_CONFIG_TYPE;
+    }
+    // Field assignment
+    proxyData.uri_ = data.proxyData.uri;
+    proxyData.value_ = data.proxyData.value;
+    proxyData.isMultiValues_ = data.proxyData.isMultiValues;
+    // Only return multiValues belonging to the caller's appIdentifier to prevent cross-app data leakage
+    if (mode == QUERY_MULTIVALUES) {
+        auto appIter = data.proxyData.multiValues.find(callerBundleInfo.appIdentifier);
+        if (appIter != data.proxyData.multiValues.end()) {
+            proxyData.multiValues_[callerBundleInfo.appIdentifier] = appIter->second;
+        }
+    }
+    // Permission visibility: publisher can see all config
+    if (callerBundleInfo.tokenId == data.tokenId) {
+        proxyData.allowList_ = data.proxyData.allowList;
+        proxyData.trustProviders_ = data.proxyData.trustProviders;
     }
     if (!VerifyPermission(callerBundleInfo, data)) {
         return NO_PERMISSION;
     }
-
-    proxyData = tempProxyData;
     return SUCCESS;
 }
 
 int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const BundleInfo &callerBundleInfo,
-    DataShareObserver::ChangeType &type, const DataProxyConfig &proxyConfig)
+    DataShareObserver::ChangeType &type, const DataProxyConfig &proxyConfig,
+    ProxyDataUpsertMode mode)
 {
     type = DataShareObserver::ChangeType::INVAILD;
     auto delegate = KvDBDelegate::GetInstance();
@@ -291,9 +360,8 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
         ZLOGE("db open failed");
         return INNER_ERROR;
     }
-
     auto data = proxyData;
-    if (!CheckAndCorrectProxyData(data, proxyConfig)) {
+    if (!CheckAndCorrectProxyData(data, proxyConfig, mode)) {
         return OVER_LIMIT;
     }
     std::string filter = Id(data.uri_, callerBundleInfo.userId);
@@ -301,33 +369,194 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
     std::lock_guard<std::mutex> lock(mutex_);
     delegate->Get(KvDBDelegate::PROXYDATA_TABLE, filter, "{}", queryResult);
     if (queryResult.empty()) {
+        return UpsertInsert(delegate, data, callerBundleInfo, type, mode);
+    }
+    if (mode == PUBLISH_MULTIVALUES) {
+        ZLOGE("Publish an existing MultiValues is no allowed, please delete corresponding uri and then publish.");
+        return INCOMPATIBLE_CONFIG_TYPE;
+    }
+    ProxyDataNode oldData;
+    if (!ProxyDataNode::Unmarshall(queryResult, oldData)) {
+        ZLOGE("ProxyDataNode unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
+        return INNER_ERROR;
+    }
+    if (!IsConfigCompatible(mode, oldData.proxyData.isMultiValues)) {
+        ZLOGE("Type conflict: mode=%{public}d, existingIsMultiValues=%{public}d",
+            mode, oldData.proxyData.isMultiValues);
+        return INCOMPATIBLE_CONFIG_TYPE;
+    }
+    UpsertContext ctx { delegate, oldData, callerBundleInfo };
+    return UpsertUpdate(ctx, data, mode, type);
+}
+
+int32_t PublishedProxyData::UpsertInsert(std::shared_ptr<KvDBDelegate> delegate,
+    const DataShareProxyData &data, const BundleInfo &callerBundleInfo,
+    DataShareObserver::ChangeType &type, ProxyDataUpsertMode mode)
+{
+    if (mode == NORMAL_PUBLISH) {
         type = DataShareObserver::ChangeType::INSERT;
         return InsertProxyData(delegate, callerBundleInfo.bundleName,
             callerBundleInfo.userId, callerBundleInfo.tokenId, data);
-    } else {
-        ProxyDataNode oldData;
-        if (!ProxyDataNode::Unmarshall(queryResult, oldData)) {
-            ZLOGE("ProxyDataNode unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
-            return INNER_ERROR;
+    } else if (mode == PUBLISH_MULTIVALUES) {
+        DataShareProxyData initData = data;
+        int32_t ret = BuildInitMultiValues(initData, callerBundleInfo.appIdentifier);
+        if (ret != SUCCESS) {
+            return ret;
         }
-        if (callerBundleInfo.tokenId != oldData.tokenId) {
+        type = DataShareObserver::ChangeType::INSERT;
+        return InsertProxyData(delegate, callerBundleInfo.bundleName,
+            callerBundleInfo.userId, callerBundleInfo.tokenId, initData);
+    }
+    return INNER_ERROR;
+}
+
+int32_t PublishedProxyData::UpsertUpdate(UpsertContext &ctx, const DataShareProxyData &data,
+    ProxyDataUpsertMode mode, DataShareObserver::ChangeType &type)
+{
+    if (mode == NORMAL_PUBLISH) {
+        if (ctx.callerBundleInfo.tokenId != ctx.oldData.tokenId) {
             ZLOGE("only allow to modify the proxyData of self bundle %{public}d, dest bundle %{public}d",
-                callerBundleInfo.tokenId, oldData.tokenId);
+                ctx.callerBundleInfo.tokenId, ctx.oldData.tokenId);
             return NO_PERMISSION;
         }
+        DataShareProxyData updateData = data;
         if (data.isValueUndefined) {
-            data.value_ = oldData.proxyData.value;
+            updateData.value_ = ctx.oldData.proxyData.value;
         }
         if (data.isAllowListUndefined) {
-            data.allowList_ = oldData.proxyData.allowList;
+            updateData.allowList_ = ctx.oldData.proxyData.allowList;
         }
-        // only when value changed is need notify
-        if (oldData.proxyData.value != data.value_) {
+        if (ctx.oldData.proxyData.value != updateData.value_) {
             type = DataShareObserver::ChangeType::UPDATE;
         }
-        return UpdateProxyData(delegate, callerBundleInfo.bundleName,
-            callerBundleInfo.userId, callerBundleInfo.tokenId, data);
+        return UpdateProxyData(ctx.delegate, ctx.callerBundleInfo.bundleName,
+            ctx.callerBundleInfo.userId, ctx.callerBundleInfo.tokenId, updateData);
     }
+    std::string targetKey;
+    DataProxyValue targetValue;
+    for (const auto &appPair : data.multiValues_) {
+        if (!appPair.second.empty()) {
+            targetKey = appPair.second.begin()->first;
+            targetValue = appPair.second.begin()->second;
+            break;
+        }
+    }
+    if (targetKey.empty()) {
+        ZLOGE("No valid key found in multiValues for mode %{public}d", mode);
+        return KEY_NOT_EXIST;
+    }
+    if (mode == PUT_MULTIVALUES) {
+        return UpsertPutValues(ctx, targetKey, targetValue, type);
+    }
+    if (mode == REMOVE_MULTIVALUES) {
+        return UpsertRemoveValue(ctx, targetKey, type);
+    }
+    return INNER_ERROR;
+}
+
+int32_t PublishedProxyData::UpsertRemoveValue(UpsertContext &ctx, const std::string &key,
+    DataShareObserver::ChangeType &type)
+{
+    if (!CanModifyMultiValue(ctx.oldData, key, ctx.callerBundleInfo)) {
+        return KEY_NOT_EXIST;
+    }
+    DataShareProxyData deleteData = BuildMultiValuesAfterRemove(ctx.oldData, key, ctx.callerBundleInfo);
+    type = DataShareObserver::ChangeType::UPDATE;
+    return UpdateProxyData(ctx.delegate, ctx.callerBundleInfo.bundleName,
+        ctx.callerBundleInfo.userId, ctx.callerBundleInfo.tokenId, deleteData);
+}
+
+size_t PublishedProxyData::CalculateCurrentTotal(const ProxyDataNode &oldData)
+{
+    size_t currentTotal = 0;
+    for (const auto &appPair : oldData.proxyData.multiValues) {
+        for (const auto &keyPair : appPair.second) {
+            currentTotal += GetValueLength(keyPair.second);
+        }
+    }
+    return currentTotal;
+}
+
+int32_t PublishedProxyData::CheckValueAndTotalLimits(const DataProxyValue &value,
+    size_t currentTotal, size_t maxValueLength)
+{
+    size_t valueLength = GetValueLength(value);
+    if (valueLength > MAX_SINGLE_MULTIVALUE_LENGTH) {
+        ZLOGE("value over limit %{public}zu > %{public}u",
+            valueLength, MAX_SINGLE_MULTIVALUE_LENGTH);
+        return OVER_LIMIT;
+    }
+    // Avoid integer overflow: check if addition would exceed maxValueLength
+    if (currentTotal > maxValueLength || valueLength > maxValueLength - currentTotal) {
+        ZLOGE("total over limit %{public}zu + %{public}zu > %{public}zu",
+            currentTotal, valueLength, maxValueLength);
+        return OVER_LIMIT;
+    }
+    return SUCCESS;
+}
+
+int32_t PublishedProxyData::UpsertMultiValueData(const UpsertContext &ctx, const std::string &key,
+    const DataProxyValue &value, DataShareObserver::ChangeType &type)
+{
+    DataShareProxyData updateData = BuildMultiValuesAfterPut(ctx.oldData, key, value, ctx.callerBundleInfo);
+    type = DataShareObserver::ChangeType::UPDATE;
+    return UpdateProxyData(ctx.delegate, ctx.callerBundleInfo.bundleName,
+        ctx.callerBundleInfo.userId, ctx.callerBundleInfo.tokenId, updateData);
+}
+
+int32_t PublishedProxyData::UpsertPutValues(UpsertContext &ctx, const std::string &key,
+    const DataProxyValue &value, DataShareObserver::ChangeType &type)
+{
+    auto appIter = ctx.oldData.proxyData.multiValues.find(ctx.callerBundleInfo.appIdentifier);
+    if (appIter == ctx.oldData.proxyData.multiValues.end()) {
+        // Case 1: appIdentifier not exists - need to check permission before inserting
+        if (!CanInsertMultiValues(ctx.callerBundleInfo, ctx.oldData)) {
+            ZLOGE("No permission to modify MultiValues");
+            return NO_PERMISSION;
+        }
+        size_t currentTotal = CalculateCurrentTotal(ctx.oldData);
+        int32_t ret = CheckValueAndTotalLimits(value, currentTotal, ctx.oldData.proxyData.maxValueLength);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+        return UpsertMultiValueData(ctx, key, value, type);
+    }
+
+    auto keyIter = appIter->second.find(key);
+    if (keyIter != appIter->second.end()) {
+        // Case 2a: key already exists under caller.appIdentifier, update directly without permission check
+        size_t oldSize = GetValueLength(keyIter->second);
+        size_t newSize = GetValueLength(value);
+
+        size_t currentTotal = CalculateCurrentTotal(ctx.oldData);
+        // maxValueLength is int32_t enum but always positive (4K/100K), safe to cast to size_t
+        size_t maxValueLengthSize = static_cast<size_t>(ctx.oldData.proxyData.maxValueLength);
+
+        // Avoid integer overflow: use subtraction-based check
+        if (newSize > oldSize) {
+            size_t sizeDiff = newSize - oldSize;
+            if (currentTotal > maxValueLengthSize || sizeDiff > maxValueLengthSize - currentTotal) {
+                ZLOGE("total over limit after update %{public}zu + %{public}zu > %{public}zu",
+                    currentTotal, sizeDiff, maxValueLengthSize);
+                return OVER_LIMIT;
+            }
+        }
+        return UpsertMultiValueData(ctx, key, value, type);
+    }
+
+    // Case 2b: key not exists - insert to existing appIdentifier
+    size_t callerAppendCount = appIter->second.size();
+    if (callerAppendCount >= MAX_MULTIVALUE_COUNT_PER_APP) {
+        ZLOGE("app %{public}s append count over limit %{public}zu >= %{public}zu",
+            ctx.callerBundleInfo.appIdentifier.c_str(), callerAppendCount, MAX_MULTIVALUE_COUNT_PER_APP);
+        return OVER_LIMIT;
+    }
+    size_t currentTotal = CalculateCurrentTotal(ctx.oldData);
+    int32_t ret = CheckValueAndTotalLimits(value, currentTotal, ctx.oldData.proxyData.maxValueLength);
+    if (ret != SUCCESS) {
+        return ret;
+    }
+    return UpsertMultiValueData(ctx, key, value, type);
 }
 
 int32_t PublishedProxyData::UpdateProxyDataList(std::shared_ptr<KvDBDelegate> delegate, const std::string &uri,
@@ -342,7 +571,7 @@ int32_t PublishedProxyData::UpdateProxyDataList(std::shared_ptr<KvDBDelegate> de
         ZLOGI("get bundle %{public}s's proxyData failed", callerBundleInfo.bundleName.c_str());
         return INNER_ERROR;
     }
-    
+
     auto it = std::find(uris.begin(), uris.end(), uri);
     if (it != uris.end()) {
         uris.erase(it);
@@ -535,5 +764,111 @@ void ProxyDataManager::OnAppUninstall(const std::string &bundleName, int32_t use
     for (const auto &uri : uris) {
         PublishedProxyData::Delete(uri, callerBundleInfo, proxyData, type);
     }
+}
+
+bool PublishedProxyData::IsConfigCompatible(ProxyDataUpsertMode mode, bool existingIsMultiValues)
+{
+    if (mode == NORMAL_PUBLISH && existingIsMultiValues) {
+        return false;
+    }
+    if ((mode == PUT_MULTIVALUES || mode == REMOVE_MULTIVALUES) && !existingIsMultiValues) {
+        return false;
+    }
+    return true;
+}
+
+bool PublishedProxyData::CanInsertMultiValues(const BundleInfo &callerBundleInfo, const ProxyDataNode &data)
+{
+    if (callerBundleInfo.tokenId == data.tokenId) {
+        return true;
+    }
+    for (const auto &item : data.proxyData.trustProviders) {
+        if (item == ALLOW_ALL || callerBundleInfo.appIdentifier == item) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool PublishedProxyData::CanModifyMultiValue(const ProxyDataNode &data, const std::string &key,
+    const BundleInfo &callerBundleInfo)
+{
+    for (const auto &appPair : data.proxyData.multiValues) {
+        auto keyIter = appPair.second.find(key);
+        if (keyIter != appPair.second.end()) {
+            if (callerBundleInfo.tokenId == data.tokenId) {
+                return true;
+            }
+            if (callerBundleInfo.appIdentifier == appPair.first) {
+                return true;
+            }
+            return false;
+        }
+    }
+    return false;
+}
+
+int32_t PublishedProxyData::BuildInitMultiValues(DataShareProxyData &data, const std::string &appIdentifier)
+{
+    if (!data.multiValues_.empty()) {
+        std::map<std::string, DataProxyValue> mergedData;
+        size_t totalSize = 0;
+        for (auto &placeholderPair : data.multiValues_) {
+            for (auto &keyPair : placeholderPair.second) {
+                mergedData[keyPair.first] = keyPair.second;
+                totalSize += GetValueLength(keyPair.second);
+            }
+        }
+
+        // maxValueLength is int32_t enum but always positive, safe to cast to size_t for comparison
+        if (totalSize > static_cast<size_t>(data.maxValueLength_)) {
+            ZLOGE("BuildInitMultiValues total size over limit, size %{public}zu > max %{public}zu",
+                totalSize, static_cast<size_t>(data.maxValueLength_));
+            return OVER_LIMIT;
+        }
+
+        data.multiValues_.clear();
+        data.multiValues_[appIdentifier] = mergedData;
+    }
+    data.value_ = "";
+    data.isMultiValues_ = true;
+    return SUCCESS;
+}
+
+DataShareProxyData PublishedProxyData::BuildMultiValuesAfterRemove(const ProxyDataNode &existing,
+    const std::string &key, const BundleInfo &callerBundleInfo)
+{
+    DataShareProxyData result;
+    result.uri_ = existing.proxyData.uri;
+    result.value_ = "";
+    result.allowList_ = existing.proxyData.allowList;
+    result.trustProviders_ = existing.proxyData.trustProviders;
+    result.isMultiValues_ = true;
+
+    result.multiValues_ = existing.proxyData.multiValues;
+    auto appIter = result.multiValues_.find(callerBundleInfo.appIdentifier);
+    if (appIter != result.multiValues_.end()) {
+        appIter->second.erase(key);
+    }
+
+    result.maxValueLength_ = existing.proxyData.maxValueLength;
+    return result;
+}
+
+DataShareProxyData PublishedProxyData::BuildMultiValuesAfterPut(const ProxyDataNode &existing,
+    const std::string &key, const DataProxyValue &value, const BundleInfo &callerBundleInfo)
+{
+    DataShareProxyData result;
+    result.uri_ = existing.proxyData.uri;
+    result.value_ = "";
+    result.allowList_ = existing.proxyData.allowList;
+    result.trustProviders_ = existing.proxyData.trustProviders;
+    result.isMultiValues_ = true;
+
+    result.multiValues_ = existing.proxyData.multiValues;
+    result.multiValues_[callerBundleInfo.appIdentifier][key] = value;
+
+    result.maxValueLength_ = existing.proxyData.maxValueLength;
+    return result;
 }
 } // namespace OHOS::DataShare
