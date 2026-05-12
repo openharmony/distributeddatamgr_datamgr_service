@@ -81,16 +81,6 @@ void KVDBNotifierProxy::SyncCompleted(uint64_t seqNum, ProgressDetail &&detail)
     }
 }
 
-void KVDBNotifierProxy::OnRemoteChange(const std::map<std::string, bool> &mask, int32_t dataType)
-{
-    MessageParcel reply;
-    int32_t status = IPC_SEND(static_cast<uint32_t>(
-        KVDBNotifierCode::TRANS_ON_REMOTE_CHANGED), reply, mask, dataType);
-    if (status != SUCCESS) {
-        ZLOGE("status:%{public}d, mask:%{public}zu, dataType:%{public}d", status, mask.size(), dataType);
-    }
-}
-
 void KVDBNotifierProxy::OnSwitchChange(const SwitchNotification &notification)
 {
     MessageParcel reply;
