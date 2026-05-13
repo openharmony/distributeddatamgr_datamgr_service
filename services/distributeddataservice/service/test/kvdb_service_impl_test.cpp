@@ -2009,5 +2009,117 @@ HWTEST_F(KvdbServiceImplTest, ResolveAutoLaunch_AppIdProcessLabel, TestSize.Leve
     auto result = kvdbServiceImpl_->ResolveAutoLaunch(identifier, launchParam);
     EXPECT_EQ(result, Status::SUCCESS);
 }
+
+/**
+* @tc.name: AddOptionsWithInvalidAreaLessThanEL0
+* @tc.desc: Test AddOptions with invalid area value less than EL0
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithInvalidAreaLessThanEL0, TestSize.Level0)
+{
+    ZLOGI("AddOptionsWithInvalidAreaLessThanEL0 start");
+    Options options;
+    options.isCustomDir = false;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = -1; // Invalid area: less than EL0
+    options.subUser = 0;
+    options.hapName = "test.hap";
+    options.autoSync = false;
+    options.encrypt = false;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+    
+    kvdbServiceImpl_->AddOptions(options, metaData);
+    
+    ASSERT_EQ(metaData.area, 0xff);
+}
+
+/**
+* @tc.name: AddOptionsWithInvalidAreaGreaterThanEL5
+* @tc.desc: Test AddOptions with invalid area value greater than EL5
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithInvalidAreaGreaterThanEL5, TestSize.Level0)
+{
+    ZLOGI("AddOptionsWithInvalidAreaGreaterThanEL5 start");
+    Options options;
+    options.isCustomDir = false;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = 10; // Invalid area: greater than EL5
+    options.subUser = 0;
+    options.hapName = "test.hap";
+    options.autoSync = false;
+    options.encrypt = false;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+    
+    kvdbServiceImpl_->AddOptions(options, metaData);
+    
+    ASSERT_EQ(metaData.area, 0xff);
+}
+
+/**
+* @tc.name: AddOptionsWithValidAreaEL0
+* @tc.desc: Test AddOptions with valid area value EL0
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithValidAreaEL0, TestSize.Level0)
+{
+    ZLOGI("AddOptionsWithValidAreaEL0 start");
+    Options options;
+    options.isCustomDir = false;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = GeneralStore::EL0; // Valid area: EL0
+    options.subUser = 0;
+    options.hapName = "test.hap";
+    options.autoSync = false;
+    options.encrypt = false;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+    
+    kvdbServiceImpl_->AddOptions(options, metaData);
+    
+    ASSERT_EQ(metaData.area, GeneralStore::EL0);
+}
+
+/**
+* @tc.name: AddOptionsWithValidAreaEL5
+* @tc.desc: Test AddOptions with valid area value EL5
+* @tc.type: FUNC
+* @tc.author:
+*/
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithValidAreaEL5, TestSize.Level0)
+{
+    ZLOGI("AddOptionsWithValidAreaEL5 start");
+    Options options;
+    options.isCustomDir = false;
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = GeneralStore::EL5; // Valid area: EL5
+    options.subUser = 0;
+    options.hapName = "test.hap";
+    options.autoSync = false;
+    options.encrypt = false;
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+    
+    kvdbServiceImpl_->AddOptions(options, metaData);
+    
+    ASSERT_EQ(metaData.area, GeneralStore::EL5);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
