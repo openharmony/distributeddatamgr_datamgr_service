@@ -14,23 +14,43 @@
 */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include "checker/checker_manager.h"
 #include "accesstoken_kit.h"
 #include "bootstrap.h"
 #include "hap_token_info.h"
+#include "mock/account_delegate_mock.h"
 #include "nativetoken_kit.h"
+#include "screen/screen_manager.h"
 #include "utils/crypto.h"
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
 using namespace OHOS::Security::AccessToken;
 class CheckerManagerTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {}
-    static void TearDownTestCase(void) {}
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
     NativeTokenInfoParams infoInstance{0};
+private:
+    static AccountDelegateMock *accountDelegateMock_;
 };
+
+AccountDelegateMock *CheckerManagerTest::accountDelegateMock_ = nullptr;
+
+void CheckerManagerTest::SetUpTestCase(void)
+{
+    accountDelegateMock_ = new (std::nothrow) AccountDelegateMock();
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock_);
+}
+
+void CheckerManagerTest::TearDownTestCase(void)
+{
+    ScreenManager::RegisterInstance(nullptr);
+    delete accountDelegateMock_;
+    accountDelegateMock_ = nullptr;
+}
 
 void CheckerManagerTest::SetUp(void)
 {
