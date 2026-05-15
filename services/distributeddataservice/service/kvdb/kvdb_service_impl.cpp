@@ -882,6 +882,32 @@ int32_t KVDBServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const
     return SUCCESS;
 }
 
+int32_t KVDBServiceImpl::OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &appId)
+{
+    ZLOGI("pid:%{public}d uid:%{public}d appId:%{public}s", pid, uid, appId.c_str());
+    CheckerManager::StoreInfo info;
+    info.uid = uid;
+    info.tokenId = tokenId;
+    info.bundleName = appId;
+    syncAgents_.EraseIf([pid, &info](auto &key, SyncAgent &agent) {
+        if (agent.pid_ != pid) {
+            return false;
+        }
+        if (CheckerManager::GetInstance().IsSwitches(info)) {
+            MetaDataManager::GetInstance().Unsubscribe(SwitchesMetaData::GetPrefix({}));
+        }
+        agent.watchers_.clear();
+        return true;
+    });
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId);
+    for (auto store : stores) {
+        if (store != nullptr) {
+            store->UnregisterDetailProgressObserver();
+        }
+    }
+    return SUCCESS;
+}
+
 bool KVDBServiceImpl::CompareTripleIdentifier(const std::string &accountId, const std::string &identifier,
     const StoreMetaData &storeMeta)
 {
