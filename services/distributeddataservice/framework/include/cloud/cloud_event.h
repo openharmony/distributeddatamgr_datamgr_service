@@ -40,6 +40,7 @@ public:
         UNLOCK_CLOUD_CONTAINER,
         SET_SEARCH_TRIGGER,
         UPGRADE_SCHEMA,
+        DATABASE_DELETED,
         CLOUD_BUTT
     };
 

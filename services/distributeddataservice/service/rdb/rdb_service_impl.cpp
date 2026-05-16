@@ -1063,6 +1063,7 @@ int32_t RdbServiceImpl::Delete(const RdbSyncerParam &param)
     } else {
         MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true);
     }
+    OnSearchableDBDelete(storeMeta);
     return RDB_OK;
 }
 
@@ -1871,6 +1872,18 @@ void RdbServiceImpl::OnSearchableChange(const StoreMetaData &metaData, const Rdb
         return;
     }
     PostHeartbeatTask(pid, config.delay_, storeInfo, eventInfo);
+}
+
+void RdbServiceImpl::OnSearchableDBDelete(const StoreMetaData &storeMeta)
+{
+    // Send DATABASE_DELETED event to notify data search service
+    if (!storeMeta.isSearchable) {
+        return;
+    }
+    ZLOGI("db delete, notify search service! bundleName: %{public}s", storeMeta.bundleName.c_str());
+    StoreInfo storeInfo = GetStoreInfoEx(storeMeta);
+    auto evt = std::make_unique<DbDeleteEvent>(std::move(storeInfo));
+    EventCenter::GetInstance().PostEvent(std::move(evt));
 }
 
 int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbChangedData &rdbChangedData,
