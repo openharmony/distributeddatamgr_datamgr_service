@@ -23,6 +23,7 @@
 
 #include "cloud/cloud_event.h"
 #include "commonevent/data_change_event.h"
+#include "commonevent/db_delete_event.h"
 #include "commonevent/set_searchable_event.h"
 #include "concurrent_map.h"
 #include "crypto/crypto_manager.h"
@@ -225,6 +226,7 @@ private:
 
     void OnSearchableChange(const StoreMetaData &metaData, const RdbNotifyConfig &config,
         const RdbChangedData &changedData);
+    void OnSearchableDBDelete(const StoreMetaData &storeMeta);
     int32_t SetDeviceDistributedTables(int32_t tableType, StoreMetaData &metaData,
         std::shared_ptr<DistributedData::GeneralStore> store);
     void SetCloudDistributedTables(const RdbSyncerParam &param, StoreMetaData &metaData);
