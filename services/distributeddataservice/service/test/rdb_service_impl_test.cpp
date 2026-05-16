@@ -2794,6 +2794,9 @@ HWTEST_F(RdbServiceImplTest, Delete_001, TestSize.Level1)
     param.user_ = "0";
     errCode = service.Delete(param);
     EXPECT_EQ(errCode, RDB_OK);
+    param.isSearchable_ = true;
+    errCode = service.Delete(param);
+    EXPECT_EQ(errCode, RDB_OK);
 }
 
 /**
