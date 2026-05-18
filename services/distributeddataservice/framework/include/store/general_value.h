@@ -128,6 +128,16 @@ struct ReportParam {
     std::string message = "";
 };
 
+enum class SubQueryType : uint32_t {
+    GET_ALL = 0,
+    GET_NEW = 1,
+};
+
+struct SubscribeCur {
+    SubQueryType queryType;
+    uint64_t cursor = 0;
+};
+
 using Assets = std::vector<Asset>;
 using Bytes = std::vector<uint8_t>;
 using Relations = std::map<std::string, std::string>;

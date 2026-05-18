@@ -48,6 +48,7 @@ public:
     using Snapshot = DistributedData::Snapshot;
     using BindAssets = std::shared_ptr<std::map<std::string, std::shared_ptr<Snapshot>>>;
     using CloudConflictHandler = DistributedData::CloudConflictHandler;
+    using SubscribeCur = DistributedData::SubscribeCur;
 
     explicit RdbGeneralStore(const StoreMetaData &, bool createRequired = false);
     ~RdbGeneralStore();
@@ -108,6 +109,11 @@ public:
     int32_t UnLockCloudDB() override;
     int32_t UpdateDBStatus() override;
     int32_t SetCloudConflictHandler(const std::shared_ptr<CloudConflictHandler> &handler) override;
+
+    int32_t SetBinlogEnabled(bool enabled) override;
+    int32_t QuerySubscribeOutput(const SubscribeCur &cursorIn, SubscribeCur &cursorOut, VBuckets &dataOut) override;
+    int32_t SetSubscribeCursor(const SubscribeCur &cursorIn) override;
+    int32_t SetSubscribeSchema(const std::string &schema) override;
 
 private:
     RdbGeneralStore(const RdbGeneralStore& rdbGeneralStore) = delete;

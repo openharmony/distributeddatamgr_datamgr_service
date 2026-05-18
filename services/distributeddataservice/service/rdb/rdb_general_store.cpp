@@ -53,6 +53,7 @@ using namespace std::chrono;
 using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
+using DBSubscribeCur = DistributedDB::DBSubscribeCur;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DBStatus = DistributedDB::DBStatus;
@@ -1287,6 +1288,90 @@ int32_t RdbGeneralStore::SetTrackerTable(const std::string &tableName, const std
     }
     return GeneralError::E_OK;
 }
+
+int32_t RdbGeneralStore::SetBinlogEnabled(bool enabled)
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto status = delegate_->SetBinlogEnabled(enabled);
+    if (status != DBStatus::OK) {
+        ZLOGE("SetBinlogEnabled failed! ret:%{public}d, database:%{public}s", status,
+            meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
+int32_t RdbGeneralStore::QuerySubscribeOutput(const SubscribeCur &cursorIn, SubscribeCur &cursorOut, VBuckets &dataOut)
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    DBSubscribeCur dbCursorIn{static_cast<DistributedDB::SubQueryType>(cursorIn.queryType), cursorIn.cursor};
+    DBSubscribeCur dbCursorOut{static_cast<DistributedDB::SubQueryType>(cursorOut.queryType), cursorOut.cursor};
+    std::vector<DistributedDB::VBucket> dbDataOut;
+    auto status = delegate_->QuerySubscribeOutput(dbCursorIn, dbCursorOut, dbDataOut);
+    if (status != DBStatus::OK && status != DBStatus::SUBSCRIBE_QUERY_END) {
+        ZLOGE("QuerySubscribeOutput failed! ret:%{public}d, database:%{public}s", status,
+            meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ERROR;
+    }
+    cursorOut.queryType = static_cast<SubQueryType>(dbCursorOut.queryType);
+    cursorOut.cursor = dbCursorOut.cursor;
+    dataOut = ValueProxy::Convert(std::move(dbDataOut));
+    return status;
+}
+
+int32_t RdbGeneralStore::SetSubscribeCursor(const SubscribeCur &cursorIn)
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    DBSubscribeCur dbCursorIn{static_cast<DistributedDB::SubQueryType>(cursorIn.queryType), cursorIn.cursor};
+    auto status = delegate_->SetSubscribeCursor(dbCursorIn);
+    if (status != DBStatus::OK) {
+        ZLOGE("SetSubscribeCursor failed! ret:%{public}d, database:%{public}s", status,
+            meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
+int32_t RdbGeneralStore::SetSubscribeSchema(const std::string &schema)
+{
+    if (isClosed_) {
+        ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    std::shared_lock<decltype(dbMutex_)> lock(dbMutex_);
+    if (delegate_ == nullptr) {
+        return GeneralError::E_ALREADY_CLOSED;
+    }
+    auto status = delegate_->SetSubscribeSchema(schema);
+    if (status != DBStatus::OK) {
+        ZLOGE("SetSubscribeSchema failed! ret:%{public}d, database:%{public}s", status,
+            meta_.GetStoreAlias().c_str());
+        return GeneralError::E_ERROR;
+    }
+    return GeneralError::E_OK;
+}
+
 
 std::shared_ptr<Cursor> RdbGeneralStore::RemoteQuery(const std::string &device,
     const DistributedDB::RemoteCondition &remoteCondition)

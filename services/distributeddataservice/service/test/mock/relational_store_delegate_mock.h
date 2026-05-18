@@ -219,6 +219,57 @@ public:
     {
         return DBStatus::OK;
     }
+
+    DBStatus SetBinlogEnabled(bool enabled) override
+    {
+        return resSetBinlogEnabled_;
+    }
+
+    static inline DBStatus resSetBinlogEnabled_ = DBStatus::OK;
+    static bool SetResSetBinlogEnabled(DBStatus res)
+    {
+        resSetBinlogEnabled_ = res;
+        return true;
+    }
+
+    DBStatus QuerySubscribeOutput(const DBSubscribeCur &cursorIn, DBSubscribeCur &cursorOut,
+        std::vector<DistributedDB::VBucket> &dataOut) override
+    {
+        cursorOut = cursorIn;
+        return resQuerySubscribeOutput_;
+    }
+
+    static inline DBStatus resQuerySubscribeOutput_ = DBStatus::OK;
+    static bool SetResQuerySubscribeOutput(DBStatus res)
+    {
+        resQuerySubscribeOutput_ = res;
+        return true;
+    }
+
+    DBStatus SetSubscribeCursor(const DBSubscribeCur &cursor) override
+    {
+        return resSetSubscribeCursor_;
+    }
+
+    static inline DBStatus resSetSubscribeCursor_ = DBStatus::OK;
+    static bool SetResSetSubscribeCursor(DBStatus res)
+    {
+        resSetSubscribeCursor_ = res;
+        return true;
+    }
+
+    DBStatus SetSubscribeSchema(const std::string &schema) override
+    {
+        return resSetSubscribeSchema_;
+    }
+
+    static inline DBStatus resSetSubscribeSchema_ = DBStatus::OK;
+    static bool SetResSetSubscribeSchema(DBStatus res)
+    {
+        resSetSubscribeSchema_ = res;
+        return true;
+    }
+
     static bool gTestResult;
 protected:
     DBStatus RemoveDeviceDataInner(const std::string &device, ClearMode mode) override
