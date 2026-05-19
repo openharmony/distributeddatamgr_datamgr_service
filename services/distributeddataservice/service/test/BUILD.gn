@@ -1985,6 +1985,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "hitrace:libhitracechain",
+    "hitrace:hitrace_meter",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:distributeddata_inner",
@@ -2356,6 +2357,7 @@ ohos_unittest("LifeCycleManagerTest") {
   ]
 
   external_deps = [
+    "ability_base:want",
     "c_utils:utils",
     "hilog:libhilog",
     "kv_store:distributeddata_inner",
