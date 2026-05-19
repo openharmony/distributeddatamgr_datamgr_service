@@ -60,7 +60,6 @@ ohos_fuzztest("UdmfServiceDataFuzzTest") {
   ]
 
   external_deps = [
-    "ability_base:want",
     "ability_base:zuri",
     "ability_runtime:uri_permission_mgr",
     "access_token:libaccesstoken_sdk",
@@ -72,7 +71,6 @@ ohos_fuzztest("UdmfServiceDataFuzzTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_core",
-    "image_framework:image",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
