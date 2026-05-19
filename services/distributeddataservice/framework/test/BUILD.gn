@@ -46,6 +46,7 @@ ohos_unittest("CheckerManagerTest") {
   sources = [
     "checker_manager_test.cpp",
     "${data_service_path}/framework/checker/checker_manager.cpp",
+    "${data_service_path}/framework/utils/crypto.cpp",
   ]
 
   configs = [ ":module_private_config" ]
@@ -66,7 +67,6 @@ ohos_unittest("CheckerManagerTest") {
 
   deps = [
     "${data_service_path}/app/src/checker:distributeddata_checker",
-    "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
   ]
 }
