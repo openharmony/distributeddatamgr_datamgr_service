@@ -90,6 +90,7 @@ ohos_source_set("udmf_server") {
     "hitrace:hitrace_meter",
     "hitrace:libhitracechain",
     "ipc:ipc_core",
+    "image_framework:image",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
     "udmf:udmf_client",

@@ -24,6 +24,7 @@
 #include "udmf_notifier_proxy.h"
 #include "udmf_service_stub.h"
 #include "metadata/meta_data_manager.h"
+#include "uri.h"
 namespace OHOS {
 namespace UDMF {
 /*
