@@ -378,6 +378,16 @@ bool MetaDataManager::Sync(const DeviceMetaSyncOption &option, OnComplete comple
     if (!inited_ || option.devices.empty()) {
         return false;
     }
+    if (option.isWait) {
+        auto result = SyncCommonMeta(option, nullptr);
+        if (!result) {
+            ZLOGE("common metadata wait failed, bundleName:%{public}s, storeId:%{public}s",
+                option.bundleName.c_str(), Anonymous::Change(option.storeId).c_str());
+            return false;
+        }
+        result = SyncStoreMeta(option, nullptr);
+        return result;
+    }
     auto result = SyncCommonMeta(option, CommonSyncComplete(option, complete));
     if (!result) {
         ZLOGE("common metadata sync task failed, bundleName:%{public}s, storeId:%{public}s",
