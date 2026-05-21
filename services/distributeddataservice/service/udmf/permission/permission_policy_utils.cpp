@@ -16,6 +16,7 @@
 
 #include "permission_policy_utils.h"
 #include "uri_permission_util.h"
+#include "want.h"
 
 namespace OHOS {
 namespace UDMF {

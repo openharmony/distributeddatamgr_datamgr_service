@@ -14,6 +14,7 @@
  */
 #define LOG_TAG "LifeCycleManager"
 
+#include <cinttypes>
 #include "lifecycle_manager.h"
 
 #include "drag_lifecycle_policy.h"
