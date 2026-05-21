@@ -251,6 +251,26 @@ public:
     }
     virtual void SetCacheFlag(bool isCache) {};
     virtual void PublishCacheChange() {};
+
+    virtual int32_t SetBinlogEnabled(bool enabled)
+    {
+        return 0;
+    }
+
+    virtual int32_t QuerySubscribeOutput(const SubscribeCur &cursorIn, SubscribeCur &cursorOut, VBuckets &dataOut)
+    {
+        return 0;
+    }
+
+    virtual int32_t SetSubscribeCursor(const SubscribeCur &cursorIn)
+    {
+        return 0;
+    }
+
+    virtual int32_t SetSubscribeSchema(const std::string &schema)
+    {
+        return 0;
+    }
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_STORE_GENERAL_STORE_H
