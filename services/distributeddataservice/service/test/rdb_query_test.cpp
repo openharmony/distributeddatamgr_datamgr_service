@@ -444,5 +444,23 @@ HWTEST_F(RdbQueryTest, RdbQueryTest017, TestSize.Level1)
     RdbQuery cloudQuery1(predicates, true);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
+
+/**
+* @tc.name: RdbQueryTest018
+* @tc.desc: RdbQuery function operation LIMIT with empty values test.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author:
+*/
+HWTEST_F(RdbQueryTest, RdbQueryTest018, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<std::string> emptyValues;
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::LIMIT, "10", emptyValues);
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+    EXPECT_TRUE(emptyValues.empty());
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
