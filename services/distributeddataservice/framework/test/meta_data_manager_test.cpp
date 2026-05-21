@@ -449,4 +449,68 @@ HWTEST_F(MetaDataManagerTest, SyncWithOptionTest007, TestSize.Level1)
     EXPECT_EQ(syncCallCount, 2);
     metaStore->syncFunc = nullptr;
 }
+
+/**
+ * @tc.name: SyncWithOptionTest008
+ * @tc.desc: isWait is true, sync should call SyncCommonMeta and SyncStoreMeta directly.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(MetaDataManagerTest, SyncWithOptionTest008, TestSize.Level1)
+{
+    UserMetaData userMetaData;
+    UserStatus userStatus(100, true);
+    userMetaData.users.push_back(userStatus);
+    std::string userKey = UserMetaRow::GetKeyFor("device001");
+    MetaDataManager::GetInstance().SaveMeta(userKey, userMetaData, false);
+
+    MetaDataManager::DeviceMetaSyncOption option;
+    option.devices = { "device001" };
+    option.localDevice = "localDevice";
+    option.bundleName = "com.test";
+    option.storeId = "testStore";
+    option.isWait = true;
+    MetaDataManager::OnComplete complete;
+    int syncCallCount = 0;
+    metaStore->syncFunc = [&syncCallCount](const auto &option, const auto &onComplete) {
+        syncCallCount++;
+        std::map<std::string, DistributedDB::DBStatus> result;
+        for (const auto &device : option.devices) {
+            result[device] = DistributedDB::DBStatus::OK;
+        }
+        if (onComplete) {
+            onComplete(result);
+        }
+        return DistributedDB::DBStatus::OK;
+    };
+    auto result = MetaDataManager::GetInstance().Sync(option, complete);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(syncCallCount, 2);
+    metaStore->syncFunc = nullptr;
+}
+
+/**
+ * @tc.name: SyncWithOptionTest009
+ * @tc.desc: isWait is true, SyncCommonMeta failed should return false.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(MetaDataManagerTest, SyncWithOptionTest009, TestSize.Level1)
+{
+    MetaDataManager::DeviceMetaSyncOption option;
+    option.devices = { "device001" };
+    option.localDevice = "localDevice";
+    option.bundleName = "com.test";
+    option.storeId = "testStore";
+    option.isWait = true;
+    MetaDataManager::OnComplete complete;
+    metaStore->syncFunc = [](const auto &option, const auto &onComplete) {
+        return DistributedDB::DBStatus::DB_ERROR;
+    };
+    auto result = MetaDataManager::GetInstance().Sync(option, complete);
+    EXPECT_FALSE(result);
+    metaStore->syncFunc = nullptr;
+}
 } // namespace OHOS::Test
