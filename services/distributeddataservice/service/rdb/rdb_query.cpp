@@ -167,6 +167,9 @@ void RdbQuery::OrderBy(const RdbPredicateOperation &operation)
 
 void RdbQuery::Limit(const RdbPredicateOperation &operation)
 {
+    if (operation.values_.empty()) {
+        return;
+    }
     if (auto strVal = std::get_if<std::string>(&operation.values_[0])) {
         char *end = nullptr;
         int limit = static_cast<int>(strtol(operation.field_.c_str(), &end, DECIMAL_BASE));
