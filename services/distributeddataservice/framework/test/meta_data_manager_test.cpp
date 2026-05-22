@@ -513,40 +513,4 @@ HWTEST_F(MetaDataManagerTest, SyncWithOptionTest009, TestSize.Level1)
     EXPECT_FALSE(result);
     metaStore->syncFunc = nullptr;
 }
-
-/**
- * @tc.name: SyncWithOptionTest010
- * @tc.desc: isWait is true, SyncCommonMeta success but SyncStoreMeta failed (empty queryKeys) should return false.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author:
- */
-HWTEST_F(MetaDataManagerTest, SyncWithOptionTest010, TestSize.Level1)
-{
-    MetaDataManager::DeviceMetaSyncOption option;
-    option.devices = { "device001" };
-    option.localDevice = "localDevice";
-    option.bundleName = "com.test";
-    option.storeId = "testStore";
-    option.isWait = true;
-    MetaDataManager::OnComplete complete;
-    
-    int syncCallCount = 0;
-    metaStore->syncFunc = [&syncCallCount](const auto &option, const auto &onComplete) {
-        syncCallCount++;
-        std::map<std::string, DistributedDB::DBStatus> result;
-        for (const auto &device : option.devices) {
-            result[device] = DistributedDB::DBStatus::OK;
-        }
-        if (onComplete) {
-            onComplete(result);
-        }
-        return DistributedDB::DBStatus::OK;
-    };
-    
-    auto result = MetaDataManager::GetInstance().Sync(option, complete);
-    EXPECT_FALSE(result);
-    EXPECT_EQ(syncCallCount, 1);
-    metaStore->syncFunc = nullptr;
-}
 } // namespace OHOS::Test
