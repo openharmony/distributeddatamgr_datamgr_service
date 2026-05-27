@@ -1128,7 +1128,9 @@ std::vector<DataProxyResult> DataShareServiceImpl::PublishProxyData(const std::v
     std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> datas;
     for (const auto &data : proxyDatas) {
         DataShareObserver::ChangeType type;
-        auto ret = PublishedProxyData::Upsert(data, callerBundleInfo, type, proxyConfig);
+        ProxyDataUpsertMode mode = data.isMultiValues_ ? ProxyDataUpsertMode::PUBLISH_MULTIVALUES
+                                                           : ProxyDataUpsertMode::NORMAL_PUBLISH;
+        auto ret = PublishedProxyData::Upsert(data, callerBundleInfo, type, proxyConfig, mode);
         result.emplace_back(data.uri_, static_cast<DataProxyErrorCode>(ret));
         if (ret == SUCCESS &&
             (type == DataShareObserver::ChangeType::INSERT || type == DataShareObserver::ChangeType::UPDATE)) {
@@ -1205,7 +1207,7 @@ std::vector<DataProxyGetResult> DataShareServiceImpl::GetProxyData(const std::ve
     size_t maxLength = static_cast<size_t>(proxyConfig.maxValueLength_);
     for (const auto &uri : uris) {
         DataShareProxyData proxyData;
-        auto ret = PublishedProxyData::Query(uri, callerBundleInfo, proxyData);
+        auto ret = PublishedProxyData::Query(uri, callerBundleInfo, proxyData, QUERY_VALUE);
         if (ret == SUCCESS && proxyData.value_.index() == DataProxyValueType::VALUE_STRING) {
             std::string valueStr = std::get<std::string>(proxyData.value_);
             if (valueStr.size() > maxLength) {
@@ -1493,5 +1495,85 @@ std::pair<int32_t, ConnectionInterfaceInfo> DataShareServiceImpl::GetConnectionI
 {
     std::shared_ptr<SAConnection> connection = std::make_shared<SAConnection>(saId, waitTime);
     return connection->GetConnectionInterfaceInfo();
+}
+
+DataProxyResult DataShareServiceImpl::PutValues(const std::string &uri, const std::string &key,
+    const DataProxyValue &value, const DataProxyConfig &proxyConfig)
+{
+    ZLOGI("PutValues uri:%{public}s, key:%{public}s", URIUtils::Anonymous(uri).c_str(), key.c_str());
+
+    BundleInfo callerBundleInfo;
+    if (!GetCallerBundleInfo(callerBundleInfo)) {
+        ZLOGE("get callerBundleInfo failed");
+        return DataProxyResult(uri, DataProxyErrorCode::INNER_ERROR);
+    }
+
+    DataShareProxyData proxyData(uri, value);
+    proxyData.multiValues_[callerBundleInfo.appIdentifier][key] = value;
+    proxyData.isMultiValues_ = true;
+
+    DataShareObserver::ChangeType type;
+    int32_t ret = PublishedProxyData::Upsert(proxyData, callerBundleInfo, type, proxyConfig,
+        ProxyDataUpsertMode::PUT_MULTIVALUES);
+
+    return DataProxyResult(uri, static_cast<DataProxyErrorCode>(ret));
+}
+
+DataProxyResult DataShareServiceImpl::RemoveValue(const std::string &uri, const std::string &key,
+    const DataProxyConfig &proxyConfig)
+{
+    ZLOGI("RemoveValue uri:%{public}s, key:%{public}s", URIUtils::Anonymous(uri).c_str(), key.c_str());
+
+    BundleInfo callerBundleInfo;
+    if (!GetCallerBundleInfo(callerBundleInfo)) {
+        ZLOGE("get callerBundleInfo failed");
+        return DataProxyResult(uri, DataProxyErrorCode::INNER_ERROR);
+    }
+
+    DataShareProxyData proxyData(uri, DataProxyValue(""));
+    proxyData.multiValues_[callerBundleInfo.appIdentifier][key] = DataProxyValue("");
+    proxyData.isMultiValues_ = true;
+
+    DataShareObserver::ChangeType type;
+    int32_t ret = PublishedProxyData::Upsert(proxyData, callerBundleInfo, type, proxyConfig,
+        ProxyDataUpsertMode::REMOVE_MULTIVALUES);
+
+    return DataProxyResult(uri, static_cast<DataProxyErrorCode>(ret));
+}
+
+DataProxyGetResult DataShareServiceImpl::GetValues(const std::string &uri,
+    const DataProxyConfig &proxyConfig)
+{
+    ZLOGI("GetValues uri:%{public}s", URIUtils::Anonymous(uri).c_str());
+
+    DataProxyGetResult result;
+    result.uri_ = uri;
+
+    BundleInfo callerBundleInfo;
+    if (!GetCallerBundleInfo(callerBundleInfo)) {
+        ZLOGE("get callerBundleInfo failed");
+        result.result_ = DataProxyErrorCode::INNER_ERROR;
+        return result;
+    }
+
+    DataShareProxyData proxyData;
+    int32_t ret = PublishedProxyData::Query(uri, callerBundleInfo, proxyData, QUERY_MULTIVALUES);
+    if (ret != SUCCESS) {
+        result.result_ = static_cast<DataProxyErrorCode>(ret);
+        return result;
+    }
+
+    result.value_ = proxyData.value_;
+    result.allowList_ = proxyData.allowList_;
+
+    auto appIter = proxyData.multiValues_.find(callerBundleInfo.appIdentifier);
+    if (appIter != proxyData.multiValues_.end()) {
+        for (const auto &keyPair : appIter->second) {
+            result.multiValues_.push_back(keyPair.second);
+        }
+    }
+
+    result.result_ = DataProxyErrorCode::SUCCESS;
+    return result;
 }
 } // namespace OHOS::DataShare

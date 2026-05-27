@@ -586,5 +586,56 @@ int32_t DataShareServiceStub::OnGetConnectionInterfaceInfo(MessageParcel& data, 
     }
     return 0;
 }
+
+int32_t DataShareServiceStub::OnPutValues(MessageParcel& data, MessageParcel& reply)
+{
+    std::string uri;
+    std::string key;
+    DataProxyValue value;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uri, key, value, config)) {
+        ZLOGE("OnPutValues unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    DataProxyResult result = PutValues(uri, key, value, config);
+    if (!ITypesUtil::Marshal(reply, result)) {
+        ZLOGE("OnPutValues Marshal reply failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnRemoveValue(MessageParcel& data, MessageParcel& reply)
+{
+    std::string uri;
+    std::string key;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uri, key, config)) {
+        ZLOGE("OnRemoveValue unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    DataProxyResult result = RemoveValue(uri, key, config);
+    if (!ITypesUtil::Marshal(reply, result)) {
+        ZLOGE("OnRemoveValue Marshal reply failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
+
+int32_t DataShareServiceStub::OnGetValues(MessageParcel& data, MessageParcel& reply)
+{
+    std::string uri;
+    DataProxyConfig config;
+    if (!ITypesUtil::Unmarshal(data, uri, config)) {
+        ZLOGE("OnGetValues unmarshal failed");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    DataProxyGetResult result = GetValues(uri, config);
+    if (!ITypesUtil::Marshal(reply, result)) {
+        ZLOGE("OnGetValues Marshal reply failed");
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return E_OK;
+}
 } // namespace DataShare
 } // namespace OHOS

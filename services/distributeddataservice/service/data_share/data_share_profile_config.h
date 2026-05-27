@@ -78,6 +78,10 @@ struct SerialDataShareProxyData : public DistributedData::Serializable {
     std::string uri;
     DataProxyValue value;
     std::vector<std::string> allowList;
+    std::map<std::string, std::map<std::string, DataProxyValue>> multiValues;
+    std::vector<std::string> trustProviders;
+    bool isMultiValues = false;
+    DataProxyMaxValueLength maxValueLength = DataProxyMaxValueLength::MAX_LENGTH_100K;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };
