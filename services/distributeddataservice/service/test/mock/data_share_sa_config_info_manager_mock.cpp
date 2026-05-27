@@ -57,26 +57,32 @@ int32_t DataShareSAConfigInfoManager::LoadConfigInfo(const std::string &pathName
     testConfig1.uri = "datashareproxy://com.acts.datasharetest/SAID=12321/longertest";
     testConfig1.requiredReadPermission = "read1";
     testConfig1.requiredWritePermission = "write1";
+    testConfig1.normalAppAccessible = false;
     SAConfigProxyData testConfig2;
     testConfig2.uri = "datashareproxy://com.acts.datasharetest/SAID=12321/uri";
     testConfig2.requiredReadPermission = "read2";
     testConfig2.requiredWritePermission = "write2";
+    testConfig2.normalAppAccessible = false;
     SAConfigProxyData testConfig3;
     testConfig3.uri = "datashareproxy://com.acts.datasharetest/SAID=12321/t";
     testConfig3.requiredReadPermission = "read3";
     testConfig3.requiredWritePermission = "write3";
+    testConfig3.normalAppAccessible = false;
+    SAConfigProxyData testConfig4;
+    testConfig4.uri = "datashareproxy://com.acts.datasharetest/SAID=12321/test_access";
+    testConfig4.requiredReadPermission = "read4";
+    testConfig4.requiredWritePermission = "write4";
+    testConfig4.normalAppAccessible = true;
     configInfo.proxyData.push_back(testConfig1);
     configInfo.proxyData.push_back(testConfig2);
     configInfo.proxyData.push_back(testConfig3);
+    configInfo.proxyData.push_back(testConfig4);
     return E_OK;
 }
 
 int32_t DataShareSAConfigInfoManager::GetDataShareSAConfigInfo(const std::string &bundleName, int32_t systemAbilityId,
     DataShareSAConfigInfo &info)
 {
-    if (!DataShareThreadLocal::IsFromSystemApp()) {
-        return E_NOT_SYSTEM_APP;
-    }
     std::string configKey = bundleName + std::to_string(systemAbilityId);
     auto it = configCache_.Find(configKey);
     if (it.first) {

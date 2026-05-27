@@ -20,6 +20,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "common_utils.h"
 #include "config_factory.h"
 #include "datashare_errno.h"
 #include "hap_token_info.h"
@@ -258,6 +259,12 @@ int32_t DataProviderConfig::GetFromDataShareConfig()
         providerInfo_.readPermission = std::move(data.requiredReadPermission);
         providerInfo_.writePermission = std::move(data.requiredWritePermission);
         providerInfo_.allowLists = std::move(data.profile.allowLists);
+        if (!DataShareThreadLocal::IsFromSystemApp() && !data.normalAppAccessible) {
+            ZLOGE("Not allow normal app visit SA, bundle:%{public}s, uri:%{public}s",
+                providerInfo_.bundleName.c_str(), URIUtils::Anonymous(providerInfo_.uri).c_str());
+            return E_NOT_SYSTEM_APP;
+        }
+        providerInfo_.normalAppAccessible = data.normalAppAccessible;
         // auto set SAID to moduleName
         providerInfo_.moduleName = URIUtils::SA_ID + std::to_string(providerInfo_.systemAbilityId);
         ProfileInfo profile = data.profile;

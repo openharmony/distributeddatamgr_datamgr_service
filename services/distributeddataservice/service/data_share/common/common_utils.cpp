@@ -82,7 +82,7 @@ bool VerifyProvider(const DataProviderConfig::ProviderInfo &providerInfo, const 
     if (DataShareThreadLocal::IsFromSystemApp()) {
         return true;
     }
-    if (!ProviderInAllowList(providerInfo.appIdentifier)) {
+    if (!ProviderInAllowList(providerInfo.appIdentifier) && !providerInfo.normalAppAccessible) {
         // No need to print since app not in AppGallery do not have appIdentifier.
         DataShareFaultInfo faultInfo{HiViewFaultAdapter::unapprovedProvider, providerInfo.bundleName.c_str(),
             providerInfo.moduleName.c_str(), "", __FUNCTION__, -1, "Silent"};

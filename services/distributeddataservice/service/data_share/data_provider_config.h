@@ -53,6 +53,7 @@ public:
         bool hasExtension = false;
         bool allowEmptyPermission = false;
         bool storeMetaDataFromUri = false;
+        bool normalAppAccessible = false;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
         std::vector<AllowList> allowLists;
     };

@@ -45,14 +45,14 @@ std::string longStr = std::string(256, 'a');
 
 /**
  * @tc.name: GetDataShareSAConfigInfo001
- * @tc.desc: Verify the behavior of GetDataShareSAConfigInfo when not a system app or using an invalid SA Id
+ * @tc.desc: Verify the behavior of GetDataShareSAConfigInfo with an invalid SA Id
  * @tc.type: FUNC
  * @tc.precon: DataShareSAConfigInfoManager is initialized and ready to process config info
  * @tc.step:
- *   1. Set from system app to false and test with an invalid SA Id, expect E_NOT_SYSTEM_APP
+ *   1. Set from system app to false and test with an invalid SA Id, expect E_ERROR
  *   2. Set from system app to true and test with an invalid SA Id, expect E_ERROR
  * @tc.expect:
- *   1. Return E_NOT_SYSTEM_APP when not a system app
+ *   1. Return E_ERROR when using an invalid SA Id (no system app check now)
  *   2. Return E_ERROR when using an invalid SA Id
  */
 HWTEST_F(DataShareSAConfigInfoManagerTest, GetDataShareSAConfigInfo001, TestSize.Level1)
@@ -64,7 +64,7 @@ HWTEST_F(DataShareSAConfigInfoManagerTest, GetDataShareSAConfigInfo001, TestSize
     DataShareSAConfigInfo outInfo;
     // no configInfo cache and LoadConfiInfo failed by using invalid SA Id
     int32_t ret = configInfoMgr->GetDataShareSAConfigInfo(testKey, testId, outInfo);
-    EXPECT_EQ(ret, E_NOT_SYSTEM_APP);
+    EXPECT_EQ(ret, E_ERROR);
 
     // set from system app true
     DataShareThreadLocal::SetFromSystemApp(true);
@@ -244,5 +244,81 @@ HWTEST_F(DataShareSAConfigInfoManagerTest, SAConfigProxyData002, TestSize.Level1
     ret = invalidWritePermissionDataTest.Unmarshal(invalidWritePermissionNode);
     EXPECT_FALSE(ret);
     ZLOGI("DataShareSAConfigInfoManagerTest SAConfigProxyData002 end");
+}
+
+/**
+ * @tc.name: SAConfigProxyData_NormalAppAccessible001
+ * @tc.desc: Verify Marshal/Unmarshal for normalAppAccessible field
+ * @tc.type: FUNC
+ * @tc.precon: SAConfigProxyData is initialized and ready to marshal/unmarshal JSON
+ * @tc.step:
+ *   1. Create SAConfigProxyData with normalAppAccessible=true
+ *   2. Marshal and Unmarshal, verify normalAppAccessible is preserved
+ *   3. Create SAConfigProxyData with normalAppAccessible=false
+ *   4. Marshal and Unmarshal, verify normalAppAccessible is preserved
+ * @tc.expect:
+ *   1. normalAppAccessible field correctly serialized/deserialized
+ */
+HWTEST_F(DataShareSAConfigInfoManagerTest, SAConfigProxyData_NormalAppAccessible001, TestSize.Level1)
+{
+    ZLOGI("DataShareSAConfigInfoManagerTest SAConfigProxyData_NormalAppAccessible001 start");
+    SAConfigProxyData dataWithTrue;
+    dataWithTrue.uri = testUri;
+    dataWithTrue.requiredReadPermission = testReadPermission;
+    dataWithTrue.requiredWritePermission = testWritePermission;
+    dataWithTrue.profile.storeName = testStoreName;
+    dataWithTrue.profile.tableName = testTableName;
+    dataWithTrue.normalAppAccessible = true;
+    DistributedData::Serializable::json nodeTrue;
+    dataWithTrue.Marshal(nodeTrue);
+
+    SAConfigProxyData testDataTrue;
+    bool ret = testDataTrue.Unmarshal(nodeTrue);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(testDataTrue.normalAppAccessible, true);
+
+    SAConfigProxyData dataWithFalse;
+    dataWithFalse.uri = testUri;
+    dataWithFalse.requiredReadPermission = testReadPermission;
+    dataWithFalse.requiredWritePermission = testWritePermission;
+    dataWithFalse.profile.storeName = testStoreName;
+    dataWithFalse.profile.tableName = testTableName;
+    dataWithFalse.normalAppAccessible = false;
+    DistributedData::Serializable::json nodeFalse;
+    dataWithFalse.Marshal(nodeFalse);
+
+    SAConfigProxyData testDataFalse;
+    ret = testDataFalse.Unmarshal(nodeFalse);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(testDataFalse.normalAppAccessible, false);
+    ZLOGI("DataShareSAConfigInfoManagerTest SAConfigProxyData_NormalAppAccessible001 end");
+}
+
+/**
+ * @tc.name: SAConfigProxyData_NormalAppAccessible002
+ * @tc.desc: Verify Unmarshal with missing normalAppAccessible field defaults to false
+ * @tc.type: FUNC
+ * @tc.precon: SAConfigProxyData is initialized and ready to unmarshal JSON
+ * @tc.step:
+ *   1. Create JSON node without normalAppAccessible field
+ *   2. Unmarshal and verify normalAppAccessible defaults to false
+ * @tc.expect:
+ *   1. normalAppAccessible defaults to false when not present in JSON
+ */
+HWTEST_F(DataShareSAConfigInfoManagerTest, SAConfigProxyData_NormalAppAccessible002, TestSize.Level1)
+{
+    ZLOGI("DataShareSAConfigInfoManagerTest SAConfigProxyData_NormalAppAccessible002 start");
+    DistributedData::Serializable::json node;
+    node["uri"] = testUri;
+    node["requiredReadPermission"] = testReadPermission;
+    node["requiredWritePermission"] = testWritePermission;
+    node["profile"]["storeName"] = testStoreName;
+    node["profile"]["tableName"] = testTableName;
+
+    SAConfigProxyData testData;
+    bool ret = testData.Unmarshal(node);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(testData.normalAppAccessible, false);
+    ZLOGI("DataShareSAConfigInfoManagerTest SAConfigProxyData_NormalAppAccessible002 end");
 }
 } // namespace OHOS::Test
