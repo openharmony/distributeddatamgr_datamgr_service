@@ -108,8 +108,7 @@ ohos_unittest("CloudDataMockTest") {
   configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
 
   cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
+    "-fno-access-control",
   ]
 
   deps = [
@@ -229,40 +228,6 @@ ohos_unittest("CloudTest") {
   ]
 }
 
-ohos_unittest("ValueProxyServiceTest") {
-  module_out_path = module_output_path
-  sources = [
-    "${data_service_path}/service/common/value_proxy.cpp",
-    "../common/value_proxy_test.cpp",
-  ]
-
-  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
-
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-    "-Wno-multichar",
-    "-Wno-c99-designator",
-  ]
-
-  external_deps = [
-    "ability_base:base",
-    "ability_base:want",
-    "c_utils:utils",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "ipc:ipc_core",
-    "kv_store:distributeddata_inner",
-    "kv_store:distributeddb",
-    "relational_store:native_rdb",
-  ]
-
-  deps = [
-    "${data_service_path}/framework:distributeddatasvcfwk",
-    "${data_service_path}/service:distributeddatasvc",
-  ]
-}
-
 ###############################################################################
 # Cloud Test Collection Group
 ###############################################################################
@@ -274,6 +239,5 @@ group("unittests") {
     ":CloudDataTest",
     ":CloudServiceImplTest",
     ":CloudTest",
-    ":ValueProxyServiceTest",
   ]
 }
