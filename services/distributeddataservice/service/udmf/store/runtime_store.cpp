@@ -211,7 +211,6 @@ Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
         if (PreProcessUtils::GetDetailsFromUData(unifiedData, details)) {
             return PreProcessUtils::GetSummaryFromDetails(details, summary);
         }
-        PreProcessUtils::GetSummary(unifiedData, summary);
         return E_OK;
     }
     auto status = DataHandler::UnmarshalEntries(value, summary, TAG::TAG_SUMMARY);
