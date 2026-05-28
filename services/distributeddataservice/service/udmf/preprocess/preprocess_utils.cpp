@@ -29,6 +29,7 @@
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "permission_policy_utils.h"
+#include "remote_file_share.h"
 #include "uri_permission_util.h"
 #include "sandbox_helper.h"
 #include "system_ability_definition.h"
@@ -768,6 +769,14 @@ Status PreProcessUtils::GetSummaryFromDetails(const UDDetails &details, Summary 
         }
     }
     return E_OK;
+}
+
+void PreProcessUtils::GetSummaryFromLoadInfo(const DataLoadInfo &dataLoadInfo, Summary &summary)
+{
+    summary.totalSize = dataLoadInfo.recordCount;
+    for (const auto &type : dataLoadInfo.types) {
+        summary.summary.emplace(type, 0);
+    }
 }
 
 std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)

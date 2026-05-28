@@ -20,7 +20,6 @@
 #include "delay_data_prepare_container.h"
 #include "log_print.h"
 #include "ipc_skeleton.h"
-#include "unified_data_helper.h"
 #include "udmf_radar_reporter.h"
 #include "account/account_delegate.h"
 #include "metadata/meta_data_manager.h"
@@ -125,7 +124,7 @@ Status RuntimeStore::PutDelayData(const UnifiedData &unifiedData, const DataLoad
         return E_INVALID_PARAMETERS;
     }
     Summary summary;
-    UnifiedDataHelper::GetSummaryFromLoadInfo(info, summary);
+    PreProcessUtils::GetSummaryFromLoadInfo(info, summary);
     auto status = PutSummary(runtime->key, summary);
     if (status != E_OK) {
         ZLOGE("PutSummary failed. status: %{public}d", status);
@@ -212,7 +211,7 @@ Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
         if (PreProcessUtils::GetDetailsFromUData(unifiedData, details)) {
             return PreProcessUtils::GetSummaryFromDetails(details, summary);
         }
-        UnifiedDataHelper::GetSummary(unifiedData, summary);
+        PreProcessUtils::GetSummary(unifiedData, summary);
         return E_OK;
     }
     auto status = DataHandler::UnmarshalEntries(value, summary, TAG::TAG_SUMMARY);
