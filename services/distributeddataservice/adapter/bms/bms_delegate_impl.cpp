@@ -25,6 +25,7 @@
 #include "system_ability_definition.h"
 
 namespace OHOS::DistributedData {
+
 __attribute__((used)) static bool g_init =
     BmsDelegate::RegisterInstance(std::static_pointer_cast<BmsDelegate>(std::make_shared<BmsDelegateImpl>()));
 
