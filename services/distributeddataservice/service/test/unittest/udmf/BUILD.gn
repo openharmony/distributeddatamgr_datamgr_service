@@ -161,7 +161,7 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "${data_service_path}/framework/checker/checker_manager.cpp",
     "${data_service_path}/framework/feature/feature_system.cpp",
     "${data_service_path}/service/backup/src/backup_manager.cpp",
-    "../../mock/meta_data_manager_mock.cpp",
+    "${data_service_path}/service/test/mock/meta_data_manager_mock.cpp",
     "${data_service_path}/service/udmf/delay_data/delay_data_acquire_container.cpp",
     "${data_service_path}/service/udmf/delay_data/delay_data_prepare_container.cpp",
     "${data_service_path}/service/udmf/delay_data/synced_device_container.cpp",
@@ -475,7 +475,7 @@ ohos_unittest("UdmfPreProcessUtilsTest") {
 ohos_unittest("UdmfPreProcessUtilsMockTest") {
   module_out_path = module_output_path
   sources = [
-    "../../mock/access_token_mock.cpp",
+    "${data_service_path}/service/test/mock/access_token_mock.cpp",
     "${data_service_path}/service/udmf/permission/permission_policy_utils.cpp",
     "${data_service_path}/service/udmf/preprocess/preprocess_utils.cpp",
     "udmf_preprocess_utils_mock_test.cpp",
@@ -872,6 +872,7 @@ group("unittests") {
   testonly = true
   deps = [
     ":UdmfCheckerManagerTest",
+    ":UdmfDelayDataContainerTest",
     ":UdmfObserverTest",
     ":UdmfPreProcessUtilsMockTest",
     ":UdmfPreProcessUtilsTest",
