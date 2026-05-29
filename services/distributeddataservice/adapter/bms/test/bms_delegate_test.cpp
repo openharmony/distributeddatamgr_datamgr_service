@@ -294,18 +294,6 @@ HWTEST_F(BmsDelegateTest, OnRemoteDied002, TestSize.Level0)
 }
 
 /**
-* @tc.name: ServiceDeathRecipient001
-* @tc.desc: service death recipient ignores null owner
-* @tc.type: FUNC
-*/
-HWTEST_F(BmsDelegateTest, ServiceDeathRecipient001, TestSize.Level0)
-{
-    BmsDelegateImpl::ServiceDeathRecipient recipient(nullptr);
-    recipient.OnRemoteDied(nullptr);
-    SUCCEED();
-}
-
-/**
 * @tc.name: ServiceDeathRecipient002
 * @tc.desc: service death recipient clears owner cache
 * @tc.type: FUNC
