@@ -38,7 +38,7 @@ ohos_unittest("UpgradeMockTest") {
   sources = [
     "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
     "${data_service_path}/service/kvdb/upgrade.cpp",
-    "../../mock/access_token_mock.cpp",
+    "../mock/access_token_mock.cpp",
     "upgrade_mock_test.cpp",
   ]
 

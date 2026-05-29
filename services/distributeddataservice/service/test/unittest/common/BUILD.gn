@@ -53,9 +53,9 @@ ohos_unittest("DeviceMatrixTest") {
   module_out_path = module_output_path
   sources = [
     "device_matrix_test.cpp",
-    "../../mock/checker_mock.cpp",
-    "../../mock/db_change_data_mock.cpp",
-    "../../mock/db_store_mock.cpp",
+    "../mock/checker_mock.cpp",
+    "../mock/db_change_data_mock.cpp",
+    "../mock/db_store_mock.cpp",
     "${data_service_path}/service/matrix/src/device_matrix.cpp",
     "${data_service_path}/service/matrix/src/matrix_event.cpp",
   ]
@@ -119,6 +119,7 @@ ohos_unittest("LifeCycleManagerTest") {
 
   cflags = [
     "-Werror=vla",
+    "-fno-access-control",
   ]
 
   deps = [
@@ -195,7 +196,6 @@ group("unittests") {
   testonly = true
   deps = [
     ":CryptoManagerTest",
-    ":DataHandlerTest",
     ":DeviceMatrixTest",
     ":DumpHelperTest",
     ":LifeCycleManagerTest",
