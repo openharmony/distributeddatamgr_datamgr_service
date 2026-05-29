@@ -31,10 +31,10 @@ ohos_unittest("KVDBGeneralStoreTest") {
   module_out_path = module_output_path
   sources = [
     "kvdb_general_store_test.cpp",
-    "../mock/db_change_data_mock.cpp",
-    "../mock/db_store_mock.cpp",
-    "../mock/general_watcher_mock.cpp",
-    "../mock/kv_store_nb_delegate_mock.cpp",
+    "../../mock/db_change_data_mock.cpp",
+    "../../mock/db_store_mock.cpp",
+    "../../mock/general_watcher_mock.cpp",
+    "../../mock/kv_store_nb_delegate_mock.cpp",
   ]
 
   include_dirs = [
@@ -80,11 +80,11 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
     "${data_service_path}/service/rdb/rdb_query.cpp",
     "kvdb_general_store_abnormal_test.cpp",
-    "../mock/db_change_data_mock.cpp",
-    "../mock/db_store_mock.cpp",
-    "../mock/device_manager_adapter_mock.cpp",
-    "../mock/general_watcher_mock.cpp",
-    "../mock/kv_store_nb_delegate_mock.cpp",
+    "../../mock/db_change_data_mock.cpp",
+    "../../mock/db_store_mock.cpp",
+    "../../mock/device_manager_adapter_mock.cpp",
+    "../../mock/general_watcher_mock.cpp",
+    "../../mock/kv_store_nb_delegate_mock.cpp",
     "${data_service_path}/service/matrix/src/device_matrix.cpp",
     "${data_service_path}/service/matrix/src/matrix_event.cpp",
   ]
@@ -212,9 +212,9 @@ ohos_unittest("KvdbServiceImplTest") {
     "kvdb_service_impl_test.cpp",
     "kvdb_service_stub_unittest.cpp",
     "kvdb_service_test.cpp",
-    "../mock/access_token_mock.cpp",
-    "../mock/checker_mock.cpp",
-    "../mock/meta_data_manager_mock.cpp",
+    "../../mock/access_token_mock.cpp",
+    "../../mock/checker_mock.cpp",
+    "../../mock/meta_data_manager_mock.cpp",
     "${data_service_path}/framework/cloud/cloud_server.cpp",
   ]
 
@@ -276,8 +276,8 @@ ohos_unittest("AuthDelegateMockTest") {
   sources = [
     "${data_service_path}/service/kvdb/auth_delegate.cpp",
     "auth_delegate_mock_test.cpp",
-    "../mock/device_manager_adapter_mock.cpp",
-    "../mock/user_delegate_mock.cpp",
+    "../../mock/device_manager_adapter_mock.cpp",
+    "../../mock/user_delegate_mock.cpp",
   ]
 
   external_deps = [

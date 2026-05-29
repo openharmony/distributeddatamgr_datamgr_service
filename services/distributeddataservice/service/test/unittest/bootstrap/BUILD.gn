@@ -54,7 +54,7 @@ ohos_unittest("BootStrapMockTest") {
     "${data_service_path}/service/config/src/model/protocol_config.cpp",
     "${data_service_path}/service/config/src/model/thread_config.cpp",
     "bootstrap_mock_test.cpp",
-    "../mock/config_factory_mock.cpp",
+    "../../mock/config_factory_mock.cpp",
   ]
 
   external_deps = [

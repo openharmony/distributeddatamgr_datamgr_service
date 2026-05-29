@@ -39,8 +39,8 @@ ohos_unittest("CloudDataTest") {
     "${data_service_path}/service/cloud/sync_config.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
-    "../mock/checker_mock.cpp",
-    "../mock/general_store_mock.cpp",
+    "../../mock/checker_mock.cpp",
+    "../../mock/general_store_mock.cpp",
     "cloud_data_test.cpp",
   ]
 
@@ -100,9 +100,9 @@ ohos_unittest("CloudDataMockTest") {
     "${data_service_path}/service/cloud/sync_config.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
-    "../mock/checker_mock.cpp",
+    "../../mock/checker_mock.cpp",
     "cloud_data_mock_test.cpp",
-    "../mock/access_token_mock.cpp",
+    "../../mock/access_token_mock.cpp",
   ]
 
   configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
@@ -157,7 +157,7 @@ ohos_unittest("CloudServiceImplTest") {
     "${data_service_path}/service/cloud/sync_config.cpp",
     "${data_service_path}/service/cloud/sync_manager.cpp",
     "${data_service_path}/service/cloud/sync_strategies/network_sync_strategy.cpp",
-    "../mock/checker_mock.cpp",
+    "../../mock/checker_mock.cpp",
     "cloud_notifier_proxy_test.cpp",
     "cloud_service_impl_test.cpp",
     "cloud_service_stub_test.cpp",

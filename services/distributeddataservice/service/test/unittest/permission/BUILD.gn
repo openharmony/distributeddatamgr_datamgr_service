@@ -65,7 +65,7 @@ ohos_unittest("PermissionValidatorMockTest") {
 
   sources = [
     "${data_service_path}/service/permission/src/permission_validator.cpp",
-    "../mock/access_token_mock.cpp",
+    "../../mock/access_token_mock.cpp",
     "permission_validator_mock_test.cpp",
   ]
 
@@ -105,8 +105,8 @@ ohos_unittest("PermitDelegateMockTest") {
     "${data_service_path}/service/kvdb/user_delegate.cpp",
     "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
-    "../mock/access_token_mock.cpp",
-    "../mock/meta_data_manager_mock.cpp",
+    "../../mock/access_token_mock.cpp",
+    "../../mock/meta_data_manager_mock.cpp",
     "permit_delegate_mock_test.cpp",
   ]
 
@@ -151,7 +151,7 @@ ohos_unittest("UserDelegateMockTest") {
   sources = [
     "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/kvdb/user_delegate.cpp",
-    "../mock/device_manager_adapter_mock.cpp",
+    "../../mock/device_manager_adapter_mock.cpp",
     "user_delegate_mock_test.cpp",
   ]
 
