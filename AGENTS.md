@@ -46,7 +46,7 @@ Where to look：
 - 权限、信任或认证变更 → 阅读 `docs/agent/security-boundary.md`
 - DFX、日志、故障归因变更 → 阅读 `docs/agent/dfx-guidelines.md`
 - 同步行为变更 → 阅读 `docs/agent/domain-sync.md`
-- 云端行为变更 → 阅读 `services/distributeddataservice/service/cloud/docs/domain-cloud.md`
+- 云端行为变更 → 阅读 `docs/agent/domain-cloud.md`
 - 数据共享或静默访问变更 → 阅读 `docs/agent/domain-data-share.md`
 - UDMF 行为变更 → 阅读 `docs/agent/domain-udmf.md`
 - 元数据或 StoreMetaData 变更 → 阅读 `docs/agent/domain-metadata.md`
@@ -55,7 +55,7 @@ Where to look：
 
 - `services/distributeddataservice/service/rdb/` → `docs/agent/domain-sync.md`
 - `services/distributeddataservice/service/kvdb/` → `docs/agent/domain-sync.md`
-- `services/distributeddataservice/service/cloud/` → `services/distributeddataservice/service/cloud/docs/domain-cloud.md`
+- `services/distributeddataservice/service/cloud/` → `docs/agent/domain-cloud.md`
 - `services/distributeddataservice/service/data_share/` → `docs/agent/domain-data-share.md`
 - `services/distributeddataservice/service/object/` → `docs/agent/domain-sync.md`
 - `services/distributeddataservice/service/udmf/` → `docs/agent/domain-udmf.md`
@@ -73,7 +73,7 @@ Where to look：
 | FeatureSystem / Feature | 功能模块注册和生命周期，不得直接跨模块依赖 | `docs/agent/architecture-map.md` |
 | StoreMetaData | 单数据库元数据描述，不是全局存储管理系统 | `docs/agent/domain-metadata.md` |
 | 静默访问 / SilentAccess | 跨应用数据共享，不启动提供方进程 | `docs/agent/domain-data-share.md` |
-| 端云同步 / CloudSync | 设备-云端数据同步协议 | `services/distributeddataservice/service/cloud/docs/domain-cloud.md` |
+| 端云同步 / CloudSync | 设备-云端数据同步协议 | `docs/agent/domain-cloud.md` |
 | 权限 / Permission | 数据访问权限校验，不得绕过 | `docs/agent/security-boundary.md` |
 | 版本兼容性协议 / API 兼容性 | 公共行为和兼容性边界 | `docs/agent/api-compatibility.md` |
 | DFX / HiLog / ZLOG | 可观测性、诊断、故障归因 | `docs/agent/dfx-guidelines.md` |

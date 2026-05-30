@@ -34,7 +34,7 @@ Key areas：
 
 Where to look：
 
-- 同步流程变更 → `sync_manager.h/.cpp` + `docs/domain-cloud.md`
+- 同步流程变更 → `sync_manager.h/.cpp` + `docs/agent/domain-cloud.md`
 - IPC 接口变更 → `cloud_service_impl.h/.cpp` + `cloud_service_stub.h/.cpp`
 - 同步策略变更 → `sync_strategies/` + `framework/include/cloud/sync_strategy.h`
 - 共享功能变更 → `cloud_value_util.h/.cpp` + `framework/include/cloud/sharing_center.h`
@@ -49,7 +49,7 @@ Where to look：
 
 ### Task-based routing
 
-- 端云同步行为变更 → 阅读 `docs/domain-cloud.md`
+- 端云同步行为变更 → 阅读 `docs/agent/domain-cloud.md`
 - IPC 接口或公共 API 变更 → 阅读 `docs/agent/api-compatibility.md`
 - 权限、云开关或认证变更 → 阅读 `docs/agent/security-boundary.md`
 - DFX、日志、故障归因变更 → 阅读 `docs/agent/dfx-guidelines.md`
@@ -58,8 +58,8 @@ Where to look：
 
 ### Path-based routing
 
-- `service/cloud/` → `docs/domain-cloud.md`
-- `framework/include/cloud/` → `docs/domain-cloud.md`
+- `service/cloud/` → `docs/agent/domain-cloud.md`
+- `framework/include/cloud/` → `docs/agent/domain-cloud.md`
 - `framework/include/store/general_store.h` → `docs/agent/domain-metadata.md`
 - `framework/include/metadata/` → `docs/agent/domain-metadata.md`
 - `app/distributed_data.cfg` → `docs/agent/security-boundary.md`
@@ -70,17 +70,17 @@ Where to look：
 
 | 术语 | 风险提示 | 阅读 |
 |---|---|---|
-| CloudSync / 端云同步 | 涉及双向数据一致性、冲突处理、水印管理 | `docs/domain-cloud.md` |
-| CloudInfo | 云用户信息，包含空间配额和应用开关状态 | `docs/domain-cloud.md` |
-| SchemaMeta | 云端 Schema 元数据，版本变更影响数据兼容性 | `docs/domain-cloud.md` |
+| CloudSync / 端云同步 | 涉及双向数据一致性、冲突处理、水印管理 | `docs/agent/domain-cloud.md` |
+| CloudInfo | 云用户信息，包含空间配额和应用开关状态 | `docs/agent/domain-cloud.md` |
+| SchemaMeta | 云端 Schema 元数据，版本变更影响数据兼容性 | `docs/agent/domain-cloud.md` |
 | GeneralStore / AutoCache | 服务端句柄管理，长期持有会泄漏资源 | `docs/agent/domain-metadata.md` |
-| SyncStrategy / NetworkSyncStrategy | 同步策略链，影响网络条件判断和同步触发 | `docs/domain-cloud.md` |
-| SharingCenter / 云共享 | 跨用户数据共享，涉及 Privilege/Participant 权限模型 | `docs/domain-cloud.md` |
-| CloudConflictHandler | 冲突解决策略，影响数据一致性 | `docs/domain-cloud.md` |
-| Subscription / 云订阅 | 云端订阅生命周期管理，有过期和续订逻辑 | `docs/domain-cloud.md` |
-| AssetLoader | 资产下载管理，涉及大文件和网络状态 | `docs/domain-cloud.md` |
-| CloudNotifierProxy | IPC 通知代理，回调语义变更影响应用层 | `docs/domain-cloud.md` |
-| SyncConfig / CloudDbSyncConfig | 同步配置管理，影响同步行为参数 | `docs/domain-cloud.md` |
+| SyncStrategy / NetworkSyncStrategy | 同步策略链，影响网络条件判断和同步触发 | `docs/agent/domain-cloud.md` |
+| SharingCenter / 云共享 | 跨用户数据共享，涉及 Privilege/Participant 权限模型 | `docs/agent/domain-cloud.md` |
+| CloudConflictHandler | 冲突解决策略，影响数据一致性 | `docs/agent/domain-cloud.md` |
+| Subscription / 云订阅 | 云端订阅生命周期管理，有过期和续订逻辑 | `docs/agent/domain-cloud.md` |
+| AssetLoader | 资产下载管理，涉及大文件和网络状态 | `docs/agent/domain-cloud.md` |
+| CloudNotifierProxy | IPC 通知代理，回调语义变更影响应用层 | `docs/agent/domain-cloud.md` |
+| SyncConfig / CloudDbSyncConfig | 同步配置管理，影响同步行为参数 | `docs/agent/domain-cloud.md` |
 | CLOUDFILE_SYNC / 云开关 | 权限和功能入口，不得绕过校验 | `docs/agent/security-boundary.md` |
 | ExecutorPool | 异步操作执行器，不得启动独立线程 | `docs/agent/architecture-map.md` |
 | Serializable | 统一序列化机制，不得使用外部依赖 | `docs/agent/architecture-map.md` |
