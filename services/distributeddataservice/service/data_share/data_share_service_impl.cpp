@@ -1497,10 +1497,10 @@ std::pair<int32_t, ConnectionInterfaceInfo> DataShareServiceImpl::GetConnectionI
     return connection->GetConnectionInterfaceInfo();
 }
 
-DataProxyResult DataShareServiceImpl::PutValues(const std::string &uri, const std::string &key,
+DataProxyResult DataShareServiceImpl::PutValue(const std::string &uri, const std::string &key,
     const DataProxyValue &value, const DataProxyConfig &proxyConfig)
 {
-    ZLOGI("PutValues uri:%{public}s, key:%{public}s", URIUtils::Anonymous(uri).c_str(), key.c_str());
+    ZLOGI("PutValue uri:%{public}s, key:%{public}s", URIUtils::Anonymous(uri).c_str(), key.c_str());
 
     BundleInfo callerBundleInfo;
     if (!GetCallerBundleInfo(callerBundleInfo)) {
@@ -1567,9 +1567,9 @@ DataProxyGetResult DataShareServiceImpl::GetValues(const std::string &uri,
     result.allowList_ = proxyData.allowList_;
 
     // Collect all values from all appIdentifiers under the URI
-    for (const auto &appPair : proxyData.multiValues_) {
-        for (const auto &keyPair : appPair.second) {
-            result.multiValues_.push_back(keyPair.second);
+    for (const auto &[appIdentifier, keyMap] : proxyData.multiValues_) {
+        for (const auto &[key, value] : keyMap) {
+            result.multiValues_.push_back(value);
         }
     }
 

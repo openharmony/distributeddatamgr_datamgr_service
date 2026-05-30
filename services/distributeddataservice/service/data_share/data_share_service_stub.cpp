@@ -587,19 +587,19 @@ int32_t DataShareServiceStub::OnGetConnectionInterfaceInfo(MessageParcel& data, 
     return 0;
 }
 
-int32_t DataShareServiceStub::OnPutValues(MessageParcel& data, MessageParcel& reply)
+int32_t DataShareServiceStub::OnPutValue(MessageParcel& data, MessageParcel& reply)
 {
     std::string uri;
     std::string key;
     DataProxyValue value;
     DataProxyConfig config;
     if (!ITypesUtil::Unmarshal(data, uri, key, value, config)) {
-        ZLOGE("OnPutValues unmarshal failed");
+        ZLOGE("OnPutValue unmarshal failed");
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    DataProxyResult result = PutValues(uri, key, value, config);
+    DataProxyResult result = PutValue(uri, key, value, config);
     if (!ITypesUtil::Marshal(reply, result)) {
-        ZLOGE("OnPutValues Marshal reply failed");
+        ZLOGE("OnPutValue Marshal reply failed");
         return IPC_STUB_WRITE_PARCEL_ERR;
     }
     return E_OK;

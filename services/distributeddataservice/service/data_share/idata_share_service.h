@@ -63,7 +63,7 @@ public:
         DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO,
         DATA_SHARE_SERVICE_CMD_PROXY_DELETE_ALL,
         DATA_SHARE_SERVICE_CMD_PROXY_APPEND,
-        DATA_SHARE_SERVICE_CMD_PROXY_PUT_VALUES,
+        DATA_SHARE_SERVICE_CMD_PROXY_PUT_VALUE,
         DATA_SHARE_SERVICE_CMD_PROXY_REMOVE_VALUE,
         DATA_SHARE_SERVICE_CMD_PROXY_GET_VALUES,
         DATA_SHARE_SERVICE_CMD_MAX,
@@ -143,7 +143,7 @@ public:
     virtual std::pair<int32_t, ConnectionInterfaceInfo> GetConnectionInterfaceInfo(int32_t saId,
         uint32_t waitTime) = 0;
 
-    virtual DataProxyResult PutValues(const std::string &uri, const std::string &key,
+    virtual DataProxyResult PutValue(const std::string &uri, const std::string &key,
         const DataProxyValue &value, const DataProxyConfig &proxyConfig) = 0;
 
     virtual DataProxyResult RemoveValue(const std::string &uri, const std::string &key,

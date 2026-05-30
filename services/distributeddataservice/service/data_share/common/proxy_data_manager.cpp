@@ -433,10 +433,10 @@ int32_t PublishedProxyData::UpsertUpdate(UpsertContext &ctx, const DataShareProx
     std::string targetKey;
     DataProxyValue targetValue;
     bool found = false;
-    for (const auto &appPair : data.multiValues_) {
-        if (!appPair.second.empty()) {
-            targetKey = appPair.second.begin()->first;
-            targetValue = appPair.second.begin()->second;
+    for (const auto &[appIdentifier, keyMap] : data.multiValues_) {
+        if (!keyMap.empty()) {
+            targetKey = keyMap.begin()->first;
+            targetValue = keyMap.begin()->second;
             found = true;
             break;
         }
@@ -446,7 +446,7 @@ int32_t PublishedProxyData::UpsertUpdate(UpsertContext &ctx, const DataShareProx
         return KEY_NOT_EXIST;
     }
     if (mode == PUT_MULTIVALUES) {
-        return UpsertPutValues(ctx, targetKey, targetValue, type);
+        return UpsertPutValue(ctx, targetKey, targetValue, type);
     }
     if (mode == REMOVE_MULTIVALUES) {
         return UpsertRemoveValue(ctx, targetKey, type);
@@ -469,9 +469,9 @@ int32_t PublishedProxyData::UpsertRemoveValue(UpsertContext &ctx, const std::str
 size_t PublishedProxyData::CalculateCurrentTotal(const ProxyDataNode &oldData)
 {
     size_t currentTotal = 0;
-    for (const auto &appPair : oldData.proxyData.multiValues) {
-        for (const auto &keyPair : appPair.second) {
-            currentTotal += GetValueLength(keyPair.second);
+    for (const auto &[appIdentifier, keyMap] : oldData.proxyData.multiValues) {
+        for (const auto &[key, value] : keyMap) {
+            currentTotal += GetValueLength(value);
         }
     }
     return currentTotal;
@@ -504,7 +504,7 @@ int32_t PublishedProxyData::UpsertMultiValueData(const UpsertContext &ctx, const
         ctx.callerBundleInfo.userId, ctx.callerBundleInfo.tokenId, updateData);
 }
 
-int32_t PublishedProxyData::UpsertPutValues(UpsertContext &ctx, const std::string &key,
+int32_t PublishedProxyData::UpsertPutValue(UpsertContext &ctx, const std::string &key,
     const DataProxyValue &value, DataShareObserver::ChangeType &type)
 {
     auto appIter = ctx.oldData.proxyData.multiValues.find(ctx.callerBundleInfo.appIdentifier);
@@ -793,13 +793,13 @@ bool PublishedProxyData::CanInsertMultiValues(const BundleInfo &callerBundleInfo
 bool PublishedProxyData::CanModifyMultiValue(const ProxyDataNode &data, const std::string &key,
     const BundleInfo &callerBundleInfo)
 {
-    for (const auto &appPair : data.proxyData.multiValues) {
-        auto keyIter = appPair.second.find(key);
-        if (keyIter != appPair.second.end()) {
+    for (const auto &[appIdentifier, keyMap] : data.proxyData.multiValues) {
+        auto keyIter = keyMap.find(key);
+        if (keyIter != keyMap.end()) {
             if (callerBundleInfo.tokenId == data.tokenId) {
                 return true;
             }
-            if (callerBundleInfo.appIdentifier == appPair.first) {
+            if (callerBundleInfo.appIdentifier == appIdentifier) {
                 return true;
             }
             return false;
@@ -813,10 +813,10 @@ int32_t PublishedProxyData::BuildInitMultiValues(DataShareProxyData &data, const
     if (!data.multiValues_.empty()) {
         std::map<std::string, DataProxyValue> mergedData;
         size_t totalSize = 0;
-        for (auto &placeholderPair : data.multiValues_) {
-            for (auto &keyPair : placeholderPair.second) {
-                mergedData[keyPair.first] = keyPair.second;
-                totalSize += GetValueLength(keyPair.second);
+        for (auto &[placeholderId, keyMap] : data.multiValues_) {
+            for (auto &[key, value] : keyMap) {
+                mergedData[key] = value;
+                totalSize += GetValueLength(value);
             }
         }
 
