@@ -59,7 +59,7 @@ private:
     int32_t OnUnsubscribeProxyData(MessageParcel& data, MessageParcel& reply);
     int32_t OnGetConnectionInterfaceInfo(MessageParcel& data, MessageParcel& reply);
     int32_t OnDeleteAllProxyData(MessageParcel& data, MessageParcel& reply);
-    int32_t OnPutValues(MessageParcel& data, MessageParcel& reply);
+    int32_t OnPutValue(MessageParcel& data, MessageParcel& reply);
     int32_t OnRemoveValue(MessageParcel& data, MessageParcel& reply);
     int32_t OnGetValues(MessageParcel& data, MessageParcel& reply);
     using RequestHandle = int (DataShareServiceStub::*)(MessageParcel &, MessageParcel &);
@@ -93,7 +93,7 @@ private:
         &DataShareServiceStub::OnUnsubscribeProxyData,
         &DataShareServiceStub::OnGetConnectionInterfaceInfo,
         &DataShareServiceStub::OnDeleteAllProxyData,
-        &DataShareServiceStub::OnPutValues,
+        &DataShareServiceStub::OnPutValue,
         &DataShareServiceStub::OnRemoveValue,
         &DataShareServiceStub::OnGetValues};
     static constexpr int SLEEP_TIME = 300;

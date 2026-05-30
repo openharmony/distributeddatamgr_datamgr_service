@@ -124,7 +124,7 @@ private:
         const ProxyDataUpsertMode mode, DataShareObserver::ChangeType &type);
     static int32_t UpsertRemoveValue(UpsertContext &ctx, const std::string &key,
         DataShareObserver::ChangeType &type);
-    static int32_t UpsertPutValues(UpsertContext &ctx, const std::string &key,
+    static int32_t UpsertPutValue(UpsertContext &ctx, const std::string &key,
         const DataProxyValue &value, DataShareObserver::ChangeType &type);
     static size_t CalculateCurrentTotal(const ProxyDataNode &oldData);
     static int32_t CheckValueAndTotalLimits(const DataProxyValue &value,
