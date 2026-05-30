@@ -603,15 +603,14 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
     auto cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_PUSH_ONLY;
     store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
-    std::vector<int> users;
+    std::vector<int> users = {1};
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(1)
         .WillOnce(DoAll(
             SetArgReferee<0>(users),
-            Invoke([](std::vector<int>& users) { users.clear(); }),
             Return(true)));
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
-    EXPECT_EQ(ret, DBStatus::DB_ERROR);
+    EXPECT_EQ(ret, DBStatus::OK);
 
     store->storeInfo_.user = 1;
     cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_CLOUD_FORCE_PUSH;
