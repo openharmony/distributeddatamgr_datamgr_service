@@ -1566,9 +1566,9 @@ DataProxyGetResult DataShareServiceImpl::GetValues(const std::string &uri,
     result.value_ = proxyData.value_;
     result.allowList_ = proxyData.allowList_;
 
-    auto appIter = proxyData.multiValues_.find(callerBundleInfo.appIdentifier);
-    if (appIter != proxyData.multiValues_.end()) {
-        for (const auto &keyPair : appIter->second) {
+    // Collect all values from all appIdentifiers under the URI
+    for (const auto &appPair : proxyData.multiValues_) {
+        for (const auto &keyPair : appPair.second) {
             result.multiValues_.push_back(keyPair.second);
         }
     }

@@ -47,7 +47,6 @@
 #include "uri_permission_manager.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
-#include "unified_data_helper.h"
 #include "utils/anonymous.h"
 #include "permission_validator.h"
 #include "synced_device_container.h"

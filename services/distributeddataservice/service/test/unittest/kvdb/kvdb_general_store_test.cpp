@@ -68,6 +68,7 @@ protected:
     static constexpr const char *STORE_NAME = "test_service_meta";
 
     void InitMetaData();
+    void BindCloudDB(KVDBGeneralStore &store);
     static std::vector<uint8_t> Random(uint32_t len);
     static std::shared_ptr<DBStoreMock> dbStoreMock_;
     StoreMetaData metaData_;
@@ -89,6 +90,20 @@ void KVDBGeneralStoreTest::InitMetaData()
     metaData_.storeId = STORE_NAME;
     metaData_.dataDir = "/data/service/el1/public/database/" + std::string(BUNDLE_NAME) + "/kvdb";
     metaData_.securityLevel = SecurityLevel::S2;
+}
+
+void KVDBGeneralStoreTest::BindCloudDB(KVDBGeneralStore &store)
+{
+    DistributedData::Database database;
+    std::map<uint32_t, std::tuple<Database, GeneralStore::BindInfo, std::string>> bindInfos;
+    GeneralStore::CloudConfig config;
+    std::shared_ptr<CloudDB> dbs = std::make_shared<CloudDB>();
+    std::shared_ptr<AssetLoader> loaders = std::make_shared<AssetLoader>();
+    GeneralStore::BindInfo bindInfo(dbs, loaders);
+    bindInfos[0] = std::make_tuple(database, bindInfo, "");
+    bindInfos[1] = std::make_tuple(database, bindInfo, "");
+    auto ret = store.Bind(bindInfos, config);
+    EXPECT_EQ(ret, GeneralError::E_OK);
 }
 
 std::vector<uint8_t> KVDBGeneralStoreTest::Random(uint32_t len)
@@ -541,7 +556,7 @@ HWTEST_F(KVDBGeneralStoreTest, GetDBSyncCompleteCB, TestSize.Level0)
 
 /**
 * @tc.name: CloudSync001
-* @tc.desc: Test the scenario where the QueryUsers return false in the CloudSync function.
+* @tc.desc: Test the scenario where the QueryForegroundUsers return false in the CloudSync function.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author:
@@ -560,7 +575,8 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync001, TestSize.Level0)
     store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
     std::vector<int> users;
-    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).Times(1).WillOnce(DoAll(SetArgReferee<0>(users), Return(false)));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_)).Times(1)
+        .WillOnce(DoAll(SetArgReferee<0>(users), Return(false)));
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::DB_ERROR);
     store->delegate_ = nullptr;
@@ -588,7 +604,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
     store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
     std::vector<int> users;
-    EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(1)
         .WillOnce(DoAll(
             SetArgReferee<0>(users),
@@ -607,7 +623,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
 
 /**
 * @tc.name: CloudSync003
-* @tc.desc: Test the scenario where the QueryUsers return true in the CloudSync function.
+* @tc.desc: Test the scenario where the QueryForegroundUsers return true in the CloudSync function.
 * @tc.type: FUNC
 * @tc.require:
 * @tc.author:
@@ -626,11 +642,12 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync003, TestSize.Level0)
     store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
     std::vector<int> users = {0, 1};
-    EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(1)
         .WillOnce(DoAll(
             SetArgReferee<0>(users),
             Return(true)));
+    BindCloudDB(*store);
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::OK);
     store->delegate_ = nullptr;
@@ -659,7 +676,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync004, TestSize.Level0)
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
     std::string prepareTraceId;
     std::vector<int> users = {0, 1};
-    EXPECT_CALL(*accountDelegateMock, QueryUsers(_))
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(1)
         .WillOnce(DoAll(
             SetArgReferee<0>(users),
@@ -726,12 +743,14 @@ HWTEST_F(KVDBGeneralStoreTest, Sync002, TestSize.Level0)
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     std::vector<int> users1 = { 0, 1 };
-    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillRepeatedly(DoAll(SetArgReferee<0>(users1), Return(true)));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(users1), Return(true)));
     auto ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret.first, GeneralError::E_NOT_SUPPORT);
     GeneralStore::StoreConfig storeConfig;
     storeConfig.enableCloud_ = true;
     store->SetConfig(storeConfig);
+    BindCloudDB(*store);
     ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
     EXPECT_EQ(ret.first, GeneralError::E_OK);
     store->delegate_ = nullptr;

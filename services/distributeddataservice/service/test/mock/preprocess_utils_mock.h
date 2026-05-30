@@ -49,6 +49,7 @@ public:
     static bool GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
         std::string &bundleName);
     static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();
+    static void GetSummaryFromLoadInfo(const DataLoadInfo &dataLoadInfo, Summary &summary);
 };
 } // namespace UDMF
 } // namespace OHOS

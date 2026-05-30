@@ -15,11 +15,18 @@
 #ifndef UDMF_PREPROCESS_UTILS_H
 #define UDMF_PREPROCESS_UTILS_H
 
+#include <map>
+#include <unordered_map>
+
 #include "bundlemgr/bundle_mgr_proxy.h"
-#include "remote_file_share.h"
 #include "unified_data.h"
 
 namespace OHOS {
+namespace AppFileService {
+namespace ModuleRemoteFileShare {
+struct HmdfsUriInfo;
+} // namespace ModuleRemoteFileShare
+} // namespace AppFileService
 namespace UDMF {
 class PreProcessUtils {
 public:
@@ -46,6 +53,7 @@ public:
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);
+    static void GetSummaryFromLoadInfo(const DataLoadInfo &dataLoadInfo, Summary &summary);
     static bool GetSpecificBundleNameByTokenId(uint32_t tokenId, std::string &specificBundleName,
         std::string &bundleName);
     static sptr<AppExecFwk::IBundleMgr> GetBundleMgr();

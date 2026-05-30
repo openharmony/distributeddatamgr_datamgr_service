@@ -173,15 +173,15 @@ static void CheckAndCorrectAppIdentifierList(std::vector<std::string> &list,
             it++;
         }
     }
-    if (list.size() > ALLOW_LIST_MAX_COUNT) {
+    if (list.size() > static_cast<size_t>(ALLOW_LIST_MAX_COUNT)) {
         ZLOGW("%{public}s of proxyData %{public}s is over limit, size %{public}zu",
             fieldName.c_str(), URIUtils::Anonymous(uri).c_str(), list.size());
-        list.resize(ALLOW_LIST_MAX_COUNT);
+        list.resize(static_cast<size_t>(ALLOW_LIST_MAX_COUNT));
     }
 }
 
 bool PublishedProxyData::CheckAndCorrectProxyData(DataShareProxyData &proxyData, const DataProxyConfig &proxyConfig,
-    ProxyDataUpsertMode mode)
+    const ProxyDataUpsertMode mode)
 {
     if (proxyConfig.maxValueLength_ != DataProxyMaxValueLength::MAX_LENGTH_4K &&
         proxyConfig.maxValueLength_ != DataProxyMaxValueLength::MAX_LENGTH_100K) {
@@ -332,12 +332,9 @@ int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &call
     proxyData.uri_ = data.proxyData.uri;
     proxyData.value_ = data.proxyData.value;
     proxyData.isMultiValues_ = data.proxyData.isMultiValues;
-    // Only return multiValues belonging to the caller's appIdentifier to prevent cross-app data leakage
+    // Return all multiValues under the URI (not filtered by caller's appIdentifier)
     if (mode == QUERY_MULTIVALUES) {
-        auto appIter = data.proxyData.multiValues.find(callerBundleInfo.appIdentifier);
-        if (appIter != data.proxyData.multiValues.end()) {
-            proxyData.multiValues_[callerBundleInfo.appIdentifier] = appIter->second;
-        }
+        proxyData.multiValues_ = data.proxyData.multiValues;
     }
     // Permission visibility: publisher can see all config
     if (callerBundleInfo.tokenId == data.tokenId) {
@@ -352,7 +349,7 @@ int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &call
 
 int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const BundleInfo &callerBundleInfo,
     DataShareObserver::ChangeType &type, const DataProxyConfig &proxyConfig,
-    ProxyDataUpsertMode mode)
+    const ProxyDataUpsertMode mode)
 {
     type = DataShareObserver::ChangeType::INVAILD;
     auto delegate = KvDBDelegate::GetInstance();
@@ -372,7 +369,7 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
         return UpsertInsert(delegate, data, callerBundleInfo, type, mode);
     }
     if (mode == PUBLISH_MULTIVALUES) {
-        ZLOGE("Publish an existing MultiValues is no allowed, please delete corresponding uri and then publish.");
+        ZLOGE("Publish an existing MultiValues is not allowed, please delete corresponding uri and then publish.");
         return INCOMPATIBLE_CONFIG_TYPE;
     }
     ProxyDataNode oldData;
@@ -391,7 +388,7 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
 
 int32_t PublishedProxyData::UpsertInsert(std::shared_ptr<KvDBDelegate> delegate,
     const DataShareProxyData &data, const BundleInfo &callerBundleInfo,
-    DataShareObserver::ChangeType &type, ProxyDataUpsertMode mode)
+    DataShareObserver::ChangeType &type, const ProxyDataUpsertMode mode)
 {
     if (mode == NORMAL_PUBLISH) {
         type = DataShareObserver::ChangeType::INSERT;
@@ -407,11 +404,12 @@ int32_t PublishedProxyData::UpsertInsert(std::shared_ptr<KvDBDelegate> delegate,
         return InsertProxyData(delegate, callerBundleInfo.bundleName,
             callerBundleInfo.userId, callerBundleInfo.tokenId, initData);
     }
-    return INNER_ERROR;
+    ZLOGE("Uri not exist when PutValue");
+    return URI_NOT_EXIST;
 }
 
 int32_t PublishedProxyData::UpsertUpdate(UpsertContext &ctx, const DataShareProxyData &data,
-    ProxyDataUpsertMode mode, DataShareObserver::ChangeType &type)
+    const ProxyDataUpsertMode mode, DataShareObserver::ChangeType &type)
 {
     if (mode == NORMAL_PUBLISH) {
         if (ctx.callerBundleInfo.tokenId != ctx.oldData.tokenId) {
@@ -434,14 +432,16 @@ int32_t PublishedProxyData::UpsertUpdate(UpsertContext &ctx, const DataShareProx
     }
     std::string targetKey;
     DataProxyValue targetValue;
+    bool found = false;
     for (const auto &appPair : data.multiValues_) {
         if (!appPair.second.empty()) {
             targetKey = appPair.second.begin()->first;
             targetValue = appPair.second.begin()->second;
+            found = true;
             break;
         }
     }
-    if (targetKey.empty()) {
+    if (!found) {
         ZLOGE("No valid key found in multiValues for mode %{public}d", mode);
         return KEY_NOT_EXIST;
     }
@@ -766,7 +766,7 @@ void ProxyDataManager::OnAppUninstall(const std::string &bundleName, int32_t use
     }
 }
 
-bool PublishedProxyData::IsConfigCompatible(ProxyDataUpsertMode mode, bool existingIsMultiValues)
+bool PublishedProxyData::IsConfigCompatible(const ProxyDataUpsertMode mode, bool existingIsMultiValues)
 {
     if (mode == NORMAL_PUBLISH && existingIsMultiValues) {
         return false;

@@ -449,17 +449,11 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
     } else {
         ZLOGW("not found meta record, cloud sync with default filter");
     }
-    std::vector<int32_t> users;
-    if (storeInfo_.user == 0) {
-        auto ret = AccountDelegate::GetInstance()->QueryUsers(users);
-        if (!ret || users.empty()) {
-            ZLOGE("failed to query os accounts, ret:%{public}d", ret);
-            return DBStatus::DB_ERROR;
-        }
-    } else {
-        users.push_back(storeInfo_.user);
+    std::vector<uint32_t> users = GetCloudSyncUsers();
+    if (users.empty()) {
+        return DBStatus::DB_ERROR;
     }
-    for (int32_t user : users) {
+    for (uint32_t user : users) {
         syncOption.users = { std::to_string(user) };
         if (isFilterAccount) {
             auto id = GetId(user);
@@ -480,6 +474,35 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
         }
     }
     return DBStatus::OK;
+}
+
+std::vector<uint32_t> KVDBGeneralStore::GetCloudSyncUsers()
+{
+    std::vector<uint32_t> users;
+    if (storeInfo_.user == 0) {
+        std::vector<int32_t> frontUsers;
+        auto ret = AccountDelegate::GetInstance()->QueryForegroundUsers(frontUsers);
+        if (!ret || frontUsers.empty()) {
+            ZLOGE("failed to query os accounts, ret:%{public}d", ret);
+            return users;
+        }
+        std::shared_lock<decltype(bindMutex_)> lock(bindMutex_);
+        for (auto frontUser : frontUsers) {
+            if (bindInfos_.find(frontUser) != bindInfos_.end()) {
+                users.push_back(static_cast<uint32_t>(frontUser));
+            } else {
+                ZLOGW("front user[%{public}d] no bind", frontUser);
+            }
+        }
+    } else {
+        std::shared_lock<decltype(bindMutex_)> lock(bindMutex_);
+        if (bindInfos_.find(static_cast<uint32_t>(storeInfo_.user)) != bindInfos_.end()) {
+            users.push_back(static_cast<uint32_t>(storeInfo_.user));
+        } else {
+            ZLOGW("store user[%{public}d] no bind", storeInfo_.user);
+        }
+    }
+    return users;
 }
 
 void KVDBGeneralStore::Report(const std::string &faultType, int32_t errCode, const std::string &appendix)

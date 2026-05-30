@@ -220,5 +220,13 @@ bool PreProcessUtils::GetSpecificBundleNameByTokenId(uint32_t tokenId, std::stri
     bundleName = "bundleName";
     return true;
 }
+
+void PreProcessUtils::GetSummaryFromLoadInfo(const DataLoadInfo &dataLoadInfo, Summary &summary)
+{
+    summary.totalSize = dataLoadInfo.recordCount;
+    for (const auto &type : dataLoadInfo.types) {
+        summary.summary.emplace(type, 0);
+    }
+}
 } // namespace UDMF
 } // namespace OHOS

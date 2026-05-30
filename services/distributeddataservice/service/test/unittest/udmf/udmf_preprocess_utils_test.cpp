@@ -15,6 +15,7 @@
 
 #include "preprocess_utils.h"
 #include "gtest/gtest.h"
+#include "remote_file_share.h"
 #include "text.h"
 #include "unified_html_record_process.h"
 #include "unified_record.h"
