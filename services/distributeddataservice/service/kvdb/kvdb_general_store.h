@@ -147,6 +147,7 @@ private:
         KVDBGeneralStore* store_;
     };
     std::string GetId(uint32_t user);
+    std::vector<uint32_t> GetCloudSyncUsers();
     static int32_t CheckBindInfos(const std::map<uint32_t, std::tuple<Database, BindInfo, std::string>> &bindInfos);
 
     static constexpr uint8_t META_COMPRESS_RATE = 10;
