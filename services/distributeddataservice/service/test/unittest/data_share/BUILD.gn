@@ -344,6 +344,7 @@ ohos_unittest("DataHandlerTest") {
     "kv_store:distributeddb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 }
