@@ -93,7 +93,7 @@ ohos_source_set("udmf_server") {
     "image_framework:image",
     "kv_store:datamgr_common",
     "kv_store:distributeddb",
-    "udmf:udmf_client",
+    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 
