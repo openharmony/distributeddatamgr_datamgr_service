@@ -142,7 +142,11 @@ bool SerialDataShareProxyData::Marshal(json &node) const
     SetValue(node[GET_NAME(allowList)], allowList);
     SetValue(node[GET_NAME(maxValueLength)], static_cast<int32_t>(maxValueLength));
     if (isMultiValues) {
-        SetValue(node[GET_NAME(multiValues)], multiValues);
+        // Serialize multiValues as a single string to reduce nesting depth for GRD database (max 4 levels)
+        // Direct nested json would be: proxyData(1) -> multiValues(2) -> appIdentifier(3) -> key(4) -> type/value(5)
+        // By serializing to string: proxyData(1) -> multiValues(2, string value) = 2 levels
+        std::string multiValuesStr = DistributedData::Serializable::Marshall(multiValues);
+        SetValue(node[GET_NAME(multiValues)], multiValuesStr);
         SetValue(node[GET_NAME(trustProviders)], trustProviders);
         SetValue(node[GET_NAME(isMultiValues)], isMultiValues);
     }
@@ -160,9 +164,18 @@ bool SerialDataShareProxyData::Unmarshal(const json &node)
         value = valueStr;
     }
     GetValue(node, GET_NAME(allowList), allowList);
-    GetValue(node, GET_NAME(multiValues), multiValues);
     GetValue(node, GET_NAME(trustProviders), trustProviders);
     GetValue(node, GET_NAME(isMultiValues), isMultiValues);
+    // Unmarshal multiValues from serialized string format (to reduce GRD nesting depth)
+    std::string multiValuesStr;
+    GetValue(node, GET_NAME(multiValues), multiValuesStr);
+    if (!multiValuesStr.empty()) {
+        if (!DistributedData::Serializable::Unmarshall(multiValuesStr, multiValues)) {
+            ZLOGE("Failed to unmarshal multiValues from string: invalid JSON");
+            multiValues.clear();
+            ret = false;
+        }
+    }
     int32_t maxValueLength = static_cast<int32_t>(DataProxyMaxValueLength::MAX_LENGTH_100K);
     GetValue(node, GET_NAME(maxValueLength), maxValueLength);
     this->maxValueLength = static_cast<DataProxyMaxValueLength>(maxValueLength);

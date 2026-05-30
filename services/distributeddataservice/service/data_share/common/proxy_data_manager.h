@@ -100,7 +100,7 @@ public:
         DataShareObserver::ChangeType &type);
     static int32_t Upsert(const DataShareProxyData &proxyData, const BundleInfo &callerBundleInfo,
         DataShareObserver::ChangeType &type, const DataProxyConfig &proxyConfig,
-        ProxyDataUpsertMode mode = NORMAL_PUBLISH);
+        const ProxyDataUpsertMode mode = NORMAL_PUBLISH);
     static bool VerifyPermission(const BundleInfo &callerBundleInfo, const ProxyDataNode &data);
     bool HasVersion() const override;
     int GetVersion() const override;
@@ -114,14 +114,14 @@ private:
     static int32_t PutIntoTable(std::shared_ptr<KvDBDelegate> kvDelegate, int32_t user,
         uint32_t tokenId, const std::vector<std::string> &proxyDataList, const DataShareProxyData &proxyData);
     static bool CheckAndCorrectProxyData(DataShareProxyData &proxyData, const DataProxyConfig &proxyConfig,
-        ProxyDataUpsertMode mode = NORMAL_PUBLISH);
+        const ProxyDataUpsertMode mode = NORMAL_PUBLISH);
     static int32_t UpdateProxyDataList(std::shared_ptr<KvDBDelegate> delegate, const std::string &uri,
         const BundleInfo &callerBundleInfo);
     static int32_t UpsertInsert(std::shared_ptr<KvDBDelegate> delegate,
         const DataShareProxyData &data, const BundleInfo &callerBundleInfo,
-        DataShareObserver::ChangeType &type, ProxyDataUpsertMode mode);
+        DataShareObserver::ChangeType &type, const ProxyDataUpsertMode mode);
     static int32_t UpsertUpdate(UpsertContext &ctx, const DataShareProxyData &data,
-        ProxyDataUpsertMode mode, DataShareObserver::ChangeType &type);
+        const ProxyDataUpsertMode mode, DataShareObserver::ChangeType &type);
     static int32_t UpsertRemoveValue(UpsertContext &ctx, const std::string &key,
         DataShareObserver::ChangeType &type);
     static int32_t UpsertPutValues(UpsertContext &ctx, const std::string &key,
@@ -135,7 +135,7 @@ private:
         const std::string &key, const DataProxyValue &value, const BundleInfo &callerBundleInfo);
     static DataShareProxyData BuildMultiValuesAfterRemove(const ProxyDataNode &existing,
         const std::string &key, const BundleInfo &callerBundleInfo);
-    static bool IsConfigCompatible(ProxyDataUpsertMode mode, bool existingIsMultiValues);
+    static bool IsConfigCompatible(const ProxyDataUpsertMode mode, bool existingIsMultiValues);
     static bool CanInsertMultiValues(const BundleInfo &callerBundleInfo, const ProxyDataNode &data);
     static bool CanModifyMultiValue(const ProxyDataNode &data, const std::string &key,
         const BundleInfo &callerBundleInfo);
