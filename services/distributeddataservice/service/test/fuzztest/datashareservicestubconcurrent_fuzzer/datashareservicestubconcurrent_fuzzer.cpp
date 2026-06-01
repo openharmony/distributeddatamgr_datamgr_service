@@ -213,6 +213,46 @@ void GetFuzzDataSubAndUnsubProxyData(FuzzedDataProvider &provider, MessageParcel
     ITypesUtil::Marshal(request, uris);
 }
 
+void GetFuzzDataDeleteAllProxyData(FuzzedDataProvider &provider, MessageParcel &request)
+{
+    DataProxyConfig config;
+    config.type_ = DataProxyType::SHARED_CONFIG;
+    ITypesUtil::Marshal(request, config);
+}
+
+void GetFuzzDataPutValue(FuzzedDataProvider &provider, MessageParcel &request)
+{
+    std::string uri = provider.ConsumeRandomLengthString();
+    std::string key = provider.ConsumeRandomLengthString();
+    DataProxyValue value = GetRandomDataProxyValue(provider);
+    DataProxyConfig config;
+    config.type_ = DataProxyType::SHARED_CONFIG;
+    config.maxValueLength_ = provider.ConsumeBool() ? DataProxyMaxValueLength::MAX_LENGTH_4K
+                                                    : DataProxyMaxValueLength::MAX_LENGTH_100K;
+    ITypesUtil::Marshal(request, uri, key, value, config);
+}
+
+void GetFuzzDataRemoveValue(FuzzedDataProvider &provider, MessageParcel &request)
+{
+    std::string uri = provider.ConsumeRandomLengthString();
+    std::string key = provider.ConsumeRandomLengthString();
+    DataProxyConfig config;
+    config.type_ = DataProxyType::SHARED_CONFIG;
+    config.maxValueLength_ = provider.ConsumeBool() ? DataProxyMaxValueLength::MAX_LENGTH_4K
+                                                    : DataProxyMaxValueLength::MAX_LENGTH_100K;
+    ITypesUtil::Marshal(request, uri, key, config);
+}
+
+void GetFuzzDataGetValues(FuzzedDataProvider &provider, MessageParcel &request)
+{
+    std::string uri = provider.ConsumeRandomLengthString();
+    DataProxyConfig config;
+    config.type_ = DataProxyType::SHARED_CONFIG;
+    config.maxValueLength_ = provider.ConsumeBool() ? DataProxyMaxValueLength::MAX_LENGTH_4K
+                                                    : DataProxyMaxValueLength::MAX_LENGTH_100K;
+    ITypesUtil::Marshal(request, uri, config);
+}
+
 void GetFuzzDataCommon(FuzzedDataProvider &provider, MessageParcel &request)
 {
     std::vector<uint8_t> remainingData = provider.ConsumeRemainingBytes<uint8_t>();
@@ -249,7 +289,11 @@ static FuzzFunc g_codeMap[] = {
     GetFuzzDataDelAndGetProxyData,      // IDataShareService::DATA_SHARE_SERVICE_CMD_PROXY_GET
     GetFuzzDataSubAndUnsubProxyData,    // IDataShareService::DATA_SHARE_SERVICE_CMD_SUBSCRIBE_PROXY_DATA
     GetFuzzDataSubAndUnsubProxyData,    // IDataShareService::DATA_SHARE_SERVICE_CMD_UNSUBSCRIBE_PROXY_DATA
-    GetFuzzDataCommon,                  // IDataShareService::DATA_SHARE_SERVICE_CMD_MAX
+    GetFuzzDataCommon,                  // IDataShareService::DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO
+    GetFuzzDataDeleteAllProxyData,       // IDataShareService::DATA_SHARE_SERVICE_CMD_PROXY_DELETE_ALL
+    GetFuzzDataPutValue,                // IDataShareService::DATA_SHARE_SERVICE_CMD_PROXY_PUT_VALUE
+    GetFuzzDataRemoveValue,             // IDataShareService::DATA_SHARE_SERVICE_CMD_PROXY_REMOVE_VALUE
+    GetFuzzDataGetValues,               // IDataShareService::DATA_SHARE_SERVICE_CMD_PROXY_GET_VALUES
 };
 
 void GetFuzzData(FuzzedDataProvider &provider, MessageParcel &request, uint32_t code)
