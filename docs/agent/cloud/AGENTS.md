@@ -41,7 +41,7 @@ Where to look：
 - 数据转换/序列化变更 → `cloud_data_translate.h/.cpp` + `cloud_types_util.h/.cpp`
 - 通知回调变更 → `cloud_notifier_proxy.h/.cpp`
 - 框架层接口变更 → `framework/include/cloud/` + `../architecture-map.md`
-- 配置或权限变更 → `app/distributed_data.cfg` + `../security-boundary.md`
+- 配置或权限变更 → `app/distributed_data.cfg`
 
 ## 2. Knowledge routing
 
@@ -51,18 +51,13 @@ Where to look：
 
 - 端云同步行为变更 → 阅读 `domain-cloud.md`
 - IPC 接口或公共 API 变更 → 阅读 `../api-compatibility.md`
-- 权限、云开关或认证变更 → 阅读 `../security-boundary.md`
 - DFX、日志、故障归因变更 → 阅读 `../dfx-guidelines.md`
 - 架构或模块边界变更 → 阅读 `../architecture-map.md`
-- 元数据或 StoreMetaData 变更 → 阅读 `../domain-metadata.md`
 
 ### Path-based routing
 
 - `service/cloud/` → `domain-cloud.md`
 - `framework/include/cloud/` → `domain-cloud.md`
-- `framework/include/store/general_store.h` → `../domain-metadata.md`
-- `framework/include/metadata/` → `../domain-metadata.md`
-- `app/distributed_data.cfg` → `../security-boundary.md`
 
 ### Vocabulary-based routing
 
@@ -73,7 +68,6 @@ Where to look：
 | CloudSync / 端云同步 | 涉及双向数据一致性、冲突处理、水印管理 | `domain-cloud.md` |
 | CloudInfo | 云用户信息，包含空间配额和应用开关状态 | `domain-cloud.md` |
 | SchemaMeta | 云端 Schema 元数据，版本变更影响数据兼容性 | `domain-cloud.md` |
-| GeneralStore / AutoCache | 服务端句柄管理，长期持有会泄漏资源 | `../domain-metadata.md` |
 | SyncStrategy / NetworkSyncStrategy | 同步策略链，影响网络条件判断和同步触发 | `domain-cloud.md` |
 | SharingCenter / 云共享 | 跨用户数据共享，涉及 Privilege/Participant 权限模型 | `domain-cloud.md` |
 | CloudConflictHandler | 冲突解决策略，影响数据一致性 | `domain-cloud.md` |
@@ -81,7 +75,7 @@ Where to look：
 | AssetLoader | 资产下载管理，涉及大文件和网络状态 | `domain-cloud.md` |
 | CloudNotifierProxy | IPC 通知代理，回调语义变更影响应用层 | `domain-cloud.md` |
 | SyncConfig / CloudDbSyncConfig | 同步配置管理，影响同步行为参数 | `domain-cloud.md` |
-| CLOUDFILE_SYNC / 云开关 | 权限和功能入口，不得绕过校验 | `../security-boundary.md` |
+| CLOUDFILE_SYNC / 云开关 | 权限和功能入口，不得绕过校验 | `domain-cloud.md` |
 | ExecutorPool | 异步操作执行器，不得启动独立线程 | `../architecture-map.md` |
 | Serializable | 统一序列化机制，不得使用外部依赖 | `../architecture-map.md` |
 

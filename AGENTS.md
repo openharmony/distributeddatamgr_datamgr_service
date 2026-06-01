@@ -28,11 +28,10 @@
 
 Where to look：
 
-- 功能模块行为变更 → `services/distributeddataservice/service/<domain>/` + `docs/agent/<domain>/domain-<domain>.md`（如存在）或 `docs/agent/domain-<domain>.md`
+- 功能模块行为变更 → `services/distributeddataservice/service/<domain>/` + `docs/agent/domain-<domain>.md`
 - 端云功能模块行为变更 → `docs/agent/cloud/AGENTS.md` + `docs/agent/cloud/domain-cloud.md`
 - 适配器或依赖注入变更 → `services/distributeddataservice/adapter/` + `docs/agent/architecture-map.md`
 - 框架层接口变更 → `services/distributeddataservice/framework/` + `docs/agent/architecture-map.md`
-- 公共 API 或接口变更 → `interfaces/` + `docs/agent/api-compatibility.md`
 - 测试变更 → 先检查同目录下已有测试的模式和覆盖范围
 - 编译或 Feature 开关 → `datamgr_service.gni`
 
@@ -42,15 +41,12 @@ Where to look：
 
 ### Task-based routing
 
-- 公共 API 或 SDK 行为变更 → 阅读 `docs/agent/api-compatibility.md`
 - 架构或模块边界变更 → 阅读 `docs/agent/architecture-map.md`
-- 权限、信任或认证变更 → 阅读 `docs/agent/security-boundary.md`
 - DFX、日志、故障归因变更 → 阅读 `docs/agent/dfx-guidelines.md`
 - 同步行为变更 → 阅读 `docs/agent/domain-sync.md`
 - 云端行为变更 → 阅读 `docs/agent/cloud/domain-cloud.md`
 - 数据共享或静默访问变更 → 阅读 `docs/agent/domain-data-share.md`
 - UDMF 行为变更 → 阅读 `docs/agent/domain-udmf.md`
-- 元数据或 StoreMetaData 变更 → 阅读 `docs/agent/domain-metadata.md`
 
 ### Path-based routing
 
@@ -70,12 +66,9 @@ Where to look：
 
 | 术语 | 风险提示 | 阅读 |
 |---|---|---|
-| GeneralStore / AutoCache | 服务端句柄管理，长期持有会泄漏资源 | `docs/agent/domain-metadata.md` |
 | FeatureSystem / Feature | 功能模块注册和生命周期，不得直接跨模块依赖 | `docs/agent/architecture-map.md` |
-| StoreMetaData | 单数据库元数据描述，不是全局存储管理系统 | `docs/agent/domain-metadata.md` |
 | 静默访问 / SilentAccess | 跨应用数据共享，不启动提供方进程 | `docs/agent/domain-data-share.md` |
 | 端云同步 / CloudSync | 设备-云端数据同步协议 | `docs/agent/cloud/domain-cloud.md` |
-| 权限 / Permission | 数据访问权限校验，不得绕过 | `docs/agent/security-boundary.md` |
 | 版本兼容性协议 / API 兼容性 | 公共行为和兼容性边界 | `docs/agent/api-compatibility.md` |
 | DFX / HiLog / ZLOG | 可观测性、诊断、故障归因 | `docs/agent/dfx-guidelines.md` |
 | 依赖注入 / Delegate | 框架层接口，不得直接依赖适配器实现 | `docs/agent/architecture-map.md` |
