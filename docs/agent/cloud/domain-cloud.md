@@ -709,3 +709,26 @@ struct CloudConfig {
     bool isSupportEncrypt = false;       // 是否支持加密
 };
 ```
+
+---
+
+## 10. API 兼容性规范
+
+### 10.1 IPC 接口规则
+
+- CloudServiceStub Handler 编号不得重新分配，新增只能追加。
+- IPC 参数顺序变更视为破坏性变更。
+- 回调语义变更（如 OnComplete 回调参数含义）影响应用层，必须明确标注。
+- 权限声明变更属于兼容性敏感变更，必须经审批。
+
+### 10.2 跨模块类型定义
+
+- `cloud_types.h` 中的 Role/Confirmation/Privilege/Participant/Strategy 等类型由 `distributeddatamgr_relational_store` 定义。
+- 变更这些类型需同步确认 relational_store 侧的兼容性。
+
+### 10.3 兼容性检查方法
+
+- 检查 CloudServiceStub Handler 编号是否只增不减。
+- 检查 IPC 参数顺序是否与上一版本一致。
+- 检查错误码是否只追加不修改。
+- 检查 `cloud_types.h` 类型定义是否与 relational_store 侧对齐。

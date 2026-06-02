@@ -50,7 +50,6 @@ Where to look：
 ### Task-based routing
 
 - 端云同步行为变更 → 阅读 `domain-cloud.md`
-- IPC 接口或公共 API 变更 → 阅读 `../api-compatibility.md`
 - DFX、日志、故障归因变更 → 阅读 `../dfx-guidelines.md`
 - 架构或模块边界变更 → 阅读 `../architecture-map.md`
 

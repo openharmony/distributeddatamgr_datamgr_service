@@ -23,7 +23,7 @@
 | `services/distributeddataservice/service/object/` | 分布式对象功能模块 | 对象生命周期管理 |
 | `services/distributeddataservice/adapter/` | 系统服务适配器 | 依赖注入实现层 |
 | `services/distributeddataservice/framework/` | 框架层接口与容器 | 接口定义、全局约束 |
-| `rust/ylong_cloud_extension/` | Rust 云端扩展 | 云端协议实现 |
+| `services/distributeddataservice/rust/ylong_cloud_extension/` | Rust 云端扩展 | 云端协议实现 |
 | `datamgr_service.gni` | 功能模块编译开关 | 编译配置入口 |
 
 Where to look：
@@ -58,7 +58,6 @@ Where to look：
 - `services/distributeddataservice/service/udmf/` → `docs/agent/domain-udmf.md`
 - `services/distributeddataservice/adapter/` → `docs/agent/architecture-map.md`
 - `services/distributeddataservice/framework/` → `docs/agent/architecture-map.md`
-- `interfaces/` → `docs/agent/api-compatibility.md`
 
 ### Vocabulary-based routing
 
@@ -69,7 +68,6 @@ Where to look：
 | FeatureSystem / Feature | 功能模块注册和生命周期，不得直接跨模块依赖 | `docs/agent/architecture-map.md` |
 | 静默访问 / SilentAccess | 跨应用数据共享，不启动提供方进程 | `docs/agent/domain-data-share.md` |
 | 端云同步 / CloudSync | 设备-云端数据同步协议 | `docs/agent/cloud/domain-cloud.md` |
-| 版本兼容性协议 / API 兼容性 | 公共行为和兼容性边界 | `docs/agent/api-compatibility.md` |
 | DFX / HiLog / ZLOG | 可观测性、诊断、故障归因 | `docs/agent/dfx-guidelines.md` |
 | 依赖注入 / Delegate | 框架层接口，不得直接依赖适配器实现 | `docs/agent/architecture-map.md` |
 | ExecutorPool | 异步操作执行器，不得启动独立线程 | `docs/agent/architecture-map.md` |
