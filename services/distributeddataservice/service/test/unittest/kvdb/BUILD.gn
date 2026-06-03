@@ -74,6 +74,12 @@ ohos_unittest("KVDBGeneralStoreTest") {
 
 ohos_unittest("KVDBGeneralStoreAbnormalTest") {
   module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
   sources = [
     "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
@@ -263,6 +269,49 @@ ohos_unittest("KvdbServiceImplTest") {
   ]
 }
 
+ohos_unittest("AuthDelegateMockTest") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "${data_service_path}/adapter/include/communicator/",
+    "${data_service_path}/framework/include/",
+    "${data_service_path}/service/kvdb/",
+    "${data_service_path}/service/test/mock",
+  ]
+
+  sources = [
+    "${data_service_path}/service/kvdb/auth_delegate.cpp",
+    "auth_delegate_mock_test.cpp",
+    "../../mock/device_manager_adapter_mock.cpp",
+    "../../mock/user_delegate_mock.cpp",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+    "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  cflags = [
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
+  ]
+}
+
 ohos_unittest("QueryHelperUnitTest") {
   module_out_path = module_output_path
 
@@ -274,7 +323,7 @@ ohos_unittest("QueryHelperUnitTest") {
 
   sources = [
     "${data_service_path}/service/kvdb/query_helper.cpp",
-    "../common/query_helper_test.cpp",
+    "query_helper_test.cpp",
   ]
 
   cflags = [
@@ -309,6 +358,7 @@ ohos_unittest("QueryHelperUnitTest") {
 group("unittests") {
   testonly = true
   deps = [
+    ":AuthDelegateMockTest",
     ":KVDBGeneralStoreAbnormalTest",
     ":KVDBGeneralStoreTest",
     ":KvdbServiceImplTest",

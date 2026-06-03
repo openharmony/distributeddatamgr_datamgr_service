@@ -21,13 +21,13 @@ group("unittest") {
   testonly = true
 
   deps = [
-    "backup:unittests",
+    "bootstrap:unittests",
     "clone:unittests",
+    "common:unittests",
+    "data_share:DataHandlerTest",
+    "permission:unittests",
+    "value_proxy:unittests",
   ]
-
-  if (datamgr_service_config) {
-    deps += [ "bootstrap:unittests" ]
-  }
 
   if (datamgr_service_cloud) {
     deps += [ "cloud:unittests" ]
@@ -38,15 +38,16 @@ group("unittest") {
   }
 
   if (datamgr_service_kvdb) {
-    deps += [ "kvdb:unittests" ]
+    deps += [
+      "backup:unittests",
+      "kvdb:unittests",
+      "upgrade:unittests",
+    ]
   }
 
   if (datamgr_service_object) {
     deps += [ "object:unittests" ]
   }
-
-  # Permission feature always included
-  deps += [ "permission:unittests" ]
 
   if (datamgr_service_rdb) {
     deps += [ "rdb:unittests" ]
@@ -58,6 +59,4 @@ group("unittest") {
       "utd:unittests",
     ]
   }
-
-  deps += [ "common:unittests" ]
 }

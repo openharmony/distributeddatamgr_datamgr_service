@@ -310,7 +310,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
 
 ohos_unittest("DataHandlerTest") {
   module_out_path = module_output_path
-  sources = [ "../data_share/data_handler_test.cpp" ]
+  sources = [ "data_handler_test.cpp" ]
 
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
@@ -322,6 +322,7 @@ ohos_unittest("DataHandlerTest") {
 
   cflags = [
     "-Werror=vla",
+    "-fno-access-control",
   ]
 
   deps = [
@@ -343,6 +344,7 @@ ohos_unittest("DataHandlerTest") {
     "kv_store:distributeddb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 }
@@ -356,6 +358,5 @@ group("unittests") {
   deps = [
     ":DataShareServiceImplMockTest",
     ":DataShareServiceImplTest",
-    ":DataHandlerTest",
   ]
 }

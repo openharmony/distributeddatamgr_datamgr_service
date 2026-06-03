@@ -51,6 +51,12 @@ ohos_unittest("CryptoManagerTest") {
 
 ohos_unittest("DeviceMatrixTest") {
   module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  }
   sources = [
     "device_matrix_test.cpp",
     "../../mock/checker_mock.cpp",
@@ -119,6 +125,7 @@ ohos_unittest("LifeCycleManagerTest") {
 
   cflags = [
     "-Werror=vla",
+    "-fno-access-control",
   ]
 
   deps = [
@@ -135,6 +142,7 @@ ohos_unittest("LifeCycleManagerTest") {
     "kv_store:distributeddata_inner",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
+    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 }
@@ -195,7 +203,6 @@ group("unittests") {
   testonly = true
   deps = [
     ":CryptoManagerTest",
-    ":DataHandlerTest",
     ":DeviceMatrixTest",
     ":DumpHelperTest",
     ":LifeCycleManagerTest",

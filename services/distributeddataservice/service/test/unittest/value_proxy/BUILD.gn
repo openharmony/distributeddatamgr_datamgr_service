@@ -25,7 +25,7 @@ ohos_unittest("ValueProxyServiceTest") {
   module_out_path = module_output_path
   sources = [
     "${data_service_path}/service/common/value_proxy.cpp",
-    "../common/value_proxy_test.cpp",
+    "value_proxy_test.cpp",
   ]
 
   configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]

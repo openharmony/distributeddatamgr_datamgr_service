@@ -154,7 +154,9 @@ group("unittests") {
   testonly = true
   deps = [
     ":BootStrapMockTest",
-    ":ConfigFactoryTest",
     ":DirectoryManagerTest",
   ]
+  if (datamgr_service_config) {
+    deps += [ ":ConfigFactoryTest" ]
+  }
 }

@@ -25,6 +25,10 @@ ohos_unittest("UtdServiceStubTest") {
   module_out_path = module_output_path
   sources = [ "utd_service_stub_test.cpp" ]
 
+  cflags = [
+    "-fno-access-control",
+  ]
+
   include_dirs = [
     "${data_service_path}/service/test",
     "${data_service_path}/service/utd",
