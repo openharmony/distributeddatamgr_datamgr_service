@@ -6,41 +6,28 @@
 
 本模块实现 OpenHarmony **端云数据同步服务**，核心职责是本地数据与云端数据的双向同步、云开关管理、云订阅、云数据共享、数据冲突处理和同步策略配置。最重要的架构边界是 **服务层（CloudServiceImpl/SyncManager）调用框架层抽象接口（CloudServer/CloudDB/GeneralStore），不直接依赖云端协议实现**。
 
-> **命名空间约定**：`OHOS::CloudData` — 服务层（CloudServiceImpl、SyncManager、CloudServiceStub）；`OHOS::DistributedData` — 框架层（其余所有端云相关类）
+关键文件：
 
-Key areas：
-
-| 路径 | 职责 | 变更风险 |
-|---|---|---|
-| `cloud_service_impl.h/.cpp` | 端云服务主入口（IPC Server 端实现） | 接口兼容性敏感，权限入口 |
-| `cloud_service_stub.h/.cpp` | CloudServiceStub IPC Stub | IPC 协议兼容性 |
-| `sync_manager.h/.cpp` | 端云同步管理器，管理同步任务生命周期 | 高频修改，同步核心逻辑 |
-| `sync_config.h/.cpp` | 同步配置管理 | 策略配置变更 |
-| `cloud_notifier_proxy.h/.cpp` | 端云通知代理（OnComplete/OnSyncInfoNotify 回调） | 回调语义变更影响应用层 |
-| `cloud_types_util.h/.cpp` | CloudTypes 类型序列化工具 | 跨模块类型转换 |
-| `cloud_value_util.h/.cpp` | SharingUtil 值转换（Privilege/Participant/Confirmation） | 共享功能类型安全 |
-| `cloud_data_translate.h/.cpp` | Asset ↔ Blob 序列化 | 数据格式兼容性 |
-| `sync_strategies/` | 同步策略实现（NetworkSyncStrategy） | 网络策略变更 |
-
-依赖的框架层接口：
-
-| 路径 | 职责 |
+| 文件 | 职责 |
 |---|---|
-| `framework/include/cloud/` | 端云框架接口（CloudServer/CloudDB/CloudInfo/SchemaMeta/SyncStrategy 等 22 个头文件） |
-| `framework/include/store/` | 存储框架（GeneralStore/AutoCache） |
-| `framework/include/metadata/` | 元数据（StoreMetaData） |
-
-> **外部依赖**：`cloud_types.h`（Role/Confirmation/Privilege/Participant/Strategy 等）来自 `distributeddatamgr_relational_store`，由 `relational_store:cloud_data_inner` 构建。
+| `sync_manager.h/.cpp` | 同步流程统一管理 |
+| `cloud_service_impl.h/.cpp` | IPC 服务实现 |
+| `cloud_service_stub.h/.cpp` | IPC Stub |
+| `cloud_data_translate.h/.cpp` | 服务层-框架层数据转换（Asset ↔ Blob） |
+| `cloud_value_util.h/.cpp` | SharingUtil 值转换（Privilege/Participant/Confirmation） |
+| `cloud_types_util.h/.cpp` | CloudTypes 类型序列化工具 |
+| `cloud_notifier_proxy.h/.cpp` | IPC 通知代理（OnComplete/OnSyncInfoNotify） |
+| `sync_config.h/.cpp` | 同步配置管理 |
+| `sync_strategies/network_sync_strategy.h/.cpp` | 网络同步策略（继承 SyncStrategy） |
 
 Where to look：
 
-- 同步流程变更 → `sync_manager.h/.cpp` + `domain-cloud.md`
+- 同步流程变更 → `sync_manager.h/.cpp`（本文档 §3 + 风险提示）
 - IPC 接口变更 → `cloud_service_impl.h/.cpp` + `cloud_service_stub.h/.cpp`
 - 同步策略变更 → `sync_strategies/` + `framework/include/cloud/sync_strategy.h`
-- 共享功能变更 → `cloud_value_util.h/.cpp` + `framework/include/cloud/sharing_center.h`
+- 共享功能变更 → `cloud_value_util.h/.cpp` + `framework/include/cloud/sharing_center.h` + `feature-data-share.md`
 - 数据转换/序列化变更 → `cloud_data_translate.h/.cpp` + `cloud_types_util.h/.cpp`
 - 通知回调变更 → `cloud_notifier_proxy.h/.cpp`
-- 框架层接口变更 → `framework/include/cloud/` + `../architecture-map.md`
 - 配置或权限变更 → `app/distributed_data.cfg`
 
 ## 2. Knowledge routing
@@ -49,14 +36,17 @@ Where to look：
 
 ### Task-based routing
 
-- 端云同步行为变更 → 阅读 `domain-cloud.md`
-- DFX、日志、故障归因变更 → 阅读 `../dfx-guidelines.md`
-- 架构或模块边界变更 → 阅读 `../architecture-map.md`
+- 端云同步行为变更 → 本文档即为知识源，重点阅读 §3 Constraints 和以下术语表
+- 数据共享或 SharingCenter 变更 → 阅读 `feature-data-share.md`
+- RDB 侧同步行为关联变更 → 确认与 `feature-rdb.md` 中端端同步规则一致
+- KVDB 侧同步行为关联变更 → 确认与 `feature-kvdb.md` 中端端同步规则一致
+- 跨模块 IPC 类型（cloud_types.h）变更 → 确认与 `distributeddatamgr_relational_store` 侧兼容
 
 ### Path-based routing
 
-- `service/cloud/` → `domain-cloud.md`
-- `framework/include/cloud/` → `domain-cloud.md`
+- `service/cloud/` → 本文档即为知识源
+- `framework/include/cloud/` → 本文档即为知识源
+- `framework/include/cloud/sharing_center.h` → `feature-data-share.md`
 
 ### Vocabulary-based routing
 
@@ -64,19 +54,17 @@ Where to look：
 
 | 术语 | 风险提示 | 阅读 |
 |---|---|---|
-| CloudSync / 端云同步 | 涉及双向数据一致性、冲突处理、水印管理 | `domain-cloud.md` |
-| CloudInfo | 云用户信息，包含空间配额和应用开关状态 | `domain-cloud.md` |
-| SchemaMeta | 云端 Schema 元数据，版本变更影响数据兼容性 | `domain-cloud.md` |
-| SyncStrategy / NetworkSyncStrategy | 同步策略链，影响网络条件判断和同步触发 | `domain-cloud.md` |
-| SharingCenter / 云共享 | 跨用户数据共享，涉及 Privilege/Participant 权限模型 | `domain-cloud.md` |
-| CloudConflictHandler | 冲突解决策略，影响数据一致性 | `domain-cloud.md` |
-| Subscription / 云订阅 | 云端订阅生命周期管理，有过期和续订逻辑 | `domain-cloud.md` |
-| AssetLoader | 资产下载管理，涉及大文件和网络状态 | `domain-cloud.md` |
-| CloudNotifierProxy | IPC 通知代理，回调语义变更影响应用层 | `domain-cloud.md` |
-| SyncConfig / CloudDbSyncConfig | 同步配置管理，影响同步行为参数 | `domain-cloud.md` |
-| CLOUDFILE_SYNC / 云开关 | 权限和功能入口，不得绕过校验 | `domain-cloud.md` |
-| ExecutorPool | 异步操作执行器，不得启动独立线程 | `../architecture-map.md` |
-| Serializable | 统一序列化机制，不得使用外部依赖 | `../architecture-map.md` |
+| CloudSync / 端云同步 | 涉及双向数据一致性、冲突处理、水印管理 | 本文档 §3 + 风险提示 |
+| CloudInfo | 云用户信息，包含空间配额和应用开关状态 | 本文档 §3 + 风险提示 |
+| SchemaMeta | 云端 Schema 元数据，版本变更影响数据兼容性 | 本文档 §3 + 风险提示 |
+| SyncStrategy / NetworkSyncStrategy | 同步策略链，影响网络条件判断和同步触发 | 本文档 §3 + 风险提示 |
+| SharingCenter / 云共享 | 跨用户数据共享，涉及 Privilege/Participant 权限模型 | `feature-data-share.md` |
+| CloudConflictHandler | 冲突解决策略，影响数据一致性 | 本文档 §3 + 风险提示 |
+| Subscription / 云订阅 | 云端订阅生命周期管理，有过期和续订逻辑 | 本文档 §3 + 风险提示 |
+| AssetLoader | 资产下载管理，涉及大文件和网络状态，注意超时和资源释放 | 本文档 §3 + 风险提示 |
+| CloudNotifierProxy | IPC 通知代理，回调语义变更影响应用层 | 本文档 §3 + 风险提示 |
+| SyncConfig / CloudDbSyncConfig | 同步配置管理，影响同步行为参数 | 本文档 §3 + 风险提示 |
+| CLOUDFILE_SYNC / 云开关 | 权限和功能入口，不得绕过校验 | 本文档 §3 + 风险提示 |
 
 在计划中声明：
 - 任务类别
@@ -110,6 +98,8 @@ Where to look：
 - 不要在没有显式批准的情况下引入新的生产依赖。
 - 不要修改 SharingCenter 错误码值（SHARING_ERR_OFFSET = 1000 是跨模块协议）。
 - 不要变更 CloudConfig 默认值（maxNumber=30, maxSize=1.5MB, maxRetryConflictTimes=3）除非明确要求。
+- 不要变更 SchemaMeta 版本号（除非任务明确要求并提供数据迁移逻辑）。
+- 不要在 AssetLoader 下载大文件时忽略超时和资源释放，必须设置合理的超时和清理机制。
 
 ### Ask before
 
@@ -128,8 +118,8 @@ Where to look：
 
 - 构建当前模块：`./build.sh --product-name <product> --build-target datamgr_service`
 - 运行聚焦测试：`./build.sh --product-name <product> --build-target datamgr_service_test`
-- 格式化/lint：检查 .clang-format 配置合规
-- API 兼容性检查：检查 CloudServiceStub IPC 接口签名和错误码是否保持兼容
+- 格式化/lint：`git-clang-format` 或对照 `.clang-format` 验证
+- API 兼容性检查：对照 CloudServiceStub Handler 编号表和参数签名，确认只增不减；检查错误码是否只追加不修改
 
 ### Task-specific checks
 

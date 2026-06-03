@@ -4,6 +4,14 @@
 
 本 AGENTS.md 适用于仓库根目录。子目录可能包含更具体的规则文件。
 
+嵌套指令文件：
+- `docs/agent/feature-cloud.md` — 端云同步
+- `docs/agent/feature-rdb.md` — RDB 模块
+- `docs/agent/feature-kvdb.md` — KVDB 模块
+- `docs/agent/feature-data-share.md` — 数据共享
+- `docs/agent/feature-object.md` — 分布式对象
+- `docs/agent/feature-udmf.md` — UDMF
+
 本仓库实现 OpenHarmony **分布式数据管理服务**（distributeddatamgr_datamgr_service），核心职责是元数据管理、数据同步协调、静默访问、权限管理和备份恢复。最重要的架构边界是**客户端存储、服务端管理**的分离：客户端负责实际数据存储，本服务负责管理协调。
 
 **三层架构**：
@@ -28,10 +36,10 @@
 
 Where to look：
 
-- 功能模块行为变更 → `services/distributeddataservice/service/<domain>/` + `docs/agent/domain-<domain>.md`
-- 端云功能模块行为变更 → `docs/agent/cloud/AGENTS.md` + `docs/agent/cloud/domain-cloud.md`
-- 适配器或依赖注入变更 → `services/distributeddataservice/adapter/` + `docs/agent/architecture-map.md`
-- 框架层接口变更 → `services/distributeddataservice/framework/` + `docs/agent/architecture-map.md`
+- 功能模块行为变更 → `services/distributeddataservice/service/<domain>/` + `docs/agent/feature-<domain>.md`
+- 端云功能模块行为变更 → `docs/agent/feature-cloud.md`
+- 适配器或依赖注入变更 → `services/distributeddataservice/adapter/`
+- 框架层接口变更 → `services/distributeddataservice/framework/`
 - 测试变更 → 先检查同目录下已有测试的模式和覆盖范围
 - 编译或 Feature 开关 → `datamgr_service.gni`
 
@@ -41,23 +49,21 @@ Where to look：
 
 ### Task-based routing
 
-- 架构或模块边界变更 → 阅读 `docs/agent/architecture-map.md`
-- DFX、日志、故障归因变更 → 阅读 `docs/agent/dfx-guidelines.md`
-- 同步行为变更 → 阅读 `docs/agent/domain-sync.md`
-- 云端行为变更 → 阅读 `docs/agent/cloud/domain-cloud.md`
-- 数据共享或静默访问变更 → 阅读 `docs/agent/domain-data-share.md`
-- UDMF 行为变更 → 阅读 `docs/agent/domain-udmf.md`
+- RDB 同步行为变更 → 阅读 `docs/agent/feature-rdb.md`
+- KVDB 同步行为变更 → 阅读 `docs/agent/feature-kvdb.md`
+- 分布式对象行为变更 → 阅读 `docs/agent/feature-object.md`
+- 云端行为变更 → 阅读 `docs/agent/feature-cloud.md`
+- 数据共享或静默访问变更 → 阅读 `docs/agent/feature-data-share.md`
+- UDMF 行为变更 → 阅读 `docs/agent/feature-udmf.md`
 
 ### Path-based routing
 
-- `services/distributeddataservice/service/rdb/` → `docs/agent/domain-sync.md`
-- `services/distributeddataservice/service/kvdb/` → `docs/agent/domain-sync.md`
-- `services/distributeddataservice/service/cloud/` → `docs/agent/cloud/domain-cloud.md`
-- `services/distributeddataservice/service/data_share/` → `docs/agent/domain-data-share.md`
-- `services/distributeddataservice/service/object/` → `docs/agent/domain-sync.md`
-- `services/distributeddataservice/service/udmf/` → `docs/agent/domain-udmf.md`
-- `services/distributeddataservice/adapter/` → `docs/agent/architecture-map.md`
-- `services/distributeddataservice/framework/` → `docs/agent/architecture-map.md`
+- `services/distributeddataservice/service/rdb/` → `docs/agent/feature-rdb.md`
+- `services/distributeddataservice/service/kvdb/` → `docs/agent/feature-kvdb.md`
+- `services/distributeddataservice/service/cloud/` → `docs/agent/feature-cloud.md`
+- `services/distributeddataservice/service/data_share/` → `docs/agent/feature-data-share.md`
+- `services/distributeddataservice/service/object/` → `docs/agent/feature-object.md`
+- `services/distributeddataservice/service/udmf/` → `docs/agent/feature-udmf.md`
 
 ### Vocabulary-based routing
 
@@ -65,14 +71,23 @@ Where to look：
 
 | 术语 | 风险提示 | 阅读 |
 |---|---|---|
-| FeatureSystem / Feature | 功能模块注册和生命周期，不得直接跨模块依赖 | `docs/agent/architecture-map.md` |
-| 静默访问 / SilentAccess | 跨应用数据共享，不启动提供方进程 | `docs/agent/domain-data-share.md` |
-| 端云同步 / CloudSync | 设备-云端数据同步协议 | `docs/agent/cloud/domain-cloud.md` |
-| DFX / HiLog / ZLOG | 可观测性、诊断、故障归因 | `docs/agent/dfx-guidelines.md` |
-| 依赖注入 / Delegate | 框架层接口，不得直接依赖适配器实现 | `docs/agent/architecture-map.md` |
-| ExecutorPool | 异步操作执行器，不得启动独立线程 | `docs/agent/architecture-map.md` |
-| Serializable | 统一序列化机制，不得使用外部依赖 | `docs/agent/architecture-map.md` |
-| UDMF | 统一数据管理框架，系统级数据标准 | `docs/agent/domain-udmf.md` |
+| AutoCache | 数据库句柄统一缓存，不得长期持有，使用后尽快释放 | 本文件 §3 |
+| FeatureSystem | 功能模块分发机制，应用层入口，不得跨模块依赖 | 本文件 §1 |
+| ExecutorPool | 异步操作线程池，禁止启动独立线程，禁止回调中捕获 this | 本文件 §3 |
+| Serializable | 统一序列化接口，禁止引入外部序列化依赖 | 本文件 §3 |
+| SyncManager | 端云同步流程统一管理器，同步必须经过它 | `docs/agent/feature-cloud.md` |
+| CloudServer | 云组件抽象接口，服务层不得绕过直接调用 Rust 层 | `docs/agent/feature-cloud.md` |
+| GeneralStore | 通用存储接口，端云同步通过它执行 | `docs/agent/feature-cloud.md` |
+| 静默访问 / SilentAccess | 跨应用数据共享，不启动提供方进程 | `docs/agent/feature-data-share.md` |
+| 端云同步 / CloudSync | 设备-云端数据同步协议 | `docs/agent/feature-cloud.md` |
+| SchemaMeta | 云端 Schema 元数据，版本变更影响数据兼容性 | `docs/agent/feature-cloud.md` |
+| SharingCenter | 云数据共享中心，错误码是跨模块协议 | `docs/agent/feature-cloud.md` |
+| NetworkRecoveryManager | 网络恢复补偿同步管理器，不得自行实现重连 | `docs/agent/feature-cloud.md` |
+| CloudConflictHandler | 冲突解决统一处理器，不得跳过冲突检测 | `docs/agent/feature-cloud.md` |
+| CloudConfig | 端云同步配置（批次大小、冲突重试次数等），默认值不得随意变更 | `docs/agent/feature-cloud.md` |
+| SyncStrategy | 同步策略基类，新增策略必须继承并注册到责任链 | `docs/agent/feature-cloud.md` |
+| Subscription | 云端订阅生命周期管理，有过期和续订逻辑 | `docs/agent/feature-cloud.md` |
+| UDMF | 统一数据管理框架，系统级数据标准 | `docs/agent/feature-udmf.md` |
 
 在计划中声明：
 - 任务类别
@@ -106,6 +121,9 @@ Where to look：
 - 不要变更公共 API 签名、错误码、权限行为或生命周期语义（除非任务明确要求）。
 - 不要在异步操作中捕获 this（避免 UAF）。
 - 不要直接测试私有方法，应通过公共接口覆盖。
+- 不要变更序列化格式或持久化数据结构（除非任务明确要求并提供迁移逻辑）。
+- 不要在未断开设备连接的情况下执行清除数据或重置状态的操作。
+- 不要引入或修改 license 敏感的代码（如 GPL/LGPL 混入 Apache-2.0 仓库），变更前确认 license 合规性。
 
 ### Ask before
 
@@ -121,7 +139,8 @@ Where to look：
 
 ### 最小验证
 
-- 格式化/lint：检查 .clang-format 和 rustfmt.toml 配置合规
+- C++ 格式化/lint：`git-clang-format` 或对照 `.clang-format` 验证
+- Rust 格式化/lint：`cargo fmt --check`（对照 `rustfmt.toml`）
 - 构建当前模块：`./build.sh --product-name <product> --build-target datamgr_service`
 - 运行聚焦测试：`./build.sh --product-name <product> --build-target datamgr_service_test`
 - API 兼容性检查：检查公共接口签名和错误码是否保持兼容
