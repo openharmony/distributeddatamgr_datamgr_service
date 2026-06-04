@@ -129,13 +129,7 @@ bool PublishedProxyData::VerifyPermission(const BundleInfo &callerBundleInfo, co
     return false;
 }
 
-
-/**
- * @brief Get the serialized length of a DataProxyValue.
- * @param value The DataProxyValue to calculate length for.
- * @return The length of value when serialized to string.
- */
-static size_t GetValueLength(const DataProxyValue &value)
+size_t PublishedProxyData::GetValueLength(const DataProxyValue &value)
 {
     switch (value.index()) {
         case DataProxyValueType::VALUE_INT: {
@@ -430,13 +424,16 @@ int32_t PublishedProxyData::UpsertUpdate(UpsertContext &ctx, const DataShareProx
         return UpdateProxyData(ctx.delegate, ctx.callerBundleInfo.bundleName,
             ctx.callerBundleInfo.userId, ctx.callerBundleInfo.tokenId, updateData);
     }
+    // PUT/REMOVE mode: multiValues_ contains exactly one placeholder entry with one key-value pair,
+    // so the loop always terminates at the first non-empty entry
     std::string targetKey;
     DataProxyValue targetValue;
     bool found = false;
     for (const auto &[appIdentifier, keyMap] : data.multiValues_) {
         if (!keyMap.empty()) {
-            targetKey = keyMap.begin()->first;
-            targetValue = keyMap.begin()->second;
+            const auto &[firstKey, firstValue] = *keyMap.begin();
+            targetKey = firstKey;
+            targetValue = firstValue;
             found = true;
             break;
         }
@@ -463,7 +460,7 @@ int32_t PublishedProxyData::UpsertRemoveValue(UpsertContext &ctx, const std::str
     DataShareProxyData deleteData = BuildMultiValuesAfterRemove(ctx.oldData, key, ctx.callerBundleInfo);
     type = DataShareObserver::ChangeType::UPDATE;
     return UpdateProxyData(ctx.delegate, ctx.callerBundleInfo.bundleName,
-        ctx.callerBundleInfo.userId, ctx.callerBundleInfo.tokenId, deleteData);
+        ctx.callerBundleInfo.userId, ctx.oldData.tokenId, deleteData);
 }
 
 size_t PublishedProxyData::CalculateCurrentTotal(const ProxyDataNode &oldData)
@@ -471,7 +468,7 @@ size_t PublishedProxyData::CalculateCurrentTotal(const ProxyDataNode &oldData)
     size_t currentTotal = 0;
     for (const auto &[appIdentifier, keyMap] : oldData.proxyData.multiValues) {
         for (const auto &[key, value] : keyMap) {
-            currentTotal += GetValueLength(value);
+            currentTotal += PublishedProxyData::GetValueLength(value);
         }
     }
     return currentTotal;
@@ -480,7 +477,7 @@ size_t PublishedProxyData::CalculateCurrentTotal(const ProxyDataNode &oldData)
 int32_t PublishedProxyData::CheckValueAndTotalLimits(const DataProxyValue &value,
     size_t currentTotal, size_t maxValueLength)
 {
-    size_t valueLength = GetValueLength(value);
+    size_t valueLength = PublishedProxyData::GetValueLength(value);
     if (valueLength > MAX_SINGLE_MULTIVALUE_LENGTH) {
         ZLOGE("value over limit %{public}zu > %{public}u",
             valueLength, MAX_SINGLE_MULTIVALUE_LENGTH);
@@ -501,7 +498,7 @@ int32_t PublishedProxyData::UpsertMultiValueData(const UpsertContext &ctx, const
     DataShareProxyData updateData = BuildMultiValuesAfterPut(ctx.oldData, key, value, ctx.callerBundleInfo);
     type = DataShareObserver::ChangeType::UPDATE;
     return UpdateProxyData(ctx.delegate, ctx.callerBundleInfo.bundleName,
-        ctx.callerBundleInfo.userId, ctx.callerBundleInfo.tokenId, updateData);
+        ctx.callerBundleInfo.userId, ctx.oldData.tokenId, updateData);
 }
 
 int32_t PublishedProxyData::UpsertPutValue(UpsertContext &ctx, const std::string &key,
@@ -525,8 +522,8 @@ int32_t PublishedProxyData::UpsertPutValue(UpsertContext &ctx, const std::string
     auto keyIter = appIter->second.find(key);
     if (keyIter != appIter->second.end()) {
         // Case 2a: key already exists under caller.appIdentifier, update directly without permission check
-        size_t oldSize = GetValueLength(keyIter->second);
-        size_t newSize = GetValueLength(value);
+        size_t oldSize = PublishedProxyData::GetValueLength(keyIter->second);
+        size_t newSize = PublishedProxyData::GetValueLength(value);
 
         size_t currentTotal = CalculateCurrentTotal(ctx.oldData);
         // maxValueLength is int32_t enum but always positive (4K/100K), safe to cast to size_t
@@ -816,7 +813,7 @@ int32_t PublishedProxyData::BuildInitMultiValues(DataShareProxyData &data, const
         for (auto &[placeholderId, keyMap] : data.multiValues_) {
             for (auto &[key, value] : keyMap) {
                 mergedData[key] = value;
-                totalSize += GetValueLength(value);
+                totalSize += PublishedProxyData::GetValueLength(value);
             }
         }
 

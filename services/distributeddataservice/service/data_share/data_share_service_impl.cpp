@@ -1500,8 +1500,6 @@ std::pair<int32_t, ConnectionInterfaceInfo> DataShareServiceImpl::GetConnectionI
 DataProxyResult DataShareServiceImpl::PutValue(const std::string &uri, const std::string &key,
     const DataProxyValue &value, const DataProxyConfig &proxyConfig)
 {
-    ZLOGI("PutValue uri:%{public}s, key:%{public}s", URIUtils::Anonymous(uri).c_str(), key.c_str());
-
     BundleInfo callerBundleInfo;
     if (!GetCallerBundleInfo(callerBundleInfo)) {
         ZLOGE("get callerBundleInfo failed");
@@ -1522,8 +1520,6 @@ DataProxyResult DataShareServiceImpl::PutValue(const std::string &uri, const std
 DataProxyResult DataShareServiceImpl::RemoveValue(const std::string &uri, const std::string &key,
     const DataProxyConfig &proxyConfig)
 {
-    ZLOGI("RemoveValue uri:%{public}s, key:%{public}s", URIUtils::Anonymous(uri).c_str(), key.c_str());
-
     BundleInfo callerBundleInfo;
     if (!GetCallerBundleInfo(callerBundleInfo)) {
         ZLOGE("get callerBundleInfo failed");
@@ -1544,8 +1540,6 @@ DataProxyResult DataShareServiceImpl::RemoveValue(const std::string &uri, const 
 DataProxyGetResult DataShareServiceImpl::GetValues(const std::string &uri,
     const DataProxyConfig &proxyConfig)
 {
-    ZLOGI("GetValues uri:%{public}s", URIUtils::Anonymous(uri).c_str());
-
     DataProxyGetResult result;
     result.uri_ = uri;
 

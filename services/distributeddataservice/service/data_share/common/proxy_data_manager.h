@@ -126,6 +126,12 @@ private:
         DataShareObserver::ChangeType &type);
     static int32_t UpsertPutValue(UpsertContext &ctx, const std::string &key,
         const DataProxyValue &value, DataShareObserver::ChangeType &type);
+    /**
+     * @brief Get the serialized length of a DataProxyValue.
+     * @param value The DataProxyValue to calculate length for.
+     * @return The length of value when serialized to string.
+     */
+    static size_t GetValueLength(const DataProxyValue &value);
     static size_t CalculateCurrentTotal(const ProxyDataNode &oldData);
     static int32_t CheckValueAndTotalLimits(const DataProxyValue &value,
         size_t currentTotal, size_t maxValueLength);
