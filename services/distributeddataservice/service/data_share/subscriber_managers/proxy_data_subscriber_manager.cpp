@@ -76,6 +76,21 @@ bool ProxyDataSubscriberManager::CheckAllowList(const std::vector<std::string> &
 }
 
 // if arg observer is not null, notify that observer only; otherwise notify all observers
+DataProxyChangeInfo ProxyDataSubscriberManager::BuildChangeInfo(
+    const DataShareObserver::ChangeType &type, const DataShareProxyData &data)
+{
+    if (data.isMultiValues_) {
+        DataProxyChangeInfo changeInfo(type, data.uri_, data.value_, true);
+        for (const auto &[appIdentifier, keyMap] : data.multiValues_) {
+            for (const auto &[key, value] : keyMap) {
+                changeInfo.multiValues_.push_back(value);
+            }
+        }
+        return changeInfo;
+    }
+    return DataProxyChangeInfo(type, data.uri_, data.value_);
+}
+
 void ProxyDataSubscriberManager::Emit(const std::vector<ProxyDataKey> &keys,
     const std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> &datas, const int32_t &userId)
 {
@@ -90,11 +105,12 @@ void ProxyDataSubscriberManager::Emit(const std::vector<ProxyDataKey> &keys,
                 continue;
             }
             auto &observers = it.second;
+            auto changeInfo = BuildChangeInfo(type, data);
             std::for_each(observers.begin(), observers.end(),
-                [&callbacks, data, userId, bundleName, &type, this](const auto &obs) {
+                [&callbacks, data, userId, bundleName, &type, &changeInfo, this](const auto &obs) {
                 if ((CheckAllowList(data.allowList_, obs.callerAppIdentifier) ||
                     bundleName == obs.bundleName) && obs.userId == userId) {
-                    callbacks[obs.observer].emplace_back(type, data.uri_, data.value_);
+                    callbacks[obs.observer].push_back(changeInfo);
                 } else {
                     ZLOGE("no permission to receive notification");
                 }

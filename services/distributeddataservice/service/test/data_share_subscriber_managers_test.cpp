@@ -26,6 +26,7 @@
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
+#include "proxy_data_subscriber_manager.h"
 #include "published_data_subscriber_manager.h"
 #include "rdb_subscriber_manager.h"
 #include "system_ability_definition.h"
@@ -39,6 +40,7 @@ std::string DATA_SHARE_URI_TEST = "datashare://com.acts.ohos.data.subscribermana
 std::string DATA_SHARE_SUBSCRIBE_TEST_URI = "datashareproxy://com.acts.ohos.data.subscribermanagertest/test";
 std::string BUNDLE_NAME_TEST = "ohos.subscribermanagertest.demo";
 namespace OHOS::Test {
+using OHOS::DataShare::LogLabel;
 class DataShareSubscriberManagersTest : public testing::Test {
 public:
     static constexpr int64_t USER_TEST = 100;
@@ -360,5 +362,104 @@ HWTEST_F(DataShareSubscriberManagersTest, NotNotifyAfterEnable, TestSize.Level1)
 
     auto result3 = RdbSubscriberManager::GetInstance().Enable(key, context);
     EXPECT_EQ(result3, DataShare::E_OK);
+}
+
+/**
+* @tc.name: BuildChangeInfo001
+* @tc.desc: Verify BuildChangeInfo for non-multiValues data
+* @tc.type: FUNC
+* @tc.require: MultiValues notification adaptation
+*/
+HWTEST_F(DataShareSubscriberManagersTest, BuildChangeInfo001, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo001 start");
+    DataShareProxyData data;
+    data.uri_ = "datashareproxy://com.test/normal";
+    data.value_ = std::string("hello");
+    data.isMultiValues_ = false;
+
+    auto result = ProxyDataSubscriberManager::BuildChangeInfo(
+        DataShareObserver::ChangeType::INSERT, data);
+
+    EXPECT_EQ(result.changeType_, DataShareObserver::ChangeType::INSERT);
+    EXPECT_EQ(result.uri_, "datashareproxy://com.test/normal");
+    EXPECT_EQ(std::get<std::string>(result.value_), "hello");
+    EXPECT_FALSE(result.isMultiValues_);
+    EXPECT_TRUE(result.multiValues_.empty());
+    ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo001 end");
+}
+
+/**
+* @tc.name: BuildChangeInfo002
+* @tc.desc: Verify BuildChangeInfo for multiValues with single app and single key
+* @tc.type: FUNC
+* @tc.require: MultiValues notification adaptation
+*/
+HWTEST_F(DataShareSubscriberManagersTest, BuildChangeInfo002, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo002 start");
+    DataShareProxyData data;
+    data.uri_ = "datashareproxy://com.test/multi";
+    data.value_ = std::string("");
+    data.isMultiValues_ = true;
+    data.multiValues_["app1"]["key1"] = DataProxyValue("value1");
+
+    auto result = ProxyDataSubscriberManager::BuildChangeInfo(
+        DataShareObserver::ChangeType::UPDATE, data);
+
+    EXPECT_EQ(result.changeType_, DataShareObserver::ChangeType::UPDATE);
+    EXPECT_EQ(result.uri_, "datashareproxy://com.test/multi");
+    EXPECT_TRUE(result.isMultiValues_);
+    ASSERT_EQ(result.multiValues_.size(), 1u);
+    EXPECT_EQ(std::get<std::string>(result.multiValues_[0]), "value1");
+    ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo002 end");
+}
+
+/**
+* @tc.name: BuildChangeInfo003
+* @tc.desc: Verify BuildChangeInfo flattens multiValues from multiple apps into a single vector
+* @tc.type: FUNC
+* @tc.require: MultiValues notification adaptation
+*/
+HWTEST_F(DataShareSubscriberManagersTest, BuildChangeInfo003, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo003 start");
+    DataShareProxyData data;
+    data.uri_ = "datashareproxy://com.test/multi";
+    data.value_ = std::string("");
+    data.isMultiValues_ = true;
+    data.multiValues_["app1"]["key1"] = DataProxyValue("v1");
+    data.multiValues_["app1"]["key2"] = DataProxyValue(42);
+    data.multiValues_["app2"]["key3"] = DataProxyValue(true);
+
+    auto result = ProxyDataSubscriberManager::BuildChangeInfo(
+        DataShareObserver::ChangeType::DELETE, data);
+
+    EXPECT_EQ(result.changeType_, DataShareObserver::ChangeType::DELETE);
+    EXPECT_TRUE(result.isMultiValues_);
+    ASSERT_EQ(result.multiValues_.size(), 3u);
+    ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo003 end");
+}
+
+/**
+* @tc.name: BuildChangeInfo004
+* @tc.desc: Verify BuildChangeInfo for multiValues with isMultiValues_=true but empty map
+* @tc.type: FUNC
+* @tc.require: MultiValues notification adaptation
+*/
+HWTEST_F(DataShareSubscriberManagersTest, BuildChangeInfo004, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo004 start");
+    DataShareProxyData data;
+    data.uri_ = "datashareproxy://com.test/multi_empty";
+    data.value_ = std::string("");
+    data.isMultiValues_ = true;
+
+    auto result = ProxyDataSubscriberManager::BuildChangeInfo(
+        DataShareObserver::ChangeType::INSERT, data);
+
+    EXPECT_TRUE(result.isMultiValues_);
+    EXPECT_TRUE(result.multiValues_.empty());
+    ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo004 end");
 }
 } // namespace OHOS::Test

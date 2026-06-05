@@ -78,6 +78,16 @@ struct UpsertContext {
     std::shared_ptr<KvDBDelegate> delegate;
     ProxyDataNode oldData;
     BundleInfo callerBundleInfo;
+    DataShareProxyData updatedData;  // Output: complete data after successful PUT/REMOVE update
+};
+
+/**
+ * Result structure for UpsertMultiValues operation.
+ * Contains error code and updated data (updatedData only valid when errorCode == SUCCESS).
+ */
+struct UpsertMultiResult {
+    int32_t errorCode = INNER_ERROR;
+    DataShareProxyData updatedData;
 };
 
 /**
@@ -101,6 +111,9 @@ public:
     static int32_t Upsert(const DataShareProxyData &proxyData, const BundleInfo &callerBundleInfo,
         DataShareObserver::ChangeType &type, const DataProxyConfig &proxyConfig,
         const ProxyDataUpsertMode mode = NORMAL_PUBLISH);
+    static UpsertMultiResult UpsertMultiValues(const DataShareProxyData &proxyData,
+        const BundleInfo &callerBundleInfo, const DataProxyConfig &proxyConfig,
+        const ProxyDataUpsertMode mode);
     static bool VerifyPermission(const BundleInfo &callerBundleInfo, const ProxyDataNode &data);
     bool HasVersion() const override;
     int GetVersion() const override;
@@ -122,10 +135,9 @@ private:
         DataShareObserver::ChangeType &type, const ProxyDataUpsertMode mode);
     static int32_t UpsertUpdate(UpsertContext &ctx, const DataShareProxyData &data,
         const ProxyDataUpsertMode mode, DataShareObserver::ChangeType &type);
-    static int32_t UpsertRemoveValue(UpsertContext &ctx, const std::string &key,
-        DataShareObserver::ChangeType &type);
+    static int32_t UpsertRemoveValue(UpsertContext &ctx, const std::string &key);
     static int32_t UpsertPutValue(UpsertContext &ctx, const std::string &key,
-        const DataProxyValue &value, DataShareObserver::ChangeType &type);
+        const DataProxyValue &value);
     /**
      * @brief Get the serialized length of a DataProxyValue.
      * @param value The DataProxyValue to calculate length for.
@@ -135,8 +147,8 @@ private:
     static size_t CalculateCurrentTotal(const ProxyDataNode &oldData);
     static int32_t CheckValueAndTotalLimits(const DataProxyValue &value,
         size_t currentTotal, size_t maxValueLength);
-    static int32_t UpsertMultiValueData(const UpsertContext &ctx, const std::string &key,
-        const DataProxyValue &value, DataShareObserver::ChangeType &type);
+    static int32_t UpsertMultiValueData(UpsertContext &ctx, const std::string &key,
+        const DataProxyValue &value);
     static DataShareProxyData BuildMultiValuesAfterPut(const ProxyDataNode &existing,
         const std::string &key, const DataProxyValue &value, const BundleInfo &callerBundleInfo);
     static DataShareProxyData BuildMultiValuesAfterRemove(const ProxyDataNode &existing,

@@ -1510,11 +1510,17 @@ DataProxyResult DataShareServiceImpl::PutValue(const std::string &uri, const std
     proxyData.multiValues_[callerBundleInfo.appIdentifier][key] = value;
     proxyData.isMultiValues_ = true;
 
-    DataShareObserver::ChangeType type;
-    int32_t ret = PublishedProxyData::Upsert(proxyData, callerBundleInfo, type, proxyConfig,
+    auto result = PublishedProxyData::UpsertMultiValues(proxyData, callerBundleInfo, proxyConfig,
         ProxyDataUpsertMode::PUT_MULTIVALUES);
+    if (result.errorCode == SUCCESS) {
+        std::vector<ProxyDataKey> keys;
+        std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> datas;
+        keys.emplace_back(uri, callerBundleInfo.bundleName);
+        datas[DataShareObserver::ChangeType::UPDATE].emplace_back(result.updatedData);
+        ProxyDataSubscriberManager::GetInstance().Emit(keys, datas, callerBundleInfo.userId);
+    }
 
-    return DataProxyResult(uri, static_cast<DataProxyErrorCode>(ret));
+    return DataProxyResult(uri, static_cast<DataProxyErrorCode>(result.errorCode));
 }
 
 DataProxyResult DataShareServiceImpl::RemoveValue(const std::string &uri, const std::string &key,
@@ -1530,11 +1536,17 @@ DataProxyResult DataShareServiceImpl::RemoveValue(const std::string &uri, const 
     proxyData.multiValues_[callerBundleInfo.appIdentifier][key] = DataProxyValue("");
     proxyData.isMultiValues_ = true;
 
-    DataShareObserver::ChangeType type;
-    int32_t ret = PublishedProxyData::Upsert(proxyData, callerBundleInfo, type, proxyConfig,
+    auto result = PublishedProxyData::UpsertMultiValues(proxyData, callerBundleInfo, proxyConfig,
         ProxyDataUpsertMode::REMOVE_MULTIVALUES);
+    if (result.errorCode == SUCCESS) {
+        std::vector<ProxyDataKey> keys;
+        std::map<DataShareObserver::ChangeType, std::vector<DataShareProxyData>> datas;
+        keys.emplace_back(uri, callerBundleInfo.bundleName);
+        datas[DataShareObserver::ChangeType::UPDATE].emplace_back(result.updatedData);
+        ProxyDataSubscriberManager::GetInstance().Emit(keys, datas, callerBundleInfo.userId);
+    }
 
-    return DataProxyResult(uri, static_cast<DataProxyErrorCode>(ret));
+    return DataProxyResult(uri, static_cast<DataProxyErrorCode>(result.errorCode));
 }
 
 DataProxyGetResult DataShareServiceImpl::GetValues(const std::string &uri,

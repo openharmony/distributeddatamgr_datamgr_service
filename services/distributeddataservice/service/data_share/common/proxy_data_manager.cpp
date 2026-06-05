@@ -380,6 +380,54 @@ int32_t PublishedProxyData::Upsert(const DataShareProxyData &proxyData, const Bu
     return UpsertUpdate(ctx, data, mode, type);
 }
 
+UpsertMultiResult PublishedProxyData::UpsertMultiValues(const DataShareProxyData &proxyData,
+    const BundleInfo &callerBundleInfo, const DataProxyConfig &proxyConfig,
+    const ProxyDataUpsertMode mode)
+{
+    UpsertMultiResult result;
+    auto delegate = KvDBDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("db open failed");
+        result.errorCode = INNER_ERROR;
+        return result;
+    }
+    auto data = proxyData;
+    if (!CheckAndCorrectProxyData(data, proxyConfig, mode)) {
+        result.errorCode = OVER_LIMIT;
+        return result;
+    }
+    std::string filter = Id(data.uri_, callerBundleInfo.userId);
+    std::string queryResult;
+    std::lock_guard<std::mutex> lock(mutex_);
+    delegate->Get(KvDBDelegate::PROXYDATA_TABLE, filter, "{}", queryResult);
+    if (queryResult.empty()) {
+        ZLOGE("Uri not exist when multiValues update");
+        result.errorCode = URI_NOT_EXIST;
+        return result;
+    }
+    ProxyDataNode oldData;
+    if (!ProxyDataNode::Unmarshall(queryResult, oldData)) {
+        ZLOGE("ProxyDataNode unmarshall failed, %{public}s",
+            StringUtils::GeneralAnonymous(queryResult).c_str());
+        result.errorCode = INNER_ERROR;
+        return result;
+    }
+    if (!IsConfigCompatible(mode, oldData.proxyData.isMultiValues)) {
+        ZLOGE("Type conflict: mode=%{public}d, existingIsMultiValues=%{public}d",
+            mode, oldData.proxyData.isMultiValues);
+        result.errorCode = INCOMPATIBLE_CONFIG_TYPE;
+        return result;
+    }
+    UpsertContext ctx { delegate, oldData, callerBundleInfo };
+    DataShareObserver::ChangeType type;
+    int32_t ret = UpsertUpdate(ctx, data, mode, type);
+    result.errorCode = ret;
+    if (ret == SUCCESS) {
+        result.updatedData = ctx.updatedData;
+    }
+    return result;
+}
+
 int32_t PublishedProxyData::UpsertInsert(std::shared_ptr<KvDBDelegate> delegate,
     const DataShareProxyData &data, const BundleInfo &callerBundleInfo,
     DataShareObserver::ChangeType &type, const ProxyDataUpsertMode mode)
@@ -443,22 +491,21 @@ int32_t PublishedProxyData::UpsertUpdate(UpsertContext &ctx, const DataShareProx
         return KEY_NOT_EXIST;
     }
     if (mode == PUT_MULTIVALUES) {
-        return UpsertPutValue(ctx, targetKey, targetValue, type);
+        return UpsertPutValue(ctx, targetKey, targetValue);
     }
     if (mode == REMOVE_MULTIVALUES) {
-        return UpsertRemoveValue(ctx, targetKey, type);
+        return UpsertRemoveValue(ctx, targetKey);
     }
     return INNER_ERROR;
 }
 
-int32_t PublishedProxyData::UpsertRemoveValue(UpsertContext &ctx, const std::string &key,
-    DataShareObserver::ChangeType &type)
+int32_t PublishedProxyData::UpsertRemoveValue(UpsertContext &ctx, const std::string &key)
 {
     if (!CanModifyMultiValue(ctx.oldData, key, ctx.callerBundleInfo)) {
         return KEY_NOT_EXIST;
     }
     DataShareProxyData deleteData = BuildMultiValuesAfterRemove(ctx.oldData, key, ctx.callerBundleInfo);
-    type = DataShareObserver::ChangeType::UPDATE;
+    ctx.updatedData = deleteData;
     return UpdateProxyData(ctx.delegate, ctx.callerBundleInfo.bundleName,
         ctx.callerBundleInfo.userId, ctx.oldData.tokenId, deleteData);
 }
@@ -492,17 +539,17 @@ int32_t PublishedProxyData::CheckValueAndTotalLimits(const DataProxyValue &value
     return SUCCESS;
 }
 
-int32_t PublishedProxyData::UpsertMultiValueData(const UpsertContext &ctx, const std::string &key,
-    const DataProxyValue &value, DataShareObserver::ChangeType &type)
+int32_t PublishedProxyData::UpsertMultiValueData(UpsertContext &ctx, const std::string &key,
+    const DataProxyValue &value)
 {
     DataShareProxyData updateData = BuildMultiValuesAfterPut(ctx.oldData, key, value, ctx.callerBundleInfo);
-    type = DataShareObserver::ChangeType::UPDATE;
+    ctx.updatedData = updateData;
     return UpdateProxyData(ctx.delegate, ctx.callerBundleInfo.bundleName,
         ctx.callerBundleInfo.userId, ctx.oldData.tokenId, updateData);
 }
 
 int32_t PublishedProxyData::UpsertPutValue(UpsertContext &ctx, const std::string &key,
-    const DataProxyValue &value, DataShareObserver::ChangeType &type)
+    const DataProxyValue &value)
 {
     auto appIter = ctx.oldData.proxyData.multiValues.find(ctx.callerBundleInfo.appIdentifier);
     if (appIter == ctx.oldData.proxyData.multiValues.end()) {
@@ -516,7 +563,7 @@ int32_t PublishedProxyData::UpsertPutValue(UpsertContext &ctx, const std::string
         if (ret != SUCCESS) {
             return ret;
         }
-        return UpsertMultiValueData(ctx, key, value, type);
+        return UpsertMultiValueData(ctx, key, value);
     }
 
     auto keyIter = appIter->second.find(key);
@@ -538,7 +585,7 @@ int32_t PublishedProxyData::UpsertPutValue(UpsertContext &ctx, const std::string
                 return OVER_LIMIT;
             }
         }
-        return UpsertMultiValueData(ctx, key, value, type);
+        return UpsertMultiValueData(ctx, key, value);
     }
 
     // Case 2b: key not exists - insert to existing appIdentifier
@@ -553,7 +600,7 @@ int32_t PublishedProxyData::UpsertPutValue(UpsertContext &ctx, const std::string
     if (ret != SUCCESS) {
         return ret;
     }
-    return UpsertMultiValueData(ctx, key, value, type);
+    return UpsertMultiValueData(ctx, key, value);
 }
 
 int32_t PublishedProxyData::UpdateProxyDataList(std::shared_ptr<KvDBDelegate> delegate, const std::string &uri,
@@ -634,6 +681,8 @@ int32_t PublishedProxyData::Delete(const std::string &uri, const BundleInfo &cal
     }
 
     oldProxyData = DataShareProxyData(oldData.proxyData.uri, oldData.proxyData.value, oldData.proxyData.allowList);
+    oldProxyData.isMultiValues_ = oldData.proxyData.isMultiValues;
+    oldProxyData.multiValues_ = oldData.proxyData.multiValues;
     type = DataShareObserver::ChangeType::DELETE;
     return SUCCESS;
 }
