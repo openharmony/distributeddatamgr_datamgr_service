@@ -260,7 +260,7 @@ std::string RdbServiceImpl::ObtainDistributedTableName(const RdbSyncerParam &par
     return DistributedDB::RelationalStoreManager::GetDistributedTableName(uuid, table);
 }
 
-int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> notifier)
+int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> &notifier)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     if (!IsValidAccess(param.bundleName_, "")) {

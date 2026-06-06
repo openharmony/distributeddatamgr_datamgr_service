@@ -24,12 +24,16 @@ ohos_fuzztest("SyncStrategiesFuzzTest") {
     "${data_service_path}/framework/include",
     "${data_service_path}/service/cloud",
     "${data_service_path}/service/common",
+    "${data_service_path}/service/rdb",
   ]
 
   fuzz_config_file =
       "${data_service_path}/service/test/fuzztest/syncstrategies_fuzzer"
 
-  sources = [ "syncstrategies_fuzzer.cpp" ]
+  sources = [
+    "${data_service_path}/service/rdb/rdb_types_utils.cpp",
+    "syncstrategies_fuzzer.cpp",
+  ]
 
   cflags = [
     "-g",
@@ -55,8 +59,10 @@ ohos_fuzztest("SyncStrategiesFuzzTest") {
     "access_token:libtokenid_sdk",
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
+    "relational_store:cloud_data_inner",
   ]
 }
 
