@@ -82,7 +82,5 @@ bool Unmarshalling(BundleInfo &output, MessageParcel &data);
 
 template<>
 bool Unmarshalling(CloudSubscribeType &output, MessageParcel &data);
-
-
 } // namespace OHOS::ITypesUtil
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_CLOUD_TYPES_UTIL_H

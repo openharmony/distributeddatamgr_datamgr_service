@@ -132,6 +132,4 @@ bool Unmarshalling(CloudSubscribeType &output, MessageParcel &data)
     output = type;
     return true;
 }
-
-
 } // namespace OHOS::ITypesUtil
