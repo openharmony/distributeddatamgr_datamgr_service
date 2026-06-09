@@ -142,7 +142,6 @@ ohos_unittest("LifeCycleManagerTest") {
     "kv_store:distributeddata_inner",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 }
