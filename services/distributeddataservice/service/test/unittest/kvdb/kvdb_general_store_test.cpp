@@ -609,6 +609,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
         .WillOnce(DoAll(
             SetArgReferee<0>(users),
             Return(true)));
+    BindCloudDB(*store);
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
     EXPECT_EQ(ret, DBStatus::OK);
 
