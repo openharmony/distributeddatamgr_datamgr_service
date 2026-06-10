@@ -466,26 +466,6 @@ ohos_unittest("PowerManagerTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 }
 
-ohos_unittest("BatteryStateMonitorTest") {
-  module_out_path = module_output_path
-  sources = [ "battery_state_monitor_test.cpp" ]
-  configs = [ ":module_private_config" ]
-
-  cflags = [
-    "-fno-access-control",
-    "-Werror=vla",
-  ]
-
-  external_deps = [
-    "ability_base:want",
-    "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
-    "googletest:gtest_main",
-    "hilog:libhilog",
-    "kv_store:datamgr_common",
-  ]
-}
-
 ohos_unittest("AppIdMappingConfigManagerTest") {
   module_out_path = module_output_path
   sources = [ "app_id_mapping_config_manager_test.cpp" ]
@@ -577,7 +557,6 @@ group("unittest") {
     ":AssetLoaderTest",
     ":AutoCacheTest",
     ":BackupRuleManagerTest",
-    ":BatteryStateMonitorTest",
     ":BindEventTest",
     ":CheckerManagerTest",
     ":CloudInfoTest",

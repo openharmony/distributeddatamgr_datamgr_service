@@ -104,6 +104,7 @@ group("unittest") {
 
   deps += [
     "../account/test:unittest",
+    "../battery_state/test:unittest",
     "../communicator/test:unittest",
     "../dfx/test:unittest",
     "../power_manager/test:unittest",

@@ -16,9 +16,10 @@
 #include <gtest/gtest.h>
 
 #include "common_event_data.h"
+#include "error/general_error.h"
 #include "want.h"
 
-#include "../battery_state/battery_state_monitor.cpp"
+#include "battery_state_monitor_impl.h"
 
 using namespace testing::ext;
 using namespace OHOS::DistributedData;
@@ -66,8 +67,8 @@ public:
  */
 HWTEST_F(BatteryStateMonitorTest, Subscribe_InvalidArgs_ReturnsError001, TestSize.Level1)
 {
-    EXPECT_EQ(monitor_.Subscribe("", [](const BatteryStateMonitor::Snapshot &) {}), -1);
-    EXPECT_EQ(monitor_.Subscribe("observer", nullptr), -1);
+    EXPECT_EQ(monitor_.Subscribe("", [](const BatteryStateMonitor::Snapshot &) {}), E_INVALID_ARGS);
+    EXPECT_EQ(monitor_.Subscribe("observer", nullptr), E_INVALID_ARGS);
 }
 
 /**
@@ -84,11 +85,11 @@ HWTEST_F(BatteryStateMonitorTest, Subscribe_ValidObserver_ReceivesSnapshotAndCan
 
     ASSERT_EQ(monitor_.Subscribe("observer", [&firstCount](const BatteryStateMonitor::Snapshot &) {
         ++firstCount;
-    }), 0);
+    }), E_OK);
     ASSERT_EQ(monitor_.Subscribe("observer", [&secondCount, &received](const BatteryStateMonitor::Snapshot &snapshot) {
         ++secondCount;
         received = snapshot;
-    }), 0);
+    }), E_OK);
 
     EXPECT_EQ(firstCount, 1);
     EXPECT_EQ(secondCount, 1);
@@ -109,10 +110,10 @@ HWTEST_F(BatteryStateMonitorTest, Subscribe_ValidObserver_ReceivesSnapshotAndCan
  */
 HWTEST_F(BatteryStateMonitorTest, Unsubscribe_ExistingAndMissingObserver_ReturnsExpectedStatus003, TestSize.Level1)
 {
-    ASSERT_EQ(monitor_.Subscribe("observer", [](const BatteryStateMonitor::Snapshot &) {}), 0);
+    ASSERT_EQ(monitor_.Subscribe("observer", [](const BatteryStateMonitor::Snapshot &) {}), E_OK);
 
-    EXPECT_EQ(monitor_.Unsubscribe("observer"), 0);
-    EXPECT_EQ(monitor_.Unsubscribe("observer"), -1);
+    EXPECT_EQ(monitor_.Unsubscribe("observer"), E_OK);
+    EXPECT_EQ(monitor_.Unsubscribe("observer"), E_ERROR);
 }
 
 /**
@@ -139,7 +140,7 @@ HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_BeforeStart_DoesNotNotify005, T
     int32_t callbackCount = 0;
     ASSERT_EQ(monitor_.Subscribe("observer", [&callbackCount](const BatteryStateMonitor::Snapshot &) {
         ++callbackCount;
-    }), 0);
+    }), E_OK);
 
     monitor_.OnBatteryEvent(MakeBatteryEvent(BATTERY_LOW_EVENT));
 
@@ -161,7 +162,7 @@ HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_LowAndOkay_UpdateSnapshot006, T
         const BatteryStateMonitor::Snapshot &snapshot) {
         ++callbackCount;
         received = snapshot;
-    }), 0);
+    }), E_OK);
 
     monitor_.OnBatteryEvent(MakeBatteryEvent(BATTERY_LOW_EVENT));
     EXPECT_EQ(callbackCount, 2);
@@ -188,7 +189,7 @@ HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_LevelEvents_ParseKnownKeysAndCl
         const BatteryStateMonitor::Snapshot &snapshot) {
         ++callbackCount;
         received = snapshot;
-    }), 0);
+    }), E_OK);
 
     monitor_.OnBatteryEvent(MakeBatteryLevelEvent(BATTERY_CHANGED_EVENT, "batteryCapacityLevel", 6));
     EXPECT_EQ(callbackCount, 2);
@@ -219,7 +220,7 @@ HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_UnknownActionOrDuplicateLevel_D
     int32_t callbackCount = 0;
     ASSERT_EQ(monitor_.Subscribe("observer", [&callbackCount](const BatteryStateMonitor::Snapshot &) {
         ++callbackCount;
-    }), 0);
+    }), E_OK);
 
     monitor_.OnBatteryEvent(MakeBatteryEvent("usual.event.UNKNOWN"));
     EXPECT_EQ(callbackCount, 1);

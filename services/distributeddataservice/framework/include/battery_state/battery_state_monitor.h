@@ -31,6 +31,7 @@ public:
     using Observer = std::function<void(const Snapshot &)>;
 
     static BatteryStateMonitor *GetInstance();
+    static bool RegisterInstance(BatteryStateMonitor *instance);
 
     virtual ~BatteryStateMonitor() = default;
     virtual int32_t Subscribe(const std::string &name, Observer observer) = 0;
@@ -41,6 +42,9 @@ public:
 
 protected:
     BatteryStateMonitor() = default;
+
+private:
+    static BatteryStateMonitor *instance_;
 };
 } // namespace OHOS::DistributedData
 
