@@ -1103,8 +1103,8 @@ bool UdmfServiceImpl::IsNeedTransferDeviceType(const QueryOption &query)
     int32_t userId = DistributedData::AccountDelegate::GetInstance()->GetUserByToken(
         IPCSkeleton::GetCallingFullTokenID());
     AppExecFwk::BundleInfo bundleInfo;
-    bundleManager->GetBundleInfoV9(bundleName, static_cast<int32_t>(
-        AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE), bundleInfo, userId);
+    bundleManager->GetBundleInfoV9(bundleName, OHOS::AppExecFwk::BundleFlag::GET_BUNDLE_INFO_EXCLUDE_EXT,
+        bundleInfo, userId);
     for (const auto &hapModuleInfo : bundleInfo.hapModuleInfos) {
         if (std::find(hapModuleInfo.deviceTypes.begin(), hapModuleInfo.deviceTypes.end(),
             DEVICE_PHONE_TAG) == hapModuleInfo.deviceTypes.end()
