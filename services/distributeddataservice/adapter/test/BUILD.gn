@@ -110,7 +110,8 @@ group("unittest") {
     "../qos/test:unittest",
   ]
 
-  if (datamgr_service_battery) {
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.battery_manager_native_batterysrv_client)) {
     deps += [ "../battery_state/test:unittest" ]
   }
 
