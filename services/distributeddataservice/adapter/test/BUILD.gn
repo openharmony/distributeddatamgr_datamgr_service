@@ -104,12 +104,15 @@ group("unittest") {
 
   deps += [
     "../account/test:unittest",
-    "../battery_state/test:unittest",
     "../communicator/test:unittest",
     "../dfx/test:unittest",
     "../power_manager/test:unittest",
     "../qos/test:unittest",
   ]
+
+  if (datamgr_service_battery) {
+    deps += [ "../battery_state/test:unittest" ]
+  }
 
   if (defined(global_parts_info) &&
       defined(global_parts_info.theme_screenlock_mgr)) {

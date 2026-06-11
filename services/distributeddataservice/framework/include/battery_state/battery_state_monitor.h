@@ -23,15 +23,15 @@
 #include "visibility.h"
 
 namespace OHOS::DistributedData {
-class API_EXPORT BatteryStateMonitor {
+class BatteryStateMonitor {
 public:
     struct Snapshot {
         int32_t batteryLevel = 0;
     };
     using Observer = std::function<void(const Snapshot &)>;
 
-    static BatteryStateMonitor *GetInstance();
-    static bool RegisterInstance(BatteryStateMonitor *instance);
+    API_EXPORT static BatteryStateMonitor *GetInstance();
+    API_EXPORT static bool RegisterInstance(BatteryStateMonitor *instance);
 
     virtual ~BatteryStateMonitor() = default;
     virtual int32_t Subscribe(const std::string &name, Observer observer) = 0;
