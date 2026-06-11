@@ -79,7 +79,6 @@ ohos_unittest("UdmfRunTimeStoreTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
   ]
 
   deps = [
@@ -146,7 +145,6 @@ ohos_unittest("UdmfServiceImplTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
   ]
 
   deps = [
@@ -240,7 +238,6 @@ ohos_unittest("UdmfServiceImplMockTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
     "udmf:utd_client",
   ]
   sanitize = {
@@ -286,7 +283,6 @@ ohos_unittest("UdmfPermissionPolicyUtilsTest") {
     "hitrace:libhitracechain",
     "kv_store:datamgr_common",
     "udmf:udmf_client",
-    "udmf:udmf_core",
   ]
 }
 
@@ -332,7 +328,6 @@ ohos_unittest("UdmfServiceStubTest") {
     "relational_store:native_rdb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
   ]
 }
 
@@ -432,7 +427,6 @@ ohos_unittest("UdmfServiceStubMockTest") {
     "relational_store:native_rdb",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 }
@@ -475,7 +469,6 @@ ohos_unittest("UdmfPreProcessUtilsTest") {
     "kv_store:distributeddb",
     "relational_store:native_rdb",
     "udmf:udmf_client",
-    "udmf:udmf_core",
   ]
 }
 
@@ -532,7 +525,6 @@ ohos_unittest("UdmfPreProcessUtilsMockTest") {
     "kv_store:datamgr_common",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 }
@@ -585,7 +577,6 @@ ohos_unittest("UdmfCheckerManagerTest") {
     "kv_store:distributeddata_inner",
     "openssl:libcrypto_shared",
     "udmf:udmf_client",
-    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 }
@@ -674,7 +665,6 @@ ohos_unittest("UdmfServiceImplDbCorruptionMockTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
   ]
 
   deps = [
@@ -769,7 +759,6 @@ ohos_unittest("UdmfDelayDataContainerTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 
@@ -865,7 +854,6 @@ ohos_unittest("UdmfObserverTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "udmf:udmf_client",
-    "udmf:udmf_core",
     "udmf:utd_client",
   ]
 
