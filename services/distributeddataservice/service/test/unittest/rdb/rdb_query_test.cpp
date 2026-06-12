@@ -462,5 +462,117 @@ HWTEST_F(RdbQueryTest, RdbQueryTest018, TestSize.Level1)
     EXPECT_EQ(predicates.operations_.size(), 1);
     EXPECT_TRUE(emptyValues.empty());
 }
+
+/**
+ * @tc.name: RdbQuery_EqualTo_EmptyValues
+ * @tc.desc: RdbQuery EqualTo with empty values - early return branch
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_EqualTo_EmptyValues, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<std::string> emptyValues;
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "field", emptyValues);
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+ * @tc.name: RdbQuery_EqualTo_StringValue
+ * @tc.desc: RdbQuery EqualTo with string value
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_EqualTo_StringValue, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<std::string> values = { "testString" };
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "field", values);
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+ * @tc.name: RdbQuery_EqualTo_IntValue
+ * @tc.desc: RdbQuery EqualTo with int64 value
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_EqualTo_IntValue, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<int64_t> values = { 12345 };
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "field", values);
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+ * @tc.name: RdbQuery_NotEqualTo_StringValue
+ * @tc.desc: RdbQuery NotEqualTo with string value
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_NotEqualTo_StringValue, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<std::string> values = { "testString" };
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::NOT_EQUAL_TO, "field", values);
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+ * @tc.name: RdbQuery_NotLike_StringValue
+ * @tc.desc: RdbQuery NotLike with string value
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_NotLike_StringValue, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<std::string> values = { "testPattern" };
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::NOT_LIKE, "field", values);
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+ * @tc.name: RdbQuery_AssetsOnly_StringValues
+ * @tc.desc: RdbQuery AssetsOnly with string values
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_AssetsOnly_StringValues, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<std::string> assetNames = { "asset1.png", "asset2.jpg", "asset3.bmp" };
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::ASSETS_ONLY, "assets_field", assetNames);
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
+
+/**
+ * @tc.name: RdbQuery_AssetsOnly_IntValue
+ * @tc.desc: RdbQuery AssetsOnly with int64 value - early return due to type mismatch
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_AssetsOnly_IntValue, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    std::vector<int64_t> values = { 12345 };
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::ASSETS_ONLY, "field", values);
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
