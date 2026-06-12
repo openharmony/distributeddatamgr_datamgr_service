@@ -470,7 +470,7 @@ int SoftBusAdapter::CreateSessionServerAdapter(const std::string &sessionName)
     ZLOGD("begin");
     SocketInfo socketInfo;
     std::string sessionServerName = sessionName;
-    socketInfo.name = const_cast<char *>(sessionServerName.c_str());
+    socketInfo.name = sessionServerName.data();
     std::string pkgName = "ohos.distributeddata";
     socketInfo.pkgName = pkgName.data();
     socket_ = Socket(socketInfo);
@@ -579,6 +579,10 @@ void AppDataListenerWrap::OnServerShutdown(int32_t socket, ShutdownReason reason
 
 void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data, uint32_t dataLen)
 {
+    if (data == nullptr || dataLen == 0) {
+        ZLOGE("Invalid data received, socket id %{public}d, data is null or dataLen is zero", socket);
+        return;
+    }
     SoftBusAdapter::ServerSocketInfo info;
     if (!softBusAdapter_->GetPeerSocketInfo(socket, info)) {
         ZLOGE("Get peer socket info failed, socket id %{public}d", socket);

@@ -33,6 +33,7 @@ using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 constexpr const char *CLONE_KEY_ALIAS = "distributed_db_backup_key";
 constexpr int KEY_SIZE = 32;
 constexpr int AES_256_NONCE_SIZE = 32;
+constexpr int DECIMAL_BASE = 10;
 
 std::string GetBackupReplyCode(int replyCode, const std::string &info)
 {
@@ -50,7 +51,7 @@ std::vector<uint8_t> ConvertDecStrToVec(const std::string &inData)
     auto splitedToken = Constant::Split(inData, ",");
     outData.reserve(splitedToken.size());
     for (auto &token : splitedToken) {
-        outData.push_back(static_cast<uint8_t>(atoi(token.c_str())));
+        outData.push_back(static_cast<uint8_t>(strtol(token.c_str(), nullptr, DECIMAL_BASE)));
     }
     return outData;
 }

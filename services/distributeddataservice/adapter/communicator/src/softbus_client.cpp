@@ -127,11 +127,11 @@ int32_t SoftBusClient::CreateSocket(const SessionAccessInfo &accessInfo) const
 {
     SocketInfo socketInfo;
     std::string peerName = pipe_.pipeId;
-    socketInfo.peerName = const_cast<char *>(peerName.c_str());
+    socketInfo.peerName = peerName.data();
     auto networkId = GetNetworkId();
-    socketInfo.peerNetworkId = const_cast<char *>(networkId.c_str());
+    socketInfo.peerNetworkId = networkId.data();
     std::string clientName = pipe_.pipeId;
-    socketInfo.name = const_cast<char *>(clientName.c_str());
+    socketInfo.name = clientName.data();
     std::string pkgName = "ohos.distributeddata";
     socketInfo.pkgName = pkgName.data();
     socketInfo.dataType = DATA_TYPE_BYTES;
@@ -153,7 +153,7 @@ int32_t SoftBusClient::CreateSocket(const SessionAccessInfo &accessInfo) const
             ZLOGE("Marshall access info fail");
             return INVALID_SOCKET_ID;
         }
-        info.extraAccessInfo = const_cast<char *>(extraInfoStr.c_str());
+        info.extraAccessInfo = extraInfoStr.data();
         auto status = SetAccessInfo(socket, info);
         if (status != SOFTBUS_OK) {
             ZLOGE("SetAccessInfo fail, status:%{public}d, userId:%{public}d, bundleName:%{public}s,"
