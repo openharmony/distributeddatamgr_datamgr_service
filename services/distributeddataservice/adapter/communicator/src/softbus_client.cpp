@@ -21,6 +21,7 @@
 #include "communication/connect_manager.h"
 #include "inner_socket.h"
 #include "log_print.h"
+#include "securec.h"
 #include "softbus_error_code.h"
 #include "utils/anonymous.h"
 
@@ -125,15 +126,32 @@ Status SoftBusClient::OpenConnect(const ISocketListener *listener, const Session
 
 int32_t SoftBusClient::CreateSocket(const SessionAccessInfo &accessInfo) const
 {
-    SocketInfo socketInfo;
-    std::string peerName = pipe_.pipeId;
-    socketInfo.peerName = peerName.data();
+    SocketInfo socketInfo = {};
+    char peerNameBuf[256] = {0};
+    if (strncpy_s(peerNameBuf, sizeof(peerNameBuf), pipe_.pipeId.c_str(), pipe_.pipeId.length()) != EOK) {
+        ZLOGE("copy peer name failed");
+        return INVALID_SOCKET_ID;
+    }
+    socketInfo.peerName = peerNameBuf;
     auto networkId = GetNetworkId();
-    socketInfo.peerNetworkId = networkId.data();
-    std::string clientName = pipe_.pipeId;
-    socketInfo.name = clientName.data();
-    std::string pkgName = "ohos.distributeddata";
-    socketInfo.pkgName = pkgName.data();
+    char networkIdBuf[65] = {0};
+    if (strncpy_s(networkIdBuf, sizeof(networkIdBuf), networkId.c_str(), networkId.length()) != EOK) {
+        ZLOGE("copy network id failed");
+        return INVALID_SOCKET_ID;
+    }
+    socketInfo.peerNetworkId = networkIdBuf;
+    char clientNameBuf[256] = {0};
+    if (strncpy_s(clientNameBuf, sizeof(clientNameBuf), pipe_.pipeId.c_str(), pipe_.pipeId.length()) != EOK) {
+        ZLOGE("copy client name failed");
+        return INVALID_SOCKET_ID;
+    }
+    socketInfo.name = clientNameBuf;
+    char pkgBuf[65] = {0};
+    if (strncpy_s(pkgBuf, sizeof(pkgBuf), "ohos.distributeddata", strlen("ohos.distributeddata")) != EOK) {
+        ZLOGE("copy pkg name failed");
+        return INVALID_SOCKET_ID;
+    }
+    socketInfo.pkgName = pkgBuf;
     socketInfo.dataType = DATA_TYPE_BYTES;
     int32_t socket = Socket(socketInfo);
     if (socket <= 0) {
@@ -153,7 +171,12 @@ int32_t SoftBusClient::CreateSocket(const SessionAccessInfo &accessInfo) const
             ZLOGE("Marshall access info fail");
             return INVALID_SOCKET_ID;
         }
-        info.extraAccessInfo = extraInfoStr.data();
+        char extraBuf[257] = {0};
+        if (strncpy_s(extraBuf, sizeof(extraBuf), extraInfoStr.c_str(), extraInfoStr.length()) != EOK) {
+            ZLOGE("copy extra access info failed");
+            return INVALID_SOCKET_ID;
+        }
+        info.extraAccessInfo = extraBuf;
         auto status = SetAccessInfo(socket, info);
         if (status != SOFTBUS_OK) {
             ZLOGE("SetAccessInfo fail, status:%{public}d, userId:%{public}d, bundleName:%{public}s,"
