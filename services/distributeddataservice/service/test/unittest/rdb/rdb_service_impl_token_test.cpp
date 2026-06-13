@@ -411,6 +411,102 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo008, TestSize.Level0)
 }
 
 /**
+ * @tc.name: VerifyPromiseInfo009
+ * @tc.desc: Test VerifyPromiseInfo self-access when mapping tokenId matches caller tokenId.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo009, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+
+    auto meta = service.GetStoreMetaData(param);
+    meta.user = param.user_;
+    MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+
+    StoreMetaMapping metaMappingSave(meta);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMappingSave.GetKey(), metaMappingSave, true), true);
+
+    int32_t result = service.VerifyPromiseInfo(param);
+
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMappingSave.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: VerifyPromiseInfo010
+ * @tc.desc: Test VerifyPromiseInfo non-self-access when mapping tokenId differs and no localMeta.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo010, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+
+    auto meta = service.GetStoreMetaData(param);
+    meta.user = param.user_;
+    MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+
+    StoreMetaMapping metaMappingSave(meta);
+    metaMappingSave.tokenId = 12345u;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMappingSave.GetKey(), metaMappingSave, true), true);
+
+    int32_t result = service.VerifyPromiseInfo(param);
+
+    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMappingSave.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: VerifyPromiseInfo011
+ * @tc.desc: Test VerifyPromiseInfo non-self-access with localMeta found but denied by promiseInfo.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo011, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+
+    auto meta = service.GetStoreMetaData(param);
+    meta.user = param.user_;
+    MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
+
+    StoreMetaMapping metaMappingSave(meta);
+    metaMappingSave.tokenId = 12345u;
+    metaMappingSave.dataDir = "test_data_dir";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMappingSave.GetKey(), metaMappingSave, true), true);
+
+    StoreMetaDataLocal localMeta;
+    localMeta.isAutoSync = true;
+    localMeta.promiseInfo.tokenIds = {};
+    localMeta.promiseInfo.uids = {};
+    localMeta.promiseInfo.permissionNames = {};
+
+    StoreMetaData correctedMeta = meta;
+    correctedMeta.dataDir = metaMappingSave.dataDir;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(correctedMeta.GetKeyLocal(), localMeta, true), true);
+
+    EXPECT_CALL(*accTokenMock, GetTokenType(testing::_))
+        .WillOnce(testing::Return(ATokenTypeEnum::TOKEN_NATIVE))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
+
+    int32_t result = service.VerifyPromiseInfo(param);
+
+    EXPECT_EQ(result, RDB_ERROR);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMappingSave.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(correctedMeta.GetKeyLocal(), true), true);
+}
+
+/**
  * @tc.name: GetReuseDevice001
  * @tc.desc: Test GetReuseDevice when all devices can reusable.
  * @tc.type: FUNC

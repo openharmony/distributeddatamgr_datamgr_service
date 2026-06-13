@@ -2262,13 +2262,14 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto meta = GetStoreMetaData(param);
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    auto uid = IPCSkeleton::GetCallingUid();
     meta.user = param.user_;
     StoreMetaDataLocal localMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true)) {
         StoreMetaMapping metaMapping(meta);
-        MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+        if (MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true) &&
+            meta.tokenId == metaMapping.tokenId) {
+            return RDB_OK;
+        }
         meta.dataDir = metaMapping.dataDir;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true)) {
             ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),
@@ -2276,13 +2277,13 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
             return RDB_ERROR;
         }
     }
-    ATokenTypeEnum type = AccessTokenKit::GetTokenType(tokenId);
+    ATokenTypeEnum type = AccessTokenKit::GetTokenType(meta.tokenId);
     if (type == ATokenTypeEnum::TOKEN_NATIVE || type == ATokenTypeEnum::TOKEN_SHELL) {
         auto tokenIdRet =
-            std::find(localMeta.promiseInfo.tokenIds.begin(), localMeta.promiseInfo.tokenIds.end(), tokenId);
-        auto uidRet = std::find(localMeta.promiseInfo.uids.begin(), localMeta.promiseInfo.uids.end(), uid);
+            std::find(localMeta.promiseInfo.tokenIds.begin(), localMeta.promiseInfo.tokenIds.end(), meta.tokenId);
+        auto uidRet = std::find(localMeta.promiseInfo.uids.begin(), localMeta.promiseInfo.uids.end(), meta.uid);
         bool isPromise = std::any_of(localMeta.promiseInfo.permissionNames.begin(),
-            localMeta.promiseInfo.permissionNames.end(), [tokenId](const std::string &permissionName) {
+            localMeta.promiseInfo.permissionNames.end(), [tokenId = meta.tokenId](const std::string &permissionName) {
                 return PermitDelegate::VerifyPermission(permissionName, tokenId);
             });
         if (tokenIdRet == localMeta.promiseInfo.tokenIds.end() && uidRet == localMeta.promiseInfo.uids.end() &&
@@ -2291,11 +2292,11 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
         }
     } else if (type == ATokenTypeEnum::TOKEN_HAP) {
         for (const auto &permissionName : localMeta.promiseInfo.permissionNames) {
-            if (PermitDelegate::VerifyPermission(permissionName, tokenId)) {
+            if (PermitDelegate::VerifyPermission(permissionName, meta.tokenId)) {
                 return RDB_OK;
             }
         }
-        ZLOGE("Permission denied! tokenId:0x%{public}x", tokenId);
+        ZLOGE("Permission denied! tokenId:0x%{public}x", meta.tokenId);
         return RDB_ERROR;
     } else {
         ZLOGE("invalid type! bundleName:%{public}s, storeName:%{public}s, token_type is %{public}d.",
