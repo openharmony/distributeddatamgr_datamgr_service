@@ -29,7 +29,6 @@
 #include "metadata/appid_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
-#include "securec.h"
 #include "softbus_error_code.h"
 #include "utils/anonymous.h"
 
@@ -469,19 +468,11 @@ void SoftBusAdapter::SetMessageTransFlag(const PipeInfo &pipeInfo, bool flag)
 int SoftBusAdapter::CreateSessionServerAdapter(const std::string &sessionName)
 {
     ZLOGD("begin");
-    SocketInfo socketInfo = {};
-    char nameBuf[256] = {0};
-    if (strncpy_s(nameBuf, sizeof(nameBuf), sessionName.c_str(), sessionName.length()) != EOK) {
-        ZLOGE("copy session name failed");
-        return SOFTBUS_ERROR;
-    }
-    socketInfo.name = nameBuf;
-    char pkgBuf[65] = {0};
-    if (strncpy_s(pkgBuf, sizeof(pkgBuf), "ohos.distributeddata", strlen("ohos.distributeddata")) != EOK) {
-        ZLOGE("copy pkg name failed");
-        return SOFTBUS_ERROR;
-    }
-    socketInfo.pkgName = pkgBuf;
+    SocketInfo socketInfo;
+    std::string sessionServerName = sessionName;
+    socketInfo.name = sessionServerName.data();
+    std::string pkgName = "ohos.distributeddata";
+    socketInfo.pkgName = pkgName.data();
     socket_ = Socket(socketInfo);
     return Listen(socket_, Qos, QOS_COUNT, &serverListener_);
 }
