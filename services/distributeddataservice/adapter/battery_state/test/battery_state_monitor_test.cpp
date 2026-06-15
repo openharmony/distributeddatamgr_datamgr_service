@@ -96,8 +96,8 @@ HWTEST_F(BatteryStateMonitorTest, Subscribe_ValidObserver_ReceivesSnapshotAndCan
     EXPECT_EQ(firstCount, 1);
     EXPECT_EQ(secondCount, 1);
     EXPECT_EQ(received.batteryLevel, 2);
+    EXPECT_TRUE(monitor_.started_);
 
-    monitor_.started_ = true;
     monitor_.OnBatteryEvent(MakeBatteryEvent(BATTERY_LOW_EVENT));
 
     EXPECT_EQ(firstCount, 1);
@@ -114,8 +114,10 @@ HWTEST_F(BatteryStateMonitorTest, Unsubscribe_ExistingAndMissingObserver_Returns
 {
     monitor_.started_ = true;
     ASSERT_EQ(monitor_.Subscribe("observer", [](const BatteryStateMonitor::Snapshot &) {}), E_OK);
+    EXPECT_TRUE(monitor_.started_);
 
     EXPECT_EQ(monitor_.Unsubscribe("observer"), E_OK);
+    EXPECT_FALSE(monitor_.started_);
     EXPECT_EQ(monitor_.Unsubscribe("observer"), E_ERROR);
 }
 
@@ -134,23 +136,24 @@ HWTEST_F(BatteryStateMonitorTest, GetSnapshot_ReturnsCachedSnapshot004, TestSize
 }
 
 /**
- * @tc.name: OnBatteryEvent_BeforeStart_DoesNotNotify005
- * @tc.desc: Verify battery events before Start do not update or notify observers.
+ * @tc.name: Unsubscribe_LastObserver_StopsReceivingEvents005
+ * @tc.desc: Verify removing the last observer stops battery event updates.
  * @tc.type: FUNC
  */
-HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_BeforeStart_DoesNotNotify005, TestSize.Level1)
+HWTEST_F(BatteryStateMonitorTest, Unsubscribe_LastObserver_StopsReceivingEvents005, TestSize.Level1)
 {
     monitor_.started_ = true;
     int32_t callbackCount = 0;
     ASSERT_EQ(monitor_.Subscribe("observer", [&callbackCount](const BatteryStateMonitor::Snapshot &) {
         ++callbackCount;
     }), E_OK);
-    monitor_.started_ = false;
+    ASSERT_EQ(monitor_.Unsubscribe("observer"), E_OK);
 
     monitor_.OnBatteryEvent(MakeBatteryEvent(BATTERY_LOW_EVENT));
 
     EXPECT_EQ(callbackCount, 1);
     EXPECT_EQ(monitor_.GetSnapshot().batteryLevel, 0);
+    EXPECT_FALSE(monitor_.started_);
 }
 
 /**
