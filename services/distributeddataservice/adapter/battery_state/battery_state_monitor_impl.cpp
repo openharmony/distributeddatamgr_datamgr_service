@@ -22,7 +22,6 @@
 
 #include "common_event_manager.h"
 #include "error/general_error.h"
-#include "log_print.h"
 #include "want.h"
 
 namespace OHOS::DistributedData {
@@ -105,7 +104,6 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
         observers_[name] = observer;
         snapshot = snapshot_;
     }
-    ZLOGI("battery observer subscribed, name:%{public}s, battery:%{public}d", name.c_str(), snapshot.batteryLevel);
     observer(snapshot);
     return E_OK;
 }
@@ -114,7 +112,6 @@ int32_t BatteryStateMonitorImpl::Unsubscribe(const std::string &name)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     int32_t status = observers_.erase(name) == 0 ? E_ERROR : E_OK;
-    ZLOGI("battery observer unsubscribed, name:%{public}s, status:%{public}d", name.c_str(), status);
     return status;
 }
 
@@ -131,7 +128,6 @@ int32_t BatteryStateMonitorImpl::Start()
         return E_OK;
     }
     started_ = SubscribeBatteryLocked();
-    ZLOGI("battery state monitor started, result:%{public}d, battery:%{public}d", started_, snapshot_.batteryLevel);
     return started_ ? E_OK : E_ERROR;
 }
 
@@ -148,7 +144,6 @@ void BatteryStateMonitorImpl::Stop()
     }
     if (subscriber != nullptr) {
         bool result = EventFwk::CommonEventManager::UnSubscribeCommonEvent(subscriber);
-        ZLOGI("unsubscribe battery state event result:%{public}d", result);
     }
 }
 
@@ -167,7 +162,6 @@ bool BatteryStateMonitorImpl::SubscribeBatteryLocked()
         });
     }
     bool result = EventFwk::CommonEventManager::SubscribeCommonEvent(batterySubscriber_);
-    ZLOGI("subscribe battery state event result:%{public}d", result);
     return result;
 }
 
@@ -175,7 +169,6 @@ void BatteryStateMonitorImpl::OnBatteryEvent(const EventFwk::CommonEventData &ev
 {
     const auto want = event.GetWant();
     const auto action = want.GetAction();
-    ZLOGI("receive battery event, action:%{public}s", action.c_str());
     bool changed = false;
     Snapshot snapshot;
     {
@@ -206,8 +199,6 @@ bool BatteryStateMonitorImpl::UpdateBatteryLevelLocked(int32_t level)
     if (snapshot_.batteryLevel == normalized) {
         return false;
     }
-    ZLOGI("battery level changed, old:%{public}d, new:%{public}d, raw:%{public}d",
-        snapshot_.batteryLevel, normalized, level);
     snapshot_.batteryLevel = normalized;
     return true;
 }
