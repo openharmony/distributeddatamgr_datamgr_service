@@ -41,6 +41,9 @@ public:
     std::string GetUnencryptedAccountId(int32_t userId = 0) const;
     bool IsUserForeground(int32_t userId);
     bool IsOsAccountConstraintEnabled();
+    int32_t GetSubProfileIdByToken(int32_t userId, uint32_t tokenId, int32_t &subProfileId);
+    int32_t GetSubProfileIdByAppIndex(int32_t userId, int32_t appIndex, int32_t &subProfileId);
+    int32_t GetAppIndexBySubProfileId(int32_t userId, int32_t subProfileId, int32_t &appIndex);
     void SetAccountDelegateMock(std::shared_ptr<AccountDelegateMock> accountDelegate);
 
 private:

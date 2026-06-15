@@ -320,9 +320,34 @@ bool AccountDelegateNormalImpl::IsOsAccountConstraintEnabled()
         return true;
     }
     bool isEnabled = true;
-    int32_t status = AccountSA::OsAccountManager::CheckOsAccountConstraintEnabled(userId, TRANS_CONSTRAINT, isEnabled);
+    int32_t status = AccountSA::OsAccountManager::CheckOsAccountConstraintEnabled(
+        userId, TRANS_CONSTRAINT, isEnabled);
     ZLOGI("status: %{public}d, userId is %{public}d, isEnabled is %{public}d", status, userId, isEnabled);
     return isEnabled;
+}
+
+int32_t AccountDelegateNormalImpl::GetSubProfileIdByToken(
+    int32_t userId, uint32_t tokenId, int32_t &subProfileId)
+{
+    ZLOGI("GetSubProfileIdByToken stub, userId:%{public}d, token:0x%{public}x", userId, tokenId);
+    subProfileId = -1;
+    return -1;
+}
+
+int32_t AccountDelegateNormalImpl::GetSubProfileIdByAppIndex(
+    int32_t userId, int32_t appIndex, int32_t &subProfileId)
+{
+    ZLOGI("GetSubProfileIdByAppIndex stub, userId:%{public}d, appIndex:%{public}d", userId, appIndex);
+    subProfileId = -1;
+    return -1;
+}
+
+int32_t AccountDelegateNormalImpl::GetAppIndexBySubProfileId(
+    int32_t userId, int32_t subProfileId, int32_t &appIndex)
+{
+    ZLOGI("GetAppIndexBySubProfileId stub, userId:%{public}d, subProfileId:%{public}d", userId, subProfileId);
+    appIndex = -1;
+    return -1;
 }
 } // namespace DistributedData
 } // namespace OHOS

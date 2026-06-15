@@ -166,6 +166,17 @@ std::pair<int, std::string> BundleMgrProxy::GetCallerAppIdentifier(
     return std::make_pair(ret, bundleInfo.signatureInfo.appIdentifier);
 }
 
+ErrCode BundleMgrProxy::GetCloneAppIndexes(
+    const std::string &bundleName, std::vector<int32_t> &appIndexes, int32_t userId)
+{
+    auto bmsClient = GetBundleMgrProxy();
+    if (bmsClient == nullptr) {
+        ZLOGE("GetBundleMgrProxy is nullptr!");
+        return E_BMS_NOT_READY;
+    }
+    return bmsClient->GetCloneAppIndexes(bundleName, appIndexes, userId);
+}
+
 void BundleMgrProxy::OnProxyDied()
 {
     std::lock_guard<std::mutex> lock(mutex_);

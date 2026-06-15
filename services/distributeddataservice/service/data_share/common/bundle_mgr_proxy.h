@@ -106,6 +106,8 @@ public:
     void Delete(const std::string &bundleName, int32_t userId, int32_t appIndex);
     sptr<IRemoteObject> CheckBMS();
     std::pair<int, std::string> GetCallerAppIdentifier(const std::string &bundleName, int32_t userId);
+    ErrCode GetCloneAppIndexes(const std::string &bundleName, std::vector<int32_t> &appIndexes,
+        int32_t userId);
 private:
     class ServiceDeathRecipient : public IRemoteObject::DeathRecipient {
     public:

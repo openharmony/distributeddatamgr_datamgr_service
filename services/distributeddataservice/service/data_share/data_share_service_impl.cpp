@@ -1048,6 +1048,32 @@ int32_t DataShareServiceImpl::EnableSilentProxy(const std::string &uri, bool ena
     return E_OK;
 }
 
+int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
+    const std::string &uri, int32_t visitedUserId, int32_t appIndex)
+{
+    if (!IsCarDevice()) {
+        return appIndex;
+    }
+    std::string accountIdStr;
+    URIUtils::GetAccountIdFromProxyURI(uri, accountIdStr);
+    if (accountIdStr.empty()) {
+        return appIndex;
+    }
+    int32_t accountId = atoi(accountIdStr.c_str());
+    if (accountId <= 0) {
+        return appIndex;
+    }
+    int32_t resolvedAppIndex = 0;
+    auto ret = AccountDelegate::GetInstance()->GetAppIndexBySubProfileId(
+        visitedUserId, accountId, resolvedAppIndex);
+    if (ret == 0 && resolvedAppIndex > 0) {
+        ZLOGI("silent proxy account isolation: accountId %{public}d -> appIndex %{public}d",
+            accountId, resolvedAppIndex);
+        return resolvedAppIndex;
+    }
+    return appIndex;
+}
+
 int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool isCreateHelper)
 {
     XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
@@ -1074,6 +1100,9 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
     if (!URIUtils::GetAppIndexFromProxyURI(uri, appIndex)) {
         return E_APPINDEX_INVALID;
     }
+#ifdef ACCOUNT_ISOLATION_ENABLED
+    appIndex = ResolveAccessorAppIndexForSilentProxy(uri, currentUserId, appIndex);
+#endif
     uint32_t calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
         currentUserId, calledBundleName, appIndex);
     if (calledTokenId == 0) {
@@ -1271,6 +1300,24 @@ bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId,
     return PermitDelegate::VerifyPermission(acrossAccountsPermission, callerTokenId);
 }
 
+void DataShareServiceImpl::ResolveProviderAppIndex(ProviderInfo &providerInfo)
+{
+    if (!IsCarDevice() || !providerInfo.accountIsolation || providerInfo.accountId <= 0) {
+        return;
+    }
+    int32_t providerAppIndex = 0;
+    auto ret = AccountDelegate::GetInstance()->GetAppIndexBySubProfileId(
+        providerInfo.visitedUserId, providerInfo.accountId, providerAppIndex);
+    if (ret == 0 && providerAppIndex > 0) {
+        ZLOGI("account isolation: accountId %{public}d -> appIndex %{public}d, userId %{public}d",
+            providerInfo.accountId, providerAppIndex, providerInfo.visitedUserId);
+        providerInfo.appIndex = providerAppIndex;
+    } else {
+        ZLOGE("accountId to appIndex failed, accountId:%{public}d, userId:%{public}d, ret:%{public}d",
+            providerInfo.accountId, providerInfo.visitedUserId, ret);
+    }
+}
+
 std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &uri, const std::string &extUri,
     const int32_t tokenId, bool isRead, ExecuteCallbackEx callback)
 {
@@ -1302,6 +1349,9 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
             tokenId, permission.c_str(), providerInfo.isFromExtension, URIUtils::Anonymous(providerInfo.uri).c_str());
         return std::make_pair(ERROR_PERMISSION_DENIED, 0);
     }
+#ifdef ACCOUNT_ISOLATION_ENABLED
+    ResolveProviderAppIndex(providerInfo);
+#endif
     DataShareDbConfig dbConfig;
     std::string extensionUri = extUri;
     if (extensionUri.empty()) {

@@ -80,6 +80,15 @@ bool URIUtils::GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex
     return true;
 }
 
+bool URIUtils::GetAccountIdFromProxyURI(const std::string &uri, std::string &accountId)
+{
+    auto queryParams = URIUtils::GetQueryParams(uri);
+    if (!queryParams[ACCOUNT_ID].empty()) {
+        accountId = queryParams[ACCOUNT_ID];
+    }
+    return true;
+}
+
 std::pair<bool, int32_t> URIUtils::GetUserFromProxyURI(const std::string &uri)
 {
     auto queryParams = URIUtils::GetQueryParams(uri);

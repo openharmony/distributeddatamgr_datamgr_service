@@ -17,6 +17,7 @@
 
 #include "accesstoken_kit.h"
 #include "config_factory.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
 #include "tokenid_kit.h"
 #include "hiview_fault_adapter.h"
@@ -92,5 +93,12 @@ bool VerifyProvider(const DataProviderConfig::ProviderInfo &providerInfo, const 
     }
     // Provider in allowlist
     return true;
+}
+bool IsCarDevice()
+{
+    using DistributedData::DeviceManagerAdapter;
+    auto localDevice = DeviceManagerAdapter::GetInstance().GetLocalDevice();
+    auto deviceType = DeviceManagerAdapter::GetInstance().GetDeviceTypeByUuid(localDevice.uuid);
+    return deviceType == DeviceManagerAdapter::DEVICE_TYPE_CAR;
 }
 } // namespace OHOS::DataShare

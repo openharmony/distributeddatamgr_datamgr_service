@@ -78,6 +78,12 @@ public:
     API_EXPORT static bool RegisterAccountInstance(AccountDelegate *instance);
     API_EXPORT virtual bool IsUserForeground(int32_t userId) = 0;
     API_EXPORT virtual bool IsOsAccountConstraintEnabled() = 0;
+    API_EXPORT virtual int32_t GetSubProfileIdByToken(
+        int32_t userId, uint32_t tokenId, int32_t &subProfileId) = 0;
+    API_EXPORT virtual int32_t GetSubProfileIdByAppIndex(
+        int32_t userId, int32_t appIndex, int32_t &subProfileId) = 0;
+    API_EXPORT virtual int32_t GetAppIndexBySubProfileId(
+        int32_t userId, int32_t subProfileId, int32_t &appIndex) = 0;
 
 private:
     static AccountDelegate *instance_;

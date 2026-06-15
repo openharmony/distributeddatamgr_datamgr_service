@@ -88,6 +88,21 @@ namespace DistributedData {
     {
         return accountDelegate_->IsOsAccountConstraintEnabled();
     }
+    int32_t AccountDelegateMockProxy::GetSubProfileIdByToken(
+        int32_t userId, uint32_t tokenId, int32_t &subProfileId)
+    {
+        return accountDelegate_->GetSubProfileIdByToken(userId, tokenId, subProfileId);
+    }
+    int32_t AccountDelegateMockProxy::GetSubProfileIdByAppIndex(
+        int32_t userId, int32_t appIndex, int32_t &subProfileId)
+    {
+        return accountDelegate_->GetSubProfileIdByAppIndex(userId, appIndex, subProfileId);
+    }
+    int32_t AccountDelegateMockProxy::GetAppIndexBySubProfileId(
+        int32_t userId, int32_t subProfileId, int32_t &appIndex)
+    {
+        return accountDelegate_->GetAppIndexBySubProfileId(userId, subProfileId, appIndex);
+    }
     void AccountDelegateMockProxy::SetAccountDelegateMock(std::shared_ptr<AccountDelegateMock> accountDelegate)
     {
         accountDelegate_ = accountDelegate;

@@ -1,0 +1,589 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#define LOG_TAG "DataShareAccountIsolationTest"
+
+#include <gtest/gtest.h>
+
+#include "account/account_delegate.h"
+#include "account_delegate_mock.h"
+#include "common_utils.h"
+#include "data_provider_config.h"
+#include "data_share_profile_config.h"
+#include "data_share_service_impl.h"
+#include "device_manager_adapter.h"
+#include "device_manager_adapter_mock.h"
+#include "log_print.h"
+#include "mock/native_and_hap_token_mock.h"
+#include "strategies/general/load_config_common_strategy.h"
+#include "utils.h"
+
+namespace OHOS::DataShare {
+using namespace testing;
+using namespace testing::ext;
+using namespace OHOS::DistributedData;
+using namespace OHOS::Security::AccessToken;
+
+class DataShareAccountIsolationTest : public testing::Test {
+public:
+    static void SetUpTestCase()
+    {
+        MockToken::SetTestEnvironment();
+    }
+    static void TearDownTestCase()
+    {
+        MockToken::ResetTestEnvironment();
+    }
+    void SetUp() {}
+    void TearDown() {}
+};
+
+// ===== GetAccountIdFromProxyURI tests (pure URI parsing, no mock needed) =====
+
+/**
+ * @tc.name: GetAccountIdFromProxyURI_WithAccountIdParam_ExpectAccountIdReturned
+ * @tc.desc: Verify GetAccountIdFromProxyURI extracts accountId from URI query param
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_WithAccountIdParam_ExpectAccountIdReturned,
+    TestSize.Level0)
+{
+    ZLOGI("GetAccountIdFromProxyURI_WithAccountIdParam start");
+    std::string accountId;
+    std::string uri = "datashareproxy://com.test/module/store/table?accountId=100";
+    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(accountId, "100");
+}
+
+/**
+ * @tc.name: GetAccountIdFromProxyURI_NoAccountIdParam_ExpectEmptyString
+ * @tc.desc: Verify GetAccountIdFromProxyURI returns empty when no accountId in URI
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_NoAccountIdParam_ExpectEmptyString,
+    TestSize.Level0)
+{
+    ZLOGI("GetAccountIdFromProxyURI_NoAccountIdParam start");
+    std::string accountId = "initial";
+    std::string uri = "datashareproxy://com.test/module/store/table?appIndex=1";
+    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(accountId, "");
+}
+
+/**
+ * @tc.name: GetAccountIdFromProxyURI_NoQueryParams_ExpectEmptyString
+ * @tc.desc: Verify GetAccountIdFromProxyURI returns empty when URI has no query params
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_NoQueryParams_ExpectEmptyString,
+    TestSize.Level0)
+{
+    ZLOGI("GetAccountIdFromProxyURI_NoQueryParams start");
+    std::string accountId = "initial";
+    std::string uri = "datashareproxy://com.test/module/store/table";
+    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(accountId, "");
+}
+
+/**
+ * @tc.name: GetAccountIdFromProxyURI_MultipleParams_ExpectAccountIdReturned
+ * @tc.desc: Verify GetAccountIdFromProxyURI works with multiple query params
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_MultipleParams_ExpectAccountIdReturned,
+    TestSize.Level0)
+{
+    ZLOGI("GetAccountIdFromProxyURI_MultipleParams start");
+    std::string accountId;
+    std::string uri = "datashareproxy://com.test/module/store/table?user=100&accountId=200&appIndex=1";
+    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(accountId, "200");
+}
+
+/**
+ * @tc.name: GetAccountIdFromProxyURI_AccountIdZero_ExpectZeroString
+ * @tc.desc: Verify GetAccountIdFromProxyURI returns "0" when accountId is 0
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_AccountIdZero_ExpectZeroString,
+    TestSize.Level0)
+{
+    ZLOGI("GetAccountIdFromProxyURI_AccountIdZero start");
+    std::string accountId;
+    std::string uri = "datashareproxy://com.test/module/store/table?accountId=0";
+    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(accountId, "0");
+}
+
+// ===== ProfileInfo.accountIsolation serialization tests =====
+
+/**
+ * @tc.name: ProfileInfoAccountIsolation_MarshalUnmarshal_ExpectValuePreserved
+ * @tc.desc: Verify accountIsolation field Marshal/Unmarshal preserves value
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ProfileInfoAccountIsolation_MarshalUnmarshal_ExpectValuePreserved,
+    TestSize.Level0)
+{
+    ZLOGI("ProfileInfoAccountIsolation_MarshalUnmarshal start");
+    ProfileInfo info;
+    info.accountIsolation = true;
+    info.storeName = "store";
+    info.tableName = "table";
+    DistributedData::Serializable::json node;
+    info.Marshal(node);
+    EXPECT_EQ(node["accountIsolation"], true);
+
+    ProfileInfo unmarshalled;
+    unmarshalled.Unmarshal(node);
+    EXPECT_EQ(unmarshalled.accountIsolation, true);
+}
+
+/**
+ * @tc.name: ProfileInfoAccountIsolation_DefaultFalse_ExpectDefaultPreserved
+ * @tc.desc: Verify accountIsolation defaults to false and Marshal/Unmarshal preserves it
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ProfileInfoAccountIsolation_DefaultFalse_ExpectDefaultPreserved,
+    TestSize.Level0)
+{
+    ZLOGI("ProfileInfoAccountIsolation_DefaultFalse start");
+    ProfileInfo info;
+    EXPECT_EQ(info.accountIsolation, false);
+
+    DistributedData::Serializable::json node;
+    info.Marshal(node);
+    ProfileInfo unmarshalled;
+    unmarshalled.Unmarshal(node);
+    EXPECT_EQ(unmarshalled.accountIsolation, false);
+}
+
+/**
+ * @tc.name: ProfileInfoAccountIsolation_MarshalTrueUnmarshal_ExpectTruePreserved
+ * @tc.desc: Verify accountIsolation=true is correctly serialized and deserialized
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ProfileInfoAccountIsolation_MarshalTrueUnmarshal_ExpectTruePreserved,
+    TestSize.Level0)
+{
+    ZLOGI("ProfileInfoAccountIsolation_MarshalTrueUnmarshal start");
+    ProfileInfo info;
+    info.accountIsolation = true;
+    info.isSilentProxyEnable = true;
+    info.storeName = "mystore";
+    info.tableName = "mytable";
+    DistributedData::Serializable::json node;
+    EXPECT_TRUE(info.Marshal(node));
+
+    ProfileInfo unmarshalled;
+    EXPECT_TRUE(unmarshalled.Unmarshal(node));
+    EXPECT_EQ(unmarshalled.accountIsolation, true);
+    EXPECT_EQ(unmarshalled.storeName, "mystore");
+    EXPECT_EQ(unmarshalled.tableName, "mytable");
+}
+
+// ===== ProviderInfo.accountId/accountIsolation field tests =====
+
+/**
+ * @tc.name: ProviderInfoAccountId_DefaultMinusOne_ExpectDefaultPreserved
+ * @tc.desc: Verify ProviderInfo.accountId defaults to -1 and accountIsolation defaults to false
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ProviderInfoAccountId_DefaultMinusOne_ExpectDefaultPreserved,
+    TestSize.Level0)
+{
+    ZLOGI("ProviderInfoAccountId_DefaultMinusOne start");
+    DataProviderConfig::ProviderInfo providerInfo;
+    EXPECT_EQ(providerInfo.accountId, -1);
+    EXPECT_EQ(providerInfo.accountIsolation, false);
+}
+
+// ===== Context.accountId field test =====
+
+/**
+ * @tc.name: ContextAccountId_DefaultMinusOne_ExpectDefaultPreserved
+ * @tc.desc: Verify Context.accountId defaults to -1
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ContextAccountId_DefaultMinusOne_ExpectDefaultPreserved,
+    TestSize.Level0)
+{
+    ZLOGI("ContextAccountId_DefaultMinusOne start");
+    Context context;
+    EXPECT_EQ(context.accountId, -1);
+}
+
+// ===== AccountDelegate mock tests for new methods =====
+
+/**
+ * @tc.name: AccountDelegateMock_GetSubProfileIdByToken_ExpectMockCallable
+ * @tc.desc: Verify AccountDelegate mock has GetSubProfileIdByToken method
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, AccountDelegateMock_GetSubProfileIdByToken_ExpectMockCallable,
+    TestSize.Level0)
+{
+    ZLOGI("AccountDelegateMock_GetSubProfileIdByToken start");
+    AccountDelegateMock mock;
+    int32_t subProfileId = -1;
+    EXPECT_CALL(mock, GetSubProfileIdByToken(100, 0u, subProfileId))
+        .WillOnce(Return(-1));
+    auto ret = mock.GetSubProfileIdByToken(100, 0u, subProfileId);
+    EXPECT_EQ(ret, -1);
+    EXPECT_EQ(subProfileId, -1);
+}
+
+/**
+ * @tc.name: AccountDelegateMock_GetSubProfileIdByAppIndex_ExpectMockCallable
+ * @tc.desc: Verify AccountDelegate mock has GetSubProfileIdByAppIndex method
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, AccountDelegateMock_GetSubProfileIdByAppIndex_ExpectMockCallable,
+    TestSize.Level0)
+{
+    ZLOGI("AccountDelegateMock_GetSubProfileIdByAppIndex start");
+    AccountDelegateMock mock;
+    int32_t subProfileId = -1;
+    EXPECT_CALL(mock, GetSubProfileIdByAppIndex(100, 0, subProfileId))
+        .WillOnce(Return(0));
+    auto ret = mock.GetSubProfileIdByAppIndex(100, 0, subProfileId);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: AccountDelegateMock_GetAppIndexBySubProfileId_ExpectMockCallable
+ * @tc.desc: Verify AccountDelegate mock has GetAppIndexBySubProfileId method
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, AccountDelegateMock_GetAppIndexBySubProfileId_ExpectMockCallable,
+    TestSize.Level0)
+{
+    ZLOGI("AccountDelegateMock_GetAppIndexBySubProfileId start");
+    AccountDelegateMock mock;
+    int32_t appIndex = -1;
+    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 200, appIndex))
+        .WillOnce(DoAll(SetArgReferee<2>(3), Return(0)));
+    auto ret = mock.GetAppIndexBySubProfileId(100, 200, appIndex);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(appIndex, 3);
+}
+
+// ===== ResolveProviderAppIndex mock tests =====
+
+/**
+ * @tc.name: ResolveProviderAppIndex_AccountIsolationTrueAccountIdValid_ExpectAppIndexOverridden
+ * @tc.desc: Verify ResolveProviderAppIndex overrides appIndex when accountIsolation=true and accountId>0
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest,
+    ResolveProviderAppIndex_AccountIsolationTrueAccountIdValid_ExpectAppIndexOverridden,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveProviderAppIndex_AccountIsolationTrueAccountIdValid start");
+    DeviceManagerAdapterMock dmMock;
+    DeviceInfo localDev;
+    localDev.uuid = "test_car_uuid";
+    EXPECT_CALL(dmMock, GetLocalDevice()).WillRepeatedly(Return(localDev));
+    EXPECT_CALL(dmMock, GetDeviceTypeByUuid("test_car_uuid"))
+        .WillRepeatedly(Return(DeviceManagerAdapter::DEVICE_TYPE_CAR));
+    BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
+        [](BDeviceManagerAdapter *) {});
+
+    AccountDelegateMock mock;
+    AccountDelegate::RegisterAccountInstance(&mock);
+    int32_t appIndex = 0;
+    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 200, appIndex))
+        .WillOnce(DoAll(SetArgReferee<2>(5), Return(0)));
+
+    DataProviderConfig::ProviderInfo providerInfo;
+    providerInfo.accountIsolation = true;
+    providerInfo.accountId = 200;
+    providerInfo.visitedUserId = 100;
+    providerInfo.appIndex = 0;
+
+    DataShareServiceImpl serviceImpl;
+    serviceImpl.ResolveProviderAppIndex(providerInfo);
+    EXPECT_EQ(providerInfo.appIndex, 5);
+    AccountDelegate::RegisterAccountInstance(nullptr);
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
+}
+
+/**
+ * @tc.name: ResolveProviderAppIndex_AccountIsolationFalse_ExpectNoChange
+ * @tc.desc: Verify ResolveProviderAppIndex does nothing when accountIsolation=false
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest,
+    ResolveProviderAppIndex_AccountIsolationFalse_ExpectNoChange,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveProviderAppIndex_AccountIsolationFalse start");
+    DataProviderConfig::ProviderInfo providerInfo;
+    providerInfo.accountIsolation = false;
+    providerInfo.accountId = 200;
+    providerInfo.visitedUserId = 100;
+    providerInfo.appIndex = 2;
+
+    DataShareServiceImpl serviceImpl;
+    serviceImpl.ResolveProviderAppIndex(providerInfo);
+    EXPECT_EQ(providerInfo.appIndex, 2);
+}
+
+/**
+ * @tc.name: ResolveProviderAppIndex_AccountIdMinusOne_ExpectNoChange
+ * @tc.desc: Verify ResolveProviderAppIndex does nothing when accountId=-1
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest,
+    ResolveProviderAppIndex_AccountIdMinusOne_ExpectNoChange,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveProviderAppIndex_AccountIdMinusOne start");
+    DataProviderConfig::ProviderInfo providerInfo;
+    providerInfo.accountIsolation = true;
+    providerInfo.accountId = -1;
+    providerInfo.visitedUserId = 100;
+    providerInfo.appIndex = 2;
+
+    DataShareServiceImpl serviceImpl;
+    serviceImpl.ResolveProviderAppIndex(providerInfo);
+    EXPECT_EQ(providerInfo.appIndex, 2);
+}
+
+/**
+ * @tc.name: ResolveProviderAppIndex_GetAppIndexFailed_ExpectNoChange
+ * @tc.desc: Verify ResolveProviderAppIndex does not change appIndex when API returns error
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest,
+    ResolveProviderAppIndex_GetAppIndexFailed_ExpectNoChange,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveProviderAppIndex_GetAppIndexFailed start");
+    DeviceManagerAdapterMock dmMock;
+    DeviceInfo localDev;
+    localDev.uuid = "test_car_uuid";
+    EXPECT_CALL(dmMock, GetLocalDevice()).WillRepeatedly(Return(localDev));
+    EXPECT_CALL(dmMock, GetDeviceTypeByUuid("test_car_uuid"))
+        .WillRepeatedly(Return(DeviceManagerAdapter::DEVICE_TYPE_CAR));
+    BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
+        [](BDeviceManagerAdapter *) {});
+
+    AccountDelegateMock mock;
+    AccountDelegate::RegisterAccountInstance(&mock);
+    int32_t appIndex = -1;
+    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 200, appIndex))
+        .WillOnce(DoAll(SetArgReferee<2>(-1), Return(-1)));
+
+    DataProviderConfig::ProviderInfo providerInfo;
+    providerInfo.accountIsolation = true;
+    providerInfo.accountId = 200;
+    providerInfo.visitedUserId = 100;
+    providerInfo.appIndex = 2;
+
+    DataShareServiceImpl serviceImpl;
+    serviceImpl.ResolveProviderAppIndex(providerInfo);
+    EXPECT_EQ(providerInfo.appIndex, 2);
+    AccountDelegate::RegisterAccountInstance(nullptr);
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
+}
+
+// ===== ResolveAccessorAppIndexForSilentProxy mock tests =====
+
+/**
+ * @tc.name: ResolveAccessorAppIndexForSilentProxy_AccountIdValid_ExpectAppIndexResolved
+ * @tc.desc: Verify ResolveAccessorAppIndexForSilentProxy resolves appIndex from accountId
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest,
+    ResolveAccessorAppIndexForSilentProxy_AccountIdValid_ExpectAppIndexResolved,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveAccessorAppIndexForSilentProxy_AccountIdValid start");
+    DeviceManagerAdapterMock dmMock;
+    DeviceInfo localDev;
+    localDev.uuid = "test_car_uuid";
+    EXPECT_CALL(dmMock, GetLocalDevice()).WillRepeatedly(Return(localDev));
+    EXPECT_CALL(dmMock, GetDeviceTypeByUuid("test_car_uuid"))
+        .WillRepeatedly(Return(DeviceManagerAdapter::DEVICE_TYPE_CAR));
+    BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
+        [](BDeviceManagerAdapter *) {});
+
+    AccountDelegateMock mock;
+    AccountDelegate::RegisterAccountInstance(&mock);
+    int32_t resolvedAppIndex = 0;
+    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 300, resolvedAppIndex))
+        .WillOnce(DoAll(SetArgReferee<2>(5), Return(0)));
+
+    DataShareServiceImpl serviceImpl;
+    std::string uri = "datashareproxy://com.test/module/store/table?accountId=300";
+    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, 100, 0);
+    EXPECT_EQ(result, 5);
+    AccountDelegate::RegisterAccountInstance(nullptr);
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
+}
+
+/**
+ * @tc.name: ResolveAccessorAppIndexForSilentProxy_NoAccountId_ExpectOriginalAppIndex
+ * @tc.desc: Verify ResolveAccessorAppIndexForSilentProxy returns original appIndex when no accountId in URI
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest,
+    ResolveAccessorAppIndexForSilentProxy_NoAccountId_ExpectOriginalAppIndex,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveAccessorAppIndexForSilentProxy_NoAccountId start");
+    DataShareServiceImpl serviceImpl;
+    std::string uri = "datashareproxy://com.test/module/store/table?appIndex=2";
+    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, 100, 2);
+    EXPECT_EQ(result, 2);
+}
+
+/**
+ * @tc.name: ResolveAccessorAppIndexForSilentProxy_AccountIdZero_ExpectOriginalAppIndex
+ * @tc.desc: Verify ResolveAccessorAppIndexForSilentProxy returns original appIndex when accountId=0
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest,
+    ResolveAccessorAppIndexForSilentProxy_AccountIdZero_ExpectOriginalAppIndex,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveAccessorAppIndexForSilentProxy_AccountIdZero start");
+    DataShareServiceImpl serviceImpl;
+    std::string uri = "datashareproxy://com.test/module/store/table?accountId=0";
+    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, 100, 2);
+    EXPECT_EQ(result, 2);
+}
+
+/**
+ * @tc.name: ResolveAccessorAppIndexForSilentProxy_GetAppIndexFailed_ExpectOriginalAppIndex
+ * @tc.desc: Verify ResolveAccessorAppIndexForSilentProxy returns original when API fails
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest,
+    ResolveAccessorAppIndexForSilentProxy_GetAppIndexFailed_ExpectOriginalAppIndex,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveAccessorAppIndexForSilentProxy_GetAppIndexFailed start");
+    DeviceManagerAdapterMock dmMock;
+    DeviceInfo localDev;
+    localDev.uuid = "test_car_uuid";
+    EXPECT_CALL(dmMock, GetLocalDevice()).WillRepeatedly(Return(localDev));
+    EXPECT_CALL(dmMock, GetDeviceTypeByUuid("test_car_uuid"))
+        .WillRepeatedly(Return(DeviceManagerAdapter::DEVICE_TYPE_CAR));
+    BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
+        [](BDeviceManagerAdapter *) {});
+
+    AccountDelegateMock mock;
+    AccountDelegate::RegisterAccountInstance(&mock);
+    int32_t resolvedAppIndex = -1;
+    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 300, resolvedAppIndex))
+        .WillOnce(DoAll(SetArgReferee<2>(-1), Return(-1)));
+
+    DataShareServiceImpl serviceImpl;
+    std::string uri = "datashareproxy://com.test/module/store/table?accountId=300";
+    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, 100, 2);
+    EXPECT_EQ(result, 2);
+    AccountDelegate::RegisterAccountInstance(nullptr);
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
+}
+
+// ===== ACCOUNT_ID constant test =====
+
+/**
+ * @tc.name: AccountIdConstant_ExpectCorrectValue
+ * @tc.desc: Verify URIUtils::ACCOUNT_ID constant is "accountId"
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, AccountIdConstant_ExpectCorrectValue, TestSize.Level0)
+{
+    ZLOGI("AccountIdConstant_ExpectCorrectValue start");
+    EXPECT_STREQ(URIUtils::ACCOUNT_ID, "accountId");
+}
+
+// ===== DataProviderConfig.accountIsolation pass-through test =====
+
+/**
+ * @tc.name: GetFromDataProperties_AccountIsolation_ExpectPassThrough
+ * @tc.desc: Verify GetFromDataProperties passes accountIsolation from ProfileInfo to ProviderInfo
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetFromDataProperties_AccountIsolation_ExpectPassThrough,
+    TestSize.Level1)
+{
+    ZLOGI("GetFromDataProperties_AccountIsolation start");
+    std::string uri = "datashare:///com.test/module/store/table";
+    DataProviderConfig providerConfig(uri, 100);
+    ProfileInfo profileInfo;
+    profileInfo.isSilentProxyEnable = true;
+    profileInfo.storeName = "store";
+    profileInfo.tableName = "table";
+    profileInfo.accountIsolation = true;
+
+    auto result = providerConfig.GetFromDataProperties(profileInfo, "module");
+    EXPECT_EQ(result, E_OK);
+    EXPECT_EQ(providerConfig.providerInfo_.accountIsolation, true);
+}
+
+/**
+ * @tc.name: GetFromDataProperties_AccountIsolationFalse_ExpectFalsePassThrough
+ * @tc.desc: Verify GetFromDataProperties passes accountIsolation=false correctly
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetFromDataProperties_AccountIsolationFalse_ExpectFalsePassThrough,
+    TestSize.Level1)
+{
+    ZLOGI("GetFromDataProperties_AccountIsolationFalse start");
+    std::string uri = "datashare:///com.test/module/store/table";
+    DataProviderConfig providerConfig(uri, 100);
+    ProfileInfo profileInfo;
+    profileInfo.isSilentProxyEnable = true;
+    profileInfo.storeName = "store";
+    profileInfo.tableName = "table";
+    profileInfo.accountIsolation = false;
+
+    auto result = providerConfig.GetFromDataProperties(profileInfo, "module");
+    EXPECT_EQ(result, E_OK);
+    EXPECT_EQ(providerConfig.providerInfo_.accountIsolation, false);
+}
+} // namespace OHOS::DataShare

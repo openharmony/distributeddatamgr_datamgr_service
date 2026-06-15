@@ -164,6 +164,9 @@ private:
         const std::vector<AllowList> &allowLists, const int32_t &systemAbilityId = URIUtils::INVALID_SA_ID);
     bool VerifyPermission(const std::string &bundleName, const std::string &permission,
         bool isFromExtension, const int32_t tokenId);
+    void ResolveProviderAppIndex(DataProviderConfig::ProviderInfo &providerInfo);
+    int32_t ResolveAccessorAppIndexForSilentProxy(
+        const std::string &uri, int32_t visitedUserId, int32_t appIndex);
     bool GetCallerBundleInfo(BundleInfo &callerBundleInfo);
     void SetCriticalTask();
     bool VerifyPredicates(const DataSharePredicates &predicates, uint32_t callingTokenId,

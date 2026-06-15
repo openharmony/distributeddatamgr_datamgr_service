@@ -20,6 +20,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bundle_mgr_proxy.h"
 #include "common_utils.h"
 #include "config_factory.h"
 #include "datashare_errno.h"
@@ -43,7 +44,6 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
         LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.visitedUserId,
             callerTokenId, providerInfo_.bundleName);
         URIUtils::FormatUri(providerInfo_.uri);
-        // if visitedUserId is 0, set current foreground userId as visitedUserId
         if (providerInfo_.visitedUserId == 0) {
             if (!(AccountDelegate::GetInstance()->QueryForegroundUserId(providerInfo_.visitedUserId))) {
                 ZLOGE("Get foreground userId failed");
@@ -52,13 +52,15 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
     } else {
         auto [success, data] = URIUtils::GetUserFromProxyURI(providerInfo_.uri);
         if (success) {
-            // if data is -1, it means visiting provider's user
             providerInfo_.visitedUserId = (data == -1 ? providerInfo_.currentUserId : data);
         } else {
             providerInfo_.visitedUserId = -1;
         }
     }
     uriConfig_ = URIUtils::GetUriConfig(providerInfo_.uri);
+#ifdef ACCOUNT_ISOLATION_ENABLED
+    ResolveAccessorAccountId();
+#endif
 }
 
 std::pair<int, BundleConfig> DataProviderConfig::GetBundleInfo()
@@ -134,6 +136,7 @@ int DataProviderConfig::GetFromDataProperties(const ProfileInfo &profileInfo,
     providerInfo_.storeMetaDataFromUri = profileInfo.storeMetaDataFromUri;
     providerInfo_.backup = profileInfo.backup;
     providerInfo_.extensionUri = profileInfo.extUri;
+    providerInfo_.accountIsolation = profileInfo.accountIsolation;
     if (profileInfo.tableConfig.empty()) {
         return E_OK;
     }
@@ -328,5 +331,49 @@ bool DataProviderConfig::IsInExtList(const std::string &bundleName)
     }
     std::vector<std::string>& extNames = config->dataShareExtNames;
     return std::find(extNames.begin(), extNames.end(), bundleName) != extNames.end();
+}
+
+void DataProviderConfig::ResolveAccessorAccountId()
+{
+    if (!IsCarDevice()) {
+        return;
+    }
+    std::string accountIdStr;
+    URIUtils::GetAccountIdFromProxyURI(providerInfo_.uri, accountIdStr);
+    if (!accountIdStr.empty()) {
+        providerInfo_.accountId = atoi(accountIdStr.c_str());
+    }
+    if (providerInfo_.accountId <= 0) {
+        return;
+    }
+    auto *delegate = AccountDelegate::GetInstance();
+    auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(
+        IPCSkeleton::GetCallingTokenID());
+    if (tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_HAP) {
+        Security::AccessToken::HapTokenInfo hapInfo;
+        auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(
+            IPCSkeleton::GetCallingTokenID(), hapInfo);
+        if (ret != Security::AccessToken::RET_SUCCESS) {
+            return;
+        }
+        std::vector<int32_t> cloneAppIndexes;
+        auto errCode = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
+            hapInfo.bundleName, cloneAppIndexes, providerInfo_.visitedUserId);
+        if (errCode == 0 && !cloneAppIndexes.empty()) {
+            int32_t subProfileId = -1;
+            delegate->GetSubProfileIdByToken(
+                providerInfo_.visitedUserId, IPCSkeleton::GetCallingTokenID(), subProfileId);
+            if (subProfileId > 0) {
+                providerInfo_.accountId = subProfileId;
+            }
+        } else {
+            int32_t foregroundUserId = providerInfo_.visitedUserId;
+            int32_t subProfileId = -1;
+            delegate->GetSubProfileIdByAppIndex(foregroundUserId, 0, subProfileId);
+            if (subProfileId > 0) {
+                providerInfo_.accountId = subProfileId;
+            }
+        }
+    }
 }
 } // namespace OHOS::DataShare
