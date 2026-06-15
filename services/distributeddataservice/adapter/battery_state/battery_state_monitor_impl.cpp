@@ -22,6 +22,7 @@
 
 #include "common_event_manager.h"
 #include "error/general_error.h"
+#include "log_print.h"
 #include "want.h"
 
 namespace OHOS::DistributedData {
@@ -99,10 +100,34 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
         return E_INVALID_ARGS;
     }
     Snapshot snapshot;
+    std::shared_ptr<BatteryStateEventSubscriber> subscriber;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::unique_lock<std::mutex> lock(mutex_);
+        condition_.wait(lock, [this]() {
+            return !subscribing_;
+        });
         observers_[name] = observer;
         snapshot = snapshot_;
+        if (!started_) {
+            subscriber = GetSubscriberLocked();
+            subscribing_ = true;
+        }
+    }
+    if (subscriber != nullptr) {
+        bool result = EventFwk::CommonEventManager::SubscribeCommonEvent(subscriber);
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            subscribing_ = false;
+            started_ = result;
+            if (!result) {
+                observers_.erase(name);
+            }
+        }
+        condition_.notify_all();
+        if (!result) {
+            ZLOGE("subscribe battery state event failed, name:%{public}s", name.c_str());
+            return E_ERROR;
+        }
     }
     observer(snapshot);
     return E_OK;
@@ -110,9 +135,28 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
 
 int32_t BatteryStateMonitorImpl::Unsubscribe(const std::string &name)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    int32_t status = observers_.erase(name) == 0 ? E_ERROR : E_OK;
-    return status;
+    std::shared_ptr<BatteryStateEventSubscriber> subscriber;
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        condition_.wait(lock, [this]() {
+            return !subscribing_;
+        });
+        if (observers_.erase(name) == 0) {
+            ZLOGE("BatteryStateMonitor Unsubscribe failed: observer not found, name:%{public}s", name.c_str());
+            return E_ERROR;
+        }
+        if (observers_.empty() && started_) {
+            started_ = false;
+            subscriber = batterySubscriber_;
+        }
+    }
+    if (subscriber != nullptr) {
+        bool result = EventFwk::CommonEventManager::UnSubscribeCommonEvent(subscriber);
+        if (!result) {
+            ZLOGE("unsubscribe battery state event failed");
+        }
+    }
+    return E_OK;
 }
 
 BatteryStateMonitor::Snapshot BatteryStateMonitorImpl::GetSnapshot() const
@@ -121,17 +165,7 @@ BatteryStateMonitor::Snapshot BatteryStateMonitorImpl::GetSnapshot() const
     return snapshot_;
 }
 
-int32_t BatteryStateMonitorImpl::Start()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (started_) {
-        return E_OK;
-    }
-    started_ = SubscribeBatteryLocked();
-    return started_ ? E_OK : E_ERROR;
-}
-
-void BatteryStateMonitorImpl::Stop()
+void BatteryStateMonitorImpl::UnsubscribeBatteryEvent()
 {
     std::shared_ptr<BatteryStateEventSubscriber> subscriber;
     {
@@ -144,10 +178,15 @@ void BatteryStateMonitorImpl::Stop()
     }
     if (subscriber != nullptr) {
         bool result = EventFwk::CommonEventManager::UnSubscribeCommonEvent(subscriber);
+        if (!result) {
+            ZLOGE("unsubscribe battery state event failed");
+        } else {
+            ZLOGI("unsubscribe battery state event success");
+        }
     }
 }
 
-bool BatteryStateMonitorImpl::SubscribeBatteryLocked()
+std::shared_ptr<BatteryStateEventSubscriber> BatteryStateMonitorImpl::GetSubscriberLocked()
 {
     if (batterySubscriber_ == nullptr) {
         EventFwk::MatchingSkills matchingSkills;
@@ -161,48 +200,50 @@ bool BatteryStateMonitorImpl::SubscribeBatteryLocked()
             OnBatteryEvent(event);
         });
     }
-    bool result = EventFwk::CommonEventManager::SubscribeCommonEvent(batterySubscriber_);
-    return result;
+    return batterySubscriber_;
 }
 
 void BatteryStateMonitorImpl::OnBatteryEvent(const EventFwk::CommonEventData &event)
 {
     const auto want = event.GetWant();
     const auto action = want.GetAction();
-    bool changed = false;
+    int32_t level = INVALID_LEVEL;
     Snapshot snapshot;
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (!started_) {
-            return;
-        }
-        if (action == BATTERY_LOW_EVENT) {
-            changed = UpdateBatteryLevelLocked(BATTERY_LEVEL_LOW);
-        } else if (action == BATTERY_OKAY_EVENT) {
-            changed = UpdateBatteryLevelLocked(BATTERY_LEVEL_NORMAL);
-        } else if (action == BATTERY_CHANGED_EVENT || action == BATTERY_CAPACITY_LEVEL_EVENT) {
-            int32_t level = GetIntParam(want, { "batteryCapacityLevel", "capacityLevel", "batteryLevel", "level" });
-            if (level != INVALID_LEVEL) {
-                changed = UpdateBatteryLevelLocked(level);
-            }
-        }
-        snapshot = snapshot_;
+
+    if (action == BATTERY_LOW_EVENT) {
+        level = BATTERY_LEVEL_LOW;
+    } else if (action == BATTERY_OKAY_EVENT) {
+        level = BATTERY_LEVEL_NORMAL;
+    } else if (action == BATTERY_CHANGED_EVENT || action == BATTERY_CAPACITY_LEVEL_EVENT) {
+        level = GetIntParam(want, { "batteryCapacityLevel", "capacityLevel", "batteryLevel", "level" });
     }
-    if (changed) {
+
+    if (level != INVALID_LEVEL && UpdateBatteryLevel(level, snapshot)) {
         Notify(snapshot);
     }
 }
 
-bool BatteryStateMonitorImpl::UpdateBatteryLevelLocked(int32_t level)
+bool BatteryStateMonitorImpl::UpdateBatteryLevel(int32_t level, Snapshot &snapshot)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!started_) {
+        return false;
+    }
     int32_t normalized = ClampLevel(level);
     if (snapshot_.batteryLevel == normalized) {
         return false;
     }
     snapshot_.batteryLevel = normalized;
+    snapshot = snapshot_;
     return true;
 }
 
+/**
+ * Observer is invoked synchronously. The initial snapshot is called on the
+ * Subscribe caller thread, and later battery updates are called on the
+ * CommonEvent callback thread. Observers must dispatch to the target runtime
+ * thread themselves before touching JS/ArkTS objects.
+ */
 void BatteryStateMonitorImpl::Notify(const Snapshot &snapshot)
 {
     std::vector<Observer> observers;

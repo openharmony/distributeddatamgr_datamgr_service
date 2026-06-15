@@ -16,6 +16,7 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_BATTERY_STATE_MONITOR_IMPL_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_BATTERY_STATE_MONITOR_IMPL_H
 
+#include <condition_variable>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -36,13 +37,12 @@ public:
     API_EXPORT int32_t Subscribe(const std::string &name, Observer observer) override;
     API_EXPORT int32_t Unsubscribe(const std::string &name) override;
     API_EXPORT Snapshot GetSnapshot() const override;
-    API_EXPORT int32_t Start() override;
-    API_EXPORT void Stop() override;
 
 private:
-    bool SubscribeBatteryLocked();
+    std::shared_ptr<BatteryStateEventSubscriber> GetSubscriberLocked();
+    void UnsubscribeBatteryEvent();
     void OnBatteryEvent(const EventFwk::CommonEventData &event);
-    bool UpdateBatteryLevelLocked(int32_t level);
+    bool UpdateBatteryLevel(int32_t level, Snapshot &snapshot);
     void Notify(const Snapshot &snapshot);
 
     mutable std::mutex mutex_;
@@ -50,6 +50,8 @@ private:
     std::map<std::string, Observer> observers_;
     std::shared_ptr<BatteryStateEventSubscriber> batterySubscriber_;
     bool started_ = false;
+    bool subscribing_ = false;
+    std::condition_variable condition_;
 };
 } // namespace OHOS::DistributedData
 

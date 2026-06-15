@@ -51,10 +51,11 @@ class BatteryStateMonitorTest : public testing::Test {
 public:
     void SetUp() override
     {
-        monitor_.Stop();
+        monitor_.UnsubscribeBatteryEvent();
         monitor_.observers_.clear();
         monitor_.snapshot_ = BatteryStateMonitor::Snapshot {};
         monitor_.started_ = false;
+        monitor_.subscribing_ = false;
     }
 
     BatteryStateMonitorImpl monitor_;
@@ -78,6 +79,7 @@ HWTEST_F(BatteryStateMonitorTest, Subscribe_InvalidArgs_ReturnsError001, TestSiz
  */
 HWTEST_F(BatteryStateMonitorTest, Subscribe_ValidObserver_ReceivesSnapshotAndCanBeReplaced002, TestSize.Level1)
 {
+    monitor_.started_ = true;
     monitor_.snapshot_.batteryLevel = 2;
     int32_t firstCount = 0;
     int32_t secondCount = 0;
@@ -110,6 +112,7 @@ HWTEST_F(BatteryStateMonitorTest, Subscribe_ValidObserver_ReceivesSnapshotAndCan
  */
 HWTEST_F(BatteryStateMonitorTest, Unsubscribe_ExistingAndMissingObserver_ReturnsExpectedStatus003, TestSize.Level1)
 {
+    monitor_.started_ = true;
     ASSERT_EQ(monitor_.Subscribe("observer", [](const BatteryStateMonitor::Snapshot &) {}), E_OK);
 
     EXPECT_EQ(monitor_.Unsubscribe("observer"), E_OK);
@@ -137,10 +140,12 @@ HWTEST_F(BatteryStateMonitorTest, GetSnapshot_ReturnsCachedSnapshot004, TestSize
  */
 HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_BeforeStart_DoesNotNotify005, TestSize.Level1)
 {
+    monitor_.started_ = true;
     int32_t callbackCount = 0;
     ASSERT_EQ(monitor_.Subscribe("observer", [&callbackCount](const BatteryStateMonitor::Snapshot &) {
         ++callbackCount;
     }), E_OK);
+    monitor_.started_ = false;
 
     monitor_.OnBatteryEvent(MakeBatteryEvent(BATTERY_LOW_EVENT));
 

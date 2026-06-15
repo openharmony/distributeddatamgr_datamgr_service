@@ -37,8 +37,6 @@ public:
     virtual int32_t Subscribe(const std::string &name, Observer observer) = 0;
     virtual int32_t Unsubscribe(const std::string &name) = 0;
     virtual Snapshot GetSnapshot() const = 0;
-    virtual int32_t Start() = 0;
-    virtual void Stop() = 0;
 
 protected:
     BatteryStateMonitor() = default;
