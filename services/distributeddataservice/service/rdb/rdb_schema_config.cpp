@@ -98,6 +98,7 @@ bool RdbSchemaConfig::GetSchemaFromHap(const OHOS::AppExecFwk::BundleInfo &bundl
         std::string jsonData(fileContent.get(), fileContent.get() + length);
         DbSchema databases;
         databases.Unmarshall(jsonData);
+        ZLOGE("dddddd jsonData:%{public}s", jsonData.c_str());
         for (const auto &schema : databases.databases) {
             if (schema.name == storeName && schema.bundleName == bundleName) {
                 database = schema;

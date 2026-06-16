@@ -17,6 +17,13 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SCHEMA_META_H
 #include "serializable/serializable.h"
 namespace OHOS::DistributedData {
+struct API_EXPORT EqualConstraint final : public Serializable {
+    bool notNull = false;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+    bool operator==(const EqualConstraint &constraint) const;
+};
+
 struct API_EXPORT Field final : public Serializable {
     std::string colName;
     std::string alias;
@@ -25,6 +32,7 @@ struct API_EXPORT Field final : public Serializable {
     bool autoIncrement = false;
     bool nullable = true;
     bool dupCheckCol = false;
+    std::vector<EqualConstraint> equalConstraints;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
     bool operator==(const Field &field) const;
@@ -45,6 +53,7 @@ struct API_EXPORT Table final : public Serializable {
 struct API_EXPORT Database final : public Serializable {
     std::string name = "";
     std::string alias;
+    std::vector<Table> fieldSyncPolicies;
     std::vector<Table> tables;
     uint32_t autoSyncType = 0;
     std::string user = "";
