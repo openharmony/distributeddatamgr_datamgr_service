@@ -74,7 +74,7 @@ SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, con
     syncId_ = SyncManager::GenerateId(user);
 }
 
-SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables)
+SyncManager::SyncInfo::SyncInfo(int32_t user, const std::string &bundleName, const MultiStoreTables &tables)
     : user_(user), bundleName_(bundleName), tables_(tables)
 {
     tables_ = tables;
@@ -910,7 +910,7 @@ std::vector<std::tuple<QueryKey, uint64_t>> SyncManager::GetCloudSyncInfo(const 
 std::pair<int32_t, CloudLastSyncInfo> SyncManager::GetLastResults(std::map<SyncId, CloudLastSyncInfo> &infos)
 {
     auto iter = infos.rbegin();
-    if (iter != infos.rend() && iter->second.code != -1) {
+    if (iter != infos.rend() && iter->second.code != INVALID_SYNC_CODE) {
         return { SUCCESS, iter->second };
     }
     return { E_ERROR, {} };

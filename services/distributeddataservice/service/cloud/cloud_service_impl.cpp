@@ -2134,6 +2134,8 @@ int32_t CloudServiceImpl::Query(const std::string &sharingRes, QueryResults &res
     }
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
+        ZLOGE("sharing center not support, bundleName:%{public}s, sharingRes:%{public}s",
+            hapInfo.bundleName.c_str(), Anonymous::Change(sharingRes).c_str());
         return NOT_SUPPORT;
     }
     auto queryResults = instance->Query(hapInfo.user, hapInfo.bundleName, sharingRes);
@@ -2153,6 +2155,8 @@ int32_t CloudServiceImpl::QueryByInvitation(const std::string &invitation, Query
     }
     auto instance = GetSharingHandle(hapInfo);
     if (instance == nullptr) {
+        ZLOGE("sharing center not support, bundleName:%{public}s, invitation:%{public}s",
+            hapInfo.bundleName.c_str(), Anonymous::Change(invitation).c_str());
         return NOT_SUPPORT;
     }
     auto queryResults = instance->QueryByInvitation(hapInfo.user, hapInfo.bundleName, invitation);

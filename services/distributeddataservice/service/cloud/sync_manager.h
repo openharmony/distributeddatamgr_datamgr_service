@@ -62,11 +62,11 @@ public:
             int32_t triggerMode = 0;
             std::string prepareTraceId;
         };
-        using MutliStoreTables = std::map<Store, Tables>;
+        using MultiStoreTables = std::map<Store, Tables>;
         explicit SyncInfo(int32_t user, const std::string &bundleName = "", const Store &store = "",
             const Tables &tables = {}, int32_t triggerMode = 0);
         SyncInfo(int32_t user, const std::string &bundleName, const Stores &stores);
-        SyncInfo(int32_t user, const std::string &bundleName, const MutliStoreTables &tables);
+        SyncInfo(int32_t user, const std::string &bundleName, const MultiStoreTables &tables);
         explicit SyncInfo(const Param &param);
         void SetMode(int32_t mode);
         void SetWait(int32_t wait);
@@ -168,6 +168,7 @@ private:
     static constexpr uint64_t USER_MARK = 0xFFFFFFFF00000000;                           // high 32 bit
     static constexpr int32_t MV_BIT = 32;
     static constexpr int32_t EXPIRATION_TIME = 6 * 60 * 60 * 1000;                      // 6 hours
+    static constexpr int32_t INVALID_SYNC_CODE = -1;                                    // sentinel: no valid result
 
     static uint64_t GenerateId(int32_t user);
     static ExecutorPool::Duration GetInterval(int32_t code);

@@ -12,8 +12,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_DATA_TRASLATE_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_DATA_TRASLATE_H
+#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_DATA_TRANSLATE_H
+#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_DATA_TRANSLATE_H
 
 #include "cloud/icloud_data_translate.h"
 #include "serializable/serializable.h"
@@ -47,5 +47,5 @@ private:
     size_t ParserRawData(const uint8_t *data, size_t length, DataAsset &asset);
     size_t ParserRawData(const uint8_t *data, size_t length, DataAssets &assets);
 };
-} // namespace OHOS::DistributedRdb
-#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_DATA_TRASLATE_H
+} // namespace OHOS::CloudData
+#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_RDB_CLOUD_DATA_TRANSLATE_H
