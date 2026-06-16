@@ -112,6 +112,11 @@ group("unittest") {
   ]
 
   if (defined(global_parts_info) &&
+      defined(global_parts_info.battery_manager_native_batterysrv_client)) {
+    deps += [ "../battery_state/test:unittest" ]
+  }
+
+  if (defined(global_parts_info) &&
       defined(global_parts_info.theme_screenlock_mgr)) {
     deps += [ "${data_service_path}/adapter/screen/test:unittest" ]
   }
