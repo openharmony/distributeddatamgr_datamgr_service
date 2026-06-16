@@ -160,12 +160,12 @@ HWTEST_F(CloudServiceStubTest, OnSubscribe_EmptyBundleInfos, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnSubscribe_UnmarshalFailed
- * @tc.desc: Test OnSubscribe with unmarshal failed
+ * @tc.name: OnSubscribe_ExceedMaxLimit
+ * @tc.desc: Test OnSubscribe with bundleInfos exceeding maximum limit
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(CloudServiceStubTest, OnSubscribe_UnmarshalFailed, TestSize.Level1)
+HWTEST_F(CloudServiceStubTest, OnSubscribe_ExceedMaxLimit, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -185,18 +185,18 @@ HWTEST_F(CloudServiceStubTest, OnSubscribe_UnmarshalFailed, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnSubscribe_ExceedMaxLimit
- * @tc.desc: Test OnSubscribe with bundleInfos exceeding maximum limit
+ * @tc.name: OnSubscribe_UnmarshalFailed_EmptyParcel
+ * @tc.desc: Test OnSubscribe with empty parcel that fails to unmarshal
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(CloudServiceStubTest, OnSubscribe_ExceedMaxLimit, TestSize.Level1)
+HWTEST_F(CloudServiceStubTest, OnSubscribe_UnmarshalFailed_EmptyParcel, TestSize.Level1)
 {
     MessageParcel data;
     MessageParcel reply;
     
     auto result = cloudServiceStub->OnSubscribe(data, reply);
-    EXPECT_EQ(result, CloudService::IPC_PARCEL_ERROR);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 }
 
 /**
@@ -257,7 +257,7 @@ HWTEST_F(CloudServiceStubTest, OnUnsubscribe_UnmarshalFailed, TestSize.Level1)
     MessageParcel reply;
     
     auto result = cloudServiceStub->OnUnsubscribe(data, reply);
-    EXPECT_EQ(result, CloudService::IPC_PARCEL_ERROR);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 }
 } // namespace CloudDataTest
 } // namespace OHOS::Test
