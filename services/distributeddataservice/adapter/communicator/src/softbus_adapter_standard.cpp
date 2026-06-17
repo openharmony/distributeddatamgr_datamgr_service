@@ -23,6 +23,7 @@
 #include "account/account_delegate.h"
 #include "communication/connect_manager.h"
 #include "communicator_context.h"
+#include "data_buffer.h"
 #include "data_level.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
