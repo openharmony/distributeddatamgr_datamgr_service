@@ -411,7 +411,7 @@ int32_t CloudServiceStub::OnSubscribe(MessageParcel &data, MessageParcel &reply)
     std::vector<BundleInfo> bundleInfos;
     if (!ITypesUtil::Unmarshal(data, type, bundleInfos)) {
         ZLOGE("read subscribe data failed, type:%{public}d", type);
-        return IPC_PARCEL_ERROR;
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
         ZLOGE("BundleInfos size %{public}zu exceeds maximum, type:%{public}d", bundleInfos.size(), type);
@@ -427,7 +427,7 @@ int32_t CloudServiceStub::OnUnsubscribe(MessageParcel &data, MessageParcel &repl
     std::vector<BundleInfo> bundleInfos;
     if (!ITypesUtil::Unmarshal(data, type, bundleInfos)) {
         ZLOGE("read unsubscribe data failed, type:%{public}d", type);
-        return IPC_PARCEL_ERROR;
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     if (bundleInfos.size() > MAX_BUNDLE_INFO_COUNT) {
         ZLOGE("BundleInfos size %{public}zu exceeds maximum, type:%{public}d", bundleInfos.size(), type);

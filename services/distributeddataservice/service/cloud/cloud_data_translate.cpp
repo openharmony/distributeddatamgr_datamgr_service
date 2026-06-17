@@ -77,6 +77,9 @@ Assets RdbCloudDataTranslate::BlobToAssets(const std::vector<uint8_t> &blob)
 
 size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, DataAsset &asset)
 {
+    if (data == nullptr || length == 0) {
+        return 0;
+    }
     size_t used = 0;
     uint16_t size = 0;
 
@@ -110,6 +113,9 @@ size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, 
 
 size_t RdbCloudDataTranslate::ParserRawData(const uint8_t *data, size_t length, DataAssets &assets)
 {
+    if (data == nullptr || length == 0) {
+        return 0;
+    }
     size_t used = 0;
     uint16_t num = 0;
 
@@ -177,4 +183,4 @@ bool RdbCloudDataTranslate::InnerAsset::Unmarshal(const OHOS::DistributedData::S
     ret = GetValue(node, GET_NAME(hash), asset_.hash) && ret;
     return ret;
 }
-} // namespace OHOS::DistributedRdb
+} // namespace OHOS::CloudData

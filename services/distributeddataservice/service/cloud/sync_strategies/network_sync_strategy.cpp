@@ -83,10 +83,11 @@ bool NetworkSyncStrategy::StrategyInfo::Marshal(Serializable::json &node) const
 
 bool NetworkSyncStrategy::StrategyInfo::Unmarshal(const Serializable::json &node)
 {
-    GetValue(node, GET_NAME(user), user);
-    GetValue(node, GET_NAME(bundleName), bundleName);
-    GetValue(node, GET_NAME(strategy), strategy);
-    return false;
+    bool ret = true;
+    ret = GetValue(node, GET_NAME(user), user) && ret;
+    ret = GetValue(node, GET_NAME(bundleName), bundleName) && ret;
+    ret = GetValue(node, GET_NAME(strategy), strategy) && ret;
+    return ret;
 }
 
 bool NetworkSyncStrategy::StrategyInfo::operator==(const StrategyInfo &info) const
@@ -133,7 +134,9 @@ NetworkSyncStrategy::StrategyInfo NetworkSyncStrategy::GetStrategy(int32_t user,
     if (res) {
         return info;
     }
-    MetaDataManager::GetInstance().LoadMeta(GetKey(user, bundleName), info, true);
+    if (!MetaDataManager::GetInstance().LoadMeta(GetKey(user, bundleName), info, true)) {
+        return info;
+    }
     strategies_.Insert(info.bundleName, info);
     return info;
 }
