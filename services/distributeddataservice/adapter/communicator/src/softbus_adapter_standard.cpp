@@ -579,8 +579,8 @@ void AppDataListenerWrap::OnServerShutdown(int32_t socket, ShutdownReason reason
 
 void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data, uint32_t dataLen)
 {
-    if (data == nullptr || dataLen == 0) {
-        ZLOGE("Invalid data received, socket id %{public}d, data is null or dataLen is zero", socket);
+    if (data == nullptr || dataLen == 0 || dataLen > DataBuffer::MAX_DATA_LEN) {
+        ZLOGE("Invalid data received, socket:%{public}d, dataLen:%{public}u", socket, dataLen);
         return;
     }
     SoftBusAdapter::ServerSocketInfo info;

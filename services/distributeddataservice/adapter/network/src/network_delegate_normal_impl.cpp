@@ -150,7 +150,9 @@ ExecutorPool::Task NetworkDelegateNormalImpl::GetTask(uint32_t retry)
             ZLOGE("fail to register subscriber!");
             return;
         }
-        executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+        if (executors_ != nullptr) {
+            executors_->Schedule(std::chrono::seconds(RETRY_WAIT_TIME_S), GetTask(retry + 1));
+        }
     };
 }
 
