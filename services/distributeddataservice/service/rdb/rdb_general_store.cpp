@@ -161,6 +161,8 @@ std::pair<bool, DistributedDB::DistributedSchema> RdbGeneralStore::GetGaussDistr
             return {false, distributedSchema};
         }
     }
+
+    PopulateTableSyncPolicies(database, distributedSchema);
     return {true, distributedSchema};
 }
 
@@ -1982,6 +1984,28 @@ DistributedDB::AssetConflictPolicy RdbGeneralStore::ConvertPolicy(DistributedRdb
         case DistributedRdb::AssetConflictPolicy::CONFLICT_POLICY_DEFAULT :
         default:
             return DistributedDB::AssetConflictPolicy::CONFLICT_POLICY_DEFAULT;
+    }
+}
+
+void RdbGeneralStore::PopulateTableSyncPolicies(const Database &database, DistributedDB::DistributedSchema &distributedSchema)
+{
+    distributedSchema.tableSyncPolicies.resize(database.fieldSyncPolicies.size());
+    for (size_t i = 0; i < database.fieldSyncPolicies.size(); i++) {
+        const Table &fieldSyncTable = database.fieldSyncPolicies[i];
+        DistributedDB::TableSyncPolicy &tableSyncPolicy = distributedSchema.tableSyncPolicies[i];
+        tableSyncPolicy.tableName = fieldSyncTable.name;
+
+        tableSyncPolicy.fieldSyncPolicies.resize(fieldSyncTable.fields.size());
+        for (size_t j = 0; j < fieldSyncTable.fields.size(); j++) {
+            const Field &field = fieldSyncTable.fields[j];
+            DistributedDB::FieldSyncPolicy &fieldSyncPolicy = tableSyncPolicy.fieldSyncPolicies[j];
+            fieldSyncPolicy.colName = field.colName;
+
+            fieldSyncPolicy.equalConstraint.resize(field.equalConstraints.size());
+            for (size_t k = 0; k < field.equalConstraints.size(); k++) {
+                fieldSyncPolicy.equalConstraint[k].notNull = field.equalConstraints[k].notNull;
+            }
+        }
     }
 }
 } // namespace OHOS::DistributedRdb

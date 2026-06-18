@@ -157,7 +157,6 @@ bool Database::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(version), version);
     GetValue(node, GET_NAME(bundleName), bundleName);
     GetValue(node, GET_NAME(fieldSyncPolicies), fieldSyncPolicies);
-    GetValue(node, GET_NAME(fieldSyncPolicy), fieldSyncPolicies); // Support both fieldSyncPolicy and fieldSyncPolicies
     return true;
 }
 
@@ -224,7 +223,6 @@ bool Field::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(columnName), colName);
     GetValue(node, GET_NAME(notNull), nullable);
     GetValue(node, GET_NAME(dupCheckCol), dupCheckCol);
-    GetValue(node, GET_NAME(equalConstraint), equalConstraints);
     GetValue(node, GET_NAME(equalConstraints), equalConstraints);
     return true;
 }

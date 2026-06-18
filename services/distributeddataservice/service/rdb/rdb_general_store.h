@@ -192,6 +192,7 @@ private:
     size_t SqlConcatenate(VBucket &value, std::string &strColumnSql, std::string &strRowValueSql);
     bool IsPrintLog(DistributedDB::DBStatus status);
     std::pair<bool, DistributedDB::DistributedSchema> GetGaussDistributedSchema(const Database &database);
+    void PopulateTableSyncPolicies(const Database &database, DistributedDB::DistributedSchema &distributedSchema);
     std::shared_ptr<RdbCloud> GetRdbCloud() const;
     bool IsFinished(uint64_t syncId) const;
     void RemoveTasks();
