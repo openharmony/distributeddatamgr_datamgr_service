@@ -30,6 +30,11 @@ public:
     void TearDown() {}
 };
 
+constexpr const char *DATA_HUB_KEY = "udmf://DataHub/com.example.app/1233455";
+constexpr const char *DRAG_KEY = "udmf://drag/com.example.app/1233455";
+constexpr const char *UNKNOWN_INTENTION_KEY = "udmf://Unknown/com.example.app/1233455";
+constexpr const char *INVALID_KEY = "invalid_key";
+
 /**
 * @tc.name: OnRemoteRequest001
 * @tc.desc: Abnormal test of OnRemoteRequest, code is invalid
