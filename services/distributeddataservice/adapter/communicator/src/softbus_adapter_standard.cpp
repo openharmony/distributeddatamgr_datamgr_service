@@ -23,6 +23,7 @@
 #include "account/account_delegate.h"
 #include "communication/connect_manager.h"
 #include "communicator_context.h"
+#include "data_buffer.h"
 #include "data_level.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
@@ -470,7 +471,7 @@ int SoftBusAdapter::CreateSessionServerAdapter(const std::string &sessionName)
     ZLOGD("begin");
     SocketInfo socketInfo;
     std::string sessionServerName = sessionName;
-    socketInfo.name = const_cast<char *>(sessionServerName.c_str());
+    socketInfo.name = sessionServerName.data();
     std::string pkgName = "ohos.distributeddata";
     socketInfo.pkgName = pkgName.data();
     socket_ = Socket(socketInfo);
@@ -579,6 +580,10 @@ void AppDataListenerWrap::OnServerShutdown(int32_t socket, ShutdownReason reason
 
 void AppDataListenerWrap::OnServerBytesReceived(int32_t socket, const void *data, uint32_t dataLen)
 {
+    if (data == nullptr || dataLen == 0 || dataLen > DataBuffer::MAX_DATA_LEN) {
+        ZLOGE("Invalid data received, socket:%{public}d, dataLen:%{public}u", socket, dataLen);
+        return;
+    }
     SoftBusAdapter::ServerSocketInfo info;
     if (!softBusAdapter_->GetPeerSocketInfo(socket, info)) {
         ZLOGE("Get peer socket info failed, socket id %{public}d", socket);
