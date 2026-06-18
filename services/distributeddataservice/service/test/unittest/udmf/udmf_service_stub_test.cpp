@@ -240,4 +240,134 @@ HWTEST_F(UdmfServiceStubTest, OnClearAsynProcessByKey001, TestSize.Level1)
     int ret = udmfServiceImpl.OnClearAsynProcessByKey(data, reply);
     EXPECT_EQ(ret, E_READ_PARCEL_ERROR);
 }
+
+/**
+* @tc.name: NormalizeQueryOption001
+* @tc.desc: BASE intention is normalized from a valid DataHub key
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, NormalizeQueryOption001, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = DATA_HUB_KEY;
+    query.intention = UD_INTENTION_BASE;
+    UdmfServiceImpl udmfServiceImpl;
+
+    EXPECT_EQ(udmfServiceImpl.NormalizeQueryOption(query), E_OK);
+    EXPECT_EQ(query.intention, UD_INTENTION_DATA_HUB);
+}
+
+/**
+* @tc.name: NormalizeQueryOption002
+* @tc.desc: BASE intention is normalized from a valid drag key
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, NormalizeQueryOption002, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = DRAG_KEY;
+    query.intention = UD_INTENTION_BASE;
+    UdmfServiceImpl udmfServiceImpl;
+
+    EXPECT_EQ(udmfServiceImpl.NormalizeQueryOption(query), E_OK);
+    EXPECT_EQ(query.intention, UD_INTENTION_DRAG);
+}
+
+/**
+* @tc.name: NormalizeQueryOption003
+* @tc.desc: Matching query intention and key intention is allowed
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, NormalizeQueryOption003, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = DATA_HUB_KEY;
+    query.intention = UD_INTENTION_DATA_HUB;
+    UdmfServiceImpl udmfServiceImpl;
+
+    EXPECT_EQ(udmfServiceImpl.NormalizeQueryOption(query), E_OK);
+    EXPECT_EQ(query.intention, UD_INTENTION_DATA_HUB);
+}
+
+/**
+* @tc.name: NormalizeQueryOption004
+* @tc.desc: Mismatched query intention and key intention is rejected
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, NormalizeQueryOption004, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = DATA_HUB_KEY;
+    query.intention = UD_INTENTION_DRAG;
+    UdmfServiceImpl udmfServiceImpl;
+
+    EXPECT_EQ(udmfServiceImpl.NormalizeQueryOption(query), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: NormalizeQueryOption005
+* @tc.desc: Empty key with BASE intention is rejected
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, NormalizeQueryOption005, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = UD_INTENTION_BASE;
+    UdmfServiceImpl udmfServiceImpl;
+
+    EXPECT_EQ(udmfServiceImpl.NormalizeQueryOption(query), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: NormalizeQueryOption006
+* @tc.desc: Empty key with explicit intention is allowed
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, NormalizeQueryOption006, TestSize.Level1)
+{
+    QueryOption query;
+    query.intention = UD_INTENTION_DATA_HUB;
+    UdmfServiceImpl udmfServiceImpl;
+
+    EXPECT_EQ(udmfServiceImpl.NormalizeQueryOption(query), E_OK);
+    EXPECT_EQ(query.intention, UD_INTENTION_DATA_HUB);
+}
+
+/**
+* @tc.name: NormalizeQueryOption007
+* @tc.desc: Invalid key is rejected
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, NormalizeQueryOption007, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = INVALID_KEY;
+    query.intention = UD_INTENTION_BASE;
+    UdmfServiceImpl udmfServiceImpl;
+
+    EXPECT_EQ(udmfServiceImpl.NormalizeQueryOption(query), E_INVALID_PARAMETERS);
+}
+
+/**
+* @tc.name: NormalizeQueryOption008
+* @tc.desc: Valid key format with unknown intention is rejected
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfServiceStubTest, NormalizeQueryOption008, TestSize.Level1)
+{
+    QueryOption query;
+    query.key = UNKNOWN_INTENTION_KEY;
+    query.intention = UD_INTENTION_BASE;
+    UdmfServiceImpl udmfServiceImpl;
+
+    EXPECT_EQ(udmfServiceImpl.NormalizeQueryOption(query), E_INVALID_PARAMETERS);
+}
 }; // namespace UDMF
