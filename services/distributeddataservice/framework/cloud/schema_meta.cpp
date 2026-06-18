@@ -18,21 +18,62 @@ namespace OHOS::DistributedData {
 static constexpr const char *KEY_PREFIX = "DistributedSchema";
 static constexpr const char *KEY_SEPARATOR = "###";
 
-bool EqualConstraint::Marshal(Serializable::json &node) const
+bool CompatibleConstraint::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(notNull)], notNull);
+    SetValue(node[GET_NAME(hasDefault)], hasDefault);
     return true;
 }
 
-bool EqualConstraint::Unmarshal(const Serializable::json &node)
+bool CompatibleConstraint::Unmarshal(const Serializable::json &node)
 {
     GetValue(node, GET_NAME(notNull), notNull);
+    GetValue(node, GET_NAME(hasDefault), hasDefault);
     return true;
 }
 
-bool EqualConstraint::operator==(const EqualConstraint &constraint) const
+bool CompatibleConstraint::operator==(const CompatibleConstraint &constraint) const
 {
-    return std::tie(notNull) == std::tie(constraint.notNull);
+    return std::tie(notNull, hasDefault) == std::tie(constraint.notNull, constraint.hasDefault);
+}
+
+bool FieldsPolicy::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(columnName)], columnName);
+    SetValue(node[GET_NAME(compatibleConstraints)], compatibleConstraints);
+    return true;
+}
+
+bool FieldsPolicy::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(columnName), columnName);
+    GetValue(node, GET_NAME(compatibleConstraints), compatibleConstraints);
+    return true;
+}
+
+bool FieldsPolicy::operator==(const FieldsPolicy &policy) const
+{
+    return std::tie(columnName, compatibleConstraints) ==
+           std::tie(policy.columnName, policy.compatibleConstraints);
+}
+
+bool CompatiblePolicy::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(tableName)], tableName);
+    SetValue(node[GET_NAME(fieldsPolicy)], fieldsPolicy);
+    return true;
+}
+
+bool CompatiblePolicy::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(tableName), tableName);
+    GetValue(node, GET_NAME(fieldsPolicy), fieldsPolicy);
+    return true;
+}
+
+bool CompatiblePolicy::operator==(const CompatiblePolicy &policy) const
+{
+    return std::tie(tableName, fieldsPolicy) == std::tie(policy.tableName, policy.fieldsPolicy);
 }
 
 bool SchemaMeta::Marshal(Serializable::json &node) const
@@ -141,7 +182,7 @@ bool Database::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(user)], user);
     SetValue(node[GET_NAME(deviceId)], deviceId);
     SetValue(node[GET_NAME(autoSyncType)], autoSyncType);
-    SetValue(node[GET_NAME(fieldSyncPolicies)], fieldSyncPolicies);
+    SetValue(node[GET_NAME(backwardCompatiblePolicies)], backwardCompatiblePolicies);
     return true;
 }
 
@@ -156,15 +197,16 @@ bool Database::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(deviceId), deviceId);
     GetValue(node, GET_NAME(version), version);
     GetValue(node, GET_NAME(bundleName), bundleName);
-    GetValue(node, GET_NAME(fieldSyncPolicies), fieldSyncPolicies);
+    GetValue(node, GET_NAME(backwardCompatiblePolicies), backwardCompatiblePolicies);
     return true;
 }
 
 bool Database::operator==(const Database &database) const
 {
-    return std::tie(name, alias, tables, version, bundleName, user, deviceId, autoSyncType, fieldSyncPolicies) ==
-        std::tie(database.name, database.alias, database.tables, database.version, database.bundleName, database.user,
-        database.deviceId, database.autoSyncType, database.fieldSyncPolicies);
+    return std(name, alias, tables, version, bundleName, user, deviceId, autoSyncType,
+                    backwardCompatiblePolicies) ==
+           std::tie(database database.alias, database.tables, database.version, database.bundleName,
+                    database.user, database.deviceId, database.autoSyncType, database.backwardCompatiblePolicies);
 }
 
 bool Table::Marshal(Serializable::json &node) const
@@ -184,7 +226,6 @@ bool Table::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(sharedTableName), sharedTableName);
     GetValue(node, GET_NAME(alias), alias);
     GetValue(node, GET_NAME(fields), fields);
-    GetValue(node, GET_NAME(field), fields); // Support both "field" and "fields"
     GetValue(node, GET_NAME(tableName), name);
     GetValue(node, GET_NAME(deviceSyncFields), deviceSyncFields);
     GetValue(node, GET_NAME(cloudSyncFields), cloudSyncFields);
@@ -207,7 +248,6 @@ bool Field::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(autoIncrement)], autoIncrement);
     SetValue(node[GET_NAME(nullable)], nullable);
     SetValue(node[GET_NAME(dupCheckCol)], dupCheckCol);
-    SetValue(node[GET_NAME(equalConstraints)], equalConstraints);
     return true;
 }
 
@@ -223,13 +263,12 @@ bool Field::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(columnName), colName);
     GetValue(node, GET_NAME(notNull), nullable);
     GetValue(node, GET_NAME(dupCheckCol), dupCheckCol);
-    GetValue(node, GET_NAME(equalConstraints), equalConstraints);
     return true;
 }
 bool Field::operator==(const Field &field) const
 {
-    return std::tie(colName, alias, type, primary, nullable, dupCheckCol, equalConstraints) ==
-           std::tie(field.colName, field.alias, field.type, field.primary, field.nullable, field.dupCheckCol, field.equalConstraints);
+    return std::tie(colName, alias, type, primary, nullable, dupCheckCol) ==
+           std::tie(field.colName, field.alias, field.type, field.primary, field.nullable, field.dupCheckCol);
 }
 
 Database SchemaMeta::GetDataBase(const std::string &storeId)

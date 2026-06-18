@@ -1987,23 +1987,25 @@ DistributedDB::AssetConflictPolicy RdbGeneralStore::ConvertPolicy(DistributedRdb
     }
 }
 
-void RdbGeneralStore::PopulateTableSyncPolicies(const Database &database, DistributedDB::DistributedSchema &distributedSchema)
+void RdbGeneralStore::PopulateTableSyncPolicies(
+    const Database &database, DistributedDB::DistributedSchema &distributedSchema)
 {
-    distributedSchema.tableSyncPolicies.resize(database.fieldSyncPolicies.size());
-    for (size_t i = 0; i < database.fieldSyncPolicies.size(); i++) {
-        const Table &fieldSyncTable = database.fieldSyncPolicies[i];
+    distributedSchema.tableSyncPolicies.resize(database.backwardCompatiblePolicies.size());
+    for (size_t i = 0; i < database.backwardCompatiblePolicies.size(); i++) {
+        const CompatiblePolicy &compatiblePolicy = database.backwardCompatiblePolicies[i];
         DistributedDB::TableSyncPolicy &tableSyncPolicy = distributedSchema.tableSyncPolicies[i];
-        tableSyncPolicy.tableName = fieldSyncTable.name;
+        tableSyncPolicy.tableName = compatiblePolicy.tableName;
 
-        tableSyncPolicy.fieldSyncPolicies.resize(fieldSyncTable.fields.size());
-        for (size_t j = 0; j < fieldSyncTable.fields.size(); j++) {
-            const Field &field = fieldSyncTable.fields[j];
+        tableSyncPolicy.fieldSyncPolicies.resize(compatiblePolicy.fieldsPolicy.size());
+        for (size_t j = 0; j < compatiblePolicy.fieldsPolicy.size(); j++) {
+            const FieldsPolicy &fieldsPolicy = compatiblePolicy.fieldsPolicy[j];
             DistributedDB::FieldSyncPolicy &fieldSyncPolicy = tableSyncPolicy.fieldSyncPolicies[j];
-            fieldSyncPolicy.colName = field.colName;
+            fieldSyncPolicy.colName = fieldsPolicy.columnName;
 
-            fieldSyncPolicy.equalConstraint.resize(field.equalConstraints.size());
-            for (size_t k = 0; k < field.equalConstraints.size(); k++) {
-                fieldSyncPolicy.equalConstraint[k].notNull = field.equalConstraints[k].notNull;
+            fieldSyncPolicy.equalConstraints.resize(fieldsPolicy.compatibleConstraints.size());
+            for (size_t k = 0; k < fieldsPolicy.compatibleConstraints.size(); k++) {
+                fieldSyncPolicy.equalConstraints[k].notNull = fieldsPolicy.compatibleConstraints[k].notNull;
+                fieldSyncPolicy.equalConstraints[k].hasDefault = fieldsPolicy.compatibleConstraints[k].hasDefault;
             }
         }
     }
