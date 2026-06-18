@@ -213,6 +213,7 @@ void KvStoreMetaManager::UpdateMetaData(const std::string &uuid)
     }
     bool syncMetaUpdateNeeded = !isExist || versionMeta.version < VersionMetaData::UPDATE_SYNC_META_VERSION;
     bool storeMetaUpgradeNeeded = !isExist || versionMeta.version < VersionMetaData::UPDATE_STORE_META_KEY_VERSION;
+    bool storeMetaCleanNeeded = !isExist || versionMeta.version < VersionMetaData::CLEAN_STORE_META_DATA_VERSION;
     if (syncMetaUpdateNeeded) {
         std::vector<StoreMetaData> metaDataList;
         std::string prefix = StoreMetaData::GetPrefix({ uuid });
@@ -234,6 +235,33 @@ void KvStoreMetaManager::UpdateMetaData(const std::string &uuid)
         versionMeta.version = VersionMetaData::UPDATE_STORE_META_KEY_VERSION;
         MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
     }
+    if (storeMetaCleanNeeded) {
+        CleanStoreMetaData();
+    }
+}
+
+void KvStoreMetaManager::CleanStoreMetaData()
+{
+    auto option = InitDBOption();
+    delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
+        [](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *delegate) {
+            if (dbStatus != DistributedDB::DBStatus::OK || delegate == nullptr) {
+                return;
+            }
+            PragmaRemoveLocalDataInfo param;
+            param.limit = CLEAN_BATCH_SIZE;
+            
+            auto data = static_cast<DistributedDB::PragmaData>(&param);
+            delegate->Pragma(PragmaCmd::REMOVE_LOCAL_DATA_BY_KEY_PATTERN, data);
+            ZLOGI("CleanStoreMetaData deletedCount: %{public}d", param.deletedCount);
+
+            if (param.deletedCount < CLEAN_BATCH_SIZE) {
+                VersionMetaData versionMeta;
+                MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true);
+                versionMeta.version = VersionMetaData::CLEAN_STORE_META_DATA_VERSION;
+                MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+            }
+        });
 }
 
 // The metadata database is upgraded. The suffix is added to the path.
