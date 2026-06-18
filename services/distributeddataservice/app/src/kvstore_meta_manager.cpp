@@ -414,9 +414,7 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore(bool isRest
         DeviceMatrix::GetInstance().OnExchanged(info.deviceId, DeviceMatrix::META_STORE_MASK,
             DeviceMatrix::LevelType::DYNAMIC, DeviceMatrix::ChangeType::CHANGE_REMOTE);
     });
-    bool param = true;
-    auto data = static_cast<DistributedDB::PragmaData>(&param);
-    delegate->Pragma(DistributedDB::SET_SYNC_RETRY, data);
+    SetPragma(delegate);
     auto release = [this](DistributedDB::KvStoreNbDelegate *delegate) {
         ZLOGI("release meta data kv store");
         if (delegate == nullptr) {
@@ -428,6 +426,14 @@ KvStoreMetaManager::NbDelegate KvStoreMetaManager::CreateMetaKvStore(bool isRest
         }
     };
     return NbDelegate(delegate, release);
+}
+
+void KvStoreMetaManager::SetPragma(DistributedDB::KvStoreNbDelegate *delegate)
+{
+    bool param = true;
+    auto data = static_cast<DistributedDB::PragmaData>(&param);
+    delegate->Pragma(DistributedDB::SET_SYNC_RETRY, data);
+    delegate->Pragma(DistributedDB::SET_HIGH_PERFORMANCE_READ_MODE, data);
 }
 
 DistributedDB::KvStoreNbDelegate::Option KvStoreMetaManager::InitDBOption()
