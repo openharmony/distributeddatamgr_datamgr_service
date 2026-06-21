@@ -20,7 +20,8 @@
 namespace OHOS::DistributedData {
 class API_EXPORT VersionMetaData final : public Serializable {
 public:
-    static constexpr int32_t CURRENT_VERSION = 5;
+    static constexpr int32_t CURRENT_VERSION = 6;
+    static constexpr int32_t CLEAN_STORE_META_DATA_VERSION = 6;
     static constexpr int32_t UPDATE_STORE_META_KEY_VERSION = 5;
     static constexpr int32_t UPDATE_SYNC_META_VERSION = 4;
     static constexpr int32_t INVALID_VERSION = -1;

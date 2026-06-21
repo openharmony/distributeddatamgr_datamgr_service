@@ -40,6 +40,7 @@ class KvStoreMetaManager {
 public:
     static constexpr uint32_t META_STORE_VERSION = 0x03000001;
     static constexpr uint16_t DEFAULT_MASK = 0x000F;
+    static constexpr uint32_t CLEAN_BATCH_SIZE = 10000;
     using ChangeObserver = std::function<void(const std::vector<uint8_t> &, const std::vector<uint8_t> &, CHANGE_FLAG)>;
 
     class MetaDeviceChangeListenerImpl : public AppDistributedKv::AppDeviceChangeListener {
@@ -78,6 +79,8 @@ private:
     DistributedData::StoreMetaData InitStoreMetaData();
 
     void UpdateMetaData(const std::string &uuid);
+
+    void CleanStoreMetaData();
 
     void SubscribeMetaKvStore();
 

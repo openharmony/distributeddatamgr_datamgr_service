@@ -333,4 +333,84 @@ HWTEST_F(KvstoreMetaManagerUpdateKeyTest, KeyUpdataTest007, TestSize.Level1)
     EXPECT_TRUE(MetaDataManager::GetInstance().DelMeta(storeMetaMapping.GetKey(), true));
     EXPECT_TRUE(MetaDataManager::GetInstance().DelMeta(metaData.GetKeyLocal(), true));
 }
+
+/**
+* @tc.name: CleanStoreMetaDataTest
+* @tc.desc: CleanStoreMetaData test - version below CLEAN_STORE_META_DATA_VERSION triggers cleaning
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(KvstoreMetaManagerUpdateKeyTest, CleanStoreMetaDataTest001, TestSize.Level1)
+{
+    VersionMetaData versionMeta;
+    versionMeta.version = VersionMetaData::UPDATE_STORE_META_KEY_VERSION;
+    MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+    KvStoreMetaManager::GetInstance().InitMetaData();
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true));
+}
+
+/**
+* @tc.name: CleanStoreMetaDataTest
+* @tc.desc: CleanStoreMetaData test - version at CLEAN_STORE_META_DATA_VERSION skips cleaning
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(KvstoreMetaManagerUpdateKeyTest, CleanStoreMetaDataTest002, TestSize.Level1)
+{
+    VersionMetaData versionMeta;
+    versionMeta.version = VersionMetaData::CLEAN_STORE_META_DATA_VERSION;
+    MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+    KvStoreMetaManager::GetInstance().InitMetaData();
+    VersionMetaData checkMeta;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), checkMeta, true));
+    EXPECT_EQ(checkMeta.version, VersionMetaData::CLEAN_STORE_META_DATA_VERSION);
+}
+
+/**
+* @tc.name: CleanStoreMetaDataTest
+* @tc.desc: CleanStoreMetaData test - version at CURRENT_VERSION skips all upgrades
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(KvstoreMetaManagerUpdateKeyTest, CleanStoreMetaDataTest003, TestSize.Level1)
+{
+    VersionMetaData versionMeta;
+    versionMeta.version = VersionMetaData::CURRENT_VERSION;
+    MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+    KvStoreMetaManager::GetInstance().InitMetaData();
+    VersionMetaData checkMeta;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), checkMeta, true));
+    EXPECT_EQ(checkMeta.version, VersionMetaData::CURRENT_VERSION);
+}
+
+/**
+* @tc.name: CleanStoreMetaDataTest
+* @tc.desc: CleanStoreMetaData test - version between UPDATE_STORE_META_KEY_VERSION and
+*           CLEAN_STORE_META_DATA_VERSION triggers clean path with isExist=true
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(KvstoreMetaManagerUpdateKeyTest, CleanStoreMetaDataTest004, TestSize.Level1)
+{
+    VersionMetaData versionMeta;
+    versionMeta.version = VersionMetaData::UPDATE_STORE_META_KEY_VERSION;
+    MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+    StoreMetaData metaData;
+    metaData.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaData.user = "CleanStoreMetaDataTest004_user";
+    metaData.bundleName = "CleanStoreMetaDataTest004_bundleName";
+    metaData.storeId = "CleanStoreMetaDataTest004_storeId";
+    metaData.dataDir = "CleanStoreMetaDataTest004_dataDir";
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true));
+    KvStoreMetaManager::GetInstance().InitMetaData();
+    VersionMetaData checkMeta;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), checkMeta, true));
+    EXPECT_GE(checkMeta.version, VersionMetaData::UPDATE_STORE_META_KEY_VERSION);
+}
+
 } // namespace
