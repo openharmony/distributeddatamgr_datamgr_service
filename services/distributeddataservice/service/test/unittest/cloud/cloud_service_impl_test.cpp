@@ -2092,5 +2092,852 @@ HWTEST_F(CloudServiceImplTest, SyncManager_QueryLastSyncInfo_NormalParams, TestS
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
     EXPECT_TRUE(results.empty());
 }
+
+/**
+ * @tc.name: ProcessDatabaseSync_AutoSyncOff
+ * @tc.desc: Test ProcessDatabaseSync when autoSyncSwitch is false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessDatabaseSync_AutoSyncOff, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessDatabaseSync_AutoSyncOff start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = std::to_string(MOCK_USER);
+    metaMapping.bundleName = TEST_CLOUD_BUNDLE;
+    metaMapping.storeId = TEST_CLOUD_STORE;
+    metaMapping.instanceId = 0;
+    metaMapping.autoSyncSwitch = false; // autoSync disabled
+    metaMapping.cloudPath = "";
+    metaMapping.dataDir = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+
+    CloudData::CloudServiceImpl::DatabaseSyncContext context{
+        .user = MOCK_USER,
+        .bundleName = TEST_CLOUD_BUNDLE,
+        .instanceId = 0,
+        .dbName = TEST_CLOUD_STORE,
+        .tables = {},
+        .triggerMode = static_cast<int32_t>(CloudSyncScene::PUSH),
+        .prepareTraceId = ""
+    };
+    cloudServiceImpl_->ProcessDatabaseSync(context);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: ProcessDatabaseSync_AutoSyncOn_WithPushMode
+ * @tc.desc: Test ProcessDatabaseSync when autoSyncSwitch is true and triggerMode is PUSH
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessDatabaseSync_AutoSyncOn_WithPushMode, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessDatabaseSync_AutoSyncOn_WithPushMode start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = std::to_string(MOCK_USER);
+    metaMapping.bundleName = TEST_CLOUD_BUNDLE;
+    metaMapping.storeId = TEST_CLOUD_STORE;
+    metaMapping.instanceId = 0;
+    metaMapping.autoSyncSwitch = true;
+    metaMapping.cloudPath = "";
+    metaMapping.dataDir = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+
+    CloudData::CloudServiceImpl::DatabaseSyncContext context{
+        .user = MOCK_USER,
+        .bundleName = TEST_CLOUD_BUNDLE,
+        .instanceId = 0,
+        .dbName = TEST_CLOUD_STORE,
+        .tables = {},
+        .triggerMode = static_cast<int32_t>(CloudSyncScene::PUSH),
+        .prepareTraceId = ""
+    };
+    cloudServiceImpl_->ProcessDatabaseSync(context);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: ProcessDatabaseSync_AutoSyncOn_WithPrepareTraceId
+ * @tc.desc: Test ProcessDatabaseSync when autoSyncSwitch is true and prepareTraceId is not empty
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessDatabaseSync_AutoSyncOn_WithPrepareTraceId, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessDatabaseSync_AutoSyncOn_WithPrepareTraceId start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = std::to_string(MOCK_USER);
+    metaMapping.bundleName = TEST_CLOUD_BUNDLE;
+    metaMapping.storeId = TEST_CLOUD_STORE;
+    metaMapping.instanceId = 0;
+    metaMapping.autoSyncSwitch = true;
+    metaMapping.cloudPath = "";
+    metaMapping.dataDir = DirectoryManager::GetInstance().GetStorePath(metaMapping) + "/" + metaMapping.storeId;
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+
+    CloudData::CloudServiceImpl::DatabaseSyncContext context{
+        .user = MOCK_USER,
+        .bundleName = TEST_CLOUD_BUNDLE,
+        .instanceId = 0,
+        .dbName = TEST_CLOUD_STORE,
+        .tables = {},
+        .triggerMode = static_cast<int32_t>(CloudSyncScene::PUSH),
+        .prepareTraceId = "test_prepare_trace_id_12345"
+    };
+    cloudServiceImpl_->ProcessDatabaseSync(context);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: ProcessDatabaseSync_CloudPathNotEmpty
+ * @tc.desc: Test ProcessDatabaseSync when cloudPath is not empty and different from dataDir
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessDatabaseSync_CloudPathNotEmpty, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessDatabaseSync_CloudPathNotEmpty start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    StoreMetaMapping metaMapping;
+    metaMapping.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
+    metaMapping.user = std::to_string(MOCK_USER);
+    metaMapping.bundleName = TEST_CLOUD_BUNDLE;
+    metaMapping.storeId = TEST_CLOUD_STORE;
+    metaMapping.instanceId = 0;
+    metaMapping.autoSyncSwitch = true;
+    metaMapping.cloudPath = "cloud_path_value";
+    metaMapping.dataDir = "data_dir_value";
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetKey(), metaMapping, true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMapping.GetCloudStoreMetaKey(), metaMapping, true), true);
+
+    CloudData::CloudServiceImpl::DatabaseSyncContext context{
+        .user = MOCK_USER,
+        .bundleName = TEST_CLOUD_BUNDLE,
+        .instanceId = 0,
+        .dbName = TEST_CLOUD_STORE,
+        .tables = {},
+        .triggerMode = static_cast<int32_t>(CloudSyncScene::PUSH),
+        .prepareTraceId = ""
+    };
+    cloudServiceImpl_->ProcessDatabaseSync(context);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMapping.GetCloudStoreMetaKey(), true), true);
+}
+
+/**
+ * @tc.name: ProcessUserNotifyDataChange_CheckNotifyConditionsFailed
+ * @tc.desc: Test ProcessUserNotifyDataChange when CheckNotifyConditions fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessUserNotifyDataChange_CheckNotifyConditionsFailed, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessUserNotifyDataChange_CheckNotifyConditionsFailed start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    ExtraData exData;
+    exData.info.accountId = TEST_CLOUD_APPID;
+    exData.info.bundleName = TEST_CLOUD_BUNDLE;
+    exData.info.context.prepareTraceId = "test_trace_id";
+
+    // Cloud disable case - CheckNotifyConditions will return not E_OK
+    auto ret = cloudServiceImpl_->ProcessUserNotifyDataChange(MOCK_USER, exData);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: ProcessUserNotifyDataChange_SchemaMetaNotFound
+ * @tc.desc: Test ProcessUserNotifyDataChange when schema meta is not found
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessUserNotifyDataChange_SchemaMetaNotFound, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessUserNotifyDataChange_SchemaMetaNotFound start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    // Setup cloudInfo with enableCloud=true and cloudSwitch=true
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    ExtraData exData;
+    exData.info.accountId = TEST_CLOUD_APPID;
+    exData.info.bundleName = TEST_CLOUD_BUNDLE;
+    exData.info.context.prepareTraceId = "test_trace_id";
+    // Note: schemaMeta is not saved, so LoadMeta will fail
+
+    auto ret = cloudServiceImpl_->ProcessUserNotifyDataChange(MOCK_USER, exData);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: ProcessUserNotifyDataChange_GetDbInfoFromExtraDataEmpty
+ * @tc.desc: Test ProcessUserNotifyDataChange when GetDbInfoFromExtraData returns empty
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessUserNotifyDataChange_GetDbInfoFromExtraDataEmpty, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessUserNotifyDataChange_GetDbInfoFromExtraDataEmpty start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    // Setup cloudInfo with enableCloud=true and cloudSwitch=true
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // Setup schemaMeta but with a different containerName than extraData uses
+    SchemaMeta schemaMeta;
+    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.alias = "different_alias"; // This won't match extraData's containerName
+    schemaMeta.databases.emplace_back(database);
+    MetaDataManager::GetInstance().SaveMeta(CloudInfo::GetSchemaKey(MOCK_USER, TEST_CLOUD_BUNDLE), schemaMeta, true);
+
+    ExtraData exData;
+    exData.info.accountId = TEST_CLOUD_APPID;
+    exData.info.bundleName = TEST_CLOUD_BUNDLE;
+    exData.info.containerName = "test_container_alias"; // Doesn't match schema alias
+    exData.info.context.prepareTraceId = "test_trace_id";
+
+    auto ret = cloudServiceImpl_->ProcessUserNotifyDataChange(MOCK_USER, exData);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(MOCK_USER, TEST_CLOUD_BUNDLE), true),
+        true);
+}
+
+/**
+ * @tc.name: ProcessUserNotifyDataChange_BundleNotInCloudInfoApps
+ * @tc.desc: Test ProcessUserNotifyDataChange when bundleName is not in cloudInfo.apps
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessUserNotifyDataChange_BundleNotInCloudInfoApps, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessUserNotifyDataChange_BundleNotInCloudInfoApps start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    // Setup cloudInfo with enableCloud=true and cloudSwitch=true but empty apps
+    CloudInfo cloudInfo;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    // cloudInfo.apps is empty
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // Setup schemaMeta
+    SchemaMeta schemaMeta;
+    schemaMeta.bundleName = "non_existent_bundle";
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
+    schemaMeta.databases.emplace_back(database);
+    MetaDataManager::GetInstance().SaveMeta(CloudInfo::GetSchemaKey(MOCK_USER, "non_existent_bundle"),
+        schemaMeta, true);
+
+    ExtraData exData;
+    exData.info.accountId = TEST_CLOUD_APPID;
+    exData.info.bundleName = "non_existent_bundle";
+    exData.info.containerName = TEST_CLOUD_DATABASE_ALIAS_1;
+    exData.info.context.prepareTraceId = "test_trace_id";
+
+    auto ret = cloudServiceImpl_->ProcessUserNotifyDataChange(MOCK_USER, exData);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(MOCK_USER,
+        "non_existent_bundle"), true), true);
+}
+
+/**
+ * @tc.name: ProcessUserNotifyDataChange_NormalFlow
+ * @tc.desc: Test ProcessUserNotifyDataChange with normal flow
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessUserNotifyDataChange_NormalFlow, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessUserNotifyDataChange_NormalFlow start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    // Setup cloudInfo with enableCloud=true and cloudSwitch=true
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    SchemaMeta schemaMeta;
+    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
+    schemaMeta.databases.emplace_back(database);
+    MetaDataManager::GetInstance().SaveMeta(CloudInfo::GetSchemaKey(MOCK_USER, TEST_CLOUD_BUNDLE), schemaMeta, true);
+
+    ExtraData exData;
+    exData.info.accountId = TEST_CLOUD_APPID;
+    exData.info.bundleName = TEST_CLOUD_BUNDLE;
+    exData.info.containerName = TEST_CLOUD_DATABASE_ALIAS_1; // Matches schema alias
+    exData.info.context.prepareTraceId = "test_trace_id";
+
+    auto ret = cloudServiceImpl_->ProcessUserNotifyDataChange(MOCK_USER, exData);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: ProcessUserNotifyDataChange_WithTables
+ * @tc.desc: Test ProcessUserNotifyDataChange with tables specified in ExtraData
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, ProcessUserNotifyDataChange_WithTables, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest ProcessUserNotifyDataChange_WithTables start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+
+    // Setup cloudInfo with enableCloud=true and cloudSwitch=true
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    SchemaMeta schemaMeta;
+    schemaMeta.bundleName = TEST_CLOUD_BUNDLE;
+    SchemaMeta::Database database;
+    database.name = TEST_CLOUD_STORE;
+    database.alias = TEST_CLOUD_DATABASE_ALIAS_1;
+    schemaMeta.databases.emplace_back(database);
+    MetaDataManager::GetInstance().SaveMeta(CloudInfo::GetSchemaKey(MOCK_USER, TEST_CLOUD_BUNDLE), schemaMeta, true);
+
+    ExtraData exData;
+    exData.info.accountId = TEST_CLOUD_APPID;
+    exData.info.bundleName = TEST_CLOUD_BUNDLE;
+    exData.info.containerName = TEST_CLOUD_DATABASE_ALIAS_1; // Matches schema alias
+    exData.info.context.prepareTraceId = "test_trace_id";
+    exData.info.tables.emplace_back(TEST_CLOUD_DATABASE_ALIAS_1); // Specify a table alias
+
+    auto ret = cloudServiceImpl_->ProcessUserNotifyDataChange(MOCK_USER, exData);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: DoCloudSync_GetCloudInfoFailed_MetaNotExistAndUserNotVerified
+ * @tc.desc: Test DoCloudSync when GetCloudInfo fails - meta doesn't exist and user not verified
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoCloudSync_GetCloudInfoFailed_MetaNotExistAndUserNotVerified, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoCloudSync_GetCloudInfoFailed_MetaNotExistAndUserNotVerified start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    // Delete cloudInfo meta so GetCloudInfoFromMeta fails
+    CloudInfo cloudInfoToDelete;
+    cloudInfoToDelete.user = MOCK_USER;
+    MetaDataManager::GetInstance().DelMeta(cloudInfoToDelete.GetKey(), true);
+
+    // When user is not verified and meta doesn't exist, GetCloudInfo returns ERROR
+    EXPECT_CALL(*accountDelegateMock, IsVerified(MOCK_USER)).WillOnce(Return(false));
+
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::PUSH);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: DoCloudSync_NeedCheckAutoSync_EnableCloud
+ * @tc.desc: Test DoCloudSync when NeedCheckAutoSync returns true (ENABLE_CLOUD scene)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoCloudSync_NeedCheckAutoSync_EnableCloud, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoCloudSync_NeedCheckAutoSync_EnableCloud start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // ENABLE_CLOUD scene triggers NeedCheckAutoSync -> TriggerAppDatabaseSync
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::ENABLE_CLOUD);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: DoCloudSync_NeedCheckAutoSync_ServiceInit
+ * @tc.desc: Test DoCloudSync when NeedCheckAutoSync returns true (SERVICE_INIT scene)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoCloudSync_NeedCheckAutoSync_ServiceInit, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoCloudSync_NeedCheckAutoSync_ServiceInit start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // SERVICE_INIT scene triggers NeedCheckAutoSync -> TriggerAppDatabaseSync
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::SERVICE_INIT);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: DoCloudSync_NeedCheckAutoSync_SwitchOn
+ * @tc.desc: Test DoCloudSync when NeedCheckAutoSync returns true (SWITCH_ON scene)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoCloudSync_NeedCheckAutoSync_SwitchOn, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoCloudSync_NeedCheckAutoSync_SwitchOn start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // SWITCH_ON scene triggers NeedCheckAutoSync -> TriggerAppDatabaseSync
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::SWITCH_ON);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: DoCloudSync_NeedCheckAutoSync_NetworkRecovery
+ * @tc.desc: Test DoCloudSync when NeedCheckAutoSync returns true (NETWORK_RECOVERY scene)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoCloudSync_NeedCheckAutoSync_NetworkRecovery, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoCloudSync_NeedCheckAutoSync_NetworkRecovery start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // NETWORK_RECOVERY scene triggers NeedCheckAutoSync -> TriggerAppDatabaseSync
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::NETWORK_RECOVERY);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: DoCloudSync_NoNeedCheckAutoSync_Push
+ * @tc.desc: Test DoCloudSync when NeedCheckAutoSync returns false (PUSH scene)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoCloudSync_NoNeedCheckAutoSync_Push, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoCloudSync_NoNeedCheckAutoSync_Push start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // PUSH scene does NOT trigger NeedCheckAutoSync -> SyncManager::DoCloudSync
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::PUSH);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: DoCloudSync_NoNeedCheckAutoSync_DisableCloud
+ * @tc.desc: Test DoCloudSync when NeedCheckAutoSync returns false (DISABLE_CLOUD scene)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoCloudSync_NoNeedCheckAutoSync_DisableCloud, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoCloudSync_NoNeedCheckAutoSync_DisableCloud start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // DISABLE_CLOUD scene does NOT trigger NeedCheckAutoSync -> SyncManager::DoCloudSync
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::DISABLE_CLOUD);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: DoCloudSync_NoNeedCheckAutoSync_QuerySyncInfo
+ * @tc.desc: Test DoCloudSync when NeedCheckAutoSync returns false (QUERY_SYNC_INFO scene)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoCloudSync_NoNeedCheckAutoSync_QuerySyncInfo, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoCloudSync_NoNeedCheckAutoSync_QuerySyncInfo start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    // QUERY_SYNC_INFO scene does NOT trigger NeedCheckAutoSync -> SyncManager::DoCloudSync
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::QUERY_SYNC_INFO);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: NotifyCloudSyncTriggerObservers_USER_CHANGE
+ * @tc.desc: Test NotifyCloudSyncTriggerObservers with USER_CHANGE scene
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, NotifyCloudSyncTriggerObservers_USER_CHANGE, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest NotifyCloudSyncTriggerObservers_USER_CHANGE start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::USER_CHANGE);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: NotifyCloudSyncTriggerObservers_notifierExists
+ * @tc.desc: Test NotifyCloudSyncTriggerObservers when notifier exists
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, NotifyCloudSyncTriggerObservers_notifierExists, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest NotifyCloudSyncTriggerObservers_notifierExists start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::SWITCH_ON);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: TriggerAppDatabaseSync_BundleNameNotExist
+ * @tc.desc: Test TriggerAppDatabaseSync when bundleName is not in cloudInfo.apps
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, TriggerAppDatabaseSync_BundleNameNotExist, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest TriggerAppDatabaseSync_BundleNameNotExist start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = "other_bundle";
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace("other_bundle", appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::SERVICE_INIT);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: TriggerAppDatabaseSync_SchemaStatusFail
+ * @tc.desc: Test TriggerAppDatabaseSync when GetSchemaMeta fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, TriggerAppDatabaseSync_SchemaStatusFail, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest TriggerAppDatabaseSync_SchemaStatusFail start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    appInfo.instanceId = 999;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::SERVICE_INIT);
+    EXPECT_EQ(result, true);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: DoSync_CloudEvent
+ * @tc.desc: Test DoSync with CloudEvent
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, DoSync_CloudEvent, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest DoSync_CloudEvent start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+    InitCloudInfoAndSchema();
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    appInfo.cloudSwitch = true;
+    std::map<std::string, CloudInfo::AppInfo> apps;
+    apps.emplace(TEST_CLOUD_BUNDLE, appInfo);
+    CloudInfo cloudInfo;
+    cloudInfo.apps = apps;
+    cloudInfo.user = MOCK_USER;
+    cloudInfo.enableCloud = true;
+    cloudInfo.id = TEST_CLOUD_APPID;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
+
+    StoreInfo storeInfo;
+    storeInfo.user = MOCK_USER;
+    storeInfo.bundleName = TEST_CLOUD_BUNDLE;
+    storeInfo.storeName = TEST_CLOUD_STORE;
+    storeInfo.tokenId = metaData_.tokenId;
+
+    CloudEvent cloudEvent(CloudEvent::DATA_SYNC, storeInfo);
+    cloudServiceImpl_->DoSync(cloudEvent);
+
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
