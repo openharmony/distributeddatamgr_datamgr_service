@@ -205,7 +205,7 @@ bool Database::operator==(const Database &database) const
 {
     return std(name, alias, tables, version, bundleName, user, deviceId, autoSyncType,
                     backwardCompatiblePolicies) ==
-           std::tie(database database.alias, database.tables, database.version, database.bundleName,
+           std::tie(database.name, database.alias, database.tables, database.version, database.bundleName,
                     database.user, database.deviceId, database.autoSyncType, database.backwardCompatiblePolicies);
 }
 
