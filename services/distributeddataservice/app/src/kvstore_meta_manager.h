@@ -68,6 +68,8 @@ private:
 
     NbDelegate CreateMetaKvStore(bool isRestore = false);
 
+    void SetPragma(DistributedDB::KvStoreNbDelegate *delegate);
+    
     void SetCloudSyncer();
 
     std::function<void()> CloudSyncTask();
