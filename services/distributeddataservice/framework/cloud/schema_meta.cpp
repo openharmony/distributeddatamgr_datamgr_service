@@ -203,9 +203,11 @@ bool Database::Unmarshal(const Serializable::json &node)
 
 bool Database::operator==(const Database &database) const
 {
-    return std::tie(name, alias, tables, version, bundleName, user, deviceId, autoSyncType, backwardCompatiblePolicies) ==
-           std::tie(database.name, database.alias, database.tables, database.version, database.bundleName,
-                    database.user, database.device, database.autoSyncType,
+    return std::tie(name, alias, tables, version, bundleName, user,
+                    deviceId, autoSyncType, backwardCompatiblePolicies) ==
+           std::tie(database.name, database.alias, database.tables,
+                    database.version, database.bundleName, database.user,
+                    database.deviceId, database.autoSyncType,
                     database.backwardCompatiblePolicies);
 }
 
