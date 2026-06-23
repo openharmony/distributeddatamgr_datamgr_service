@@ -20,12 +20,45 @@
 #include "log_print.h"
 #include "qos_manager.h"
 #include "udmf_types_util.h"
+#include "unified_key.h"
+#include "unified_meta.h"
 
 namespace OHOS {
 namespace UDMF {
 using OHOS::DistributedData::QosManager;
 constexpr UdmfServiceStub::Handler
     UdmfServiceStub::HANDLERS[static_cast<uint32_t>(UdmfServiceInterfaceCode::CODE_BUTT)];
+
+int32_t UdmfServiceStub::NormalizeQueryOption(QueryOption &query)
+{
+    if (query.key.empty()) {
+        return query.intention == UD_INTENTION_BASE ? E_INVALID_PARAMETERS : E_OK;
+    }
+
+    UnifiedKey key(query.key);
+    if (!key.IsValid()) {
+        ZLOGE("invalid key, key: %{public}s", query.key.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+
+    auto keyIntention = UnifiedDataUtils::GetIntentionByString(key.intention);
+    if (keyIntention == UD_INTENTION_BUTT) {
+        ZLOGE("invalid key intention, key.intention: %{public}s", key.intention.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+
+    if (query.intention == UD_INTENTION_BASE) {
+        query.intention = keyIntention;
+        return E_OK;
+    }
+    if (query.intention != keyIntention) {
+        ZLOGE("intention mismatch, query.intention: %{public}d, key.intention: %{public}s",
+            query.intention, key.intention.c_str());
+        return E_INVALID_PARAMETERS;
+    }
+    return E_OK;
+}
+
 int UdmfServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     QosManager qos(false);
@@ -97,7 +130,10 @@ int32_t UdmfServiceStub::OnGetBatchData(MessageParcel &data, MessageParcel &repl
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     query.tokenId = token;
     std::vector<UnifiedData> unifiedDataSet;
-    int32_t status = GetBatchData(query, unifiedDataSet);
+    int32_t status = NormalizeQueryOption(query);
+    if (status == E_OK) {
+        status = GetBatchData(query, unifiedDataSet);
+    }
     if (!ITypesUtil::Marshal(reply, status, unifiedDataSet)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
@@ -116,7 +152,10 @@ int32_t UdmfServiceStub::OnUpdateData(MessageParcel &data, MessageParcel &reply)
     }
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     query.tokenId = token;
-    int32_t status = UpdateData(query, unifiedData);
+    int32_t status = NormalizeQueryOption(query);
+    if (status == E_OK) {
+        status = UpdateData(query, unifiedData);
+    }
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
@@ -135,7 +174,10 @@ int32_t UdmfServiceStub::OnDeleteData(MessageParcel &data, MessageParcel &reply)
     uint32_t token = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     query.tokenId = token;
     std::vector<UnifiedData> unifiedDataSet;
-    int32_t status = DeleteData(query, unifiedDataSet);
+    int32_t status = NormalizeQueryOption(query);
+    if (status == E_OK) {
+        status = DeleteData(query, unifiedDataSet);
+    }
     if (!ITypesUtil::Marshal(reply, status, unifiedDataSet)) {
         ZLOGE("Marshal failed:%{public}d", status);
         return E_WRITE_PARCEL_ERROR;
