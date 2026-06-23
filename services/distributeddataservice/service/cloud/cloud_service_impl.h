@@ -227,6 +227,8 @@ private:
     int32_t GetTriggerKey(std::string &key);
     int32_t ProcessUserNotifyDataChange(int32_t user, const DistributedData::ExtraData &exData);
     bool NeedCheckAutoSync(CloudSyncScene scene);
+    int32_t ParseStoreIdsIfNeed(int32_t user, const std::string &bundleName, const std::string &storeId,
+        std::vector<std::string> &storeNames);
     using SaveStrategy = int32_t (*)(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);
     static const SaveStrategy STRATEGY_SAVERS[Strategy::STRATEGY_BUTT];
     static int32_t SaveNetworkStrategy(const std::vector<CommonType::Value> &values, const HapInfo &hapInfo);

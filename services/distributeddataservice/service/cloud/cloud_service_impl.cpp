@@ -1660,6 +1660,7 @@ Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
         auto &dbDetail = dbDetails[id];
         dbDetail.progress = detail.progress;
         dbDetail.code = detail.code;
+        dbDetail.message = detail.message;
         for (auto &[name, table] : detail.details) {
             auto &dbTable = dbDetail.details[name];
             Constant::Copy(&dbTable, &table);
@@ -1681,6 +1682,12 @@ void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Detail
     }
 }
 
+int32_t CloudServiceImpl::CloudSync(const BundleInfo &bundleInfo, const Option &option,
+    const DistributedRdb::AsyncDetail &async)
+{
+    return CloudSync(bundleInfo.bundleName, bundleInfo.storeId, option, async);
+}
+
 int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::string &storeId,
     const Option &option, const AsyncDetail &async)
 {
@@ -1689,21 +1696,63 @@ int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::st
         ZLOGE("not support cloud sync, syncMode = %{public}d", option.syncMode);
         return INVALID_ARGUMENT;
     }
-    StoreInfo storeInfo;
-    storeInfo.bundleName = bundleName;
-    storeInfo.tokenId = IPCSkeleton::GetCallingTokenID();
-    storeInfo.user = AccountDelegate::GetInstance()->GetUserByToken(storeInfo.tokenId);
-    storeInfo.storeName = storeId;
-    GenAsync asyncCallback =
-        [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
-        OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
-    };
-    auto highMode = GeneralStore::MANUAL_SYNC_MODE;
-    auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
-    SyncParam syncParam = { .mode = mixMode, .wait = 0, .isDownloadOnly = option.isDownloadOnly};
-    auto info = ChangeEvent::EventInfo(syncParam, false, nullptr, asyncCallback);
-    auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
-    EventCenter::GetInstance().PostEvent(std::move(evt));
+
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
+    std::vector<std::string> storeNames;
+    auto ret = ParseStoreIdsIfNeed(user, bundleName, storeId, storeNames);
+    if (ret != SUCCESS) {
+        return ret;
+    }
+    for (const auto &storeName : storeNames) {
+        StoreInfo storeInfo;
+        storeInfo.tokenId = tokenId;
+        storeInfo.bundleName = bundleName;
+        storeInfo.user = user;
+        storeInfo.storeName = storeName;
+        GenAsync asyncCallback =
+            [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
+            OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
+        };
+        auto highMode = GeneralStore::MANUAL_SYNC_MODE;
+        auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
+        SyncParam syncParam = { .mode = mixMode, .wait = 0, .isDownloadOnly = option.isDownloadOnly};
+        auto info = ChangeEvent::EventInfo(syncParam, false, nullptr, asyncCallback);
+        auto evt = std::make_unique<ChangeEvent>(std::move(storeInfo), std::move(info));
+        EventCenter::GetInstance().PostEvent(std::move(evt));
+    }
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::ParseStoreIdsIfNeed(int32_t user, const std::string &bundleName,
+    const std::string &storeId, std::vector<std::string> &storeNames)
+{
+    if (!storeId.empty()) {
+        storeNames.push_back(storeId);
+        return SUCCESS;
+    }
+    auto [status, cloudInfo] = GetCloudInfo(user);
+    if (status != SUCCESS) {
+        ZLOGE("get cloud info failed, user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
+        return status;
+    }
+    auto it = cloudInfo.apps.find(bundleName);
+    if (it == cloudInfo.apps.end()) {
+        ZLOGE("bundleName:%{public}s is not exist in cloud info", bundleName.c_str());
+        return INVALID_ARGUMENT;
+    }
+    auto [schemaStatus, schemaMeta] = GetSchemaMeta(user, bundleName, it->second.instanceId);
+    if (schemaStatus != SUCCESS) {
+        ZLOGE("get schema meta failed, user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
+        return schemaStatus;
+    }
+    for (const auto &database : schemaMeta.databases) {
+        storeNames.push_back(database.name);
+    }
+    if (storeNames.empty()) {
+        ZLOGE("no database found for bundleName:%{public}s", bundleName.c_str());
+        return INVALID_ARGUMENT;
+    }
     return SUCCESS;
 }
 

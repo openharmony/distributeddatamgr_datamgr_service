@@ -1022,7 +1022,8 @@ RdbGeneralStore::DBProcessCB RdbGeneralStore::GetDBProcessCB(DetailAsync async, 
             detail.progress = process.process;
             detail.code = ConvertStatus(process.errCode);
             detail.dbCode = process.errCode;
-            detail.cloudErrorInfo.cloudAction = static_cast<CloudErrorAction>(process.cloudErrorInfo.cloudAction);
+            detail.cloudAction = static_cast<CloudErrorAction>(process.cloudErrorInfo.cloudAction);
+            detail.message = process.cloudErrorInfo.errorMessage;
             uint32_t totalCount = 0;
             for (auto [key, value] : process.tableProcess) {
                 auto &table = detail.details[key];
