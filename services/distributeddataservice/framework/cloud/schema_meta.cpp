@@ -17,6 +17,65 @@
 namespace OHOS::DistributedData {
 static constexpr const char *KEY_PREFIX = "DistributedSchema";
 static constexpr const char *KEY_SEPARATOR = "###";
+
+bool CompatibleConstraint::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(notNull)], notNull);
+    SetValue(node[GET_NAME(hasDefault)], hasDefault);
+    return true;
+}
+
+bool CompatibleConstraint::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(notNull), notNull);
+    GetValue(node, GET_NAME(hasDefault), hasDefault);
+    return true;
+}
+
+bool CompatibleConstraint::operator==(const CompatibleConstraint &constraint) const
+{
+    return std::tie(notNull, hasDefault) == std::tie(constraint.notNull, constraint.hasDefault);
+}
+
+bool FieldsPolicy::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(columnName)], columnName);
+    SetValue(node[GET_NAME(compatibleConstraints)], compatibleConstraints);
+    return true;
+}
+
+bool FieldsPolicy::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(columnName), columnName);
+    GetValue(node, GET_NAME(compatibleConstraints), compatibleConstraints);
+    return true;
+}
+
+bool FieldsPolicy::operator==(const FieldsPolicy &policy) const
+{
+    return std::tie(columnName, compatibleConstraints) ==
+           std::tie(policy.columnName, policy.compatibleConstraints);
+}
+
+bool CompatiblePolicy::Marshal(Serializable::json &node) const
+{
+    SetValue(node[GET_NAME(tableName)], tableName);
+    SetValue(node[GET_NAME(fieldsPolicy)], fieldsPolicy);
+    return true;
+}
+
+bool CompatiblePolicy::Unmarshal(const Serializable::json &node)
+{
+    GetValue(node, GET_NAME(tableName), tableName);
+    GetValue(node, GET_NAME(fieldsPolicy), fieldsPolicy);
+    return true;
+}
+
+bool CompatiblePolicy::operator==(const CompatiblePolicy &policy) const
+{
+    return std::tie(tableName, fieldsPolicy) == std::tie(policy.tableName, policy.fieldsPolicy);
+}
+
 bool SchemaMeta::Marshal(Serializable::json &node) const
 {
     SetValue(node[GET_NAME(metaVersion)], metaVersion);
@@ -123,6 +182,7 @@ bool Database::Marshal(Serializable::json &node) const
     SetValue(node[GET_NAME(user)], user);
     SetValue(node[GET_NAME(deviceId)], deviceId);
     SetValue(node[GET_NAME(autoSyncType)], autoSyncType);
+    SetValue(node[GET_NAME(backwardCompatiblePolicies)], backwardCompatiblePolicies);
     return true;
 }
 
@@ -137,14 +197,18 @@ bool Database::Unmarshal(const Serializable::json &node)
     GetValue(node, GET_NAME(deviceId), deviceId);
     GetValue(node, GET_NAME(version), version);
     GetValue(node, GET_NAME(bundleName), bundleName);
+    GetValue(node, GET_NAME(backwardCompatiblePolicies), backwardCompatiblePolicies);
     return true;
 }
 
 bool Database::operator==(const Database &database) const
 {
-    return std::tie(name, alias, tables, version, bundleName, user, deviceId, autoSyncType) ==
-        std::tie(database.name, database.alias, database.tables, database.version, database.bundleName, database.user,
-        database.deviceId, database.autoSyncType);
+    return std::tie(name, alias, tables, version, bundleName, user,
+                    deviceId, autoSyncType, backwardCompatiblePolicies) ==
+           std::tie(database.name, database.alias, database.tables,
+                    database.version, database.bundleName, database.user,
+                    database.deviceId, database.autoSyncType,
+                    database.backwardCompatiblePolicies);
 }
 
 bool Table::Marshal(Serializable::json &node) const

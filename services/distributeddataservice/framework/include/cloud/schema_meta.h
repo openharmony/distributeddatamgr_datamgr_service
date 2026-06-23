@@ -17,6 +17,30 @@
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_SCHEMA_META_H
 #include "serializable/serializable.h"
 namespace OHOS::DistributedData {
+struct API_EXPORT CompatibleConstraint final : public Serializable {
+    bool notNull = false;
+    bool hasDefault = false;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+    bool operator==(const CompatibleConstraint &constraint) const;
+};
+
+struct API_EXPORT FieldsPolicy final : public Serializable {
+    std::string columnName;
+    std::vector<CompatibleConstraint> compatibleConstraints;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+    bool operator==(const FieldsPolicy &policy) const;
+};
+
+struct API_EXPORT CompatiblePolicy final : public Serializable {
+    std::string tableName;
+    std::vector<FieldsPolicy> fieldsPolicy;
+    bool Marshal(json &node) const override;
+    bool Unmarshal(const json &node) override;
+    bool operator==(const CompatiblePolicy &policy) const;
+};
+
 struct API_EXPORT Field final : public Serializable {
     std::string colName;
     std::string alias;
@@ -46,6 +70,7 @@ struct API_EXPORT Database final : public Serializable {
     std::string name = "";
     std::string alias;
     std::vector<Table> tables;
+    std::vector<CompatiblePolicy> backwardCompatiblePolicies;
     uint32_t autoSyncType = 0;
     std::string user = "";
     std::string deviceId = "";
@@ -67,6 +92,9 @@ public:
     using Database = Database;
     using Table = Table;
     using Field = Field;
+    using CompatibleConstraint = CompatibleConstraint;
+    using FieldsPolicy = FieldsPolicy;
+    using CompatiblePolicy = CompatiblePolicy;
     static constexpr const char *DELETE_FIELD = "#_deleted";
     static constexpr const char *GID_FIELD = "#_gid";
     static constexpr const char *CREATE_FIELD = "#_createTime";
