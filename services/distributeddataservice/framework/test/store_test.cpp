@@ -377,4 +377,27 @@ HWTEST_F(AutoCacheTest, StoreMetaDatacustomSwitch, TestSize.Level2)
     metaData3.customSwitch = false;
     EXPECT_FALSE(metaData3 == metaData1);
 }
+
+/**
+ * @tc.name: GeneralStoreDefaultImpl001
+ * @tc.desc: Cover GeneralStore default inline implementations through a
+ *           non-overriding subclass (SetBinlogEnabled / QuerySubscribeOutput /
+ *           SetSubscribeCursor / SetSubscribeSchema).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GeneralStoreTest, GeneralStoreDefaultImpl001, TestSize.Level1)
+{
+    GeneralStoreMock store;
+
+    EXPECT_EQ(store.SetBinlogEnabled(true), 0);
+
+    SubscribeCur cursorIn{ SubQueryType::GET_ALL, 0 };
+    SubscribeCur cursorOut{ SubQueryType::GET_ALL, 0 };
+    VBuckets dataOut;
+    EXPECT_EQ(store.QuerySubscribeOutput(cursorIn, cursorOut, dataOut), 0);
+
+    EXPECT_EQ(store.SetSubscribeCursor(cursorIn), 0);
+    EXPECT_EQ(store.SetSubscribeSchema("test_schema"), 0);
+}
 } // namespace OHOS::Test
