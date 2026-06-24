@@ -1071,7 +1071,7 @@ int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
     int32_t resolvedAppIndex = 0;
     auto ret = AccountDelegate::GetInstance()->GetAppIndexBySubProfileId(
         visitedUserId, accountId, resolvedAppIndex);
-    if (ret == 0 && resolvedAppIndex > 0) {
+    if (ret == 0 && resolvedAppIndex >= 0) {
         ZLOGI("silent proxy account isolation: accountId %{public}d -> appIndex %{public}d",
             accountId, resolvedAppIndex);
         return resolvedAppIndex;
@@ -1322,7 +1322,7 @@ void DataShareServiceImpl::ResolveProviderAppIndex(ProviderInfo &providerInfo)
         int32_t providerAppIndex = 0;
         auto ret =
             delegate->GetAppIndexBySubProfileId(providerInfo.visitedUserId, providerInfo.accountId, providerAppIndex);
-        if (ret == 0 && providerAppIndex > 0) {
+        if (ret == 0 && providerAppIndex >= 0) {
             ZLOGI("account isolation: accountId %{public}d -> appIndex %{public}d, userId %{public}d",
                 providerInfo.accountId, providerAppIndex, providerInfo.visitedUserId);
             providerInfo.appIndex = providerAppIndex;
