@@ -88,10 +88,13 @@ namespace DistributedData {
     {
         return accountDelegate_->IsOsAccountConstraintEnabled();
     }
-    int32_t AccountDelegateMockProxy::GetSubProfileIdByToken(
-        int32_t userId, uint32_t tokenId, int32_t &subProfileId)
+    int32_t AccountDelegateMockProxy::GetSubProfileIdByToken(uint32_t tokenId, int32_t &subProfileId)
     {
-        return accountDelegate_->GetSubProfileIdByToken(userId, tokenId, subProfileId);
+        return accountDelegate_->GetSubProfileIdByToken(tokenId, subProfileId);
+    }
+    int32_t AccountDelegateMockProxy::GetForegroundSubProfileId(int32_t osAccountId, int32_t &subProfileId)
+    {
+        return accountDelegate_->GetForegroundSubProfileId(osAccountId, subProfileId);
     }
     int32_t AccountDelegateMockProxy::GetSubProfileIdByAppIndex(
         int32_t userId, int32_t appIndex, int32_t &subProfileId)

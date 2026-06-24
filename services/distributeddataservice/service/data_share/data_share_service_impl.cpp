@@ -1049,7 +1049,7 @@ int32_t DataShareServiceImpl::EnableSilentProxy(const std::string &uri, bool ena
 }
 
 int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
-    const std::string &uri, int32_t visitedUserId, int32_t appIndex)
+    const std::string &uri, const std::string &calledBundleName, int32_t visitedUserId, int32_t appIndex)
 {
     if (!IsCarDevice()) {
         return appIndex;
@@ -1061,6 +1061,11 @@ int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
     }
     int32_t accountId = atoi(accountIdStr.c_str());
     if (accountId <= 0) {
+        return appIndex;
+    }
+    std::vector<int32_t> cloneAppIndexes;
+    BundleMgrProxy::GetInstance()->GetCloneAppIndexes(calledBundleName, cloneAppIndexes, visitedUserId);
+    if (cloneAppIndexes.empty()) {
         return appIndex;
     }
     int32_t resolvedAppIndex = 0;
@@ -1101,7 +1106,7 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
         return E_APPINDEX_INVALID;
     }
 #ifdef ACCOUNT_ISOLATION_ENABLED
-    appIndex = ResolveAccessorAppIndexForSilentProxy(uri, currentUserId, appIndex);
+    appIndex = ResolveAccessorAppIndexForSilentProxy(uri, calledBundleName, currentUserId, appIndex);
 #endif
     uint32_t calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
         currentUserId, calledBundleName, appIndex);
@@ -1302,19 +1307,34 @@ bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId,
 
 void DataShareServiceImpl::ResolveProviderAppIndex(ProviderInfo &providerInfo)
 {
-    if (!IsCarDevice() || !providerInfo.accountIsolation || providerInfo.accountId <= 0) {
+    if (!IsCarDevice() || providerInfo.accountId <= 0) {
         return;
     }
-    int32_t providerAppIndex = 0;
-    auto ret = AccountDelegate::GetInstance()->GetAppIndexBySubProfileId(
-        providerInfo.visitedUserId, providerInfo.accountId, providerAppIndex);
-    if (ret == 0 && providerAppIndex > 0) {
-        ZLOGI("account isolation: accountId %{public}d -> appIndex %{public}d, userId %{public}d",
-            providerInfo.accountId, providerAppIndex, providerInfo.visitedUserId);
-        providerInfo.appIndex = providerAppIndex;
-    } else {
-        ZLOGE("accountId to appIndex failed, accountId:%{public}d, userId:%{public}d, ret:%{public}d",
-            providerInfo.accountId, providerInfo.visitedUserId, ret);
+    auto *delegate = AccountDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("AccountDelegate is null, provider identity skipped");
+        return;
+    }
+    std::vector<int32_t> cloneAppIndexes;
+    BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
+        providerInfo.bundleName, cloneAppIndexes, providerInfo.visitedUserId);
+    if (!cloneAppIndexes.empty()) {
+        int32_t providerAppIndex = 0;
+        auto ret =
+            delegate->GetAppIndexBySubProfileId(providerInfo.visitedUserId, providerInfo.accountId, providerAppIndex);
+        if (ret == 0 && providerAppIndex > 0) {
+            ZLOGI("account isolation: accountId %{public}d -> appIndex %{public}d, userId %{public}d",
+                providerInfo.accountId, providerAppIndex, providerInfo.visitedUserId);
+            providerInfo.appIndex = providerAppIndex;
+        } else {
+            ZLOGE("accountId to appIndex failed, accountId:%{public}d, userId:%{public}d, ret:%{public}d",
+                providerInfo.accountId, providerInfo.visitedUserId, ret);
+        }
+        return;
+    }
+    if (providerInfo.accountIsolation) {
+        providerInfo.queryByPath = true;
+        ZLOGI("account isolation: no clone app, accountId %{public}d -> query by path", providerInfo.accountId);
     }
 }
 
@@ -1357,9 +1377,9 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     if (extensionUri.empty()) {
         extensionUri = providerInfo.extensionUri;
     }
-    DataShareDbConfig::DbConfig config {providerInfo.uri, extensionUri, providerInfo.bundleName,
+    DataShareDbConfig::DbConfig config{ providerInfo.uri, extensionUri, providerInfo.bundleName,
         providerInfo.storeName, providerInfo.backup, providerInfo.singleton ? 0 : providerInfo.visitedUserId,
-        providerInfo.appIndex, providerInfo.hasExtension};
+        providerInfo.appIndex, providerInfo.accountId, providerInfo.queryByPath, providerInfo.hasExtension };
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",

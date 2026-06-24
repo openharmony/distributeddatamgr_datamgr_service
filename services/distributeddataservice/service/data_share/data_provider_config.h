@@ -56,6 +56,7 @@ public:
         bool storeMetaDataFromUri = false;
         bool normalAppAccessible = false;
         bool accountIsolation = false;
+        bool queryByPath = false;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
         std::vector<AllowList> allowLists;
     };

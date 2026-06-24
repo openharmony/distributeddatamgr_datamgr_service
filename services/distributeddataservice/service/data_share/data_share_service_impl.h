@@ -166,7 +166,7 @@ private:
         bool isFromExtension, const int32_t tokenId);
     void ResolveProviderAppIndex(DataProviderConfig::ProviderInfo &providerInfo);
     int32_t ResolveAccessorAppIndexForSilentProxy(
-        const std::string &uri, int32_t visitedUserId, int32_t appIndex);
+        const std::string &uri, const std::string &calledBundleName, int32_t visitedUserId, int32_t appIndex);
     bool GetCallerBundleInfo(BundleInfo &callerBundleInfo);
     void SetCriticalTask();
     bool VerifyPredicates(const DataSharePredicates &predicates, uint32_t callingTokenId,

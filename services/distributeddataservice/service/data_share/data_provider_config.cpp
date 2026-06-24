@@ -338,21 +338,28 @@ void DataProviderConfig::ResolveAccessorAccountId()
     if (!IsCarDevice()) {
         return;
     }
-    std::string accountIdStr;
-    URIUtils::GetAccountIdFromProxyURI(providerInfo_.uri, accountIdStr);
-    if (!accountIdStr.empty()) {
-        providerInfo_.accountId = atoi(accountIdStr.c_str());
-    }
-    if (providerInfo_.accountId <= 0) {
+    auto *delegate = AccountDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("AccountDelegate is null, account isolation skipped");
         return;
     }
-    auto *delegate = AccountDelegate::GetInstance();
-    auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(
-        IPCSkeleton::GetCallingTokenID());
-    if (tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_HAP) {
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    auto callerTokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(callerTokenId);
+    if (callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE ||
+        callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL) {
+        std::string accountIdStr;
+        URIUtils::GetAccountIdFromProxyURI(providerInfo_.uri, accountIdStr);
+        if (!accountIdStr.empty()) {
+            providerInfo_.accountId = atoi(accountIdStr.c_str());
+        }
+        if (providerInfo_.accountId <= 0) {
+            delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId, providerInfo_.accountId);
+        }
+        return;
+    }
+    if (callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_HAP) {
         Security::AccessToken::HapTokenInfo hapInfo;
-        auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(
-            IPCSkeleton::GetCallingTokenID(), hapInfo);
+        auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(callerTokenId, hapInfo);
         if (ret != Security::AccessToken::RET_SUCCESS) {
             return;
         }
@@ -361,15 +368,13 @@ void DataProviderConfig::ResolveAccessorAccountId()
             hapInfo.bundleName, cloneAppIndexes, providerInfo_.visitedUserId);
         if (errCode == 0 && !cloneAppIndexes.empty()) {
             int32_t subProfileId = -1;
-            delegate->GetSubProfileIdByToken(
-                providerInfo_.visitedUserId, IPCSkeleton::GetCallingTokenID(), subProfileId);
+            delegate->GetSubProfileIdByToken(callerTokenId, subProfileId);
             if (subProfileId > 0) {
                 providerInfo_.accountId = subProfileId;
             }
         } else {
-            int32_t foregroundUserId = providerInfo_.visitedUserId;
             int32_t subProfileId = -1;
-            delegate->GetSubProfileIdByAppIndex(foregroundUserId, 0, subProfileId);
+            delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId, subProfileId);
             if (subProfileId > 0) {
                 providerInfo_.accountId = subProfileId;
             }

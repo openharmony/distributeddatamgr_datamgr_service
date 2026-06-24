@@ -221,6 +221,7 @@ HWTEST_F(DataShareAccountIsolationTest, ProviderInfoAccountId_DefaultMinusOne_Ex
     DataProviderConfig::ProviderInfo providerInfo;
     EXPECT_EQ(providerInfo.accountId, -1);
     EXPECT_EQ(providerInfo.accountIsolation, false);
+    EXPECT_EQ(providerInfo.queryByPath, false);
 }
 
 // ===== Context.accountId field test =====
@@ -253,11 +254,28 @@ HWTEST_F(DataShareAccountIsolationTest, AccountDelegateMock_GetSubProfileIdByTok
     ZLOGI("AccountDelegateMock_GetSubProfileIdByToken start");
     AccountDelegateMock mock;
     int32_t subProfileId = -1;
-    EXPECT_CALL(mock, GetSubProfileIdByToken(100, 0u, subProfileId))
-        .WillOnce(Return(-1));
-    auto ret = mock.GetSubProfileIdByToken(100, 0u, subProfileId);
+    EXPECT_CALL(mock, GetSubProfileIdByToken(0u, subProfileId)).WillOnce(Return(-1));
+    auto ret = mock.GetSubProfileIdByToken(0u, subProfileId);
     EXPECT_EQ(ret, -1);
     EXPECT_EQ(subProfileId, -1);
+}
+
+/**
+ * @tc.name: AccountDelegateMock_GetForegroundSubProfileId_ExpectMockCallable
+ * @tc.desc: Verify AccountDelegate mock has GetForegroundSubProfileId method
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(
+    DataShareAccountIsolationTest, AccountDelegateMock_GetForegroundSubProfileId_ExpectMockCallable, TestSize.Level0)
+{
+    ZLOGI("AccountDelegateMock_GetForegroundSubProfileId start");
+    AccountDelegateMock mock;
+    int32_t subProfileId = -1;
+    EXPECT_CALL(mock, GetForegroundSubProfileId(100, subProfileId)).WillOnce(DoAll(SetArgReferee<1>(200), Return(0)));
+    auto ret = mock.GetForegroundSubProfileId(100, subProfileId);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(subProfileId, 200);
 }
 
 /**
@@ -300,16 +318,15 @@ HWTEST_F(DataShareAccountIsolationTest, AccountDelegateMock_GetAppIndexBySubProf
 // ===== ResolveProviderAppIndex mock tests =====
 
 /**
- * @tc.name: ResolveProviderAppIndex_AccountIsolationTrueAccountIdValid_ExpectAppIndexOverridden
- * @tc.desc: Verify ResolveProviderAppIndex overrides appIndex when accountIsolation=true and accountId>0
+ * @tc.name: ResolveProviderAppIndex_NoCloneAccountIsolationTrue_ExpectDataDirSet
+ * @tc.desc: Verify ResolveProviderAppIndex sets dataDir when no clone app and accountIsolation=true
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(DataShareAccountIsolationTest,
-    ResolveProviderAppIndex_AccountIsolationTrueAccountIdValid_ExpectAppIndexOverridden,
+HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_NoCloneAccountIsolationTrue_ExpectDataDirSet,
     TestSize.Level1)
 {
-    ZLOGI("ResolveProviderAppIndex_AccountIsolationTrueAccountIdValid start");
+    ZLOGI("ResolveProviderAppIndex_NoCloneAccountIsolationTrue start");
     DeviceManagerAdapterMock dmMock;
     DeviceInfo localDev;
     localDev.uuid = "test_car_uuid";
@@ -321,19 +338,18 @@ HWTEST_F(DataShareAccountIsolationTest,
 
     AccountDelegateMock mock;
     AccountDelegate::RegisterAccountInstance(&mock);
-    int32_t appIndex = 0;
-    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 200, appIndex))
-        .WillOnce(DoAll(SetArgReferee<2>(5), Return(0)));
 
     DataProviderConfig::ProviderInfo providerInfo;
     providerInfo.accountIsolation = true;
     providerInfo.accountId = 200;
     providerInfo.visitedUserId = 100;
     providerInfo.appIndex = 0;
+    providerInfo.storeName = "mystore";
 
     DataShareServiceImpl serviceImpl;
     serviceImpl.ResolveProviderAppIndex(providerInfo);
-    EXPECT_EQ(providerInfo.appIndex, 5);
+    EXPECT_EQ(providerInfo.appIndex, 0);
+    EXPECT_TRUE(providerInfo.queryByPath);
     AccountDelegate::RegisterAccountInstance(nullptr);
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
@@ -383,16 +399,14 @@ HWTEST_F(DataShareAccountIsolationTest,
 }
 
 /**
- * @tc.name: ResolveProviderAppIndex_GetAppIndexFailed_ExpectNoChange
- * @tc.desc: Verify ResolveProviderAppIndex does not change appIndex when API returns error
+ * @tc.name: ResolveProviderAppIndex_DelegateNull_ExpectNoChange
+ * @tc.desc: Verify ResolveProviderAppIndex does nothing when AccountDelegate is null
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(DataShareAccountIsolationTest,
-    ResolveProviderAppIndex_GetAppIndexFailed_ExpectNoChange,
-    TestSize.Level1)
+HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNull_ExpectNoChange, TestSize.Level1)
 {
-    ZLOGI("ResolveProviderAppIndex_GetAppIndexFailed start");
+    ZLOGI("ResolveProviderAppIndex_DelegateNull start");
     DeviceManagerAdapterMock dmMock;
     DeviceInfo localDev;
     localDev.uuid = "test_car_uuid";
@@ -402,11 +416,7 @@ HWTEST_F(DataShareAccountIsolationTest,
     BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
         [](BDeviceManagerAdapter *) {});
 
-    AccountDelegateMock mock;
-    AccountDelegate::RegisterAccountInstance(&mock);
-    int32_t appIndex = -1;
-    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 200, appIndex))
-        .WillOnce(DoAll(SetArgReferee<2>(-1), Return(-1)));
+    AccountDelegate::RegisterAccountInstance(nullptr);
 
     DataProviderConfig::ProviderInfo providerInfo;
     providerInfo.accountIsolation = true;
@@ -417,6 +427,7 @@ HWTEST_F(DataShareAccountIsolationTest,
     DataShareServiceImpl serviceImpl;
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 2);
+    EXPECT_FALSE(providerInfo.queryByPath);
     AccountDelegate::RegisterAccountInstance(nullptr);
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
@@ -424,16 +435,15 @@ HWTEST_F(DataShareAccountIsolationTest,
 // ===== ResolveAccessorAppIndexForSilentProxy mock tests =====
 
 /**
- * @tc.name: ResolveAccessorAppIndexForSilentProxy_AccountIdValid_ExpectAppIndexResolved
- * @tc.desc: Verify ResolveAccessorAppIndexForSilentProxy resolves appIndex from accountId
+ * @tc.name: ResolveAccessorAppIndexForSilentProxy_NoCloneApp_ExpectOriginalAppIndex
+ * @tc.desc: Verify ResolveAccessorAppIndexForSilentProxy returns original appIndex when provider has no clone app
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(DataShareAccountIsolationTest,
-    ResolveAccessorAppIndexForSilentProxy_AccountIdValid_ExpectAppIndexResolved,
+HWTEST_F(DataShareAccountIsolationTest, ResolveAccessorAppIndexForSilentProxy_NoCloneApp_ExpectOriginalAppIndex,
     TestSize.Level1)
 {
-    ZLOGI("ResolveAccessorAppIndexForSilentProxy_AccountIdValid start");
+    ZLOGI("ResolveAccessorAppIndexForSilentProxy_NoCloneApp start");
     DeviceManagerAdapterMock dmMock;
     DeviceInfo localDev;
     localDev.uuid = "test_car_uuid";
@@ -445,14 +455,11 @@ HWTEST_F(DataShareAccountIsolationTest,
 
     AccountDelegateMock mock;
     AccountDelegate::RegisterAccountInstance(&mock);
-    int32_t resolvedAppIndex = 0;
-    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 300, resolvedAppIndex))
-        .WillOnce(DoAll(SetArgReferee<2>(5), Return(0)));
 
     DataShareServiceImpl serviceImpl;
     std::string uri = "datashareproxy://com.test/module/store/table?accountId=300";
-    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, 100, 0);
-    EXPECT_EQ(result, 5);
+    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, "com.test", 100, 0);
+    EXPECT_EQ(result, 0);
     AccountDelegate::RegisterAccountInstance(nullptr);
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
@@ -470,7 +477,7 @@ HWTEST_F(DataShareAccountIsolationTest,
     ZLOGI("ResolveAccessorAppIndexForSilentProxy_NoAccountId start");
     DataShareServiceImpl serviceImpl;
     std::string uri = "datashareproxy://com.test/module/store/table?appIndex=2";
-    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, 100, 2);
+    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, "com.test", 100, 2);
     EXPECT_EQ(result, 2);
 }
 
@@ -487,42 +494,24 @@ HWTEST_F(DataShareAccountIsolationTest,
     ZLOGI("ResolveAccessorAppIndexForSilentProxy_AccountIdZero start");
     DataShareServiceImpl serviceImpl;
     std::string uri = "datashareproxy://com.test/module/store/table?accountId=0";
-    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, 100, 2);
+    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, "com.test", 100, 2);
     EXPECT_EQ(result, 2);
 }
 
 /**
- * @tc.name: ResolveAccessorAppIndexForSilentProxy_GetAppIndexFailed_ExpectOriginalAppIndex
- * @tc.desc: Verify ResolveAccessorAppIndexForSilentProxy returns original when API fails
+ * @tc.name: ResolveAccessorAppIndexForSilentProxy_NonCarDevice_ExpectOriginalAppIndex
+ * @tc.desc: Verify ResolveAccessorAppIndexForSilentProxy returns original appIndex on non-car device
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(DataShareAccountIsolationTest,
-    ResolveAccessorAppIndexForSilentProxy_GetAppIndexFailed_ExpectOriginalAppIndex,
+HWTEST_F(DataShareAccountIsolationTest, ResolveAccessorAppIndexForSilentProxy_NonCarDevice_ExpectOriginalAppIndex,
     TestSize.Level1)
 {
-    ZLOGI("ResolveAccessorAppIndexForSilentProxy_GetAppIndexFailed start");
-    DeviceManagerAdapterMock dmMock;
-    DeviceInfo localDev;
-    localDev.uuid = "test_car_uuid";
-    EXPECT_CALL(dmMock, GetLocalDevice()).WillRepeatedly(Return(localDev));
-    EXPECT_CALL(dmMock, GetDeviceTypeByUuid("test_car_uuid"))
-        .WillRepeatedly(Return(DeviceManagerAdapter::DEVICE_TYPE_CAR));
-    BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
-        [](BDeviceManagerAdapter *) {});
-
-    AccountDelegateMock mock;
-    AccountDelegate::RegisterAccountInstance(&mock);
-    int32_t resolvedAppIndex = -1;
-    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 300, resolvedAppIndex))
-        .WillOnce(DoAll(SetArgReferee<2>(-1), Return(-1)));
-
+    ZLOGI("ResolveAccessorAppIndexForSilentProxy_NonCarDevice start");
     DataShareServiceImpl serviceImpl;
     std::string uri = "datashareproxy://com.test/module/store/table?accountId=300";
-    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, 100, 2);
+    auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, "com.test", 100, 2);
     EXPECT_EQ(result, 2);
-    AccountDelegate::RegisterAccountInstance(nullptr);
-    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 // ===== ACCOUNT_ID constant test =====

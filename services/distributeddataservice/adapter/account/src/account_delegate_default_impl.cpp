@@ -120,11 +120,16 @@ bool AccountDelegateDefaultImpl::IsOsAccountConstraintEnabled()
     return false;
 }
 
-int32_t AccountDelegateDefaultImpl::GetSubProfileIdByToken(
-    int32_t userId, uint32_t tokenId, int32_t &subProfileId)
+int32_t AccountDelegateDefaultImpl::GetSubProfileIdByToken(uint32_t tokenId, int32_t &subProfileId)
 {
-    (void)userId;
     (void)tokenId;
+    subProfileId = -1;
+    return -1;
+}
+
+int32_t AccountDelegateDefaultImpl::GetForegroundSubProfileId(int32_t osAccountId, int32_t &subProfileId)
+{
+    (void)osAccountId;
     subProfileId = -1;
     return -1;
 }

@@ -41,7 +41,8 @@ public:
     MOCK_METHOD(std::string, GetUnencryptedAccountId, (int32_t), (const));
     MOCK_METHOD(bool, IsUserForeground, (int32_t));
     MOCK_METHOD(bool, IsOsAccountConstraintEnabled, ());
-    MOCK_METHOD(int32_t, GetSubProfileIdByToken, (int32_t, uint32_t, int32_t &));
+    MOCK_METHOD(int32_t, GetSubProfileIdByToken, (uint32_t, int32_t &));
+    MOCK_METHOD(int32_t, GetForegroundSubProfileId, (int32_t, int32_t &));
     MOCK_METHOD(int32_t, GetSubProfileIdByAppIndex, (int32_t, int32_t, int32_t &));
     MOCK_METHOD(int32_t, GetAppIndexBySubProfileId, (int32_t, int32_t, int32_t &));
 };

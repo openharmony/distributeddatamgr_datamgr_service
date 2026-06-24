@@ -17,8 +17,6 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "bundle_mgr_proxy.h"
-#include "common_utils.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
@@ -39,9 +37,6 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     if (!URIUtils::GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
         return false;
     }
-#ifdef ACCOUNT_ISOLATION_ENABLED
-    ResolveContextAccountId(context);
-#endif
     if (context->currentUserId == 0) {
         GetInfoFromProxyURI(
             context->uri, context->visitedUserId, context->callerTokenId, context->calledBundleName);
@@ -81,48 +76,5 @@ bool LoadConfigCommonStrategy::GetInfoFromProxyURI(
         calledBundleName = queryParams[DST_BUNDLE_NAME_PARAM];
     }
     return true;
-}
-
-void LoadConfigCommonStrategy::ResolveContextAccountId(std::shared_ptr<Context> context)
-{
-    if (!IsCarDevice()) {
-        return;
-    }
-    std::string accountIdStr;
-    URIUtils::GetAccountIdFromProxyURI(context->uri, accountIdStr);
-    if (!accountIdStr.empty()) {
-        context->accountId = atoi(accountIdStr.c_str());
-    }
-    if (context->accountId <= 0) {
-        return;
-    }
-    auto *delegate = AccountDelegate::GetInstance();
-    auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(context->callerTokenId);
-    if (tokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_HAP) {
-        Security::AccessToken::HapTokenInfo hapInfo;
-        auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(
-            context->callerTokenId, hapInfo);
-        if (ret != Security::AccessToken::RET_SUCCESS) {
-            return;
-        }
-        std::vector<int32_t> cloneAppIndexes;
-        auto errCode = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
-            hapInfo.bundleName, cloneAppIndexes, context->visitedUserId);
-        if (errCode == 0 && !cloneAppIndexes.empty()) {
-            int32_t subProfileId = -1;
-            delegate->GetSubProfileIdByToken(
-                context->visitedUserId, context->callerTokenId, subProfileId);
-            if (subProfileId > 0) {
-                context->accountId = subProfileId;
-            }
-        } else {
-            int32_t foregroundUserId = context->visitedUserId;
-            int32_t subProfileId = -1;
-            delegate->GetSubProfileIdByAppIndex(foregroundUserId, 0, subProfileId);
-            if (subProfileId > 0) {
-                context->accountId = subProfileId;
-            }
-        }
-    }
 }
 } // namespace OHOS::DataShare
