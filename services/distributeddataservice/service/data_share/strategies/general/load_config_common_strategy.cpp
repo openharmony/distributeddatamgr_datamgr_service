@@ -37,6 +37,7 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     if (!URIUtils::GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
         return false;
     }
+    // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
         GetInfoFromProxyURI(
             context->uri, context->visitedUserId, context->callerTokenId, context->calledBundleName);
