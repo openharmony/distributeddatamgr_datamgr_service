@@ -2454,12 +2454,7 @@ HWTEST_F(CloudServiceImplTest, ProcessUserNotifyDataChange_WithTables, TestSize.
     ZLOGI("CloudServiceImplTest ProcessUserNotifyDataChange_WithTables start");
     testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
-    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
-    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
-    InitCloudInfoAndSchema();
-    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
-    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
 
     // Setup cloudInfo with enableCloud=true and cloudSwitch=true
     CloudInfo::AppInfo appInfo;
