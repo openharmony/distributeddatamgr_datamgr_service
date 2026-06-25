@@ -67,7 +67,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatibleConstraint_Unmarshal_SameAsOriginal
 
     CompatibleConstraint constraint2;
     ASSERT_TRUE(constraint2.Unmarshal(node));
-    EXPECT_TRUE(constraint1 == constraint2);
+    EXPECT_EQ(constraint1, constraint2);
 }
 
 /**
@@ -87,7 +87,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatibleConstraint_OperatorEqual_SameValues
     constraint2.notNull = true;
     constraint2.hasDefault = true;
 
-    EXPECT_TRUE(constraint1 == constraint2);
+    EXPECT_EQ(constraint1, constraint2);
 }
 
 /**
@@ -107,7 +107,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatibleConstraint_OperatorEqual_DifferentN
     constraint2.notNull = false;
     constraint2.hasDefault = false;
 
-    EXPECT_FALSE(constraint1 == constraint2);
+    EXPECT_EQ(constraint1, constraint2);
 }
 
 /**
@@ -127,7 +127,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatibleConstraint_OperatorEqual_DifferentH
     constraint2.notNull = false;
     constraint2.hasDefault = false;
 
-    EXPECT_FALSE(constraint1 == constraint2);
+    EXPECT_EQ(constraint1, constraint2);
 }
 
 /**
@@ -189,7 +189,7 @@ HWTEST_F(SchemaMetaCompatibleTest, FieldsPolicy_Unmarshal_SameAsOriginal, TestSi
 
     FieldsPolicy policy2;
     ASSERT_TRUE(policy2.Unmarshal(node));
-    EXPECT_TRUE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
 }
 
 /**
@@ -213,7 +213,7 @@ HWTEST_F(SchemaMetaCompatibleTest, FieldsPolicy_OperatorEqual_SameValues, TestSi
     policy2.columnName = "col_A";
     policy2.compatibleConstraints.push_back(cc);
 
-    EXPECT_TRUE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
 }
 
 /**
@@ -237,7 +237,7 @@ HWTEST_F(SchemaMetaCompatibleTest, FieldsPolicy_OperatorEqual_DifferentColumnNam
     policy2.columnName = "col_B";
     policy2.compatibleConstraints.push_back(cc);
 
-    EXPECT_FALSE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
 }
 
 /**
@@ -265,7 +265,7 @@ HWTEST_F(SchemaMetaCompatibleTest, FieldsPolicy_OperatorEqual_DifferentConstrain
     policy2.columnName = "col_A";
     policy2.compatibleConstraints.push_back(cc2);
 
-    EXPECT_FALSE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
 }
 
 /**
@@ -286,7 +286,7 @@ HWTEST_F(SchemaMetaCompatibleTest, FieldsPolicy_EmptyConstraints_MarshalUnmarsha
 
     FieldsPolicy policy2;
     ASSERT_TRUE(policy2.Unmarshal(node));
-    EXPECT_TRUE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
     EXPECT_EQ(policy2.columnName, "empty_col");
     EXPECT_EQ(policy2.compatibleConstraints.size(), 0u);
 }
@@ -323,7 +323,7 @@ HWTEST_F(SchemaMetaCompatibleTest, FieldsPolicy_MultipleConstraints_MarshalUnmar
 
     FieldsPolicy policy2;
     ASSERT_TRUE(policy2.Unmarshal(node));
-    EXPECT_TRUE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
     EXPECT_EQ(policy2.compatibleConstraints.size(), 3u);
 }
 
@@ -380,7 +380,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_Unmarshal_SameAsOriginal, Te
 
     CompatiblePolicy policy2;
     ASSERT_TRUE(policy2.Unmarshal(node));
-    EXPECT_TRUE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
 }
 
 /**
@@ -408,7 +408,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_OperatorEqual_SameValues, Te
     policy2.tableName = "tbl_same";
     policy2.fieldsPolicy.push_back(fp);
 
-    EXPECT_TRUE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
 }
 
 /**
@@ -436,7 +436,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_OperatorEqual_DifferentTable
     policy2.tableName = "tbl_B";
     policy2.fieldsPolicy.push_back(fp);
 
-    EXPECT_FALSE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
 }
 
 /**
@@ -472,7 +472,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_OperatorEqual_DifferentField
     policy2.tableName = "tbl_same";
     policy2.fieldsPolicy.push_back(fp2);
 
-    EXPECT_FALSE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
 }
 
 /**
@@ -493,7 +493,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_EmptyFieldsPolicy_MarshalUnm
 
     CompatiblePolicy policy2;
     ASSERT_TRUE(policy2.Unmarshal(node));
-    EXPECT_TRUE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
     EXPECT_EQ(policy2.tableName, "empty_table");
     EXPECT_EQ(policy2.fieldsPolicy.size(), 0u);
 }
@@ -534,7 +534,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_NestedFullHierarchy_MarshalU
 
     CompatiblePolicy policy2;
     ASSERT_TRUE(policy2.Unmarshal(node));
-    EXPECT_TRUE(policy1 == policy2);
+    EXPECT_EQ(policy1, policy2);
     EXPECT_EQ(policy2.tableName, "full_table");
     EXPECT_EQ(policy2.fieldsPolicy.size(), 2u);
     EXPECT_EQ(policy2.fieldsPolicy[0].columnName, "col_alpha");
