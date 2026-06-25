@@ -215,6 +215,7 @@ void GetFuzzDataSubAndUnsubProxyData(FuzzedDataProvider &provider, MessageParcel
 
 void GetFuzzDataDeleteAllProxyData(FuzzedDataProvider &provider, MessageParcel &request)
 {
+    (void)provider;
     DataProxyConfig config;
     config.type_ = DataProxyType::SHARED_CONFIG;
     ITypesUtil::Marshal(request, config);
