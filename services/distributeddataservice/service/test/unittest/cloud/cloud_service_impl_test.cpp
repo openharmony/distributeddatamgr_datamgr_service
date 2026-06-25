@@ -2560,10 +2560,8 @@ HWTEST_F(CloudServiceImplTest, DoCloudSync_NeedCheckAutoSync_ServiceInit, TestSi
     ZLOGI("CloudServiceImplTest DoCloudSync_NeedCheckAutoSync_ServiceInit start");
     testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
-    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
     InitCloudInfoAndSchema();
-    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
 
     CloudInfo::AppInfo appInfo;
     appInfo.bundleName = TEST_CLOUD_BUNDLE;
@@ -2580,7 +2578,6 @@ HWTEST_F(CloudServiceImplTest, DoCloudSync_NeedCheckAutoSync_ServiceInit, TestSi
     // SERVICE_INIT scene triggers NeedCheckAutoSync -> TriggerAppDatabaseSync
     auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::SERVICE_INIT);
     EXPECT_EQ(result, true);
-
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
 }
 
@@ -2595,10 +2592,8 @@ HWTEST_F(CloudServiceImplTest, DoCloudSync_NeedCheckAutoSync_SwitchOn, TestSize.
     ZLOGI("CloudServiceImplTest DoCloudSync_NeedCheckAutoSync_SwitchOn start");
     testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
-    EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
     InitCloudInfoAndSchema();
-    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
 
     CloudInfo::AppInfo appInfo;
     appInfo.bundleName = TEST_CLOUD_BUNDLE;
