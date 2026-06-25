@@ -343,10 +343,8 @@ void DataProviderConfig::ResolveAccessorAccountId()
         ZLOGE("AccountDelegate is null, account isolation skipped");
         return;
     }
-    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
-    auto callerTokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(callerTokenId);
-    if (callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE ||
-        callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL) {
+    auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
         std::string accountIdStr;
         URIUtils::GetAccountIdFromProxyURI(providerInfo_.uri, accountIdStr);
         if (!accountIdStr.empty()) {
@@ -357,27 +355,27 @@ void DataProviderConfig::ResolveAccessorAccountId()
         }
         return;
     }
-    if (callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_HAP) {
-        Security::AccessToken::HapTokenInfo hapInfo;
-        auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(callerTokenId, hapInfo);
-        if (ret != Security::AccessToken::RET_SUCCESS) {
-            return;
+    // Non-system app (third-party HAP): resolve by clone app or foreground account.
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    Security::AccessToken::HapTokenInfo hapInfo;
+    auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(callerTokenId, hapInfo);
+    if (ret != Security::AccessToken::RET_SUCCESS) {
+        return;
+    }
+    std::vector<int32_t> cloneAppIndexes;
+    auto errCode = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
+        hapInfo.bundleName, cloneAppIndexes, providerInfo_.visitedUserId);
+    if (errCode == 0 && !cloneAppIndexes.empty()) {
+        int32_t subProfileId = -1;
+        delegate->GetSubProfileIdByToken(callerTokenId, subProfileId);
+        if (subProfileId > 0) {
+            providerInfo_.accountId = subProfileId;
         }
-        std::vector<int32_t> cloneAppIndexes;
-        auto errCode = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
-            hapInfo.bundleName, cloneAppIndexes, providerInfo_.visitedUserId);
-        if (errCode == 0 && !cloneAppIndexes.empty()) {
-            int32_t subProfileId = -1;
-            delegate->GetSubProfileIdByToken(callerTokenId, subProfileId);
-            if (subProfileId > 0) {
-                providerInfo_.accountId = subProfileId;
-            }
-        } else {
-            int32_t subProfileId = -1;
-            delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId, subProfileId);
-            if (subProfileId > 0) {
-                providerInfo_.accountId = subProfileId;
-            }
+    } else {
+        int32_t subProfileId = -1;
+        delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId, subProfileId);
+        if (subProfileId > 0) {
+            providerInfo_.accountId = subProfileId;
         }
     }
 }
