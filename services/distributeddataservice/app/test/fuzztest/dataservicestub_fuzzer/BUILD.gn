@@ -57,6 +57,8 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "-Werror=vla",
   ]
 
+  defines = [ "CLONE_SO_PATH=\"${clone_so_path}\"" ]
+
   sources = [
     "${data_service_path}/app/src/db_info_handle_impl.cpp",
     "${data_service_path}/app/src/feature_stub_impl.cpp",
