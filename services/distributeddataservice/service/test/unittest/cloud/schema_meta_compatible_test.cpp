@@ -107,7 +107,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatibleConstraint_OperatorEqual_DifferentN
     constraint2.notNull = false;
     constraint2.hasDefault = false;
 
-    EXPECT_NE(constraint1, constraint2);
+    EXPECT_FALSE(constraint1 == constraint2);
 }
 
 /**
@@ -127,7 +127,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatibleConstraint_OperatorEqual_DifferentH
     constraint2.notNull = false;
     constraint2.hasDefault = false;
 
-    EXPECT_NE(constraint1, constraint2);
+    EXPECT_FALSE(constraint1 == constraint2);
 }
 
 /**
@@ -237,7 +237,7 @@ HWTEST_F(SchemaMetaCompatibleTest, FieldsPolicy_OperatorEqual_DifferentColumnNam
     policy2.columnName = "col_B";
     policy2.compatibleConstraints.push_back(cc);
 
-    EXPECT_NE(policy1, policy2);
+    EXPECT_FALSE(policy1 == policy2);
 }
 
 /**
@@ -265,7 +265,7 @@ HWTEST_F(SchemaMetaCompatibleTest, FieldsPolicy_OperatorEqual_DifferentConstrain
     policy2.columnName = "col_A";
     policy2.compatibleConstraints.push_back(cc2);
 
-    EXPECT_NE(policy1, policy2);
+    EXPECT_FALSE(policy1 == policy2);
 }
 
 /**
@@ -436,7 +436,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_OperatorEqual_DifferentTable
     policy2.tableName = "tbl_B";
     policy2.fieldsPolicy.push_back(fp);
 
-    EXPECT_NE(policy1, policy2);
+    EXPECT_FALSE(policy1 == policy2);
 }
 
 /**
@@ -472,7 +472,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_OperatorEqual_DifferentField
     policy2.tableName = "tbl_same";
     policy2.fieldsPolicy.push_back(fp2);
 
-    EXPECT_NE(policy1, policy2);
+    EXPECT_FALSE(policy1 == policy2);
 }
 
 /**
