@@ -536,7 +536,7 @@ HWTEST_F(SchemaMetaCompatibleTest, CompatiblePolicy_NestedFullHierarchy_MarshalU
     ASSERT_TRUE(policy2.Unmarshal(node));
     EXPECT_EQ(policy1, policy2);
     EXPECT_EQ(policy2.tableName, "full_table");
-    EXPECT_EQ(policy2.fieldsPolicy.size(), 2u);
+    ASSERT_EQ(policy2.fieldsPolicy.size(), 2u);
     EXPECT_EQ(policy2.fieldsPolicy[0].columnName, "col_alpha");
     EXPECT_EQ(policy2.fieldsPolicy[0].compatibleConstraints.size(), 1u);
     EXPECT_EQ(policy2.fieldsPolicy[1].columnName, "col_beta");
