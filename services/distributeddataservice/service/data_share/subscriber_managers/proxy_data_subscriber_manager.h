@@ -56,6 +56,8 @@ struct ObserverNode {
 
     bool CheckAllowList(const std::vector<std::string> &allowList,
         const std::string &callerAppIdentifier);
+    static DataProxyChangeInfo BuildChangeInfo(const DataShareObserver::ChangeType &type,
+        const DataShareProxyData &data);
     ProxyDataSubscriberManager() = default;
     ConcurrentMap<ProxyDataKey, std::vector<ObserverNode>> ProxyDataCache_;
 };
