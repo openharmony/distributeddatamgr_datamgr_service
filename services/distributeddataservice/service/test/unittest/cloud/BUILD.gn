@@ -228,6 +228,26 @@ ohos_unittest("CloudTest") {
   ]
 }
 
+ohos_unittest("SchemaMetaCompatibleTest") {
+  module_out_path = module_output_path
+  sources = [ "schema_meta_compatible_test.cpp" ]
+
+  configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "json:nlohmann_json_static",
+    "kv_store:distributeddata_inner",
+    "kv_store:distributeddb",
+  ]
+
+  deps = [
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
+}
+
 ###############################################################################
 # Cloud Test Collection Group
 ###############################################################################
@@ -239,5 +259,6 @@ group("unittests") {
     ":CloudDataTest",
     ":CloudServiceImplTest",
     ":CloudTest",
+    ":SchemaMetaCompatibleTest",
   ]
 }
