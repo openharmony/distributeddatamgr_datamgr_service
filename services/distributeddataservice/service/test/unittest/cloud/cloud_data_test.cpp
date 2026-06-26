@@ -1267,6 +1267,143 @@ HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level0)
 }
 
 /**
+* @tc.name: CloudSync008
+* @tc.desc: Test CloudSync with empty storeId, valid bundleName in cloudInfo, should sync all databases
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync008, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, "", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync009
+* @tc.desc: Test CloudSync with empty storeId, bundleName not in cloudInfo.apps, should return INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync009, TestSize.Level0)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("non_existent_bundle", "", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: CloudSync010
+* @tc.desc: Test CloudSync with empty storeId, schemaMeta has empty databases, should return INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync010, TestSize.Level0)
+{
+    SchemaMeta emptySchemaMeta;
+    emptySchemaMeta.bundleName = TEST_CLOUD_BUNDLE;
+    emptySchemaMeta.metaVersion = SchemaMeta::CURRENT_VERSION;
+    MetaDataManager::GetInstance().SaveMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), emptySchemaMeta, true);
+
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, "", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: CloudSync011
+* @tc.desc: Test CloudSync with empty storeId, cloudInfo meta deleted, GetCloudInfo falls back to server
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync011, TestSize.Level1)
+{
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, "", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync012
+* @tc.desc: Test CloudSync with empty storeId, schemaMeta deleted, GetSchemaMeta falls back to server
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync012, TestSize.Level1)
+{
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetSchemaKey(TEST_CLOUD_BUNDLE), true);
+
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, "", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync013
+* @tc.desc: Test CloudSync with empty storeId and CLOUD_CLOUD_FIRST syncMode
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync013, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_CLOUD_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, "", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync014
+* @tc.desc: Test CloudSync with empty storeId and CLOUD_NATIVE_FIRST syncMode
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync014, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_NATIVE_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, "", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+* @tc.name: CloudSync015
+* @tc.desc: Test CloudSync with empty storeId, cloudInfo meta deleted and bundleName not in server cloudInfo
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync015, TestSize.Level0)
+{
+    MetaDataManager::GetInstance().DelMeta(cloudInfo_.GetKey(), true);
+
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync("non_existent_bundle", "", { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: CloudSync016
+* @tc.desc: Test CloudSync with non-empty storeId still works (storeId not empty branch of ParseStoreIdsIfNeed)
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataTest, CloudSync016, TestSize.Level1)
+{
+    int32_t syncMode = DistributedData::GeneralStore::CLOUD_TIME_FIRST;
+    uint32_t seqNum = 10;
+    auto ret = cloudServiceImpl_->CloudSync(TEST_CLOUD_BUNDLE, TEST_CLOUD_STORE, { syncMode, seqNum }, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
 * @tc.name: InitNotifier001
 * @tc.desc:
 * @tc.type: FUNC

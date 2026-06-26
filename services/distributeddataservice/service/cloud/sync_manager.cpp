@@ -1138,6 +1138,7 @@ void SyncManager::DoExceptionalCallback(const GenAsync &async, GenDetails &detai
 {
     if (async) {
         details[SyncInfo::DEFAULT_ID].code = param.errCode;
+        details[SyncInfo::DEFAULT_ID].message = param.message;
         async(details);
     }
     QueryKey queryKey{ storeInfo.user, GetAccountId(storeInfo.user), storeInfo.bundleName, storeInfo.storeName };
@@ -1181,7 +1182,7 @@ std::function<void(const DistributedData::GenDetails &result)> SyncManager::Retr
                     dbCode == GenStore::DB_ERR_OFFSET ? 0 : dbCode, "RetryCallback" });
             }
         }
-        retryer(GetInterval(code), code, dbCode, prepareTraceId, details.begin()->second.cloudErrorInfo.cloudAction);
+        retryer(GetInterval(code), code, dbCode, prepareTraceId, details.begin()->second.cloudAction);
     };
 }
 
