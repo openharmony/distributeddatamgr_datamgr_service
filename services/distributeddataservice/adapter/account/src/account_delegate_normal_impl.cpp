@@ -376,6 +376,10 @@ int32_t AccountDelegateNormalImpl::GetAppIndexBySubProfileId(
         return ret;
     }
     appIndex = subspaceResult.index;
+    if (appIndex < 0) {
+        ZLOGW("GetOsAccountSubProfile succeeded but index not resolved, userId:%{public}d, subProfileId:%{public}d",
+            userId, subProfileId);
+    }
     return ret;
 }
 } // namespace DistributedData

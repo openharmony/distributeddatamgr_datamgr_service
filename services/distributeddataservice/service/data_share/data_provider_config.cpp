@@ -343,8 +343,12 @@ void DataProviderConfig::ResolveAccessorAccountId()
         ZLOGE("AccountDelegate is null, account isolation skipped");
         return;
     }
+    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
-    if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
+    auto callerTokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(callerTokenId);
+    if (callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE ||
+        callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL ||
+        Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
         std::string accountIdStr;
         URIUtils::GetAccountIdFromProxyURI(providerInfo_.uri, accountIdStr);
         if (!accountIdStr.empty()) {
@@ -356,7 +360,6 @@ void DataProviderConfig::ResolveAccessorAccountId()
         return;
     }
     // Non-system app (third-party HAP): resolve by clone app or foreground account.
-    auto callerTokenId = IPCSkeleton::GetCallingTokenID();
     Security::AccessToken::HapTokenInfo hapInfo;
     auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(callerTokenId, hapInfo);
     if (ret != Security::AccessToken::RET_SUCCESS) {

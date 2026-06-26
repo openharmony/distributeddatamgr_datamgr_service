@@ -1064,7 +1064,11 @@ int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
         return appIndex;
     }
     std::vector<int32_t> cloneAppIndexes;
-    BundleMgrProxy::GetInstance()->GetCloneAppIndexes(calledBundleName, cloneAppIndexes, visitedUserId);
+    auto bmsErr = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(calledBundleName, cloneAppIndexes, visitedUserId);
+    if (bmsErr != 0) {
+        ZLOGW("GetCloneAppIndexes failed, err:%{public}d, bundle:%{public}s, treat as no clone app", bmsErr,
+            calledBundleName.c_str());
+    }
     if (cloneAppIndexes.empty()) {
         return appIndex;
     }
@@ -1316,8 +1320,12 @@ void DataShareServiceImpl::ResolveProviderAppIndex(ProviderInfo &providerInfo)
         return;
     }
     std::vector<int32_t> cloneAppIndexes;
-    BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
+    auto bmsErr = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
         providerInfo.bundleName, cloneAppIndexes, providerInfo.visitedUserId);
+    if (bmsErr != 0) {
+        ZLOGW("GetCloneAppIndexes failed, err:%{public}d, bundle:%{public}s, treat as no clone app", bmsErr,
+            providerInfo.bundleName.c_str());
+    }
     if (!cloneAppIndexes.empty()) {
         int32_t providerAppIndex = 0;
         auto ret =
