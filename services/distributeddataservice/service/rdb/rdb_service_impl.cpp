@@ -649,11 +649,6 @@ int32_t RdbServiceImpl::StopCloudSync(const RdbSyncerParam &param)
     return store->StopCloudSync();
 }
 
-int32_t RdbServiceImpl::EnableSearchBinlog(const RdbSyncerParam &param, bool enabled, bool isFull)
-{
-    return RDB_OK;
-}
-
 bool RdbServiceImpl::IsSyncLimitApp(const StoreMetaData &meta)
 {
     if (SyncManager::GetInstance().IsAutoSyncApp(meta.bundleName, meta.appId)) {

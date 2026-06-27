@@ -82,8 +82,6 @@ public:
 
     int32_t StopCloudSync(const RdbSyncerParam &param) override;
 
-    int32_t EnableSearchBinlog(const RdbSyncerParam &param, bool enabled, bool isFull) override;
-
     int32_t Subscribe(const RdbSyncerParam &param,
                       const SubscribeOption &option,
                       std::shared_ptr<RdbStoreObserver> observer) override;
