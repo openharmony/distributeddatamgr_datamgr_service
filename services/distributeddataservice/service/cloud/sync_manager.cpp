@@ -810,7 +810,7 @@ void SyncManager::BindInfos(const AutoCache::Store &store, const UserBindInfo &u
             std::min(config.maxNumber, userConfig.maxNumber);
         config.maxSize = config.maxSize == 0 ? userConfig.maxSize :
             std::min(config.maxSize, userConfig.maxSize);
-        config.isSupportEncrypt = config.isSupportEncrypt && schemaMeta.e2eeEnable;
+        config.isSupportEncrypt = config.isSupportEncrypt || schemaMeta.e2eeEnable;
     }
     store->Bind(bindInfos, config);
 }
