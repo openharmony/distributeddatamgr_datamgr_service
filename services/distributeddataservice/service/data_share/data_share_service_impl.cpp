@@ -1054,12 +1054,7 @@ int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
     if (!IsCarDevice()) {
         return appIndex;
     }
-    std::string accountIdStr;
-    URIUtils::GetAccountIdFromProxyURI(uri, accountIdStr);
-    if (accountIdStr.empty()) {
-        return appIndex;
-    }
-    int32_t accountId = atoi(accountIdStr.c_str());
+    int32_t accountId = URIUtils::GetAccountIdFromProxyURI(uri);
     if (accountId <= 0) {
         return appIndex;
     }
@@ -1072,9 +1067,13 @@ int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
     if (cloneAppIndexes.empty()) {
         return appIndex;
     }
+    auto *delegate = AccountDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("AccountDelegate is null, silent proxy account isolation skipped");
+        return appIndex;
+    }
     int32_t resolvedAppIndex = 0;
-    auto ret = AccountDelegate::GetInstance()->GetAppIndexBySubProfileId(
-        visitedUserId, accountId, resolvedAppIndex);
+    auto ret = delegate->GetAppIndexBySubProfileId(visitedUserId, accountId, resolvedAppIndex);
     if (ret == 0 && resolvedAppIndex >= 0) {
         ZLOGI("silent proxy account isolation: accountId %{public}d -> appIndex %{public}d",
             accountId, resolvedAppIndex);

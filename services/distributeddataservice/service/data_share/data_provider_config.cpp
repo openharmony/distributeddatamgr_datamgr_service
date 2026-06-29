@@ -349,11 +349,7 @@ void DataProviderConfig::ResolveAccessorAccountId()
     if (callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE ||
         callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL ||
         Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
-        std::string accountIdStr;
-        URIUtils::GetAccountIdFromProxyURI(providerInfo_.uri, accountIdStr);
-        if (!accountIdStr.empty()) {
-            providerInfo_.accountId = atoi(accountIdStr.c_str());
-        }
+        providerInfo_.accountId = URIUtils::GetAccountIdFromProxyURI(providerInfo_.uri);
         if (providerInfo_.accountId <= 0) {
             delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId, providerInfo_.accountId);
         }

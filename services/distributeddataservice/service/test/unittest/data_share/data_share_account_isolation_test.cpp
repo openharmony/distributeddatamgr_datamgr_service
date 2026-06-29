@@ -61,45 +61,37 @@ HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_WithAccountIdPa
     TestSize.Level0)
 {
     ZLOGI("GetAccountIdFromProxyURI_WithAccountIdParam start");
-    std::string accountId;
     std::string uri = "datashareproxy://com.test/module/store/table?accountId=100";
-    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(accountId, "100");
+    auto accountId = URIUtils::GetAccountIdFromProxyURI(uri);
+    EXPECT_EQ(accountId, 100);
 }
 
 /**
- * @tc.name: GetAccountIdFromProxyURI_NoAccountIdParam_ExpectEmptyString
- * @tc.desc: Verify GetAccountIdFromProxyURI returns empty when no accountId in URI
+ * @tc.name: GetAccountIdFromProxyURI_NoAccountIdParam_ExpectInvalid
+ * @tc.desc: Verify GetAccountIdFromProxyURI returns invalid when no accountId in URI
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_NoAccountIdParam_ExpectEmptyString,
-    TestSize.Level0)
+HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_NoAccountIdParam_ExpectInvalid, TestSize.Level0)
 {
     ZLOGI("GetAccountIdFromProxyURI_NoAccountIdParam start");
-    std::string accountId = "initial";
     std::string uri = "datashareproxy://com.test/module/store/table?appIndex=1";
-    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(accountId, "");
+    auto accountId = URIUtils::GetAccountIdFromProxyURI(uri);
+    EXPECT_LT(accountId, 1);
 }
 
 /**
- * @tc.name: GetAccountIdFromProxyURI_NoQueryParams_ExpectEmptyString
- * @tc.desc: Verify GetAccountIdFromProxyURI returns empty when URI has no query params
+ * @tc.name: GetAccountIdFromProxyURI_NoQueryParams_ExpectInvalid
+ * @tc.desc: Verify GetAccountIdFromProxyURI returns invalid when URI has no query params
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_NoQueryParams_ExpectEmptyString,
-    TestSize.Level0)
+HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_NoQueryParams_ExpectInvalid, TestSize.Level0)
 {
     ZLOGI("GetAccountIdFromProxyURI_NoQueryParams start");
-    std::string accountId = "initial";
     std::string uri = "datashareproxy://com.test/module/store/table";
-    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(accountId, "");
+    auto accountId = URIUtils::GetAccountIdFromProxyURI(uri);
+    EXPECT_LT(accountId, 1);
 }
 
 /**
@@ -112,28 +104,23 @@ HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_MultipleParams_
     TestSize.Level0)
 {
     ZLOGI("GetAccountIdFromProxyURI_MultipleParams start");
-    std::string accountId;
     std::string uri = "datashareproxy://com.test/module/store/table?user=100&accountId=200&appIndex=1";
-    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(accountId, "200");
+    auto accountId = URIUtils::GetAccountIdFromProxyURI(uri);
+    EXPECT_EQ(accountId, 200);
 }
 
 /**
- * @tc.name: GetAccountIdFromProxyURI_AccountIdZero_ExpectZeroString
- * @tc.desc: Verify GetAccountIdFromProxyURI returns "0" when accountId is 0
+ * @tc.name: GetAccountIdFromProxyURI_AccountIdZero_ExpectInvalid
+ * @tc.desc: Verify GetAccountIdFromProxyURI returns invalid when accountId is 0
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_AccountIdZero_ExpectZeroString,
-    TestSize.Level0)
+HWTEST_F(DataShareAccountIsolationTest, GetAccountIdFromProxyURI_AccountIdZero_ExpectInvalid, TestSize.Level0)
 {
     ZLOGI("GetAccountIdFromProxyURI_AccountIdZero start");
-    std::string accountId;
     std::string uri = "datashareproxy://com.test/module/store/table?accountId=0";
-    bool result = URIUtils::GetAccountIdFromProxyURI(uri, accountId);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(accountId, "0");
+    auto accountId = URIUtils::GetAccountIdFromProxyURI(uri);
+    EXPECT_LT(accountId, 1);
 }
 
 // ===== ProfileInfo.accountIsolation serialization tests =====

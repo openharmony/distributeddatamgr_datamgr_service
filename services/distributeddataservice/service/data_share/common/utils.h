@@ -58,7 +58,7 @@ public:
     static bool GetInfoFromURI(const std::string &uri, UriInfo &uriInfo);
     static bool GetBundleNameFromProxyURI(const std::string &uri, std::string &bundleName);
     static bool GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex);
-    static bool GetAccountIdFromProxyURI(const std::string &uri, std::string &accountId);
+    static int32_t GetAccountIdFromProxyURI(const std::string &uri);
     static std::pair<bool, int32_t> GetUserFromProxyURI(const std::string &uri);
     static bool IsDataProxyURI(const std::string &uri);
     static void FormatUri(std::string &uri);
