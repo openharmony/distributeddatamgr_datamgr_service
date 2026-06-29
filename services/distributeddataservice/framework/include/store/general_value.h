@@ -108,6 +108,7 @@ struct SyncParam {
     bool isRetry = true;
     bool isDownloadOnly = false;
     bool isEnablePredicate = false;
+    bool isFullSync = false;
     int32_t assetConflictPolicy = 0;
     std::string assetTempPath = {};
     bool assetDownloadOnDemand = false;

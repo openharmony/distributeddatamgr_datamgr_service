@@ -757,6 +757,7 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     option.asyncDownloadAssets = syncParam.asyncDownloadAsset;
     option.syncFlowType = syncParam.isDownloadOnly ? DistributedDB::SyncFlowType::DOWNLOAD_ONLY
                                                   : DistributedDB::SyncFlowType::NORMAL;
+    option.isFullSync = syncParam.isFullSync;
     auto dbStatus = DistributedDB::INVALID_ARGS;
     dbStatus = delegate_->Sync(option, tasks_ != nullptr ? GetCB(syncId) : callback, syncId);
     if (dbStatus == DBStatus::OK || tasks_ == nullptr) {

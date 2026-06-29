@@ -899,6 +899,7 @@ void RdbServiceImpl::DoCloudSync(const StoreMetaData &metaData, const RdbService
     syncParam.asyncDownloadAsset = metaData.asyncDownloadAsset;
     syncParam.isDownloadOnly = option.isDownloadOnly;
     syncParam.isEnablePredicate = option.isEnablePredicate;
+    syncParam.isFullSync = option.isFullSync;
     syncParam.assetDownloadOnDemand = metaData.assetDownloadOnDemand;
     auto info = ChangeEvent::EventInfo(syncParam, option.isAutoSync, query,
         option.isAutoSync ? nullptr
