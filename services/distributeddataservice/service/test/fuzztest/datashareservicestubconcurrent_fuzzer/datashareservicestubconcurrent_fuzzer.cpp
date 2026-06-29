@@ -215,9 +215,10 @@ void GetFuzzDataSubAndUnsubProxyData(FuzzedDataProvider &provider, MessageParcel
 
 void GetFuzzDataDeleteAllProxyData(FuzzedDataProvider &provider, MessageParcel &request)
 {
-    (void)provider;
     DataProxyConfig config;
     config.type_ = DataProxyType::SHARED_CONFIG;
+    config.maxValueLength_ = provider.ConsumeBool() ? DataProxyMaxValueLength::MAX_LENGTH_4K
+                                                    : DataProxyMaxValueLength::MAX_LENGTH_100K;
     ITypesUtil::Marshal(request, config);
 }
 
