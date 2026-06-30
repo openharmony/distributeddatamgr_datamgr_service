@@ -45,8 +45,15 @@ public:
     {
         MockToken::ResetTestEnvironment();
     }
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp() override
+    {
+        AccountDelegate::instance_ = nullptr;
+        AccountDelegate::RegisterAccountInstance(&mock_);
+    }
+    void TearDown() override
+    {
+    }
+    AccountDelegateMock mock_;
 };
 
 // ===== GetAccountIdFromProxyURI tests (pure URI parsing, no mock needed) =====
@@ -323,9 +330,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_NoCloneAccountIs
     BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
         [](BDeviceManagerAdapter *) {});
 
-    AccountDelegateMock mock;
-    AccountDelegate::RegisterAccountInstance(&mock);
-
     DataProviderConfig::ProviderInfo providerInfo;
     providerInfo.accountIsolation = true;
     providerInfo.accountId = 200;
@@ -337,7 +341,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_NoCloneAccountIs
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 0);
     EXPECT_TRUE(providerInfo.queryByPath);
-    AccountDelegate::instance_ = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
@@ -415,7 +418,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNull_Exp
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 2);
     EXPECT_FALSE(providerInfo.queryByPath);
-    AccountDelegate::instance_ = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
@@ -440,14 +442,10 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveAccessorAppIndexForSilentProxy_No
     BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
         [](BDeviceManagerAdapter *) {});
 
-    AccountDelegateMock mock;
-    AccountDelegate::RegisterAccountInstance(&mock);
-
     DataShareServiceImpl serviceImpl;
     std::string uri = "datashareproxy://com.test/module/store/table?accountId=300";
     auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, "com.test", 100, 0);
     EXPECT_EQ(result, 0);
-    AccountDelegate::instance_ = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
