@@ -25,7 +25,7 @@ namespace UDMF {
 class LifeCycleManager {
 public:
     static LifeCycleManager &GetInstance();
-    Status OnGot(UnifiedKey &key, const uint32_t tokenId, bool isNeedPush = true);
+    Status OnGot(UnifiedKey &key, const uint32_t tokenId, bool isNeedPush = false);
     Status OnStart();
     Status StartLifeCycleTimer();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
