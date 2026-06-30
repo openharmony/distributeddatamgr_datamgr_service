@@ -337,7 +337,7 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_NoCloneAccountIs
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 0);
     EXPECT_TRUE(providerInfo.queryByPath);
-    AccountDelegate::RegisterAccountInstance(nullptr);
+    AccountDelegate::instance_ = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
@@ -403,7 +403,7 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNull_Exp
     BDeviceManagerAdapter::deviceManagerAdapter = std::shared_ptr<BDeviceManagerAdapter>(&dmMock,
         [](BDeviceManagerAdapter *) {});
 
-    AccountDelegate::RegisterAccountInstance(nullptr);
+    AccountDelegate::instance_ = nullptr;
 
     DataProviderConfig::ProviderInfo providerInfo;
     providerInfo.accountIsolation = true;
@@ -415,7 +415,7 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNull_Exp
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 2);
     EXPECT_FALSE(providerInfo.queryByPath);
-    AccountDelegate::RegisterAccountInstance(nullptr);
+    AccountDelegate::instance_ = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
@@ -447,7 +447,7 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveAccessorAppIndexForSilentProxy_No
     std::string uri = "datashareproxy://com.test/module/store/table?accountId=300";
     auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, "com.test", 100, 0);
     EXPECT_EQ(result, 0);
-    AccountDelegate::RegisterAccountInstance(nullptr);
+    AccountDelegate::instance_ = nullptr;
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
