@@ -140,6 +140,11 @@ bool AccountDelegateNormalImpl::IsLoginAccount()
     return GetCurrentAccountId() != AccountSA::DEFAULT_OHOS_ACCOUNT_UID;
 }
 
+bool AccountDelegateNormalImpl::IsLoginAccount(int32_t userId)
+{
+    return GetUnencryptedAccountId(userId) != AccountSA::DEFAULT_OHOS_ACCOUNT_UID;
+}
+
 bool AccountDelegateNormalImpl::IsVerified(int userId)
 {
     auto [success, res] = userStatus_.Find(userId);

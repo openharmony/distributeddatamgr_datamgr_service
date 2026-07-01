@@ -155,6 +155,7 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
         Constant::NotEqual(isSearchable, metaData.isSearchable) ||
         Constant::NotEqual(isNeedCompress, metaData.isNeedCompress) ||
         Constant::NotEqual(enableCloud, metaData.enableCloud) ||
+        Constant::NotEqual(filterMode, metaData.filterMode) ||
         Constant::NotEqual(customSwitch, metaData.customSwitch) ||
         Constant::NotEqual(cloudAutoSync, metaData.cloudAutoSync) ||
         Constant::NotEqual(isManualClean, metaData.isManualClean) ||

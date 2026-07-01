@@ -33,6 +33,7 @@ public:
     MOCK_METHOD(bool, QueryUsers, (std::vector<int> &));
     MOCK_METHOD(bool, QueryForegroundUsers, (std::vector<int> &));
     MOCK_METHOD(bool, IsLoginAccount, ());
+    MOCK_METHOD(bool, IsLoginAccount, (int32_t));
     MOCK_METHOD(bool, QueryForegroundUserId, (int &));
     MOCK_METHOD(bool, IsVerified, (int));
     MOCK_METHOD(bool, RegisterHashFunc, (HashFunc));

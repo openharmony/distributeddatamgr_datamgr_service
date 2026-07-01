@@ -34,6 +34,7 @@ public:
     bool QueryForegroundUsers(std::vector<int> &users);
     bool QueryForegroundUserId(int &foregroundUserId);
     bool IsLoginAccount();
+    bool IsLoginAccount(int32_t userId);
     bool IsVerified(int userId);
     bool RegisterHashFunc(HashFunc hash);
     bool IsDeactivating(int userId);
