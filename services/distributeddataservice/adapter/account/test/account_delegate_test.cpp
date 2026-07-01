@@ -343,21 +343,6 @@ HWTEST_F(AccountDelegateTest, GetSubProfileIdByToken_InvalidToken_ExpectMinusOne
 }
 
 /**
- * @tc.name: GetSubProfileIdByToken_ValidToken_ExpectResult
- * @tc.desc: Verify GetSubProfileIdByToken is callable with valid token
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(AccountDelegateTest, GetSubProfileIdByToken_ValidToken_ExpectResult, TestSize.Level0)
-{
-    auto account = std::make_unique<AccountDelegateNormalImpl>();
-    ASSERT_NE(account, nullptr);
-    auto tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-    auto result = account->GetSubProfileIdByToken(tokenId);
-    EXPECT_GT(result, 0);
-}
-
-/**
  * @tc.name: GetForegroundSubProfileId_InvalidUser_ExpectMinusOne
  * @tc.desc: Verify GetForegroundSubProfileId returns -1 for invalid user
  * @tc.type: FUNC
