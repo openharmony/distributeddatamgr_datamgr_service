@@ -44,6 +44,7 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
         LoadConfigCommonStrategy::GetInfoFromProxyURI(providerInfo_.uri, providerInfo_.visitedUserId,
             callerTokenId, providerInfo_.bundleName);
         URIUtils::FormatUri(providerInfo_.uri);
+        // if visitedUserId is 0, set current foreground userId as visitedUserId
         if (providerInfo_.visitedUserId == 0) {
             if (!(AccountDelegate::GetInstance()->QueryForegroundUserId(providerInfo_.visitedUserId))) {
                 ZLOGE("Get foreground userId failed");
@@ -52,6 +53,7 @@ DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTo
     } else {
         auto [success, data] = URIUtils::GetUserFromProxyURI(providerInfo_.uri);
         if (success) {
+            // if data is -1, it means visiting provider's user
             providerInfo_.visitedUserId = (data == -1 ? providerInfo_.currentUserId : data);
         } else {
             providerInfo_.visitedUserId = -1;
@@ -335,9 +337,6 @@ bool DataProviderConfig::IsInExtList(const std::string &bundleName)
 
 void DataProviderConfig::ResolveAccessorAccountId()
 {
-    if (!IsCarDevice()) {
-        return;
-    }
     auto *delegate = AccountDelegate::GetInstance();
     if (delegate == nullptr) {
         ZLOGE("AccountDelegate is null, account isolation skipped");
@@ -351,7 +350,7 @@ void DataProviderConfig::ResolveAccessorAccountId()
         Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
         providerInfo_.accountId = URIUtils::GetAccountIdFromProxyURI(providerInfo_.uri);
         if (providerInfo_.accountId <= 0) {
-            delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId, providerInfo_.accountId);
+            providerInfo_.accountId = delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId);
         }
         return;
     }
@@ -365,14 +364,12 @@ void DataProviderConfig::ResolveAccessorAccountId()
     auto errCode = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
         hapInfo.bundleName, cloneAppIndexes, providerInfo_.visitedUserId);
     if (errCode == 0 && !cloneAppIndexes.empty()) {
-        int32_t subProfileId = -1;
-        delegate->GetSubProfileIdByToken(callerTokenId, subProfileId);
+        int32_t subProfileId = delegate->GetSubProfileIdByToken(callerTokenId);
         if (subProfileId > 0) {
             providerInfo_.accountId = subProfileId;
         }
     } else {
-        int32_t subProfileId = -1;
-        delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId, subProfileId);
+        int32_t subProfileId = delegate->GetForegroundSubProfileId(providerInfo_.visitedUserId);
         if (subProfileId > 0) {
             providerInfo_.accountId = subProfileId;
         }

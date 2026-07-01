@@ -1051,9 +1051,6 @@ int32_t DataShareServiceImpl::EnableSilentProxy(const std::string &uri, bool ena
 int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
     const std::string &uri, const std::string &calledBundleName, int32_t visitedUserId, int32_t appIndex)
 {
-    if (!IsCarDevice()) {
-        return appIndex;
-    }
     int32_t accountId = URIUtils::GetAccountIdFromProxyURI(uri);
     if (accountId <= 0) {
         return appIndex;
@@ -1072,9 +1069,8 @@ int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
         ZLOGE("AccountDelegate is null, silent proxy account isolation skipped");
         return appIndex;
     }
-    int32_t resolvedAppIndex = 0;
-    auto ret = delegate->GetAppIndexBySubProfileId(visitedUserId, accountId, resolvedAppIndex);
-    if (ret == 0 && resolvedAppIndex >= 0) {
+    int32_t resolvedAppIndex = delegate->GetAppIndexBySubProfileId(visitedUserId, accountId);
+    if (resolvedAppIndex >= 0) {
         ZLOGI("silent proxy account isolation: accountId %{public}d -> appIndex %{public}d",
             accountId, resolvedAppIndex);
         return resolvedAppIndex;
@@ -1310,7 +1306,7 @@ bool DataShareServiceImpl::VerifyAcrossAccountsPermission(int32_t currentUserId,
 
 void DataShareServiceImpl::ResolveProviderAppIndex(ProviderInfo &providerInfo)
 {
-    if (!IsCarDevice() || providerInfo.accountId <= 0) {
+    if (providerInfo.accountId <= 0) {
         return;
     }
     auto *delegate = AccountDelegate::GetInstance();
@@ -1326,22 +1322,16 @@ void DataShareServiceImpl::ResolveProviderAppIndex(ProviderInfo &providerInfo)
             providerInfo.bundleName.c_str());
     }
     if (!cloneAppIndexes.empty()) {
-        int32_t providerAppIndex = 0;
-        auto ret =
-            delegate->GetAppIndexBySubProfileId(providerInfo.visitedUserId, providerInfo.accountId, providerAppIndex);
-        if (ret == 0 && providerAppIndex >= 0) {
+        int32_t providerAppIndex =
+            delegate->GetAppIndexBySubProfileId(providerInfo.visitedUserId, providerInfo.accountId);
+        if (providerAppIndex >= 0) {
             ZLOGI("account isolation: accountId %{public}d -> appIndex %{public}d, userId %{public}d",
                 providerInfo.accountId, providerAppIndex, providerInfo.visitedUserId);
             providerInfo.appIndex = providerAppIndex;
         } else {
-            ZLOGE("accountId to appIndex failed, accountId:%{public}d, userId:%{public}d, ret:%{public}d",
-                providerInfo.accountId, providerInfo.visitedUserId, ret);
+            ZLOGE("accountId to appIndex failed, accountId:%{public}d, userId:%{public}d", providerInfo.accountId,
+                providerInfo.visitedUserId);
         }
-        return;
-    }
-    if (providerInfo.accountIsolation) {
-        providerInfo.queryByPath = true;
-        ZLOGI("account isolation: no clone app, accountId %{public}d -> query by path", providerInfo.accountId);
     }
 }
 
@@ -1386,7 +1376,7 @@ std::pair<int32_t, int32_t> DataShareServiceImpl::ExecuteEx(const std::string &u
     }
     DataShareDbConfig::DbConfig config{ providerInfo.uri, extensionUri, providerInfo.bundleName,
         providerInfo.storeName, providerInfo.backup, providerInfo.singleton ? 0 : providerInfo.visitedUserId,
-        providerInfo.appIndex, providerInfo.accountId, providerInfo.queryByPath, providerInfo.hasExtension };
+        providerInfo.appIndex, providerInfo.accountId, providerInfo.accountIsolation, providerInfo.hasExtension };
     auto [code, metaData, dbDelegate] = dbConfig.GetDbConfig(config);
     if (code != E_OK) {
         ZLOGE("Get dbConfig fail,bundleName:%{public}s,tableName:%{public}s,tokenId:0x%{public}x, uri:%{public}s",

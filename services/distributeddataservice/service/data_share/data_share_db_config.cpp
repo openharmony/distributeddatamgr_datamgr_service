@@ -44,7 +44,7 @@ std::pair<bool, DistributedData::StoreMetaData> DataShareDbConfig::QueryMetaData
     storeMetaMapping.bundleName = dbConfig.bundleName;
     storeMetaMapping.storeId = dbConfig.storeName;
     storeMetaMapping.instanceId = dbConfig.appIndex;
-    if (dbConfig.queryByPath && dbConfig.accountId > 0) {
+    if (dbConfig.accountIsolation && dbConfig.accountId > 0) {
         // No clone app + account isolation: prefix-query StoreMetaData for all same-name DBs
         // (key contains dataDir, one entry per DB), then match dataDir (DB path) by accountId.
         std::vector<DistributedData::StoreMetaData> metas;
@@ -71,14 +71,9 @@ bool DataShareDbConfig::MatchAccountDataDir(const std::string &dataDir, int32_t 
     if (accountId <= 0 || dataDir.empty()) {
         return false;
     }
-    // accountId must appear as a full path segment (preceded by '/', followed by '/' or end of string),
-    // to avoid 100 matching 1000.
-    std::string token = "/" + std::to_string(accountId);
-    auto pos = dataDir.find(token);
-    if (pos == std::string::npos) {
-        return false;
-    }
-    return pos + token.size() == dataDir.size() || dataDir[pos + token.size()] == '/';
+    // dataDir ends with ".db", accountId is always a middle path segment followed by '/'.
+    std::string token = "/" + std::to_string(accountId) + "/";
+    return dataDir.find(token) != std::string::npos;
 }
 
 std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(const DbConfig &dbConfig)

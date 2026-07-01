@@ -215,7 +215,6 @@ HWTEST_F(DataShareAccountIsolationTest, ProviderInfoAccountId_DefaultMinusOne_Ex
     DataProviderConfig::ProviderInfo providerInfo;
     EXPECT_EQ(providerInfo.accountId, -1);
     EXPECT_EQ(providerInfo.accountIsolation, false);
-    EXPECT_EQ(providerInfo.queryByPath, false);
 }
 
 // ===== Context.accountId field test =====
@@ -247,11 +246,9 @@ HWTEST_F(DataShareAccountIsolationTest, AccountDelegateMock_GetSubProfileIdByTok
 {
     ZLOGI("AccountDelegateMock_GetSubProfileIdByToken start");
     AccountDelegateMock mock;
-    int32_t subProfileId = -1;
-    EXPECT_CALL(mock, GetSubProfileIdByToken(0u, subProfileId)).WillOnce(Return(-1));
-    auto ret = mock.GetSubProfileIdByToken(0u, subProfileId);
-    EXPECT_EQ(ret, -1);
-    EXPECT_EQ(subProfileId, -1);
+    EXPECT_CALL(mock, GetSubProfileIdByToken(0u)).WillOnce(Return(200));
+    auto ret = mock.GetSubProfileIdByToken(0u);
+    EXPECT_EQ(ret, 200);
 }
 
 /**
@@ -265,11 +262,9 @@ HWTEST_F(
 {
     ZLOGI("AccountDelegateMock_GetForegroundSubProfileId start");
     AccountDelegateMock mock;
-    int32_t subProfileId = -1;
-    EXPECT_CALL(mock, GetForegroundSubProfileId(100, subProfileId)).WillOnce(DoAll(SetArgReferee<1>(200), Return(0)));
-    auto ret = mock.GetForegroundSubProfileId(100, subProfileId);
-    EXPECT_EQ(ret, 0);
-    EXPECT_EQ(subProfileId, 200);
+    EXPECT_CALL(mock, GetForegroundSubProfileId(100)).WillOnce(Return(200));
+    auto ret = mock.GetForegroundSubProfileId(100);
+    EXPECT_EQ(ret, 200);
 }
 
 /**
@@ -283,11 +278,9 @@ HWTEST_F(DataShareAccountIsolationTest, AccountDelegateMock_GetSubProfileIdByApp
 {
     ZLOGI("AccountDelegateMock_GetSubProfileIdByAppIndex start");
     AccountDelegateMock mock;
-    int32_t subProfileId = -1;
-    EXPECT_CALL(mock, GetSubProfileIdByAppIndex(100, 0, subProfileId))
-        .WillOnce(Return(0));
-    auto ret = mock.GetSubProfileIdByAppIndex(100, 0, subProfileId);
-    EXPECT_EQ(ret, 0);
+    EXPECT_CALL(mock, GetSubProfileIdByAppIndex(100, 0)).WillOnce(Return(200));
+    auto ret = mock.GetSubProfileIdByAppIndex(100, 0);
+    EXPECT_EQ(ret, 200);
 }
 
 /**
@@ -301,12 +294,9 @@ HWTEST_F(DataShareAccountIsolationTest, AccountDelegateMock_GetAppIndexBySubProf
 {
     ZLOGI("AccountDelegateMock_GetAppIndexBySubProfileId start");
     AccountDelegateMock mock;
-    int32_t appIndex = -1;
-    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 200, appIndex))
-        .WillOnce(DoAll(SetArgReferee<2>(3), Return(0)));
-    auto ret = mock.GetAppIndexBySubProfileId(100, 200, appIndex);
-    EXPECT_EQ(ret, 0);
-    EXPECT_EQ(appIndex, 3);
+    EXPECT_CALL(mock, GetAppIndexBySubProfileId(100, 200)).WillOnce(Return(3));
+    auto ret = mock.GetAppIndexBySubProfileId(100, 200);
+    EXPECT_EQ(ret, 3);
 }
 
 // ===== ResolveProviderAppIndex mock tests =====
@@ -340,7 +330,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_NoCloneAccountIs
     DataShareServiceImpl serviceImpl;
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 0);
-    EXPECT_TRUE(providerInfo.queryByPath);
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
@@ -417,7 +406,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNull_Exp
     DataShareServiceImpl serviceImpl;
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 2);
-    EXPECT_FALSE(providerInfo.queryByPath);
     BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 

@@ -37,7 +37,7 @@ public:
         int32_t userId;
         int32_t appIndex;
         int32_t accountId = -1;
-        bool queryByPath = false;
+        bool accountIsolation = false;
         bool hasExtension;
     };
     std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(DbConfig &dbConfig);

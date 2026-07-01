@@ -35,7 +35,6 @@ bool CheckSystemCallingPermission(uint32_t tokenId, uint64_t fullTokenId);
 
 bool ProviderInAllowList(const std::string &appIdentifier);
 bool VerifyProvider(const DataProviderConfig::ProviderInfo &providerInfo, const pid_t calllingPid);
-bool IsCarDevice();
 
 inline int64_t GetSystemTime()
 {
