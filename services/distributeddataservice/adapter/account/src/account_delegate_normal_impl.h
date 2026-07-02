@@ -52,6 +52,10 @@ public:
     bool IsUserForeground(int32_t userId) override;
     static bool Init();
     bool IsOsAccountConstraintEnabled() override;
+    int32_t GetSubProfileIdByToken(uint32_t tokenId) override;
+    int32_t GetForegroundSubProfileId(int32_t osAccountId) override;
+    int32_t GetSubProfileIdByAppIndex(int32_t userId, int32_t appIndex) override;
+    int32_t GetAppIndexBySubProfileId(int32_t userId, int32_t subProfileId) override;
 
 private:
     ~AccountDelegateNormalImpl();

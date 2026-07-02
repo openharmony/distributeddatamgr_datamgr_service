@@ -97,6 +97,7 @@ bool ProfileInfo::Marshal(json &node) const
     SetValue(node[GET_NAME(allowLists)], allowLists);
     SetValue(node[GET_NAME(storeMetaDataFromUri)], storeMetaDataFromUri);
     SetValue(node[GET_NAME(launchForCleanData)], launchForCleanData);
+    SetValue(node[GET_NAME(accountIsolation)], accountIsolation);
     SetValue(node[GET_NAME(backup)], backup);
     SetValue(node[GET_NAME(extUri)], extUri);
     return true;
@@ -115,6 +116,7 @@ bool ProfileInfo::Unmarshal(const json &node)
     }
     GetValue(node, GET_NAME(storeMetaDataFromUri), storeMetaDataFromUri);
     GetValue(node, GET_NAME(launchForCleanData), launchForCleanData);
+    GetValue(node, GET_NAME(accountIsolation), accountIsolation);
     GetValue(node, GET_NAME(backup), backup);
     GetValue(node, GET_NAME(extUri), extUri);
     std::string path;

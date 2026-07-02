@@ -119,5 +119,31 @@ bool AccountDelegateDefaultImpl::IsOsAccountConstraintEnabled()
 {
     return false;
 }
+
+int32_t AccountDelegateDefaultImpl::GetSubProfileIdByToken(uint32_t tokenId)
+{
+    (void)tokenId;
+    return -1;
+}
+
+int32_t AccountDelegateDefaultImpl::GetForegroundSubProfileId(int32_t osAccountId)
+{
+    (void)osAccountId;
+    return -1;
+}
+
+int32_t AccountDelegateDefaultImpl::GetSubProfileIdByAppIndex(int32_t userId, int32_t appIndex)
+{
+    (void)userId;
+    (void)appIndex;
+    return -1;
+}
+
+int32_t AccountDelegateDefaultImpl::GetAppIndexBySubProfileId(int32_t userId, int32_t subProfileId)
+{
+    (void)userId;
+    (void)subProfileId;
+    return -1;
+}
 } // namespace DistributedData
 } // namespace OHOS

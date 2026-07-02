@@ -17,6 +17,7 @@
 
 #include "accesstoken_kit.h"
 #include "config_factory.h"
+#include "device_manager_adapter.h"
 #include "log_print.h"
 #include "tokenid_kit.h"
 #include "hiview_fault_adapter.h"

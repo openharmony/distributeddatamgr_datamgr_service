@@ -327,4 +327,76 @@ HWTEST_F(AccountDelegateTest, SubscribeAccountEvent, TestSize.Level0)
     account->SubscribeAccountEvent();
     EXPECT_NE(account->accountSubscriber_, nullptr);
 }
+
+/**
+ * @tc.name: GetSubProfileIdByToken_InvalidToken_ExpectMinusOne
+ * @tc.desc: Verify GetSubProfileIdByToken returns -1 for invalid token
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AccountDelegateTest, GetSubProfileIdByToken_InvalidToken_ExpectMinusOne, TestSize.Level0)
+{
+    auto account = std::make_unique<AccountDelegateNormalImpl>();
+    ASSERT_NE(account, nullptr);
+    auto result = account->GetSubProfileIdByToken(INVALID_TOKEN_ID);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: GetForegroundSubProfileId_InvalidUser_ExpectMinusOne
+ * @tc.desc: Verify GetForegroundSubProfileId returns -1 for invalid user
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AccountDelegateTest, GetForegroundSubProfileId_InvalidUser_ExpectMinusOne, TestSize.Level0)
+{
+    auto account = std::make_unique<AccountDelegateNormalImpl>();
+    ASSERT_NE(account, nullptr);
+    auto result = account->GetForegroundSubProfileId(INVALID_USER);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: GetForegroundSubProfileId_ValidUser_ExpectResult
+ * @tc.desc: Verify GetForegroundSubProfileId is callable with valid user
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AccountDelegateTest, GetForegroundSubProfileId_ValidUser_ExpectResult, TestSize.Level0)
+{
+    auto account = std::make_unique<AccountDelegateNormalImpl>();
+    ASSERT_NE(account, nullptr);
+    int32_t foregroundUser = 0;
+    AccountDelegate::GetInstance()->QueryForegroundUserId(foregroundUser);
+    auto result = account->GetForegroundSubProfileId(foregroundUser);
+    EXPECT_GT(result, 0);
+}
+
+/**
+ * @tc.name: GetSubProfileIdByAppIndex_InvalidUser_ExpectMinusOne
+ * @tc.desc: Verify GetSubProfileIdByAppIndex returns -1 for invalid user
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AccountDelegateTest, GetSubProfileIdByAppIndex_InvalidUser_ExpectMinusOne, TestSize.Level0)
+{
+    auto account = std::make_unique<AccountDelegateNormalImpl>();
+    ASSERT_NE(account, nullptr);
+    auto result = account->GetSubProfileIdByAppIndex(INVALID_USER, 0);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: GetAppIndexBySubProfileId_InvalidInput_ExpectMinusOne
+ * @tc.desc: Verify GetAppIndexBySubProfileId returns -1 for invalid input
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AccountDelegateTest, GetAppIndexBySubProfileId_InvalidInput_ExpectMinusOne, TestSize.Level0)
+{
+    auto account = std::make_unique<AccountDelegateNormalImpl>();
+    ASSERT_NE(account, nullptr);
+    auto result = account->GetAppIndexBySubProfileId(INVALID_USER, -1);
+    EXPECT_EQ(result, -1);
+}
 } // namespace

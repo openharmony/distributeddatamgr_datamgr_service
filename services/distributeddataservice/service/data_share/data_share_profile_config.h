@@ -65,6 +65,7 @@ struct ProfileInfo : public DistributedData::Serializable {
     std::vector<AllowList> allowLists;
     bool storeMetaDataFromUri = false;
     bool launchForCleanData = false;
+    bool accountIsolation = false;
     bool Marshal(json &node) const override;
     bool Unmarshal(const json &node) override;
 };

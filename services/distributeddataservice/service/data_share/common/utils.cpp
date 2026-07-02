@@ -80,6 +80,19 @@ bool URIUtils::GetAppIndexFromProxyURI(const std::string &uri, int32_t &appIndex
     return true;
 }
 
+int32_t URIUtils::GetAccountIdFromProxyURI(const std::string &uri)
+{
+    auto queryParams = URIUtils::GetQueryParams(uri);
+    if (queryParams[ACCOUNT_ID].empty()) {
+        return -1;
+    }
+    auto [success, data] = URIUtils::Strtoul(queryParams[ACCOUNT_ID]);
+    if (!success || data == 0 || data > static_cast<uint32_t>(INT32_MAX)) {
+        return -1;
+    }
+    return static_cast<int32_t>(data);
+}
+
 std::pair<bool, int32_t> URIUtils::GetUserFromProxyURI(const std::string &uri)
 {
     auto queryParams = URIUtils::GetQueryParams(uri);

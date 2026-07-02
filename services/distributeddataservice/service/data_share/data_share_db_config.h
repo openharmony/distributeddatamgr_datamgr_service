@@ -36,13 +36,15 @@ public:
         std::string backup;
         int32_t userId;
         int32_t appIndex;
+        int32_t accountId = -1;
+        bool accountIsolation = false;
         bool hasExtension;
     };
     std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(DbConfig &dbConfig);
     std::pair<int, DistributedData::StoreMetaData> GetMetaData(const DbConfig &dbConfig);
 private:
-    static std::pair<bool, DistributedData::StoreMetaData> QueryMetaData(const std::string &bundleName,
-        const std::string &storeName, int32_t userId, int32_t appIndex);
+    static std::pair<bool, DistributedData::StoreMetaData> QueryMetaData(const DbConfig &dbConfig);
+    static bool MatchAccountDataDir(const std::string &dataDir, int32_t accountId);
 };
 } // namespace OHOS::DataShare
 #endif

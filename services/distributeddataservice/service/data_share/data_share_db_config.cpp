@@ -18,43 +18,67 @@
 
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include "datashare_errno.h"
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "extension_connect_adaptor.h"
+#include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "utils.h"
 #include "utils/anonymous.h"
-#include "ipc_skeleton.h"
 
 namespace OHOS::DataShare {
 static const int32_t WAIT_TIME = 2;
-std::pair<bool, DistributedData::StoreMetaData> DataShareDbConfig::QueryMetaData(
-    const std::string &bundleName, const std::string &storeName, int32_t userId, int32_t appIndex)
+std::pair<bool, DistributedData::StoreMetaData> DataShareDbConfig::QueryMetaData(const DbConfig &dbConfig)
 {
-    TimeoutReport timeoutReport({bundleName, "", storeName, __FUNCTION__, 0});
+    TimeoutReport timeoutReport({ dbConfig.bundleName, "", dbConfig.storeName, __FUNCTION__, 0 });
+    auto callingPid = IPCSkeleton::GetCallingPid();
     DistributedData::StoreMetaMapping storeMetaMapping;
     storeMetaMapping.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
-    storeMetaMapping.user = std::to_string(userId);
-    storeMetaMapping.bundleName = bundleName;
-    storeMetaMapping.storeId = storeName;
-    storeMetaMapping.instanceId = appIndex;
+    storeMetaMapping.user = std::to_string(dbConfig.userId);
+    storeMetaMapping.bundleName = dbConfig.bundleName;
+    storeMetaMapping.storeId = dbConfig.storeName;
+    storeMetaMapping.instanceId = dbConfig.appIndex;
+    if (dbConfig.accountIsolation && dbConfig.accountId > 0) {
+        // No clone app + account isolation: prefix-query StoreMetaData for all same-name DBs
+        // (key contains dataDir, one entry per DB), then match dataDir (DB path) by accountId.
+        std::vector<DistributedData::StoreMetaData> metas;
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKeyWithoutPath(), metas, true);
+        for (const auto &meta : metas) {
+            if (MatchAccountDataDir(meta.dataDir, dbConfig.accountId)) {
+                timeoutReport.Report(std::to_string(dbConfig.userId), callingPid, dbConfig.appIndex);
+                return std::make_pair(true, meta);
+            }
+        }
+        timeoutReport.Report(std::to_string(dbConfig.userId), callingPid, dbConfig.appIndex);
+        return std::make_pair(false, DistributedData::StoreMetaData{});
+    }
+    // Clone app / no clone app without account isolation: StoreMetaMapping query
+    // (key without dataDir, records the last opened DB).
     bool isCreated =
         DistributedData::MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKey(), storeMetaMapping, true);
-
-    auto callingPid = IPCSkeleton::GetCallingPid();
-    timeoutReport.Report(std::to_string(userId), callingPid, appIndex);
+    timeoutReport.Report(std::to_string(dbConfig.userId), callingPid, dbConfig.appIndex);
     return std::make_pair(isCreated, storeMetaMapping);
+}
+
+bool DataShareDbConfig::MatchAccountDataDir(const std::string &dataDir, int32_t accountId)
+{
+    if (accountId <= 0 || dataDir.empty()) {
+        return false;
+    }
+    // dataDir ends with ".db", accountId is always a middle path segment followed by '/'.
+    std::string token = "/" + std::to_string(accountId) + "/";
+    return dataDir.find(token) != std::string::npos;
 }
 
 std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(const DbConfig &dbConfig)
 {
-    auto [success, metaData] = QueryMetaData(
-        dbConfig.bundleName, dbConfig.storeName, dbConfig.userId, dbConfig.appIndex);
+    auto [success, metaData] = QueryMetaData(dbConfig);
     if (!success) {
         // without extension configuration, load the SA when there is no metadata information.
         int32_t systemAbilityId = URIUtils::GetSystemAbilityId(dbConfig.uri);
@@ -82,7 +106,7 @@ std::pair<int, DistributedData::StoreMetaData> DataShareDbConfig::GetMetaData(co
             AAFwk::WantParams wantParams;
             ExtensionConnectAdaptor::TryAndWait(dbConfig.uri, dbConfig.bundleName, wantParams);
         }
-        auto [succ, meta] = QueryMetaData(dbConfig.bundleName, dbConfig.storeName, dbConfig.userId, dbConfig.appIndex);
+        auto [succ, meta] = QueryMetaData(dbConfig);
         if (!succ) {
             return std::pair(NativeRdb::E_DB_NOT_EXIST, meta);
         }
