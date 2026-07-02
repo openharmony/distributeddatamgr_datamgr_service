@@ -467,8 +467,7 @@ int32_t KvStoreDataService::OnExtension(const std::string &extension, MessagePar
 
 KvStoreDataService::CloneManager::CloneManager()
 {
-    static constexpr const char *libName = "libdistributeddata_clone.z.so";
-    cloneHandle_ = dlopen(libName, RTLD_LAZY);
+    cloneHandle_ = dlopen(CLONE_SO_PATH, RTLD_LAZY);
     if (cloneHandle_ == nullptr) {
         ZLOGE("dlopen failed: %{public}s", dlerror());
     }
