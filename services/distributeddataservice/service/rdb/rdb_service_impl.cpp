@@ -291,39 +291,32 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
 
 bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
 {
+    Database database;
+    database.bundleName = metaData.bundleName;
+    database.name = metaData.storeId;
+    database.user = metaData.user;
     BundleVersionMetaData versionMeta;
-    versionMeta.bundleName = metaData.bundleName;
-    versionMeta.user = metaData.user;
-    if (MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)) {
+    if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
+        versionMeta.bundleName = metaData.bundleName;
+        versionMeta.user = metaData.user;
+        if (MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)) {
+            return true;
+        }
+    }
+    auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
+    if (success && !database.name.empty() && !database.bundleName.empty()) {
+        MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true);
+        OHOS::AppExecFwk::BundleInfo bundleInfo;
+        if (RdbSchemaConfig::InitBundleInfo(metaData.bundleName, std::atoi(metaData.user.c_str()), bundleInfo)) {
+            versionMeta.versionCode = bundleInfo.versionCode;
+            versionMeta.appIndex = metaData.instanceId;
+            MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+            ZLOGI("Saved bundle version, bundleName: %{public}s, versionCode: %{public}d",
+                metaData.bundleName.c_str(), versionMeta.versionCode);
+        }
         return true;
     }
-
-    Database oldDatabase;
-    oldDatabase.bundleName = metaData.bundleName;
-    oldDatabase.name = metaData.storeId;
-    oldDatabase.user = metaData.user;
-    if (MetaDataManager::GetInstance().LoadMeta(oldDatabase.GetKey(), oldDatabase, true)) {
-        MetaDataManager::GetInstance().DelMeta(oldDatabase.GetKey(), true);
-    }
-
-    Database newDatabase;
-    auto success = RdbSchemaConfig::GetDistributedSchema(metaData, newDatabase);
-    if (!success || newDatabase.name.empty() || newDatabase.bundleName.empty()) {
-        return false;
-    }
-
-    MetaDataManager::GetInstance().SaveMeta(newDatabase.GetKey(), newDatabase, true);
-
-    OHOS::AppExecFwk::BundleInfo bundleInfo;
-    if (RdbSchemaConfig::InitBundleInfo(metaData.bundleName, std::atoi(metaData.user.c_str()), bundleInfo)) {
-        versionMeta.versionCode = bundleInfo.versionCode;
-        versionMeta.appIndex = metaData.instanceId;
-        MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
-        ZLOGI("Saved bundle version, bundleName: %{public}s, versionCode: %{public}d",
-            metaData.bundleName.c_str(), versionMeta.versionCode);
-    }
-
-    return true;
+    return false;
 }
 
 int32_t RdbServiceImpl::SetDeviceDistributedTables(int32_t tableType, StoreMetaData &metaData,
