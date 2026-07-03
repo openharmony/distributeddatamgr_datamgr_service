@@ -15,11 +15,10 @@
 
 #include "metadata/bundle_version_meta_data.h"
 
-#include "bootstrap.h"
-#include "kvstore_meta_manager.h"
 #include "metadata/meta_data_manager.h"
 #include "utils/constant.h"
 #include "gtest/gtest.h"
+#include "mock/db_store_mock.h"
 #include "serializable/serializable.h"
 
 using namespace testing::ext;
@@ -28,23 +27,50 @@ using namespace OHOS::DistributedKv;
 using namespace OHOS::DistributedData;
 
 namespace OHOS::Test {
+class DBStoreMockImpl;
 class BundleVersionMetaDataTest : public testing::Test {
 public:
-    static constexpr size_t NUM_MIN = 1;
-    static constexpr size_t NUM_MAX = 2;
-    static void SetUpTestCase()
-    {
-        std::shared_ptr<ExecutorPool> executors = std::make_shared<ExecutorPool>(NUM_MAX, NUM_MIN);
-        Bootstrap::GetInstance().LoadDirectory();
-        Bootstrap::GetInstance().LoadCheckers();
-        KvStoreMetaManager::GetInstance().BindExecutor(executors);
-        KvStoreMetaManager::GetInstance().InitMetaParameter();
-        KvStoreMetaManager::GetInstance().InitMetaListener();
-    }
-    static void TearDownTestCase(void) {};
+    static void SetUpTestCase();
+    static void TearDownTestCase() {};
     void SetUp() {};
     void TearDown() {};
+    static std::shared_ptr<DBStoreMockImpl> metaStore;
 };
+
+std::shared_ptr<DBStoreMockImpl> BundleVersionMetaDataTest::metaStore = nullptr;
+
+class DBStoreMockImpl : public DBStoreMock {
+public:
+    using PutLocalBatchFunc = std::function<DBStatus(const std::vector<Entry> &)>;
+    PutLocalBatchFunc putLocalBatchFunc;
+    DBStatus PutLocalBatch(const std::vector<Entry> &entries) override
+    {
+        if (putLocalBatchFunc) {
+            return putLocalBatchFunc(entries);
+        }
+        return DBStoreMock::PutLocalBatch(entries);
+    }
+    using DeleteLocalBatchFunc = std::function<DBStatus(const std::vector<Key> &)>;
+    DeleteLocalBatchFunc deleteLocalBatchFunc;
+    DBStatus DeleteLocalBatch(const std::vector<Key> &keys) override
+    {
+        if (deleteLocalBatchFunc) {
+            return deleteLocalBatchFunc(keys);
+        }
+        return DBStoreMock::DeleteLocalBatch(keys);
+    }
+};
+
+void BundleVersionMetaDataTest::SetUpTestCase()
+{
+    metaStore = std::make_shared<DBStoreMockImpl>();
+    MetaDataManager::GetInstance().Initialize(
+        metaStore,
+        [](const auto &store) {
+            return 0;
+        },
+        "meta");
+}
 
 /**
  * @tc.name: BundleVersionMetaData_Marshal_Unmarshal_RoundTrip
