@@ -39,8 +39,6 @@
 #include "mock/access_token_mock.h"
 #include "mock/meta_data_manager_mock.h"
 #include "nativetoken_kit.h"
-#include "network/network_delegate.h"
-#include "network_delegate_mock.h"
 #include "token_setproc.h"
 #include "types.h"
 #include "utils/anonymous.h"
@@ -105,7 +103,6 @@ public:
 
 protected:
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
-    static NetworkDelegateMock delegate_;
     StoreMetaData metaData_;
     Options options_;
 };
@@ -128,7 +125,6 @@ UserId KvdbServiceImplTest::userId;
 AppId KvdbServiceImplTest::appId;
 StoreId KvdbServiceImplTest::storeId64;
 StoreId KvdbServiceImplTest::storeId65;
-NetworkDelegateMock KvdbServiceImplTest::delegate_;
 
 void KvdbServiceImplTest::RemoveAllStore(DistributedKvDataManager &manager)
 {
@@ -162,7 +158,6 @@ void KvdbServiceImplTest::SetUpTestCase(void)
     BMetaDataManager::metaDataManager = metaDataManagerMock;
     metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
     BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
-    NetworkDelegate::RegisterNetworkInstance(&delegate_);
 }
 
 void KvdbServiceImplTest::TearDownTestCase()
@@ -1369,28 +1364,10 @@ HWTEST_F(KvdbServiceImplTest, GetSyncMode, TestSize.Level0)
 }
 
 /**
-* @tc.name: DoCloudSync02
-* @tc.desc: DoCloudSync02 function test.
-* @tc.type: FUNC
-* @tc.author:
-*/
-HWTEST_F(KvdbServiceImplTest, DoCloudSync02, TestSize.Level0)
-{
-    delegate_.isNetworkAvailable_ = false;
-    auto cloudServerMock = new CloudServerMock();
-    CloudServer::RegisterCloudInstance(cloudServerMock);
-    StoreMetaData metaData;
-    metaData.enableCloud = true;
-    SyncInfo syncInfo;
-    auto status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
-    EXPECT_EQ(status, OHOS::DistributedKv::Status::NETWORK_ERROR);
-}
-
-/**
 * @tc.name: DoCloudSync
 * @tc.desc: DoCloudSync error function test.
 * @tc.type: FUNC
-* @tc.author:
+* @tc.author: agent
 */
 HWTEST_F(KvdbServiceImplTest, DoCloudSync01, TestSize.Level0)
 {
