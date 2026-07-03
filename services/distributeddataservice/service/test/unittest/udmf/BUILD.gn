@@ -874,6 +874,7 @@ group("unittests") {
     ":UdmfCheckerManagerTest",
     ":UdmfDelayDataContainerTest",
     ":UdmfObserverTest",
+    ":UdmfPermissionPolicyUtilsTest",
     ":UdmfPreProcessUtilsMockTest",
     ":UdmfPreProcessUtilsTest",
     ":UdmfRunTimeStoreTest",

@@ -21,6 +21,7 @@
 #include "unified_data.h"
 #include "unified_meta.h"
 #include "uri_permission_util.h"
+#include "want.h"
 
 using namespace testing::ext;
 using namespace OHOS::UDMF;
