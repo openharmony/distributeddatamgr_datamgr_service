@@ -135,6 +135,7 @@ public:
 
 private:
     void NotifyAccountEvent(const AccountEventInfo &eventInfo);
+    void InitBundleVersionCheck();
     class KvStoreClientDeathObserverImpl {
     public:
         KvStoreClientDeathObserverImpl(const AppId &appId, KvStoreDataService &service, sptr<IRemoteObject> observer,

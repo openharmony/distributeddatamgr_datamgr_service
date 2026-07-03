@@ -434,15 +434,20 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
         // request qos auth for current pid
         OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
     } else if (systemAbilityId == BUNDLE_MGR_SERVICE_SYS_ABILITY_ID) {
-        auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
-        staticActs.ForEachCopies([](const auto &, const std::shared_ptr<StaticActs> &acts) {
-            if (acts != nullptr) {
-                acts->Execute([acts]() { acts->OnStartupVersionCheck(); });
-            }
-            return false;
-        });
+        InitBundleVersionCheck();
     }
     return;
+}
+
+void KvStoreDataService::InitBundleVersionCheck()
+{
+    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+    staticActs.ForEachCopies([](const auto &, const std::shared_ptr<StaticActs> &acts) {
+        if (acts != nullptr) {
+            acts->Execute([acts]() { acts->OnStartupVersionCheck(); });
+        }
+        return false;
+    });
 }
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
