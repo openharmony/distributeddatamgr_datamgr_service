@@ -37,6 +37,7 @@
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/auto_launch_meta_data.h"
+#include "metadata/bundle_version_meta_data.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/special_channel_data.h"
@@ -290,19 +291,39 @@ int32_t RdbServiceImpl::InitNotifier(const RdbSyncerParam &param, const sptr<IRe
 
 bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
 {
-    Database database;
-    database.bundleName = metaData.bundleName;
-    database.name = metaData.storeId;
-    database.user = metaData.user;
-    if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
+    BundleVersionMetaData versionMeta;
+    versionMeta.bundleName = metaData.bundleName;
+    versionMeta.user = metaData.user;
+    if (MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)) {
         return true;
     }
-    auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
-    if (success && !database.name.empty() && !database.bundleName.empty()) {
-        MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true);
-        return true;
+
+    Database oldDatabase;
+    oldDatabase.bundleName = metaData.bundleName;
+    oldDatabase.name = metaData.storeId;
+    oldDatabase.user = metaData.user;
+    if (MetaDataManager::GetInstance().LoadMeta(oldDatabase.GetKey(), oldDatabase, true)) {
+        MetaDataManager::GetInstance().DelMeta(oldDatabase.GetKey(), true);
     }
-    return false;
+
+    Database newDatabase;
+    auto success = RdbSchemaConfig::GetDistributedSchema(metaData, newDatabase);
+    if (!success || newDatabase.name.empty() || newDatabase.bundleName.empty()) {
+        return false;
+    }
+
+    MetaDataManager::GetInstance().SaveMeta(newDatabase.GetKey(), newDatabase, true);
+
+    OHOS::AppExecFwk::BundleInfo bundleInfo;
+    if (RdbSchemaConfig::InitBundleInfo(metaData.bundleName, std::atoi(metaData.user.c_str()), bundleInfo)) {
+        versionMeta.versionCode = bundleInfo.versionCode;
+        versionMeta.appIndex = metaData.instanceId;
+        MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+        ZLOGI("Saved bundle version, bundleName: %{public}s, versionCode: %{public}d",
+            metaData.bundleName.c_str(), versionMeta.versionCode);
+    }
+
+    return true;
 }
 
 int32_t RdbServiceImpl::SetDeviceDistributedTables(int32_t tableType, StoreMetaData &metaData,
@@ -1747,6 +1768,11 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName,
             MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true);
         }
     }
+    BundleVersionMetaData versionMeta;
+    versionMeta.bundleName = bundleName;
+    versionMeta.user = std::to_string(user);
+    versionMeta.appIndex = index;
+    MetaDataManager::GetInstance().DelMeta(versionMeta.GetKey(), true);
     return CloseStore(bundleName, user, index);
 }
 
@@ -1775,6 +1801,15 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, in
             }
         }
     }
+    OHOS::AppExecFwk::BundleInfo bundleInfo;
+    if (RdbSchemaConfig::InitBundleInfo(bundleName, user, bundleInfo)) {
+        BundleVersionMetaData versionMeta;
+        versionMeta.bundleName = bundleName;
+        versionMeta.user = std::to_string(user);
+        versionMeta.appIndex = index;
+        versionMeta.versionCode = bundleInfo.versionCode;
+        MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+    }
     return CloseStore(bundleName, user, index);
 }
 
@@ -1782,6 +1817,58 @@ int32_t RdbServiceImpl::RdbStatic::OnClearAppStorage(const std::string &bundleNa
     int32_t tokenId)
 {
     return CloseStore(bundleName, user, index, tokenId);
+}
+
+void RdbServiceImpl::RdbStatic::OnStartupVersionCheck()
+{
+    std::string prefix = BundleVersionMetaData::GetPrefix({});
+    std::vector<BundleVersionMetaData> versionEntries;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, versionEntries, true)) {
+        ZLOGI("No bundle version entries found on startup.");
+        return;
+    }
+
+    for (const auto &entry : versionEntries) {
+        OHOS::AppExecFwk::BundleInfo bundleInfo;
+        if (!RdbSchemaConfig::InitBundleInfo(entry.bundleName, std::atoi(entry.user.c_str()), bundleInfo)) {
+            ZLOGW("Failed to get bundle info on startup, bundleName: %{public}s", entry.bundleName.c_str());
+            continue;
+        }
+
+        if (bundleInfo.versionCode <= entry.versionCode) {
+            ZLOGI("Bundle version unchanged, bundleName: %{public}s, versionCode: %{public}d",
+                entry.bundleName.c_str(), entry.versionCode);
+            continue;
+        }
+
+        ZLOGI("Bundle version upgraded, bundleName: %{public}s, old: %{public}d, new: %{public}d",
+            entry.bundleName.c_str(), entry.versionCode, bundleInfo.versionCode);
+
+        std::string dbPrefix = Database::GetPrefix({ entry.user, "default", entry.bundleName });
+        std::vector<Database> databases;
+        if (MetaDataManager::GetInstance().LoadMeta(dbPrefix, databases, true)) {
+            for (const auto &db : databases) {
+                MetaDataManager::GetInstance().DelMeta(db.GetKey(), true);
+            }
+        }
+
+        for (const auto &db : databases) {
+            StoreMetaData meta;
+            meta.bundleName = entry.bundleName;
+            meta.user = entry.user;
+            meta.storeId = db.name;
+            meta.deviceId = db.deviceId;
+            Database newDatabase;
+            if (RdbSchemaConfig::GetDistributedSchema(meta, newDatabase)
+                && !newDatabase.name.empty() && !newDatabase.bundleName.empty()) {
+                MetaDataManager::GetInstance().SaveMeta(newDatabase.GetKey(), newDatabase, true);
+            }
+        }
+
+        BundleVersionMetaData updatedEntry = entry;
+        updatedEntry.versionCode = bundleInfo.versionCode;
+        MetaDataManager::GetInstance().SaveMeta(updatedEntry.GetKey(), updatedEntry, true);
+    }
 }
 
 void RdbServiceImpl::RegisterRdbServiceInfo()

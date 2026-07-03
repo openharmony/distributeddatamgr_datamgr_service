@@ -30,6 +30,7 @@
 #include "feature/static_acts.h"
 #include "rdb_flow_control_manager.h"
 #include "lru_bucket.h"
+#include "metadata/bundle_version_meta_data.h"
 #include "metadata/meta_data_saver.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -173,6 +174,7 @@ private:
             int32_t tokenId = -1) override;
         int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId) override;
+        void OnStartupVersionCheck() override;
     private:
         static constexpr int32_t INVALID_TOKENID = 0;
         int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index,
