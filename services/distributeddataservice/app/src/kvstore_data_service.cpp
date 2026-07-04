@@ -44,8 +44,6 @@
 #include "dump/dump_manager.h"
 #include "dump_helper.h"
 #include "eventcenter/event_center.h"
-#include "feature/feature_system.h"
-#include "feature/static_acts.h"
 #include "if_system_ability_manager.h"
 #include "installer/installer.h"
 #include "iservice_registry.h"
@@ -379,7 +377,6 @@ void KvStoreDataService::OnStart()
     AddSystemAbilityListener(COMM_NET_CONN_MANAGER_SYS_ABILITY_ID);
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
     AddSystemAbilityListener(CONCURRENT_TASK_SERVICE_ID);
-    AddSystemAbilityListener(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     RegisterStoreInfo();
     Handler handlerStoreInfo = std::bind(&KvStoreDataService::DumpStoreInfo, this, std::placeholders::_1,
         std::placeholders::_2);
@@ -433,21 +430,8 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
         payload["pid"] = std::to_string(getpid());
         // request qos auth for current pid
         OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
-    } else if (systemAbilityId == BUNDLE_MGR_SERVICE_SYS_ABILITY_ID) {
-        InitBundleVersionCheck();
     }
     return;
-}
-
-void KvStoreDataService::InitBundleVersionCheck()
-{
-    auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
-    staticActs.ForEachCopies([](const auto &, const std::shared_ptr<StaticActs> &acts) {
-        if (acts != nullptr) {
-            acts->Execute([acts]() { acts->OnStartupVersionCheck(); });
-        }
-        return false;
-    });
 }
 
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)

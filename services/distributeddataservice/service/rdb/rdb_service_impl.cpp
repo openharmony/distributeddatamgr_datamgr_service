@@ -1812,57 +1812,57 @@ int32_t RdbServiceImpl::RdbStatic::OnClearAppStorage(const std::string &bundleNa
     return CloseStore(bundleName, user, index, tokenId);
 }
 
-void RdbServiceImpl::RdbStatic::OnStartupVersionCheck()
-{
-    std::string prefix = BundleVersionMetaData::GetPrefix({});
-    std::vector<BundleVersionMetaData> versionEntries;
-    if (!MetaDataManager::GetInstance().LoadMeta(prefix, versionEntries, true)) {
-        ZLOGI("No bundle version entries found on startup.");
-        return;
-    }
+// void RdbServiceImpl::RdbStatic::OnStartupVersionCheck()
+// {
+//     std::string prefix = BundleVersionMetaData::GetPrefix({});
+//     std::vector<BundleVersionMetaData> versionEntries;
+//     if (!MetaDataManager::GetInstance().LoadMeta(prefix, versionEntries, true)) {
+//         ZLOGI("No bundle version entries found on startup.");
+//         return;
+//     }
 
-    for (const auto &entry : versionEntries) {
-        OHOS::AppExecFwk::BundleInfo bundleInfo;
-        if (!RdbSchemaConfig::InitBundleInfo(entry.bundleName, std::atoi(entry.user.c_str()), bundleInfo)) {
-            ZLOGW("Failed to get bundle info on startup, bundleName: %{public}s", entry.bundleName.c_str());
-            continue;
-        }
+//     for (const auto &entry : versionEntries) {
+//         OHOS::AppExecFwk::BundleInfo bundleInfo;
+//         if (!RdbSchemaConfig::InitBundleInfo(entry.bundleName, std::atoi(entry.user.c_str()), bundleInfo)) {
+//             ZLOGW("Failed to get bundle info on startup, bundleName: %{public}s", entry.bundleName.c_str());
+//             continue;
+//         }
 
-        if (bundleInfo.versionCode <= entry.versionCode) {
-            ZLOGI("Bundle version unchanged, bundleName: %{public}s, versionCode: %{public}d",
-                entry.bundleName.c_str(), entry.versionCode);
-            continue;
-        }
+//         if (bundleInfo.versionCode <= entry.versionCode) {
+//             ZLOGI("Bundle version unchanged, bundleName: %{public}s, versionCode: %{public}d",
+//                 entry.bundleName.c_str(), entry.versionCode);
+//             continue;
+//         }
 
-        ZLOGI("Bundle version upgraded, bundleName: %{public}s, old: %{public}d, new: %{public}d",
-            entry.bundleName.c_str(), entry.versionCode, bundleInfo.versionCode);
+//         ZLOGI("Bundle version upgraded, bundleName: %{public}s, old: %{public}d, new: %{public}d",
+//             entry.bundleName.c_str(), entry.versionCode, bundleInfo.versionCode);
 
-        std::string dbPrefix = Database::GetPrefix({ entry.user, "default", entry.bundleName });
-        std::vector<Database> databases;
-        if (MetaDataManager::GetInstance().LoadMeta(dbPrefix, databases, true)) {
-            for (const auto &db : databases) {
-                MetaDataManager::GetInstance().DelMeta(db.GetKey(), true);
-            }
-        }
+//         std::string dbPrefix = Database::GetPrefix({ entry.user, "default", entry.bundleName });
+//         std::vector<Database> databases;
+//         if (MetaDataManager::GetInstance().LoadMeta(dbPrefix, databases, true)) {
+//             for (const auto &db : databases) {
+//                 MetaDataManager::GetInstance().DelMeta(db.GetKey(), true);
+//             }
+//         }
 
-        for (const auto &db : databases) {
-            StoreMetaData meta;
-            meta.bundleName = entry.bundleName;
-            meta.user = entry.user;
-            meta.storeId = db.name;
-            meta.deviceId = db.deviceId;
-            Database newDatabase;
-            if (RdbSchemaConfig::GetDistributedSchema(meta, newDatabase)
-                && !newDatabase.name.empty() && !newDatabase.bundleName.empty()) {
-                MetaDataManager::GetInstance().SaveMeta(newDatabase.GetKey(), newDatabase, true);
-            }
-        }
+//         for (const auto &db : databases) {
+//             StoreMetaData meta;
+//             meta.bundleName = entry.bundleName;
+//             meta.user = entry.user;
+//             meta.storeId = db.name;
+//             meta.deviceId = db.deviceId;
+//             Database newDatabase;
+//             if (RdbSchemaConfig::GetDistributedSchema(meta, newDatabase)
+//                 && !newDatabase.name.empty() && !newDatabase.bundleName.empty()) {
+//                 MetaDataManager::GetInstance().SaveMeta(newDatabase.GetKey(), newDatabase, true);
+//             }
+//         }
 
-        BundleVersionMetaData updatedEntry = entry;
-        updatedEntry.versionCode = bundleInfo.versionCode;
-        MetaDataManager::GetInstance().SaveMeta(updatedEntry.GetKey(), updatedEntry, true);
-    }
-}
+//         BundleVersionMetaData updatedEntry = entry;
+//         updatedEntry.versionCode = bundleInfo.versionCode;
+//         MetaDataManager::GetInstance().SaveMeta(updatedEntry.GetKey(), updatedEntry, true);
+//     }
+// }
 
 void RdbServiceImpl::RegisterRdbServiceInfo()
 {
@@ -1894,6 +1894,43 @@ int32_t RdbServiceImpl::OnInitialize()
     specialChannels_.Initialize({ std::move(specialChannels.devices), std::vector<std::monostate>{} });
     RegisterRdbServiceInfo();
     RegisterHandler();
+    if (executors_ != nullptr) {
+        std::shared_ptr<RdbStatic> rdbStatic = nullptr;
+        auto staticActsMap = FeatureSystem::GetInstance().GetStaticActs();
+        staticActsMap.ForEach(
+            [&rdbStatic](const auto &name, std::shared_ptr<StaticActs> acts) {
+                if (name == SERVICE_NAME && acts != nullptr) {
+                    rdbStatic = std::static_pointer_cast<RdbStatic>(acts);
+                    return true;
+                }
+                return false;
+            });
+        if (rdbStatic != nullptr) {
+            executors_->Execute([rdbStatic]() {
+                std::string prefix = BundleVersionMetaData::GetPrefix({});
+                std::vector<BundleVersionMetaData> versionEntries;
+                if (!MetaDataManager::GetInstance().LoadMeta(prefix, versionEntries, true)) {
+                    ZLOGI("No bundle version entries found on startup.");
+                    return;
+                }
+                for (const auto &entry : versionEntries) {
+                    OHOS::AppExecFwk::BundleInfo bundleInfo;
+                    if (!RdbSchemaConfig::InitBundleInfo(entry.bundleName,
+                        std::atoi(entry.user.c_str()), bundleInfo)) {
+                        ZLOGW("Failed to get bundle info on startup, bundleName: %{public}s",
+                            entry.bundleName.c_str());
+                        continue;
+                    }
+                    if (bundleInfo.versionCode <= entry.versionCode) {
+                        continue;
+                    }
+                    ZLOGI("Bundle version upgraded , bundleName: %{public}s, old: %{public}d, new: %{public}d",
+                        entry.bundleName.c_str(), entry.versionCode, bundleInfo.versionCode);
+                    rdbStatic->OnAppUpdate(entry.bundleName, std::atoi(entry.user.c_str()), entry.appIndex);
+                }
+            });
+        }
+    }
     return RDB_OK;
 }
 

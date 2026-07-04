@@ -174,7 +174,6 @@ private:
             int32_t tokenId = -1) override;
         int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index) override;
         int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId) override;
-        void OnStartupVersionCheck() override;
     private:
         static constexpr int32_t INVALID_TOKENID = 0;
         int32_t CloseStore(const std::string &bundleName, int32_t user, int32_t index,
