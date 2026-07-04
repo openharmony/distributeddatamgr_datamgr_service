@@ -75,12 +75,12 @@ void OnStartupVersionCheckTest::SetUpTestCase()
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_NoVersionEntries_NoAction
- * @tc.desc: When no BundleVersionMetaData entries exist, no Database entries should be affected
+ * @tc.name: NoVersionEntries_NoAction
+ * @tc.desc: No BundleVersionMetaData entries, no Database entries affected
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_NoVersionEntries_NoAction, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, NoVersionEntries_NoAction, TestSize.Level1)
 {
     std::string prefix = BundleVersionMetaData::GetPrefix({});
     std::vector<BundleVersionMetaData> entries;
@@ -90,13 +90,13 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_NoVersionEntries_NoAct
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_VersionEntryExists_VersionNotZero_NoDeletion
- * @tc.desc: When a BundleVersionMetaData entry exists with versionCode != 0,
- *           its corresponding Database should NOT be deleted
+ * @tc.name: VersionNotZero_NoDeletion
+ * @tc.desc: BundleVersionMetaData exists with versionCode != 0,
+ *           Database should NOT be deleted
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_VersionEntryExists_VersionNotZero_NoDeletion, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, VersionNotZero_NoDeletion, TestSize.Level1)
 {
     BundleVersionMetaData versionMeta;
     versionMeta.bundleName = "com.example.nozero";
@@ -128,13 +128,13 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_VersionEntryExists_Ver
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_VersionEntryExists_VersionIsZero_DeletesOldDatabase
- * @tc.desc: When a BundleVersionMetaData entry exists with versionCode == 0,
- *           the corresponding Database entry should be deleted
+ * @tc.name: VersionIsZero_DeletesOldDatabase
+ * @tc.desc: BundleVersionMetaData exists with versionCode == 0,
+ *           corresponding Database should be deleted
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_VersionEntryExists_VersionIsZero_DeletesOldDatabase, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, VersionIsZero_DeletesOldDatabase, TestSize.Level1)
 {
     BundleVersionMetaData versionMeta;
     versionMeta.bundleName = "com.example.zero";
@@ -171,12 +171,12 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_VersionEntryExists_Ver
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_MultipleVersionEntries_PrefixQuery
- * @tc.desc: Multiple BundleVersionMetaData entries can be queried via prefix
+ * @tc.name: MultipleVersionEntries_PrefixQuery
+ * @tc.desc: Multiple BundleVersionMetaData entries queried via prefix
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_MultipleVersionEntries_PrefixQuery, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, MultipleVersionEntries_PrefixQuery, TestSize.Level1)
 {
     BundleVersionMetaData meta1;
     meta1.bundleName = "com.example.multi1";
@@ -208,13 +208,13 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_MultipleVersionEntries
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_DatabasePrefixQuery_MatchesBundleVersion
- * @tc.desc: Database prefix query with user+default+bundleName matches the key pattern
- *           used in OnStartupVersionCheck
+ * @tc.name: DatabasePrefixQuery_MatchesBundleVersion
+ * @tc.desc: Database prefix query matches the key pattern used
+ *           in OnStartupVersionCheck
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DatabasePrefixQuery_MatchesBundleVersion, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, DatabasePrefixQuery_MatchesBundleVersion, TestSize.Level1)
 {
     BundleVersionMetaData versionMeta;
     versionMeta.bundleName = "com.example.match";
@@ -255,13 +255,13 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DatabasePrefixQuery_Ma
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_DeleteDatabaseAndSaveNewDatabase
- * @tc.desc: After deleting old Database entries and saving new ones,
- *           the new entries should be loadable
+ * @tc.name: DeleteDatabaseAndSaveNewDatabase
+ * @tc.desc: After deleting old Database and saving new one,
+ *           the new entry should be loadable
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DeleteDatabaseAndSaveNewDatabase, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, DeleteDatabaseAndSaveNewDatabase, TestSize.Level1)
 {
     Database oldDb;
     oldDb.bundleName = "com.example.replace";
@@ -298,13 +298,13 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DeleteDatabaseAndSaveN
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_UpdateVersionCodeAfterSchemaReplacement
- * @tc.desc: After schema replacement, updating BundleVersionMetaData versionCode
+ * @tc.name: UpdateVersionCodeAfterSchemaReplace
+ * @tc.desc: After schema replacement, updating versionCode
  *           should overwrite the old value
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_UpdateVersionCodeAfterSchemaReplacement, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, UpdateVersionCodeAfterSchemaReplace, TestSize.Level1)
 {
     BundleVersionMetaData oldVersion;
     oldVersion.bundleName = "com.example.update";
@@ -335,13 +335,13 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_UpdateVersionCodeAfter
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_DifferentUsers_IndependentVersion
- * @tc.desc: Different users with the same bundleName have independent
- *           BundleVersionMetaData entries and Database entries
+ * @tc.name: DifferentUsers_IndependentVersion
+ * @tc.desc: Different users with same bundleName have
+ *           independent version and Database entries
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DifferentUsers_IndependentVersion, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, DifferentUsers_IndependentVersion, TestSize.Level1)
 {
     BundleVersionMetaData v1;
     v1.bundleName = "com.example.crossuser";
@@ -401,13 +401,13 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DifferentUsers_Indepen
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_DeleteAllDatabasesUnderPrefix
- * @tc.desc: Deleting all Database entries under a prefix simulates
- *           the schema cleanup step in OnStartupVersionCheck
+ * @tc.name: DeleteAllDatabasesUnderPrefix
+ * @tc.desc: Deleting all Database entries under prefix
+ *           simulates schema cleanup in OnStartupVersionCheck
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DeleteAllDatabasesUnderPrefix, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, DeleteAllDatabasesUnderPrefix, TestSize.Level1)
 {
     Database db1;
     db1.bundleName = "com.example.cleanup";
