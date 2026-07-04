@@ -35,8 +35,8 @@ constexpr const char *SCHEMA_PATH = "arkdata/schema/sync_schema.json";
 
 bool RdbSchemaConfig::GetDistributedSchema(const StoreMetaData &meta, Database &database)
 {
-    OHOS::AppExecFwk::BundleInfo bundleInfo;
-    if (!InitBundleInfo(meta.bundleName, std::atoi(meta.user.c_str()), bundleInfo)) {
+    auto [success, bundleInfo] = InitBundleInfo(meta.bundleName, std::atoi(meta.user.c_str()));
+    if (!success) {
         return false;
     }
     auto ret = GetSchemaFromHap(bundleInfo, meta.storeId, meta.bundleName, database);
@@ -48,35 +48,36 @@ bool RdbSchemaConfig::GetDistributedSchema(const StoreMetaData &meta, Database &
     return false;
 }
 
-bool RdbSchemaConfig::InitBundleInfo(
-    const std::string &bundleName, int32_t userId, OHOS::AppExecFwk::BundleInfo &bundleInfo)
+std::pair<bool, OHOS::AppExecFwk::BundleInfo> RdbSchemaConfig::InitBundleInfo(
+    const std::string &bundleName, int32_t userId)
 {
+    OHOS::AppExecFwk::BundleInfo bundleInfo;
     OHOS::sptr<OHOS::ISystemAbilityManager> systemAbilityManager =
         OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
         ZLOGE("Fail to get ststem ability mgr, bundleName: %{public}s.", bundleName.c_str());
-        return false;
+        return {false, bundleInfo};
     }
 
     OHOS::sptr<OHOS::IRemoteObject> remoteObject =
         systemAbilityManager->GetSystemAbility(OHOS::BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
     if (remoteObject == nullptr) {
         ZLOGE("Fail to get bundle manager proxy, bundleName: %{public}s.", bundleName.c_str());
-        return false;
+        return {false, bundleInfo};
     }
 
     auto bundleMgrProxy = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     if (bundleMgrProxy == nullptr) {
         ZLOGE("Fail to cast proxy, bundleName: %{public}s.", bundleName.c_str());
-        return false;
+        return {false, bundleInfo};
     }
     bool ret = bundleMgrProxy->GetBundleInfo(
         bundleName, OHOS::AppExecFwk::BundleFlag::GET_BUNDLE_INFO_EXCLUDE_EXT, bundleInfo, userId);
     if (!ret || bundleInfo.moduleDirs.size() == 0) {
         ZLOGE("Get bundle info failed, bundleName: %{public}s.", bundleName.c_str());
-        return false;
+        return {false, bundleInfo};
     }
-    return true;
+    return {true, bundleInfo};
 }
 
 bool RdbSchemaConfig::GetSchemaFromHap(const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName,

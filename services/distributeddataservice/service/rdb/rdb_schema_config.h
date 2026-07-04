@@ -28,7 +28,7 @@ using StoreMetaData = OHOS::DistributedData::StoreMetaData;
 class RdbSchemaConfig {
 public:
     static bool GetDistributedSchema(const StoreMetaData &meta, Database &database);
-    static bool InitBundleInfo(const std::string &bundleName, int32_t userId, OHOS::AppExecFwk::BundleInfo &bundleInfo);
+    static std::pair<bool, OHOS::AppExecFwk::BundleInfo> InitBundleInfo(const std::string &bundleName, int32_t userId);
 
 private:
     static bool GetSchemaFromHap(const OHOS::AppExecFwk::BundleInfo &bundleInfo, const std::string &storeName,

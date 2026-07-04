@@ -46,7 +46,7 @@ bool BundleVersionMetaData::Unmarshal(const json &node)
 
 std::string BundleVersionMetaData::GetKey() const
 {
-    return GetKey({user, "default", bundleName});
+    return GetKey({user, bundleName, std::to_string(appIndex)});
 }
 
 std::string BundleVersionMetaData::GetKey(const std::initializer_list<std::string> &fields)

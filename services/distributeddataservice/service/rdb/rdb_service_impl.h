@@ -180,6 +180,8 @@ private:
             int32_t tokenId = INVALID_TOKENID) const;
     };
 
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+
     class Factory {
     public:
         Factory();
@@ -199,6 +201,8 @@ private:
     void RegisterRdbServiceInfo();
 
     void RegisterHandler();
+
+    void StartupVersionCheck();
 
     void RegisterEvent();
 
@@ -277,6 +281,8 @@ private:
         StoreInfo &storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
 
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
+
+    static void UpdateSchemaMeta(const std::string &bundleName, int32_t user, int32_t index);
 
     static std::string TransferStringToHex(const std::string& origStr);
 
