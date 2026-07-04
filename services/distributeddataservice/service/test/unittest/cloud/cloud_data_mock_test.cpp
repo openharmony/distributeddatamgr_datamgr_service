@@ -385,6 +385,29 @@ HWTEST_F(CloudDataMockTest, OnReadyTest_LoginAccount, TestSize.Level0)
 }
 
 /**
+* @tc.name: IsLoginAccountWithUserId002
+* @tc.desc: Test IsLoginAccount(int32_t userId) returns false or true for different scenarios
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataMockTest, IsLoginAccountWithUserId002, TestSize.Level1)
+{
+    ZLOGI("CloudDataMockTest IsLoginAccountWithUserId002 start");
+    // Test when GetUnencryptedAccountId returns default account (not logged in)
+    int32_t userId1 = 101;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(userId1)).Times(1).WillOnce(testing::Return(false));
+    bool result = AccountDelegate::GetInstance()->IsLoginAccount(userId1);
+    EXPECT_FALSE(result);
+
+    // Test when GetUnencryptedAccountId returns valid account id (logged in)
+    int32_t userId2 = 102;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(userId2)).Times(1).WillOnce(testing::Return(true));
+    result = AccountDelegate::GetInstance()->IsLoginAccount(userId2);
+    EXPECT_TRUE(result);
+    ZLOGI("CloudDataMockTest IsLoginAccountWithUserId002 end");
+}
+
+/**
 * @tc.name: GetHapInfo001
 * @tc.desc: Test GetHapInfo function when GetTokenTypeFlag is not TOKEN_HAP.
 * @tc.type: FUNC

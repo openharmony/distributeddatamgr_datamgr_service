@@ -60,6 +60,10 @@ namespace DistributedData {
     {
         return accountDelegate_->IsLoginAccount();
     }
+    bool AccountDelegateMockProxy::IsLoginAccount(int32_t userId)
+    {
+        return accountDelegate_->IsLoginAccount(userId);
+    }
     bool AccountDelegateMockProxy::IsVerified(int userId)
     {
         return accountDelegate_->IsVerified(userId);

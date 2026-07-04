@@ -1015,6 +1015,7 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.dataType = options.dataType;
     metaData.enableCloud = options.cloudConfig.enableCloud;
     metaData.cloudAutoSync = options.cloudConfig.autoSync;
+    metaData.filterMode = options.cloudConfig.filterMode;
     metaData.authType = static_cast<int32_t>(options.authType);
 }
 

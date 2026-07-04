@@ -63,6 +63,13 @@ bool AccountDelegateDefaultImpl::IsLoginAccount()
     return false;
 }
 
+bool AccountDelegateDefaultImpl::IsLoginAccount(int32_t userId)
+{
+    (void)userId;
+    ZLOGD("no account login.");
+    return false;
+}
+
 bool AccountDelegateDefaultImpl::IsVerified(int userId)
 {
     ZLOGD("no account part.");
