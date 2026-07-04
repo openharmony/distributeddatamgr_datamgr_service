@@ -45,6 +45,7 @@
 #include "mock/general_store_mock.h"
 #include "mock/tokenid_kit_mock.h"
 #include "rdb_general_store.h"
+#include "rdb_schema_config.h"
 #include "rdb_types.h"
 #include "relational_store_manager.h"
 #include "sync_mgr/sync_mgr.h"
@@ -4196,6 +4197,196 @@ HWTEST_F(RdbServiceImplTest, GetStoreMetaDataWithValidAreaEL5, TestSize.Level0)
     auto metaData = service.GetStoreMetaData(param);
     
     EXPECT_EQ(metaData.area, DistributedData::GeneralStore::EL5);
+}
+
+/**
+ * @tc.name: OnAppUninstall001
+ * @tc.desc: Test OnAppUninstall deletes Database and BundleVersionMetaData
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, OnAppUninstall001, TestSize.Level0)
+{
+    RdbServiceImpl::RdbStatic rdbStatic;
+    Database database;
+    database.bundleName = TEST_BUNDLE;
+    database.name = TEST_STORE;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    BundleVersionMetaData versionMeta;
+    versionMeta.bundleName = TEST_BUNDLE;
+    versionMeta.user = metaData_.user;
+    versionMeta.appIndex = metaData_.instanceId;
+    versionMeta.versionCode = 1;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true), true);
+
+    auto result = rdbStatic.OnAppUninstall(TEST_BUNDLE, std::atoi(metaData_.user.c_str()), metaData_.instanceId);
+    EXPECT_EQ(result, E_OK);
+
+    Database loadedDb;
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(database.GetKey(), loadedDb, true));
+    BundleVersionMetaData loadedVersion;
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), loadedVersion, true));
+}
+
+/**
+ * @tc.name: OnUserChange001
+ * @tc.desc: Test OnUserChange with DEVICE_ACCOUNT_DELETE deletes BundleVersionMetaData entries
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, OnUserChange001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    BundleVersionMetaData versionMeta1;
+    versionMeta1.bundleName = TEST_BUNDLE;
+    versionMeta1.user = metaData_.user;
+    versionMeta1.appIndex = 0;
+    versionMeta1.versionCode = 1;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(versionMeta1.GetKey(), versionMeta1, true), true);
+    BundleVersionMetaData versionMeta2;
+    versionMeta2.bundleName = "test_bundle_another";
+    versionMeta2.user = metaData_.user;
+    versionMeta2.appIndex = 0;
+    versionMeta2.versionCode = 2;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(versionMeta2.GetKey(), versionMeta2, true), true);
+
+    auto result = service.OnUserChange(
+        uint32_t(AccountStatus::DEVICE_ACCOUNT_DELETE), metaData_.user, "test_account");
+    EXPECT_EQ(result, E_OK);
+
+    BundleVersionMetaData loadedVersion1;
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(versionMeta1.GetKey(), loadedVersion1, true));
+    BundleVersionMetaData loadedVersion2;
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(versionMeta2.GetKey(), loadedVersion2, true));
+}
+
+/**
+ * @tc.name: OnUserChange002
+ * @tc.desc: Test OnUserChange with non-DEVICE_ACCOUNT_DELETE code does not delete BundleVersionMetaData
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, OnUserChange002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    BundleVersionMetaData versionMeta;
+    versionMeta.bundleName = TEST_BUNDLE;
+    versionMeta.user = metaData_.user;
+    versionMeta.appIndex = 0;
+    versionMeta.versionCode = 1;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true), true);
+
+    auto result = service.OnUserChange(
+        uint32_t(AccountStatus::DEVICE_ACCOUNT_SWITCHED), metaData_.user, "test_account");
+    EXPECT_EQ(result, E_OK);
+
+    BundleVersionMetaData loadedVersion;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), loadedVersion, true));
+    EXPECT_EQ(loadedVersion.versionCode, 1);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(versionMeta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: IsCollaboration001
+ * @tc.desc: Test IsCollaboration returns true when both Database and BundleVersionMetaData exist
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, IsCollaboration001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    BundleVersionMetaData versionMeta;
+    versionMeta.bundleName = metaData_.bundleName;
+    versionMeta.user = metaData_.user;
+    versionMeta.appIndex = metaData_.instanceId;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true), true);
+
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.distributedTableMode_ = OHOS::DistributedRdb::DistributedTableMode::SINGLE_VERSION;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
+    EXPECT_EQ(result, RDB_OK);
+
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(versionMeta.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: IsCollaboration002
+ * @tc.desc: Test IsCollaboration returns false when only Database exists without BundleVersionMetaData
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, IsCollaboration002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    Database database;
+    database.bundleName = metaData_.bundleName;
+    database.name = metaData_.storeId;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.type_ = metaData_.storeType;
+    param.area_ = metaData_.area;
+    param.level_ = metaData_.securityLevel;
+    param.distributedTableMode_ = OHOS::DistributedRdb::DistributedTableMode::SINGLE_VERSION;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    auto result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
+    EXPECT_EQ(result, RDB_ERROR);
+
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath()), true);
+}
+
+/**
+ * @tc.name: OnAppUpdate001
+ * @tc.desc: Test OnAppUpdate calls UpdateSchemaMeta and closes store
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, OnAppUpdate001, TestSize.Level0)
+{
+    RdbServiceImpl::RdbStatic rdbStatic;
+    Database database;
+    database.bundleName = TEST_BUNDLE;
+    database.name = TEST_STORE;
+    database.user = metaData_.user;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    BundleVersionMetaData versionMeta;
+    versionMeta.bundleName = TEST_BUNDLE;
+    versionMeta.user = metaData_.user;
+    versionMeta.appIndex = metaData_.instanceId;
+    versionMeta.versionCode = 1;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true), true);
+
+    auto result = rdbStatic.OnAppUpdate(TEST_BUNDLE, std::atoi(metaData_.user.c_str()), metaData_.instanceId);
+    EXPECT_EQ(result, E_OK);
+
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
+    ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(versionMeta.GetKey(), true), true);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
