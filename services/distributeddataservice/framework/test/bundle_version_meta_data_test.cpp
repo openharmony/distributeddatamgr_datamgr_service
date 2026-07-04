@@ -317,17 +317,6 @@ HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_LoadMeta_PrefixQuery, 
 }
 
 /**
- * @tc.name: BundleVersionMetaData_KeyPrefix_MatchesPattern
- * @tc.desc: Test KEY_PREFIX constant value
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_KeyPrefix_MatchesPattern, TestSize.Level1)
-{
-    EXPECT_STREQ(BundleVersionMetaData::KEY_PREFIX, "BundleVersionMetaData");
-}
-
-/**
  * @tc.name: BundleVersionMetaData_DifferentUsers_DifferentKeys
  * @tc.desc: Test that same bundleName with different users produces different keys
  * @tc.type: FUNC

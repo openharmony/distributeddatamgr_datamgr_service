@@ -296,23 +296,22 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
     database.name = metaData.storeId;
     database.user = metaData.user;
     BundleVersionMetaData versionMeta;
+    versionMeta.user = metaData.user;
+    versionMeta.bundleName = metaData.bundleName;
+    versionMeta.appIndex = metaData.instanceId;
     if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
-        versionMeta.user = metaData.user;
-        versionMeta.bundleName = metaData.bundleName;
-        versionMeta.appIndex = metaData.instanceId;
         if (MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)) {
             return true;
         }
     }
     auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
     if (success && !database.name.empty() && !database.bundleName.empty()) {
-        MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true);
+        if (!MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true)) {
+            return false;
+        }
         auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(metaData.bundleName,
             std::atoi(metaData.user.c_str()));
         if (initOk) {
-            versionMeta.user = metaData.user;
-            versionMeta.bundleName = metaData.bundleName;
-            versionMeta.appIndex = metaData.instanceId;
             versionMeta.versionCode = bundleInfo.versionCode;
             MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
             ZLOGI("Saved bundle version, bundleName: %{public}s, versionCode: %{public}d",
