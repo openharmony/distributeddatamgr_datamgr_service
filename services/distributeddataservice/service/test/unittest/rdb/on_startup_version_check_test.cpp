@@ -335,13 +335,13 @@ HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_UpdateVersionCodeAfter
 }
 
 /**
- * @tc.name: OnStartupVersionCheck_DifferentUsers_IndependentVersionTracking
+ * @tc.name: OnStartupVersionCheck_DifferentUsers_IndependentVersion
  * @tc.desc: Different users with the same bundleName have independent
  *           BundleVersionMetaData entries and Database entries
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DifferentUsers_IndependentVersionTracking, TestSize.Level1)
+HWTEST_F(OnStartupVersionCheckTest, OnStartupVersionCheck_DifferentUsers_IndependentVersion, TestSize.Level1)
 {
     BundleVersionMetaData v1;
     v1.bundleName = "com.example.crossuser";

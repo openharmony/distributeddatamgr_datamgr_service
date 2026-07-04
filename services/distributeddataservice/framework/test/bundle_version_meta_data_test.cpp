@@ -23,7 +23,7 @@
 
 using namespace testing::ext;
 using namespace OHOS;
-using namespace OHOS::DistributedKv;
+using namespace DistributedDB;
 using namespace OHOS::DistributedData;
 
 namespace OHOS::Test {
@@ -136,15 +136,17 @@ HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_Unmarshal_PartialJson,
 {
     Serializable::json node;
     node["bundleName"] = "com.example.partial";
+    node["user"] = "100";
+    node["appIndex"] = 0;
     node["versionCode"] = 999;
 
     BundleVersionMetaData meta;
     bool ret = meta.Unmarshal(node);
     EXPECT_TRUE(ret);
     EXPECT_EQ(meta.bundleName, "com.example.partial");
-    EXPECT_EQ(meta.versionCode, 999);
-    EXPECT_EQ(meta.user, "");
+    EXPECT_EQ(meta.user, "100");
     EXPECT_EQ(meta.appIndex, 0);
+    EXPECT_EQ(meta.versionCode, 999);
 }
 
 /**
@@ -347,8 +349,8 @@ HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_DifferentUsers_Differe
 
     EXPECT_NE(meta1.GetKey(), meta2.GetKey());
 
-    auto delResult1 = MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true);
-    auto delResult2 = MetaDataManager::GetInstance().DelMeta(meta2.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta1.GetKey(), true);
+    MetaDataManager::GetInstance().DelMeta(meta2.GetKey(), true);
 }
 
 /**
