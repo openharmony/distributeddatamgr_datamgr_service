@@ -163,7 +163,7 @@ HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_GetKey_InstanceMethod,
 
     std::string key = meta.GetKey();
     std::string expected = std::string(BundleVersionMetaData::KEY_PREFIX) + Constant::KEY_SEPARATOR
-        + "100" + Constant::KEY_SEPARATOR + "default" + Constant::KEY_SEPARATOR + "com.example.testapp";
+        + "100" + Constant::KEY_SEPARATOR + "com.example.testapp" + Constant::KEY_SEPARATOR + "0";
     EXPECT_EQ(key, expected);
 }
 
@@ -175,9 +175,9 @@ HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_GetKey_InstanceMethod,
  */
 HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_GetKey_StaticMethod, TestSize.Level1)
 {
-    std::string key = BundleVersionMetaData::GetKey({ "100", "default", "com.example.testapp" });
+    std::string key = BundleVersionMetaData::GetKey({ "100", "com.example.testapp", "0" });
     std::string expected = std::string(BundleVersionMetaData::KEY_PREFIX) + Constant::KEY_SEPARATOR
-        + "100" + Constant::KEY_SEPARATOR + "default" + Constant::KEY_SEPARATOR + "com.example.testapp";
+        + "100" + Constant::KEY_SEPARATOR + "com.example.testapp" + Constant::KEY_SEPARATOR + "0";
     EXPECT_EQ(key, expected);
 }
 
@@ -202,10 +202,10 @@ HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_GetPrefix_EmptyFields,
  */
 HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_GetPrefix_WithUserAndBundleName, TestSize.Level1)
 {
-    std::string prefix = BundleVersionMetaData::GetPrefix({ "100", "default", "com.example.testapp" });
+    std::string prefix = BundleVersionMetaData::GetPrefix({ "100", "com.example.testapp", "0" });
     std::string expected = std::string(BundleVersionMetaData::KEY_PREFIX) + Constant::KEY_SEPARATOR
-        + "100" + Constant::KEY_SEPARATOR + "default" + Constant::KEY_SEPARATOR
-        + "com.example.testapp" + Constant::KEY_SEPARATOR;
+        + "100" + Constant::KEY_SEPARATOR + "com.example.testapp" + Constant::KEY_SEPARATOR
+        + "0" + Constant::KEY_SEPARATOR;
     EXPECT_EQ(prefix, expected);
 }
 
@@ -355,8 +355,7 @@ HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_DifferentUsers_Differe
 
 /**
  * @tc.name: BundleVersionMetaData_DifferentAppIndex_DifferentKeys
- * @tc.desc: Test that same bundleName+user with different appIndex still uses same key
- *       (appIndex is in data but not in key)
+ * @tc.desc: Test that same bundleName+user with different appIndex produces different keys
  * @tc.type: FUNC
  * @tc.author: agent
  */
@@ -374,6 +373,6 @@ HWTEST_F(BundleVersionMetaDataTest, BundleVersionMetaData_DifferentAppIndex_Diff
     meta2.appIndex = 1;
     meta2.versionCode = 200;
 
-    EXPECT_EQ(meta1.GetKey(), meta2.GetKey());
+    EXPECT_NE(meta1.GetKey(), meta2.GetKey());
 }
 } // namespace OHOS::Test
