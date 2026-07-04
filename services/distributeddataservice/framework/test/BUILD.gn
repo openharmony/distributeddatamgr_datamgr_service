@@ -575,14 +575,14 @@ group("unittest") {
 
   deps = []
 
-    deps += [
-        ":AppIdMappingConfigManagerTest",
-        ":AssetLoaderTest",
-        ":AutoCacheTest",
-        ":BackupRuleManagerTest",
-        ":BindEventTest",
-        ":BundleVersionMetaDataTest",
-        ":CheckerManagerTest",
+  deps += [
+    ":AppIdMappingConfigManagerTest",
+    ":AssetLoaderTest",
+    ":AutoCacheTest",
+    ":BackupRuleManagerTest",
+    ":BindEventTest",
+    ":BundleVersionMetaDataTest",
+    ":CheckerManagerTest",
     ":CloudInfoTest",
     ":ConnectManagerTest",
     ":ConstantTest",
