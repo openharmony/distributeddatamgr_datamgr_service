@@ -306,7 +306,8 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
     auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
     if (success && !database.name.empty() && !database.bundleName.empty()) {
         MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true);
-        auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(metaData.bundleName, std::atoi(metaData.user.c_str()));
+        auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(metaData.bundleName,
+            std::atoi(metaData.user.c_str()));
         if (initOk) {
             versionMeta.versionCode = bundleInfo.versionCode;
             versionMeta.appIndex = metaData.instanceId;
