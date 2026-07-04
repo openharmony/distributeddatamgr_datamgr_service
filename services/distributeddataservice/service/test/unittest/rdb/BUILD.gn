@@ -125,6 +125,7 @@ ohos_unittest("RdbServiceTest") {
     "${data_service_path}/framework/flow_control_manager/flow_control_manager.cpp",
     "${data_service_path}/framework/metadata/appid_meta_data.cpp",
     "${data_service_path}/framework/metadata/auto_launch_meta_data.cpp",
+    "${data_service_path}/framework/metadata/bundle_version_meta_data.cpp",
     "${data_service_path}/framework/metadata/capability_meta_data.cpp",
     "${data_service_path}/framework/metadata/capability_range.cpp",
     "${data_service_path}/framework/metadata/corrupted_meta_data.cpp",

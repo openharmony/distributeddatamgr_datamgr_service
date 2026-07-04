@@ -37,6 +37,7 @@
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/auto_launch_meta_data.h"
+#include "metadata/bundle_version_meta_data.h"
 #include "metadata/capability_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/special_channel_data.h"
@@ -294,12 +295,28 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
     database.bundleName = metaData.bundleName;
     database.name = metaData.storeId;
     database.user = metaData.user;
+    BundleVersionMetaData versionMeta;
+    versionMeta.user = metaData.user;
+    versionMeta.bundleName = metaData.bundleName;
+    versionMeta.appIndex = metaData.instanceId;
     if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
-        return true;
+        if (MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)) {
+            return true;
+        }
     }
     auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
     if (success && !database.name.empty() && !database.bundleName.empty()) {
-        MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true);
+        if (!MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true)) {
+            return false;
+        }
+        auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(metaData.bundleName,
+            std::atoi(metaData.user.c_str()));
+        if (initOk) {
+            versionMeta.versionCode = bundleInfo.versionCode;
+            MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
+            ZLOGI("Saved bundle version, bundleName: %{public}s, versionCode: %{public}d",
+                metaData.bundleName.c_str(), versionMeta.versionCode);
+        }
         return true;
     }
     return false;
@@ -1747,6 +1764,11 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName,
             MetaDataManager::GetInstance().DelMeta(dataBase.GetKey(), true);
         }
     }
+    BundleVersionMetaData versionMeta;
+    versionMeta.bundleName = bundleName;
+    versionMeta.user = std::to_string(user);
+    versionMeta.appIndex = index;
+    MetaDataManager::GetInstance().DelMeta(versionMeta.GetKey(), true);
     return CloseStore(bundleName, user, index);
 }
 
@@ -1755,27 +1777,61 @@ int32_t RdbServiceImpl::RdbStatic::OnAppUpdate(const std::string &bundleName, in
     if (rdbFlowControlManager_ != nullptr) {
         rdbFlowControlManager_->Remove(bundleName);
     }
+    UpdateSchemaMeta(bundleName, user, index);
+    return CloseStore(bundleName, user, index);
+}
+
+void RdbServiceImpl::UpdateSchemaMeta(const std::string &bundleName, int32_t user, int32_t index)
+{
     std::string prefix = Database::GetPrefix({ std::to_string(user), "default", bundleName });
     std::vector<Database> dataBase;
-    if (MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {
-        for (const auto &database : dataBase) {
-            MetaDataManager::GetInstance().DelMeta(database.GetKey(), true);
-            ZLOGD("del metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
-                Anonymous::Change(database.name).c_str(), database.user.c_str(), database.bundleName.c_str());
-            StoreMetaData meta;
-            meta.user = database.user;
-            meta.deviceId = database.deviceId;
-            meta.storeId = database.name;
-            meta.bundleName = bundleName;
-            Database base;
-            if (RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() && !base.bundleName.empty()) {
-                MetaDataManager::GetInstance().SaveMeta(base.GetKey(), base, true);
-                ZLOGD("save metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
-                    Anonymous::Change(base.name).c_str(), base.user.c_str(), base.bundleName.c_str());
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, dataBase, true)) {
+        return;
+    }
+    for (const auto &database : dataBase) {
+        MetaDataManager::GetInstance().DelMeta(database.GetKey(), true);
+        ZLOGD("del metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
+            Anonymous::Change(database.name).c_str(), database.user.c_str(), database.bundleName.c_str());
+        StoreMetaData meta;
+        meta.user = database.user;
+        meta.deviceId = database.deviceId;
+        meta.storeId = database.name;
+        meta.bundleName = bundleName;
+        Database base;
+        if (!(RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() && !base.bundleName.empty())) {
+            return;
+        }
+        if (MetaDataManager::GetInstance().SaveMeta(base.GetKey(), base, true)) {
+            ZLOGD("save metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
+                Anonymous::Change(base.name).c_str(), base.user.c_str(), base.bundleName.c_str());
+            auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(bundleName, user);
+            if (initOk) {
+                BundleVersionMetaData versionMeta;
+                versionMeta.bundleName = bundleName;
+                versionMeta.user = std::to_string(user);
+                versionMeta.appIndex = index;
+                versionMeta.versionCode = bundleInfo.versionCode;
+                MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
             }
         }
     }
-    return CloseStore(bundleName, user, index);
+}
+
+int32_t RdbServiceImpl::OnUserChange(uint32_t code, const std::string &user, const std::string &account)
+{
+    if (code == uint32_t(AccountStatus::DEVICE_ACCOUNT_DELETE)) {
+        std::string prefix = BundleVersionMetaData::GetPrefix({user});
+        std::vector<BundleVersionMetaData> versionEntries;
+        if (MetaDataManager::GetInstance().LoadMeta(prefix, versionEntries, true)) {
+            std::vector<std::string> keys;
+            keys.reserve(versionEntries.size());
+            for (const auto &entry : versionEntries) {
+                keys.push_back(entry.GetKey());
+            }
+            MetaDataManager::GetInstance().DelMeta(keys, true);
+        }
+    }
+    return Feature::OnUserChange(code, user, account);
 }
 
 int32_t RdbServiceImpl::RdbStatic::OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index,
@@ -1814,8 +1870,41 @@ int32_t RdbServiceImpl::OnInitialize()
     specialChannels_.Initialize({ std::move(specialChannels.devices), std::vector<std::monostate>{} });
     RegisterRdbServiceInfo();
     RegisterHandler();
+    if (executors_ != nullptr) {
+        executors_->Execute([]() {
+            UpdateBundleVerison();
+        });
+        return RDB_OK;
+    }
+    UpdateBundleVerison();
     return RDB_OK;
 }
+
+void RdbServiceImpl::UpdateBundleVerison()
+{
+    std::string prefix = BundleVersionMetaData::GetPrefix({});
+    std::vector<BundleVersionMetaData> versionEntries;
+    if (!MetaDataManager::GetInstance().LoadMeta(prefix, versionEntries, true)) {
+        ZLOGI("No bundle version entries found on startup.");
+        return;
+    }
+    for (const auto &entry : versionEntries) {
+        auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(entry.bundleName,
+            std::atoi(entry.user.c_str()));
+        if (!initOk) {
+            ZLOGW("Failed to get bundle info on startup, bundleName: %{public}s",
+                entry.bundleName.c_str());
+            continue;
+        }
+        if (bundleInfo.versionCode <= entry.versionCode) {
+            continue;
+        }
+        ZLOGI("Bundle version upgraded , bundleName: %{public}s, old: %{public}d, new: %{public}d",
+            entry.bundleName.c_str(), entry.versionCode, bundleInfo.versionCode);
+        UpdateSchemaMeta(entry.bundleName, std::atoi(entry.user.c_str()), entry.appIndex);
+    }
+}
+
 
 RdbServiceImpl::~RdbServiceImpl()
 {
