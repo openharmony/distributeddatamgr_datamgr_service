@@ -202,8 +202,6 @@ private:
 
     void RegisterHandler();
 
-    void StartupVersionCheck();
-
     void RegisterEvent();
 
     void DumpRdbServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);
@@ -283,6 +281,8 @@ private:
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
 
     static void UpdateSchemaMeta(const std::string &bundleName, int32_t user, int32_t index);
+
+    static void UpdateBundleVerison();
 
     static std::string TransferStringToHex(const std::string& origStr);
 

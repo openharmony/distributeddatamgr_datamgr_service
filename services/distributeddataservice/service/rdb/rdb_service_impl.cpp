@@ -1795,13 +1795,12 @@ void RdbServiceImpl::UpdateSchemaMeta(const std::string &bundleName, int32_t use
         meta.storeId = database.name;
         meta.bundleName = bundleName;
         Database base;
-        bool ret = false;
-        if (RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() && !base.bundleName.empty()) {
-            ret = MetaDataManager::GetInstance().SaveMeta(base.GetKey(), base, true);
+        if (!RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() && !base.bundleName.empty()) {
+            return;
+        }
+        if (MetaDataManager::GetInstance().SaveMeta(base.GetKey(), base, true)) {
             ZLOGD("save metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
                 Anonymous::Change(base.name).c_str(), base.user.c_str(), base.bundleName.c_str());
-        }
-        if (ret) {
             auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(bundleName, user);
             if (initOk) {
                 BundleVersionMetaData versionMeta;
@@ -1821,9 +1820,12 @@ int32_t RdbServiceImpl::OnUserChange(uint32_t code, const std::string &user, con
         std::string prefix = BundleVersionMetaData::GetPrefix({user});
         std::vector<BundleVersionMetaData> versionEntries;
         if (MetaDataManager::GetInstance().LoadMeta(prefix, versionEntries, true)) {
+            std::vector<std::string> keys;
+            keys.reserve(versionEntries.size());
             for (const auto &entry : versionEntries) {
-                MetaDataManager::GetInstance().DelMeta(entry.GetKey(), true);
+                keys.push_back(entry.GetKey());
             }
+            MetaDataManager::GetInstance().DelMeta(keys, true);
         }
     }
     return Feature::OnUserChange(code, user, account);
@@ -1866,16 +1868,16 @@ int32_t RdbServiceImpl::OnInitialize()
     RegisterRdbServiceInfo();
     RegisterHandler();
     if (executors_ != nullptr) {
-        executors_->Execute([this]() {
-            StartupVersionCheck();
+        executors_->Execute([]() {
+            UpdateBundleVerison();
         });
         return RDB_OK;
     }
-    StartupVersionCheck();
+    UpdateBundleVerison();
     return RDB_OK;
 }
 
-void RdbServiceImpl::StartupVersionCheck()
+void RdbServiceImpl::UpdateBundleVerison()
 {
     std::string prefix = BundleVersionMetaData::GetPrefix({});
     std::vector<BundleVersionMetaData> versionEntries;
