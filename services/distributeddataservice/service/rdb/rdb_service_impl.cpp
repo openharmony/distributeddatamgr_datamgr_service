@@ -297,8 +297,9 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
     database.user = metaData.user;
     BundleVersionMetaData versionMeta;
     if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
-        versionMeta.bundleName = metaData.bundleName;
         versionMeta.user = metaData.user;
+        versionMeta.bundleName = metaData.bundleName;
+        versionMeta.appIndex = metaData.instanceId;
         if (MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)) {
             return true;
         }
@@ -309,8 +310,10 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
         auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(metaData.bundleName,
             std::atoi(metaData.user.c_str()));
         if (initOk) {
-            versionMeta.versionCode = bundleInfo.versionCode;
+            versionMeta.user = metaData.user;
+            versionMeta.bundleName = metaData.bundleName;
             versionMeta.appIndex = metaData.instanceId;
+            versionMeta.versionCode = bundleInfo.versionCode;
             MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
             ZLOGI("Saved bundle version, bundleName: %{public}s, versionCode: %{public}d",
                 metaData.bundleName.c_str(), versionMeta.versionCode);

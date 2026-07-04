@@ -33,6 +33,7 @@
 #include "ipc_skeleton.h"
 #include "metadata/appid_meta_data.h"
 #include "metadata/capability_meta_data.h"
+#include "metadata/bundle_version_meta_data.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/meta_data_saver.h"
 #include "metadata/special_channel_data.h"
@@ -1544,6 +1545,11 @@ HWTEST_F(RdbServiceImplTest, SetDistributedTables005, TestSize.Level0)
     database.name = metaData_.storeId;
     database.user = metaData_.user;
     ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true), true);
+    BundleVersionMetaData versionMeta;
+    versionMeta.bundleName = metaData_.bundleName;
+    versionMeta.user = metaData_.user;
+    versionMeta.appIndex = metaData_.instanceId;
+    ASSERT_EQ(MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true), true);
     result = service.SetDistributedTables(param, {}, {}, false, DistributedTableType::DISTRIBUTED_DEVICE);
 
     EXPECT_EQ(result, RDB_OK);
