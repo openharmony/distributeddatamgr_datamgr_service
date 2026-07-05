@@ -299,15 +299,14 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
     versionMeta.user = metaData.user;
     versionMeta.bundleName = metaData.bundleName;
     versionMeta.appIndex = metaData.instanceId;
-    if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true)) {
-        if (MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)) {
-            return true;
-        }
+    if (MetaDataManager::GetInstance().LoadMeta(database.GetKey(), database, true) &&
+            MetaDataManager::GetInstance().LoadMeta(versionMeta.GetKey(), versionMeta, true)) {
+        return true;
     }
     auto success = RdbSchemaConfig::GetDistributedSchema(metaData, database);
     if (success && !database.name.empty() && !database.bundleName.empty()) {
         if (!MetaDataManager::GetInstance().SaveMeta(database.GetKey(), database, true)) {
-            return false;
+            return true;
         }
         auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(metaData.bundleName,
             std::atoi(metaData.user.c_str()));
@@ -1896,7 +1895,7 @@ void RdbServiceImpl::UpdateBundleVerison()
                 entry.bundleName.c_str());
             continue;
         }
-        if (bundleInfo.versionCode <= entry.versionCode) {
+        if (bundleInfo.versionCode == entry.versionCode) {
             continue;
         }
         ZLOGI("Bundle version upgraded , bundleName: %{public}s, old: %{public}d, new: %{public}d",
