@@ -15,6 +15,8 @@
 #define LOG_TAG "LoadConfigDataInfoStrategy"
 #include "load_config_data_info_strategy.h"
 
+#include "accesstoken_kit.h"
+#include "account/account_delegate.h"
 #include "check_is_single_app_strategy.h"
 #include "device_manager_adapter.h"
 #include "extension_connect_adaptor.h"
@@ -22,6 +24,7 @@
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "rdb_errno.h"
+#include "tokenid_kit.h"
 #include "utils.h"
 
 namespace OHOS::DataShare {
@@ -30,14 +33,41 @@ LoadConfigDataInfoStrategy::LoadConfigDataInfoStrategy()
           std::make_shared<LoadConfigNormalDataInfoStrategy>())
 {
 }
-static bool QueryMetaData(const std::string &bundleName, const std::string &storeName,
-    DistributedData::StoreMetaData &metaData, const int32_t userId, const int32_t appIndex)
+
+static bool MatchAccountDataDir(const std::string &dataDir, int32_t accountId)
+{
+    if (accountId <= 0 || dataDir.empty()) {
+        return false;
+    }
+    // dataDir ends with ".db", accountId is always a middle path segment followed by '/'.
+    std::string token = "/" + std::to_string(accountId) + "/";
+    return dataDir.find(token) != std::string::npos;
+}
+
+static bool QueryMetaData(std::shared_ptr<Context> context,
+    const int32_t userId, DistributedData::StoreMetaData &metaData)
 {
     DistributedData::StoreMetaMapping storeMetaMapping;
     storeMetaMapping.deviceId = DistributedData::DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     storeMetaMapping.user = std::to_string(userId);
-    storeMetaMapping.bundleName = bundleName;
-    storeMetaMapping.storeId = storeName;
+    storeMetaMapping.bundleName = context->calledBundleName;
+    storeMetaMapping.storeId = context->calledStoreName;
+    storeMetaMapping.instanceId = context->appIndex;
+
+    if (context->accountIsolation && context->accountId > 0) {
+        // No clone app + account isolation: prefix-query StoreMetaData for all same-name DBs
+        // (key contains dataDir, one entry per DB), then match dataDir (DB path) by accountId.
+        std::vector<DistributedData::StoreMetaData> metas;
+        DistributedData::MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKeyWithoutPath(), metas, true);
+        for (const auto &meta : metas) {
+            if (MatchAccountDataDir(meta.dataDir, context->accountId)) {
+                metaData = meta;
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool isCreated = DistributedData::MetaDataManager::GetInstance().LoadMeta(
         storeMetaMapping.GetKey(), storeMetaMapping, true);
     metaData = storeMetaMapping;
@@ -54,13 +84,11 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
         return true;
     }
     DistributedData::StoreMetaData metaData;
-    if (!QueryMetaData(
-        context->calledBundleName, context->calledStoreName, metaData, context->visitedUserId, context->appIndex)) {
+    if (!QueryMetaData(context, context->visitedUserId, metaData)) {
         // connect extension and retry
         AAFwk::WantParams wantParams;
         ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName, wantParams);
-        if (!QueryMetaData(
-            context->calledBundleName, context->calledStoreName, metaData, context->visitedUserId, context->appIndex)) {
+        if (!QueryMetaData(context, context->visitedUserId, metaData)) {
             ZLOGE("QueryMetaData fail, %{public}s", URIUtils::Anonymous(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;
             return false;
@@ -80,11 +108,11 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
 bool LoadConfigSingleDataInfoStrategy::operator()(std::shared_ptr<Context> context)
 {
     DistributedData::StoreMetaData metaData;
-    if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0, context->appIndex)) {
+    if (!QueryMetaData(context, 0, metaData)) {
         // connect extension and retry
         AAFwk::WantParams wantParams;
         ExtensionConnectAdaptor::TryAndWait(context->uri, context->calledBundleName, wantParams);
-        if (!QueryMetaData(context->calledBundleName, context->calledStoreName, metaData, 0, context->appIndex)) {
+        if (!QueryMetaData(context, 0, metaData)) {
             ZLOGE("QueryMetaData fail, %{public}s", URIUtils::Anonymous(context->uri).c_str());
             context->errCode = NativeRdb::E_DB_NOT_EXIST;
             return false;

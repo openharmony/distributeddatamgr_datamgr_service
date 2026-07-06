@@ -35,8 +35,8 @@ class DBDelegate {
 public:
     using Time = std::chrono::steady_clock::time_point;
     using Filter = std::function<bool(const std::string &user)>;
-    static std::shared_ptr<DBDelegate> Create(DistributedData::StoreMetaData &metaData,
-        const std::string &extUri = "", const std::string &backup = "");
+    static std::shared_ptr<DBDelegate> Create(DistributedData::StoreMetaData &metaData, const std::string &extUri = "",
+        const std::string &backup = "", int32_t accountId = -1);
     static bool Delete(const DistributedData::StoreMetaData &metaData);
     virtual bool Init(const DistributedData::StoreMetaData &meta, int version,
         bool registerFunction, const std::string &extUri, const std::string &backup) = 0;

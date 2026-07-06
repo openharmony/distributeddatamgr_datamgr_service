@@ -30,8 +30,8 @@ ExecutorPool::TaskId DBDelegate::taskIdEncrypt_ = ExecutorPool::INVALID_TASK_ID;
 ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<DBDelegate::Entity>>> DBDelegate::stores_ = {};
 ConcurrentMap<uint32_t, std::map<std::string, std::shared_ptr<DBDelegate::Entity>>> DBDelegate::storesEncrypt_ = {};
 std::shared_ptr<ExecutorPool> DBDelegate::executor_ = nullptr;
-std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &metaData,
-    const std::string &extUri, const std::string &backup)
+std::shared_ptr<DBDelegate> DBDelegate::Create(
+    DistributedData::StoreMetaData &metaData, const std::string &extUri, const std::string &backup, int32_t accountId)
 {
     if (atoi(metaData.user.c_str()) != 0 && metaData.area > DistributedData::GeneralStore::Area::EL1 &&
        (Account::GetInstance()->IsDeactivating(atoi(metaData.user.c_str())) ||
@@ -41,9 +41,12 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
         return nullptr;
     }
     std::shared_ptr<DBDelegate> store;
-    auto storeFunc = [&metaData, &store, extUri, &backup]
-        (auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
-        auto it = stores.find(metaData.storeId);
+    std::string cacheKey = (accountId > 0)
+        ? metaData.storeId + "/" + std::to_string(accountId)
+        : metaData.storeId;
+    auto storeFunc = [&metaData, &store, &backup, cacheKey](
+                         auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
+        auto it = stores.find(cacheKey);
         if (it != stores.end()) {
             store = it->second->store_;
             it->second->time_ = std::chrono::steady_clock::now() + std::chrono::seconds(INTERVAL);
@@ -51,7 +54,7 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
         }
         store = std::make_shared<RdbDelegate>();
         auto entity = std::make_shared<Entity>(store, metaData);
-        stores.emplace(metaData.storeId, entity);
+        stores.emplace(cacheKey, entity);
         StartTimer(metaData.isEncrypt);
         return !stores.empty();
     };
@@ -67,9 +70,8 @@ std::shared_ptr<DBDelegate> DBDelegate::Create(DistributedData::StoreMetaData &m
         return store;
     }
     ZLOGE("creator failed, storeName: %{public}s", StringUtils::GeneralAnonymous(metaData.GetStoreAlias()).c_str());
-    auto eraseFunc = [&metaData]
-        (auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
-        stores.erase(metaData.storeId);
+    auto eraseFunc = [cacheKey](auto &, std::map<std::string, std::shared_ptr<Entity>> &stores) -> bool {
+        stores.erase(cacheKey);
         return !stores.empty();
     };
     if (metaData.isEncrypt) {

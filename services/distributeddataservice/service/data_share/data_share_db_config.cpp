@@ -127,7 +127,7 @@ std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> Dat
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::META_DATA_NOT_EXISTS);
         return std::make_tuple(errCode, metaData, nullptr);
     }
-    auto dbDelegate = DBDelegate::Create(metaData, dbConfig.extUri, dbConfig.backup);
+    auto dbDelegate = DBDelegate::Create(metaData, dbConfig.extUri, dbConfig.backup, dbConfig.accountId);
     if (dbDelegate == nullptr) {
         ZLOGE("Create delegate fail, bundleName:%{public}s, userId:%{public}d, uri:%{public}s",
             dbConfig.bundleName.c_str(), dbConfig.userId, URIUtils::Anonymous(dbConfig.uri).c_str());

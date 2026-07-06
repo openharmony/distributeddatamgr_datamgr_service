@@ -16,6 +16,8 @@
 
 #include "load_config_from_data_proxy_node_strategy.h"
 
+#include "accesstoken_kit.h"
+#include "account/account_delegate.h"
 #include "bundle_mgr_proxy.h"
 #include "common/utils.h"
 #include "data_share_profile_config.h"
@@ -24,12 +26,16 @@
 #include "utils/anonymous.h"
 
 namespace OHOS::DataShare {
+using namespace OHOS::DistributedData;
 bool LoadConfigFromDataProxyNodeStrategy::operator()(std::shared_ptr<Context> context)
 {
     if (!LoadConfigFromUri(context)) {
         return false;
     }
     context->type = PUBLISHED_DATA_TYPE;
+#ifdef ACCOUNT_ISOLATION_ENABLED
+    ResolveProviderAppIndex(context);
+#endif
     if (BundleMgrProxy::GetInstance()->GetBundleInfoFromBMSWithCheck(
         context->calledBundleName, context->visitedUserId, context->bundleInfo) != E_OK) {
         ZLOGE("GetBundleInfoFromBMSWithCheck failed! bundleName: %{public}s", context->calledBundleName.c_str());
@@ -84,6 +90,7 @@ bool LoadConfigFromDataProxyNodeStrategy::GetContextInfoFromDataProperties(const
     context->calledStoreName = properties.storeName;
     context->calledTableName = properties.tableName;
     context->type = properties.type;
+    context->accountIsolation = properties.accountIsolation;
     return true;
 }
 
@@ -93,5 +100,36 @@ bool LoadConfigFromDataProxyNodeStrategy::LoadConfigFromUri(std::shared_ptr<Cont
         return false;
     }
     return true;
+}
+
+void LoadConfigFromDataProxyNodeStrategy::ResolveProviderAppIndex(std::shared_ptr<Context> context)
+{
+    if (context->accountId <= 0) {
+        return;
+    }
+    auto *delegate = AccountDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("AccountDelegate is null, provider identity skipped");
+        return;
+    }
+    std::vector<int32_t> cloneAppIndexes;
+    auto bmsErr = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
+        context->calledBundleName, cloneAppIndexes, context->visitedUserId);
+    if (bmsErr != 0) {
+        ZLOGW("GetCloneAppIndexes failed, err:%{public}d, bundle:%{public}s, treat as no clone app", bmsErr,
+            context->calledBundleName.c_str());
+    }
+    if (!cloneAppIndexes.empty()) {
+        int32_t providerAppIndex =
+            delegate->GetAppIndexBySubProfileId(context->visitedUserId, context->accountId);
+        if (providerAppIndex >= 0) {
+            ZLOGI("account isolation: accountId %{public}d -> appIndex %{public}d, userId %{public}d",
+                context->accountId, providerAppIndex, context->visitedUserId);
+            context->appIndex = providerAppIndex;
+        } else {
+            ZLOGE("accountId to appIndex failed, accountId:%{public}d, userId:%{public}d", context->accountId,
+                context->visitedUserId);
+        }
+    }
 }
 } // namespace OHOS::DataShare
