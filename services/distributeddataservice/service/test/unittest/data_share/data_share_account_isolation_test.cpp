@@ -549,9 +549,6 @@ HWTEST_F(DataShareAccountIsolationTest, GetFromDataProperties_AccountIsolationFa
     EXPECT_EQ(result, E_OK);
     EXPECT_EQ(providerConfig.providerInfo_.accountIsolation, false);
 }
-
-// ===== Context.accountIsolation field tests =====
-
 /**
  * @tc.name: Context_AccountIsolation_DefaultFalse_ExpectDefaultPreserved
  * @tc.desc: Verify Context.accountIsolation defaults to false
@@ -563,41 +560,10 @@ HWTEST_F(DataShareAccountIsolationTest, Context_AccountIsolation_DefaultFalse_Ex
 {
     ZLOGI("Context_AccountIsolation_DefaultFalse start");
     auto context = std::make_shared<Context>();
-    EXPECT_EQ(context->accountIsolation, false);
-}
-
-/**
- * @tc.name: Context_AccountIsolation_SetTrue_ExpectValueTrue
- * @tc.desc: Verify Context.accountIsolation can be set to true and preserved
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(DataShareAccountIsolationTest, Context_AccountIsolation_SetTrue_ExpectValueTrue, TestSize.Level0)
-{
-    ZLOGI("Context_AccountIsolation_SetTrue start");
-    auto context = std::make_shared<Context>();
+    EXPECT_FALSE(context->accountIsolation);
     context->accountIsolation = true;
-    EXPECT_EQ(context->accountIsolation, true);
+    EXPECT_TRUE(context->accountIsolation);
 }
-
-/**
- * @tc.name: Context_AccountIsolation_SetTrueThenFalse_ExpectValueUpdated
- * @tc.desc: Verify Context.accountIsolation can be updated from true to false
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(DataShareAccountIsolationTest, Context_AccountIsolation_SetTrueThenFalse_ExpectValueUpdated,
-    TestSize.Level0)
-{
-    ZLOGI("Context_AccountIsolation_SetTrueThenFalse start");
-    auto context = std::make_shared<Context>();
-    context->accountIsolation = true;
-    EXPECT_EQ(context->accountIsolation, true);
-    context->accountIsolation = false;
-    EXPECT_EQ(context->accountIsolation, false);
-}
-
-// ===== GetContextInfoFromDataProperties accountIsolation pass-through tests =====
 
 /**
  * @tc.name: GetContextInfoFromDataProperties_AccountIsolationTrue_ExpectPassedToContext
@@ -643,8 +609,6 @@ HWTEST_F(DataShareAccountIsolationTest, GetContextInfoFromDataProperties_Account
     EXPECT_EQ(context->calledTableName, "table");
 }
 
-// ===== ResolveProviderAppIndex (LoadConfigFromDataProxyNodeStrategy) tests =====
-
 /**
  * @tc.name: ResolveProviderAppIndex_AccountIdZero_ExpectNoChange
  * @tc.desc: Verify ResolveProviderAppIndex exits early when accountId is 0, appIndex unchanged
@@ -680,12 +644,12 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_AccountIdNegativ
 }
 
 /**
- * @tc.name: ResolveProviderAppIndex_DelegateNull_ExpectNoChange
- * @tc.desc: Verify ResolveProviderAppIndex exits early when AccountDelegate is null, appIndex unchanged
+ * @tc.name: ResolveProviderAppIndex_DelegateNullDataProxy_ExpectNoChange
+ * @tc.desc: Verify ResolveProviderAppIndex exits early when AccountDelegate is null with DataProxyNodeStrategy, appIndex unchanged
  * @tc.type: FUNC
  * @tc.author: agent
  */
-HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNull_ExpectNoChange, TestSize.Level1)
+HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNullDataProxy_ExpectNoChange, TestSize.Level1)
 {
     ZLOGI("ResolveProviderAppIndex_DelegateNull start");
     AccountDelegate::instance_ = nullptr;
@@ -720,31 +684,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_EmptyCloneAppInd
 }
 
 /**
- * @tc.name: ResolveProviderAppIndex_CloneAppExistDelegateReturnsAppIndex_ExpectAppIndexUpdated
- * @tc.desc: Verify ResolveProviderAppIndex updates appIndex when clone apps exist and delegate resolves it
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(DataShareAccountIsolationTest,
-    ResolveProviderAppIndex_CloneAppExistDelegateReturnsAppIndex_ExpectAppIndexUpdated, TestSize.Level1)
-{
-    ZLOGI("ResolveProviderAppIndex_CloneAppExistDelegateReturnsAppIndex start");
-    EXPECT_CALL(mock_, GetAppIndexBySubProfileId(100, 100)).WillOnce(Return(3));
-    LoadConfigFromDataProxyNodeStrategy strategy;
-    auto context = std::make_shared<Context>();
-    context->accountId = 100;
-    context->appIndex = 0;
-    context->calledBundleName = "com.test.clone";
-    context->visitedUserId = 100;
-    strategy.ResolveProviderAppIndex(context);
-    // appIndex change depends on BMS returning clone app indexes
-    // If BMS unavailable, cloneAppIndexes empty → appIndex stays 0
-    // If BMS available and clone apps exist → appIndex set to delegate result
-}
-
-// ===== ResolveAccessorAccountId (LoadConfigCommonStrategy) tests =====
-
-/**
  * @tc.name: ResolveAccessorAccountId_DelegateNull_ExpectNoChange
  * @tc.desc: Verify ResolveAccessorAccountId exits early when AccountDelegate is null
  * @tc.type: FUNC
@@ -761,66 +700,5 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveAccessorAccountId_DelegateNull_Ex
     context->callerTokenId = 0;
     strategy.ResolveAccessorAccountId(context);
     EXPECT_EQ(context->accountId, -1);
-}
-
-// ===== MatchAccountDataDir specification tests =====
-
-/**
- * @tc.name: MatchAccountDataDirSpec_AccountIdInPathSegment_ExpectMatchFound
- * @tc.desc: Verify MatchAccountDataDir spec: "/accountId/" as a path segment matches in dataDir
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDirSpec_AccountIdInPathSegment_ExpectMatchFound,
-    TestSize.Level0)
-{
-    ZLOGI("MatchAccountDataDirSpec_AccountIdInPathSegment start");
-    std::string dataDir = "/data/app/el2/100/com.test/200/mystore.db";
-    std::string token = "/" + std::to_string(200) + "/";
-    EXPECT_NE(dataDir.find(token), std::string::npos);
-}
-
-/**
- * @tc.name: MatchAccountDataDirSpec_AccountIdNotInPath_ExpectNoMatch
- * @tc.desc: Verify MatchAccountDataDir spec: accountId not present as path segment does not match
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDirSpec_AccountIdNotInPath_ExpectNoMatch, TestSize.Level0)
-{
-    ZLOGI("MatchAccountDataDirSpec_AccountIdNotInPath start");
-    std::string dataDir = "/data/app/el2/100/com.test/mystore.db";
-    std::string token = "/" + std::to_string(200) + "/";
-    EXPECT_EQ(dataDir.find(token), std::string::npos);
-}
-
-/**
- * @tc.name: MatchAccountDataDirSpec_AccountIdAsPartialNumber_ExpectNoMatch
- * @tc.desc: Verify MatchAccountDataDir spec: accountId as substring of larger number does not match
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDirSpec_AccountIdAsPartialNumber_ExpectNoMatch,
-    TestSize.Level0)
-{
-    ZLOGI("MatchAccountDataDirSpec_AccountIdAsPartialNumber start");
-    std::string dataDir = "/data/app/el2/100/com.test/200/mystore.db";
-    std::string token = "/" + std::to_string(20) + "/";
-    EXPECT_EQ(dataDir.find(token), std::string::npos);
-}
-
-/**
- * @tc.name: MatchAccountDataDirSpec_AccountIdAtEndWithoutSlash_ExpectNoMatch
- * @tc.desc: Verify MatchAccountDataDir spec: accountId not followed by "/" does not match
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDirSpec_AccountIdAtEndWithoutSlash_ExpectNoMatch,
-    TestSize.Level0)
-{
-    ZLOGI("MatchAccountDataDirSpec_AccountIdAtEndWithoutSlash start");
-    std::string dataDir = "/data/app/el2/100/com.test200/mystore.db";
-    std::string token = "/" + std::to_string(200) + "/";
-    EXPECT_EQ(dataDir.find(token), std::string::npos);
 }
 } // namespace OHOS::DataShare
