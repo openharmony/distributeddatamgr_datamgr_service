@@ -645,7 +645,7 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_AccountIdNegativ
 
 /**
  * @tc.name: ResolveProviderAppIndex_DelegateNullDataProxy_ExpectNoChange
- * @tc.desc: Verify ResolveProviderAppIndex exits early when AccountDelegate is null with DataProxyNodeStrategy, appIndex unchanged
+ * @tc.desc: Verify AccountDelegate is null with DataProxyNodeStrategy, appIndex unchanged
  * @tc.type: FUNC
  * @tc.author: agent
  */
