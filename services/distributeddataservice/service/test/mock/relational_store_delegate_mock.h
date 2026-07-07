@@ -232,7 +232,7 @@ public:
         return true;
     }
 
-    DBStatus QuerySubscribeOutput(const DBSubscribeCur &cursorIn, DBSubscribeCur &cursorOut,
+    DBStatus QuerySubscribeOutput(const DBSubscribeCursor &cursorIn, DBSubscribeCursor &cursorOut,
         std::vector<DistributedDB::VBucket> &dataOut) override
     {
         cursorOut = cursorIn;
@@ -246,7 +246,7 @@ public:
         return true;
     }
 
-    DBStatus SetSubscribeCursor(const DBSubscribeCur &cursor) override
+    DBStatus SetSubscribeCursor(const DBSubscribeCursor &cursor) override
     {
         return resSetSubscribeCursor_;
     }

@@ -53,7 +53,7 @@ using namespace std::chrono;
 using namespace DistributedDataDfx;
 using DBField = DistributedDB::Field;
 using DBTable = DistributedDB::TableSchema;
-using DBSubscribeCur = DistributedDB::DBSubscribeCur;
+using DBSubscribeCur = DistributedDB::DBSubscribeCursor;
 using DBSchema = DistributedDB::DataBaseSchema;
 using ClearMode = DistributedDB::ClearMode;
 using DBStatus = DistributedDB::DBStatus;
