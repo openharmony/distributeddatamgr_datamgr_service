@@ -34,7 +34,7 @@ LoadConfigDataInfoStrategy::LoadConfigDataInfoStrategy()
 {
 }
 
-static bool MatchAccountDataDir(const std::string &dataDir, int32_t accountId)
+bool MatchAccountDataDir(const std::string &dataDir, int32_t accountId)
 {
     if (accountId <= 0 || dataDir.empty()) {
         return false;
