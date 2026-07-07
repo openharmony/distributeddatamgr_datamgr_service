@@ -86,7 +86,7 @@ private:
     RdbSubscriberManager() = default;
     ConcurrentMap<Key, std::vector<ObserverNode>> rdbCache_;
     int Notify(const Key &key, int32_t userId,
-        const std::vector<ObserverNode> &val, const DistributedData::StoreMetaData &metaData);
+        const std::vector<ObserverNode> &val, const DistributedData::StoreMetaData &metaData, int32_t accountId = -1);
     int GetEnableObserverCount(const Key &key);
     void SetObserverNotifyOnEnabled(std::vector<ObserverNode> &nodes);
 };

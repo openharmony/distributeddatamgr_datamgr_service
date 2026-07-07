@@ -365,7 +365,7 @@ int RdbSubscriberManager::GetEnableObserverCount(const Key &key)
 }
 
 int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vector<ObserverNode> &val,
-    const DistributedData::StoreMetaData &metaData)
+    const DistributedData::StoreMetaData &metaData, int32_t accountId)
 {
     Template tpl;
     if (!TemplateManager::GetInstance().Get(key, userId, tpl)) {
@@ -375,7 +375,7 @@ int RdbSubscriberManager::Notify(const Key &key, int32_t userId, const std::vect
     }
     DistributedData::StoreMetaData meta = metaData;
     meta.user = std::to_string(userId);
-    auto delegate = DBDelegate::Create(meta, key.uri);
+    auto delegate = DBDelegate::Create(meta, key.uri, "", accountId);
     if (delegate == nullptr) {
         ZLOGE("Create fail %{public}s %{public}s", URIUtils::Anonymous(key.uri).c_str(),
             key.bundleName.c_str());
@@ -443,7 +443,7 @@ void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId,
         return false;
     });
     for (const auto &observers : obsMap) {
-        Notify(observers.first, context->visitedUserId, observers.second, metaData);
+        Notify(observers.first, context->visitedUserId, observers.second, metaData, context->accountId);
     }
     Key executeKey(uri, subscriberId, bundleName);
     SchedulerManager::GetInstance().Start(executeKey, context->visitedUserId, metaData);
