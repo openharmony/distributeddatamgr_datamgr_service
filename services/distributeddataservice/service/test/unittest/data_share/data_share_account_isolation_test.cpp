@@ -22,6 +22,7 @@
 #include "data_provider_config.h"
 #include "data_share_profile_config.h"
 #include "data_share_service_impl.h"
+#include "data_share_db_config.h"
 #include "device_manager_adapter.h"
 #include "device_manager_adapter_mock.h"
 #include "log_print.h"
@@ -704,8 +705,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveAccessorAccountId_DelegateNull_Ex
 
 // ===== MatchAccountDataDir tests =====
 
-bool MatchAccountDataDir(const std::string &dataDir, int32_t accountId);
-
 /**
  * @tc.name: MatchAccountDataDir_AccountIdInPathSegment_ExpectMatch
  * @tc.desc: Verify MatchAccountDataDir returns true when accountId is a path segment in dataDir
@@ -716,7 +715,7 @@ HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDir_AccountIdInPathSegme
 {
     ZLOGI("MatchAccountDataDir_AccountIdInPathSegment start");
     std::string dataDir = "/data/app/el2/100/com.test/200/mystore.db";
-    EXPECT_TRUE(MatchAccountDataDir(dataDir, 200));
+    EXPECT_TRUE(DataShareDbConfig::MatchAccountDataDir(dataDir, 200));
 }
 
 /**
@@ -729,7 +728,7 @@ HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDir_AccountIdNotInPath_E
 {
     ZLOGI("MatchAccountDataDir_AccountIdNotInPath start");
     std::string dataDir = "/data/app/el2/100/com.test/mystore.db";
-    EXPECT_FALSE(MatchAccountDataDir(dataDir, 200));
+    EXPECT_FALSE(DataShareDbConfig::MatchAccountDataDir(dataDir, 200));
 }
 
 /**
@@ -743,7 +742,7 @@ HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDir_AccountIdAsPartialNu
 {
     ZLOGI("MatchAccountDataDir_AccountIdAsPartialNumber start");
     std::string dataDir = "/data/app/el2/100/com.test/200/mystore.db";
-    EXPECT_FALSE(MatchAccountDataDir(dataDir, 20));
+    EXPECT_FALSE(DataShareDbConfig::MatchAccountDataDir(dataDir, 20));
 }
 
 /**
@@ -756,7 +755,7 @@ HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDir_AccountIdZero_Expect
 {
     ZLOGI("MatchAccountDataDir_AccountIdZero start");
     std::string dataDir = "/data/app/el2/100/com.test/0/mystore.db";
-    EXPECT_FALSE(MatchAccountDataDir(dataDir, 0));
+    EXPECT_FALSE(DataShareDbConfig::MatchAccountDataDir(dataDir, 0));
 }
 
 /**
@@ -769,7 +768,7 @@ HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDir_AccountIdNegative_Ex
 {
     ZLOGI("MatchAccountDataDir_AccountIdNegative start");
     std::string dataDir = "/data/app/el2/100/com.test/mystore.db";
-    EXPECT_FALSE(MatchAccountDataDir(dataDir, -1));
+    EXPECT_FALSE(DataShareDbConfig::MatchAccountDataDir(dataDir, -1));
 }
 
 /**
@@ -782,7 +781,7 @@ HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDir_EmptyDataDir_ExpectN
 {
     ZLOGI("MatchAccountDataDir_EmptyDataDir start");
     std::string dataDir = "";
-    EXPECT_FALSE(MatchAccountDataDir(dataDir, 100));
+    EXPECT_FALSE(DataShareDbConfig::MatchAccountDataDir(dataDir, 100));
 }
 
 /**
@@ -796,6 +795,6 @@ HWTEST_F(DataShareAccountIsolationTest, MatchAccountDataDir_AccountIdAtEndWithou
 {
     ZLOGI("MatchAccountDataDir_AccountIdAtEndWithoutSlash start");
     std::string dataDir = "/data/app/el2/100/com.test200/mystore.db";
-    EXPECT_FALSE(MatchAccountDataDir(dataDir, 200));
+    EXPECT_FALSE(DataShareDbConfig::MatchAccountDataDir(dataDir, 200));
 }
 } // namespace OHOS::DataShare

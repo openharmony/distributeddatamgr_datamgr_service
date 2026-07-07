@@ -42,9 +42,9 @@ public:
     };
     std::tuple<int, DistributedData::StoreMetaData, std::shared_ptr<DBDelegate>> GetDbConfig(DbConfig &dbConfig);
     std::pair<int, DistributedData::StoreMetaData> GetMetaData(const DbConfig &dbConfig);
+    static bool MatchAccountDataDir(const std::string &dataDir, int32_t accountId);
 private:
     static std::pair<bool, DistributedData::StoreMetaData> QueryMetaData(const DbConfig &dbConfig);
-    static bool MatchAccountDataDir(const std::string &dataDir, int32_t accountId);
 };
 } // namespace OHOS::DataShare
 #endif

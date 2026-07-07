@@ -18,6 +18,7 @@
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
 #include "check_is_single_app_strategy.h"
+#include "data_share_db_config.h"
 #include "device_manager_adapter.h"
 #include "extension_connect_adaptor.h"
 #include "log_print.h"
@@ -32,16 +33,6 @@ LoadConfigDataInfoStrategy::LoadConfigDataInfoStrategy()
     : DivStrategy(std::make_shared<CheckIsSingleAppStrategy>(), std::make_shared<LoadConfigSingleDataInfoStrategy>(),
           std::make_shared<LoadConfigNormalDataInfoStrategy>())
 {
-}
-
-bool MatchAccountDataDir(const std::string &dataDir, int32_t accountId)
-{
-    if (accountId <= 0 || dataDir.empty()) {
-        return false;
-    }
-    // dataDir ends with ".db", accountId is always a middle path segment followed by '/'.
-    std::string token = "/" + std::to_string(accountId) + "/";
-    return dataDir.find(token) != std::string::npos;
 }
 
 static bool QueryMetaData(std::shared_ptr<Context> context,
@@ -60,7 +51,7 @@ static bool QueryMetaData(std::shared_ptr<Context> context,
         std::vector<DistributedData::StoreMetaData> metas;
         DistributedData::MetaDataManager::GetInstance().LoadMeta(storeMetaMapping.GetKeyWithoutPath(), metas, true);
         for (const auto &meta : metas) {
-            if (MatchAccountDataDir(meta.dataDir, context->accountId)) {
+            if (DataShareDbConfig::MatchAccountDataDir(meta.dataDir, context->accountId)) {
                 metaData = meta;
                 return true;
             }
