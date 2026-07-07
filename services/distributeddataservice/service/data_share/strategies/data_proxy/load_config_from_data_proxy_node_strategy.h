@@ -32,6 +32,7 @@ private:
         PARAM_SIZE
     };
     bool LoadConfigFromUri(std::shared_ptr<Context> context);
+    void ResolveProviderAppIndex(std::shared_ptr<Context> context);
     bool GetContextInfoFromDataProperties(
         const ProfileInfo &properties, const std::string &moduleName, std::shared_ptr<Context> context);
     static constexpr const char *PUBLISHED_DATA_TYPE = "publishedData";

@@ -22,10 +22,12 @@
 #include "data_provider_config.h"
 #include "data_share_profile_config.h"
 #include "data_share_service_impl.h"
+#include "data_share_db_config.h"
 #include "device_manager_adapter.h"
 #include "device_manager_adapter_mock.h"
 #include "log_print.h"
 #include "mock/native_and_hap_token_mock.h"
+#include "strategies/data_proxy/load_config_from_data_proxy_node_strategy.h"
 #include "strategies/general/load_config_common_strategy.h"
 #include "utils.h"
 
@@ -547,5 +549,157 @@ HWTEST_F(DataShareAccountIsolationTest, GetFromDataProperties_AccountIsolationFa
     auto result = providerConfig.GetFromDataProperties(profileInfo, "module");
     EXPECT_EQ(result, E_OK);
     EXPECT_EQ(providerConfig.providerInfo_.accountIsolation, false);
+}
+/**
+ * @tc.name: Context_AccountIsolation_DefaultFalse_ExpectDefaultPreserved
+ * @tc.desc: Verify Context.accountIsolation defaults to false
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, Context_AccountIsolation_DefaultFalse_ExpectDefaultPreserved,
+    TestSize.Level0)
+{
+    ZLOGI("Context_AccountIsolation_DefaultFalse start");
+    auto context = std::make_shared<Context>();
+    EXPECT_FALSE(context->accountIsolation);
+    context->accountIsolation = true;
+    EXPECT_TRUE(context->accountIsolation);
+}
+
+/**
+ * @tc.name: GetContextInfoFromDataProperties_AccountIsolationTrue_ExpectPassedToContext
+ * @tc.desc: Verify GetContextInfoFromDataProperties passes accountIsolation=true from ProfileInfo to Context
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetContextInfoFromDataProperties_AccountIsolationTrue_ExpectPassedToContext,
+    TestSize.Level1)
+{
+    ZLOGI("GetContextInfoFromDataProperties_AccountIsolationTrue start");
+    LoadConfigFromDataProxyNodeStrategy strategy;
+    auto context = std::make_shared<Context>();
+    ProfileInfo profileInfo;
+    profileInfo.accountIsolation = true;
+    profileInfo.storeName = "mystore";
+    profileInfo.tableName = "mytable";
+    strategy.GetContextInfoFromDataProperties(profileInfo, "module", context);
+    EXPECT_EQ(context->accountIsolation, true);
+    EXPECT_EQ(context->calledStoreName, "mystore");
+    EXPECT_EQ(context->calledTableName, "mytable");
+}
+
+/**
+ * @tc.name: GetContextInfoFromDataProperties_AccountIsolationFalse_ExpectPassedToContext
+ * @tc.desc: Verify GetContextInfoFromDataProperties passes accountIsolation=false from ProfileInfo to Context
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, GetContextInfoFromDataProperties_AccountIsolationFalse_ExpectPassedToContext,
+    TestSize.Level1)
+{
+    ZLOGI("GetContextInfoFromDataProperties_AccountIsolationFalse start");
+    LoadConfigFromDataProxyNodeStrategy strategy;
+    auto context = std::make_shared<Context>();
+    ProfileInfo profileInfo;
+    profileInfo.accountIsolation = false;
+    profileInfo.storeName = "store";
+    profileInfo.tableName = "table";
+    strategy.GetContextInfoFromDataProperties(profileInfo, "module", context);
+    EXPECT_EQ(context->accountIsolation, false);
+    EXPECT_EQ(context->calledStoreName, "store");
+    EXPECT_EQ(context->calledTableName, "table");
+}
+
+/**
+ * @tc.name: ResolveProviderAppIndex_AccountIdZero_ExpectNoChange
+ * @tc.desc: Verify ResolveProviderAppIndex exits early when accountId is 0, appIndex unchanged
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_AccountIdZero_ExpectNoChange, TestSize.Level1)
+{
+    ZLOGI("ResolveProviderAppIndex_AccountIdZero start");
+    LoadConfigFromDataProxyNodeStrategy strategy;
+    auto context = std::make_shared<Context>();
+    context->accountId = 0;
+    context->appIndex = 5;
+    strategy.ResolveProviderAppIndex(context);
+    EXPECT_EQ(context->appIndex, 5);
+}
+
+/**
+ * @tc.name: ResolveProviderAppIndex_AccountIdNegative_ExpectNoChange
+ * @tc.desc: Verify ResolveProviderAppIndex exits early when accountId is negative, appIndex unchanged
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_AccountIdNegative_ExpectNoChange, TestSize.Level1)
+{
+    ZLOGI("ResolveProviderAppIndex_AccountIdNegative start");
+    LoadConfigFromDataProxyNodeStrategy strategy;
+    auto context = std::make_shared<Context>();
+    context->accountId = -1;
+    context->appIndex = 3;
+    strategy.ResolveProviderAppIndex(context);
+    EXPECT_EQ(context->appIndex, 3);
+}
+
+/**
+ * @tc.name: ResolveProviderAppIndex_DelegateNullDataProxy_ExpectNoChange
+ * @tc.desc: Verify AccountDelegate is null with DataProxyNodeStrategy, appIndex unchanged
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNullDataProxy_ExpectNoChange, TestSize.Level1)
+{
+    ZLOGI("ResolveProviderAppIndex_DelegateNull start");
+    AccountDelegate::instance_ = nullptr;
+    LoadConfigFromDataProxyNodeStrategy strategy;
+    auto context = std::make_shared<Context>();
+    context->accountId = 100;
+    context->appIndex = 2;
+    context->calledBundleName = "com.test";
+    context->visitedUserId = 100;
+    strategy.ResolveProviderAppIndex(context);
+    EXPECT_EQ(context->appIndex, 2);
+}
+
+/**
+ * @tc.name: ResolveProviderAppIndex_EmptyCloneAppIndexes_ExpectNoAppIndexChange
+ * @tc.desc: Verify ResolveProviderAppIndex does not change appIndex when clone app indexes are empty
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_EmptyCloneAppIndexes_ExpectNoAppIndexChange,
+    TestSize.Level1)
+{
+    ZLOGI("ResolveProviderAppIndex_EmptyCloneAppIndexes start");
+    LoadConfigFromDataProxyNodeStrategy strategy;
+    auto context = std::make_shared<Context>();
+    context->accountId = 100;
+    context->appIndex = 0;
+    context->calledBundleName = "com.test.no.clone";
+    context->visitedUserId = 100;
+    strategy.ResolveProviderAppIndex(context);
+    EXPECT_EQ(context->appIndex, 0);
+}
+
+/**
+ * @tc.name: ResolveAccessorAccountId_DelegateNull_ExpectNoChange
+ * @tc.desc: Verify ResolveAccessorAccountId exits early when AccountDelegate is null
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareAccountIsolationTest, ResolveAccessorAccountId_DelegateNull_ExpectNoChange, TestSize.Level1)
+{
+    ZLOGI("ResolveAccessorAccountId_DelegateNull start");
+    AccountDelegate::instance_ = nullptr;
+    LoadConfigCommonStrategy strategy;
+    auto context = std::make_shared<Context>();
+    context->accountId = -1;
+    context->visitedUserId = 100;
+    context->callerTokenId = 0;
+    strategy.ResolveAccessorAccountId(context);
+    EXPECT_EQ(context->accountId, -1);
 }
 } // namespace OHOS::DataShare

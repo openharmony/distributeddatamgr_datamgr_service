@@ -47,6 +47,7 @@ public:
     int32_t visitedUserId = -1;
     int32_t appIndex = 0;
     int32_t accountId = -1;
+    bool accountIsolation = false;
     int32_t haMode = 0;
     std::string permission;
     uint32_t callerTokenId = 0;
