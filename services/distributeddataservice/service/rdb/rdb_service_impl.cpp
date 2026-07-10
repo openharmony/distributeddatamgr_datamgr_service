@@ -65,6 +65,8 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
+#include "inotify_matrix_file/inotify_matrix_file.h"
+
 using OHOS::DistributedData::AccountDelegate;
 using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
@@ -1345,6 +1347,29 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
+int32_t RdbServiceImpl::RegisterMatrix(const RdbSyncerParam &param,
+    std::string &matrixFilePath, std::map<std::string, uint64_t> &matrixTables, uint64_t &fullSyncOffset)
+{
+    if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    auto meta = GetStoreMetaData(param);
+    bool status = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), meta, true);
+    if (!status) {
+        ZLOGE("Load metadata failed, bundleName:%{public}s", param.bundleName_.c_str());
+        return RDB_ERROR;
+    }
+    int32_t ret = CreateMatrixFile(meta, matrixFilePath, matrixTables, fullSyncOffset);
+    if (ret != RDB_OK) {
+        ZLOGE("CreateMatrixFile failed, ret = %{public}d bundleName:%{public}s",
+            ret, param.bundleName_.c_str());
+        return ret;
+    }
+    return RDB_OK;
+}
+
 bool RdbServiceImpl::SaveAppIDMeta(const StoreMetaData &meta, const StoreMetaData &old, MetaDataSaver &saver)
 {
     AppIDMetaData appIdMeta;
@@ -1433,6 +1458,28 @@ void RdbServiceImpl::GetCloudSchema(const StoreMetaData &metaData)
         auto event = std::make_unique<CloudEvent>(CloudEvent::GET_SCHEMA, std::move(storeInfo));
         EventCenter::GetInstance().PostEvent(move(event));
     });
+}
+
+int32_t RdbServiceImpl::CreateMatrixFile(const StoreMetaData &metaData,
+    std::string &matrixFilePath, std::map<std::string, uint64_t> &matrixTables, uint64_t &fullSyncOffset)
+{
+    StoreInfo storeInfo = GetStoreInfoEx(metaData);
+    auto event = std::make_unique<CloudEvent>(CloudEvent::CREATE_MATRIX_FILE, std::move(storeInfo));
+    EventCenter::GetInstance().PostEvent(move(event));
+
+    std::string matrixFileName = MatrixFileInfo::GenerateMatrixFileName(metaData);
+    MatrixFileInfo matrixFileInfo;
+    bool status = MetaDataManager::GetInstance().LoadMeta(matrixFileName, matrixFileInfo, true);
+    if (!status) {
+        ZLOGW("Load metadata failed, key:%{public}s", matrixFileName.c_str());
+        return RDB_ERROR;
+    }
+    matrixFilePath = std::string(MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName;
+    for (const auto &[tableName, tableInfo] : matrixFileInfo.matrixTables) {
+        matrixTables[tableName] = tableInfo.matrixOffset;
+    }
+    fullSyncOffset = matrixFileInfo.fullSyncOffset;
+    return RDB_OK;
 }
 
 StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
@@ -1990,8 +2037,6 @@ int32_t RdbServiceImpl::NotifyDataChange(const RdbSyncerParam &param, const RdbC
     if (SyncManager::GetInstance().IsAutoSyncApp(meta.bundleName, meta.appId)) {
         OnCollaborationChange(meta, rdbChangedData);
     }
-
-    OnSearchableChange(meta, rdbNotifyConfig, rdbChangedData);
     return RDB_OK;
 }
 

@@ -125,6 +125,9 @@ public:
 
     int32_t AfterOpen(const RdbSyncerParam &param) override;
 
+    int32_t RegisterMatrix(const RdbSyncerParam &param,
+        std::string &matrixFilePath, std::map<std::string, uint64_t> &matrixTables, uint64_t &fullSyncOffset) override;
+
     int32_t ReportStatistic(const RdbSyncerParam &param, const RdbStatEvent &statEvent) override;
 
     int32_t GetPassword(const RdbSyncerParam &param, std::vector<std::vector<uint8_t>> &password) override;
@@ -243,6 +246,9 @@ private:
     int32_t Upgrade(const StoreMetaData &metaData, const StoreMetaData &old);
 
     void GetCloudSchema(const StoreMetaData &metaData);
+
+    int32_t CreateMatrixFile(const StoreMetaData &metaData,
+        std::string &matrixFilePath, std::map<std::string, uint64_t> &matrixTables, uint64_t &fullSyncOffset);
 
     void PostHeartbeatTask(int32_t pid, uint32_t delay, StoreInfo &storeInfo,
         DistributedData::DataChangeEvent::EventInfo &eventInfo);

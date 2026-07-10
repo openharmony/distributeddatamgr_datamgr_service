@@ -71,6 +71,8 @@ private:
 
     int32_t OnAfterOpen(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnRegisterMatrix(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnGetSilentAccessStores(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnReportStatistic(MessageParcel& data, MessageParcel& reply);
@@ -139,6 +141,8 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
             &RdbServiceStub::OnRemoteObtainUuid,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_STOP_CLOUD_SYNC)] =
             &RdbServiceStub::OnRemoteStopCloudSync,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REGISTER_MATRIX)] =
+            &RdbServiceStub::OnRegisterMatrix,
     };
 RDB_UTILS_POP_WARNING
 };

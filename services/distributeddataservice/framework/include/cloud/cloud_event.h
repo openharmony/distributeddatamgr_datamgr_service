@@ -41,6 +41,7 @@ public:
         SET_SEARCH_TRIGGER,
         UPGRADE_SCHEMA,
         DATABASE_DELETED,
+        CREATE_MATRIX_FILE,
         CLOUD_BUTT
     };
 

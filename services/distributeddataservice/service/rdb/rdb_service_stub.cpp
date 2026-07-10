@@ -95,6 +95,25 @@ int32_t RdbServiceStub::OnAfterOpen(MessageParcel &data, MessageParcel &reply)
     return RDB_OK;
 }
 
+int32_t RdbServiceStub::OnRegisterMatrix(MessageParcel& data, MessageParcel& reply)
+{
+    RdbSyncerParam param;
+    if (!ITypesUtil::Unmarshal(data, param)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    std::string matrixFilePath;
+    std::map<std::string, uint64_t> matrixTables;
+    uint64_t fullSyncOffset;
+    auto status = RegisterMatrix(param, matrixFilePath, matrixTables, fullSyncOffset);
+    if (!ITypesUtil::Marshal(reply, status, matrixFilePath, matrixTables, fullSyncOffset)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
 int32_t RdbServiceStub::OnReportStatistic(MessageParcel& data, MessageParcel& reply)
 {
     RdbSyncerParam param;
