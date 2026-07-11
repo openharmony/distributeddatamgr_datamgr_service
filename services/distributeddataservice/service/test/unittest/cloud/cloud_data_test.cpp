@@ -4217,11 +4217,9 @@ HWTEST_F(CloudDataTest, SyncAgents_DifferentPidNoOverwrite, TestSize.Level1)
     auto notifierProxyB = new CloudData::CloudNotifierProxy(notifierObjB);
 
     auto [itA, okA] = agents.try_emplace(pidA);
-    itA->second.pid_ = pidA;
     itA->second.notifier_ = notifierProxyA;
 
     auto [itB, okB] = agents.try_emplace(pidB);
-    itB->second.pid_ = pidB;
     itB->second.notifier_ = notifierProxyB;
 
     EXPECT_EQ(okA, true);
@@ -4256,13 +4254,11 @@ HWTEST_F(CloudDataTest, SyncAgents_SamePidUpdateNotifier, TestSize.Level1)
     auto notifierProxyOld = new CloudData::CloudNotifierProxy(notifierObjOld);
 
     auto [it1, ok1] = agents.try_emplace(samePid);
-    it1->second.pid_ = samePid;
     it1->second.notifier_ = notifierProxyOld;
     EXPECT_EQ(static_cast<int32_t>(agents.size()), 1);
 
     auto notifierProxyNew = new CloudData::CloudNotifierProxy(notifierObjNew);
     auto [it2, ok2] = agents.try_emplace(samePid);
-    it2->second.pid_ = samePid;
     it2->second.notifier_ = notifierProxyNew;
     EXPECT_EQ(ok2, false);
     EXPECT_EQ(static_cast<int32_t>(agents.size()), 1);
@@ -4289,10 +4285,8 @@ HWTEST_F(CloudDataTest, SyncAgents_RouteByPid, TestSize.Level1)
 
     CloudData::CloudServiceImpl::SyncAgents agents;
     auto [itA, okA] = agents.try_emplace(pidA);
-    itA->second.pid_ = pidA;
     itA->second.notifier_ = notifierProxyA;
     auto [itB, okB] = agents.try_emplace(pidB);
-    itB->second.pid_ = pidB;
     itB->second.notifier_ = notifierProxyB;
 
     cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
@@ -4344,10 +4338,8 @@ HWTEST_F(CloudDataTest, SyncAgents_BroadcastAllPidsUnderTokenId, TestSize.Level1
 
     CloudData::CloudServiceImpl::SyncAgents agents;
     auto [itA, okA] = agents.try_emplace(pidA);
-    itA->second.pid_ = pidA;
     itA->second.notifier_ = notifierProxyA;
     auto [itB, okB] = agents.try_emplace(pidB);
-    itB->second.pid_ = pidB;
     itB->second.notifier_ = notifierProxyB;
 
     cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
@@ -4381,10 +4373,8 @@ HWTEST_F(CloudDataTest, SyncAgents_EraseSpecificPidKeepsOthers, TestSize.Level1)
 
     CloudData::CloudServiceImpl::SyncAgents agents;
     agents.try_emplace(pidA);
-    agents[pidA].pid_ = pidA;
     agents[pidA].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
     agents.try_emplace(pidB);
-    agents[pidB].pid_ = pidB;
     agents[pidB].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
 
     cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
