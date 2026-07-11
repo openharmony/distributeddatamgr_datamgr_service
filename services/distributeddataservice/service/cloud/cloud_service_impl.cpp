@@ -567,14 +567,20 @@ void CloudServiceImpl::NotifyCloudSyncTriggerObservers(const std::string &bundle
     }
     std::string key = bundleName + std::to_string(user);
     cloudSyncTriggerObservers_.ComputeIfPresent(key, [this, innerTriggerMode](auto, uint32_t &tokenId) {
-        sptr<CloudNotifierProxy> notifier = nullptr;
-        syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &agent) {
-            notifier = agent.notifier_;
-            return true;
-        });
-        if (notifier != nullptr) {
-            notifier->OnCloudSyncTrigger(innerTriggerMode);
-            ZLOGI("Notified tokenId=%{public}x, triggerMode=%{public}d", tokenId, innerTriggerMode);
+        NotifySyncAgentsByTokenId(tokenId, innerTriggerMode);
+        return true;
+    });
+}
+
+void CloudServiceImpl::NotifySyncAgentsByTokenId(uint32_t tokenId, int32_t innerTriggerMode)
+{
+    syncAgents_.ComputeIfPresent(tokenId, [innerTriggerMode, tokenId](auto, SyncAgents &agents) {
+        for (auto &[pid, agent] : agents) {
+            if (agent.notifier_ != nullptr) {
+                agent.notifier_->OnCloudSyncTrigger(innerTriggerMode);
+                ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, triggerMode=%{public}d",
+                    tokenId, pid, innerTriggerMode);
+            }
         }
         return true;
     });
@@ -1645,11 +1651,13 @@ int32_t CloudServiceImpl::InitNotifier(sptr<IRemoteObject> notifier)
         return INVALID_ARGUMENT;
     }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    syncAgents_.Compute(tokenId, [notifierProxy](auto, SyncAgent &agent) {
-        agent = SyncAgent();
-        agent.notifier_ = notifierProxy;
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    syncAgents_.Compute(tokenId, [notifierProxy, pid](auto, SyncAgents &agents) {
+        auto [it, success] = agents.try_emplace(pid, SyncAgent());
+        it->second.notifier_ = notifierProxy;
         return true;
     });
+    ZLOGI("success tokenId:%{public}x, pid=%{public}d", tokenId, pid);
     return SUCCESS;
 }
 
@@ -1669,12 +1677,15 @@ Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
     return dbDetails;
 }
 
-void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
+void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
 {
-    ZLOGI("tokenId=%{public}x, seqnum=%{public}u", tokenId, seqNum);
+    ZLOGI("tokenId=%{public}x, pid=%{public}d, seqnum=%{public}u", tokenId, pid, seqNum);
     sptr<CloudNotifierProxy> notifier = nullptr;
-    syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &syncAgent) {
-        notifier = syncAgent.notifier_;
+    syncAgents_.ComputeIfPresent(tokenId, [&notifier, pid](auto, SyncAgents &syncAgents) {
+        auto it = syncAgents.find(pid);
+        if (it != syncAgents.end()) {
+            notifier = it->second.notifier_;
+        }
         return true;
     });
     if (notifier != nullptr) {
@@ -1698,6 +1709,7 @@ int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::st
     }
 
     auto tokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     std::vector<std::string> storeNames;
     auto ret = ParseStoreIdsIfNeed(user, bundleName, storeId, storeNames);
@@ -1711,8 +1723,8 @@ int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::st
         storeInfo.user = user;
         storeInfo.storeName = storeName;
         GenAsync asyncCallback =
-            [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
-            OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
+            [this, tokenId = storeInfo.tokenId, pid, seqNum = option.seqNum](const GenDetails &result) mutable {
+            OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
         };
         auto highMode = GeneralStore::MANUAL_SYNC_MODE;
         auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
@@ -2535,12 +2547,17 @@ void CloudServiceImpl::ExecuteBatchNotify()
     }
     for (const auto &[tokenId, data] : tasks) {
         auto agentIt = syncAgents_.Find(tokenId);
-        if (!agentIt.first || agentIt.second.notifier_ == nullptr) {
+        if (!agentIt.first) {
             ZLOGW("No notifier for tokenId=%{public}x", tokenId);
             continue;
         }
-        agentIt.second.notifier_->OnSyncInfoNotify(data);
-        ZLOGI("Notified tokenId=%{public}x, bundleCount=%{public}zu", tokenId, data.size());
+        for (auto &[pid, agent] : agentIt.second) {
+            if (agent.notifier_ != nullptr) {
+                agent.notifier_->OnSyncInfoNotify(data);
+                ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, bundleCount=%{public}zu",
+                    tokenId, pid, data.size());
+            }
+        }
     }
 }
 } // namespace OHOS::CloudData

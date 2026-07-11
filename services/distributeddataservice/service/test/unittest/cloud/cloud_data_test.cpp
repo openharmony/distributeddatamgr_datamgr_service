@@ -30,6 +30,7 @@
 #include "cloud/make_query_event.h"
 #include "cloud_data_translate.h"
 #include "cloud_service_impl.h"
+#include "cloud_notifier_proxy.h"
 #include "cloud_types.h"
 #include "cloud_types_util.h"
 #include "cloud_value_util.h"
@@ -159,6 +160,21 @@ PermissionStateFull GetPermissionStateFull(const std::string &permission)
         .grantFlags = { 1 } };
     return stateFull;
 }
+class MockRemoteObjectForNotifier : public IRemoteObject {
+public:
+    explicit MockRemoteObjectForNotifier() : IRemoteObject(u"mock") {}
+    virtual ~MockRemoteObjectForNotifier() = default;
+    int32_t GetObjectRefCount() override { return 0; }
+    int32_t SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
+        MessageOption &option) override
+    {
+        return CloudData::CloudService::SUCCESS;
+    }
+    bool AddDeathRecipient(const sptr<DeathRecipient> &recipient) override { return true; }
+    bool RemoveDeathRecipient(const sptr<DeathRecipient> &recipient) override { return true; }
+    sptr<IRemoteBroker> AsInterface() override { return nullptr; }
+    int Dump(int fd, const std::vector<std::u16string> &args) override { return 0; }
+};
 class CloudDataTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -1263,7 +1279,8 @@ HWTEST_F(CloudDataTest, CloudSync007, TestSize.Level0)
 
     CloudData::Details details{};
     uint32_t tokenId = 0;
-    cloudServiceImpl_->OnAsyncComplete(tokenId, seqNum, std::move(details));
+    pid_t pid = 0;
+    cloudServiceImpl_->OnAsyncComplete(tokenId, pid, seqNum, std::move(details));
 }
 
 /**
@@ -4179,6 +4196,219 @@ HWTEST_F(CloudDataTest, PrepareForCloudSync_AutoSync_EmptyCloudInfo, TestSize.Le
     auto ret = sync.PrepareForCloudSync(info, cloud, cloudSyncInfos, traceIds);
     EXPECT_FALSE(ret);
     EXPECT_TRUE(cloudSyncInfos.empty());
+}
+
+/**
+ * @tc.name: SyncAgents_DifferentPidNoOverwrite
+ * @tc.desc: Verify that different pids under the same tokenId do not overwrite each other
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_DifferentPidNoOverwrite, TestSize.Level1)
+{
+    pid_t pidA = 1000;
+    pid_t pidB = 2000;
+
+    sptr<IRemoteObject> notifierObjA = new MockRemoteObjectForNotifier();
+    sptr<IRemoteObject> notifierObjB = new MockRemoteObjectForNotifier();
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    auto notifierProxyA = new CloudData::CloudNotifierProxy(notifierObjA);
+    auto notifierProxyB = new CloudData::CloudNotifierProxy(notifierObjB);
+
+    auto [itA, okA] = agents.try_emplace(pidA);
+    itA->second.pid_ = pidA;
+    itA->second.notifier_ = notifierProxyA;
+
+    auto [itB, okB] = agents.try_emplace(pidB);
+    itB->second.pid_ = pidB;
+    itB->second.notifier_ = notifierProxyB;
+
+    EXPECT_EQ(okA, true);
+    EXPECT_EQ(okB, true);
+    EXPECT_EQ(static_cast<int32_t>(agents.size()), 2);
+
+    auto findA = agents.find(pidA);
+    EXPECT_NE(findA, agents.end());
+    EXPECT_NE(findA->second.notifier_, nullptr);
+    EXPECT_EQ(findA->second.notifier_->AsObject(), notifierObjA);
+
+    auto findB = agents.find(pidB);
+    EXPECT_NE(findB, agents.end());
+    EXPECT_NE(findB->second.notifier_, nullptr);
+    EXPECT_EQ(findB->second.notifier_->AsObject(), notifierObjB);
+}
+
+/**
+ * @tc.name: SyncAgents_SamePidUpdateNotifier
+ * @tc.desc: Verify that the same pid under the same tokenId updates the notifier instead of adding a new entry
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_SamePidUpdateNotifier, TestSize.Level1)
+{
+    pid_t samePid = 1000;
+
+    sptr<IRemoteObject> notifierObjOld = new MockRemoteObjectForNotifier();
+    sptr<IRemoteObject> notifierObjNew = new MockRemoteObjectForNotifier();
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    auto notifierProxyOld = new CloudData::CloudNotifierProxy(notifierObjOld);
+
+    auto [it1, ok1] = agents.try_emplace(samePid);
+    it1->second.pid_ = samePid;
+    it1->second.notifier_ = notifierProxyOld;
+    EXPECT_EQ(static_cast<int32_t>(agents.size()), 1);
+
+    auto notifierProxyNew = new CloudData::CloudNotifierProxy(notifierObjNew);
+    auto [it2, ok2] = agents.try_emplace(samePid);
+    it2->second.pid_ = samePid;
+    it2->second.notifier_ = notifierProxyNew;
+    EXPECT_EQ(ok2, false);
+    EXPECT_EQ(static_cast<int32_t>(agents.size()), 1);
+    EXPECT_EQ(it2->second.notifier_->AsObject(), notifierObjNew);
+}
+
+/**
+ * @tc.name: SyncAgents_RouteByPid
+ * @tc.desc: Verify that tokenId+pid can precisely route to the notifier of the corresponding process
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_RouteByPid, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pidA = 1000;
+    pid_t pidB = 2000;
+
+    sptr<IRemoteObject> notifierObjA = new MockRemoteObjectForNotifier();
+    sptr<IRemoteObject> notifierObjB = new MockRemoteObjectForNotifier();
+
+    auto notifierProxyA = new CloudData::CloudNotifierProxy(notifierObjA);
+    auto notifierProxyB = new CloudData::CloudNotifierProxy(notifierObjB);
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    auto [itA, okA] = agents.try_emplace(pidA);
+    itA->second.pid_ = pidA;
+    itA->second.notifier_ = notifierProxyA;
+    auto [itB, okB] = agents.try_emplace(pidB);
+    itB->second.pid_ = pidB;
+    itB->second.notifier_ = notifierProxyB;
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    sptr<CloudData::CloudNotifierProxy> foundNotifierA = nullptr;
+    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
+        [&foundNotifierA, pidA](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
+        auto it = syncAgents.find(pidA);
+        if (it != syncAgents.end()) {
+            foundNotifierA = it->second.notifier_;
+        }
+        return true;
+    });
+    EXPECT_NE(foundNotifierA, nullptr);
+    EXPECT_EQ(foundNotifierA->AsObject(), notifierObjA);
+
+    sptr<CloudData::CloudNotifierProxy> foundNotifierB = nullptr;
+    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
+        [&foundNotifierB, pidB](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
+        auto it = syncAgents.find(pidB);
+        if (it != syncAgents.end()) {
+            foundNotifierB = it->second.notifier_;
+        }
+        return true;
+    });
+    EXPECT_NE(foundNotifierB, nullptr);
+    EXPECT_EQ(foundNotifierB->AsObject(), notifierObjB);
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_BroadcastAllPidsUnderTokenId
+ * @tc.desc: Verify that broadcast notifications iterate all pids under the same tokenId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_BroadcastAllPidsUnderTokenId, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pidA = 1000;
+    pid_t pidB = 2000;
+
+    sptr<IRemoteObject> notifierObjA = new MockRemoteObjectForNotifier();
+    sptr<IRemoteObject> notifierObjB = new MockRemoteObjectForNotifier();
+
+    auto notifierProxyA = new CloudData::CloudNotifierProxy(notifierObjA);
+    auto notifierProxyB = new CloudData::CloudNotifierProxy(notifierObjB);
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    auto [itA, okA] = agents.try_emplace(pidA);
+    itA->second.pid_ = pidA;
+    itA->second.notifier_ = notifierProxyA;
+    auto [itB, okB] = agents.try_emplace(pidB);
+    itB->second.pid_ = pidB;
+    itB->second.notifier_ = notifierProxyB;
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    int32_t notifyCount = 0;
+    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
+        [&notifyCount](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
+        for (auto &[pid, agent] : syncAgents) {
+            if (agent.notifier_ != nullptr) {
+                notifyCount++;
+            }
+        }
+        return true;
+    });
+    EXPECT_EQ(notifyCount, 2);
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_EraseSpecificPidKeepsOthers
+ * @tc.desc: Verify that erasing a specific pid does not affect other pids under the same tokenId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_EraseSpecificPidKeepsOthers, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pidA = 1000;
+    pid_t pidB = 2000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(pidA);
+    agents[pidA].pid_ = pidA;
+    agents[pidA].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    agents.try_emplace(pidB);
+    agents[pidB].pid_ = pidB;
+    agents[pidB].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
+        [pidA](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
+        auto it = syncAgents.find(pidA);
+        if (it != syncAgents.end()) {
+            it->second.notifier_ = nullptr;
+            syncAgents.erase(it);
+        }
+        if (!syncAgents.empty()) {
+            return true;
+        }
+        return false;
+    });
+
+    auto result = cloudServiceImpl_->syncAgents_.Find(sameTokenId);
+    EXPECT_TRUE(result.first);
+    EXPECT_EQ(static_cast<int32_t>(result.second.size()), 1);
+    EXPECT_NE(result.second.find(pidB), result.second.end());
+    EXPECT_EQ(result.second.find(pidA), result.second.end());
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
 }
 
 /**

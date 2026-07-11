@@ -143,6 +143,7 @@ private:
         SyncAgent() = default;
         sptr<CloudNotifierProxy> notifier_;
     };
+    using SyncAgents = std::map<pid_t, SyncAgent>;
 
     struct DatabaseSyncContext {
         int32_t user = 0;
@@ -184,7 +185,7 @@ private:
     static std::pair<int32_t, SchemaMeta> GetAppSchemaFromServer(int32_t user, const std::string &bundleName);
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
 
-    void OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result);
+    void OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result);
     std::pair<int32_t, SchemaMeta> GetSchemaMeta(int32_t userId, const std::string &bundleName, int32_t instanceId);
     void UpgradeSchemaMeta(int32_t user, const SchemaMeta &schemaMeta);
     std::map<std::string, StatisticInfos> ExecuteStatistics(
@@ -197,6 +198,7 @@ private:
     void CloudShare(const Event &event);
     void DoSync(const Event &event);
     void OnSyncInfoChanged(const Event &event);
+    void NotifySyncAgentsByTokenId(uint32_t tokenId, int32_t innerTriggerMode);
     void ExecuteBatchNotify();
 
     Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
@@ -255,7 +257,7 @@ private:
     uint64_t expireTime_ = static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
             .count());
-    ConcurrentMap<uint32_t, SyncAgent> syncAgents_;
+    ConcurrentMap<uint32_t, SyncAgents> syncAgents_;
     CloudSyncTriggerObservers cloudSyncTriggerObservers_;
 
     std::mutex subscribeMutex_;
