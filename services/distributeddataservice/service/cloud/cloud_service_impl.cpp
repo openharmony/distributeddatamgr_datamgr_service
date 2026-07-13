@@ -574,16 +574,20 @@ void CloudServiceImpl::NotifyCloudSyncTriggerObservers(const std::string &bundle
 
 void CloudServiceImpl::NotifySyncAgentsByTokenId(uint32_t tokenId, int32_t innerTriggerMode)
 {
-    syncAgents_.ComputeIfPresent(tokenId, [innerTriggerMode, tokenId](auto, SyncAgents &agents) {
+    std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> notifiers;
+    syncAgents_.ComputeIfPresent(tokenId, [&notifiers](auto, SyncAgents &agents) {
         for (auto &[pid, agent] : agents) {
             if (agent.notifier_ != nullptr) {
-                agent.notifier_->OnCloudSyncTrigger(innerTriggerMode);
-                ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, triggerMode=%{public}d",
-                    tokenId, pid, innerTriggerMode);
+                notifiers.emplace_back(pid, agent.notifier_);
             }
         }
         return true;
     });
+    for (auto &[pid, notifier] : notifiers) {
+        notifier->OnCloudSyncTrigger(innerTriggerMode);
+        ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, triggerMode=%{public}d",
+            tokenId, pid, innerTriggerMode);
+    }
 }
 
 void CloudServiceImpl::ProcessDatabaseSync(DatabaseSyncContext &context)
