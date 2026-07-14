@@ -4592,7 +4592,7 @@ HWTEST_F(CloudDataTest, SyncAgents_ExecuteBatchNotifyWithValidPids, TestSize.Lev
 
     cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
 
-    CloudData::CloudServiceImpl::BatchQueryLastResults data;
+    CloudData::BatchQueryLastResults data;
     cloudServiceImpl_->pendingNotifies_.emplace(sameTokenId, data);
 
     cloudServiceImpl_->ExecuteBatchNotify();
@@ -4613,7 +4613,7 @@ HWTEST_F(CloudDataTest, SyncAgents_ExecuteBatchNotifySkipsNonexistentTokenId, Te
 {
     uint32_t nonexistentTokenId = 0xDEAD;
 
-    CloudData::CloudServiceImpl::BatchQueryLastResults data;
+    CloudData::BatchQueryLastResults data;
     cloudServiceImpl_->pendingNotifies_.emplace(nonexistentTokenId, data);
 
     cloudServiceImpl_->ExecuteBatchNotify();
