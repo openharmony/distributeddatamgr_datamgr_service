@@ -200,6 +200,7 @@ private:
     void DoSync(const Event &event);
     void OnSyncInfoChanged(const Event &event);
     void NotifySyncAgentsByTokenId(uint32_t tokenId, int32_t innerTriggerMode);
+    std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> CollectNotifiersByTokenId(uint32_t tokenId);
     void ExecuteBatchNotify();
 
     Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
