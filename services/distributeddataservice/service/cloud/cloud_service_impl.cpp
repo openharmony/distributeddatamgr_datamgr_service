@@ -2565,17 +2565,19 @@ void CloudServiceImpl::ExecuteBatchNotify()
         notifyTaskId_ = ExecutorPool::INVALID_TASK_ID;
     }
     for (const auto &[tokenId, data] : tasks) {
-        auto agentIt = syncAgents_.Find(tokenId);
-        if (!agentIt.first) {
-            ZLOGW("No notifier for tokenId=%{public}x", tokenId);
-            continue;
-        }
-        for (auto &[pid, agent] : agentIt.second) {
-            if (agent.notifier_ != nullptr) {
-                agent.notifier_->OnSyncInfoNotify(data);
-                ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, bundleCount=%{public}zu",
-                    tokenId, pid, data.size());
+        std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> notifiers;
+        syncAgents_.ComputeIfPresent(tokenId, [&notifiers](auto, SyncAgents &agents) {
+            for (auto &[pid, agent] : agents) {
+                if (agent.notifier_ != nullptr) {
+                    notifiers.emplace_back(pid, agent.notifier_);
+                }
             }
+            return true;
+        });
+        for (auto &[pid, notifier] : notifiers) {
+            notifier->OnSyncInfoNotify(data);
+            ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, bundleCount=%{public}zu",
+                tokenId, pid, data.size());
         }
     }
 }
