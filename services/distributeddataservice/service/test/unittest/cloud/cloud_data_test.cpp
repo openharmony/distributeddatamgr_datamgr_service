@@ -4508,7 +4508,14 @@ HWTEST_F(CloudDataTest, SyncAgents_OnAsyncCompletePidNotFound, TestSize.Level1)
 
     CloudData::Details details{};
     uint32_t seqNum = 0;
-    cloudServiceImpl_->OnAsyncComplete(sameTokenId, unregisteredPid, seqNum, std::move(details));
+    cloudServiceImpl_->OnAsyncComplete(sameTokenId, registeredPid, seqNum, std::move(details));
+
+    auto notifiers = cloudServiceImpl_->CollectNotifiersByTokenId(sameTokenId);
+    EXPECT_EQ(static_cast<int32_t>(notifiers.size()), 1);
+    EXPECT_NE(notifiers[0].second, nullptr);
+
+    CloudData::Details details2{};
+    cloudServiceImpl_->OnAsyncComplete(sameTokenId, unregisteredPid, seqNum, std::move(details2));
 
     sptr<CloudData::CloudNotifierProxy> foundNotifier = nullptr;
     cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
