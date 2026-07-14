@@ -27,9 +27,9 @@ class XCollieDelegate {
 public:
     API_EXPORT virtual ~XCollieDelegate() = default;
     API_EXPORT virtual int32_t SetTimer(const std::string &tag, uint32_t timeoutSeconds,
-                                        std::function<void(void *)> func, void *arg, uint32_t flag) = 0;
+        std::function<void(void *)> func, void *arg, uint32_t flag) = 0;
     API_EXPORT virtual void CancelTimer(int32_t id) = 0;
-    API_EXPORT static XCollieDelegate *GetInstance();
+    static XCollieDelegate *GetInstance();
     API_EXPORT static bool RegisterXCollieInstance(XCollieDelegate *instance);
 
 private:
@@ -41,7 +41,7 @@ public:
     enum FLAG { XCOLLIE_LOG = 0x1, XCOLLIE_RECOVERY = 0x2 };
 
     API_EXPORT XCollie(const std::string &tag, uint32_t flag, uint32_t timeoutSeconds = RESTART_TIME_THRESHOLD,
-                       std::function<void(void *)> func = nullptr, void *arg = nullptr);
+        std::function<void(void *)> func = nullptr, void *arg = nullptr);
     API_EXPORT ~XCollie();
 
     XCollie(const XCollie &other) = delete;

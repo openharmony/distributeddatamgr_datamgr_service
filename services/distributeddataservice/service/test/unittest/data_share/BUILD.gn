@@ -39,7 +39,7 @@ ohos_unittest("DataShareServiceImplTest") {
   sources = [
     "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/common/bundle_utils.cpp",
-    "${data_service_path}/adapter/dfx/src/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "${data_service_path}/service/data_share/common/app_connect_manager.cpp",
     "${data_service_path}/service/data_share/common/bundle_mgr_proxy.cpp",
     "${data_service_path}/service/data_share/common/common_utils.cpp",
@@ -181,7 +181,7 @@ ohos_unittest("DataShareServiceImplMockTest") {
 
   sources = [
     "${data_service_path}/service/common/bundle_utils.cpp",
-    "${data_service_path}/adapter/dfx/src/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
     "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
     "${data_service_path}/service/config/src/model/auto_sync_app_config.cpp",
@@ -326,7 +326,7 @@ ohos_unittest("DataShareAccountIsolationMockTest") {
   sources = [
     "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "${data_service_path}/service/common/bundle_utils.cpp",
-    "${data_service_path}/adapter/dfx/src/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "${data_service_path}/service/config/src/model/app_access_check_config.cpp",
     "${data_service_path}/service/config/src/model/app_id_mapping_config.cpp",
     "${data_service_path}/service/config/src/model/auto_sync_app_config.cpp",

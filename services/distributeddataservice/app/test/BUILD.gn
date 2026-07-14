@@ -95,7 +95,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/service/clone/clone_backup_info.cpp",
     "${data_service_path}/service/clone/clone_manager.cpp",
     "${data_service_path}/service/clone/secret_key_backup_data.cpp",
-    "${data_service_path}/adapter/dfx/src/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
   ]
 
   sanitize = {
@@ -178,7 +178,7 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_data_service_mock_test.cpp",
-    "${data_service_path}/adapter/dfx/src/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "${data_service_path}/service/test/mock/access_token_mock.cpp",
   ]
   include_dirs = [
@@ -269,7 +269,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_meta_manager_update_key_test.cpp",
-    "${data_service_path}/adapter/dfx/src/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
   ]
 
@@ -398,7 +398,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "${data_service_path}/app/src/session_manager/session_manager.cpp",
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
-    "${data_service_path}/adapter/dfx/src/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "unittest/kvstore_data_service_clear_test.cpp",
   ]
 

@@ -77,7 +77,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "${data_service_path}/service/clone/clone_backup_info.cpp",
     "${data_service_path}/service/clone/clone_manager.cpp",
     "${data_service_path}/service/clone/secret_key_backup_data.cpp",
-    "${data_service_path}/adapter/dfx/src/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "dataservicestub_fuzzer.cpp",
   ]
 

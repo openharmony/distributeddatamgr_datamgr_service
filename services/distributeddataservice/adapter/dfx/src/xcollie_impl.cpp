@@ -27,8 +27,8 @@ bool XCollieImpl::Init()
     return true;
 }
 
-int32_t XCollieImpl::SetTimer(const std::string &tag, uint32_t timeoutSeconds, std::function<void(void *)> func,
-                              void *arg, uint32_t flag)
+int32_t XCollieImpl::SetTimer(
+    const std::string &tag, uint32_t timeoutSeconds, std::function<void(void *)> func, void *arg, uint32_t flag)
 {
     uint32_t xCollieFlag = 0;
     if ((flag & XCollie::XCOLLIE_LOG) == XCollie::XCOLLIE_LOG) {

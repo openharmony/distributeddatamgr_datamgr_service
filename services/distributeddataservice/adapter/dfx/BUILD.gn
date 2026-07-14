@@ -28,7 +28,7 @@ ohos_source_set("distributeddata_dfx") {
     "src/hiview_adapter.cpp",
     "src/radar_reporter.cpp",
     "src/reporter_impl.cpp",
-    "src/xcollie.cpp",
+    "src/xcollie_impl.cpp",
   ]
 
   include_dirs = [
