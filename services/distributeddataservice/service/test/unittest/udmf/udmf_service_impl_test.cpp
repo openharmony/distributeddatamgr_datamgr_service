@@ -1547,7 +1547,6 @@ HWTEST_F(UdmfServiceImplTest, AsyncProcessTokenCheck001, TestSize.Level1)
     auto ownerTokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME, instIndex);
     auto callerTokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME1, instIndex);
     service.RegisterAsyncProcessInfo(key, ownerTokenId);
-    TokenGuard tokenGuard(callerTokenId);
 
     AsyncProcessInfo processInfo;
     processInfo.businessUdKey = key;
