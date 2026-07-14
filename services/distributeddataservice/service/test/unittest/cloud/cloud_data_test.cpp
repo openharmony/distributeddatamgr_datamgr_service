@@ -4720,6 +4720,17 @@ HWTEST_F(CloudDataTest, SyncAgents_NotifyCloudSyncTriggerObserverExist, TestSize
 
     cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudData::CloudSyncScene::PUSH);
 
+    sptr<CloudData::CloudNotifierProxy> foundNotifier = nullptr;
+    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
+        [&foundNotifier, pidA](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
+        auto it = syncAgents.find(pidA);
+        if (it != syncAgents.end()) {
+            foundNotifier = it->second.notifier_;
+        }
+        return true;
+    });
+    EXPECT_NE(foundNotifier, nullptr);
+
     cloudServiceImpl_->cloudSyncTriggerObservers_.Erase(key);
     cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
 }
