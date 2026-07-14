@@ -4705,7 +4705,7 @@ HWTEST_F(CloudDataTest, SyncAgents_OnFeatureExitTokenIdNotExist, TestSize.Level1
  */
 HWTEST_F(CloudDataTest, SyncAgents_NotifyCloudSyncTriggerObserverExist, TestSize.Level1)
 {
-    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    uint32_t observerTokenId = 0xABCD;
     pid_t pidA = 1000;
     std::string bundleName = "com.test.bundle";
     int32_t user = 100;
@@ -4713,26 +4713,19 @@ HWTEST_F(CloudDataTest, SyncAgents_NotifyCloudSyncTriggerObserverExist, TestSize
     CloudData::CloudServiceImpl::SyncAgents agents;
     agents.try_emplace(pidA);
     agents[pidA].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
-    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+    cloudServiceImpl_->syncAgents_.Insert(observerTokenId, agents);
 
     std::string key = bundleName + std::to_string(user);
-    cloudServiceImpl_->cloudSyncTriggerObservers_.Insert(key, sameTokenId);
+    cloudServiceImpl_->cloudSyncTriggerObservers_.Insert(key, observerTokenId);
 
     cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudData::CloudSyncScene::PUSH);
 
-    sptr<CloudData::CloudNotifierProxy> foundNotifier = nullptr;
-    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
-        [&foundNotifier, pidA](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
-        auto it = syncAgents.find(pidA);
-        if (it != syncAgents.end()) {
-            foundNotifier = it->second.notifier_;
-        }
-        return true;
-    });
-    EXPECT_NE(foundNotifier, nullptr);
+    auto notifiers = cloudServiceImpl_->CollectNotifiersByTokenId(observerTokenId);
+    EXPECT_EQ(static_cast<int32_t>(notifiers.size()), 1);
+    EXPECT_NE(notifiers[0].second, nullptr);
 
     cloudServiceImpl_->cloudSyncTriggerObservers_.Erase(key);
-    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+    cloudServiceImpl_->syncAgents_.Erase(observerTokenId);
 }
 
 /**
