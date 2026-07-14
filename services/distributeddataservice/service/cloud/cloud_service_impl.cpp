@@ -566,10 +566,14 @@ void CloudServiceImpl::NotifyCloudSyncTriggerObservers(const std::string &bundle
         }
     }
     std::string key = bundleName + std::to_string(user);
-    cloudSyncTriggerObservers_.ComputeIfPresent(key, [this, innerTriggerMode](auto, uint32_t &tokenId) {
-        NotifySyncAgentsByTokenId(tokenId, innerTriggerMode);
+    uint32_t tokenId = 0;
+    cloudSyncTriggerObservers_.ComputeIfPresent(key, [&tokenId](auto, uint32_t &value) {
+        tokenId = value;
         return true;
     });
+    if (tokenId != 0) {
+        NotifySyncAgentsByTokenId(tokenId, innerTriggerMode);
+    }
 }
 
 void CloudServiceImpl::NotifySyncAgentsByTokenId(uint32_t tokenId, int32_t innerTriggerMode)
