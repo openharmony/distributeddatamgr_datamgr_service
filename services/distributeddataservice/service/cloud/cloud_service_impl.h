@@ -95,6 +95,7 @@ public:
     int32_t OnReady(const std::string &device) override;
     int32_t Offline(const std::string &device) override;
     int32_t OnScreenUnlocked(int32_t user) override;
+    int32_t OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 
 private:
     using StaticActs = DistributedData::StaticActs;

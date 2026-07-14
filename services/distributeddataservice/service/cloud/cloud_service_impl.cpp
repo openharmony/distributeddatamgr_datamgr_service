@@ -1643,6 +1643,17 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user, CloudSyncScene scene)
     return true;
 }
 
+int32_t CloudServiceImpl::OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
+{
+    ZLOGI("pid:%{public}d uid:%{public}d tokenId:%{public}x bundleName:%{public}s",
+        pid, uid, tokenId, bundleName.c_str());
+    syncAgents_.ComputeIfPresent(tokenId, [pid](auto, SyncAgents &agents) {
+        agents.erase(pid);
+        return !agents.empty();
+    });
+    return SUCCESS;
+}
+
 int32_t CloudServiceImpl::InitNotifier(sptr<IRemoteObject> notifier)
 {
     if (notifier == nullptr) {
