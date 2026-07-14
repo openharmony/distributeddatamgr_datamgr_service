@@ -4487,25 +4487,15 @@ HWTEST_F(CloudDataTest, SyncAgents_NotifySyncAgentsByTokenId_IPC, TestSize.Level
 }
 
 /**
- * @tc.name: SyncAgents_InitNotifierNullPtr
- * @tc.desc: Verify InitNotifier returns INVALID_ARGUMENT when notifier is nullptr
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(CloudDataTest, SyncAgents_InitNotifierNullPtr, TestSize.Level1)
-{
-    int32_t ret = cloudServiceImpl_->InitNotifier(nullptr);
-    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
-}
-
-/**
  * @tc.name: SyncAgents_OnAsyncCompletePidNotFound
- * @tc.desc: Verify OnAsyncComplete does not call OnComplete when pid is not found in SyncAgents
+ * @tc.desc: Verify InitNotifier rejects nullptr and OnAsyncComplete skips unregistered pid
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(CloudDataTest, SyncAgents_OnAsyncCompletePidNotFound, TestSize.Level1)
 {
+    EXPECT_EQ(cloudServiceImpl_->InitNotifier(nullptr), CloudData::CloudService::INVALID_ARGUMENT);
+
     uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
     pid_t registeredPid = 1000;
     pid_t unregisteredPid = 2000;
