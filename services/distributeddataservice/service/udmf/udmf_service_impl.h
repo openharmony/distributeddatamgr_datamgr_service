@@ -74,7 +74,7 @@ private:
         std::map<unsigned int, std::vector<Uri>> &grantUris);
     bool VerifyPermission(const std::string &permission, uint32_t callerTokenId);
     bool HasDatahubPriviledge(const std::string &bundleName);
-    void RegisterAsyncProcessInfo(const std::string &businessUdKey);
+    void RegisterAsyncProcessInfo(const std::string &businessUdKey, uint32_t tokenId);
     void TransferToEntriesIfNeed(const QueryOption &query, UnifiedData &unifiedData);
     bool IsNeedTransferDeviceType(const QueryOption &query);
     bool CheckDragParams(UnifiedKey &key);

@@ -112,7 +112,7 @@ void RegisterAsyncProcessInfoFuzz(FuzzedDataProvider &provider)
 {
     std::shared_ptr<UdmfServiceImpl> udmfServiceImpl = std::make_shared<UdmfServiceImpl>();
     std::string businessUdKey = provider.ConsumeRandomLengthString();
-    udmfServiceImpl->RegisterAsyncProcessInfo(businessUdKey);
+    udmfServiceImpl->RegisterAsyncProcessInfo(businessUdKey, static_cast<uint32_t>(IPCSkeleton::GetSelfTokenID()));
 }
 }
 
