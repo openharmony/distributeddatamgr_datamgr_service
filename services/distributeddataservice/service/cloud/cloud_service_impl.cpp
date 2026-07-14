@@ -578,15 +578,7 @@ void CloudServiceImpl::NotifyCloudSyncTriggerObservers(const std::string &bundle
 
 void CloudServiceImpl::NotifySyncAgentsByTokenId(uint32_t tokenId, int32_t innerTriggerMode)
 {
-    std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> notifiers;
-    syncAgents_.ComputeIfPresent(tokenId, [&notifiers](auto, SyncAgents &agents) {
-        for (auto &[pid, agent] : agents) {
-            if (agent.notifier_ != nullptr) {
-                notifiers.emplace_back(pid, agent.notifier_);
-            }
-        }
-        return true;
-    });
+    auto notifiers = CollectNotifiersByTokenId(tokenId);
     for (auto &[pid, notifier] : notifiers) {
         notifier->OnCloudSyncTrigger(innerTriggerMode);
         ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, triggerMode=%{public}d",
@@ -2565,20 +2557,27 @@ void CloudServiceImpl::ExecuteBatchNotify()
         notifyTaskId_ = ExecutorPool::INVALID_TASK_ID;
     }
     for (const auto &[tokenId, data] : tasks) {
-        std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> notifiers;
-        syncAgents_.ComputeIfPresent(tokenId, [&notifiers](auto, SyncAgents &agents) {
-            for (auto &[pid, agent] : agents) {
-                if (agent.notifier_ != nullptr) {
-                    notifiers.emplace_back(pid, agent.notifier_);
-                }
-            }
-            return true;
-        });
+        auto notifiers = CollectNotifiersByTokenId(tokenId);
         for (auto &[pid, notifier] : notifiers) {
             notifier->OnSyncInfoNotify(data);
             ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, bundleCount=%{public}zu",
                 tokenId, pid, data.size());
         }
     }
+}
+
+std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> CloudServiceImpl::CollectNotifiersByTokenId(
+    uint32_t tokenId)
+{
+    std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> notifiers;
+    syncAgents_.ComputeIfPresent(tokenId, [&notifiers](auto, SyncAgents &agents) {
+        for (auto &[pid, agent] : agents) {
+            if (agent.notifier_ != nullptr) {
+                notifiers.emplace_back(pid, agent.notifier_);
+            }
+        }
+        return true;
+    });
+    return notifiers;
 }
 } // namespace OHOS::CloudData
