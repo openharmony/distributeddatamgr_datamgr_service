@@ -4698,6 +4698,54 @@ HWTEST_F(CloudDataTest, SyncAgents_OnFeatureExitTokenIdNotExist, TestSize.Level1
 }
 
 /**
+ * @tc.name: SyncAgents_NotifyCloudSyncTriggerObserverExist
+ * @tc.desc: Verify NotifyCloudSyncTriggerObservers calls NotifySyncAgentsByTokenId when observer key exists
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_NotifyCloudSyncTriggerObserverExist, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pidA = 1000;
+    std::string bundleName = "com.test.bundle";
+    int32_t user = 100;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(pidA);
+    agents[pidA].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    std::string key = bundleName + std::to_string(user);
+    cloudServiceImpl_->cloudSyncTriggerObservers_.Insert(key, sameTokenId);
+
+    cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudData::CloudSyncScene::PUSH);
+
+    cloudServiceImpl_->cloudSyncTriggerObservers_.Erase(key);
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_NotifyCloudSyncTriggerObserverNotExist
+ * @tc.desc: Verify NotifyCloudSyncTriggerObservers does nothing when observer key does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_NotifyCloudSyncTriggerObserverNotExist, TestSize.Level1)
+{
+    std::string bundleName = "com.test.nonexistent";
+    int32_t user = 999;
+
+    std::string key = bundleName + std::to_string(user);
+    auto result = cloudServiceImpl_->cloudSyncTriggerObservers_.Find(key);
+    EXPECT_FALSE(result.first);
+
+    cloudServiceImpl_->NotifyCloudSyncTriggerObservers(bundleName, user, CloudData::CloudSyncScene::PUSH);
+
+    result = cloudServiceImpl_->cloudSyncTriggerObservers_.Find(key);
+    EXPECT_FALSE(result.first);
+}
+
+/**
 * @tc.name: PrepareForCloudSync_ManualSync_EmptyCloudInfo
 * @tc.desc: Test PrepareForCloudSync with manual sync mode when cloud info is empty, covers ZLOGE branch
 * @tc.type: FUNC
