@@ -13,9 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICE_COMMON_XCOLLIE_H
-#define OHOS_DISTRIBUTED_DATA_SERVICE_COMMON_XCOLLIE_H
+#ifndef DISTRIBUTEDDATAMGR_XCOLLIE_IMPL_H
+#define DISTRIBUTEDDATAMGR_XCOLLIE_IMPL_H
 
 #include "dfx/xcollie.h"
 
-#endif // OHOS_DISTRIBUTED_DATA_SERVICE_COMMON_XCOLLIE_H
+namespace OHOS::DistributedData {
+class XCollieImpl final : public XCollieDelegate {
+public:
+    static bool Init();
+    int32_t SetTimer(const std::string &tag, uint32_t timeoutSeconds, std::function<void(void *)> func, void *arg,
+                     uint32_t flag) override;
+    void CancelTimer(int32_t id) override;
+
+private:
+    ~XCollieImpl() override = default;
+};
+} // namespace OHOS::DistributedData
+#endif // DISTRIBUTEDDATAMGR_XCOLLIE_IMPL_H
