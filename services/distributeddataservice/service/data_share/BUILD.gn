@@ -37,6 +37,9 @@ config("module_public_config") {
   if (target_platform == "pc") {
     defines += [ "PLATFORM_PC" ]
   }
+  if (target_platform == "car") {
+    defines += [ "ACCOUNT_ISOLATION_ENABLED" ]
+  }
 }
 group("build_module") {
   deps = [ ":data_share_service" ]

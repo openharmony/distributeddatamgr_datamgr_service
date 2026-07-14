@@ -33,6 +33,7 @@ public:
     MOCK_METHOD(bool, QueryUsers, (std::vector<int> &));
     MOCK_METHOD(bool, QueryForegroundUsers, (std::vector<int> &));
     MOCK_METHOD(bool, IsLoginAccount, ());
+    MOCK_METHOD(bool, IsLoginAccount, (int32_t));
     MOCK_METHOD(bool, QueryForegroundUserId, (int &));
     MOCK_METHOD(bool, IsVerified, (int));
     MOCK_METHOD(bool, RegisterHashFunc, (HashFunc));
@@ -41,6 +42,10 @@ public:
     MOCK_METHOD(std::string, GetUnencryptedAccountId, (int32_t), (const));
     MOCK_METHOD(bool, IsUserForeground, (int32_t));
     MOCK_METHOD(bool, IsOsAccountConstraintEnabled, ());
+    MOCK_METHOD(int32_t, GetSubProfileIdByToken, (uint32_t));
+    MOCK_METHOD(int32_t, GetForegroundSubProfileId, (int32_t));
+    MOCK_METHOD(int32_t, GetSubProfileIdByAppIndex, (int32_t, int32_t));
+    MOCK_METHOD(int32_t, GetAppIndexBySubProfileId, (int32_t, int32_t));
 };
 }
 }

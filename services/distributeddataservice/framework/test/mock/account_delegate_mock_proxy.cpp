@@ -60,6 +60,10 @@ namespace DistributedData {
     {
         return accountDelegate_->IsLoginAccount();
     }
+    bool AccountDelegateMockProxy::IsLoginAccount(int32_t userId)
+    {
+        return accountDelegate_->IsLoginAccount(userId);
+    }
     bool AccountDelegateMockProxy::IsVerified(int userId)
     {
         return accountDelegate_->IsVerified(userId);
@@ -87,6 +91,22 @@ namespace DistributedData {
     bool AccountDelegateMockProxy::IsOsAccountConstraintEnabled()
     {
         return accountDelegate_->IsOsAccountConstraintEnabled();
+    }
+    int32_t AccountDelegateMockProxy::GetSubProfileIdByToken(uint32_t tokenId)
+    {
+        return accountDelegate_->GetSubProfileIdByToken(tokenId);
+    }
+    int32_t AccountDelegateMockProxy::GetForegroundSubProfileId(int32_t osAccountId)
+    {
+        return accountDelegate_->GetForegroundSubProfileId(osAccountId);
+    }
+    int32_t AccountDelegateMockProxy::GetSubProfileIdByAppIndex(int32_t userId, int32_t appIndex)
+    {
+        return accountDelegate_->GetSubProfileIdByAppIndex(userId, appIndex);
+    }
+    int32_t AccountDelegateMockProxy::GetAppIndexBySubProfileId(int32_t userId, int32_t subProfileId)
+    {
+        return accountDelegate_->GetAppIndexBySubProfileId(userId, subProfileId);
     }
     void AccountDelegateMockProxy::SetAccountDelegateMock(std::shared_ptr<AccountDelegateMock> accountDelegate)
     {

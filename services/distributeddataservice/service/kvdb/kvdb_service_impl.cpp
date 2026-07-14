@@ -51,7 +51,6 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
-#include "network/network_delegate.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -1015,6 +1014,7 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.dataType = options.dataType;
     metaData.enableCloud = options.cloudConfig.enableCloud;
     metaData.cloudAutoSync = options.cloudConfig.autoSync;
+    metaData.filterMode = options.cloudConfig.filterMode;
     metaData.authType = static_cast<int32_t>(options.authType);
 }
 
@@ -1115,12 +1115,6 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
         return Status::CLOUD_DISABLED;
-    }
-    auto network = NetworkDelegate::GetInstance();
-    if (network == nullptr || !network->IsNetworkAvailable()) {
-        ZLOGE("appId:%{public}s storeId:%{public}s instanceId:%{public}d network is not available", meta.appId.c_str(),
-            Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
-        return Status::NETWORK_ERROR;
     }
     std::vector<int32_t> users;
     if (meta.user != StoreMetaData::ROOT_USER) {

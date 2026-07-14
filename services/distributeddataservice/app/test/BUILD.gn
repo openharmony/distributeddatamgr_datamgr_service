@@ -64,6 +64,8 @@ config("module_private_config") {
     "TEST_ON_DEVICE",
     "OPENSSL_SUPPRESS_DEPRECATED",
   ]
+
+  defines += [ "CLONE_SO_PATH=\"${clone_so_path}\"" ]
 }
 
 ohos_unittest("KvStoreDataServiceTest") {

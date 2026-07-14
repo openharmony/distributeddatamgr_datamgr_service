@@ -30,6 +30,7 @@
 #include "feature/static_acts.h"
 #include "rdb_flow_control_manager.h"
 #include "lru_bucket.h"
+#include "metadata/bundle_version_meta_data.h"
 #include "metadata/meta_data_saver.h"
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -179,6 +180,8 @@ private:
             int32_t tokenId = INVALID_TOKENID) const;
     };
 
+    int32_t OnUserChange(uint32_t code, const std::string &user, const std::string &account) override;
+
     class Factory {
     public:
         Factory();
@@ -276,6 +279,10 @@ private:
         StoreInfo &storeInfo, std::shared_ptr<RdbQuery> rdbQuery);
 
     static Details HandleGenDetails(const DistributedData::GenDetails &details);
+
+    static void UpdateSchemaMeta(const std::string &bundleName, int32_t user, int32_t index);
+
+    static void UpdateBundleVerison();
 
     static std::string TransferStringToHex(const std::string& origStr);
 

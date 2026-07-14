@@ -385,6 +385,29 @@ HWTEST_F(CloudDataMockTest, OnReadyTest_LoginAccount, TestSize.Level0)
 }
 
 /**
+* @tc.name: IsLoginAccountWithUserId002
+* @tc.desc: Test IsLoginAccount(int32_t userId) returns false or true for different scenarios
+* @tc.type: FUNC
+* @tc.require:
+ */
+HWTEST_F(CloudDataMockTest, IsLoginAccountWithUserId002, TestSize.Level1)
+{
+    ZLOGI("CloudDataMockTest IsLoginAccountWithUserId002 start");
+    // Test when GetUnencryptedAccountId returns default account (not logged in)
+    int32_t userId1 = 101;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(userId1)).Times(1).WillOnce(testing::Return(false));
+    bool result = AccountDelegate::GetInstance()->IsLoginAccount(userId1);
+    EXPECT_FALSE(result);
+
+    // Test when GetUnencryptedAccountId returns valid account id (logged in)
+    int32_t userId2 = 102;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(userId2)).Times(1).WillOnce(testing::Return(true));
+    result = AccountDelegate::GetInstance()->IsLoginAccount(userId2);
+    EXPECT_TRUE(result);
+    ZLOGI("CloudDataMockTest IsLoginAccountWithUserId002 end");
+}
+
+/**
 * @tc.name: GetHapInfo001
 * @tc.desc: Test GetHapInfo function when GetTokenTypeFlag is not TOKEN_HAP.
 * @tc.type: FUNC
@@ -623,9 +646,10 @@ HWTEST_F(CloudDataMockTest, DownloadOnlySync_DifferentFlowTypes, TestSize.Level0
 HWTEST_F(CloudDataMockTest, GetStore001, TestSize.Level0)
 {
     CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(testing::Return(false));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
-    std::vector<int> users;
+    std::vector<int> users = {1};
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(1)
         .WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
@@ -659,6 +683,7 @@ HWTEST_F(CloudDataMockTest, GetStore001, TestSize.Level0)
 HWTEST_F(CloudDataMockTest, GetStore002, TestSize.Level0)
 {
     CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
     std::vector<int> users = {1};
@@ -696,6 +721,7 @@ HWTEST_F(CloudDataMockTest, GetStore002, TestSize.Level0)
 HWTEST_F(CloudDataMockTest, GetStore003, TestSize.Level0)
 {
     CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(testing::Return(false));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
     auto mock = std::make_shared<CloudTestGeneralStoreMock>();
@@ -729,6 +755,7 @@ HWTEST_F(CloudDataMockTest, GetStore003, TestSize.Level0)
 HWTEST_F(CloudDataMockTest, GetStore004, TestSize.Level0)
 {
     CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
     auto mock = std::make_shared<CloudTestGeneralStoreMock>();

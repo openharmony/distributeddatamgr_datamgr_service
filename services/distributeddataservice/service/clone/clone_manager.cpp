@@ -21,10 +21,10 @@
 #include "directory/directory_manager.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
-#include "securec.h"
 #include "utils/anonymous.h"
 #include "utils/base64_utils.h"
 #include "utils/constant.h"
+#include "utils/secure_clear_guard.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -58,18 +58,16 @@ std::vector<uint8_t> ConvertDecStrToVec(const std::string &inData)
 bool ImportCloneKey(const std::string &keyStr)
 {
     auto key = ConvertDecStrToVec(keyStr);
+    SecureClearGuard<std::vector<uint8_t>> keyGuard(key);
     if (key.size() != KEY_SIZE) {
         ZLOGE("ImportKey failed, key size not correct, key size:%{public}zu", key.size());
-        key.assign(key.size(), 0);
         return false;
     }
 
     auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
     if (!CryptoManager::GetInstance().ImportKey(key, cloneKeyAlias)) {
-        key.assign(key.size(), 0);
         return false;
     }
-    key.assign(key.size(), 0);
     return true;
 }
 
@@ -115,10 +113,10 @@ std::vector<uint8_t> ReEncryptKey(const std::string &key, SecretKeyMetaData &sec
     if (password.empty()) {
         return {};
     }
+    SecureClearGuard<std::vector<uint8_t>> passwordGuard(password);
     auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
     CryptoManager::CryptoParams encryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
     auto reEncryptedKey = CryptoManager::GetInstance().Encrypt(password, encryptParams);
-    password.assign(password.size(), 0);
     if (reEncryptedKey.size() == 0) {
         return {};
     };
@@ -164,20 +162,17 @@ int32_t OnBackup(MessageParcel &data, MessageParcel &reply, const std::string &l
 {
     CloneBackupInfo backupInfo;
     if (!backupInfo.Unmarshal(data.ReadString()) || backupInfo.bundleInfos.empty() || backupInfo.userId.empty()) {
-        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return -1;
     }
 
     if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
-        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return -1;
     }
-    std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
 
     auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
+    SecureClearGuard<std::vector<uint8_t>> ivGuard(iv);
     if (iv.size() != AES_256_NONCE_SIZE) {
         ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
-        iv.assign(iv.size(), 0);
         return -1;
     }
 
@@ -201,8 +196,8 @@ int32_t OnBackup(MessageParcel &data, MessageParcel &reply, const std::string &l
     fd = UniqueFd(open(backupPath.c_str(), O_RDONLY));
     std::string replyCode = GetBackupReplyCode(0);
     if (!reply.WriteFileDescriptor(fd) || !reply.WriteString(replyCode)) {
-        close(fd.Release());
         ZLOGE("OnBackup fail: reply wirte fail, fd:%{public}d", fd.Get());
+        close(fd.Release());
         return -1;
     }
 
@@ -238,10 +233,10 @@ bool ParseSecretKeyFile(MessageParcel &data, SecretKeyBackupData &backupData)
         ZLOGE("Read backup secret key failed. errno:%{public}d", errno);
         return false;
     }
+    SecureClearGuard<std::vector<char>> bufferGuard(buffer);
     std::string keyLoad(buffer.data(), static_cast<size_t>(fileSize));
-    memset_s(buffer.data(), buffer.size(), 0, buffer.size());
+    SecureClearGuard<std::string> keyLoadGuard(keyLoad);
     DistributedData::Serializable::Unmarshall(keyLoad, backupData);
-    std::fill(keyLoad.begin(), keyLoad.end(), '\0');
     return true;
 }
 
@@ -249,16 +244,16 @@ bool RestoreSecretKey(
     const SecretKeyBackupData::BackupItem &item, const std::string &userId, const std::vector<uint8_t> &iv)
 {
     auto sKey = DistributedData::Base64::Decode(item.sKey);
+    SecureClearGuard<std::vector<uint8_t>> sKeyGuard(sKey);
     auto cloneKeyAlias = std::vector<uint8_t>(CLONE_KEY_ALIAS, CLONE_KEY_ALIAS + strlen(CLONE_KEY_ALIAS));
     CryptoManager::CryptoParams decryptParams = { .keyAlias = cloneKeyAlias, .nonce = iv };
     auto rawKey = CryptoManager::GetInstance().Decrypt(sKey, decryptParams);
     if (rawKey.empty()) {
         ZLOGE("Decrypt failed, bundleName:%{public}s, storeName:%{public}s, storeType:%{public}d",
             item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.storeType);
-        sKey.assign(sKey.size(), 0);
-        rawKey.assign(rawKey.size(), 0);
         return false;
     }
+    SecureClearGuard<std::vector<uint8_t>> rawKeyGuard(rawKey);
 
     StoreMetaData metaData;
     metaData.bundleName = item.bundleName;
@@ -272,16 +267,12 @@ bool RestoreSecretKey(
     if (secretKey.sKey.empty()) {
         ZLOGE("Encrypt failed, bundleName:%{public}s, storeName:%{public}s, storeType:%{public}d",
             item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.storeType);
-        sKey.assign(sKey.size(), 0);
-        rawKey.assign(rawKey.size(), 0);
     }
     secretKey.storeType = item.storeType;
     secretKey.nonce = encryptParams.nonce;
     secretKey.area = item.area;
     secretKey.time = { item.time.begin(), item.time.end() };
 
-    sKey.assign(sKey.size(), 0);
-    rawKey.assign(rawKey.size(), 0);
     return MetaDataManager::GetInstance().SaveMeta(metaData.GetCloneSecretKey(), secretKey, true);
 }
 
@@ -294,23 +285,20 @@ int32_t OnRestore(MessageParcel &data, MessageParcel &reply)
     CloneBackupInfo backupInfo;
     bool ret = backupInfo.Unmarshal(data.ReadString());
     if (!ret || backupInfo.userId.empty()) {
-        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return ReplyForRestore(reply, -1);
     }
 
     auto iv = ConvertDecStrToVec(backupInfo.encryptionInfo.iv);
+    SecureClearGuard<std::vector<uint8_t>> ivGuard(iv);
     if (iv.size() != AES_256_NONCE_SIZE) {
         ZLOGE("Iv size not correct, iv size:%{public}zu", iv.size());
-        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         return ReplyForRestore(reply, -1);
     }
 
     if (!ImportCloneKey(backupInfo.encryptionInfo.symkey)) {
-        std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
         DeleteCloneKey();
         return ReplyForRestore(reply, -1);
     }
-    std::fill(backupInfo.encryptionInfo.symkey.begin(), backupInfo.encryptionInfo.symkey.end(), '\0');
 
     for (const auto &item : backupData.infos) {
         if (!item.IsValid() || !RestoreSecretKey(item, backupInfo.userId, iv)) {

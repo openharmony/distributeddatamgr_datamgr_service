@@ -69,6 +69,7 @@ public:
     API_EXPORT virtual bool QueryForegroundUsers(std::vector<int> &users) = 0;
     API_EXPORT virtual bool QueryForegroundUserId(int &foregroundUserId) = 0;
     API_EXPORT virtual bool IsLoginAccount() = 0;
+    API_EXPORT virtual bool IsLoginAccount(int32_t userId) = 0;
     API_EXPORT virtual bool IsVerified(int userId) = 0;
     API_EXPORT virtual bool RegisterHashFunc(HashFunc hash) = 0;
     API_EXPORT virtual bool IsDeactivating(int userId) = 0;
@@ -78,6 +79,10 @@ public:
     API_EXPORT static bool RegisterAccountInstance(AccountDelegate *instance);
     API_EXPORT virtual bool IsUserForeground(int32_t userId) = 0;
     API_EXPORT virtual bool IsOsAccountConstraintEnabled() = 0;
+    API_EXPORT virtual int32_t GetSubProfileIdByToken(uint32_t tokenId) = 0;
+    API_EXPORT virtual int32_t GetForegroundSubProfileId(int32_t osAccountId) = 0;
+    API_EXPORT virtual int32_t GetSubProfileIdByAppIndex(int32_t userId, int32_t appIndex) = 0;
+    API_EXPORT virtual int32_t GetAppIndexBySubProfileId(int32_t userId, int32_t subProfileId) = 0;
 
 private:
     static AccountDelegate *instance_;

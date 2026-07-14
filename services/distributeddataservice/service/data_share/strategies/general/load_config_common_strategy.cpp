@@ -17,9 +17,11 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bundle_mgr_proxy.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
+#include "tokenid_kit.h"
 #include "utils.h"
 
 namespace OHOS::DataShare {
@@ -37,6 +39,9 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     if (!URIUtils::GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
         return false;
     }
+#ifdef ACCOUNT_ISOLATION_ENABLED
+    ResolveAccessorAccountId(context);
+#endif
     // sa, userId is in uri, caller token id is from first caller tokenId
     if (context->currentUserId == 0) {
         GetInfoFromProxyURI(
@@ -77,5 +82,45 @@ bool LoadConfigCommonStrategy::GetInfoFromProxyURI(
         calledBundleName = queryParams[DST_BUNDLE_NAME_PARAM];
     }
     return true;
+}
+
+void LoadConfigCommonStrategy::ResolveAccessorAccountId(std::shared_ptr<Context> context)
+{
+    auto *delegate = AccountDelegate::GetInstance();
+    if (delegate == nullptr) {
+        ZLOGE("AccountDelegate is null, account isolation skipped");
+        return;
+    }
+    auto fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    auto callerTokenType = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(context->callerTokenId);
+    if (callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE ||
+        callerTokenType == Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL ||
+        Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
+        context->accountId = URIUtils::GetAccountIdFromProxyURI(context->uri);
+        if (context->accountId <= 0) {
+            context->accountId = delegate->GetForegroundSubProfileId(context->visitedUserId);
+        }
+        return;
+    }
+    // Non-system app (third-party HAP): resolve by clone app or foreground account.
+    Security::AccessToken::HapTokenInfo hapInfo;
+    auto ret = Security::AccessToken::AccessTokenKit::GetHapTokenInfo(context->callerTokenId, hapInfo);
+    if (ret != Security::AccessToken::RET_SUCCESS) {
+        return;
+    }
+    std::vector<int32_t> cloneAppIndexes;
+    auto errCode = BundleMgrProxy::GetInstance()->GetCloneAppIndexes(
+        hapInfo.bundleName, cloneAppIndexes, context->visitedUserId);
+    if (errCode == 0 && !cloneAppIndexes.empty()) {
+        int32_t subProfileId = delegate->GetSubProfileIdByToken(context->callerTokenId);
+        if (subProfileId > 0) {
+            context->accountId = subProfileId;
+        }
+    } else {
+        int32_t subProfileId = delegate->GetForegroundSubProfileId(context->visitedUserId);
+        if (subProfileId > 0) {
+            context->accountId = subProfileId;
+        }
+    }
 }
 } // namespace OHOS::DataShare

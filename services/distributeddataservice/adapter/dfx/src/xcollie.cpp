@@ -15,8 +15,6 @@
 
 #include "xcollie_impl.h"
 
-#include <mutex>
-
 #include "xcollie/xcollie.h"
 
 namespace OHOS::DistributedData {
@@ -25,8 +23,7 @@ __attribute__((used)) static bool g_isInit = XCollieImpl::Init();
 bool XCollieImpl::Init()
 {
     static XCollieImpl xcollieImpl;
-    static std::once_flag onceFlag;
-    std::call_once(onceFlag, []() { (void)XCollieDelegate::RegisterXCollieInstance(&xcollieImpl); });
+    (void)XCollieDelegate::RegisterXCollieInstance(&xcollieImpl);
     return true;
 }
 

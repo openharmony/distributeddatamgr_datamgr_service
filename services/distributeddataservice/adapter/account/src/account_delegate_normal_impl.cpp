@@ -16,16 +16,18 @@
 
 #include "account_delegate_normal_impl.h"
 
-#include <algorithm>
 #include <endian.h>
+#include <unistd.h>
+
+#include <algorithm>
 #include <regex>
 #include <thread>
-#include <unistd.h>
 
 #include "accesstoken_kit.h"
 #include "log_print.h"
 #include "ohos_account_kits.h"
 #include "os_account_manager.h"
+#include "os_account_subprofile_client.h"
 #include "os_account_subscribe_info.h"
 
 namespace OHOS {
@@ -138,6 +140,11 @@ bool AccountDelegateNormalImpl::QueryForegroundUsers(std::vector<int> &users)
 bool AccountDelegateNormalImpl::IsLoginAccount()
 {
     return GetCurrentAccountId() != AccountSA::DEFAULT_OHOS_ACCOUNT_UID;
+}
+
+bool AccountDelegateNormalImpl::IsLoginAccount(int32_t userId)
+{
+    return GetUnencryptedAccountId(userId) != AccountSA::DEFAULT_OHOS_ACCOUNT_UID;
 }
 
 bool AccountDelegateNormalImpl::IsVerified(int userId)
@@ -320,9 +327,64 @@ bool AccountDelegateNormalImpl::IsOsAccountConstraintEnabled()
         return true;
     }
     bool isEnabled = true;
-    int32_t status = AccountSA::OsAccountManager::CheckOsAccountConstraintEnabled(userId, TRANS_CONSTRAINT, isEnabled);
+    int32_t status = AccountSA::OsAccountManager::CheckOsAccountConstraintEnabled(
+        userId, TRANS_CONSTRAINT, isEnabled);
     ZLOGI("status: %{public}d, userId is %{public}d, isEnabled is %{public}d", status, userId, isEnabled);
     return isEnabled;
+}
+
+int32_t AccountDelegateNormalImpl::GetSubProfileIdByToken(uint32_t tokenId)
+{
+    int32_t subProfileId = -1;
+    auto ret = AccountSA::OsAccountSubProfileClient::GetInstance().GetOsAccountSubProfileId(tokenId, subProfileId);
+    if (ret != 0) {
+        ZLOGE("GetOsAccountSubProfileId by token failed, ret:%{public}d, tokenId:0x%{public}x", ret, tokenId);
+        return -1;
+    }
+    return subProfileId;
+}
+
+int32_t AccountDelegateNormalImpl::GetForegroundSubProfileId(int32_t osAccountId)
+{
+    int32_t subProfileId = -1;
+    auto ret = AccountSA::OsAccountSubProfileClient::GetInstance().GetOsAccountForegroundSubProfileId(
+        osAccountId, subProfileId);
+    if (ret != 0) {
+        ZLOGE("GetOsAccountForegroundSubProfileId failed, ret:%{public}d, osAccountId:%{public}d", ret, osAccountId);
+        return -1;
+    }
+    return subProfileId;
+}
+
+int32_t AccountDelegateNormalImpl::GetSubProfileIdByAppIndex(int32_t userId, int32_t appIndex)
+{
+    int32_t subProfileId = -1;
+    auto ret =
+        AccountSA::OsAccountSubProfileClient::GetInstance().GetOsAccountSubProfileId(userId, appIndex, subProfileId);
+    if (ret != 0) {
+        ZLOGE("GetOsAccountSubProfileId by appIndex failed, ret:%{public}d, userId:%{public}d, appIndex:%{public}d",
+            ret, userId, appIndex);
+        return -1;
+    }
+    return subProfileId;
+}
+
+int32_t AccountDelegateNormalImpl::GetAppIndexBySubProfileId(int32_t userId, int32_t subProfileId)
+{
+    AccountSA::OsAccountSubspaceResult subspaceResult;
+    AccountSA::OhosAccountInfo distributedInfo;
+    auto ret = AccountSA::OsAccountSubProfileClient::GetInstance().GetOsAccountSubProfile(
+        userId, subProfileId, subspaceResult, distributedInfo);
+    if (ret != 0) {
+        ZLOGE("GetOsAccountSubProfile failed, ret:%{public}d, userId:%{public}d, subProfileId:%{public}d", ret, userId,
+            subProfileId);
+        return -1;
+    }
+    if (subspaceResult.index < 0) {
+        ZLOGW("GetOsAccountSubProfile succeeded but index not resolved, userId:%{public}d, subProfileId:%{public}d",
+            userId, subProfileId);
+    }
+    return subspaceResult.index;
 }
 } // namespace DistributedData
 } // namespace OHOS

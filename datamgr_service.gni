@@ -89,3 +89,9 @@ declare_args() {
 
   datamgr_service_distributed = true
 }
+
+if (current_cpu == "arm64" || current_cpu == "x64") {
+  clone_so_path = "/system/lib64/libdistributeddata_clone.z.so"
+} else {
+  clone_so_path = "/system/lib/libdistributeddata_clone.z.so"
+}

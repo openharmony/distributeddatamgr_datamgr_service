@@ -42,6 +42,7 @@ public:
     bool QueryUsers(std::vector<int> &users) override;
     bool QueryForegroundUsers(std::vector<int> &users) override;
     bool IsLoginAccount() override;
+    bool IsLoginAccount(int32_t userId) override;
     bool IsVerified(int userId) override;
     bool IsDeactivating(int userId) override;
     void SubscribeAccountEvent() override;
@@ -52,6 +53,10 @@ public:
     bool IsUserForeground(int32_t userId) override;
     static bool Init();
     bool IsOsAccountConstraintEnabled() override;
+    int32_t GetSubProfileIdByToken(uint32_t tokenId) override;
+    int32_t GetForegroundSubProfileId(int32_t osAccountId) override;
+    int32_t GetSubProfileIdByAppIndex(int32_t userId, int32_t appIndex) override;
+    int32_t GetAppIndexBySubProfileId(int32_t userId, int32_t subProfileId) override;
 
 private:
     ~AccountDelegateNormalImpl();
