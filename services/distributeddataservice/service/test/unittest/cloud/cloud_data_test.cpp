@@ -4572,6 +4572,78 @@ HWTEST_F(CloudDataTest, SyncAgents_ExecuteBatchNotifyTokenIdNotExist, TestSize.L
 }
 
 /**
+ * @tc.name: SyncAgents_OnFeatureExitErasePid
+ * @tc.desc: Verify OnFeatureExit erases specific pid and keeps others under the same tokenId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_OnFeatureExitErasePid, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pidA = 1000;
+    pid_t pidB = 2000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(pidA);
+    agents[pidA].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    agents.try_emplace(pidB);
+    agents[pidB].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    int32_t ret = cloudServiceImpl_->OnFeatureExit(0, pidA, sameTokenId, "com.test.bundle");
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto result = cloudServiceImpl_->syncAgents_.Find(sameTokenId);
+    EXPECT_TRUE(result.first);
+    EXPECT_EQ(static_cast<int32_t>(result.second.size()), 1);
+    EXPECT_NE(result.second.find(pidB), result.second.end());
+    EXPECT_EQ(result.second.find(pidA), result.second.end());
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_OnFeatureExitEraseLastPid
+ * @tc.desc: Verify OnFeatureExit removes entire tokenId entry when the last pid is erased
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_OnFeatureExitEraseLastPid, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t onlyPid = 1000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(onlyPid);
+    agents[onlyPid].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    int32_t ret = cloudServiceImpl_->OnFeatureExit(0, onlyPid, sameTokenId, "com.test.bundle");
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto result = cloudServiceImpl_->syncAgents_.Find(sameTokenId);
+    EXPECT_FALSE(result.first);
+}
+
+/**
+ * @tc.name: SyncAgents_OnFeatureExitTokenIdNotExist
+ * @tc.desc: Verify OnFeatureExit does nothing when tokenId does not exist in syncAgents
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_OnFeatureExitTokenIdNotExist, TestSize.Level1)
+{
+    uint32_t nonexistentTokenId = 0xDEAD;
+    int32_t ret = cloudServiceImpl_->OnFeatureExit(0, 1000, nonexistentTokenId, "com.test.bundle");
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto result = cloudServiceImpl_->syncAgents_.Find(nonexistentTokenId);
+    EXPECT_FALSE(result.first);
+}
+
+/**
 * @tc.name: PrepareForCloudSync_ManualSync_EmptyCloudInfo
 * @tc.desc: Test PrepareForCloudSync with manual sync mode when cloud info is empty, covers ZLOGE branch
 * @tc.type: FUNC
