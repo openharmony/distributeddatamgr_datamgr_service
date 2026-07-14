@@ -13,21 +13,13 @@
  * limitations under the License.
  */
 
-#include "xcollie_impl.h"
-
+#include "dfx/xcollie.h"
 #include "xcollie/xcollie.h"
 
 namespace OHOS::DistributedData {
-__attribute__((used)) static bool g_isInit = XCollieImpl::Init();
+namespace {
 
-bool XCollieImpl::Init()
-{
-    static XCollieImpl xcollieImpl;
-    (void)XCollieDelegate::RegisterXCollieInstance(&xcollieImpl);
-    return true;
-}
-
-int32_t XCollieImpl::SetTimer(
+int32_t SetTimer(
     const std::string &tag, uint32_t timeoutSeconds, std::function<void(void *)> func, void *arg, uint32_t flag)
 {
     uint32_t xCollieFlag = 0;
@@ -40,8 +32,11 @@ int32_t XCollieImpl::SetTimer(
     return HiviewDFX::XCollie::GetInstance().SetTimer(tag, timeoutSeconds, func, arg, xCollieFlag);
 }
 
-void XCollieImpl::CancelTimer(int32_t id)
+void CancelTimer(int32_t id)
 {
     HiviewDFX::XCollie::GetInstance().CancelTimer(id);
 }
+
+__attribute__((used)) static bool g_isInit = XCollie::RegisterTimerHandler(SetTimer, CancelTimer);
+} // namespace
 } // namespace OHOS::DistributedData

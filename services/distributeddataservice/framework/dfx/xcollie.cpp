@@ -18,36 +18,31 @@
 #include <utility>
 
 namespace OHOS::DistributedData {
-XCollieDelegate *XCollieDelegate::instance_ = nullptr;
+XCollie::SetTimerHandler XCollie::setTimer_ = nullptr;
+XCollie::CancelTimerHandler XCollie::cancelTimer_ = nullptr;
 
-bool XCollieDelegate::RegisterXCollieInstance(XCollieDelegate *instance)
+bool XCollie::RegisterTimerHandler(SetTimerHandler setTimer, CancelTimerHandler cancelTimer)
 {
-    if (instance_ != nullptr) {
+    if (setTimer_ != nullptr || cancelTimer_ != nullptr || setTimer == nullptr || cancelTimer == nullptr) {
         return false;
     }
-    instance_ = instance;
+    setTimer_ = setTimer;
+    cancelTimer_ = cancelTimer;
     return true;
 }
 
-XCollieDelegate *XCollieDelegate::GetInstance()
+XCollie::XCollie(
+    const std::string &tag, uint32_t flag, uint32_t timeoutSeconds, std::function<void(void *)> func, void *arg)
 {
-    return instance_;
-}
-
-XCollie::XCollie(const std::string &tag, uint32_t flag, uint32_t timeoutSeconds, std::function<void(void *)> func,
-                 void *arg)
-{
-    auto *instance = XCollieDelegate::GetInstance();
-    if (instance != nullptr) {
-        id_ = instance->SetTimer(tag, timeoutSeconds, std::move(func), arg, flag);
+    if (setTimer_ != nullptr) {
+        id_ = setTimer_(tag, timeoutSeconds, std::move(func), arg, flag);
     }
 }
 
 XCollie::~XCollie()
 {
-    auto *instance = XCollieDelegate::GetInstance();
-    if (instance != nullptr && id_ != -1) {
-        instance->CancelTimer(id_);
+    if (cancelTimer_ != nullptr && id_ != -1) {
+        cancelTimer_(id_);
     }
 }
 } // namespace OHOS::DistributedData

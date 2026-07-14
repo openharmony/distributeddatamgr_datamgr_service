@@ -24,26 +24,27 @@ using namespace OHOS::DistributedData;
 
 namespace OHOS::Test {
 namespace DistributedDataXCollieTest {
-class XCollieDelegateMock final : public XCollieDelegate {
+class XCollieHandlerMock final {
 public:
-    int32_t SetTimer(const std::string &tag, uint32_t timeoutSeconds, std::function<void(void *)> func, void *arg,
-        uint32_t flag) override
+    static int32_t SetTimer(
+        const std::string &tag, uint32_t timeoutSeconds, std::function<void(void *)> func, void *arg, uint32_t flag)
     {
-        tag_ = tag;
-        timeoutSeconds_ = timeoutSeconds;
-        func_ = std::move(func);
-        arg_ = arg;
-        flag_ = flag;
-        ++setTimerCount_;
-        return timerId_;
+        instance_->tag_ = tag;
+        instance_->timeoutSeconds_ = timeoutSeconds;
+        instance_->func_ = std::move(func);
+        instance_->arg_ = arg;
+        instance_->flag_ = flag;
+        ++instance_->setTimerCount_;
+        return instance_->timerId_;
     }
 
-    void CancelTimer(int32_t id) override
+    static void CancelTimer(int32_t id)
     {
-        canceledId_ = id;
-        ++cancelTimerCount_;
+        instance_->canceledId_ = id;
+        ++instance_->cancelTimerCount_;
     }
 
+    static XCollieHandlerMock *instance_;
     std::string tag_;
     uint32_t timeoutSeconds_ = 0;
     std::function<void(void *)> func_;
@@ -55,74 +56,97 @@ public:
     uint32_t cancelTimerCount_ = 0;
 };
 
+XCollieHandlerMock *XCollieHandlerMock::instance_ = nullptr;
+
 class XCollieTest : public testing::Test {
 public:
     void SetUp() override
     {
-        XCollieDelegate::instance_ = nullptr;
+        XCollie::setTimer_ = nullptr;
+        XCollie::cancelTimer_ = nullptr;
+        XCollieHandlerMock::instance_ = nullptr;
     }
 
     void TearDown() override
     {
-        XCollieDelegate::instance_ = nullptr;
+        XCollie::setTimer_ = nullptr;
+        XCollie::cancelTimer_ = nullptr;
+        XCollieHandlerMock::instance_ = nullptr;
     }
 };
 
 /**
- * @tc.name: RegisterXCollieInstance_FirstAndDuplicateRegistration_ReturnsExpected
- * @tc.desc: Test XCollieDelegate registration keeps the first instance and rejects duplicate registration.
+ * @tc.name: RegisterTimerHandler_FirstAndDuplicateRegistration_ReturnsExpected
+ * @tc.desc: Test XCollie keeps the first timer handler and rejects duplicate registration.
  * @tc.author: agent
  * @tc.type: FUNC
  */
-HWTEST_F(XCollieTest, RegisterXCollieInstance_FirstAndDuplicateRegistration_ReturnsExpected, TestSize.Level1)
+HWTEST_F(XCollieTest, RegisterTimerHandler_FirstAndDuplicateRegistration_ReturnsExpected, TestSize.Level1)
 {
-    XCollieDelegateMock first;
-    XCollieDelegateMock second;
+    XCollieHandlerMock mock;
+    XCollieHandlerMock::instance_ = &mock;
 
-    EXPECT_TRUE(XCollieDelegate::RegisterXCollieInstance(&first));
-    EXPECT_EQ(XCollieDelegate::GetInstance(), &first);
-    EXPECT_FALSE(XCollieDelegate::RegisterXCollieInstance(&second));
-    EXPECT_EQ(XCollieDelegate::GetInstance(), &first);
+    EXPECT_TRUE(XCollie::RegisterTimerHandler(XCollieHandlerMock::SetTimer, XCollieHandlerMock::CancelTimer));
+    EXPECT_EQ(XCollie::setTimer_, XCollieHandlerMock::SetTimer);
+    EXPECT_EQ(XCollie::cancelTimer_, XCollieHandlerMock::CancelTimer);
+    EXPECT_FALSE(XCollie::RegisterTimerHandler(XCollieHandlerMock::SetTimer, XCollieHandlerMock::CancelTimer));
+    EXPECT_EQ(XCollie::setTimer_, XCollieHandlerMock::SetTimer);
+    EXPECT_EQ(XCollie::cancelTimer_, XCollieHandlerMock::CancelTimer);
 }
 
 /**
- * @tc.name: XCollie_ConstructWithoutRegisteredDelegate_KeepsInvalidTimerId
- * @tc.desc: Test XCollie keeps the default invalid timer id when no delegate is registered.
+ * @tc.name: RegisterTimerHandler_NullHandler_ReturnsFalse
+ * @tc.desc: Test XCollie rejects incomplete timer handlers.
  * @tc.author: agent
  * @tc.type: FUNC
  */
-HWTEST_F(XCollieTest, XCollie_ConstructWithoutRegisteredDelegate_KeepsInvalidTimerId, TestSize.Level1)
+HWTEST_F(XCollieTest, RegisterTimerHandler_NullHandler_ReturnsFalse, TestSize.Level1)
 {
-    XCollie xcollie("NoDelegate", XCollie::XCOLLIE_LOG, 10);
+    EXPECT_FALSE(XCollie::RegisterTimerHandler(nullptr, XCollieHandlerMock::CancelTimer));
+    EXPECT_FALSE(XCollie::RegisterTimerHandler(XCollieHandlerMock::SetTimer, nullptr));
+    EXPECT_EQ(XCollie::setTimer_, nullptr);
+    EXPECT_EQ(XCollie::cancelTimer_, nullptr);
+}
+
+/**
+ * @tc.name: XCollie_ConstructWithoutRegisteredHandler_KeepsInvalidTimerId
+ * @tc.desc: Test XCollie keeps the default invalid timer id when no timer handler is registered.
+ * @tc.author: agent
+ * @tc.type: FUNC
+ */
+HWTEST_F(XCollieTest, XCollie_ConstructWithoutRegisteredHandler_KeepsInvalidTimerId, TestSize.Level1)
+{
+    XCollie xcollie("NoHandler", XCollie::XCOLLIE_LOG, 10);
 
     EXPECT_EQ(xcollie.id_, -1);
 }
 
 /**
- * @tc.name: XCollie_ConstructAndDestructWithRegisteredDelegate_ForwardsTimerOperations
- * @tc.desc: Test XCollie forwards timer creation and cancellation to the registered delegate.
+ * @tc.name: XCollie_ConstructAndDestructWithRegisteredHandler_ForwardsTimerOperations
+ * @tc.desc: Test XCollie forwards timer creation and cancellation to the registered handler.
  * @tc.author: agent
  * @tc.type: FUNC
  */
-HWTEST_F(XCollieTest, XCollie_ConstructAndDestructWithRegisteredDelegate_ForwardsTimerOperations, TestSize.Level1)
+HWTEST_F(XCollieTest, XCollie_ConstructAndDestructWithRegisteredHandler_ForwardsTimerOperations, TestSize.Level1)
 {
-    XCollieDelegateMock delegate;
+    XCollieHandlerMock handler;
     int32_t arg = 1;
-    delegate.timerId_ = 200;
+    handler.timerId_ = 200;
+    XCollieHandlerMock::instance_ = &handler;
 
-    EXPECT_TRUE(XCollieDelegate::RegisterXCollieInstance(&delegate));
+    EXPECT_TRUE(XCollie::RegisterTimerHandler(XCollieHandlerMock::SetTimer, XCollieHandlerMock::CancelTimer));
     {
         XCollie xcollie("AutoCache::GetDBStore", XCollie::XCOLLIE_LOG, 10, nullptr, &arg);
-        EXPECT_EQ(delegate.setTimerCount_, 1);
-        EXPECT_EQ(delegate.tag_, "AutoCache::GetDBStore");
-        EXPECT_EQ(delegate.timeoutSeconds_, 10);
-        EXPECT_EQ(delegate.arg_, &arg);
-        EXPECT_EQ(delegate.flag_, XCollie::XCOLLIE_LOG);
-        EXPECT_EQ(delegate.cancelTimerCount_, 0);
+        EXPECT_EQ(handler.setTimerCount_, 1);
+        EXPECT_EQ(handler.tag_, "AutoCache::GetDBStore");
+        EXPECT_EQ(handler.timeoutSeconds_, 10);
+        EXPECT_EQ(handler.arg_, &arg);
+        EXPECT_EQ(handler.flag_, XCollie::XCOLLIE_LOG);
+        EXPECT_EQ(handler.cancelTimerCount_, 0);
     }
 
-    EXPECT_EQ(delegate.cancelTimerCount_, 1);
-    EXPECT_EQ(delegate.canceledId_, 200);
+    EXPECT_EQ(handler.cancelTimerCount_, 1);
+    EXPECT_EQ(handler.canceledId_, 200);
 }
 } // namespace DistributedDataXCollieTest
 } // namespace OHOS::Test
