@@ -646,9 +646,10 @@ HWTEST_F(CloudDataMockTest, DownloadOnlySync_DifferentFlowTypes, TestSize.Level0
 HWTEST_F(CloudDataMockTest, GetStore001, TestSize.Level0)
 {
     CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(testing::Return(false));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
-    std::vector<int> users;
+    std::vector<int> users = {1};
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(1)
         .WillOnce(DoAll(SetArgReferee<0>(users), Return(true)));
@@ -682,6 +683,7 @@ HWTEST_F(CloudDataMockTest, GetStore001, TestSize.Level0)
 HWTEST_F(CloudDataMockTest, GetStore002, TestSize.Level0)
 {
     CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
     std::vector<int> users = {1};
@@ -719,6 +721,7 @@ HWTEST_F(CloudDataMockTest, GetStore002, TestSize.Level0)
 HWTEST_F(CloudDataMockTest, GetStore003, TestSize.Level0)
 {
     CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(testing::Return(false));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
     auto mock = std::make_shared<CloudTestGeneralStoreMock>();
@@ -752,6 +755,7 @@ HWTEST_F(CloudDataMockTest, GetStore003, TestSize.Level0)
 HWTEST_F(CloudDataMockTest, GetStore004, TestSize.Level0)
 {
     CloudData::SyncManager syncManager;
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(testing::Return(true));
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(DoAll(Return(true)));
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(ATokenTypeEnum::TOKEN_HAP));
     auto mock = std::make_shared<CloudTestGeneralStoreMock>();
