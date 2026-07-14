@@ -734,12 +734,17 @@ std::pair<int32_t, AutoCache::Store> SyncManager::GetStore(const StoreMetaData &
         return { E_ERROR, nullptr };
     }
     UserBindInfo bindInfos;
+    bool hasSuccess = false;
     for (auto &info : infos) {
-        status = FillUserBindInfos(store, meta, mustBind, info, bindInfos);
-        if (status != E_OK) {
-            return { status, nullptr };
+        auto ret = FillUserBindInfos(store, meta, mustBind, info, bindInfos);
+        if (ret != E_OK) {
+            ZLOGW("get bind infos failed, bundleName:%{public}s user:%{public}d", meta.bundleName.c_str(), info.user);
+            status = ret;
+        } else {
+            hasSuccess = true;
         }
     }
+    status = hasSuccess ? E_OK : status;
     BindInfos(store, bindInfos, meta.storeId);
     return { status, store };
 }
@@ -754,9 +759,11 @@ std::vector<CloudInfo> SyncManager::GetCloudInfos(int32_t user)
             return infos;
         }
         for (int32_t infoUser : users) {
-            CloudInfo info;
-            info.user = infoUser;
-            infos.emplace_back(info);
+            if (AccountDelegate::GetInstance()->IsLoginAccount(infoUser)) {
+                CloudInfo info;
+                info.user = infoUser;
+                infos.emplace_back(info);
+            }
         }
     } else {
         CloudInfo info;
