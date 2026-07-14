@@ -4572,6 +4572,59 @@ HWTEST_F(CloudDataTest, SyncAgents_ExecuteBatchNotifyTokenIdNotExist, TestSize.L
 }
 
 /**
+ * @tc.name: SyncAgents_ExecuteBatchNotifyWithValidPids
+ * @tc.desc: Verify ExecuteBatchNotify sends OnSyncInfoNotify to all valid notifiers and skips nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_ExecuteBatchNotifyWithValidPids, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t validPid = 1000;
+    pid_t nullPid = 2000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(validPid);
+    agents[validPid].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    agents.try_emplace(nullPid);
+    agents[nullPid].notifier_ = nullptr;
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    CloudData::CloudServiceImpl::BatchQueryLastResults data;
+    cloudServiceImpl_->pendingNotifies_.emplace(sameTokenId, data);
+
+    cloudServiceImpl_->ExecuteBatchNotify();
+
+    auto pendingResult = cloudServiceImpl_->pendingNotifies_.find(sameTokenId);
+    EXPECT_EQ(pendingResult, cloudServiceImpl_->pendingNotifies_.end());
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_ExecuteBatchNotifySkipsNonexistentTokenId
+ * @tc.desc: Verify ExecuteBatchNotify skips when tokenId in pendingNotifies does not exist in syncAgents
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_ExecuteBatchNotifySkipsNonexistentTokenId, TestSize.Level1)
+{
+    uint32_t nonexistentTokenId = 0xDEAD;
+
+    CloudData::CloudServiceImpl::BatchQueryLastResults data;
+    cloudServiceImpl_->pendingNotifies_.emplace(nonexistentTokenId, data);
+
+    cloudServiceImpl_->ExecuteBatchNotify();
+
+    auto pendingResult = cloudServiceImpl_->pendingNotifies_.find(nonexistentTokenId);
+    EXPECT_EQ(pendingResult, cloudServiceImpl_->pendingNotifies_.end());
+
+    auto agentResult = cloudServiceImpl_->syncAgents_.Find(nonexistentTokenId);
+    EXPECT_FALSE(agentResult.first);
+}
+
+/**
  * @tc.name: SyncAgents_OnFeatureExitErasePid
  * @tc.desc: Verify OnFeatureExit erases specific pid and keeps others under the same tokenId
  * @tc.type: FUNC
