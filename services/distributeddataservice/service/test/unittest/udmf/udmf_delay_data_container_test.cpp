@@ -192,8 +192,18 @@ HWTEST_F(UdmfDelayDataContainerTest, RegisterDelayDataCallback001, TestSize.Leve
     DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, info);
     EXPECT_TRUE(DelayDataAcquireContainer::GetInstance().delayDataCallback_.empty());
     key = "udmf://drag/com.example.app/1233455";
+    info.tokenId = 12345;
     DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, info);
     EXPECT_TRUE(DelayDataAcquireContainer::GetInstance().delayDataCallback_.size() == 1);
+    EXPECT_EQ(DelayDataAcquireContainer::GetInstance().delayDataCallback_.at(key).tokenId, 12345);
+
+    info.tokenId = 23456;
+    DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, info);
+    EXPECT_EQ(DelayDataAcquireContainer::GetInstance().delayDataCallback_.at(key).tokenId, 12345);
+
+    info.tokenId = 12345;
+    DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, info);
+    EXPECT_EQ(DelayDataAcquireContainer::GetInstance().delayDataCallback_.at(key).tokenId, 12345);
 
     DelayDataAcquireContainer::GetInstance().delayDataCallback_.clear();
 }

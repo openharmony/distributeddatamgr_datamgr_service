@@ -711,7 +711,7 @@ int32_t UdmfServiceImpl::Sync(const QueryOption &query, const std::vector<std::s
         ZLOGE("Unified key: %{public}s is invalid.", query.key.c_str());
         return E_INVALID_PARAMETERS;
     }
-    RegisterAsyncProcessInfo(query.key);
+    RegisterAsyncProcessInfo(query.key, query.tokenId);
     return StoreSync(key, query, devices);
 }
 
@@ -730,6 +730,7 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
             return;
         }
         syncInfo.businessUdKey = query.key;
+        syncInfo.tokenId = query.tokenId;
         std::lock_guard<std::mutex> lock(mutex_);
         asyncProcessInfoMap_.insert_or_assign(syncInfo.businessUdKey, syncInfo);
     };
@@ -986,6 +987,11 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
         processInfo.srcDevName = "Local";
         return E_OK;
     }
+    uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    if (it->second.tokenId != tokenId) {
+        ZLOGE("Obtain async process failed, tokenId mismatch.");
+        return E_NO_PERMISSION;
+    }
     processInfo.syncStatus = it->second.syncStatus;
     processInfo.srcDevName = it->second.srcDevName;
     return E_OK;
@@ -995,10 +1001,16 @@ int32_t UdmfServiceImpl::ClearAsynProcessByKey(const std::string & businessUdKey
 {
     ZLOGI("ClearAsynProcessByKey begin.");
     std::lock_guard<std::mutex> lock(mutex_);
-    if (asyncProcessInfoMap_.find(businessUdKey) == asyncProcessInfoMap_.end()) {
+    auto it = asyncProcessInfoMap_.find(businessUdKey);
+    if (it == asyncProcessInfoMap_.end()) {
         return E_OK;
     }
-    asyncProcessInfoMap_.erase(businessUdKey);
+    uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    if (it->second.tokenId != tokenId) {
+        ZLOGE("Clear async process failed, tokenId mismatch.");
+        return E_NO_PERMISSION;
+    }
+    asyncProcessInfoMap_.erase(it);
     return E_OK;
 }
 
@@ -1060,9 +1072,11 @@ bool UdmfServiceImpl::HasDatahubPriviledge(const std::string &bundleName)
     return std::find(std::begin(HAP_LIST), std::end(HAP_LIST), bundleName) != std::end(HAP_LIST) && isSystemApp;
 }
 
-void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey)
+void UdmfServiceImpl::RegisterAsyncProcessInfo(const std::string &businessUdKey, uint32_t tokenId)
 {
     AsyncProcessInfo info;
+    info.businessUdKey = businessUdKey;
+    info.tokenId = tokenId;
     std::lock_guard<std::mutex> lock(mutex_);
     asyncProcessInfoMap_.insert_or_assign(businessUdKey, std::move(info));
 }
@@ -1342,7 +1356,23 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         return E_DB_ERROR;
     }
     uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    int32_t res = store->Update(unifiedData, summary);
+    UnifiedData storedData;
+    int32_t res = store->Get(key, storedData);
+    if (res != E_OK) {
+        ZLOGE("Query delay data failed:%{public}s, status:%{public}d", key.c_str(), res);
+        HandleDbError(udKey.intention, res);
+        return res == E_DB_ERROR ? E_DB_ERROR : E_ERROR;
+    }
+    auto runtime = storedData.GetRuntime();
+    if (runtime == nullptr) {
+        ZLOGE("Stored delay data runtime is null, key:%{public}s", key.c_str());
+        return E_DB_ERROR;
+    }
+    if (runtime->tokenId != tokenId) {
+        ZLOGE("Update delay data failed, tokenId mismatch");
+        return E_NO_PERMISSION;
+    }
+    res = store->Update(unifiedData, summary);
     if (res != E_OK) {
         ZLOGE("Update delay data failed:%{public}s, status:%{public}d", key.c_str(), res);
         HandleDbError(udKey.intention, res);
