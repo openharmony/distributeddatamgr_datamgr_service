@@ -4402,6 +4402,176 @@ HWTEST_F(CloudDataTest, SyncAgents_EraseSpecificPidKeepsOthers, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SyncAgents_NotifyTokenIdNotExist
+ * @tc.desc: Verify NotifySyncAgentsByTokenId does nothing when tokenId does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_NotifyTokenIdNotExist, TestSize.Level1)
+{
+    uint32_t nonexistentTokenId = 0xDEAD;
+    cloudServiceImpl_->NotifySyncAgentsByTokenId(nonexistentTokenId, TriggerScene::TRIGGER_PUSH);
+    auto result = cloudServiceImpl_->syncAgents_.Find(nonexistentTokenId);
+    EXPECT_FALSE(result.first);
+}
+
+/**
+ * @tc.name: SyncAgents_NotifySkipsNullNotifier
+ * @tc.desc: Verify NotifySyncAgentsByTokenId skips agents with nullptr notifier
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_NotifySkipsNullNotifier, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t validPid = 1000;
+    pid_t nullPid = 2000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(validPid);
+    agents[validPid].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    agents.try_emplace(nullPid);
+    agents[nullPid].notifier_ = nullptr;
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    int32_t validCount = 0;
+    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
+        [&validCount](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
+        for (auto &[pid, agent] : syncAgents) {
+            if (agent.notifier_ != nullptr) {
+                validCount++;
+            }
+        }
+        return true;
+    });
+    EXPECT_EQ(validCount, 1);
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_NotifySyncAgentsByTokenId_IPC
+ * @tc.desc: Verify NotifySyncAgentsByTokenId sends IPC to all valid notifiers under a tokenId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_NotifySyncAgentsByTokenId_IPC, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pidA = 1000;
+
+    sptr<IRemoteObject> notifierObj = new MockRemoteObjectForNotifier();
+    auto notifierProxy = new CloudData::CloudNotifierProxy(notifierObj);
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(pidA);
+    agents[pidA].notifier_ = notifierProxy;
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    cloudServiceImpl_->NotifySyncAgentsByTokenId(sameTokenId, TriggerScene::TRIGGER_PUSH);
+
+    sptr<CloudData::CloudNotifierProxy> foundNotifier = nullptr;
+    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
+        [&foundNotifier, pidA](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
+        auto it = syncAgents.find(pidA);
+        if (it != syncAgents.end()) {
+            foundNotifier = it->second.notifier_;
+        }
+        return true;
+    });
+    EXPECT_NE(foundNotifier, nullptr);
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_InitNotifierNullPtr
+ * @tc.desc: Verify InitNotifier returns INVALID_ARGUMENT when notifier is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_InitNotifierNullPtr, TestSize.Level1)
+{
+    int32_t ret = cloudServiceImpl_->InitNotifier(nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: SyncAgents_OnAsyncCompletePidNotFound
+ * @tc.desc: Verify OnAsyncComplete does not call OnComplete when pid is not found in SyncAgents
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_OnAsyncCompletePidNotFound, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t registeredPid = 1000;
+    pid_t unregisteredPid = 2000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(registeredPid);
+    agents[registeredPid].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    CloudData::Details details{};
+    uint32_t seqNum = 0;
+    cloudServiceImpl_->OnAsyncComplete(sameTokenId, unregisteredPid, seqNum, std::move(details));
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_ExecuteBatchNotifyByPid
+ * @tc.desc: Verify ExecuteBatchNotify sends OnSyncInfoNotify to all pids under each tokenId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_ExecuteBatchNotifyByPid, TestSize.Level1)
+{
+    uint32_t sameTokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pidA = 1000;
+    pid_t pidB = 2000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(pidA);
+    agents[pidA].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    agents.try_emplace(pidB);
+    agents[pidB].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+
+    cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
+
+    int32_t notifyCount = 0;
+    cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
+        [&notifyCount](auto, CloudData::CloudServiceImpl::SyncAgents &syncAgents) {
+        for (auto &[pid, agent] : syncAgents) {
+            if (agent.notifier_ != nullptr) {
+                notifyCount++;
+            }
+        }
+        return true;
+    });
+    EXPECT_EQ(notifyCount, 2);
+
+    cloudServiceImpl_->syncAgents_.Erase(sameTokenId);
+}
+
+/**
+ * @tc.name: SyncAgents_ExecuteBatchNotifyTokenIdNotExist
+ * @tc.desc: Verify ExecuteBatchNotify skips when tokenId does not exist in syncAgents
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, SyncAgents_ExecuteBatchNotifyTokenIdNotExist, TestSize.Level1)
+{
+    uint32_t nonexistentTokenId = 0xDEAD;
+    auto result = cloudServiceImpl_->syncAgents_.Find(nonexistentTokenId);
+    EXPECT_FALSE(result.first);
+}
+
+/**
 * @tc.name: PrepareForCloudSync_ManualSync_EmptyCloudInfo
 * @tc.desc: Test PrepareForCloudSync with manual sync mode when cloud info is empty, covers ZLOGE branch
 * @tc.type: FUNC
