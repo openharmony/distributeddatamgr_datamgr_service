@@ -76,12 +76,12 @@ public:
 };
 
 /**
- * @tc.name: RegisterTimerHandler_FirstAndDuplicateRegistration_ReturnsExpected
+ * @tc.name: RegisterTimerHandler
  * @tc.desc: Test XCollie keeps the first timer handler and rejects duplicate registration.
  * @tc.author: agent
  * @tc.type: FUNC
  */
-HWTEST_F(XCollieTest, RegisterTimerHandler_FirstAndDuplicateRegistration_ReturnsExpected, TestSize.Level1)
+HWTEST_F(XCollieTest, RegisterTimerHandler, TestSize.Level1)
 {
     XCollieHandlerMock mock;
     XCollieHandlerMock::instance_ = &mock;
@@ -95,12 +95,12 @@ HWTEST_F(XCollieTest, RegisterTimerHandler_FirstAndDuplicateRegistration_Returns
 }
 
 /**
- * @tc.name: RegisterTimerHandler_NullHandler_ReturnsFalse
+ * @tc.name: RegisterNullHandler
  * @tc.desc: Test XCollie rejects incomplete timer handlers.
  * @tc.author: agent
  * @tc.type: FUNC
  */
-HWTEST_F(XCollieTest, RegisterTimerHandler_NullHandler_ReturnsFalse, TestSize.Level1)
+HWTEST_F(XCollieTest, RegisterNullHandler, TestSize.Level1)
 {
     EXPECT_FALSE(XCollie::RegisterTimerHandler(nullptr, XCollieHandlerMock::CancelTimer));
     EXPECT_FALSE(XCollie::RegisterTimerHandler(XCollieHandlerMock::SetTimer, nullptr));
@@ -109,12 +109,12 @@ HWTEST_F(XCollieTest, RegisterTimerHandler_NullHandler_ReturnsFalse, TestSize.Le
 }
 
 /**
- * @tc.name: XCollie_ConstructWithoutRegisteredHandler_KeepsInvalidTimerId
+ * @tc.name: ConstructWithoutHandler
  * @tc.desc: Test XCollie keeps the default invalid timer id when no timer handler is registered.
  * @tc.author: agent
  * @tc.type: FUNC
  */
-HWTEST_F(XCollieTest, XCollie_ConstructWithoutRegisteredHandler_KeepsInvalidTimerId, TestSize.Level1)
+HWTEST_F(XCollieTest, ConstructWithoutHandler, TestSize.Level1)
 {
     XCollie xcollie("NoHandler", XCollie::XCOLLIE_LOG, 10);
 
@@ -122,12 +122,12 @@ HWTEST_F(XCollieTest, XCollie_ConstructWithoutRegisteredHandler_KeepsInvalidTime
 }
 
 /**
- * @tc.name: XCollie_ConstructAndDestructWithRegisteredHandler_ForwardsTimerOperations
+ * @tc.name: ForwardTimerOperations
  * @tc.desc: Test XCollie forwards timer creation and cancellation to the registered handler.
  * @tc.author: agent
  * @tc.type: FUNC
  */
-HWTEST_F(XCollieTest, XCollie_ConstructAndDestructWithRegisteredHandler_ForwardsTimerOperations, TestSize.Level1)
+HWTEST_F(XCollieTest, ForwardTimerOperations, TestSize.Level1)
 {
     XCollieHandlerMock handler;
     int32_t arg = 1;
