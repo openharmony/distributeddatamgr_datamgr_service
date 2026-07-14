@@ -4410,7 +4410,7 @@ HWTEST_F(CloudDataTest, SyncAgents_EraseSpecificPidKeepsOthers, TestSize.Level1)
 HWTEST_F(CloudDataTest, SyncAgents_NotifyTokenIdNotExist, TestSize.Level1)
 {
     uint32_t nonexistentTokenId = 0xDEAD;
-    cloudServiceImpl_->NotifySyncAgentsByTokenId(nonexistentTokenId, 0);
+    cloudServiceImpl_->NotifySyncAgentsByTokenId(nonexistentTokenId, CloudData::TriggerScene::TRIGGER_PUSH);
     auto result = cloudServiceImpl_->syncAgents_.Find(nonexistentTokenId);
     EXPECT_FALSE(result.first);
 }
@@ -4470,7 +4470,7 @@ HWTEST_F(CloudDataTest, SyncAgents_NotifySyncAgentsByTokenId_IPC, TestSize.Level
 
     cloudServiceImpl_->syncAgents_.Insert(sameTokenId, agents);
 
-    cloudServiceImpl_->NotifySyncAgentsByTokenId(sameTokenId, 0);
+    cloudServiceImpl_->NotifySyncAgentsByTokenId(sameTokenId, CloudData::TriggerScene::TRIGGER_PUSH);
 
     sptr<CloudData::CloudNotifierProxy> foundNotifier = nullptr;
     cloudServiceImpl_->syncAgents_.ComputeIfPresent(sameTokenId,
