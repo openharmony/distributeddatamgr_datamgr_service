@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +31,7 @@
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
+#include "dfx/xcollie.h"
 #include "eventcenter/event_center.h"
 #include "rdb_flow_control_manager.h"
 #include "ipc_skeleton.h"
@@ -64,7 +65,6 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
-#include "xcollie.h"
 using OHOS::DistributedData::AccountDelegate;
 using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;

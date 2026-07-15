@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,6 +36,7 @@
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "datashare_template.h"
+#include "dfx/xcollie.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
 #include "extension_connect_adaptor.h"
@@ -62,7 +63,6 @@
 #include "task_executor.h"
 #include "template_data.h"
 #include "utils/anonymous.h"
-#include "xcollie.h"
 #include "log_debug.h"
 #include "dataproxy_handle_common.h"
 #include "proxy_data_manager.h"
