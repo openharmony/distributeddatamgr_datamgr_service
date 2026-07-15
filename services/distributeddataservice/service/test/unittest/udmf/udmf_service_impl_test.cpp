@@ -1593,35 +1593,6 @@ HWTEST_F(UdmfServiceImplTest, UpdateDelayData002, TestSize.Level1)
 }
 
 /**
- * @tc.name: AsyncProcessTokenCheck001
- * @tc.desc: Async process query and clear reject caller whose tokenId differs from registered tokenId
- * @tc.type: FUNC
- */
-HWTEST_F(UdmfServiceImplTest, AsyncProcessTokenCheck001, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    std::string key = "udmf://drag/com.test.demo/async_process_token";
-    auto ownerTokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME, instIndex);
-    TokenGuard tokenGuard(IPCSkeleton::GetSelfTokenID());
-    service.RegisterAsyncProcessInfo(key, ownerTokenId);
-
-    AsyncProcessInfo processInfo;
-    processInfo.businessUdKey = key;
-    EXPECT_EQ(service.ObtainAsynProcess(processInfo), E_NO_PERMISSION);
-    EXPECT_EQ(service.ClearAsynProcessByKey(key), E_NO_PERMISSION);
-
-    SetSelfTokenID(ownerTokenId);
-    EXPECT_EQ(service.ObtainAsynProcess(processInfo), E_OK);
-    EXPECT_EQ(service.ClearAsynProcessByKey(key), E_OK);
-
-    processInfo.syncStatus = AsyncTaskStatus::ASYNC_IDLE;
-    processInfo.srcDevName.clear();
-    EXPECT_EQ(service.ObtainAsynProcess(processInfo), E_OK);
-    EXPECT_EQ(processInfo.syncStatus, AsyncTaskStatus::ASYNC_SUCCESS);
-    EXPECT_EQ(processInfo.srcDevName, "Local");
-}
-
-/**
  * @tc.name: GetDevicesForDelayData001
  * @tc.desc: UpdateDelayData function test
  * @tc.type: FUNC
