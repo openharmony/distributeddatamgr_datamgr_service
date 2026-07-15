@@ -223,10 +223,14 @@ int32_t UdmfServiceImpl::GetData(const QueryOption &query, UnifiedData &unifiedD
     }
     msg.appId = bundleName;
 
-    bool handledByDelay = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, unifiedData);
-    if (!handledByDelay) {
+    auto delayLoadStatus = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, unifiedData);
+    if (delayLoadStatus == DelayLoadStatus::NOT_DELAY_DATA) {
         res = RetrieveData(query, unifiedData);
-    } else if (!unifiedData.IsComplete()) {
+    } else if (delayLoadStatus == DelayLoadStatus::NO_PERMISSION) {
+        res = E_NO_PERMISSION;
+    } else if (delayLoadStatus == DelayLoadStatus::LOAD_ERROR) {
+        res = E_ERROR;
+    } else if (delayLoadStatus == DelayLoadStatus::WAITING || !unifiedData.IsComplete()) {
         res = E_NOT_FOUND;
     }
     auto errFind = ERROR_MAP.find(res);
