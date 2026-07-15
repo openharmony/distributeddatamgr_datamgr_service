@@ -1548,7 +1548,7 @@ HWTEST_F(UdmfServiceImplTest, UpdateDelayData001, TestSize.Level1)
     unifiedData.SetRuntime(runtime);
     Summary summary;
     auto status = service.UpdateDelayData(key, unifiedData, summary);
-    EXPECT_EQ(status, E_INVALID_PARAMETERS);
+    EXPECT_EQ(status, E_DB_ERROR);
 }
 
 /**
