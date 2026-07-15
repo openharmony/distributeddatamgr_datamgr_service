@@ -987,11 +987,6 @@ int32_t UdmfServiceImpl::ObtainAsynProcess(AsyncProcessInfo &processInfo)
         processInfo.srcDevName = "Local";
         return E_OK;
     }
-    uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    if (it->second.tokenId != tokenId) {
-        ZLOGE("Obtain async process failed, tokenId mismatch.");
-        return E_NO_PERMISSION;
-    }
     processInfo.syncStatus = it->second.syncStatus;
     processInfo.srcDevName = it->second.srcDevName;
     return E_OK;
@@ -1001,16 +996,10 @@ int32_t UdmfServiceImpl::ClearAsynProcessByKey(const std::string & businessUdKey
 {
     ZLOGI("ClearAsynProcessByKey begin.");
     std::lock_guard<std::mutex> lock(mutex_);
-    auto it = asyncProcessInfoMap_.find(businessUdKey);
-    if (it == asyncProcessInfoMap_.end()) {
+    if (asyncProcessInfoMap_.find(businessUdKey) == asyncProcessInfoMap_.end()) {
         return E_OK;
     }
-    uint32_t tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    if (it->second.tokenId != tokenId) {
-        ZLOGE("Clear async process failed, tokenId mismatch.");
-        return E_NO_PERMISSION;
-    }
-    asyncProcessInfoMap_.erase(it);
+    asyncProcessInfoMap_.erase(businessUdKey);
     return E_OK;
 }
 
