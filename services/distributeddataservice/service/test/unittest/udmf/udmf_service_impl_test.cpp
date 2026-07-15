@@ -1672,5 +1672,82 @@ HWTEST_F(UdmfServiceImplTest, IsDraggable004, TestSize.Level1)
     EXPECT_TRUE(result);
 }
 
+/**
+ * @tc.name: GetBatchData_DataHubEmptyQuery_ReturnOk
+ * @tc.desc: Test GetBatchData returns E_OK when DATA_HUB query result is empty
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(UdmfServiceImplTest, GetBatchData_DataHubEmptyQuery_ReturnOk, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    QueryOption query;
+    query.intention = Intention::UD_INTENTION_DATA_HUB;
+    query.key = "udmf://DataHub/com.test.demo/testkey";
+    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
+    
+    auto executors = std::make_shared<OHOS::ExecutorPool>(2, 1);
+    DistributedData::FeatureSystem::Feature::BindInfo bindInfo;
+    bindInfo.executors = executors;
+    service.OnBind(bindInfo);
+    
+    std::vector<UnifiedData> unifiedDataSet;
+    auto status = service.GetBatchData(query, unifiedDataSet);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(unifiedDataSet.size(), 0);
+}
+
+/**
+ * @tc.name: SetDelayInfo_PermissionCheckBranch_Covered
+ * @tc.desc: Test SetDelayInfo permission check branch is covered
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(UdmfServiceImplTest, SetDelayInfo_PermissionCheckBranch_Covered, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    DataLoadInfo dataLoadInfo;
+    sptr<IRemoteObject> notifier = nullptr;
+    std::string key;
+    
+    auto executors = std::make_shared<OHOS::ExecutorPool>(2, 1);
+    DistributedData::FeatureSystem::Feature::BindInfo bindInfo;
+    bindInfo.executors = executors;
+    service.OnBind(bindInfo);
+    
+    auto status = service.SetDelayInfo(dataLoadInfo, notifier, key);
+#ifdef WITH_DLP
+    EXPECT_EQ(status, E_NO_PERMISSION);
+#else
+    EXPECT_NE(status, E_OK);
+#endif
+}
+
+/**
+ * @tc.name: PushDelayData_PermissionCheckBranch_Covered
+ * @tc.desc: Test PushDelayData permission check branch is covered
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(UdmfServiceImplTest, PushDelayData_PermissionCheckBranch_Covered, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    std::string key = "udmf://drag/com.test.demo/testkey";
+    UnifiedData unifiedData;
+    Summary summary;
+    
+    auto executors = std::make_shared<OHOS::ExecutorPool>(2, 1);
+    DistributedData::FeatureSystem::Feature::BindInfo bindInfo;
+    bindInfo.executors = executors;
+    service.OnBind(bindInfo);
+    
+    auto status = service.PushDelayData(key, unifiedData, summary);
+#ifdef WITH_DLP
+    EXPECT_EQ(status, E_NO_PERMISSION);
+#else
+    EXPECT_NE(status, E_OK);
+#endif
+}
+
 }; // namespace DistributedDataTest
 }; // namespace OHOS::Test
