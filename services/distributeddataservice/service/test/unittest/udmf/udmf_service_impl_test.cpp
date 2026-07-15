@@ -106,6 +106,22 @@ public:
     static constexpr int instIndex = 0;
 };
 
+class TokenGuard {
+public:
+    explicit TokenGuard(uint64_t tokenId) : tokenId_(IPCSkeleton::GetSelfTokenID())
+    {
+        SetSelfTokenID(tokenId);
+    }
+
+    ~TokenGuard()
+    {
+        SetSelfTokenID(tokenId_);
+    }
+
+private:
+    uint64_t tokenId_;
+};
+
 void UdmfServiceImplTest::AllocTestHapToken()
 {
     HapInfoParams info = {
@@ -1532,7 +1548,48 @@ HWTEST_F(UdmfServiceImplTest, UpdateDelayData001, TestSize.Level1)
     unifiedData.SetRuntime(runtime);
     Summary summary;
     auto status = service.UpdateDelayData(key, unifiedData, summary);
-    EXPECT_EQ(status, E_ERROR);
+    EXPECT_EQ(status, E_INVALID_PARAMETERS);
+}
+
+/**
+ * @tc.name: UpdateDelayData002
+ * @tc.desc: UpdateDelayData checks caller tokenId against stored data tokenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfServiceImplTest, UpdateDelayData002, TestSize.Level1)
+{
+    UdmfServiceImpl service;
+    auto ownerTokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME, instIndex);
+    auto callerTokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME1, instIndex);
+    TokenGuard tokenGuard(ownerTokenId);
+
+    UnifiedData storedData;
+    storedData.AddRecord(std::make_shared<PlainText>());
+    Summary summary;
+    std::string key;
+    CustomOption option {UD_INTENTION_DRAG, ownerTokenId};
+    auto status = service.SaveData(option, storedData, summary, key);
+    EXPECT_EQ(status, E_OK);
+    if (status != E_OK) {
+        return;
+    }
+
+    UnifiedData updateData;
+    updateData.AddRecord(std::make_shared<PlainText>());
+    Runtime runtime;
+    runtime.key = UnifiedKey(key);
+    updateData.SetRuntime(runtime);
+
+    SetSelfTokenID(callerTokenId);
+    EXPECT_EQ(service.UpdateDelayData(key, updateData, summary), E_NO_PERMISSION);
+
+    SetSelfTokenID(ownerTokenId);
+    EXPECT_NE(service.UpdateDelayData(key, updateData, summary), E_NO_PERMISSION);
+
+    auto store = StoreCache::GetInstance().GetStore(UD_INTENTION_MAP.at(UD_INTENTION_DRAG));
+    ASSERT_NE(store, nullptr);
+    store->Delete(UnifiedKey(key).GetKeyCommonPrefix());
+    LifeCycleManager::GetInstance().EraseUdkey(key, ownerTokenId);
 }
 
 /**
@@ -1545,6 +1602,7 @@ HWTEST_F(UdmfServiceImplTest, AsyncProcessTokenCheck001, TestSize.Level1)
     UdmfServiceImpl service;
     std::string key = "udmf://drag/com.test.demo/async_process_token";
     auto ownerTokenId = AccessTokenKit::GetHapTokenID(userId, HAP_BUNDLE_NAME, instIndex);
+    TokenGuard tokenGuard(IPCSkeleton::GetSelfTokenID());
     service.RegisterAsyncProcessInfo(key, ownerTokenId);
 
     AsyncProcessInfo processInfo;
@@ -1626,6 +1684,7 @@ HWTEST_F(UdmfServiceImplTest, HandleRemoteDelayData001, TestSize.Level1)
  */
 HWTEST_F(UdmfServiceImplTest, OnAppUninstall001, TestSize.Level1)
 {
+    LifeCycleManager::GetInstance().udKeys_.Clear();
     auto tokenId = IPCSkeleton::GetSelfTokenID();
     CustomOption option {UD_INTENTION_DRAG, tokenId};
 
@@ -1650,6 +1709,7 @@ HWTEST_F(UdmfServiceImplTest, OnAppUninstall001, TestSize.Level1)
     EXPECT_EQ(status, E_OK);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     EXPECT_EQ(0, LifeCycleManager::GetInstance().udKeys_.Size());
+    LifeCycleManager::GetInstance().udKeys_.Clear();
 }
 
 /**
