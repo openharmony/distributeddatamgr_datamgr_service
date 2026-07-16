@@ -142,8 +142,8 @@ HWTEST_F(UdmfDelayDataContainerTest, ExecDataLoadCallback001, TestSize.Level1)
     auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
     EXPECT_EQ(ret, DelayLoadStatus::WAITING);
     DataLoadInfo info;
-    ret = DelayDataPrepareContainer::GetInstance().ExecDataLoadCallback(query.key, info);
-    EXPECT_EQ(ret, true);
+    auto execRet = DelayDataPrepareContainer::GetInstance().ExecDataLoadCallback(query.key, info);
+    EXPECT_EQ(execRet, true);
     DelayDataPrepareContainer::GetInstance().dataLoadCallback_.clear();
 }
 
