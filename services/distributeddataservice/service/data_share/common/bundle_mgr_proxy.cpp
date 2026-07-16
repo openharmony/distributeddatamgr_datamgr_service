@@ -26,9 +26,13 @@
 #include "utils.h"
 #include "ipc_skeleton.h"
 #include "hiview_fault_adapter.h"
+#include "dfx/xcollie.h"
 #include <algorithm>
 
 namespace OHOS::DataShare {
+constexpr uint32_t BUNDLE_MGR_XCOLLIE_TIMEOUT = 3 * 60;
+constexpr uint32_t BUNDLE_MGR_XCOLLIE_FLAG =
+    DistributedData::XCollie::XCOLLIE_LOG | DistributedData::XCollie::XCOLLIE_RECOVERY;
 sptr<AppExecFwk::IBundleMgr> BundleMgrProxy::GetBundleMgrProxy()
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -72,6 +76,7 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
     if (appIndex != 0) {
         bundleKey += "appIndex" + std::to_string(appIndex);
     }
+    DistributedData::XCollie xcollie(__FUNCTION__, BUNDLE_MGR_XCOLLIE_FLAG, BUNDLE_MGR_XCOLLIE_TIMEOUT);
     auto it = bundleCache_.Find(bundleKey);
     if (it.first) {
         bundleConfig = it.second;
