@@ -30,7 +30,7 @@
 #include <algorithm>
 
 namespace OHOS::DataShare {
-constexpr uint32_t BUNDLE_MGR_XCOLLIE_TIMEOUT = 3 * 60;
+constexpr uint32_t BUNDLE_MGR_XCOLLIE_TIMEOUT = 3;
 constexpr uint32_t BUNDLE_MGR_XCOLLIE_FLAG =
     DistributedData::XCollie::XCOLLIE_LOG | DistributedData::XCollie::XCOLLIE_RECOVERY;
 
@@ -77,11 +77,13 @@ int BundleMgrProxy::GetBundleInfoFromBMS(
     if (appIndex != 0) {
         bundleKey += "appIndex" + std::to_string(appIndex);
     }
-    DistributedData::XCollie xcollie(__FUNCTION__, BUNDLE_MGR_XCOLLIE_FLAG, BUNDLE_MGR_XCOLLIE_TIMEOUT);
-    auto it = bundleCache_.Find(bundleKey);
-    if (it.first) {
-        bundleConfig = it.second;
-        return E_OK;
+    {
+        DistributedData::XCollie xcollie(__FUNCTION__, BUNDLE_MGR_XCOLLIE_FLAG, BUNDLE_MGR_XCOLLIE_TIMEOUT);
+        auto it = bundleCache_.Find(bundleKey);
+        if (it.first) {
+            bundleConfig = it.second;
+            return E_OK;
+        }
     }
     auto bmsClient = GetBundleMgrProxy();
     if (bmsClient == nullptr) {
