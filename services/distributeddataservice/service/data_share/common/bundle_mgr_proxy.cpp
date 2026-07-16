@@ -33,6 +33,7 @@ namespace OHOS::DataShare {
 constexpr uint32_t BUNDLE_MGR_XCOLLIE_TIMEOUT = 3 * 60;
 constexpr uint32_t BUNDLE_MGR_XCOLLIE_FLAG =
     DistributedData::XCollie::XCOLLIE_LOG | DistributedData::XCollie::XCOLLIE_RECOVERY;
+
 sptr<AppExecFwk::IBundleMgr> BundleMgrProxy::GetBundleMgrProxy()
 {
     std::lock_guard<std::mutex> lock(mutex_);
