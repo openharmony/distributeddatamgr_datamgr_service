@@ -478,18 +478,18 @@ DBStatus KVDBGeneralStore::CloudSync(const Devices &devices, DistributedDB::Sync
 
 std::vector<uint32_t> KVDBGeneralStore::GetCloudSyncUsers()
 {
-    std::vector<uint32_t> users;
+    std::vector<int32_t> users;
     if (storeInfo_.user == 0) {
         std::vector<int32_t> frontUsers;
         auto ret = AccountDelegate::GetInstance()->QueryForegroundUsers(frontUsers);
         if (!ret || frontUsers.empty()) {
             ZLOGE("failed to query os accounts, ret:%{public}d", ret);
-            return users;
+            return {};
         }
         std::shared_lock<decltype(bindMutex_)> lock(bindMutex_);
         for (auto frontUser : frontUsers) {
             if (bindInfos_.find(frontUser) != bindInfos_.end()) {
-                users.push_back(static_cast<uint32_t>(frontUser));
+                users.push_back(frontUser);
             } else {
                 ZLOGW("front user[%{public}d] no bind", frontUser);
             }
@@ -497,12 +497,20 @@ std::vector<uint32_t> KVDBGeneralStore::GetCloudSyncUsers()
     } else {
         std::shared_lock<decltype(bindMutex_)> lock(bindMutex_);
         if (bindInfos_.find(static_cast<uint32_t>(storeInfo_.user)) != bindInfos_.end()) {
-            users.push_back(static_cast<uint32_t>(storeInfo_.user));
+            users.push_back(storeInfo_.user);
         } else {
             ZLOGW("store user[%{public}d] no bind", storeInfo_.user);
         }
     }
-    return users;
+    std::vector<uint32_t> res;
+    for (auto user : users) {
+        if (AccountDelegate::GetInstance()->IsLoginAccount(user)) {
+            res.emplace_back(static_cast<uint32_t>(user));
+        } else {
+            ZLOGW("user[%{public}d] no login", user);
+        }
+    }
+    return res;
 }
 
 void KVDBGeneralStore::Report(const std::string &faultType, int32_t errCode, const std::string &appendix)
