@@ -36,6 +36,11 @@ void DelayDataAcquireContainer::RegisterDelayDataCallback(const std::string &key
         ZLOGE("RegisterDelayDataCallback failed, key is empty");
         return;
     }
+    auto it = delayDataCallback_.find(key);
+    if (it != delayDataCallback_.end() && it->second.tokenId != info.tokenId) {
+        ZLOGE("RegisterDelayDataCallback failed, tokenId mismatch");
+        return;
+    }
     delayDataCallback_.insert_or_assign(key, info);
 }
 

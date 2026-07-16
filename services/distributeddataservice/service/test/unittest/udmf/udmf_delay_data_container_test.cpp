@@ -43,11 +43,11 @@ HWTEST_F(UdmfDelayDataContainerTest, DataLoadCallbackTest001, TestSize.Level1)
     QueryOption query;
     query.key = "";
     auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, DelayLoadStatus::NOT_DELAY_DATA);
 
     query.key = "udmf://drag/com.example.app/1233455";
     ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, DelayLoadStatus::NOT_DELAY_DATA);
 }
 
 /**
@@ -76,9 +76,9 @@ HWTEST_F(UdmfDelayDataContainerTest, DataLoadCallbackTest002, TestSize.Level1)
     query.key = key;
     UnifiedData data;
     auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, DelayLoadStatus::WAITING);
     ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, DelayLoadStatus::WAITING);
     DelayDataPrepareContainer::GetInstance().dataLoadCallback_.clear();
 }
 
@@ -111,7 +111,12 @@ HWTEST_F(UdmfDelayDataContainerTest, DataLoadCallbackTest003, TestSize.Level1)
     query.key = key;
     UnifiedData getData;
     auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, getData);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, DelayLoadStatus::NO_PERMISSION);
+    EXPECT_TRUE(getData.GetRecords().empty());
+
+    query.tokenId = 1111;
+    ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, getData);
+    EXPECT_EQ(ret, DelayLoadStatus::DATA_READY);
     EXPECT_TRUE(getData.GetRecords().size() == 1);
     DelayDataPrepareContainer::GetInstance().dataLoadCallback_.clear();
     DelayDataPrepareContainer::GetInstance().blockDelayDataCache_.clear();
@@ -135,10 +140,10 @@ HWTEST_F(UdmfDelayDataContainerTest, ExecDataLoadCallback001, TestSize.Level1)
     query.key = key;
     UnifiedData data;
     auto ret = DelayDataPrepareContainer::GetInstance().HandleDelayLoad(query, data);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, DelayLoadStatus::WAITING);
     DataLoadInfo info;
-    ret = DelayDataPrepareContainer::GetInstance().ExecDataLoadCallback(query.key, info);
-    EXPECT_EQ(ret, true);
+    auto execRet = DelayDataPrepareContainer::GetInstance().ExecDataLoadCallback(query.key, info);
+    EXPECT_EQ(execRet, true);
     DelayDataPrepareContainer::GetInstance().dataLoadCallback_.clear();
 }
 
@@ -192,8 +197,18 @@ HWTEST_F(UdmfDelayDataContainerTest, RegisterDelayDataCallback001, TestSize.Leve
     DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, info);
     EXPECT_TRUE(DelayDataAcquireContainer::GetInstance().delayDataCallback_.empty());
     key = "udmf://drag/com.example.app/1233455";
+    info.tokenId = 12345;
     DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, info);
     EXPECT_TRUE(DelayDataAcquireContainer::GetInstance().delayDataCallback_.size() == 1);
+    EXPECT_EQ(DelayDataAcquireContainer::GetInstance().delayDataCallback_.at(key).tokenId, 12345);
+
+    info.tokenId = 23456;
+    DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, info);
+    EXPECT_EQ(DelayDataAcquireContainer::GetInstance().delayDataCallback_.at(key).tokenId, 12345);
+
+    info.tokenId = 12345;
+    DelayDataAcquireContainer::GetInstance().RegisterDelayDataCallback(key, info);
+    EXPECT_EQ(DelayDataAcquireContainer::GetInstance().delayDataCallback_.at(key).tokenId, 12345);
 
     DelayDataAcquireContainer::GetInstance().delayDataCallback_.clear();
 }

@@ -27,11 +27,19 @@ struct BlockDelayData {
     std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
 };
 
+enum class DelayLoadStatus {
+    NOT_DELAY_DATA = 0,
+    WAITING,
+    DATA_READY,
+    NO_PERMISSION,
+    LOAD_ERROR,
+};
+
 class DelayDataPrepareContainer {
 public:
     static DelayDataPrepareContainer &GetInstance();
     // dataLoadCallback_ part
-    bool HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData);
+    DelayLoadStatus HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData);
     void RegisterDataLoadCallback(const std::string &key, sptr<IUdmfNotifier> callback);
     int QueryDataLoadCallbackSize();
     bool ExecDataLoadCallback(const std::string &key, const DataLoadInfo &info);

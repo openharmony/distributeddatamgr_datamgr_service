@@ -27,11 +27,11 @@ DelayDataPrepareContainer &DelayDataPrepareContainer::GetInstance()
     return instance;
 }
 
-bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData)
+DelayLoadStatus DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, UnifiedData &unifiedData)
 {
     if (query.key.empty()) {
         ZLOGE("HandleDelayLoad failed, key is empty");
-        return false;
+        return DelayLoadStatus::NOT_DELAY_DATA;
     }
     sptr<IUdmfNotifier> callback = nullptr;
     std::shared_ptr<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>> blockData;
@@ -39,10 +39,14 @@ bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, Unifie
         std::lock_guard<std::mutex> lock(dataLoadMutex_);
         auto dataLoadIter = dataLoadCallback_.find(query.key);
         if (dataLoadIter == dataLoadCallback_.end()) {
-            return false;
+            return DelayLoadStatus::NOT_DELAY_DATA;
         }
         auto blockDataIter = blockDelayDataCache_.find(query.key);
         if (blockDataIter != blockDelayDataCache_.end()) {
+            if (blockDataIter->second.tokenId != query.tokenId) {
+                ZLOGE("HandleDelayLoad failed, tokenId mismatch");
+                return DelayLoadStatus::NO_PERMISSION;
+            }
             blockData = blockDataIter->second.blockData;
         } else {
             blockData = std::make_shared<BlockData<std::optional<UnifiedData>, std::chrono::milliseconds>>(WAIT_TIME);
@@ -56,7 +60,7 @@ bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, Unifie
     ZLOGI("Start waiting for data, key:%{public}s", query.key.c_str());
     if (blockData == nullptr) {
         ZLOGE("Block data is null");
-        return false;
+        return DelayLoadStatus::LOAD_ERROR;
     }
     auto dataOpt = blockData->GetValue();
     if (dataOpt.has_value()) {
@@ -64,8 +68,9 @@ bool DelayDataPrepareContainer::HandleDelayLoad(const QueryOption &query, Unifie
         std::lock_guard<std::mutex> lock(dataLoadMutex_);
         blockDelayDataCache_.erase(query.key);
         dataLoadCallback_.erase(query.key);
+        return DelayLoadStatus::DATA_READY;
     }
-    return true;
+    return DelayLoadStatus::WAITING;
 }
 
 void DelayDataPrepareContainer::RegisterDataLoadCallback(const std::string &key, sptr<IUdmfNotifier> callback)
