@@ -153,7 +153,6 @@ Agent 注意：不要绕过流控管理器直接调用 `store->Sync`；不要变
 
 ### 禁止事项
 - NEVER 长期持有 AutoCache 获取的 Store 句柄作为成员变量
-- NEVER 与其它 feature 产生依赖关系 - feature 间通信使用 EventCenter
 - NEVER 变更 `SyncMode` 区间语义（端端/端云/订阅的区间划分）
 - NEVER 变更冲突处理返回码协议（INSERT/UPDATE/DELETE/NOT_HANDLE/INTEGRATE）的数值
 - NEVER 在异步操作回调中捕获 this（UAF 风险，见 AGENTS.md §3）
@@ -162,6 +161,7 @@ Agent 注意：不要绕过流控管理器直接调用 `store->Sync`；不要变
 - NEVER 变更 `AssetConflictPolicy` 默认值除非任务明确要求
 - NEVER 明文打印 udid/uuid/ip/mac/密钥/路径 — 用 `Anonymous()` 匿名化
 - NEVER 变更序列化格式或持久化数据结构除非任务明确要求并提供迁移逻辑
+- NEVER 与其它 feature 产生依赖关系 - feature 间通信使用 EventCenter
 
 ### 已知陷阱
 
