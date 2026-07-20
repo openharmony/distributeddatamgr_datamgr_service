@@ -37,7 +37,7 @@ Before planning or editing, classify the task and read the matching documents.
 ### Task-based routing
 - 端端同步行为变更 -> 读 `rdb_service_impl.cpp`（`Sync`→`DoSync`→`GetSyncTask`→`store->Sync`）+ `rdb_general_store.cpp` `Sync`/`GetDBBriefCB` + 本文件 §3.1
 - 端云同步行为变更 -> 读 `docs/agent/feature-cloud.md`（`SyncManager`/`GeneralStore`/`CloudServer`）+ `rdb_service_impl.cpp` `DoCloudSync` + `rdb_general_store.cpp` `DoCloudSync`/`GetDBProcessCB`
-- 冲突处理变更 -> 读 `rdb_cloud_conflict_handler.cpp` + 本文件 §3.3
+- 冲突处理变更 -> 读 `rdb_cloud_conflict_handler.cpp` + `rdb_general_store.cpp` `SetCloudConflictHandler`/`ConvertPolicy`
 - 水印/Schema 升级变更 -> 读 `rdb_general_store.cpp` `SetCloudReference` + `cloud_mark.h` + 本文件 §3.4
 - IPC 接口码变更 -> 读 `rdb_service_stub.cpp` `HANDLERS[]` + `CODEOWNERS`
 - 流控变更 -> 读 `rdb_service_impl.cpp` `IsSyncLimitApp`/`rdbFlowControlManager_` + 本文件 §3.5
@@ -85,86 +85,13 @@ In the plan, state:
 - IPC 接口码变更必须通知 CODEOWNERS 指定评审人
 - 同步路径由 `SyncMode` 区间分发，不得跨区间调用
 
-### 3.1 同步模型与时序
+### 3.1 同步模型
 
-`GeneralStore::SyncMode` 是统一模式空间（`framework/include/store/general_store.h`）：
+`GeneralStore::SyncMode` 按区间分发（`general_store.h`）：NEARBY (0-3) 端端 `delegate_->Sync`；CLOUD (4-9) 端云 `DoCloudSync`（经 `SyncManager`）；订阅 (10-11) `delegate_->Subscribe/Unsubscribe`。详见 P1/P5。
 
-| 区间 | 枚举值 | 含义 | 路径 |
-|---|---|---|---|
-| NEARBY (0-3) | `NEARBY_PUSH`=0, `NEARBY_PULL`=1, `NEARBY_PULL_PUSH`=2 | 端端：仅推/仅拉/推拉 | `delegate_->Sync` |
-| CLOUD (4-9) | `CLOUD_TIME_FIRST`=4, `CLOUD_NATIVE_FIRST`=5, `CLOUD_CLOUD_FIRST`=6, `CLOUD_CUSTOM_PUSH`=7, `CLOUD_CUSTOM_PULL`=8 | 端云：时间优先/本地优先/云端优先/自定义推拉 | `DoCloudSync` |
-| 订阅 (10-11) | `NEARBY_SUBSCRIBE_REMOTE`=10, `NEARBY_UNSUBSCRIBE_REMOTE`=11 | 端端订阅远端变更 | `delegate_->Subscribe/Unsubscribe` |
-
-分发逻辑（`rdb_general_store.cpp` `Sync`）：`syncMode < NEARBY_END` → 端端；`NEARBY_END < syncMode < CLOUD_END` → `DoCloudSync`。
-
-**端端同步时序**（`rdb_service_impl.cpp` → `rdb_general_store.cpp`）：
-```
-Client IPC (RDB_SERVICE_CMD_SYNC / _ASYNC)
- → RdbServiceStub::OnRemoteDoSync / OnRemoteDoAsync    [rdb_service_stub.cpp]
- → RdbServiceImpl::Sync(param, option, predicates, async)  [rdb_service_impl.cpp]
-      - IsValidParam / IsValidAccess 权限校验
-      - LoadStoreMetaData(param) -> meta
-      - if option.mode ∈ [CLOUD_BEGIN, CLOUD_END): DoCloudSync; return   (端云分支)
-      - else: 加载 syncMeta; DoSync(syncMeta, option, predicates, async)
- → RdbServiceImpl::DoSync(...)                          [rdb_service_impl.cpp]
-      - if enableErrorDetail: PermissionValidator::CheckSyncPermission
-      - task = GetSyncTask(meta, option, predicates, async)
-      - 流控：IsSyncLimitApp ? rdbFlowControlManager_->Execute(task, ...) : task()
- → GetSyncTask 闭包                                     [rdb_service_impl.cpp]
-      - store = GetStore(metaData)                       (AutoCache 获取，用后释放)
-      - rdbQuery(predicates); ConvertToDeviceInfo(...) (networkId -> uuid)
-      - SaveAutoSyncInfo (如需)
-      - SyncParam syncParam { option.mode, 0, option.isCompensation }
-      - if IsNeedMetaSync: MetaDataManager::Sync(option, complete)  (元数据先行，complete 回调内 store->Sync)
-        else: store->Sync(uuids, rdbQuery, notify, syncParam)
- → RdbGeneralStore::Sync(devices, query, async, syncParam)  [rdb_general_store.cpp]
-      - syncMode = GetSyncMode(syncParam.mode)
-      - delegate_->Sync(devices, dbMode, dbQuery, GetDBBriefCB(async), wait!=0)
- → DistributedDB RelationalStoreDelegate::Sync (回调 GetDBBriefCB -> GenDetails -> async/notify)
-```
-
-**端云同步时序**（`rdb_service_impl.cpp` → `SyncManager` → `rdb_general_store.cpp`）：
-```
-RdbServiceImpl::Sync -> DoCloudSync(metaData, option, predicates, async)  [rdb_service_impl.cpp]
-      - GetStoreInfoEx(metaData) -> storeInfo
-      - highMode = (predicates 非空 && CLOUD_CLOUD_FIRST) ? ASSETS_SYNC_MODE
-                : (isAutoSync ? AUTO_SYNC_MODE : MANUAL_SYNC_MODE)
-      - mixMode = MixMode(option.mode, highMode)
-      - SyncParam { mixMode, wait, isCompensation, asyncDownloadAsset, isDownloadOnly,
-                    isEnablePredicate, isFullSync, assetDownloadOnDemand }
-      - EventCenter::PostEvent(ChangeEvent{storeInfo, EventInfo{syncParam, isAutoSync, query, callback}})
-           (端云同步事件驱动，由 CloudData::SyncManager 接管)
-CloudData::SyncManager::DoCloudSync(SyncInfo)           [service/cloud/sync_manager.h]
-      - PrepareForCloudSync -> GetCloudSyncInfo -> GetSchemaMeta
-      - StartCloudSync(SyncEvent, meta, store, retryer, details)
-      - GetSyncTask(times, retry, ref, syncInfo) 通过 ExecutorPool 调度重试
-      - store->Sync(devices, query, callback, syncParam)
-RdbGeneralStore::Sync -> DoCloudSync(devices, dbQuery, syncParam, isPriority, async)  [rdb_general_store.cpp]
-      - syncId = ++syncTaskId_; callback = GetDBProcessCB(async, syncMode, syncId, highMode)
-      - executor->Schedule(1 min, GetFinishTask(syncId))   (看门狗)
-      - tasks_->Insert(syncId, {id, callback})
-      - UpdateCloudConfig(syncParam) -> delegate_->SetCloudSyncConfig({skipDownloadAssets, assetPolicy})
-      - CloudSyncOption{ devices, mode, query, waitTime, queryMode=UPLOAD_ONLY if isEnablePredicate,
-                         priorityTask, priorityLevel, compensatedSyncOnly, merge(autoSync),
-                         lockAction=LOCK_ACTION, asyncDownloadAssets,
-                         syncFlowType=DOWNLOAD_ONLY if isDownloadOnly else NORMAL, isFullSync }
-      - delegate_->Sync(option, GetCB(syncId), syncId)
-      - GetDBProcessCB: 构建每设备 GenDetails（progress/code/upload/download 每表统计），
-                        调用 OnSyncStart/OnSyncFinish，下载后重新锁云库，转发 async + autoAsync
-```
-
-**自动同步时序**（设备上线触发，`rdb_service_impl.cpp`）：
-```
-RdbServiceImpl::OnReady(device)
-      - 加载数据库；过滤 AutoSyncType == SYNC_ON_READY / SYNC_ON_CHANGE_READY
-      - DoAutoSync({device}, metaData, database.GetSyncTables())
-RdbServiceImpl::DoAutoSync(devices, metaData, tables)   [rdb_service_impl.cpp]
-      - executors_->Execute( lambda:
-            RdbQuery rdbQuery(tables); onDevices = GetReuseDevice(devices, metaData)
-            store = GetStore(metaData)
-            if IsNeedMetaSync: MetaDataManager::Sync(..., complete -> store->Sync(...))
-            else: store->Sync(onDevices, rdbQuery, DetailAsync(), {0,0}) )
-```
+端端同步：`RdbServiceImpl::Sync` → `DoSync` → `GetSyncTask` → `RdbGeneralStore::Sync` → `delegate_->Sync`。
+端云同步：`RdbServiceImpl::Sync` → `DoCloudSync` → `EventCenter::PostEvent(ChangeEvent)` → `CloudData::SyncManager` → `RdbGeneralStore::DoCloudSync` → `delegate_->Sync`。
+自动同步：`RdbServiceImpl::OnReady` → `DoAutoSync`（按 `AutoSyncType` 过滤）→ `store->Sync`。
 
 ### 3.2 错误码转换边界（三层，不可混用）
 
@@ -176,34 +103,9 @@ RdbServiceImpl::DoAutoSync(devices, metaData, tables)   [rdb_service_impl.cpp]
 
 转换函数：`RdbCommonUtils::ConvertNativeRdbStatus`（`rdb_common_utils.cpp`）—— `DBStatus`↔`SyncResultCode` 映射。端云路径另有 `SyncManager` 的错误码协议（见 `docs/agent/feature-cloud.md` `SharingCenter` 错误码）。
 
-### 3.3 冲突处理策略
+### 3.3 冲突处理
 
-**端云冲突**（行级，云端数据与本地数据冲突）由 `RdbCloudConflictHandler` 处理（`rdb_cloud_conflict_handler.cpp`）：
-- 框架抽象：`DistributedData::CloudConflictHandler::HandleConflict(table, oldData, newData, upsert)` 返回 int（`framework/include/cloud/cloud_conflict_handler.h`）
-- RDB 适配：`RdbCloudConflictHandler : public DistributedDB::ICloudConflictHandler`，`HandleConflict` 经 `ValueProxy::Convert` 转换 VBucket 后委托框架 handler
-- 安装：`RdbGeneralStore::SetCloudConflictHandler`（`rdb_general_store.cpp` ~1955）将框架 handler 包装后注入 `delegate_->SetCloudConflictHandler`
-
-冲突处理返回码协议（本地常量，`rdb_cloud_conflict_handler.cpp`）：
-
-| 框架返回值 | 含义 | 映射 `DistributedDB::ConflictRet` |
-|---|---|---|
-| `INSERT` = 0 | 插入 upsert | `UPSERT` |
-| `UPDATE` = 1 | 更新 upsert | `UPSERT` |
-| `DELETE` = 2 | 删除 | `DELETE` |
-| `NOT_HANDLE` = 3 | 不处理 | `NOT_HANDLE` |
-| `INTEGRATE` = 4 | 合并 | `INTEGRATE` |
-
-**资产冲突策略**（Asset 级，独立于行冲突）由 `ConvertPolicy` 映射（`rdb_general_store.cpp`）：
-
-| `DistributedRdb::AssetConflictPolicy` | 映射 `DistributedDB::AssetConflictPolicy` |
-|---|---|
-| `CONFLICT_POLICY_DEFAULT` | `CONFLICT_POLICY_DEFAULT` |
-| `CONFLICT_POLICY_TIME_FIRST` | `CONFLICT_POLICY_TIME_FIRST` |
-| `CONFLICT_POLICY_TEMP_PATH` | `CONFLICT_POLICY_TEMP_PATH` |
-
-在 `UpdateCloudConfig`（`rdb_general_store.cpp`）经 `delegate_->SetCloudSyncConfig({skipDownloadAssets, assetPolicy})` 下发。
-
-**本地插入冲突**（SQLite ON CONFLICT）由 `GeneralStore::ConflictResolution` 枚举控制（`general_store.h`）：`ON_CONFLICT_NONE/ROLLBACK/ABORT/FAIL/IGNORE/REPLACE`，用于 `Insert/BatchInsert/Update` 重载。
+冲突处理由 `RdbCloudConflictHandler`（`rdb_cloud_conflict_handler.cpp`）实现，将框架层 int 协议码（`INSERT`/`UPDATE`/`DELETE`/`NOT_HANDLE`/`INTEGRATE`）映射到 `DistributedDB::ConflictRet`；资产冲突经 `ConvertPolicy`（`rdb_general_store.cpp`）映射 `AssetConflictPolicy`；本地插入冲突用 `GeneralStore::ConflictResolution`（`general_store.h`）。详见源文件，不在此赘述。
 
 ### 3.4 水印机制
 
@@ -251,8 +153,7 @@ Agent 注意：不要绕过流控管理器直接调用 `store->Sync`；不要变
 
 ### Do not
 - NEVER 长期持有 AutoCache 获取的 Store 句柄作为成员变量
-- NEVER 绕过 `RdbServiceImpl::Sync` 直接调用 `delegate_->Sync`（端端）或直接调 `SyncManager`（端云）
-- NEVER 修改 IPC 接口码而不通知 CODEOWNERS
+- NEVER 与其它 feature 产生依赖关系 - feature 间通信使用 EventCenter
 - NEVER 变更 `SyncMode` 区间语义（端端/端云/订阅的区间划分）
 - NEVER 变更冲突处理返回码协议（INSERT/UPDATE/DELETE/NOT_HANDLE/INTEGRATE）的数值
 - NEVER 在异步操作回调中捕获 this（UAF 风险，见 AGENTS.md §3）
