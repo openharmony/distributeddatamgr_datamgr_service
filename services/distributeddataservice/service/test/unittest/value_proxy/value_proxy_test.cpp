@@ -461,4 +461,119 @@ HWTEST_F(ValueProxyServiceTest, AssetOperator001, TestSize.Level0)
     asset = asset1;
     EXPECT_EQ(asset.version, 1);
 }
+HWTEST_F(ValueProxyServiceTest, ConvertAssetMapGaussDB2NormalExtensionTest, TestSize.Level0)
+{
+    DistributedDB::Asset dbAsset { .name = "dbname", .uri = "dburi", .extension = "ext_db_value" };
+    std::map<std::string, DistributedDB::Asset> dbMap { { "asset0", dbAsset } };
+    OHOS::DistributedData::VBucket transferredAsset = ValueProxy::Convert(dbMap);
+    ASSERT_EQ(transferredAsset.size(), 1);
+    auto asset = std::get<OHOS::DistributedData::Asset>(transferredAsset.find("asset0")->second);
+    EXPECT_EQ(asset.name, "dbname");
+    EXPECT_EQ(asset.extension, "ext_db_value");
+
+    DistributedDB::Assets dbAssets { dbAsset };
+    std::map<std::string, DistributedDB::Assets> dbAssetsMap { {"dbAssets", dbAssets} };
+    OHOS::DistributedData::VBucket transferredAssets = ValueProxy::Convert(dbAssetsMap);
+    ASSERT_EQ(transferredAssets.size(), 1);
+    auto assets = std::get<OHOS::DistributedData::Assets>(transferredAssets.find("dbAssets")->second);
+    ASSERT_EQ(assets.size(), 1);
+    EXPECT_EQ(assets.begin()->name, "dbname");
+    EXPECT_EQ(assets.begin()->extension, "ext_db_value");
+}
+
+HWTEST_F(ValueProxyServiceTest, ConvertAssetMapNormal2GaussDBExtensionTest, TestSize.Level0)
+{
+    using NormalAsset = OHOS::DistributedData::Asset;
+    NormalAsset nAsset { .name = "name", .uri = "uri", .extension = "ext_normal_value" };
+    std::map<std::string, NormalAsset> nMap { { "asset0", nAsset } };
+    DistributedDB::VBucket transferredAsset = ValueProxy::Convert(nMap);
+    ASSERT_EQ(transferredAsset.size(), 1);
+    auto asset = std::get<DistributedDB::Asset>(transferredAsset.find("asset0")->second);
+    EXPECT_EQ(asset.name, "name");
+    EXPECT_EQ(asset.extension, "ext_normal_value");
+}
+
+HWTEST_F(ValueProxyServiceTest, ConvertAssetMapRdb2NormalExtensionTest, TestSize.Level0)
+{
+    using RdbAsset = OHOS::NativeRdb::AssetValue;
+    RdbAsset dbAsset { .name = "dbname", .uri = "dburi", .extension = "ext_rdb_value" };
+    std::map<std::string, RdbAsset> dbMap { { "asset0", dbAsset } };
+    OHOS::DistributedData::VBucket transferredAsset = ValueProxy::Convert(dbMap);
+    ASSERT_EQ(transferredAsset.size(), 1);
+    auto asset = std::get<OHOS::DistributedData::Asset>(transferredAsset.find("asset0")->second);
+    EXPECT_EQ(asset.name, "dbname");
+    EXPECT_EQ(asset.extension, "ext_rdb_value");
+}
+
+HWTEST_F(ValueProxyServiceTest, ConvertAssetMapNormal2RdbExtensionTest, TestSize.Level0)
+{
+    using RdbAsset = OHOS::NativeRdb::AssetValue;
+    using NormalAsset = OHOS::DistributedData::Asset;
+    NormalAsset nAsset { .name = "name", .uri = "uri", .extension = "ext_to_rdb" };
+    std::map<std::string, NormalAsset> nMap { { "asset0", nAsset } };
+    OHOS::NativeRdb::ValuesBucket transferredAsset = ValueProxy::Convert(nMap);
+    ASSERT_EQ(transferredAsset.Size(), 1);
+    OHOS::NativeRdb::ValueObject rdbObject;
+    transferredAsset.GetObject("asset0", rdbObject);
+    RdbAsset rdbAsset;
+    rdbObject.GetAsset(rdbAsset);
+    EXPECT_EQ(rdbAsset.name, "name");
+    EXPECT_EQ(rdbAsset.extension, "ext_to_rdb");
+}
+
+HWTEST_F(ValueProxyServiceTest, AssetOperatorExtensionTest, TestSize.Level0)
+{
+    ValueProxy::Asset asset1 = DistributedDB::Asset {
+        .version = 1,
+        .name = "Asset1",
+        .uri = "uri1",
+        .size = "1",
+        .hash = "hash1",
+        .extension = "ext1",
+        .status = DistributedData::Asset::Status::STATUS_INSERT,
+    };
+    DistributedData::Asset dAsset = asset1;
+    EXPECT_EQ(dAsset.extension, "ext1");
+
+    CommonType::AssetValue cAsset = asset1;
+    EXPECT_EQ(cAsset.extension, "ext1");
+
+    DistributedDB::Asset dbAsset = asset1;
+    EXPECT_EQ(dbAsset.extension, "ext1");
+}
+
+HWTEST_F(ValueProxyServiceTest, TempAssetOperatorExtensionTest, TestSize.Level0)
+{
+    ValueProxy::TempAsset tempAsset(DistributedDB::Asset {
+        .version = 1,
+        .name = "TempAsset",
+        .uri = "uri_temp",
+        .size = "100",
+        .hash = "hash_temp",
+        .extension = "ext_temp",
+        .status = static_cast<uint32_t>(DistributedDB::AssetStatus::NORMAL),
+    });
+    NativeRdb::AssetValue rdbAsset = tempAsset;
+    EXPECT_EQ(rdbAsset.name, "TempAsset");
+    EXPECT_EQ(rdbAsset.extension, "ext_temp");
+}
+
+HWTEST_F(ValueProxyServiceTest, AssetExtensionEmptyTest, TestSize.Level0)
+{
+    ValueProxy::Asset asset1 = DistributedDB::Asset {
+        .version = 1,
+        .name = "Asset1",
+        .uri = "uri1",
+        .extension = "",
+        .status = DistributedData::Asset::Status::STATUS_NORMAL,
+    };
+    DistributedData::Asset dAsset = asset1;
+    EXPECT_TRUE(dAsset.extension.empty());
+
+    DistributedDB::Asset dbAsset = asset1;
+    EXPECT_TRUE(dbAsset.extension.empty());
+
+    CommonType::AssetValue cAsset = asset1;
+    EXPECT_TRUE(cAsset.extension.empty());
+}
 } // namespace OHOS::Test

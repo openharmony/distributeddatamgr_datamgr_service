@@ -164,6 +164,7 @@ bool RdbCloudDataTranslate::InnerAsset::Marshal(OHOS::DistributedData::Serializa
     ret = SetValue(node[GET_NAME(modifyTime)], asset_.modifyTime) && ret;
     ret = SetValue(node[GET_NAME(size)], asset_.size) && ret;
     ret = SetValue(node[GET_NAME(hash)], asset_.hash) && ret;
+    ret = SetValue(node[GET_NAME(extension)], asset_.extension) && ret;
     return ret;
 }
 
@@ -181,6 +182,7 @@ bool RdbCloudDataTranslate::InnerAsset::Unmarshal(const OHOS::DistributedData::S
     ret = GetValue(node, GET_NAME(modifyTime), asset_.modifyTime) && ret;
     ret = GetValue(node, GET_NAME(size), asset_.size) && ret;
     ret = GetValue(node, GET_NAME(hash), asset_.hash) && ret;
+    GetValue(node, GET_NAME(extension), asset_.extension);
     return ret;
 }
 } // namespace OHOS::CloudData

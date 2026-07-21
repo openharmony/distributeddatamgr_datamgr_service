@@ -1176,19 +1176,19 @@ HWTEST_F(RdbGeneralStoreTest, OnChange001, TestSize.Level1)
     DistributedDB::ChangedData changedData;
     changedData.primaryData[0] = { { std::monostate{}, 42, 3.14, "hello", true },
         { Bytes{ 1, 2, 3, 4 },
-            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999",
+            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999", "",
                 static_cast<uint32_t>(AssetOpType::NO_CHANGE), static_cast<uint32_t>(AssetStatus::NORMAL), 0 },
             Bytes{ 5, 6, 7, 8 } },
         { int64_t(-123), 2.718, 100, 0.001 } };
     changedData.primaryData[1] = { { std::monostate{}, 42, 3.14, "hello", true },
         { Bytes{ 1, 2, 3, 4 },
-            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999",
+            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999", "",
                 static_cast<uint32_t>(AssetOpType::NO_CHANGE), static_cast<uint32_t>(AssetStatus::NORMAL), 0 },
             Bytes{ 5, 6, 7, 8 } },
         { int64_t(-123), 2.718, 100, 0.001 } };
     changedData.primaryData[2] = { { "DELETE#ALL_CLOUDDATA", std::monostate{}, 42, 3.14, "hello", true },
         { Bytes{ 1, 2, 3, 4 },
-            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999",
+            DistributedDB::Asset{ 1, "zhangsan", "123", "/data/test", "file://xxx", "123", "100", "100", "999", "",
                 static_cast<uint32_t>(AssetOpType::NO_CHANGE), static_cast<uint32_t>(AssetStatus::NORMAL), 0 },
             Bytes{ 5, 6, 7, 8 } },
         { int64_t(-123), 2.718, 100, 0.001 } };
