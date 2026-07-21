@@ -4404,14 +4404,12 @@ HWTEST_F(RdbServiceImplTest, RegisterMatrix001, TestSize.Level0)
     param.bundleName_ = metaData_.bundleName;
     param.storeName_ = metaData_.storeId;
     param.hapName_ = "test/test";
-    std::string matrixFilePath;
-    std::map<std::string, uint64_t> matrixTables;
-    uint64_t fullSyncOffset;
-    int32_t result = service.RegisterMatrix(param, matrixFilePath, matrixTables, fullSyncOffset);
- 
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.RegisterMatrix(param, fileInfo);
+
     EXPECT_EQ(result, RDB_ERROR);
 }
- 
+
 /**
  * @tc.name: RegisterMatrix002
  * @tc.desc: Test RegisterMatrix when CheckAccess not pass.
@@ -4423,11 +4421,9 @@ HWTEST_F(RdbServiceImplTest, RegisterMatrix002, TestSize.Level0)
 {
     RdbServiceImpl service;
     RdbSyncerParam param;
-    std::string matrixFilePath;
-    std::map<std::string, uint64_t> matrixTables;
-    uint64_t fullSyncOffset;
-    int32_t result = service.RegisterMatrix(param, matrixFilePath, matrixTables, fullSyncOffset);
- 
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.RegisterMatrix(param, fileInfo);
+
     EXPECT_EQ(result, RDB_ERROR);
 }
  
@@ -4449,10 +4445,8 @@ HWTEST_F(RdbServiceImplTest, RegisterMatrix003, TestSize.Level0)
     param.uids_ = { 123 };
     param.permissionNames_ = {};
  
-    std::string matrixFilePath;
-    std::map<std::string, uint64_t> matrixTables;
-    uint64_t fullSyncOffset;
-    int32_t result = service.RegisterMatrix(param, matrixFilePath, matrixTables, fullSyncOffset);
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.RegisterMatrix(param, fileInfo);
     EXPECT_EQ(result, RDB_ERROR);
  
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
@@ -4468,10 +4462,8 @@ HWTEST_F(RdbServiceImplTest, RegisterMatrix003, TestSize.Level0)
 HWTEST_F(RdbServiceImplTest, CreateMatrixFile001, TestSize.Level0)
 {
     RdbServiceImpl service;
-    std::string matrixFilePath;
-    std::map<std::string, uint64_t> matrixTables;
-    uint64_t fullSyncOffset;
-    int32_t result = service.CreateMatrixFile(metaData_, matrixFilePath, matrixTables, fullSyncOffset);
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.CreateMatrixFile(metaData_, fileInfo);
     EXPECT_EQ(result, RDB_ERROR);
 }
  
@@ -4490,15 +4482,13 @@ HWTEST_F(RdbServiceImplTest, CreateMatrixFile002, TestSize.Level0)
     matrixFileInfo.matrixTables["table0"] = MatrixTableInfo(1, 2);
     EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(matrixFileName, matrixFileInfo, true), true);
     RdbServiceImpl service;
-    std::string matrixFilePath;
-    std::map<std::string, uint64_t> matrixTables;
-    uint64_t fullSyncOffset;
-    int32_t result = service.CreateMatrixFile(metaData_, matrixFilePath, matrixTables, fullSyncOffset);
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.CreateMatrixFile(metaData_, fileInfo);
     EXPECT_EQ(result, RDB_OK);
-    EXPECT_EQ(fullSyncOffset, 10);
-    EXPECT_EQ(matrixTables["table0"], 1);
-    EXPECT_EQ(matrixFilePath, std::string(OHOS::DistributedData::MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName);
- 
+    EXPECT_EQ(fileInfo.fullSyncOffset, 10);
+    EXPECT_EQ(fileInfo.matrixTables["table0"], 1);
+    EXPECT_EQ(fileInfo.matrixFilePath, std::string(OHOS::DistributedData::MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName);
+
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(matrixFileName, true), true);
 }
 } // namespace DistributedRDBTest

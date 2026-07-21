@@ -103,11 +103,9 @@ int32_t RdbServiceStub::OnRegisterMatrix(MessageParcel& data, MessageParcel& rep
             Anonymous::Change(param.storeName_).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    std::string matrixFilePath;
-    std::map<std::string, uint64_t> matrixTables;
-    uint64_t fullSyncOffset;
-    auto status = RegisterMatrix(param, matrixFilePath, matrixTables, fullSyncOffset);
-    if (!ITypesUtil::Marshal(reply, status, matrixFilePath, matrixTables, fullSyncOffset)) {
+    MatrixFileInfo fileInfo;
+    auto status = RegisterMatrix(param, fileInfo);
+    if (!ITypesUtil::Marshal(reply, status, fileInfo.matrixFilePath, fileInfo.matrixTables, fileInfo.fullSyncOffset)) {
         ZLOGE("Marshal status:0x%{public}x", status);
         return IPC_STUB_WRITE_PARCEL_ERR;
     }

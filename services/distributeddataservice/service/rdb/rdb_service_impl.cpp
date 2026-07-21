@@ -1347,8 +1347,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     return RDB_OK;
 }
 
-int32_t RdbServiceImpl::RegisterMatrix(const RdbSyncerParam &param,
-    std::string &matrixFilePath, std::map<std::string, uint64_t> &matrixTables, uint64_t &fullSyncOffset)
+int32_t RdbServiceImpl::RegisterMatrix(const RdbSyncerParam &param, DistributedRdb::MatrixFileInfo &fileInfo)
 {
     if (!IsValidParam(param) || !IsValidAccess(param.bundleName_, param.storeName_)) {
         ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
@@ -1361,7 +1360,7 @@ int32_t RdbServiceImpl::RegisterMatrix(const RdbSyncerParam &param,
         ZLOGE("Load metadata failed, bundleName:%{public}s", param.bundleName_.c_str());
         return RDB_ERROR;
     }
-    int32_t ret = CreateMatrixFile(meta, matrixFilePath, matrixTables, fullSyncOffset);
+    int32_t ret = CreateMatrixFile(meta, fileInfo);
     if (ret != RDB_OK) {
         ZLOGE("CreateMatrixFile failed, ret = %{public}d bundleName:%{public}s",
             ret, param.bundleName_.c_str());
@@ -1460,25 +1459,24 @@ void RdbServiceImpl::GetCloudSchema(const StoreMetaData &metaData)
     });
 }
 
-int32_t RdbServiceImpl::CreateMatrixFile(const StoreMetaData &metaData,
-    std::string &matrixFilePath, std::map<std::string, uint64_t> &matrixTables, uint64_t &fullSyncOffset)
+int32_t RdbServiceImpl::CreateMatrixFile(const StoreMetaData &metaData, DistributedRdb::MatrixFileInfo &fileInfo)
 {
     StoreInfo storeInfo = GetStoreInfoEx(metaData);
     auto event = std::make_unique<CloudEvent>(CloudEvent::CREATE_MATRIX_FILE, std::move(storeInfo));
     EventCenter::GetInstance().PostEvent(move(event));
 
-    std::string matrixFileName = MatrixFileInfo::GenerateMatrixFileName(metaData);
-    MatrixFileInfo matrixFileInfo;
+    std::string matrixFileName = DistributedData::MatrixFileInfo::GenerateMatrixFileName(metaData);
+    DistributedData::MatrixFileInfo matrixFileInfo;
     bool status = MetaDataManager::GetInstance().LoadMeta(matrixFileName, matrixFileInfo, true);
     if (!status) {
         ZLOGW("Load metadata failed, key:%{public}s", matrixFileName.c_str());
         return RDB_ERROR;
     }
-    matrixFilePath = std::string(MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName;
+    fileInfo.matrixFilePath = std::string(DistributedData::MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName;
     for (const auto &[tableName, tableInfo] : matrixFileInfo.matrixTables) {
-        matrixTables[tableName] = tableInfo.matrixOffset;
+        fileInfo.matrixTables[tableName] = tableInfo.matrixOffset;
     }
-    fullSyncOffset = matrixFileInfo.fullSyncOffset;
+    fileInfo.fullSyncOffset = matrixFileInfo.fullSyncOffset;
     return RDB_OK;
 }
 
