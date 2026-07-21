@@ -4487,8 +4487,8 @@ HWTEST_F(RdbServiceImplTest, CreateMatrixFile002, TestSize.Level0)
     EXPECT_EQ(result, RDB_OK);
     EXPECT_EQ(fileInfo.fullSyncOffset, 10);
     EXPECT_EQ(fileInfo.matrixTables["table0"], 1);
-    EXPECT_EQ(fileInfo.matrixFilePath, std::string(OHOS::DistributedData::MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName);
-
+    EXPECT_EQ(fileInfo.matrixFilePath,
+        std::string(OHOS::DistributedData::MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(matrixFileName, true), true);
 }
 } // namespace DistributedRDBTest
