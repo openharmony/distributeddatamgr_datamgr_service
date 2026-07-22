@@ -43,6 +43,7 @@ public:
         int32_t user_ = 0;
         bool isDownloadOnly_ = false;
         bool isEnablePredicate_ = false;
+        bool isFullSync_ = false;
     };
     SyncEvent(StoreInfo storeInfo, EventInfo info);
     ~SyncEvent() override = default;
@@ -57,6 +58,7 @@ public:
     int32_t GetUser() const;
     bool GetDownloadOnly() const;
     bool GetEnablePredicate() const;
+    bool GetFullSync() const;
 
 protected:
     SyncEvent(int32_t evtId, StoreInfo storeInfo, EventInfo info);

@@ -143,6 +143,11 @@ void SyncManager::SyncInfo::SetEnablePredicate(bool isEnablePredicate)
     isEnablePredicate_ = isEnablePredicate;
 }
 
+void SyncManager::SyncInfo::SetFullSync(bool isFullSync)
+{
+    isFullSync_ = isFullSync;
+}
+
 void SyncManager::SyncInfo::SetError(int32_t code) const
 {
     if (async_) {
@@ -374,7 +379,7 @@ std::function<void()> SyncManager::GetPostEventTask(const std::vector<SchemaMeta
                 auto query = info.GenerateQuery(tables);
 
                 SyncParam syncParam = { info.mode_, info.wait_, info.isCompensation_, info.triggerMode_, traceId,
-                    info.user_, false, true, info.isDownloadOnly_, info.isEnablePredicate_};
+                    info.user_, false, true, info.isDownloadOnly_, info.isEnablePredicate_, info.isFullSync_};
                 auto evt = std::make_unique<SyncEvent>(std::move(storeInfo),
                     SyncEvent::EventInfo{ syncParam, retry, std::move(query), info.async_ });
                 EventCenter::GetInstance().PostEvent(std::move(evt));
@@ -470,6 +475,7 @@ void SyncManager::StartCloudSync(const DistributedData::SyncEvent &evt, const St
         syncParam.isEnablePredicate = isEnablePredicate;
     }
     syncParam.isDownloadOnly = evt.GetDownloadOnly();
+    syncParam.isFullSync = evt.GetFullSync();
     syncParam.assetConflictPolicy = meta.assetConflictPolicy;
     syncParam.assetTempPath = meta.assetTempPath;
     syncParam.assetDownloadOnDemand = meta.assetDownloadOnDemand;
@@ -569,6 +575,7 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetTriggerMode(evt.GetTriggerMode());
         syncInfo.SetDownloadOnly(evt.GetDownloadOnly());
         syncInfo.SetEnablePredicate(evt.GetEnablePredicate());
+        syncInfo.SetFullSync(evt.GetFullSync());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
         executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
     };
