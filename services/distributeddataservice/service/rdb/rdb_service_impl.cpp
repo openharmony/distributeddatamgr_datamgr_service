@@ -1462,7 +1462,8 @@ void RdbServiceImpl::GetCloudSchema(const StoreMetaData &metaData)
 int32_t RdbServiceImpl::CreateMatrixFile(const StoreMetaData &metaData, DistributedRdb::MatrixFileInfo &fileInfo)
 {
     StoreInfo storeInfo = GetStoreInfoEx(metaData);
-    auto event = std::make_unique<CloudEvent>(CloudEvent::CREATE_MATRIX_FILE, std::move(storeInfo));
+    CallingInfo callingInfo{ IPCSkeleton::GetCallingUid() };
+    auto event = std::make_unique<CloudEvent>(CloudEvent::CREATE_MATRIX_FILE, std::move(storeInfo), callingInfo);
     EventCenter::GetInstance().PostEvent(move(event));
 
     std::string matrixFileName = DistributedData::MatrixFileInfo::GenerateMatrixFileName(metaData);
