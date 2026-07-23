@@ -500,5 +500,27 @@ HWTEST_F(RdbGeneralStoreTest2, Sync_CloudSyncExecutorNull, TestSize.Level1)
     auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
     EXPECT_EQ(result1, GeneralError::E_OK);
 }
+
+/**
+ * @tc.name: Sync_CloudSyncTasksNull
+ * @tc.desc: RdbGeneralStore DoCloudSync tasks_=nullptr, if branch and tasks_==nullptr early return
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest2, Sync_CloudSyncTasksNull, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    store_ = std::make_shared<RdbGeneralStore>(metaData_, true, nullptr);
+    store_->Init();
+    ASSERT_NE(store_, nullptr);
+
+    GeneralStore::Devices devices;
+    MockQuery query;
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::CLOUD_TIME_FIRST;
+    syncParam.isCompensation = false;
+    auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
