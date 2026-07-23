@@ -734,7 +734,7 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     SyncId syncId = ++syncTaskId_;
     auto callback = GetDBProcessCB(std::move(async), syncMode, syncId, highMode);
     auto executor = GetExecutor();
-    if (executor != nullptr && tasks_ != nullptr && syncParam.isCompensation == 0) {
+    if (executor != nullptr && tasks_ != nullptr && !syncParam.isCompensation) {
         auto id = executor->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
         tasks_->Insert(syncId, { id, callback });
     }
