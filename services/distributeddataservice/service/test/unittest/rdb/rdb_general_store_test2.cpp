@@ -435,6 +435,7 @@ HWTEST_F(RdbGeneralStoreTest2, SetSubscribeSchema_Failed, TestSize.Level1)
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
     remove(meta.dataDir.c_str());
 }
+ 
 /**
  * @tc.name: Sync_CloudSyncIsCompensationFalse
  * @tc.desc: RdbGeneralStore DoCloudSync isCompensation=false, if branch is entered
