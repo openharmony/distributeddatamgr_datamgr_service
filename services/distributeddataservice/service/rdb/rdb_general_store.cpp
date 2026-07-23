@@ -297,6 +297,16 @@ RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta, bool createRequired)
     }
 }
 
+RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta, bool createRequired,
+    std::shared_ptr<ConcurrentMap<SyncId, FinishTask>> tasks)
+    : observer_(meta), meta_(observer_.meta_), manager_(meta.appId, meta.user, meta.instanceId),
+      createRequired_(createRequired), isClosed_(false), tasks_(std::move(tasks))
+{
+    if (meta.isSearchable) {
+        syncNotifyFlag_ |= SEARCHABLE_FLAG;
+    }
+}
+
 RdbGeneralStore::~RdbGeneralStore()
 {
     ZLOGI("%{public}s,%{public}s,%{public}u,%{public}s", meta_.user.c_str(), meta_.bundleName.c_str(), meta_.tokenId,
