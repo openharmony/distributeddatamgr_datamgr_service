@@ -51,8 +51,6 @@ public:
     using SubscribeCur = DistributedData::SubscribeCur;
 
     explicit RdbGeneralStore(const StoreMetaData &, bool createRequired = false);
-    explicit RdbGeneralStore(const StoreMetaData &, bool createRequired,
-        std::shared_ptr<ConcurrentMap<SyncId, FinishTask>> tasks);
     ~RdbGeneralStore();
 
     int32_t Init();
