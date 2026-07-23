@@ -26,7 +26,7 @@ bool Marshalling(const Option &input, MessageParcel &data)
 {
     return ITypesUtil::Marshal(
         data, input.mode, input.seqNum, input.isAsync, input.isAutoSync, input.isCompensation,
-        input.isEnablePredicate, input.isDownloadOnly, input.enableErrorDetail);
+        input.isEnablePredicate, input.isDownloadOnly, input.enableErrorDetail, input.isFullSync);
 }
 
 template<>
