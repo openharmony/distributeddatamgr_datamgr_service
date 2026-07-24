@@ -1470,7 +1470,7 @@ int32_t RdbServiceImpl::CreateMatrixFile(const StoreMetaData &metaData, Distribu
     DistributedData::MatrixFileInfo matrixFileInfo;
     bool status = MetaDataManager::GetInstance().LoadMeta(matrixFileName, matrixFileInfo, true);
     if (!status) {
-        ZLOGW("Load metadata failed, key:%{public}s", matrixFileName.c_str());
+        ZLOGW("Load metadata failed, key:%{public}s", Anonymous::Change(matrixFileName).c_str());
         return RDB_ERROR;
     }
     fileInfo.matrixFilePath = std::string(DistributedData::MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName;
