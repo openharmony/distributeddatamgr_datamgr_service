@@ -1588,8 +1588,6 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
             auto key = std::get_if<std::string>(&value);
             if (key != nullptr && (*key == LOGOUT_DELETE_FLAG || *key == LOGOUT_RESERVE_FLAG)) {
                 // notify to start app
-                ZLOGI("Detect cloud logout flag:%{public}s, will trigger app launch. store:%{public}s table:%{public}s",
-                    (*key).c_str(), Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str());
                 notifyFlag = true;
             }
             info.push_back(std::move(value));
@@ -1597,8 +1595,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     }
     if (notifyFlag) {
         ZLOGI("post data change for cleaning cloud data. store:%{public}s table:%{public}s data change from "
-              ":%{public}s",
-            Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
+              ":%{public}s", Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
             Anonymous::Change(originalId).c_str());
         PostDataChange(meta_, {}, CLOUD_LOGOUT);
     }
