@@ -149,8 +149,8 @@ int32_t RdbServiceStub::OnRemoteSetDistributedTables(MessageParcel &data, Messag
     RdbSyncerParam param;
     std::vector<std::string> tables;
     std::vector<Reference> references;
-    int32_t type;
-    bool isRebuild;
+    int32_t type = 0;
+    bool isRebuild = false;
     if (!ITypesUtil::Unmarshal(data, param, tables, references, type, isRebuild)) {
         ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s tables size:%{public}zu type:%{public}d",
             param.bundleName_.c_str(), Anonymous::Change(param.storeName_).c_str(), tables.size(), type);
