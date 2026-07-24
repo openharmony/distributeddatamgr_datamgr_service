@@ -1524,6 +1524,8 @@ void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta, c
     info.bundleName = meta.bundleName;
     info.tables = tables;
     info.changeType = type;
+    ZLOGI("PostDataChange event, type:%{public}d bundleName:%{public}s storeId:%{public}s",
+        type, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
     auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
@@ -1551,6 +1553,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
 
 void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data)
 {
+    ZLOGI("OnChange triggered, origin:%{public}d store:%{public}s table:%{public}s hasWatcher:%{public}d",
+        origin, Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(), HasWatcher());
     if (!HasWatcher()) {
         return;
     }
@@ -1584,6 +1588,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
             auto key = std::get_if<std::string>(&value);
             if (key != nullptr && (*key == LOGOUT_DELETE_FLAG || *key == LOGOUT_RESERVE_FLAG)) {
                 // notify to start app
+                ZLOGI("Detect cloud logout flag:%{public}s, will trigger app launch. store:%{public}s table:%{public}s",
+                    (*key).c_str(), Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str());
                 notifyFlag = true;
             }
             info.push_back(std::move(value));
