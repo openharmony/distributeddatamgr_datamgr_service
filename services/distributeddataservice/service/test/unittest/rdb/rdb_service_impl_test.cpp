@@ -4395,7 +4395,7 @@ HWTEST_F(RdbServiceImplTest, OnAppUpdate001, TestSize.Level0)
  * @tc.desc: Test RegisterMatrix when CheckParam not pass.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zd
+ * @tc.author: agent
  */
 HWTEST_F(RdbServiceImplTest, RegisterMatrix001, TestSize.Level0)
 {
@@ -4415,7 +4415,7 @@ HWTEST_F(RdbServiceImplTest, RegisterMatrix001, TestSize.Level0)
  * @tc.desc: Test RegisterMatrix when CheckAccess not pass.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zd
+ * @tc.author: agent
  */
 HWTEST_F(RdbServiceImplTest, RegisterMatrix002, TestSize.Level0)
 {
@@ -4432,7 +4432,7 @@ HWTEST_F(RdbServiceImplTest, RegisterMatrix002, TestSize.Level0)
  * @tc.desc: Test RegisterMatrix when CreateMatrixFile not pass.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zd
+ * @tc.author: agent
  */
 HWTEST_F(RdbServiceImplTest, RegisterMatrix003, TestSize.Level0)
 {
@@ -4457,7 +4457,7 @@ HWTEST_F(RdbServiceImplTest, RegisterMatrix003, TestSize.Level0)
  * @tc.desc: Test CreateMatrixFile when LoadMeta not pass.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zd
+ * @tc.author: agent
  */
 HWTEST_F(RdbServiceImplTest, CreateMatrixFile001, TestSize.Level0)
 {
@@ -4472,7 +4472,7 @@ HWTEST_F(RdbServiceImplTest, CreateMatrixFile001, TestSize.Level0)
  * @tc.desc: Test CreateMatrixFile when LoadMeta pass.
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: zd
+ * @tc.author: agent
  */
 HWTEST_F(RdbServiceImplTest, CreateMatrixFile002, TestSize.Level0)
 {
