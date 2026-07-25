@@ -1537,7 +1537,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
     }
     std::string device = data.GetDataChangeDevice();
     auto networkId = DmAdapter::GetInstance().ToNetworkID(device);
-    ZLOGD("store:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
+    ZLOGI("store:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
         Anonymous::Change(device).c_str());
     GenOrigin genOrigin;
     genOrigin.origin = GenOrigin::ORIGIN_NEARBY;
@@ -1553,12 +1553,10 @@ void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
 
 void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string &originalId, DBChangedData &&data)
 {
-    ZLOGI("OnChange triggered, origin:%{public}d store:%{public}s table:%{public}s hasWatcher:%{public}d",
-        origin, Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(), HasWatcher());
     if (!HasWatcher()) {
         return;
     }
-    ZLOGD("store:%{public}s table:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
+    ZLOGI("store:%{public}s table:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
         Anonymous::Change(data.tableName).c_str(), Anonymous::Change(originalId).c_str());
     GenOrigin genOrigin;
     genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)   ? GenOrigin::ORIGIN_LOCAL
@@ -1588,6 +1586,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
             auto key = std::get_if<std::string>(&value);
             if (key != nullptr && (*key == LOGOUT_DELETE_FLAG || *key == LOGOUT_RESERVE_FLAG)) {
                 // notify to start app
+                ZLOGI("Detect cloud logout flag:%{public}s, will trigger app launch. store:%{public}s table:%{public}s",
+                    (*key).c_str(), Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str());
                 notifyFlag = true;
             }
             info.push_back(std::move(value));
@@ -1595,7 +1595,8 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     }
     if (notifyFlag) {
         ZLOGI("post data change for cleaning cloud data. store:%{public}s table:%{public}s data change from "
-              ":%{public}s", Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
+              ":%{public}s",
+            Anonymous::Change(storeId_).c_str(), Anonymous::Change(data.tableName).c_str(),
             Anonymous::Change(originalId).c_str());
         PostDataChange(meta_, {}, CLOUD_LOGOUT);
     }
