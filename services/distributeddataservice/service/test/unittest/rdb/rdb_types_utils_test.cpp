@@ -750,14 +750,11 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_MarshalUnmarshal_Asset_Extension, TestS
 {
     using RdbAsset = OHOS::NativeRdb::AssetValue;
     RdbAsset original;
+    original.version = 1;
     original.name = "test_asset";
     original.uri = "file://test/asset.png";
-    original.path = "test/asset.png";
-    original.createTime = "2024-07-05";
     original.modifyTime = "2024-07-06";
     original.size = "1024";
-    original.status = 1;
-    original.hash = "hash_value";
     original.extension = "ipc_ext_value";
 
     MessageParcel parcel;
@@ -765,9 +762,11 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_MarshalUnmarshal_Asset_Extension, TestS
 
     RdbAsset unmarshalled;
     EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.version, original.version);
     EXPECT_EQ(unmarshalled.name, original.name);
     EXPECT_EQ(unmarshalled.uri, original.uri);
-    EXPECT_EQ(unmarshalled.path, original.path);
+    EXPECT_EQ(unmarshalled.modifyTime, original.modifyTime);
+    EXPECT_EQ(unmarshalled.size, original.size);
     EXPECT_EQ(unmarshalled.extension, "ipc_ext_value");
 }
 
