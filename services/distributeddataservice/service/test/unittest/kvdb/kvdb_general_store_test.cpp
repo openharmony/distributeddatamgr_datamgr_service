@@ -604,15 +604,18 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync002, TestSize.Level0)
     store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
     std::vector<int> users = {1};
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(Return(false));
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
-        .Times(1)
-        .WillOnce(DoAll(
+        .WillRepeatedly(DoAll(
             SetArgReferee<0>(users),
             Return(true)));
     BindCloudDB(*store);
     auto ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
-    EXPECT_EQ(ret, DBStatus::OK);
+    EXPECT_EQ(ret, DBStatus::DB_ERROR);
 
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(Return(true));
+    ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
+    EXPECT_EQ(ret, DBStatus::OK);
     store->storeInfo_.user = 1;
     cloudSyncMode = DistributedDB::SyncMode::SYNC_MODE_CLOUD_FORCE_PUSH;
     ret = store->CloudSync(devices, cloudSyncMode, asyncs, 0, prepareTraceId);
@@ -642,6 +645,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync003, TestSize.Level0)
     store->SetEqualIdentifier(BUNDLE_NAME, STORE_NAME);
     std::string prepareTraceId;
     std::vector<int> users = {0, 1};
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(1)
         .WillOnce(DoAll(
@@ -676,6 +680,7 @@ HWTEST_F(KVDBGeneralStoreTest, CloudSync004, TestSize.Level0)
     MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true);
     std::string prepareTraceId;
     std::vector<int> users = {0, 1};
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .Times(1)
         .WillOnce(DoAll(
@@ -743,6 +748,7 @@ HWTEST_F(KVDBGeneralStoreTest, Sync002, TestSize.Level0)
     KvStoreNbDelegateMock mockDelegate;
     store->delegate_ = &mockDelegate;
     std::vector<int> users1 = { 0, 1 };
+    EXPECT_CALL(*accountDelegateMock, IsLoginAccount(_)).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, QueryForegroundUsers(_))
         .WillRepeatedly(DoAll(SetArgReferee<0>(users1), Return(true)));
     auto ret = store->Sync({}, query, [](const GenDetails &result) {}, syncParam);
