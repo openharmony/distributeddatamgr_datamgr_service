@@ -235,7 +235,8 @@ ValueProxy::Asset::Asset(DistributedDB::Asset asset)
         .modifyTime = std::move(asset.modifyTime),
         .size = std::move(asset.size),
         .hash = std::move(asset.hash),
-        .path = std::move(asset.subpath) };
+        .path = std::move(asset.subpath),
+        .extension = std::move(asset.extension) };
 }
 
 ValueProxy::Asset &ValueProxy::Asset::operator=(const Asset &proxy)
