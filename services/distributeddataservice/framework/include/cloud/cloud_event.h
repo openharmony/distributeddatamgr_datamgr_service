@@ -22,6 +22,10 @@
 #include "store/store_info.h"
 
 namespace OHOS::DistributedData {
+struct CallingInfo {
+    int32_t callingUid = -1;
+};
+
 class API_EXPORT CloudEvent : public Event {
 public:
     enum : int32_t {
@@ -41,17 +45,20 @@ public:
         SET_SEARCH_TRIGGER,
         UPGRADE_SCHEMA,
         DATABASE_DELETED,
+        CREATE_MATRIX_FILE,
         CLOUD_BUTT
     };
 
-    CloudEvent(int32_t evtId, StoreInfo storeInfo);
+    CloudEvent(int32_t evtId, StoreInfo storeInfo, CallingInfo callingInfo = {});
     ~CloudEvent() = default;
     const StoreInfo &GetStoreInfo() const;
+    const CallingInfo &GetCallingInfo() const;
     int32_t GetEventId() const;
 
 private:
     int32_t eventId_;
     StoreInfo storeInfo_;
+    CallingInfo callingInfo_;
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_CLOUD_CLOUD_EVENT_H

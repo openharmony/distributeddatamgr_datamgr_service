@@ -49,6 +49,7 @@
 #include "rdb_types.h"
 #include "relational_store_manager.h"
 #include "sync_mgr/sync_mgr.h"
+#include "inotify_matrix_file/inotify_matrix_file.h"
 
 using namespace OHOS::DistributedRdb;
 using namespace OHOS::DistributedData;
@@ -4387,6 +4388,108 @@ HWTEST_F(RdbServiceImplTest, OnAppUpdate001, TestSize.Level0)
 
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(database.GetKey(), true), true);
     ASSERT_EQ(MetaDataManager::GetInstance().DelMeta(versionMeta.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: RegisterMatrix001
+ * @tc.desc: Test RegisterMatrix when CheckParam not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, RegisterMatrix001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.hapName_ = "test/test";
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.RegisterMatrix(param, fileInfo);
+
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: RegisterMatrix002
+ * @tc.desc: Test RegisterMatrix when CheckAccess not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, RegisterMatrix002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.RegisterMatrix(param, fileInfo);
+
+    EXPECT_EQ(result, RDB_ERROR);
+}
+ 
+/**
+ * @tc.name: RegisterMatrix003
+ * @tc.desc: Test RegisterMatrix when CreateMatrixFile not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, RegisterMatrix003, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKey(), metaData_, true), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+    param.tokenIds_ = { 123 };
+    param.uids_ = { 123 };
+    param.permissionNames_ = {};
+ 
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.RegisterMatrix(param, fileInfo);
+    EXPECT_EQ(result, RDB_ERROR);
+ 
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKey(), true), true);
+}
+ 
+/**
+ * @tc.name: CreateMatrixFile001
+ * @tc.desc: Test CreateMatrixFile when LoadMeta not pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, CreateMatrixFile001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.CreateMatrixFile(metaData_, fileInfo);
+    EXPECT_EQ(result, RDB_ERROR);
+}
+ 
+/**
+ * @tc.name: CreateMatrixFile002
+ * @tc.desc: Test CreateMatrixFile when LoadMeta pass.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, CreateMatrixFile002, TestSize.Level0)
+{
+    std::string matrixFileName = OHOS::DistributedData::MatrixFileInfo::GenerateMatrixFileName(metaData_);
+    OHOS::DistributedData::MatrixFileInfo matrixFileInfo;
+    matrixFileInfo.fullSyncOffset = 10;
+    matrixFileInfo.matrixTables["table0"] = MatrixTableInfo(1, 2);
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(matrixFileName, matrixFileInfo, true), true);
+    RdbServiceImpl service;
+    DistributedRdb::MatrixFileInfo fileInfo;
+    int32_t result = service.CreateMatrixFile(metaData_, fileInfo);
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(fileInfo.fullSyncOffset, 10);
+    EXPECT_EQ(fileInfo.matrixTables["table0"], 1);
+    EXPECT_EQ(fileInfo.matrixFilePath,
+        std::string(OHOS::DistributedData::MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(matrixFileName, true), true);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
