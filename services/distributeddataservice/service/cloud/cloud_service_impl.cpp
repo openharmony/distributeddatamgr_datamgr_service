@@ -140,6 +140,7 @@ int32_t CloudServiceImpl::EnableCloud(const std::string &id, const std::map<std:
         return status;
     }
     cloudInfo.enableCloud = true;
+    cloudInfo.id = id;
     for (const auto &[bundle, value] : switches) {
         if (!cloudInfo.Exist(bundle)) {
             continue;
