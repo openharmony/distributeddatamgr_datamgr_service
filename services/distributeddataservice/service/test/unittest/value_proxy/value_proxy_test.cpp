@@ -471,14 +471,15 @@ HWTEST_F(ValueProxyServiceTest, ConvertAssetMapGaussDB2NormalExtensionTest, Test
     EXPECT_EQ(asset.name, "dbname");
     EXPECT_EQ(asset.extension, "ext_db_value");
 
-    DistributedDB::Assets dbAssets { dbAsset };
+    DistributedDB::Asset dbAsset2 { .name = "dbname2", .uri = "dburi2", .extension = "ext_db_value2" };
+    DistributedDB::Assets dbAssets { dbAsset2 };
     std::map<std::string, DistributedDB::Assets> dbAssetsMap { {"dbAssets", dbAssets} };
     OHOS::DistributedData::VBucket transferredAssets = ValueProxy::Convert(dbAssetsMap);
     ASSERT_EQ(transferredAssets.size(), 1);
     auto assets = std::get<OHOS::DistributedData::Assets>(transferredAssets.find("dbAssets")->second);
     ASSERT_EQ(assets.size(), 1);
-    EXPECT_EQ(assets.begin()->name, "dbname");
-    EXPECT_EQ(assets.begin()->extension, "ext_db_value");
+    EXPECT_EQ(assets.begin()->name, "dbname2");
+    EXPECT_EQ(assets.begin()->extension, "ext_db_value2");
 }
 
 HWTEST_F(ValueProxyServiceTest, ConvertAssetMapNormal2GaussDBExtensionTest, TestSize.Level0)
@@ -521,6 +522,30 @@ HWTEST_F(ValueProxyServiceTest, ConvertAssetMapNormal2RdbExtensionTest, TestSize
     EXPECT_EQ(rdbAsset.extension, "ext_to_rdb");
 }
 
+HWTEST_F(ValueProxyServiceTest, AssetOperatorExtensionTest, TestSize.Level0)
+{
+    auto makeAsset = []() -> ValueProxy::Asset {
+        return DistributedDB::Asset {
+            .version = 1,
+            .name = "Asset1",
+            .uri = "uri1",
+            .size = "1",
+            .hash = "hash1",
+            .extension = "ext1",
+            .status = DistributedData::Asset::Status::STATUS_INSERT,
+        };
+    };
+
+    DistributedData::Asset dAsset = makeAsset();
+    EXPECT_EQ(dAsset.extension, "ext1");
+
+    CommonType::AssetValue cAsset = makeAsset();
+    EXPECT_EQ(cAsset.extension, "ext1");
+
+    DistributedDB::Asset dbAsset = makeAsset();
+    EXPECT_EQ(dbAsset.extension, "ext1");
+}
+
 HWTEST_F(ValueProxyServiceTest, TempAssetOperatorExtensionTest, TestSize.Level0)
 {
     ValueProxy::TempAsset tempAsset(DistributedDB::Asset {
@@ -539,20 +564,23 @@ HWTEST_F(ValueProxyServiceTest, TempAssetOperatorExtensionTest, TestSize.Level0)
 
 HWTEST_F(ValueProxyServiceTest, AssetExtensionEmptyTest, TestSize.Level0)
 {
-    ValueProxy::Asset asset1 = DistributedDB::Asset {
-        .version = 1,
-        .name = "Asset1",
-        .uri = "uri1",
-        .extension = "",
-        .status = DistributedData::Asset::Status::STATUS_NORMAL,
+    auto makeAsset = []() -> ValueProxy::Asset {
+        return DistributedDB::Asset {
+            .version = 1,
+            .name = "Asset1",
+            .uri = "uri1",
+            .extension = "",
+            .status = DistributedData::Asset::Status::STATUS_NORMAL,
+        };
     };
-    DistributedData::Asset dAsset = asset1;
+
+    DistributedData::Asset dAsset = makeAsset();
     EXPECT_TRUE(dAsset.extension.empty());
 
-    DistributedDB::Asset dbAsset = asset1;
+    DistributedDB::Asset dbAsset = makeAsset();
     EXPECT_TRUE(dbAsset.extension.empty());
 
-    CommonType::AssetValue cAsset = asset1;
+    CommonType::AssetValue cAsset = makeAsset();
     EXPECT_TRUE(cAsset.extension.empty());
 }
 } // namespace OHOS::Test
