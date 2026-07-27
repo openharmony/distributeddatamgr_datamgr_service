@@ -106,6 +106,10 @@ bool Constant::IsValidPath(const std::string &path)
         ZLOGE("invalid dataDir is %{public}s", Anonymous::Change(path).c_str());
         return false;
     }
+    if (path.find('\\') != std::string::npos) {
+        ZLOGE("backslash is invalid. dataDir is %{public}s", Anonymous::Change(path).c_str());
+        return false;
+    }
     size_t pos = path.find(PATH_INVALID_FLAG_LEADING);
     while (pos != std::string::npos) {
         if (pos == 0 || path[pos - 1] == FILE_SEPARATOR_CHAR) {
