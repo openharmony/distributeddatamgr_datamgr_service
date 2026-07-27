@@ -102,12 +102,8 @@ bool Constant::DCopy(uint8_t *tag, size_t tagLen, const uint8_t *src, size_t src
 
 bool Constant::IsValidPath(const std::string &path)
 {
-    if (path == "..") {
+    if (path == ".." || path.find('\\') != std::string::npos) {
         ZLOGE("invalid dataDir is %{public}s", Anonymous::Change(path).c_str());
-        return false;
-    }
-    if (path.find('\\') != std::string::npos) {
-        ZLOGE("backslash is invalid. dataDir is %{public}s", Anonymous::Change(path).c_str());
         return false;
     }
     size_t pos = path.find(PATH_INVALID_FLAG_LEADING);
