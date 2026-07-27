@@ -1524,8 +1524,6 @@ void RdbGeneralStore::ObserverProxy::PostDataChange(const StoreMetaData &meta, c
     info.bundleName = meta.bundleName;
     info.tables = tables;
     info.changeType = type;
-    ZLOGI("PostDataChange event, type:%{public}d bundleName:%{public}s storeId:%{public}s",
-        type, meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str());
     auto evt = std::make_unique<RemoteChangeEvent>(RemoteChangeEvent::DATA_CHANGE, std::move(info));
     EventCenter::GetInstance().PostEvent(std::move(evt));
 }
