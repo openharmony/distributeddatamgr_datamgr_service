@@ -14,6 +14,8 @@
 */
 
 #include "preprocess_utils.h"
+
+#include "accesstoken_kit.h"
 #include "gtest/gtest.h"
 #include "remote_file_share.h"
 #include "text.h"
@@ -23,13 +25,77 @@
 
 namespace OHOS::UDMF {
 using namespace testing::ext;
+using namespace Security::AccessToken;
+
+namespace {
+constexpr int32_t TEST_USER_ID = 100;
+constexpr int32_t TEST_APP_INDEX = 0;
+constexpr const char *TEST_BUNDLE_NAME = "ohos.test.udmf.preprocess";
+
+std::shared_ptr<UnifiedRecord> CreateHtmlRecord(const std::string &uri)
+{
+    std::string html = "<img data-ohos='clipboard' src='" + uri + "'>";
+    auto obj = std::make_shared<Object>();
+    obj->value_[UNIFORM_DATA_TYPE] = "general.html";
+    obj->value_["htmlContent"] = html;
+    obj->value_["plainContent"] = "";
+    auto record = std::make_shared<UnifiedRecord>(UDType::HTML, obj);
+    UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
+    return record;
+}
+} // namespace
+
 class UdmfPreProcessUtilsTest : public testing::Test {
 public:
-    static void SetUpTestCase(void) {}
-    static void TearDownTestCase(void) {}
+    static void SetUpTestCase(void)
+    {
+        HapInfoParams info = {
+            .userID = TEST_USER_ID,
+            .bundleName = TEST_BUNDLE_NAME,
+            .instIndex = TEST_APP_INDEX,
+            .appIDDesc = TEST_BUNDLE_NAME
+        };
+        HapPolicyParams policy = {
+            .apl = APL_NORMAL,
+            .domain = "test.domain",
+            .permList = {
+                {
+                    .permissionName = "ohos.permission.test",
+                    .bundleName = TEST_BUNDLE_NAME,
+                    .grantMode = 1,
+                    .availableLevel = APL_NORMAL,
+                    .label = "label",
+                    .labelId = 1,
+                    .description = "test",
+                    .descriptionId = 1
+                }
+            },
+            .permStateList = {
+                {
+                    .permissionName = "ohos.permission.test",
+                    .isGeneral = true,
+                    .resDeviceID = { "local" },
+                    .grantStatus = { PermissionState::PERMISSION_GRANTED },
+                    .grantFlags = { 1 }
+                }
+            }
+        };
+        AccessTokenKit::AllocHapToken(info, policy);
+        tokenId_ = AccessTokenKit::GetHapTokenID(TEST_USER_ID, TEST_BUNDLE_NAME, TEST_APP_INDEX);
+    }
+
+    static void TearDownTestCase(void)
+    {
+        AccessTokenKit::DeleteToken(tokenId_);
+    }
+
     void SetUp() {}
     void TearDown() {}
+
+    static uint32_t tokenId_;
 };
+
+uint32_t UdmfPreProcessUtilsTest::tokenId_ = 0;
 
 /**
 * @tc.name: RuntimeDataImputation001
@@ -537,6 +603,99 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris004, TestSize.Level1)
     int32_t permissionExt = 0;
     EXPECT_TRUE(obj->GetValue(URI_PERMISSION_MASK, permissionExt));
     EXPECT_EQ(permissionExt, static_cast<int32_t>(UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG));
+}
+
+/**
+* @tc.name: ProcessHtmlRecord_PathTraversalUri_RejectsTraversalSegment
+* @tc.desc: Reject an HTML image URI containing a literal parent-directory segment
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_PathTraversalUri_RejectsTraversalSegment, TestSize.Level1)
+{
+    ASSERT_NE(tokenId_, 0U);
+    std::string oriUri = "file:///data/storage/el2/base/../victim.bundle/haps/image.png";
+    auto record = CreateHtmlRecord(oriUri);
+    std::vector<std::string> uris;
+
+    PreProcessUtils::ProcessHtmlRecord(record, tokenId_, true, uris);
+
+    bool uriFound = false;
+    std::string authUri;
+    record->ComputeUris([&oriUri, &uriFound, &authUri] (UriInfo &uriInfo) {
+        if (uriInfo.oriUri == oriUri) {
+            uriFound = true;
+            authUri = uriInfo.authUri;
+        }
+        return true;
+    });
+    EXPECT_TRUE(uriFound);
+    EXPECT_TRUE(authUri.empty());
+    EXPECT_TRUE(uris.empty());
+}
+
+/**
+* @tc.name: ProcessHtmlRecord_EncodedPathTraversalUri_RejectsTraversalSegment
+* @tc.desc: Reject encoded parent-directory segments and encoded path separators in HTML image URIs
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_EncodedPathTraversalUri_RejectsTraversalSegment, TestSize.Level1)
+{
+    ASSERT_NE(tokenId_, 0U);
+    std::vector<std::string> oriUris = {
+        "file:///data/storage/el2/base/%2e%2e/victim.bundle/haps/image.png",
+        "file:///data/storage/el2/base/%2E%2E/victim.bundle/haps/image.png",
+        "file:///data/storage/el2/base%2f%2e%2e%2fvictim.bundle/haps/image.png",
+        "file:///docs/%2e%2e/victim/image.png"
+    };
+
+    for (const auto &oriUri : oriUris) {
+        auto record = CreateHtmlRecord(oriUri);
+        std::vector<std::string> uris;
+        PreProcessUtils::ProcessHtmlRecord(record, tokenId_, true, uris);
+
+        bool uriFound = false;
+        std::string authUri;
+        record->ComputeUris([&oriUri, &uriFound, &authUri] (UriInfo &uriInfo) {
+            if (uriInfo.oriUri == oriUri) {
+                uriFound = true;
+                authUri = uriInfo.authUri;
+            }
+            return true;
+        });
+        EXPECT_TRUE(uriFound);
+        EXPECT_TRUE(authUri.empty());
+        EXPECT_TRUE(uris.empty());
+    }
+}
+
+/**
+* @tc.name: ProcessHtmlRecord_DoubleDotInFileName_KeepsValidUri
+* @tc.desc: Keep an HTML image URI when double dots are part of a regular file name
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_DoubleDotInFileName_KeepsValidUri, TestSize.Level1)
+{
+    ASSERT_NE(tokenId_, 0U);
+    std::string oriUri = "file:///data/storage/el2/base/haps/file..png";
+    auto record = CreateHtmlRecord(oriUri);
+    std::vector<std::string> uris;
+
+    PreProcessUtils::ProcessHtmlRecord(record, tokenId_, true, uris);
+
+    bool uriFound = false;
+    std::string authUri;
+    record->ComputeUris([&oriUri, &uriFound, &authUri] (UriInfo &uriInfo) {
+        if (uriInfo.oriUri == oriUri) {
+            uriFound = true;
+            authUri = uriInfo.authUri;
+        }
+        return true;
+    });
+    EXPECT_TRUE(uriFound);
+    EXPECT_EQ(authUri, "file://ohos.test.udmf.preprocess/data/storage/el2/base/haps/file..png");
 }
 
 /**

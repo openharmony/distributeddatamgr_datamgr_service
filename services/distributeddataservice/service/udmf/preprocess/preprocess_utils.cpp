@@ -59,6 +59,26 @@ static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
 static constexpr uint32_t PREFIX_LEN = 24;
 static constexpr uint32_t INDEX_LEN = 8;
 static constexpr const char PLACE_HOLDER = '0';
+
+static bool HasPathTraversal(const std::string &path)
+{
+    std::string decodedPath = AppFileService::SandboxHelper::Decode(path);
+    size_t segmentStart = 0;
+    while (segmentStart <= decodedPath.size()) {
+        size_t segmentEnd = decodedPath.find_first_of(DOC_LEVEL_SEPERATOR, segmentStart);
+        size_t segmentLength = segmentEnd == std::string::npos ?
+            decodedPath.size() - segmentStart : segmentEnd - segmentStart;
+        if (segmentLength == 2 && decodedPath.compare(segmentStart, segmentLength, "..") == 0) {
+            return true;
+        }
+        if (segmentEnd == std::string::npos) {
+            break;
+        }
+        segmentStart = segmentEnd + 1;
+    }
+    return false;
+}
+
 using namespace OHOS::DistributedDataDfx;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
@@ -524,6 +544,10 @@ void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, u
         if (isLocal && uriInfo.authUri.empty()) {
             Uri tmpUri(uriInfo.oriUri);
             std::string path = tmpUri.GetPath();
+            if (HasPathTraversal(path)) {
+                ZLOGE("Html image uri contains path traversal");
+                return true;
+            }
             std::string bundleName;
             if (!GetHapBundleNameByToken(tokenId, bundleName)) {
                 return true;

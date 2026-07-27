@@ -121,6 +121,9 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
             started_ = result;
             if (!result) {
                 observers_.erase(name);
+                if (batterySubscriber_ == subscriber) {
+                    batterySubscriber_.reset();
+                }
             }
         }
         condition_.notify_all();
@@ -154,6 +157,7 @@ int32_t BatteryStateMonitorImpl::Unsubscribe(const std::string &name)
         bool result = EventFwk::CommonEventManager::UnSubscribeCommonEvent(subscriber);
         if (!result) {
             ZLOGE("unsubscribe battery state event failed");
+            return E_ERROR;
         }
     }
     return E_OK;
