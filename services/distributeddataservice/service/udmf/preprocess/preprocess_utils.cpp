@@ -52,6 +52,8 @@ constexpr const char *TAG = "PreProcessUtils::";
 constexpr const char *FILE_SCHEME_PREFIX = "file://";
 constexpr const char *DOCS_LOCAL_TAG = "/docs/";
 constexpr const char *DOC_LEVEL_SEPERATOR = "/\\";
+constexpr char PARENT_DIRECTORY_SEGMENT[] = "..";
+constexpr size_t PARENT_DIRECTORY_SEGMENT_LENGTH = sizeof(PARENT_DIRECTORY_SEGMENT) - 1;
 static constexpr uint32_t DOCS_LOCAL_PATH_SUBSTR_START_INDEX = 1;
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
 constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
@@ -68,7 +70,8 @@ static bool HasPathTraversal(const std::string &path)
         size_t segmentEnd = decodedPath.find_first_of(DOC_LEVEL_SEPERATOR, segmentStart);
         size_t segmentLength = segmentEnd == std::string::npos ?
             decodedPath.size() - segmentStart : segmentEnd - segmentStart;
-        if (segmentLength == 2 && decodedPath.compare(segmentStart, segmentLength, "..") == 0) {
+        if (segmentLength == PARENT_DIRECTORY_SEGMENT_LENGTH &&
+            decodedPath.compare(segmentStart, segmentLength, PARENT_DIRECTORY_SEGMENT) == 0) {
             return true;
         }
         if (segmentEnd == std::string::npos) {
