@@ -1941,7 +1941,7 @@ void RdbServiceImpl::UpdateBundleVerison()
                 entry.bundleName.c_str());
             continue;
         }
-        if (static_cast<int32_t>(bundleInfo.versionCode) == entry.versionCode) {
+        if (bundleInfo.versionCode == entry.versionCode) {
             continue;
         }
         ZLOGI("Bundle version upgraded , bundleName: %{public}s, old: %{public}d, new: %{public}d",
