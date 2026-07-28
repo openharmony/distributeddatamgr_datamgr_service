@@ -313,7 +313,7 @@ bool RdbServiceImpl::IsCollaboration(const StoreMetaData &metaData)
         auto [initOk, bundleInfo] = RdbSchemaConfig::InitBundleInfo(metaData.bundleName,
             std::atoi(metaData.user.c_str()));
         if (initOk) {
-            versionMeta.versionCode = bundleInfo.versionCode;
+            versionMeta.versionCode = static_cast<int32_t>(bundleInfo.versionCode);
             MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
             ZLOGI("Saved bundle version, bundleName: %{public}s, versionCode: %{public}d",
                 metaData.bundleName.c_str(), versionMeta.versionCode);
@@ -1855,7 +1855,7 @@ void RdbServiceImpl::UpdateSchemaMeta(const std::string &bundleName, int32_t use
                 versionMeta.bundleName = bundleName;
                 versionMeta.user = std::to_string(user);
                 versionMeta.appIndex = index;
-                versionMeta.versionCode = bundleInfo.versionCode;
+                versionMeta.versionCode = static_cast<int32_t>(bundleInfo.versionCode);
                 MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
             }
         }
