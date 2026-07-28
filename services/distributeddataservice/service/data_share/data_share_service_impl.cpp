@@ -794,6 +794,8 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
 {
     auto &evt = static_cast<const RemoteChangeEvent &>(event);
     auto dataInfo = evt.GetDataInfo();
+    ZLOGI("changeType:%{public}d bundleName:%{public}s storeId:%{public}s", dataInfo.changeType,
+        dataInfo.bundleName.c_str(), StringUtils::GeneralAnonymous(dataInfo.storeId).c_str());
     StoreMetaData meta = MakeMetaData(dataInfo.bundleName, dataInfo.userId, dataInfo.deviceId, dataInfo.storeId);
     AutoLaunchMetaData autoLaunchMetaData;
     if (!MetaDataManager::GetInstance().LoadMeta(std::move(meta.GetAutoLaunchKey()), autoLaunchMetaData, true)) {
