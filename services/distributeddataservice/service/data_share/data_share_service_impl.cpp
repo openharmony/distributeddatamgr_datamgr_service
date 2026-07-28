@@ -811,7 +811,7 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
     for (const auto &[uri, metaTables] : autoLaunchMetaData.datas) {
         if (dataInfo.tables.empty() && dataInfo.changeType == 1) {
             ZLOGI("Start to connect extension, bundleName:%{public}s uri:%{public}s",
-                dataInfo.bundleName.c_str(), uri.c_str());
+                dataInfo.bundleName.c_str(), URIUtils::Anonymous(uri).c_str());
             AAFwk::WantParams wantParams;
             ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName, wantParams);
             return;
@@ -819,7 +819,7 @@ void DataShareServiceImpl::AutoLaunch(const Event &event)
         for (const auto &table : dataInfo.tables) {
             if (std::find(metaTables.begin(), metaTables.end(), table) != metaTables.end()) {
                 ZLOGI("Find table, start to connect extension, bundleName:%{public}s table:%{public}s uri:%{public}s",
-                    dataInfo.bundleName.c_str(), table.c_str(), uri.c_str());
+                    dataInfo.bundleName.c_str(), table.c_str(), URIUtils::Anonymous(uri).c_str());
                 AAFwk::WantParams wantParams;
                 ExtensionConnectAdaptor::TryAndWait(uri, dataInfo.bundleName, wantParams);
                 break;
