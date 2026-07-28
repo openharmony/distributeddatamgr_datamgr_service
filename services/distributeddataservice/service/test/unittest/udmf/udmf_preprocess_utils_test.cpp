@@ -32,6 +32,15 @@ constexpr int32_t TEST_USER_ID = 100;
 constexpr int32_t TEST_APP_INDEX = 0;
 constexpr const char *TEST_BUNDLE_NAME = "ohos.test.udmf.preprocess";
 
+std::shared_ptr<UnifiedRecord> CreateRecordWithUri(const std::string &uri)
+{
+    UriInfo uriInfo = {};
+    uriInfo.oriUri = uri;
+    auto record = std::make_shared<UnifiedRecord>();
+    record->SetUris({ uriInfo });
+    return record;
+}
+
 std::shared_ptr<UnifiedRecord> CreateHtmlRecord(const std::string &uri)
 {
     std::string html = "<img data-ohos='clipboard' src='" + uri + "'>";
@@ -615,7 +624,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_PathTraversalUri_RejectsTrav
 {
     ASSERT_NE(tokenId_, 0U);
     std::string oriUri = "file:///data/storage/el2/base/../victim.bundle/haps/image.png";
-    auto record = CreateHtmlRecord(oriUri);
+    auto record = CreateRecordWithUri(oriUri);
     std::vector<std::string> uris;
 
     PreProcessUtils::ProcessHtmlRecord(record, tokenId_, true, uris);
@@ -651,7 +660,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_EncodedPathTraversalUri_Reje
     };
 
     for (const auto &oriUri : oriUris) {
-        auto record = CreateHtmlRecord(oriUri);
+        auto record = CreateRecordWithUri(oriUri);
         std::vector<std::string> uris;
         PreProcessUtils::ProcessHtmlRecord(record, tokenId_, true, uris);
 
@@ -666,6 +675,35 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_EncodedPathTraversalUri_Reje
         });
         EXPECT_TRUE(uriFound);
         EXPECT_TRUE(authUri.empty());
+        EXPECT_TRUE(uris.empty());
+    }
+}
+
+/**
+* @tc.name: ProcessHtmlRecord_PathTraversalHtml_RejectsParsedUri
+* @tc.desc: Parse traversal URIs from HTML and reject them during HTML record preprocessing
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_PathTraversalHtml_RejectsParsedUri, TestSize.Level1)
+{
+    ASSERT_NE(tokenId_, 0U);
+    std::vector<std::string> oriUris = {
+        "file:///data/storage/el2/base/../victim.bundle/haps/image.png",
+        "file:///data/storage/el2/base/%2e%2e/victim.bundle/haps/image.png"
+    };
+
+    for (const auto &oriUri : oriUris) {
+        auto record = CreateHtmlRecord(oriUri);
+        auto parsedUris = record->GetUris();
+        ASSERT_EQ(parsedUris.size(), 1U);
+        EXPECT_EQ(parsedUris.front().oriUri, oriUri);
+
+        std::vector<std::string> uris;
+        PreProcessUtils::ProcessHtmlRecord(record, tokenId_, true, uris);
+
+        auto processedUris = record->GetUris();
+        ASSERT_EQ(processedUris.size(), 1U);
+        EXPECT_TRUE(processedUris.front().authUri.empty());
         EXPECT_TRUE(uris.empty());
     }
 }
@@ -696,6 +734,26 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_DoubleDotInFileName_KeepsVal
     });
     EXPECT_TRUE(uriFound);
     EXPECT_EQ(authUri, "file://ohos.test.udmf.preprocess/data/storage/el2/base/haps/file..png");
+}
+
+/**
+* @tc.name: ProcessHtmlRecord_TwoCharacterPathSegment_KeepsValidUri
+* @tc.desc: Keep a valid URI when a two-character path segment is not a parent-directory segment
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfPreProcessUtilsTest, ProcessHtmlRecord_TwoCharacterPathSegment_KeepsValidUri, TestSize.Level1)
+{
+    ASSERT_NE(tokenId_, 0U);
+    std::string oriUri = "file:///data/storage/el2/base/ab/image.png";
+    auto record = CreateRecordWithUri(oriUri);
+    std::vector<std::string> uris;
+
+    PreProcessUtils::ProcessHtmlRecord(record, tokenId_, true, uris);
+
+    auto processedUris = record->GetUris();
+    ASSERT_EQ(processedUris.size(), 1U);
+    EXPECT_EQ(processedUris.front().authUri,
+        "file://ohos.test.udmf.preprocess/data/storage/el2/base/ab/image.png");
 }
 
 /**
