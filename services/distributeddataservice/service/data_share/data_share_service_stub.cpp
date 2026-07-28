@@ -204,6 +204,10 @@ int32_t DataShareServiceStub::OnSubscribeRdbData(MessageParcel &data, MessagePar
         return -1;
     }
     auto remoteObj = data.ReadRemoteObject();
+    if (remoteObj == nullptr) {
+        ZLOGE("remoteObj is nullptr");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     sptr<IDataProxyRdbObserver> observer = new (std::nothrow)RdbObserverProxy(remoteObj);
     if (observer == nullptr) {
         ZLOGE("obServer is nullptr");
@@ -273,7 +277,12 @@ int32_t DataShareServiceStub::OnSubscribePublishedData(MessageParcel &data, Mess
         ZLOGE("read device list failed.");
         return -1;
     }
-    sptr<PublishedDataObserverProxy> observer = new (std::nothrow)PublishedDataObserverProxy(data.ReadRemoteObject());
+    auto remoteObj = data.ReadRemoteObject();
+    if (remoteObj == nullptr) {
+        ZLOGE("remoteObj is nullptr");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+    sptr<PublishedDataObserverProxy> observer = new (std::nothrow)PublishedDataObserverProxy(remoteObj);
     if (observer == nullptr) {
         ZLOGE("obServer is nullptr");
         return -1;
@@ -543,6 +552,10 @@ int32_t DataShareServiceStub::OnSubscribeProxyData(MessageParcel& data, MessageP
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto remoteObj = data.ReadRemoteObject();
+    if (remoteObj == nullptr) {
+        ZLOGE("remoteObj is nullptr");
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
     sptr<IProxyDataObserver> observer = new (std::nothrow)ProxyDataObserverProxy(remoteObj);
     if (observer == nullptr) {
         ZLOGE("observer is nullptr");
