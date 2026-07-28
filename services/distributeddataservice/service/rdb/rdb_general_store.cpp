@@ -1535,7 +1535,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(const DBChangedIF &data)
     }
     std::string device = data.GetDataChangeDevice();
     auto networkId = DmAdapter::GetInstance().ToNetworkID(device);
-    ZLOGI("store:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
+    ZLOGD("store:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
         Anonymous::Change(device).c_str());
     GenOrigin genOrigin;
     genOrigin.origin = GenOrigin::ORIGIN_NEARBY;
@@ -1554,7 +1554,7 @@ void RdbGeneralStore::ObserverProxy::OnChange(DBOrigin origin, const std::string
     if (!HasWatcher()) {
         return;
     }
-    ZLOGI("store:%{public}s table:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
+    ZLOGD("store:%{public}s table:%{public}s data change from :%{public}s", Anonymous::Change(storeId_).c_str(),
         Anonymous::Change(data.tableName).c_str(), Anonymous::Change(originalId).c_str());
     GenOrigin genOrigin;
     genOrigin.origin = (origin == DBOrigin::ORIGIN_LOCAL)   ? GenOrigin::ORIGIN_LOCAL
