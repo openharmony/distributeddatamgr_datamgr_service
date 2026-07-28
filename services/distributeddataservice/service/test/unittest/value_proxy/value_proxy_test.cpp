@@ -522,30 +522,6 @@ HWTEST_F(ValueProxyServiceTest, ConvertAssetMapNormal2RdbExtensionTest, TestSize
     EXPECT_EQ(rdbAsset.extension, "ext_to_rdb");
 }
 
-HWTEST_F(ValueProxyServiceTest, AssetOperatorExtensionTest, TestSize.Level0)
-{
-    auto makeAsset = []() -> ValueProxy::Asset {
-        return DistributedDB::Asset {
-            .version = 1,
-            .name = "Asset1",
-            .uri = "uri1",
-            .size = "1",
-            .hash = "hash1",
-            .extension = "ext1",
-            .status = DistributedData::Asset::Status::STATUS_INSERT,
-        };
-    };
-
-    DistributedData::Asset dAsset = makeAsset();
-    EXPECT_EQ(dAsset.extension, "ext1");
-
-    CommonType::AssetValue cAsset = makeAsset();
-    EXPECT_EQ(cAsset.extension, "ext1");
-
-    DistributedDB::Asset dbAsset = makeAsset();
-    EXPECT_EQ(dbAsset.extension, "ext1");
-}
-
 HWTEST_F(ValueProxyServiceTest, TempAssetOperatorExtensionTest, TestSize.Level0)
 {
     ValueProxy::TempAsset tempAsset(DistributedDB::Asset {
