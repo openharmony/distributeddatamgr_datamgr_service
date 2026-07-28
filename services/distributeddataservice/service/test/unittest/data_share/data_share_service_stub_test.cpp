@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "data_share_service_impl.h"
+#include "common_utils.h"
 #include "data_share_types_util.h"
 #include "dataproxy_handle_common.h"
 #include "ipc_skeleton.h"
@@ -322,14 +323,58 @@ HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo, TestSize.Level1
     MessageParcel reply;
     int32_t interfaceCode = 1001; // 1001 is interfaceCode
     uint32_t waitTime = 10; // 10 is waitTime
-    
+
     data.WriteInterfaceToken(IDataShareService::GetDescriptor());
     data.WriteInt32(interfaceCode);
     data.WriteUint32(waitTime);
-    
+
     int32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO;
     int32_t result = service.OnRemoteRequest(code, data, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
+}
+
+/**
+* @tc.name: OnGetConnectionInterfaceInfo_NotSystemApp_Reject
+* @tc.desc: Verify OnGetConnectionInterfaceInfo rejects non-system app callers
+* @tc.type: FUNC
+* @tc.require: SQL
+* @tc.author: agent
+*/
+HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo_NotSystemApp_Reject, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceStubTest::OnGetConnectionInterfaceInfo_NotSystemApp_Reject start");
+    DataShareThreadLocal::SetFromSystemApp(false);
+    MessageParcel data;
+    MessageParcel reply;
+    data.WriteInterfaceToken(IDataShareService::GetDescriptor());
+    data.WriteInt32(1001);
+    data.WriteUint32(10);
+    auto result = dataShareServiceStub->OnGetConnectionInterfaceInfo(data, reply);
+    EXPECT_EQ(result, E_NOT_SYSTEM_APP);
+    DataShareThreadLocal::CleanFromSystemApp();
+    ZLOGI("DataShareServiceStubTest::OnGetConnectionInterfaceInfo_NotSystemApp_Reject end");
+}
+
+/**
+* @tc.name: OnGetConnectionInterfaceInfo_InvalidSaId_Reject
+* @tc.desc: Verify OnGetConnectionInterfaceInfo rejects invalid saId
+* @tc.type: FUNC
+* @tc.require: SQL
+* @tc.author: agent
+*/
+HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo_InvalidSaId_Reject, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceStubTest::OnGetConnectionInterfaceInfo_InvalidSaId_Reject start");
+    DataShareThreadLocal::SetFromSystemApp(true);
+    MessageParcel data;
+    MessageParcel reply;
+    data.WriteInterfaceToken(IDataShareService::GetDescriptor());
+    data.WriteInt32(0);
+    data.WriteUint32(10);
+    auto result = dataShareServiceStub->OnGetConnectionInterfaceInfo(data, reply);
+    EXPECT_EQ(result, E_INVALID_ARGS);
+    DataShareThreadLocal::CleanFromSystemApp();
+    ZLOGI("DataShareServiceStubTest::OnGetConnectionInterfaceInfo_InvalidSaId_Reject end");
 }
 
 /**

@@ -592,7 +592,16 @@ int32_t DataShareServiceStub::OnGetConnectionInterfaceInfo(MessageParcel& data, 
         ZLOGE("unmarshal failed");
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    auto [errCode, info] = GetConnectionInterfaceInfo(saId, waitTime);
+    if (!DataShareThreadLocal::IsFromSystemApp()) {
+        ZLOGE("GetConnectionInterfaceInfo is not allowed for non-system app, saId:%{public}d", saId);
+        return E_NOT_SYSTEM_APP;
+    }
+    if (saId <= URIUtils::INVALID_SA_ID || saId >= static_cast<int32_t>(URIUtils::LAST_SYS_ABILITY_ID)) {
+        ZLOGE("invalid saId:%{public}d", saId);
+        return E_INVALID_ARGS;
+    }
+    constexpr uint32_t FIXED_WAIT_TIME_SEC = 5;
+    auto [errCode, info] = GetConnectionInterfaceInfo(saId, FIXED_WAIT_TIME_SEC);
     if (!ITypesUtil::Marshal(reply, errCode, info)) {
         ZLOGE("ConnectionInterfaceInfo Marshal reply failed");
         return IPC_STUB_WRITE_PARCEL_ERR;
