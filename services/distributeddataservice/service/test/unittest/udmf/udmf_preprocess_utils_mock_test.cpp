@@ -28,6 +28,7 @@ using namespace OHOS::Security::AccessToken;
 
 namespace {
 constexpr uint32_t TEST_TOKEN_ID = 9999;
+constexpr int32_t TEST_USER_ID = 100;
 constexpr const char *TEST_BUNDLE_NAME = "ohos.test.udmf.preprocess";
 
 std::shared_ptr<UnifiedRecord> CreateRecordWithUri(const std::string &uri)
@@ -54,7 +55,7 @@ std::shared_ptr<UnifiedRecord> CreateHtmlRecord(const std::string &uri)
 int FillHapTokenInfo(AccessTokenID, HapTokenInfo &hapInfo)
 {
     hapInfo.bundleName = TEST_BUNDLE_NAME;
-    hapInfo.userID = 100;
+    hapInfo.userID = TEST_USER_ID;
     return RET_SUCCESS;
 }
 } // namespace
@@ -262,7 +263,8 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalUri_Rejects
 * @tc.desc: Reject encoded parent-directory segments and encoded path separators in HTML image URIs
 * @tc.type: FUNC
 */
-HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_EncodedPathTraversalUri_RejectsTraversalSegment, TestSize.Level1)
+HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_EncodedPathTraversalUri_RejectsTraversalSegment,
+    TestSize.Level1)
 {
     EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
     std::vector<std::string> oriUris = {
