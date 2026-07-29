@@ -14,7 +14,6 @@
 */
 
 #include "preprocess_utils.h"
-
 #include "gtest/gtest.h"
 #include "remote_file_share.h"
 #include "text.h"
@@ -24,10 +23,10 @@
 
 namespace OHOS::UDMF {
 using namespace testing::ext;
-
 class UdmfPreProcessUtilsTest : public testing::Test {
+public:
     static void SetUpTestCase(void) {}
-    static void TearDownTestCase(void){}
+    static void TearDownTestCase(void) {}
     void SetUp() {}
     void TearDown() {}
 };
