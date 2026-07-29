@@ -15,7 +15,6 @@
 
 #include "preprocess_utils.h"
 
-#include "accesstoken_kit.h"
 #include "gtest/gtest.h"
 #include "remote_file_share.h"
 #include "text.h"
@@ -25,65 +24,13 @@
 
 namespace OHOS::UDMF {
 using namespace testing::ext;
-using namespace Security::AccessToken;
-
-namespace {
-constexpr int32_t TEST_USER_ID = 100;
-constexpr int32_t TEST_APP_INDEX = 0;
-constexpr const char *TEST_BUNDLE_NAME = "ohos.test.udmf.preprocess";
-} // namespace
 
 class UdmfPreProcessUtilsTest : public testing::Test {
-public:
-    static void SetUpTestCase(void)
-    {
-        HapInfoParams info = {
-            .userID = TEST_USER_ID,
-            .bundleName = TEST_BUNDLE_NAME,
-            .instIndex = TEST_APP_INDEX,
-            .appIDDesc = TEST_BUNDLE_NAME
-        };
-        HapPolicyParams policy = {
-            .apl = APL_NORMAL,
-            .domain = "test.domain",
-            .permList = {
-                {
-                    .permissionName = "ohos.permission.test",
-                    .bundleName = TEST_BUNDLE_NAME,
-                    .grantMode = 1,
-                    .availableLevel = APL_NORMAL,
-                    .label = "label",
-                    .labelId = 1,
-                    .description = "test",
-                    .descriptionId = 1
-                }
-            },
-            .permStateList = {
-                {
-                    .permissionName = "ohos.permission.test",
-                    .isGeneral = true,
-                    .resDeviceID = { "local" },
-                    .grantStatus = { PermissionState::PERMISSION_GRANTED },
-                    .grantFlags = { 1 }
-                }
-            }
-        };
-        AccessTokenKit::AllocHapToken(info, policy);
-        tokenId_ = AccessTokenKit::GetHapTokenID(TEST_USER_ID, TEST_BUNDLE_NAME, TEST_APP_INDEX);
-    }
-
-    static void TearDownTestCase(void)
-    {
-        AccessTokenKit::DeleteToken(tokenId_);
-    }
-
+    static void SetUpTestCase(void) {}
+    static void TearDownTestCase(void){}
     void SetUp() {}
     void TearDown() {}
-
-    static uint32_t tokenId_;
 };
-
-uint32_t UdmfPreProcessUtilsTest::tokenId_ = 0;
 
 /**
 * @tc.name: RuntimeDataImputation001
