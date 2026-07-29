@@ -329,6 +329,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalHtml_Reject
 */
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_DoubleDotInFileName_KeepsValidUri, TestSize.Level1)
 {
+    EXPECT_CALL(*accessTokenKitMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(TOKEN_HAP));
     EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/haps/file..png";
     auto record = CreateHtmlRecord(oriUri);
@@ -349,6 +350,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_DoubleDotInFileName_Keep
 */
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_TwoCharacterPathSegment_KeepsValidUri, TestSize.Level1)
 {
+    EXPECT_CALL(*accessTokenKitMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(TOKEN_HAP));
     EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/ab/image.png";
     auto record = CreateHtmlRecord(oriUri);
