@@ -35,9 +35,8 @@ public:
         std::string uri;
         int32_t currentUserId = -1;
         int32_t visitedUserId = -1;
-        int32_t appIndex = 0;
-        int32_t accountId = -1;
-        int32_t systemAbilityId = 0;
+        int32_t appIndex = 0;   // appIndex is in [1, 1000], and original app's index is 0
+        int32_t systemAbilityId = 0; // systemAbilityId is in [1, 16777215]
         std::string appIdentifier;
         std::string bundleName;
         std::string moduleName;
@@ -55,7 +54,6 @@ public:
         bool allowEmptyPermission = false;
         bool storeMetaDataFromUri = false;
         bool normalAppAccessible = false;
-        bool accountIsolation = false;
         AccessCrossMode accessCrossMode = AccessCrossMode::USER_UNDEFINED;
         std::vector<AllowList> allowLists;
     };
@@ -68,7 +66,6 @@ private:
     int GetFromDataProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
     int GetFromExtensionProperties(const ProfileInfo &profileInfo, const std::string &moduleName);
     void GetMetaDataFromUri();
-    void ResolveAccessorAccountId();
     std::pair<int, BundleConfig> GetBundleInfo();
     bool IsInExtList(const std::string &bundleName);
     int32_t GetFromDataShareConfig();
