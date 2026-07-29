@@ -31,15 +31,6 @@ constexpr uint32_t TEST_TOKEN_ID = 9999;
 constexpr int32_t TEST_USER_ID = 100;
 constexpr const char *TEST_BUNDLE_NAME = "ohos.test.udmf.preprocess";
 
-std::shared_ptr<UnifiedRecord> CreateRecordWithUri(const std::string &uri)
-{
-    UriInfo uriInfo = {};
-    uriInfo.oriUri = uri;
-    auto record = std::make_shared<UnifiedRecord>();
-    record->SetUris({ uriInfo });
-    return record;
-}
-
 std::shared_ptr<UnifiedRecord> CreateHtmlRecord(const std::string &uri)
 {
     std::string html = "<img data-ohos='clipboard' src='" + uri + "'>";
@@ -50,6 +41,16 @@ std::shared_ptr<UnifiedRecord> CreateHtmlRecord(const std::string &uri)
     auto record = std::make_shared<UnifiedRecord>(UDType::HTML, obj);
     UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
     return record;
+}
+
+std::vector<UriInfo> CollectUris(const std::shared_ptr<UnifiedRecord> &record)
+{
+    std::vector<UriInfo> uris;
+    record->ComputeUris([&uris] (UriInfo &uriInfo) {
+        uris.push_back(uriInfo);
+        return true;
+    });
+    return uris;
 }
 
 int FillHapTokenInfo(AccessTokenID, HapTokenInfo &hapInfo)
@@ -247,12 +248,15 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalUri_Rejects
 {
     EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
     std::string oriUri = "file:///data/storage/el2/base/../victim.bundle/haps/image.png";
-    auto record = CreateRecordWithUri(oriUri);
+    auto record = CreateHtmlRecord(oriUri);
+    auto parsedUris = CollectUris(record);
+    ASSERT_EQ(parsedUris.size(), 1U);
+    EXPECT_EQ(parsedUris.front().oriUri, oriUri);
     std::vector<std::string> uris;
 
     PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
 
-    auto processedUris = record->GetUris();
+    auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
     EXPECT_TRUE(processedUris.front().authUri.empty());
     EXPECT_TRUE(uris.empty());
@@ -275,11 +279,14 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_EncodedPathTraversalUri_
     };
 
     for (const auto &oriUri : oriUris) {
-        auto record = CreateRecordWithUri(oriUri);
+        auto record = CreateHtmlRecord(oriUri);
+        auto parsedUris = CollectUris(record);
+        ASSERT_EQ(parsedUris.size(), 1U);
+        EXPECT_EQ(parsedUris.front().oriUri, oriUri);
         std::vector<std::string> uris;
         PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
 
-        auto processedUris = record->GetUris();
+        auto processedUris = CollectUris(record);
         ASSERT_EQ(processedUris.size(), 1U);
         EXPECT_TRUE(processedUris.front().authUri.empty());
         EXPECT_TRUE(uris.empty());
@@ -301,14 +308,14 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalHtml_Reject
 
     for (const auto &oriUri : oriUris) {
         auto record = CreateHtmlRecord(oriUri);
-        auto parsedUris = record->GetUris();
+        auto parsedUris = CollectUris(record);
         ASSERT_EQ(parsedUris.size(), 1U);
         EXPECT_EQ(parsedUris.front().oriUri, oriUri);
 
         std::vector<std::string> uris;
         PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
 
-        auto processedUris = record->GetUris();
+        auto processedUris = CollectUris(record);
         ASSERT_EQ(processedUris.size(), 1U);
         EXPECT_TRUE(processedUris.front().authUri.empty());
         EXPECT_TRUE(uris.empty());
@@ -329,7 +336,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_DoubleDotInFileName_Keep
 
     PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
 
-    auto processedUris = record->GetUris();
+    auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
     EXPECT_EQ(processedUris.front().authUri,
         "file://ohos.test.udmf.preprocess/data/storage/el2/base/haps/file..png");
@@ -344,12 +351,15 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_TwoCharacterPathSegment_
 {
     EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/ab/image.png";
-    auto record = CreateRecordWithUri(oriUri);
+    auto record = CreateHtmlRecord(oriUri);
+    auto parsedUris = CollectUris(record);
+    ASSERT_EQ(parsedUris.size(), 1U);
+    EXPECT_EQ(parsedUris.front().oriUri, oriUri);
     std::vector<std::string> uris;
 
     PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
 
-    auto processedUris = record->GetUris();
+    auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
     EXPECT_EQ(processedUris.front().authUri,
         "file://ohos.test.udmf.preprocess/data/storage/el2/base/ab/image.png");
