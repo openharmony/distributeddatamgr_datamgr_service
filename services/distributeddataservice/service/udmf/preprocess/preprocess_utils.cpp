@@ -52,6 +52,8 @@ constexpr const char *TAG = "PreProcessUtils::";
 constexpr const char *FILE_SCHEME_PREFIX = "file://";
 constexpr const char *DOCS_LOCAL_TAG = "/docs/";
 constexpr const char *DOC_LEVEL_SEPERATOR = "/\\";
+constexpr char PARENT_DIRECTORY_SEGMENT[] = "..";
+constexpr size_t PARENT_DIRECTORY_SEGMENT_LENGTH = sizeof(PARENT_DIRECTORY_SEGMENT) - 1;
 static constexpr uint32_t DOCS_LOCAL_PATH_SUBSTR_START_INDEX = 1;
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
 constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
@@ -59,6 +61,30 @@ static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
 static constexpr uint32_t PREFIX_LEN = 24;
 static constexpr uint32_t INDEX_LEN = 8;
 static constexpr const char PLACE_HOLDER = '0';
+
+static bool HasPathTraversal(const std::string &path)
+{
+    std::string decodedPath = AppFileService::SandboxHelper::Decode(path);
+    if (decodedPath.find('\0') != std::string::npos) {
+        return true;
+    }
+    size_t segmentStart = 0;
+    while (segmentStart <= decodedPath.size()) {
+        size_t segmentEnd = decodedPath.find_first_of(DOC_LEVEL_SEPERATOR, segmentStart);
+        size_t segmentLength = segmentEnd == std::string::npos ?
+            decodedPath.size() - segmentStart : segmentEnd - segmentStart;
+        if (segmentLength == PARENT_DIRECTORY_SEGMENT_LENGTH &&
+            decodedPath.compare(segmentStart, segmentLength, PARENT_DIRECTORY_SEGMENT) == 0) {
+            return true;
+        }
+        if (segmentEnd == std::string::npos) {
+            break;
+        }
+        segmentStart = segmentEnd + 1;
+    }
+    return false;
+}
+
 using namespace OHOS::DistributedDataDfx;
 using namespace Security::AccessToken;
 using namespace OHOS::AppFileService::ModuleRemoteFileShare;
@@ -524,6 +550,10 @@ void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, u
         if (isLocal && uriInfo.authUri.empty()) {
             Uri tmpUri(uriInfo.oriUri);
             std::string path = tmpUri.GetPath();
+            if (HasPathTraversal(path)) {
+                ZLOGE("Html image uri contains path traversal");
+                return true;
+            }
             std::string bundleName;
             if (!GetHapBundleNameByToken(tokenId, bundleName)) {
                 return true;
