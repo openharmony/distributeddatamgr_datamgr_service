@@ -294,6 +294,29 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_EncodedPathTraversalUri_
 }
 
 /**
+* @tc.name: ProcessHtmlRecord_NullByteEncodedUri_RejectsUri
+* @tc.desc: Reject an HTML image URI containing a URL-encoded null byte
+* @tc.type: FUNC
+*/
+HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_NullByteEncodedUri_RejectsUri, TestSize.Level1)
+{
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    std::string oriUri = "file:///data/storage/el2/base/haps/image%00.png";
+    auto record = CreateHtmlRecord(oriUri);
+    auto parsedUris = CollectUris(record);
+    ASSERT_EQ(parsedUris.size(), 1U);
+    EXPECT_EQ(parsedUris.front().oriUri, oriUri);
+    std::vector<std::string> uris;
+
+    PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
+
+    auto processedUris = CollectUris(record);
+    ASSERT_EQ(processedUris.size(), 1U);
+    EXPECT_TRUE(processedUris.front().authUri.empty());
+    EXPECT_TRUE(uris.empty());
+}
+
+/**
 * @tc.name: ProcessHtmlRecord_PathTraversalHtml_RejectsParsedUri
 * @tc.desc: Parse traversal URIs from HTML and reject them during HTML record preprocessing
 * @tc.type: FUNC

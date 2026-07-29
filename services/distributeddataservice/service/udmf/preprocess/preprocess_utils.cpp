@@ -65,6 +65,9 @@ static constexpr const char PLACE_HOLDER = '0';
 static bool HasPathTraversal(const std::string &path)
 {
     std::string decodedPath = AppFileService::SandboxHelper::Decode(path);
+    if (decodedPath.find('\0') != std::string::npos) {
+        return true;
+    }
     size_t segmentStart = 0;
     while (segmentStart <= decodedPath.size()) {
         size_t segmentEnd = decodedPath.find_first_of(DOC_LEVEL_SEPERATOR, segmentStart);
