@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,27 +13,9 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_XCOLLIE_H
-#define OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_XCOLLIE_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICE_COMMON_XCOLLIE_H
+#define OHOS_DISTRIBUTED_DATA_SERVICE_COMMON_XCOLLIE_H
 
-#include <string>
-#include "xcollie/xcollie.h"
-#include "visibility.h"
+#include "dfx/xcollie.h"
 
-namespace OHOS::DistributedData {
-class XCollie {
-public:
-    enum FLAG {
-        XCOLLIE_LOG = 0x1,
-        XCOLLIE_RECOVERY = 0x2
-    };
-    API_EXPORT XCollie(const std::string &tag, uint32_t flag, uint32_t timeoutSeconds = RESTART_TIME_THRESHOLD,
-        std::function<void(void *)> func = nullptr, void *arg = nullptr);
-    API_EXPORT ~XCollie();
-
-private:
-    int32_t id_ = -1;
-    static constexpr int32_t RESTART_TIME_THRESHOLD = 30;
-};
-} // namespace OHOS::DistributedData
-#endif // OHOS_DISTRIBUTED_DATA_DATAMGR_SERVICE_COMMON_XCOLLIE_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICE_COMMON_XCOLLIE_H

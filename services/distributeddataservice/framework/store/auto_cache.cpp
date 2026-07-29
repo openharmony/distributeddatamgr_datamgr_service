@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,11 +19,17 @@
 
 #include "account/account_delegate.h"
 #include "changeevent/remote_change_event.h"
+#include "dfx/xcollie.h"
 #include "eventcenter/event_center.h"
 #include "log_print.h"
 #include "screen/screen_manager.h"
 #include "utils/anonymous.h"
 namespace OHOS::DistributedData {
+namespace {
+constexpr uint32_t AUTO_CACHE_XCOLLIE_TIMEOUT = 3 * 60;
+constexpr uint32_t AUTO_CACHE_XCOLLIE_FLAG = XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY;
+} // namespace
+
 using Account = AccountDelegate;
 static constexpr const char *KEY_SEPARATOR = "###";
 AutoCache &AutoCache::GetInstance()
@@ -73,28 +79,28 @@ std::string AutoCache::GenerateKey(const std::string &path, const std::string &s
 int32_t AutoCache::CheckStatusBeforeOpen(const StoreMetaData &meta)
 {
     if (meta.area == GeneralStore::EL4 && ScreenManager::GetInstance()->IsLocked()) {
-        ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s",
-            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        ZLOGW("screen is locked, user:%{public}s, bundleName:%{public}s, storeName:%{public}s", meta.user.c_str(),
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         return E_SCREEN_LOCKED;
     }
     if (atoi(meta.user.c_str()) == 0 || meta.area == GeneralStore::Area::EL1) {
         return E_OK;
     }
     if (Account::GetInstance()->IsDeactivating(atoi(meta.user.c_str()))) {
-        ZLOGW("user %{public}s is deactivating, bundleName:%{public}s, storeName: %{public}s",
-            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        ZLOGW("user %{public}s is deactivating, bundleName:%{public}s, storeName: %{public}s", meta.user.c_str(),
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         return E_USER_DEACTIVATING;
     }
     if (!Account::GetInstance()->IsVerified(atoi(meta.user.c_str()))) {
-        ZLOGW("user %{public}s is locked, bundleName:%{public}s, storeName: %{public}s",
-            meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
+        ZLOGW("user %{public}s is locked, bundleName:%{public}s, storeName: %{public}s", meta.user.c_str(),
+            meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         return E_USER_LOCKED;
     }
     return E_OK;
 }
 
-std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &meta, const Watchers &watchers,
-    const StoreOption &option)
+std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(
+    const StoreMetaData &meta, const Watchers &watchers, const StoreOption &option)
 {
     Store store;
     auto storeKey = GenerateKey(meta.dataDir, meta.storeId);
@@ -102,8 +108,8 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
         disables_.ContainIf(meta.tokenId,
             [&storeKey](const std::set<std::string> &stores) -> bool { return stores.count(storeKey) != 0; })) {
         ZLOGW("storeType %{public}d is invalid or store is disabled, user:%{public}s, bundleName:%{public}s, "
-              "storeName:%{public}s", meta.storeType, meta.user.c_str(), meta.bundleName.c_str(),
-              meta.GetStoreAlias().c_str());
+              "storeName:%{public}s",
+            meta.storeType, meta.user.c_str(), meta.bundleName.c_str(), meta.GetStoreAlias().c_str());
         return { E_ERROR, store };
     }
     int32_t ret = CheckStatusBeforeOpen(meta);
@@ -111,9 +117,10 @@ std::pair<int32_t, AutoCache::Store> AutoCache::GetDBStore(const StoreMetaData &
         return { ret, store };
     }
     bool startTimer = false;
+    XCollie xcollie(__FUNCTION__, AUTO_CACHE_XCOLLIE_FLAG, AUTO_CACHE_XCOLLIE_TIMEOUT);
     stores_.Compute(meta.tokenId,
-        [this, &meta, &watchers, &store, &storeKey, &option, &ret, &startTimer](auto &,
-            std::map<std::string, Delegate> &stores) -> bool {
+        [this, &meta, &watchers, &store, &storeKey, &option, &ret, &startTimer](
+            auto &, std::map<std::string, Delegate> &stores) -> bool {
             auto it = stores.find(storeKey);
             if (it != stores.end()) {
                 if (!watchers.empty()) {
@@ -150,20 +157,20 @@ AutoCache::Stores AutoCache::GetStoresIfPresent(uint32_t tokenId, const std::str
 {
     Stores stores;
     auto storeKey = GenerateKey(path, storeName);
-    stores_.ComputeIfPresent(
-        tokenId, [&stores, &storeKey](auto &, std::map<std::string, Delegate> &delegates) -> bool {
-            if (storeKey.empty()) {
-                for (auto &[_, delegate] : delegates) {
-                    stores.push_back(delegate);
-                }
-            } else {
-                auto it = delegates.find(storeKey);
-                if (it != delegates.end()) {
-                    stores.push_back(it->second);
-                }
+    XCollie xcollie(__FUNCTION__, AUTO_CACHE_XCOLLIE_FLAG, AUTO_CACHE_XCOLLIE_TIMEOUT);
+    stores_.ComputeIfPresent(tokenId, [&stores, &storeKey](auto &, std::map<std::string, Delegate> &delegates) -> bool {
+        if (storeKey.empty()) {
+            for (auto &[_, delegate] : delegates) {
+                stores.push_back(delegate);
             }
-            return !stores.empty();
-        });
+        } else {
+            auto it = delegates.find(storeKey);
+            if (it != delegates.end()) {
+                stores.push_back(it->second);
+            }
+        }
+        return !stores.empty();
+    });
     return stores;
 }
 
@@ -172,12 +179,14 @@ void AutoCache::StartTimer()
     if (executor_ == nullptr) {
         return;
     }
+    XCollie xcollie(__FUNCTION__, AUTO_CACHE_XCOLLIE_FLAG, AUTO_CACHE_XCOLLIE_TIMEOUT);
     stores_.DoAction([this]() {
         if (taskId_ != Executor::INVALID_TASK_ID || stores_.Empty()) {
             return true;
         }
         taskId_ = executor_->Schedule(std::chrono::milliseconds(garbageInterval_), [this]() {
             GarbageCollect(false);
+            XCollie xcollie("ResetTimerTask", AUTO_CACHE_XCOLLIE_FLAG, AUTO_CACHE_XCOLLIE_TIMEOUT);
             stores_.DoAction([this]() {
                 taskId_ = Executor::INVALID_TASK_ID;
                 return true;
@@ -194,6 +203,7 @@ void AutoCache::CloseStore(uint32_t tokenId, const std::string &path, const std:
     ZLOGD("close store start, store:%{public}s, token:%{public}u", Anonymous::Change(storeId).c_str(), tokenId);
     bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
     auto storeKey = GenerateKey(path, storeId);
+    XCollie xcollie(__FUNCTION__, AUTO_CACHE_XCOLLIE_FLAG, AUTO_CACHE_XCOLLIE_TIMEOUT);
     stores_.ComputeIfPresent(tokenId, [&storeKey, isScreenLocked](auto &, auto &delegates) {
         auto it = delegates.begin();
         while (it != delegates.end()) {
@@ -214,6 +224,7 @@ void AutoCache::CloseStore(const AutoCache::Filter &filter)
     if (filter == nullptr) {
         return;
     }
+    XCollie xcollie(__FUNCTION__, AUTO_CACHE_XCOLLIE_FLAG, AUTO_CACHE_XCOLLIE_TIMEOUT);
     stores_.EraseIf([&filter](auto &tokenId, auto &delegates) {
         auto it = delegates.begin();
         while (it != delegates.end()) {
@@ -228,10 +239,11 @@ void AutoCache::CloseStore(const AutoCache::Filter &filter)
     });
 }
 
-void AutoCache::SetObserver(uint32_t tokenId, const AutoCache::Watchers &watchers, const std::string &path,
-    const std::string &storeId)
+void AutoCache::SetObserver(
+    uint32_t tokenId, const AutoCache::Watchers &watchers, const std::string &path, const std::string &storeId)
 {
     auto storeKey = GenerateKey(path, storeId);
+    XCollie xcollie(__FUNCTION__, AUTO_CACHE_XCOLLIE_FLAG, AUTO_CACHE_XCOLLIE_TIMEOUT);
     stores_.ComputeIfPresent(tokenId, [&storeKey, &watchers](auto &key, auto &stores) {
         ZLOGD("tokenId:0x%{public}x storeId:%{public}s observers:%{public}zu", key,
             Anonymous::Change(storeKey).c_str(), watchers.size());
@@ -249,8 +261,9 @@ void AutoCache::GarbageCollect(bool isForce)
     bool isScreenLocked = ScreenManager::GetInstance()->IsLocked();
     uint32_t removeCount = 0;
     uint32_t remainCount = 0;
-    stores_.EraseIf([&current, isForce, isScreenLocked, &removeCount, &remainCount](auto &key,
-                        std::map<std::string, Delegate> &delegates) {
+    XCollie xcollie(__FUNCTION__, AUTO_CACHE_XCOLLIE_FLAG, AUTO_CACHE_XCOLLIE_TIMEOUT);
+    stores_.EraseIf([&current, isForce, isScreenLocked, &removeCount, &remainCount](
+                        auto &key, std::map<std::string, Delegate> &delegates) {
         for (auto it = delegates.begin(); it != delegates.end();) {
             // if the store is BUSY we wait more INTERVAL minutes again
             if ((!isScreenLocked || it->second.GetArea() != GeneralStore::EL4) && (isForce || it->second < current) &&
@@ -294,8 +307,8 @@ void AutoCache::Configure(uint32_t garbageInterval)
     }
 }
 
-AutoCache::Delegate::Delegate(GeneralStore *delegate, const Watchers &watchers, const StoreMetaData &meta,
-    uint32_t garbageInterval)
+AutoCache::Delegate::Delegate(
+    GeneralStore *delegate, const Watchers &watchers, const StoreMetaData &meta, uint32_t garbageInterval)
     : store_(delegate), watchers_(watchers), meta_(meta), garbageInterval_(garbageInterval)
 {
     time_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(garbageInterval);

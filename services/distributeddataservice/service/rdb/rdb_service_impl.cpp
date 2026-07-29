@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+/**
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,10 +29,10 @@
 #include "cloud/schema_meta.h"
 #include "communicator/device_manager_adapter.h"
 #include "device_matrix.h"
+#include "dfx/xcollie.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
 #include "eventcenter/event_center.h"
-#include "rdb_flow_control_manager.h"
 #include "ipc_skeleton.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -44,7 +44,10 @@
 #include "metadata/store_debug_info.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
+#include "permission_validator.h"
 #include "permit_delegate.h"
+#include "rdb_common_utils.h"
+#include "rdb_flow_control_manager.h"
 #include "rdb_general_store.h"
 #include "rdb_hiview_adapter.h"
 #include "rdb_notifier_proxy.h"
@@ -53,10 +56,8 @@
 #include "rdb_schema_config.h"
 #include "rdb_types.h"
 #include "rdb_types_utils.h"
-#include "rdb_common_utils.h"
 #include "rdb_watcher.h"
 #include "store/general_store.h"
-#include "permission_validator.h"
 #include "sync_mgr/sync_mgr.h"
 #include "tokenid_kit.h"
 #include "types_export.h"
@@ -64,7 +65,6 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
-#include "xcollie.h"
 using OHOS::DistributedData::AccountDelegate;
 using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
