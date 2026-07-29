@@ -372,7 +372,7 @@ HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo_InvalidSaId_Reje
     data.WriteInt32(0);
     data.WriteUint32(10);
     auto result = dataShareServiceStub->OnGetConnectionInterfaceInfo(data, reply);
-    EXPECT_EQ(result, E_INVALID_ARGS);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
     DataShareThreadLocal::CleanFromSystemApp();
     ZLOGI("DataShareServiceStubTest::OnGetConnectionInterfaceInfo_InvalidSaId_Reject end");
 }

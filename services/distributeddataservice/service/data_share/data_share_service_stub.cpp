@@ -598,7 +598,7 @@ int32_t DataShareServiceStub::OnGetConnectionInterfaceInfo(MessageParcel& data, 
     }
     if (saId <= URIUtils::INVALID_SA_ID || saId >= static_cast<int32_t>(URIUtils::LAST_SYS_ABILITY_ID)) {
         ZLOGE("invalid saId:%{public}d", saId);
-        return E_INVALID_ARGS;
+        return IPC_STUB_INVALID_DATA_ERR;
     }
     auto [errCode, info] = GetConnectionInterfaceInfo(saId, waitTime);
     if (!ITypesUtil::Marshal(reply, errCode, info)) {
