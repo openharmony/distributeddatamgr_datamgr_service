@@ -566,18 +566,24 @@ void CloudServiceImpl::NotifyCloudSyncTriggerObservers(const std::string &bundle
         }
     }
     std::string key = bundleName + std::to_string(user);
-    cloudSyncTriggerObservers_.ComputeIfPresent(key, [this, innerTriggerMode](auto, uint32_t &tokenId) {
-        sptr<CloudNotifierProxy> notifier = nullptr;
-        syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &agent) {
-            notifier = agent.notifier_;
-            return true;
-        });
-        if (notifier != nullptr) {
-            notifier->OnCloudSyncTrigger(innerTriggerMode);
-            ZLOGI("Notified tokenId=%{public}x, triggerMode=%{public}d", tokenId, innerTriggerMode);
-        }
+    uint32_t tokenId = 0;
+    cloudSyncTriggerObservers_.ComputeIfPresent(key, [&tokenId](auto, uint32_t &value) {
+        tokenId = value;
         return true;
     });
+    if (tokenId != 0) {
+        NotifySyncAgentsByTokenId(tokenId, innerTriggerMode);
+    }
+}
+
+void CloudServiceImpl::NotifySyncAgentsByTokenId(uint32_t tokenId, int32_t innerTriggerMode)
+{
+    auto notifiers = CollectNotifiersByTokenId(tokenId);
+    for (auto &[pid, notifier] : notifiers) {
+        notifier->OnCloudSyncTrigger(innerTriggerMode);
+        ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, triggerMode=%{public}d",
+            tokenId, pid, innerTriggerMode);
+    }
 }
 
 void CloudServiceImpl::ProcessDatabaseSync(DatabaseSyncContext &context)
@@ -1633,6 +1639,17 @@ bool CloudServiceImpl::ReleaseUserInfo(int32_t user, CloudSyncScene scene)
     return true;
 }
 
+int32_t CloudServiceImpl::OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
+{
+    ZLOGI("pid:%{public}d uid:%{public}d tokenId:%{public}x bundleName:%{public}s",
+        pid, uid, tokenId, bundleName.c_str());
+    syncAgents_.ComputeIfPresent(tokenId, [pid](auto, SyncAgents &agents) {
+        agents.erase(pid);
+        return !agents.empty();
+    });
+    return SUCCESS;
+}
+
 int32_t CloudServiceImpl::InitNotifier(sptr<IRemoteObject> notifier)
 {
     if (notifier == nullptr) {
@@ -1645,11 +1662,13 @@ int32_t CloudServiceImpl::InitNotifier(sptr<IRemoteObject> notifier)
         return INVALID_ARGUMENT;
     }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-    syncAgents_.Compute(tokenId, [notifierProxy](auto, SyncAgent &agent) {
-        agent = SyncAgent();
-        agent.notifier_ = notifierProxy;
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    syncAgents_.Compute(tokenId, [notifierProxy, pid](auto, SyncAgents &agents) {
+        auto [it, success] = agents.try_emplace(pid, SyncAgent());
+        it->second.notifier_ = notifierProxy;
         return true;
     });
+    ZLOGI("success tokenId:%{public}x, pid=%{public}d", tokenId, pid);
     return SUCCESS;
 }
 
@@ -1669,12 +1688,15 @@ Details CloudServiceImpl::HandleGenDetails(const GenDetails &details)
     return dbDetails;
 }
 
-void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, uint32_t seqNum, Details &&result)
+void CloudServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
 {
-    ZLOGI("tokenId=%{public}x, seqnum=%{public}u", tokenId, seqNum);
+    ZLOGI("tokenId=%{public}x, pid=%{public}d, seqnum=%{public}u", tokenId, pid, seqNum);
     sptr<CloudNotifierProxy> notifier = nullptr;
-    syncAgents_.ComputeIfPresent(tokenId, [&notifier](auto, SyncAgent &syncAgent) {
-        notifier = syncAgent.notifier_;
+    syncAgents_.ComputeIfPresent(tokenId, [&notifier, pid](auto, SyncAgents &syncAgents) {
+        auto it = syncAgents.find(pid);
+        if (it != syncAgents.end()) {
+            notifier = it->second.notifier_;
+        }
         return true;
     });
     if (notifier != nullptr) {
@@ -1698,6 +1720,7 @@ int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::st
     }
 
     auto tokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     auto user = AccountDelegate::GetInstance()->GetUserByToken(tokenId);
     std::vector<std::string> storeNames;
     auto ret = ParseStoreIdsIfNeed(user, bundleName, storeId, storeNames);
@@ -1711,8 +1734,8 @@ int32_t CloudServiceImpl::CloudSync(const std::string &bundleName, const std::st
         storeInfo.user = user;
         storeInfo.storeName = storeName;
         GenAsync asyncCallback =
-            [this, tokenId = storeInfo.tokenId, seqNum = option.seqNum](const GenDetails &result) mutable {
-            OnAsyncComplete(tokenId, seqNum, HandleGenDetails(result));
+            [this, tokenId = storeInfo.tokenId, pid, seqNum = option.seqNum](const GenDetails &result) mutable {
+            OnAsyncComplete(tokenId, pid, seqNum, HandleGenDetails(result));
         };
         auto highMode = GeneralStore::MANUAL_SYNC_MODE;
         auto mixMode = static_cast<int32_t>(GeneralStore::MixMode(option.syncMode, highMode));
@@ -2534,13 +2557,27 @@ void CloudServiceImpl::ExecuteBatchNotify()
         notifyTaskId_ = ExecutorPool::INVALID_TASK_ID;
     }
     for (const auto &[tokenId, data] : tasks) {
-        auto agentIt = syncAgents_.Find(tokenId);
-        if (!agentIt.first || agentIt.second.notifier_ == nullptr) {
-            ZLOGW("No notifier for tokenId=%{public}x", tokenId);
-            continue;
+        auto notifiers = CollectNotifiersByTokenId(tokenId);
+        for (auto &[pid, notifier] : notifiers) {
+            notifier->OnSyncInfoNotify(data);
+            ZLOGI("Notified tokenId=%{public}x, pid=%{public}d, bundleCount=%{public}zu",
+                tokenId, pid, data.size());
         }
-        agentIt.second.notifier_->OnSyncInfoNotify(data);
-        ZLOGI("Notified tokenId=%{public}x, bundleCount=%{public}zu", tokenId, data.size());
     }
+}
+
+std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> CloudServiceImpl::CollectNotifiersByTokenId(
+    uint32_t tokenId)
+{
+    std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> notifiers;
+    syncAgents_.ComputeIfPresent(tokenId, [&notifiers](auto, SyncAgents &agents) {
+        for (auto &[pid, agent] : agents) {
+            if (agent.notifier_ != nullptr) {
+                notifiers.emplace_back(pid, agent.notifier_);
+            }
+        }
+        return true;
+    });
+    return notifiers;
 }
 } // namespace OHOS::CloudData
