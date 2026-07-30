@@ -1,4 +1,4 @@
-/**
+/*
 * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 #define LOG_TAG "KvStoreDataServiceStub"
 
 #include "kvstore_data_service_stub.h"
-
 #include <ipc_skeleton.h>
-
-#include "dfx/xcollie.h"
 #include "itypes_util.h"
+#include "dfx/xcollie.h"
 #include "log_print.h"
 #include "message_parcel.h"
-#include "qos_manager.h"
 #include "types.h"
+#include "qos_manager.h"
 
 namespace OHOS {
 namespace DistributedKv {
