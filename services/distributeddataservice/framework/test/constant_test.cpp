@@ -188,11 +188,28 @@ HWTEST_F(ConstantTest, IsValidPath001, TestSize.Level0)
  * @tc.name: IsValidPath002
  * @tc.desc: IsValidPath function test.
  * @tc.type: FUNC
+ * @tc.author: agent
  */
 HWTEST_F(ConstantTest, IsValidPath002, TestSize.Level0)
 {
+    EXPECT_FALSE(Constant::IsValidPath(".."));
     EXPECT_FALSE(Constant::IsValidPath("../starting/slash"));
     EXPECT_FALSE(Constant::IsValidPath("ending/../slash/"));
     EXPECT_FALSE(Constant::IsValidPath("../../"));
     EXPECT_FALSE(Constant::IsValidPath("path/with\\mixed/slashes/.."));
+}
+
+/**
+ * @tc.name: IsValidPath003
+ * @tc.desc: IsValidPath backslash rejection test.
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(ConstantTest, IsValidPath003, TestSize.Level0)
+{
+    EXPECT_FALSE(Constant::IsValidPath("path\\backslash"));
+    EXPECT_FALSE(Constant::IsValidPath("\\leading"));
+    EXPECT_FALSE(Constant::IsValidPath("trailing\\"));
+    EXPECT_FALSE(Constant::IsValidPath("..\\traversal"));
+    EXPECT_FALSE(Constant::IsValidPath("traversal\\.."));
 }
