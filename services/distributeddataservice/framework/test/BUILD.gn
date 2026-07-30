@@ -569,6 +569,21 @@ ohos_unittest("AutoCacheTest") {
   ]
 }
 
+ohos_unittest("XCollieTest") {
+  module_out_path = module_output_path
+  sources = [
+    "${data_service_path}/framework/dfx/xcollie.cpp",
+    "xcollie_test.cpp",
+  ]
+  configs = [ ":module_private_config" ]
+  include_dirs = [ "${data_service_path}/adapter/include/utils" ]
+  external_deps = [ "googletest:gtest_main" ]
+  cflags = [
+    "-Dprivate=public",
+    "-Werror=vla",
+  ]
+}
+
 ###############################################################################
 group("unittest") {
   testonly = true
@@ -604,6 +619,7 @@ group("unittest") {
     ":StoreTest",
     ":SubscriptionTest",
     ":SyncManagerTest",
+    ":XCollieTest",
   ]
 }
 ###############################################################################
