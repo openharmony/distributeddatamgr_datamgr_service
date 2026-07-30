@@ -1844,7 +1844,7 @@ void RdbServiceImpl::UpdateSchemaMeta(const std::string &bundleName, int32_t use
         meta.bundleName = bundleName;
         Database base;
         if (!(RdbSchemaConfig::GetDistributedSchema(meta, base) && !base.name.empty() && !base.bundleName.empty())) {
-            return;
+            continue;
         }
         if (MetaDataManager::GetInstance().SaveMeta(base.GetKey(), base, true)) {
             ZLOGD("save metadata store is: %{public}s; user is: %{public}s; bundleName is: %{public}s",
