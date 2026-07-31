@@ -42,6 +42,8 @@ public:
     // Power manager events
     static constexpr const char* COMMON_EVENT_CHARGING = "usual.event.CHARGING";
     static constexpr const char* COMMON_EVENT_DISCHARGING = "usual.event.DISCHARGING";
+    static constexpr const char* COMMON_EVENT_POWER_CONNECTED = "usual.event.POWER_CONNECTED";
+    static constexpr const char* COMMON_EVENT_POWER_DISCONNECTED = "usual.event.POWER_DISCONNECTED";
 };
 
 // Mock Want class
