@@ -335,6 +335,24 @@ HWTEST_F(KvstoreMetaManagerUpdateKeyTest, KeyUpdataTest007, TestSize.Level1)
 }
 
 /**
+* @tc.name: SubscribeMeta
+* @tc.desc: SubscribeMeta test
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: cjx
+*/
+HWTEST_F(KvstoreMetaManagerUpdateKeyTest, SubscribeMeta001, TestSize.Level1)
+{
+    auto store = KvStoreMetaManager::GetInstance().GetMetaKvStore();
+    KvStoreMetaManager::GetInstance().metaObserver_ = nullptr;
+    auto observer = [](const std::vector<uint8_t> &, const std::vector<uint8_t> &, OHOS::DistributedKv::CHANGE_FLAG) {
+        return;
+    };
+    EXPECT_NO_FATAL_FAILURE(KvStoreMetaManager::GetInstance().SubscribeMeta("key", observer));
+    EXPECT_NO_FATAL_FAILURE(KvStoreMetaManager::GetInstance().SubscribeMetaKvStore());
+}
+
+/**
 * @tc.name: CleanStoreMetaDataTest
 * @tc.desc: CleanStoreMetaData test - version below CLEAN_STORE_META_DATA_VERSION triggers cleaning
 * @tc.type: FUNC

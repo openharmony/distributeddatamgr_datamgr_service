@@ -20,7 +20,7 @@ bool Unmarshalling(NotifyConfig &output, MessageParcel &data)
 {
     return ITypesUtil::Unmarshal(data, output.delay_, output.isFull_);
 }
-
+ 
 template<>
 bool Unmarshalling(Option &output, MessageParcel &data)
 {
@@ -28,7 +28,7 @@ bool Unmarshalling(Option &output, MessageParcel &data)
         data, output.mode, output.seqNum, output.isAsync, output.isAutoSync, output.isCompensation,
         output.isEnablePredicate, output.isDownloadOnly, output.enableErrorDetail, output.isFullSync);
 }
-
+ 
 template<>
 bool Unmarshalling(SubOption &output, MessageParcel &data)
 {

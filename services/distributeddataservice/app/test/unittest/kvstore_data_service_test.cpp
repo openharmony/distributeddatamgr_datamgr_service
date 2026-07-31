@@ -22,7 +22,6 @@
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include <nlohmann/json.hpp>
-#include "kvstore_client_death_observer.h"
 #include "bootstrap.h"
 #include "clone_manager.h"
 #include "gtest/gtest.h"
@@ -135,6 +134,14 @@ static int32_t WriteContentToFile(const std::string &path, const std::string &co
     return 0;
 }
 
+class IKvStoreClientDeathObserverMock : public IRemoteBroker {
+public:
+    DECLARE_INTERFACE_DESCRIPTOR(u"OHOS.DistributedKv.IKvStoreClientDeathObserver");
+};
+ 
+class KvStoreClientDeathObserverStubMock : public IRemoteStub<IKvStoreClientDeathObserverMock> {
+};
+
 /**
 * @tc.name: RegisterClientDeathObserver001
 * @tc.desc: register client death observer
@@ -147,7 +154,11 @@ HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver001, TestSize.Level1
     AppId appId;
     appId.appId = "app0";
     KvStoreDataService kvDataService;
-    Status status = kvDataService.RegisterClientDeathObserver(appId, new KvStoreClientDeathObserver(), "");
+    sptr<KvStoreClientDeathObserverStubMock> client = new KvStoreClientDeathObserverStubMock();
+    client->AsObject();
+    Status status = kvDataService.RegisterClientDeathObserver(appId, client, "");
+    EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
+    status = kvDataService.RegisterClientDeathObserver(appId, client, "");
     EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
 }
 
@@ -165,7 +176,9 @@ HWTEST_F(KvStoreDataServiceTest, RegisterClientDeathObserver002, TestSize.Level1
     EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
     for (int i = 0; i < 17; i++) {
         auto featureName = std::to_string(i);
-        status = kvDataService.RegisterClientDeathObserver(appId, new KvStoreClientDeathObserver(), featureName);
+        sptr<KvStoreClientDeathObserverStubMock> client = new KvStoreClientDeathObserverStubMock();
+        client->AsObject();
+        status = kvDataService.RegisterClientDeathObserver(appId, client, featureName);
         EXPECT_EQ(status, Status::SUCCESS) << "RegisterClientDeathObserver failed";
     }
 }

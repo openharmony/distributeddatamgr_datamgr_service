@@ -78,6 +78,7 @@ public:
         void SetPrepareTraceId(const std::string &prepareTraceId);
         void SetDownloadOnly(bool isDownloadOnly);
         void SetEnablePredicate(bool isEnablePredicate);
+        void SetFullSync(bool isFullSync);
 
         std::shared_ptr<GenQuery> GenerateQuery(const Tables &tables);
         bool Contains(const std::string &storeName) const;
@@ -104,6 +105,7 @@ public:
         std::string prepareTraceId_;
         bool isDownloadOnly_ = false;
         bool isEnablePredicate_ = false;
+        bool isFullSync_ = false;
     };
     SyncManager();
     ~SyncManager();

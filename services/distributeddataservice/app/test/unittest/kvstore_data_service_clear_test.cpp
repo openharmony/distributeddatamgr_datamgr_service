@@ -24,7 +24,6 @@
 #include "types.h"
 #include "device_manager_adapter.h"
 #include "kvstore_data_service.h"
-#include "kvstore_client_death_observer.h"
 #include "metadata/meta_data_manager.h"
 #include "metadata/store_meta_data.h"
 #include "metadata/store_meta_data_local.h"
