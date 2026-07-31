@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +31,7 @@
 #include "device_matrix.h"
 #include "directory/directory_manager.h"
 #include "dump/dump_manager.h"
+#include "dfx/xcollie.h"
 #include "eventcenter/event_center.h"
 #include "rdb_flow_control_manager.h"
 #include "ipc_skeleton.h"
@@ -64,7 +65,6 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "utils/crypto.h"
-#include "xcollie.h"
 using OHOS::DistributedData::AccountDelegate;
 using OHOS::DistributedData::Anonymous;
 using OHOS::DistributedData::CheckerManager;
@@ -507,6 +507,7 @@ std::pair<int32_t, std::vector<std::string>> RdbServiceImpl::ObtainUuid(
 
 void RdbServiceImpl::OnAsyncComplete(uint32_t tokenId, pid_t pid, uint32_t seqNum, Details &&result)
 {
+    ZLOGI("tokenId=%{public}x, pid=%{public}d, seqnum=%{public}u", tokenId, pid, seqNum);
     sptr<RdbNotifierProxy> notifier = nullptr;
     syncAgents_.ComputeIfPresent(tokenId, [&notifier, pid](auto, SyncAgents &syncAgents) {
         auto it = syncAgents.find(pid);
@@ -1305,6 +1306,7 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
     meta.customSwitch = isCreated ? old.customSwitch : meta.customSwitch;
     meta.autoSyncSwitch = isCreated ? old.autoSyncSwitch : meta.autoSyncSwitch;
+
     // MetaDataSaver destructor will automatically flush all entries
     {
         // Search relies on metadata, which needs to be stored in the database before being used by search
@@ -2346,14 +2348,13 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
 {
     XCollie xcollie(__FUNCTION__, XCollie::XCOLLIE_LOG | XCollie::XCOLLIE_RECOVERY);
     auto meta = GetStoreMetaData(param);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto uid = IPCSkeleton::GetCallingUid();
     meta.user = param.user_;
     StoreMetaDataLocal localMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true)) {
         StoreMetaMapping metaMapping(meta);
-        if (MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true) &&
-            meta.tokenId == metaMapping.tokenId) {
-            return RDB_OK;
-        }
+        MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
         meta.dataDir = metaMapping.dataDir;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true)) {
             ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),
@@ -2361,13 +2362,13 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
             return RDB_ERROR;
         }
     }
-    ATokenTypeEnum type = AccessTokenKit::GetTokenType(meta.tokenId);
+    ATokenTypeEnum type = AccessTokenKit::GetTokenType(tokenId);
     if (type == ATokenTypeEnum::TOKEN_NATIVE || type == ATokenTypeEnum::TOKEN_SHELL) {
         auto tokenIdRet =
-            std::find(localMeta.promiseInfo.tokenIds.begin(), localMeta.promiseInfo.tokenIds.end(), meta.tokenId);
-        auto uidRet = std::find(localMeta.promiseInfo.uids.begin(), localMeta.promiseInfo.uids.end(), meta.uid);
+            std::find(localMeta.promiseInfo.tokenIds.begin(), localMeta.promiseInfo.tokenIds.end(), tokenId);
+        auto uidRet = std::find(localMeta.promiseInfo.uids.begin(), localMeta.promiseInfo.uids.end(), uid);
         bool isPromise = std::any_of(localMeta.promiseInfo.permissionNames.begin(),
-            localMeta.promiseInfo.permissionNames.end(), [tokenId = meta.tokenId](const std::string &permissionName) {
+            localMeta.promiseInfo.permissionNames.end(), [tokenId](const std::string &permissionName) {
                 return PermitDelegate::VerifyPermission(permissionName, tokenId);
             });
         if (tokenIdRet == localMeta.promiseInfo.tokenIds.end() && uidRet == localMeta.promiseInfo.uids.end() &&
@@ -2376,11 +2377,11 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
         }
     } else if (type == ATokenTypeEnum::TOKEN_HAP) {
         for (const auto &permissionName : localMeta.promiseInfo.permissionNames) {
-            if (PermitDelegate::VerifyPermission(permissionName, meta.tokenId)) {
+            if (PermitDelegate::VerifyPermission(permissionName, tokenId)) {
                 return RDB_OK;
             }
         }
-        ZLOGE("Permission denied! tokenId:0x%{public}x", meta.tokenId);
+        ZLOGE("Permission denied! tokenId:0x%{public}x", tokenId);
         return RDB_ERROR;
     } else {
         ZLOGE("invalid type! bundleName:%{public}s, storeName:%{public}s, token_type is %{public}d.",

@@ -23,7 +23,7 @@ SyncEvent::EventInfo::EventInfo(const SyncParam &syncParam, bool retry, std::sha
     : retry_(retry), mode_(syncParam.mode), wait_(syncParam.wait), query_(std::move(query)),
       asyncDetail_(std::move(async)), isCompensation_(syncParam.isCompensation), triggerMode_(syncParam.triggerMode),
       prepareTraceId_(syncParam.prepareTraceId), user_(syncParam.user), isDownloadOnly_(syncParam.isDownloadOnly),
-      isEnablePredicate_(syncParam.isEnablePredicate)
+      isEnablePredicate_(syncParam.isEnablePredicate), isFullSync_(syncParam.isFullSync)
 {
 }
 
@@ -48,6 +48,7 @@ SyncEvent::EventInfo &SyncEvent::EventInfo::operator=(SyncEvent::EventInfo &&inf
     user_ = info.user_;
     isDownloadOnly_ = info.isDownloadOnly_;
     isEnablePredicate_ = info.isEnablePredicate_;
+    isFullSync_ = info.isFullSync_;
     return *this;
 }
 
@@ -116,4 +117,8 @@ int32_t SyncEvent::GetUser() const
     return info_.user_;
 }
 
+bool SyncEvent::GetFullSync() const
+{
+    return info_.isFullSync_;
+}
 } // namespace OHOS::DistributedData

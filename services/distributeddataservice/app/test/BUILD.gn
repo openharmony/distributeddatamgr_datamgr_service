@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -95,7 +95,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "${data_service_path}/service/clone/clone_backup_info.cpp",
     "${data_service_path}/service/clone/clone_manager.cpp",
     "${data_service_path}/service/clone/secret_key_backup_data.cpp",
-    "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
   ]
 
   sanitize = {
@@ -129,7 +129,6 @@ ohos_unittest("KvStoreDataServiceTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
-    "kv_store:kvdb_inner_lite",
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -178,7 +177,7 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_data_service_mock_test.cpp",
-    "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "${data_service_path}/service/test/mock/access_token_mock.cpp",
   ]
   include_dirs = [
@@ -243,12 +242,40 @@ ohos_unittest("KvStoreDataServiceMockTest") {
 
 ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
   module_out_path = module_output_path
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
+  include_dirs = [
+    "${data_service_path}/adapter/include/permission",
+    "${data_service_path}/adapter/include/account",
+    "${data_service_path}/adapter/include",
+    "${data_service_path}/adapter/include/utils",
+    "${data_service_path}/framework/include",
+    "${data_service_path}/service/bootstrap/include",
+    "${data_service_path}/service/common",
+    "${data_service_path}/service/config/include",
+    "${data_service_path}/service/crypto/include",
+    "${data_service_path}/service/data_share/common",
+    "${data_service_path}/service/directory/include",
+    "${data_service_path}/service/permission/include",
+    "${data_service_path}/service/matrix/include",
+    "${data_service_path}/app/src",
+    "${data_service_path}/app/src/session_manager",
+    "${data_service_path}/service/kvdb",
+    "${data_service_path}/service/test/mock",
+    "../include",
+    "../src",
+    "../src/security",
+    "unittest",
+    "../src/installer",
+    "../../service/backup/include",
+    "../../../../interfaces/innerkits/distributeddata",
+    "../../service/dumper/include",
+    "${data_service_path}/adapter/include/communicator",
+  ]
+
+  if (datamgr_service_power) {
+    include_dirs +=
+        [ "//base/powermgr/power_manager/interfaces/innerkits/native/include" ]
   }
+
   sources = [
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
@@ -269,7 +296,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
     "${data_service_path}/app/test/unittest/kvstore_meta_manager_update_key_test.cpp",
-    "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "${data_service_path}/service/test/mock/device_manager_adapter_mock.cpp",
   ]
 
@@ -311,6 +338,9 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     ]
   }
   cflags = [
+    "-Werror",
+    "-Dprivate=public",
+    "-Dprotected=public",
     "-fno-access-control",  # Ignore Private Member Access Control
     "-Werror=vla",
   ]
@@ -318,6 +348,12 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "${data_service_path}/adapter/qos:distributeddata_qos",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service:distributeddatasvc",
+  ]
+
+  ldflags = [ "-Wl,--whole-archive" ]
+  defines = [
+    "TEST_ON_DEVICE",
+    "OPENSSL_SUPPRESS_DEPRECATED",
   ]
   part_name = "datamgr_service"
 }
@@ -359,7 +395,6 @@ ohos_unittest("SessionManagerTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
-    "kv_store:kvdb_inner_lite",
     "safwk:system_ability_fwk",
   ]
 
@@ -398,7 +433,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "${data_service_path}/app/src/session_manager/session_manager.cpp",
     "${data_service_path}/app/src/session_manager/upgrade_manager.cpp",
     "${data_service_path}/app/src/task_manager.cpp",
-    "${data_service_path}/service/common/xcollie.cpp",
+    "${data_service_path}/adapter/dfx/src/xcollie_impl.cpp",
     "unittest/kvstore_data_service_clear_test.cpp",
   ]
 
@@ -429,7 +464,6 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "kv_store:distributeddata_inner",
     "kv_store:distributeddata_mgr",
     "kv_store:distributeddb",
-    "kv_store:kvdb_inner_lite",
     "memmgr:memmgrclient",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -609,7 +643,7 @@ ohos_unittest("RouteHeadHandlerImplTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
+    "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "c_utils:utils",
     "device_auth:deviceauth_sdk",
