@@ -165,7 +165,7 @@ Status LifeCycleManager::OnAppUninstall(uint32_t tokenId)
         if (!unifiedKey.IsValid()) {
             continue;
         }
-        OnGot(unifiedKey, tokenId);
+        OnGot(unifiedKey, tokenId, true);
     }
     return E_OK;
 }
