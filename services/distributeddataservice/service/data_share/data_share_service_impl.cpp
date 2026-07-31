@@ -36,7 +36,7 @@
 #include "datashare_radar_reporter.h"
 #include "device_manager_adapter.h"
 #include "datashare_template.h"
-#include "def/xcollie.h"
+#include "dfx/xcollie.h"
 #include "directory/directory_manager.h"
 #include "eventcenter/event_center.h"
 #include "extension_connect_adaptor.h"
