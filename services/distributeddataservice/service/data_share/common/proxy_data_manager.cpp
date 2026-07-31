@@ -311,6 +311,9 @@ int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &call
         ZLOGE("Unmarshall failed, %{public}s", StringUtils::GeneralAnonymous(queryResult).c_str());
         return INNER_ERROR;
     }
+    if (!VerifyPermission(callerBundleInfo, data)) {
+        return NO_PERMISSION;
+    }
     // Type compatibility check based on query mode
     if (mode == QUERY_VALUE && data.proxyData.isMultiValues) {
         ZLOGE("QUERY_VALUE expects non-MultiValues, but got MultiValues, uri=%{public}s",
@@ -334,9 +337,6 @@ int32_t PublishedProxyData::Query(const std::string &uri, const BundleInfo &call
     if (callerBundleInfo.tokenId == data.tokenId) {
         proxyData.allowList_ = data.proxyData.allowList;
         proxyData.trustProviders_ = data.proxyData.trustProviders;
-    }
-    if (!VerifyPermission(callerBundleInfo, data)) {
-        return NO_PERMISSION;
     }
     return SUCCESS;
 }
@@ -808,7 +808,11 @@ void ProxyDataManager::OnAppUninstall(const std::string &bundleName, int32_t use
         ZLOGI("bundle %{public}s has no proxyData", bundleName.c_str());
     }
     for (const auto &uri : uris) {
-        PublishedProxyData::Delete(uri, callerBundleInfo, proxyData, type);
+        int32_t ret = PublishedProxyData::Delete(uri, callerBundleInfo, proxyData, type);
+        if (ret != SUCCESS) {
+            ZLOGE("Delete proxyData failed on uninstall, uri=%{public}s ret=%{public}d",
+                URIUtils::Anonymous(uri).c_str(), ret);
+        }
     }
 }
 
