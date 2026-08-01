@@ -428,6 +428,7 @@ int32_t RdbGeneralStore::Close(bool isForce)
                                 delegate_->GetDeviceSyncTaskCount() > 0)) {
                 return GeneralError::E_BUSY;
             }
+            delegate_->StopTask(DistributedDB::TaskType::ONLY_CLOUD_SYNC_TASK);
             auto status = manager_.CloseStore(delegate_);
             if (status != DBStatus::OK) {
                 return status;
