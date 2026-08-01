@@ -408,7 +408,6 @@ void KvStoreDataService::LoadConfigs()
 void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
     ZLOGI("add system abilityid:%{public}d", systemAbilityId);
-    (void)deviceId;
     if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
         Installer::GetInstance().Init(this, executors_);
         ScreenManager::GetInstance()->SubscribeEvent();
@@ -418,6 +417,13 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
         }
     } else if (systemAbilityId == SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN) {
         AccountDelegate::GetInstance()->SubscribeAccountEvent();
+        auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+        staticActs.ForEachCopies([systemAbilityId, deviceId](const auto &, const std::shared_ptr<StaticActs> &acts) {
+            if (acts != nullptr) {
+                acts->OnSystemAbilityAdded(systemAbilityId, deviceId);
+            }
+            return false;
+        });
     } else if (systemAbilityId == MEMORY_MANAGER_SA_ID) {
         Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), 1, 1, DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
         // process set critical true
@@ -437,9 +443,15 @@ void KvStoreDataService::OnAddSystemAbility(int32_t systemAbilityId, const std::
 void KvStoreDataService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
     ZLOGI("remove system abilityid:%{public}d", systemAbilityId);
-    (void)deviceId;
     if (systemAbilityId == SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN) {
         AccountDelegate::GetInstance()->UnsubscribeAccountEvent();
+        auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
+        staticActs.ForEachCopies([systemAbilityId, deviceId](const auto &, const std::shared_ptr<StaticActs> &acts) {
+            if (acts != nullptr) {
+                acts->OnSystemAbilityRemoved(systemAbilityId, deviceId);
+            }
+            return false;
+        });
     }
     if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
         return;

@@ -31,6 +31,8 @@ public:
     virtual int32_t OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index);
     virtual int32_t OnAppInstall(const std::string &bundleName, int32_t user, int32_t index);
     virtual int32_t OnClearAppStorage(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId);
+    virtual int32_t OnSystemAbilityAdded(int32_t systemAbilityId, const std::string &deviceId);
+    virtual int32_t OnSystemAbilityRemoved(int32_t systemAbilityId, const std::string &deviceId);
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
     void Execute(Task task);
 

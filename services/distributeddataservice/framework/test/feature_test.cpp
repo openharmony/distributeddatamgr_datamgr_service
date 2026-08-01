@@ -90,7 +90,10 @@ HWTEST_F(FeatureSystemTest, GetStaticActsAndetStaticActsTest, TestSize.Level1)
 
     const OHOS::ConcurrentMap<std::string, std::shared_ptr<StaticActs>>& staticActsMap = featureSystem.GetStaticActs();
     auto [success, staticActsPtr] = staticActsMap.Find("StaticActs");
-    EXPECT_NE(staticActsPtr, nullptr);
+    EXPECT_TRUE(success);
+    ASSERT_NE(staticActsPtr, nullptr);
+    EXPECT_EQ(staticActsPtr->OnSystemAbilityAdded(100, "device_added"), E_OK);
+    EXPECT_EQ(staticActsPtr->OnSystemAbilityRemoved(100, "device_removed"), E_OK);
 }
 
 /**

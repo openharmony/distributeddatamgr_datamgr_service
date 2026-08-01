@@ -18,6 +18,8 @@
 #include "crypto/crypto_manager.h"
 #include "device_manager_adapter.h"
 #include "executor_pool.h"
+#include "feature/feature_system.h"
+#include "feature/static_acts.h"
 #include <memory>
 #include "metadata/secret_key_meta_data.h"
 #include "metadata/store_meta_data.h"
@@ -70,6 +72,32 @@ public:
     static constexpr int32_t TEST_APP_INDEX = 0;
     static constexpr int32_t TEST_TOKENID = 100;
     std::string TEST_INDENTATION = "    ";
+};
+
+class SystemAbilityStaticActs final : public StaticActs {
+public:
+    int32_t OnSystemAbilityAdded(int32_t systemAbilityId, const std::string &deviceId) override
+    {
+        ++addedCount_;
+        addedSystemAbilityId_ = systemAbilityId;
+        addedDeviceId_ = deviceId;
+        return E_OK;
+    }
+
+    int32_t OnSystemAbilityRemoved(int32_t systemAbilityId, const std::string &deviceId) override
+    {
+        ++removedCount_;
+        removedSystemAbilityId_ = systemAbilityId;
+        removedDeviceId_ = deviceId;
+        return E_OK;
+    }
+
+    int32_t addedCount_ = 0;
+    int32_t removedCount_ = 0;
+    int32_t addedSystemAbilityId_ = 0;
+    int32_t removedSystemAbilityId_ = 0;
+    std::string addedDeviceId_;
+    std::string removedDeviceId_;
 };
 
 void KvStoreDataServiceTest::SetUpTestCase(void)
@@ -309,6 +337,31 @@ HWTEST_F(KvStoreDataServiceTest, OnRemoveSystemAbility001, TestSize.Level0)
 
     systemAbilityId = COMMON_EVENT_SERVICE_ID;
     EXPECT_NO_FATAL_FAILURE(kvStoreDataServiceTest.OnRemoveSystemAbility(systemAbilityId, deviceId));
+}
+
+/**
+* @tc.name: AccountSystemAbilityEventsForwardToStaticActs002
+* @tc.desc: account SA add and remove events are forwarded to registered static acts with the original arguments.
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(KvStoreDataServiceTest, AccountSystemAbilityEventsForwardToStaticActs002, TestSize.Level0)
+{
+    auto staticActs = std::make_shared<SystemAbilityStaticActs>();
+    ASSERT_EQ(FeatureSystem::GetInstance().RegisterStaticActs("AccountSystemAbilityEventsTest", staticActs), E_OK);
+    KvStoreDataService service;
+    const std::string deviceId = "account_sa_device";
+
+    service.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, deviceId);
+    EXPECT_EQ(staticActs->addedCount_, 1);
+    EXPECT_EQ(staticActs->addedSystemAbilityId_, SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
+    EXPECT_EQ(staticActs->addedDeviceId_, deviceId);
+
+    service.OnRemoveSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, deviceId);
+    EXPECT_EQ(staticActs->removedCount_, 1);
+    EXPECT_EQ(staticActs->removedSystemAbilityId_, SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
+    EXPECT_EQ(staticActs->removedDeviceId_, deviceId);
 }
 
 /**
