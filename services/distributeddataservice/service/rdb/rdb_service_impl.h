@@ -64,7 +64,7 @@ public:
     std::string ObtainDistributedTableName(const RdbSyncerParam &param, const std::string &device,
         const std::string &table) override;
 
-    int32_t InitNotifier(const RdbSyncerParam &param, sptr<IRemoteObject> notifier) override;
+    int32_t InitNotifier(const RdbSyncerParam &param, const sptr<IRemoteObject> &notifier) override;
 
     int32_t SetDistributedTables(const RdbSyncerParam &param, const std::vector<std::string> &tables,
         const std::vector<Reference> &references, bool isRebuild, int32_t type = DISTRIBUTED_DEVICE) override;

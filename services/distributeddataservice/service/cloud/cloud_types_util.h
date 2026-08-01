@@ -19,7 +19,6 @@
 #include "cloud_types.h"
 #include "cloud_service.h"
 #include "itypes_util.h"
-#include "values_bucket.h"
 
 namespace OHOS::ITypesUtil {
 using Participant = OHOS::CloudData::Participant;
@@ -27,9 +26,6 @@ using Privilege = OHOS::CloudData::Privilege;
 using Role = OHOS::CloudData::Role;
 using Confirmation = OHOS::CloudData::Confirmation;
 using SharingCode = OHOS::CloudData::SharingCode;
-using Asset = OHOS::NativeRdb::AssetValue;
-using ValueObject = OHOS::NativeRdb::ValueObject;
-using ValuesBucket = OHOS::NativeRdb::ValuesBucket;
 using StatisticInfo = OHOS::CloudData::StatisticInfo;
 using Strategy = OHOS::CloudData::Strategy;
 using CloudSyncInfo = OHOS::CloudData::CloudSyncInfo;
@@ -50,19 +46,6 @@ template<>
 bool Marshalling(const Privilege &input, MessageParcel &data);
 template<>
 bool Unmarshalling(Privilege &output, MessageParcel &data);
-
-template<>
-bool Marshalling(const Asset &input, MessageParcel &data);
-template<>
-bool Unmarshalling(Asset &output, MessageParcel &data);
-template<>
-bool Marshalling(const ValueObject &input, MessageParcel &data);
-template<>
-bool Unmarshalling(ValueObject &output, MessageParcel &data);
-template<>
-bool Marshalling(const ValuesBucket &input, MessageParcel &data);
-template<>
-bool Unmarshalling(ValuesBucket &output, MessageParcel &data);
 
 template<>
 bool Marshalling(const StatisticInfo &input, MessageParcel &data);
