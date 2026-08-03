@@ -1732,31 +1732,6 @@ HWTEST_F(UdmfServiceImplTest, IsDraggable004, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetBatchData_DataHubEmptyQuery_ReturnOk
- * @tc.desc: Test GetBatchData returns E_OK when DATA_HUB query result is empty
- * @tc.type: FUNC
- * @tc.author: agent
- */
-HWTEST_F(UdmfServiceImplTest, GetBatchData_DataHubEmptyQuery_ReturnOk, TestSize.Level1)
-{
-    UdmfServiceImpl service;
-    QueryOption query;
-    query.intention = Intention::UD_INTENTION_DATA_HUB;
-    query.key = "udmf://DataHub/com.test.demo/testkey";
-    query.tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
-    
-    auto executors = std::make_shared<OHOS::ExecutorPool>(2, 1);
-    DistributedData::FeatureSystem::Feature::BindInfo bindInfo;
-    bindInfo.executors = executors;
-    service.OnBind(bindInfo);
-    
-    std::vector<UnifiedData> unifiedDataSet;
-    auto status = service.GetBatchData(query, unifiedDataSet);
-    EXPECT_EQ(status, E_OK);
-    EXPECT_EQ(unifiedDataSet.size(), 0);
-}
-
-/**
  * @tc.name: SetDelayInfo_PermissionCheckBranch_Covered
  * @tc.desc: Test SetDelayInfo permission check branch is covered
  * @tc.type: FUNC

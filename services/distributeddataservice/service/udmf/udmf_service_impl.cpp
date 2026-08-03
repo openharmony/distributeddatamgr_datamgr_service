@@ -72,8 +72,6 @@ constexpr const char *DEVICE_PHONE_TAG = "phone";
 constexpr const char *DEVICE_DEFAULT_TAG = "default";
 constexpr const char *HAP_LIST[] = {"com.ohos.pasteboarddialog"};
 constexpr uint32_t FOUNDATION_UID = 5523;
-constexpr int32_t MAX_DATA_HUB_BATCH_SIZE = 128;
-constexpr uint32_t MAX_DATA_HUB_BATCH_BYTES = 10 * 1024 * 1024;
 __attribute__((used)) UdmfServiceImpl::Factory UdmfServiceImpl::factory_;
 UdmfServiceImpl::Factory::Factory()
 {
@@ -455,34 +453,15 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
         ZLOGW("DataSet empty,key:%{public}s,intention:%{public}d", query.key.c_str(), query.intention);
         return E_OK;
     }
-
-    uint32_t totalBytes = 0;
     for (auto &data : dataSet) {
         if (query.intention == Intention::UD_INTENTION_DATA_HUB &&
             data.GetRuntime()->visibility == VISIBILITY_OWN_PROCESS &&
             query.tokenId != data.GetRuntime()->tokenId) {
             continue;
+        } else {
+            unifiedDataSet.push_back(std::move(data));
         }
-
-        if (query.intention == Intention::UD_INTENTION_DATA_HUB) {
-            uint32_t dataSize = data.GetSize();
-            if (unifiedDataSet.size() >= MAX_DATA_HUB_BATCH_SIZE) {
-                ZLOGE("DATA_HUB data overflow, count: %{public}zu exceeds limit: %{public}d, "
-                      "key: %{public}s", unifiedDataSet.size(), MAX_DATA_HUB_BATCH_SIZE,
-                      query.key.c_str());
-                return E_INVALID_PARAMETERS;
-            }
-            if (dataSize > MAX_DATA_HUB_BATCH_BYTES || totalBytes > MAX_DATA_HUB_BATCH_BYTES - dataSize) {
-                ZLOGE("DATA_HUB data overflow, size: %{public}u bytes exceeds limit: %{public}u, "
-                      "key: %{public}s", totalBytes, MAX_DATA_HUB_BATCH_BYTES, query.key.c_str());
-                return E_INVALID_PARAMETERS;
-            }
-            totalBytes += dataSize;
-        }
-
-        unifiedDataSet.push_back(std::move(data));
     }
-
     if (!IsFileMangerSa() && ProcessData(query, unifiedDataSet) != E_OK) {
         ZLOGE("Query no permission.");
         return E_NO_PERMISSION;
