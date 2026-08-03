@@ -40,8 +40,6 @@ public:
     static constexpr const char* COMMON_EVENT_SCREEN_OFF = "usual.event.SCREEN_OFF";
 
     // Power manager events
-    static constexpr const char* COMMON_EVENT_CHARGING = "usual.event.CHARGING";
-    static constexpr const char* COMMON_EVENT_DISCHARGING = "usual.event.DISCHARGING";
     static constexpr const char* COMMON_EVENT_POWER_CONNECTED = "usual.event.POWER_CONNECTED";
     static constexpr const char* COMMON_EVENT_POWER_DISCONNECTED = "usual.event.POWER_DISCONNECTED";
 };
@@ -257,7 +255,7 @@ public:
     static void PublishChargingEvent(int32_t batteryLevel = 100)
     {
         Want want;
-        want.SetAction(CommonEventSupport::COMMON_EVENT_CHARGING);
+        want.SetAction(CommonEventSupport::COMMON_EVENT_POWER_CONNECTED);
         want.SetParam("batteryLevel", batteryLevel);
         PublishEvent(CommonEventData(want));
     }
@@ -266,7 +264,7 @@ public:
     static void PublishDisChargingEvent(int32_t batteryLevel = 0)
     {
         Want want;
-        want.SetAction(CommonEventSupport::COMMON_EVENT_DISCHARGING);
+        want.SetAction(CommonEventSupport::COMMON_EVENT_POWER_DISCONNECTED);
         want.SetParam("batteryLevel", batteryLevel);
         PublishEvent(CommonEventData(want));
     }
