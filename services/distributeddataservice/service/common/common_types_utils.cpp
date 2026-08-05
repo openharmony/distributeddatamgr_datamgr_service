@@ -20,12 +20,12 @@ template<>
 bool Marshalling(const Asset &input, MessageParcel &data)
 {
     return ITypesUtil::Marshal(data, input.name, input.uri, input.path, input.createTime,
-        input.modifyTime, input.size, input.status, input.hash);
+        input.modifyTime, input.size, input.status, input.hash, input.extension);
 }
 template<>
 bool Unmarshalling(Asset &output, MessageParcel &data)
 {
     return Unmarshal(data, output.name, output.uri, output.path, output.createTime,
-        output.modifyTime, output.size, output.status, output.hash);
+        output.modifyTime, output.size, output.status, output.hash, output.extension);
 }
 }

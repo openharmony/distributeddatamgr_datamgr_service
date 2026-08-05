@@ -89,6 +89,7 @@ struct Asset {
     std::string size;
     std::string hash;
     std::string path;
+    std::string extension;
 };
 
 struct Reference {

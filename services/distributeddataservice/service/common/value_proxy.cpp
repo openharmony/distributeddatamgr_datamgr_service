@@ -203,7 +203,8 @@ ValueProxy::Asset::Asset(NativeRdb::AssetValue asset)
         .modifyTime = std::move(asset.modifyTime),
         .size = std::move(asset.size),
         .hash = std::move(asset.hash),
-        .path = std::move(asset.path) };
+        .path = std::move(asset.path),
+        .extension = std::move(asset.extension) };
 }
 
 ValueProxy::Asset::Asset(CommonType::AssetValue asset)
@@ -218,7 +219,8 @@ ValueProxy::Asset::Asset(CommonType::AssetValue asset)
         .modifyTime = std::move(asset.modifyTime),
         .size = std::move(asset.size),
         .hash = std::move(asset.hash),
-        .path = std::move(asset.path) };
+        .path = std::move(asset.path),
+        .extension = std::move(asset.extension) };
 }
 
 ValueProxy::Asset::Asset(DistributedDB::Asset asset)
@@ -233,7 +235,8 @@ ValueProxy::Asset::Asset(DistributedDB::Asset asset)
         .modifyTime = std::move(asset.modifyTime),
         .size = std::move(asset.size),
         .hash = std::move(asset.hash),
-        .path = std::move(asset.subpath) };
+        .path = std::move(asset.subpath),
+        .extension = std::move(asset.extension) };
 }
 
 ValueProxy::Asset &ValueProxy::Asset::operator=(const Asset &proxy)
@@ -266,7 +269,8 @@ ValueProxy::Asset::operator NativeRdb::AssetValue()
         .modifyTime = std::move(asset_.modifyTime),
         .size = std::move(asset_.size),
         .hash = std::move(asset_.hash),
-        .path = std::move(asset_.path) };
+        .path = std::move(asset_.path),
+        .extension = std::move(asset_.extension) };
 }
 
 ValueProxy::Asset::operator CommonType::AssetValue()
@@ -281,7 +285,8 @@ ValueProxy::Asset::operator CommonType::AssetValue()
         .modifyTime = std::move(asset_.modifyTime),
         .size = std::move(asset_.size),
         .hash = std::move(asset_.hash),
-        .path = std::move(asset_.path) };
+        .path = std::move(asset_.path),
+        .extension = std::move(asset_.extension) };
 }
 
 ValueProxy::Asset::operator DistributedData::Asset()
@@ -300,6 +305,7 @@ ValueProxy::Asset::operator DistributedDB::Asset()
         .createTime = std::move(asset_.createTime),
         .size = std::move(asset_.size),
         .hash = std::move(asset_.hash),
+        .extension = std::move(asset_.extension),
         .status = ConvertToDBStatus(asset_.status) };
 }
 
@@ -559,7 +565,8 @@ ValueProxy::TempAsset::TempAsset(DistributedDB::Asset asset)
         .modifyTime = std::move(asset.modifyTime),
         .size = std::move(asset.size),
         .hash = std::move(asset.hash),
-        .path = std::move(asset.subpath) };
+        .path = std::move(asset.subpath),
+        .extension = std::move(asset.extension) };
 }
 
 ValueProxy::TempAsset::operator NativeRdb::AssetValue()
@@ -574,7 +581,8 @@ ValueProxy::TempAsset::operator NativeRdb::AssetValue()
         .modifyTime = std::move(asset_.modifyTime),
         .size = std::move(asset_.size),
         .hash = std::move(asset_.hash),
-        .path = std::move(asset_.path) };
+        .path = std::move(asset_.path),
+        .extension = std::move(asset_.extension) };
 }
 
 uint32_t ValueProxy::TempAsset::ConvertToDataStatus(const uint32_t &status)

@@ -20,6 +20,7 @@
 #include <functional>
 #include <vector>
 
+#include "asset_value.h"
 #include "itypes_util.h"
 #include "message_parcel.h"
 #include "parcel.h"
@@ -743,6 +744,46 @@ HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_Unmarshal_Regression_StatReporter, Test
     EXPECT_EQ(unmarshalled.storeName, reporter.storeName);
     EXPECT_EQ(unmarshalled.subType, reporter.subType);
     EXPECT_EQ(unmarshalled.costTime, reporter.costTime);
+}
+
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_MarshalUnmarshal_Asset_Extension, TestSize.Level1)
+{
+    using RdbAsset = OHOS::NativeRdb::AssetValue;
+    RdbAsset original;
+    original.version = 1;
+    original.name = "test_asset";
+    original.uri = "file://test/asset.png";
+    original.modifyTime = "2024-07-06";
+    original.size = "1024";
+    original.extension = "ipc_ext_value";
+
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, original));
+
+    RdbAsset unmarshalled;
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_EQ(unmarshalled.version, original.version);
+    EXPECT_EQ(unmarshalled.name, original.name);
+    EXPECT_EQ(unmarshalled.uri, original.uri);
+    EXPECT_EQ(unmarshalled.modifyTime, original.modifyTime);
+    EXPECT_EQ(unmarshalled.size, original.size);
+    EXPECT_EQ(unmarshalled.extension, "ipc_ext_value");
+}
+
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_MarshalUnmarshal_Asset_ExtensionEmpty, TestSize.Level1)
+{
+    using RdbAsset = OHOS::NativeRdb::AssetValue;
+    RdbAsset original;
+    original.name = "test_asset";
+    original.uri = "file://test/asset.png";
+    original.extension = "";
+
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshal(parcel, original));
+
+    RdbAsset unmarshalled;
+    EXPECT_TRUE(ITypesUtil::Unmarshal(parcel, unmarshalled));
+    EXPECT_TRUE(unmarshalled.extension.empty());
 }
 
 } // namespace Test
