@@ -15,6 +15,8 @@
 #ifndef UDMF_PREPROCESS_UTILS_H
 #define UDMF_PREPROCESS_UTILS_H
 
+#include <unordered_map>
+
 #include "bundlemgr/bundle_mgr_proxy.h"
 #include "remote_file_share.h"
 #include "unified_data.h"
@@ -41,8 +43,9 @@ public:
     static void ClearHtmlDfsUris(UnifiedData &data);
     static void ProcessFileAuthorization(bool &hasError, UnifiedData &data, bool isLocal,
         std::map<std::string, unsigned int> &uriPermissions);
-    static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, uint32_t tokenId,
-        bool isLocal, std::vector<std::string> &uris);
+    static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, const std::vector<std::string> &clientUris,
+        uint32_t tokenId, bool isLocal, std::vector<std::string> &uris,
+        std::unordered_map<std::string, std::string> &processedUris);
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);

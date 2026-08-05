@@ -541,47 +541,60 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris004, TestSize.Level1)
 
 /**
 * @tc.name: MatchImgExtension001
-* @tc.desc: Normal testcase of MatchImgExtension
+* @tc.desc: Normal testcase of MatchImgExtension with URIs and physical paths
 * @tc.type: FUNC
+* @tc.author: agent
 */
 HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension001, TestSize.Level1)
 {
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.png"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.jpg"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.jpeg"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.PNG"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.JPG"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.JPEG"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///1.png"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///1.jpg"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.jpeg"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.gif"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.gif?query=aaa"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.gif;version=1"));
-    EXPECT_TRUE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/ccc.gif;version=1?query=aaa"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///example.com/img1.png"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///example.com/img1.jpg"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///example.com/img1.jpeg"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///example.com/img1.PNG"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///example.com/img1.JPG"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///example.com/img1.JPEG"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///1.png"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///1.jpg"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/ccc.jpeg"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/ccc.gif"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/ccc.gif?query=aaa"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/ccc.gif;version=1"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/ccc.gif;version=1?query=aaa"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/ccc.webp"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/ccc.HEIC"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/ccc.avif"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("/data/storage/el2/base/files/img1.png"));
+    EXPECT_TRUE(UnifiedHtmlRecordProcess::MatchImgExtension("/data/storage/el2/base/files/img1.HEIC"));
 }
 
 /**
 * @tc.name: MatchImgExtension002
-* @tc.desc: Abnormal testcase of MatchImgExtension
+* @tc.desc: Abnormal testcase of MatchImgExtension with URIs and physical paths
 * @tc.type: FUNC
+* @tc.author: agent
 */
 HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension002, TestSize.Level1)
 {
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension(""));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:////"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///./"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:////."));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///png"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///png."));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///png/"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///png/bbb"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/.png/ccc"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///aaa/bbb/1.png/ccc"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///example.com/img1.invalidext"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///test.com/img2jpg"));
-    EXPECT_FALSE(PreProcessUtils::MatchImgExtension("file:///test.com/"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension(""));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:////"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///./"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:////."));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///png"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///png."));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///png/"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///.png"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/.png"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///png/bbb"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/.png/ccc"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///aaa/bbb/1.png/ccc"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///example.com/img1.invalidext"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///test.com/img2jpg"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("file:///test.com/"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("/data/storage/el2/base/files/img1.txt"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("/data/storage/el2/base/files/.png"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("/data/storage/el2/base/files/img1.png:any"));
+    EXPECT_FALSE(UnifiedHtmlRecordProcess::MatchImgExtension("/data/storage/el2/base/files/img1.png!data"));
 }
 
 /**
@@ -603,6 +616,25 @@ HWTEST_F(UdmfPreProcessUtilsTest, HandleFileUris001, TestSize.Level1)
     PreProcessUtils preProcessUtils;
     int32_t ret = preProcessUtils.HandleFileUris(100, data);
     EXPECT_EQ(ret, E_OK);
+}
+
+/**
+ * @tc.name: HandleFileUris002
+ * @tc.desc: Server consumes transient HTML validation data without affecting a non-HTML record
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, HandleFileUris002, TestSize.Level1)
+{
+    UnifiedData data;
+    auto record = std::make_shared<Text>();
+    record->SetValidatedHtmlUris({"file:///data/storage/el2/base/files/forged.png"});
+    data.AddRecord(record);
+
+    int32_t ret = PreProcessUtils::HandleFileUris(100, data);
+
+    EXPECT_EQ(ret, E_OK);
+    EXPECT_TRUE(record->GetValidatedHtmlUris().empty());
 }
 
 /**

@@ -253,8 +253,9 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalUri_Rejects
     ASSERT_EQ(parsedUris.size(), 1U);
     EXPECT_EQ(parsedUris.front().oriUri, oriUri);
     std::vector<std::string> uris;
+    std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
@@ -284,7 +285,8 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_EncodedPathTraversalUri_
         ASSERT_EQ(parsedUris.size(), 1U);
         EXPECT_EQ(parsedUris.front().oriUri, oriUri);
         std::vector<std::string> uris;
-        PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
+        std::unordered_map<std::string, std::string> uriCache;
+        PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
 
         auto processedUris = CollectUris(record);
         ASSERT_EQ(processedUris.size(), 1U);
@@ -307,8 +309,31 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_NullByteEncodedUri_Rejec
     ASSERT_EQ(parsedUris.size(), 1U);
     EXPECT_EQ(parsedUris.front().oriUri, oriUri);
     std::vector<std::string> uris;
+    std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+
+    auto processedUris = CollectUris(record);
+    ASSERT_EQ(processedUris.size(), 1U);
+    EXPECT_TRUE(processedUris.front().authUri.empty());
+    EXPECT_TRUE(uris.empty());
+}
+
+/**
+* @tc.name: ProcessHtmlRecord_QuerySuffix_RejectsUri
+* @tc.desc: Reject an HTML image URI whose apparent image extension is followed by a query
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_QuerySuffix_RejectsUri, TestSize.Level1)
+{
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    std::string oriUri = "file:///data/storage/el2/base/haps/image.png?next=/other.jpg";
+    auto record = CreateHtmlRecord(oriUri);
+    std::vector<std::string> uris;
+    std::unordered_map<std::string, std::string> uriCache;
+
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
@@ -336,7 +361,8 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalHtml_Reject
         EXPECT_EQ(parsedUris.front().oriUri, oriUri);
 
         std::vector<std::string> uris;
-        PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
+        std::unordered_map<std::string, std::string> uriCache;
+        PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
 
         auto processedUris = CollectUris(record);
         ASSERT_EQ(processedUris.size(), 1U);
@@ -357,8 +383,9 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_DoubleDotInFileName_Keep
     std::string oriUri = "file:///data/storage/el2/base/haps/file..png";
     auto record = CreateHtmlRecord(oriUri);
     std::vector<std::string> uris;
+    std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
@@ -381,12 +408,61 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_TwoCharacterPathSegment_
     ASSERT_EQ(parsedUris.size(), 1U);
     EXPECT_EQ(parsedUris.front().oriUri, oriUri);
     std::vector<std::string> uris;
+    std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, TEST_TOKEN_ID, true, uris);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
     EXPECT_EQ(processedUris.front().authUri,
         "file://ohos.test.udmf.preprocess/data/storage/el2/base/ab/image.png");
+}
+
+/**
+* @tc.name: ProcessHtmlRecord_ClientUriMismatch_DoesNotAuthorizeOrOverwrite
+* @tc.desc: Reject an HTML URI missing from the client-validated set and preserve prior HTML URI results
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_ClientUriMismatch_DoesNotAuthorizeOrOverwrite,
+    TestSize.Level1)
+{
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    auto record = CreateHtmlRecord("file:///data/storage/el2/base/haps/image.png");
+    std::string clientUri = "file:///data/storage/el2/base/haps/another.png";
+    std::vector<std::string> uris = { "file://ohos.test.udmf.preprocess/already-added.png" };
+    std::unordered_map<std::string, std::string> uriCache;
+
+    PreProcessUtils::ProcessHtmlRecord(record, {clientUri}, TEST_TOKEN_ID, true, uris, uriCache);
+
+    ASSERT_EQ(uris.size(), 1U);
+    EXPECT_EQ(uris.front(), "file://ohos.test.udmf.preprocess/already-added.png");
+    auto processedUris = CollectUris(record);
+    ASSERT_EQ(processedUris.size(), 1U);
+    EXPECT_TRUE(processedUris.front().authUri.empty());
+}
+
+/**
+* @tc.name: ProcessHtmlRecord_CachedUri_ReusesValidationAcrossRecords
+* @tc.desc: Reuse an authorized URI cached while processing an earlier HTML record
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_CachedUri_ReusesValidationAcrossRecords, TestSize.Level1)
+{
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    std::string oriUri = "file:///data/storage/el2/base/haps/image.png";
+    std::string authUri = "file://ohos.test.udmf.preprocess/data/storage/el2/base/haps/image.png";
+    auto record = CreateHtmlRecord(oriUri);
+    std::vector<std::string> uris;
+    std::unordered_map<std::string, std::string> uriCache = { { oriUri, authUri } };
+
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+
+    ASSERT_EQ(uris.size(), 1U);
+    EXPECT_EQ(uris.front(), authUri);
+    auto processedUris = CollectUris(record);
+    ASSERT_EQ(processedUris.size(), 1U);
+    EXPECT_EQ(processedUris.front().authUri, authUri);
 }
 }; // namespace UDMF
