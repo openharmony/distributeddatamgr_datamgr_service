@@ -38,6 +38,16 @@ int32_t StaticActs::OnClearAppStorage(const std::string &bundleName, int32_t use
     return E_OK;
 }
 
+int32_t StaticActs::OnSystemAbilityAdded(int32_t systemAbilityId, const std::string &deviceId)
+{
+    return E_OK;
+}
+
+int32_t StaticActs::OnSystemAbilityRemoved(int32_t systemAbilityId, const std::string &deviceId)
+{
+    return E_OK;
+}
+
 void StaticActs::SetThreadPool(std::shared_ptr<ExecutorPool> executors)
 {
     executors_ = executors;

@@ -45,9 +45,9 @@ void PowerEventSubscriber::OnReceiveEvent(const CommonEventData &event)
     if (eventCallback_ == nullptr) {
         return;
     }
-    if (action == CommonEventSupport::COMMON_EVENT_CHARGING) {
+    if (action == CommonEventSupport::COMMON_EVENT_POWER_CONNECTED) {
         eventCallback_(PowerManager::Observer::PowerEvent::CHARGING);
-    } else if (action == CommonEventSupport::COMMON_EVENT_DISCHARGING) {
+    } else if (action == CommonEventSupport::COMMON_EVENT_POWER_DISCONNECTED) {
         eventCallback_(PowerManager::Observer::PowerEvent::DIS_CHARGING);
     }
 }
@@ -141,8 +141,8 @@ std::shared_ptr<PowerEventSubscriber> PowerManagerImpl::GetSubscriber()
         return eventSubscriber_;
     }
     MatchingSkills matchingSkills;
-    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CHARGING);
-    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_DISCHARGING);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_POWER_CONNECTED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_POWER_DISCONNECTED);
     CommonEventSubscribeInfo info(matchingSkills);
     eventSubscriber_ = std::make_shared<PowerEventSubscriber>(info);
     std::weak_ptr<Delegate> weakDelegate = delegate_;
