@@ -255,7 +255,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalUri_Rejects
     std::vector<std::string> uris;
     std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
@@ -286,7 +286,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_EncodedPathTraversalUri_
         EXPECT_EQ(parsedUris.front().oriUri, oriUri);
         std::vector<std::string> uris;
         std::unordered_map<std::string, std::string> uriCache;
-        PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+        PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
 
         auto processedUris = CollectUris(record);
         ASSERT_EQ(processedUris.size(), 1U);
@@ -311,7 +311,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_NullByteEncodedUri_Rejec
     std::vector<std::string> uris;
     std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
@@ -333,7 +333,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_QuerySuffix_RejectsUri, 
     std::vector<std::string> uris;
     std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
@@ -362,7 +362,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalHtml_Reject
 
         std::vector<std::string> uris;
         std::unordered_map<std::string, std::string> uriCache;
-        PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+        PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
 
         auto processedUris = CollectUris(record);
         ASSERT_EQ(processedUris.size(), 1U);
@@ -385,7 +385,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_DoubleDotInFileName_Keep
     std::vector<std::string> uris;
     std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
@@ -410,7 +410,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_TwoCharacterPathSegment_
     std::vector<std::string> uris;
     std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
 
     auto processedUris = CollectUris(record);
     ASSERT_EQ(processedUris.size(), 1U);
@@ -433,7 +433,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_ClientUriMismatch_DoesNo
     std::vector<std::string> uris = { "file://ohos.test.udmf.preprocess/already-added.png" };
     std::unordered_map<std::string, std::string> uriCache;
 
-    PreProcessUtils::ProcessHtmlRecord(record, {clientUri}, TEST_TOKEN_ID, true, uris, uriCache);
+    PreProcessUtils::ProcessHtmlRecord(record, {clientUri}, TEST_TOKEN_ID, uris, uriCache);
 
     ASSERT_EQ(uris.size(), 1U);
     EXPECT_EQ(uris.front(), "file://ohos.test.udmf.preprocess/already-added.png");
@@ -457,7 +457,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_CachedUri_ReusesValidati
     std::vector<std::string> uris;
     std::unordered_map<std::string, std::string> uriCache = { { oriUri, authUri } };
 
-    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, true, uris, uriCache);
+    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
 
     ASSERT_EQ(uris.size(), 1U);
     EXPECT_EQ(uris.front(), authUri);

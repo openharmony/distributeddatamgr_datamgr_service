@@ -156,8 +156,9 @@ void PreProcessUtils::ProcessFileType(const std::shared_ptr<UnifiedRecord> &reco
 }
 
 void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record,
-    const std::vector<std::string> &clientUris, uint32_t tokenId, bool isLocal, std::vector<std::string> &uris,
-    std::unordered_map<std::string, std::string> &processedUris)
+    const std::vector<std::string> &clientValidatedUris, uint32_t tokenId,
+    std::vector<std::string> &htmlAuthUrisToCheck,
+    std::unordered_map<std::string, std::string> &htmlUriValidationCache)
 {
     return;
 }

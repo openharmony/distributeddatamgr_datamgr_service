@@ -43,9 +43,10 @@ public:
     static void ClearHtmlDfsUris(UnifiedData &data);
     static void ProcessFileAuthorization(bool &hasError, UnifiedData &data, bool isLocal,
         std::map<std::string, unsigned int> &uriPermissions);
-    static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record, const std::vector<std::string> &clientUris,
-        uint32_t tokenId, bool isLocal, std::vector<std::string> &uris,
-        std::unordered_map<std::string, std::string> &processedUris);
+    static void ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record,
+        const std::vector<std::string> &clientValidatedUris, uint32_t tokenId,
+        std::vector<std::string> &htmlAuthUrisToCheck,
+        std::unordered_map<std::string, std::string> &htmlUriValidationCache);
     static void SetRecordUid(UnifiedData &data);
     static bool GetDetailsFromUData(const UnifiedData &data, UDDetails &details);
     static Status GetSummaryFromDetails(const UDDetails &details, Summary &summary);

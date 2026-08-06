@@ -262,49 +262,49 @@ void PreProcessUtils::SetRemoteData(UnifiedData &data)
 
 int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
 {
-    std::vector<std::string> fileUris;
-    std::vector<std::string> htmlUris;
-    std::unordered_map<std::string, std::string> processedHtmlUris;
+    std::vector<std::string> fileUrisToCheck;
+    std::vector<std::string> htmlAuthUrisToCheck;
+    std::unordered_map<std::string, std::string> htmlUriValidationCache;
     for (const auto &record : data.GetRecords()) {
         if (record == nullptr) {
             continue;
         }
-        auto clientUris = record->GetValidatedHtmlUris();
+        auto clientValidatedUris = record->GetValidatedHtmlUris();
         record->ClearValidatedHtmlUris();
         auto entries = record->GetEntries();
         if (entries == nullptr) {
             continue;
         }
-        auto htmlEntry = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
-        if (htmlEntry != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(htmlEntry->second)) {
+        auto htmlEntryIter = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
+        if (htmlEntryIter != entries->end() &&
+            std::holds_alternative<std::shared_ptr<Object>>(htmlEntryIter->second)) {
             UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
-            ProcessHtmlRecord(record, clientUris, tokenId, true, htmlUris, processedHtmlUris);
+            ProcessHtmlRecord(record, clientValidatedUris, tokenId, htmlAuthUrisToCheck, htmlUriValidationCache);
         }
-        auto fileEntry = entries->find(GENERAL_FILE_URI);
-        if (fileEntry != entries->end() && std::holds_alternative<std::shared_ptr<Object>>(fileEntry->second)) {
-            auto obj = std::get<std::shared_ptr<Object>>(fileEntry->second);
-            if (obj == nullptr) {
+        auto fileEntryIter = entries->find(GENERAL_FILE_URI);
+        if (fileEntryIter != entries->end() &&
+            std::holds_alternative<std::shared_ptr<Object>>(fileEntryIter->second)) {
+            auto fileObject = std::get<std::shared_ptr<Object>>(fileEntryIter->second);
+            if (fileObject == nullptr) {
                 continue;
             }
-            // To ensure remoteUri is empty before write it!
-            obj->value_[REMOTE_URI] = "";
-            // To ensure permission-policy is empty before write it!
-            obj->value_[PERMISSION_POLICY] = static_cast<int32_t>(NO_PERMISSION);
-            obj->value_[URI_PERMISSION_MASK] = 0;
-            std::string oriUri;
-            obj->GetValue(ORI_URI, oriUri);
-            Uri uri(oriUri);
+            fileObject->value_[REMOTE_URI] = "";
+            fileObject->value_[PERMISSION_POLICY] = static_cast<int32_t>(NO_PERMISSION);
+            fileObject->value_[URI_PERMISSION_MASK] = 0;
+            std::string originalFileUri;
+            fileObject->GetValue(ORI_URI, originalFileUri);
+            Uri uri(originalFileUri);
             bool hasError = false;
             if (ValidateUriScheme(uri, hasError)) {
-                fileUris.emplace_back(oriUri);
+                fileUrisToCheck.emplace_back(originalFileUri);
             }
         }
     }
-    int32_t status = ReadCheckUri(tokenId, data, fileUris);
-    if (status != E_OK) {
-        return status;
+    int32_t fileCheckStatus = ReadCheckUri(tokenId, data, fileUrisToCheck);
+    if (fileCheckStatus != E_OK) {
+        return fileCheckStatus;
     }
-    return ReadCheckUri(tokenId, data, htmlUris, true);
+    return ReadCheckUri(tokenId, data, htmlAuthUrisToCheck, true);
 }
 
 int32_t PreProcessUtils::ReadCheckUri(uint32_t tokenId, UnifiedData &data, const std::vector<std::string> &uris,
@@ -546,94 +546,74 @@ void PreProcessUtils::ProcessFileType(const std::shared_ptr<UnifiedRecord> &reco
 }
 
 void PreProcessUtils::ProcessHtmlRecord(std::shared_ptr<UnifiedRecord> record,
-    const std::vector<std::string> &clientUris, uint32_t tokenId, bool isLocal, std::vector<std::string> &uris,
-    std::unordered_map<std::string, std::string> &processedUris)
+    const std::vector<std::string> &clientValidatedUris, uint32_t tokenId,
+    std::vector<std::string> &htmlAuthUrisToCheck,
+    std::unordered_map<std::string, std::string> &htmlUriValidationCache)
 {
-    std::unordered_set<std::string> clientUriSet(clientUris.begin(), clientUris.end());
-    std::unordered_set<std::string> authorizedUriSet(uris.begin(), uris.end());
+    std::unordered_set<std::string> clientValidatedUriSet(clientValidatedUris.begin(), clientValidatedUris.end());
+    std::unordered_set<std::string> queuedAuthUriSet(htmlAuthUrisToCheck.begin(), htmlAuthUrisToCheck.end());
     std::string bundleName;
-    bool hasResolvedBundleName = false;
-    bool hasValidBundleName = false;
-    record->ComputeUris([&uris, &clientUriSet, &authorizedUriSet, &processedUris, &bundleName,
-        &hasResolvedBundleName, &hasValidBundleName, &isLocal, &tokenId] (UriInfo &uriInfo) {
-        if (clientUriSet.find(uriInfo.oriUri) == clientUriSet.end()) {
+    bool hasValidBundleName = GetHapBundleNameByToken(tokenId, bundleName);
+
+    record->ComputeUris([&htmlAuthUrisToCheck, &clientValidatedUriSet, &queuedAuthUriSet,
+        &htmlUriValidationCache, &bundleName, hasValidBundleName, tokenId] (UriInfo &uriInfo) {
+        if (clientValidatedUriSet.find(uriInfo.oriUri) == clientValidatedUriSet.end()) {
             return true;
         }
-        auto processedIter = processedUris.find(uriInfo.oriUri);
-        if (processedIter != processedUris.end()) {
-            if (!processedIter->second.empty()) {
-                if (isLocal) {
-                    uriInfo.authUri = processedIter->second;
-                }
-                if (authorizedUriSet.emplace(processedIter->second).second) {
-                    uris.emplace_back(processedIter->second);
-                }
+        auto cachedUriResult = htmlUriValidationCache.find(uriInfo.oriUri);
+        if (cachedUriResult != htmlUriValidationCache.end()) {
+            if (!cachedUriResult->second.empty()) {
+                AppendHtmlUri(uriInfo, cachedUriResult->second, htmlAuthUrisToCheck, queuedAuthUriSet);
             }
             return true;
         }
-        std::string newUriStr = "";
-        if (isLocal) {
-            uriInfo.authUri = "";
-            if (uriInfo.oriUri.find_first_of("?#") != std::string::npos) {
-                processedUris.emplace(uriInfo.oriUri, "");
-                return true;
-            }
-            Uri tmpUri(uriInfo.oriUri);
-            std::string path = tmpUri.GetPath();
-            if (HasPathTraversal(path)) {
-                ZLOGE("Html image uri contains path traversal");
-                processedUris.emplace(uriInfo.oriUri, "");
-                return true;
-            }
-            if (!hasResolvedBundleName) {
-                hasValidBundleName = GetHapBundleNameByToken(tokenId, bundleName);
-                hasResolvedBundleName = true;
-            }
-            if (!hasValidBundleName) {
-                processedUris.emplace(uriInfo.oriUri, "");
-                return true;
-            }
-            if (path.substr(0, strlen(DOCS_LOCAL_TAG)) == DOCS_LOCAL_TAG) {
-                newUriStr = FILE_SCHEME_PREFIX;
-                newUriStr += path.substr(DOCS_LOCAL_PATH_SUBSTR_START_INDEX);
-            } else {
-                newUriStr = FILE_SCHEME_PREFIX;
-                newUriStr += bundleName + path;
-            }
-        } else {
-            newUriStr = uriInfo.dfsUri;
-        }
-        Uri uri(newUriStr);
-        if (uri.GetAuthority().empty()) {
-            processedUris.emplace(uriInfo.oriUri, "");
+        uriInfo.authUri.clear();
+        std::string serverAuthUri = hasValidBundleName ? BuildHtmlAuthUri(uriInfo.oriUri, bundleName) : "";
+        if (serverAuthUri.empty()) {
+            htmlUriValidationCache.emplace(uriInfo.oriUri, "");
             return true;
         }
-        std::string scheme = uri.GetScheme();
-        std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
-        if (scheme != FILE_SCHEME) {
-            processedUris.emplace(uriInfo.oriUri, "");
+        if (queuedAuthUriSet.find(serverAuthUri) == queuedAuthUriSet.end() &&
+            !ValidateImageFileUri(serverAuthUri, tokenId)) {
+            htmlUriValidationCache.emplace(uriInfo.oriUri, "");
             return true;
         }
-        if (authorizedUriSet.find(newUriStr) != authorizedUriSet.end()) {
-            processedUris.emplace(uriInfo.oriUri, newUriStr);
-            if (isLocal) {
-                uriInfo.authUri = newUriStr;
-            }
-            return true;
-        }
-        if (!ValidateImageFileUri(newUriStr, tokenId)) {
-            processedUris.emplace(uriInfo.oriUri, "");
-            return true;
-        }
-        processedUris.emplace(uriInfo.oriUri, newUriStr);
-        if (isLocal) {
-            uriInfo.authUri = newUriStr;
-        }
-        if (authorizedUriSet.emplace(newUriStr).second) {
-            uris.emplace_back(newUriStr);
-        }
+        htmlUriValidationCache.emplace(uriInfo.oriUri, serverAuthUri);
+        AppendHtmlUri(uriInfo, serverAuthUri, htmlAuthUrisToCheck, queuedAuthUriSet);
         return true;
     });
+}
+
+std::string PreProcessUtils::BuildHtmlAuthUri(const std::string &oriUri, const std::string &bundleName)
+{
+    if (oriUri.find_first_of("?#") != std::string::npos) {
+        return "";
+    }
+    Uri uri(oriUri);
+    std::string path = uri.GetPath();
+    if (HasPathTraversal(path)) {
+        ZLOGE("Html image uri contains path traversal");
+        return "";
+    }
+    std::string authUri = FILE_SCHEME_PREFIX;
+    if (path.substr(0, strlen(DOCS_LOCAL_TAG)) == DOCS_LOCAL_TAG) {
+        authUri += path.substr(DOCS_LOCAL_PATH_SUBSTR_START_INDEX);
+    } else {
+        authUri += bundleName + path;
+    }
+    Uri result(authUri);
+    std::string scheme = result.GetScheme();
+    std::transform(scheme.begin(), scheme.end(), scheme.begin(), ::tolower);
+    return result.GetAuthority().empty() || scheme != FILE_SCHEME ? "" : authUri;
+}
+
+void PreProcessUtils::AppendHtmlUri(UriInfo &uriInfo, const std::string &serverAuthUri,
+    std::vector<std::string> &htmlAuthUrisToCheck, std::unordered_set<std::string> &queuedAuthUriSet)
+{
+    uriInfo.authUri = serverAuthUri;
+    if (queuedAuthUriSet.emplace(serverAuthUri).second) {
+        htmlAuthUrisToCheck.emplace_back(serverAuthUri);
+    }
 }
 
 void PreProcessUtils::ProcessHtmlEntryAuthorization(const std::shared_ptr<UnifiedRecord> &record, bool isLocal,
