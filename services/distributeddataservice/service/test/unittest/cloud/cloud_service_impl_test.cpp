@@ -488,6 +488,11 @@ HWTEST_F(CloudServiceImplTest, OnAppInstallTest, TestSize.Level0)
     ZLOGI("CloudServiceImplTest OnAppInstallTest start.");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+    ASSERT_NE(accountDelegateMock, nullptr);
+    AccountDelegate::instance_ = nullptr;
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     int32_t user = 0;
     int32_t index = 0;
     auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, user, index);
@@ -505,6 +510,8 @@ HWTEST_F(CloudServiceImplTest, OnAppUpdateTest, TestSize.Level0)
     ZLOGI("CloudServiceImplTest OnAppUpdateTest start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     int32_t user = 0;
     int32_t index = 0;
     auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, user, index);
