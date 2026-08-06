@@ -1415,6 +1415,10 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
     int32_t tokenId)
 {
     (void)tokenId;
+    if (!Account::GetInstance()->IsVerified(user)) {
+        ZLOGW("user:%{public}d is not verified, bundleName:%{public}s", user, bundleName.c_str());
+        return E_OK;
+    }
     Subscription sub;
     if (MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(user), sub, true) &&
         sub.expiresTime.find(bundleName) != sub.expiresTime.end()) {
@@ -1440,6 +1444,10 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
 int32_t CloudServiceImpl::CloudStatic::OnAppInstall(const std::string &bundleName, int32_t user, int32_t index)
 {
     ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", bundleName.c_str(), user, index);
+    if (!Account::GetInstance()->IsVerified(user)) {
+        ZLOGW("user:%{public}d is not verified, bundleName:%{public}s", user, bundleName.c_str());
+        return E_OK;
+    }
     if (CloudDriverCheck(bundleName, user)) {
         return SUCCESS;
     }
@@ -1454,6 +1462,10 @@ int32_t CloudServiceImpl::CloudStatic::OnAppInstall(const std::string &bundleNam
 int32_t CloudServiceImpl::CloudStatic::OnAppUpdate(const std::string &bundleName, int32_t user, int32_t index)
 {
     ZLOGI("bundleName:%{public}s,user:%{public}d,instanceId:%{public}d", bundleName.c_str(), user, index);
+    if (!Account::GetInstance()->IsVerified(user)) {
+        ZLOGW("user:%{public}d is not verified, bundleName:%{public}s", user, bundleName.c_str());
+        return E_OK;
+    }
     if (CloudDriverCheck(bundleName, user)) {
         return SUCCESS;
     }
