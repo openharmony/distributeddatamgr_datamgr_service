@@ -18,6 +18,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "account_delegate_mock.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
 #include "cloud/cloud_conflict_handler.h"
@@ -2994,6 +2995,10 @@ HWTEST_F(CloudDataTest, GetAppSchemaFromServer, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
 {
+    AccountDelegateMock accountDelegateMock;
+    AccountDelegate::instance_ = nullptr;
+    AccountDelegate::RegisterAccountInstance(&accountDelegateMock);
+    EXPECT_CALL(accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     CloudData::CloudServiceImpl::CloudStatic cloudStatic;
     int32_t userId = 1001;
     Subscription sub;
