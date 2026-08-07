@@ -131,8 +131,6 @@ int32_t PowerManagerImpl::Subscribe(std::shared_ptr<Observer> observer)
         return -1;
     }
 #ifdef SUPPORT_BATTERY_SRV
-    // 订阅即按当前真实充电态补发一次 OnChange，解决公共事件"无法获取初始状态"的问题：
-    // 旧方案只在插拔瞬间广播，服务启动时若已在充电则 observer 永远收不到 CHARGING。
     QueryInitialChargingState();
     if (stateKnown_) {
         observer->OnChange(CurrentEvent());
@@ -201,7 +199,6 @@ void PowerManagerImpl::SubscribePowerEvent()
     auto result = CommonEventManager::SubscribeCommonEvent(GetSubscriber());
     ZLOGI("register power subscriber: %{public}d.", result);
 #ifdef SUPPORT_BATTERY_SRV
-    // 公共事件只能告知"变化"，无法告知"当前态"；订阅成功后用 BatterySrvClient 拉取一次初始态。
     QueryInitialChargingState();
 #endif
 }
@@ -217,8 +214,6 @@ bool PowerManagerImpl::IsPluggedConnected(int32_t pluggedType)
 {
     using PT = OHOS::PowerMgr::BatteryPluggedType;
     auto type = static_cast<PT>(pluggedType);
-    // 与 OnReceiveEvent 的插拔语义一致："已连电源（含满电）"。
-    // pluggedType 反映物理连接，满电时仍为 AC/USB/WIRELESS；BUTT 为查询失败哨兵。
     return type != PT::PLUGGED_TYPE_NONE && type != PT::PLUGGED_TYPE_BUTT;
 }
 
