@@ -41,6 +41,14 @@ ohos_source_set("distributeddata_power_manager") {
     "hilog:libhilog",
     "kv_store:datamgr_common",
   ]
+
+  # 初始充电状态通过 BatterySrvClient 查询（解决公共事件无法获取初始态的问题）；
+  # 插拔瞬间的推送仍走 CommonEvent。
+  if (datamgr_service_batterymgr) {
+    external_deps += [ "battery_manager:batterysrv_client" ]
+    defines = [ "SUPPORT_BATTERY_SRV" ]
+  }
+
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   subsystem_name = "distributeddatamgr"

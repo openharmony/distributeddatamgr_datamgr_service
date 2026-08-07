@@ -26,6 +26,11 @@
 #include <list>
 #include <mutex>
 
+#ifdef SUPPORT_BATTERY_SRV
+#include "battery_info.h"
+#include "battery_srv_client.h"
+#endif
+
 namespace OHOS::DistributedData {
 using namespace OHOS::EventFwk;
 using PowerEventCallback = std::function<void(PowerManager::Observer::PowerEvent)>;
@@ -51,6 +56,7 @@ public:
     API_EXPORT void UnsubscribePowerEvent() override;
     ~PowerManagerImpl();
     PowerManagerImpl();
+
 private:
     std::shared_ptr<PowerEventSubscriber> GetSubscriber();
     void SetSubscriber(std::shared_ptr<PowerEventSubscriber> subscriber);
@@ -62,13 +68,21 @@ private:
         std::list<std::weak_ptr<Observer>> GetObs();
         void SetCharging(bool isCharging);
         bool IsCharging();
+
     private:
         std::mutex mutex_;
         std::list<std::weak_ptr<Observer>> observers_;
         bool isCharging_ = false;
     };
+
     std::shared_ptr<Delegate> delegate_;
     std::shared_ptr<PowerEventSubscriber> eventSubscriber_;
+#ifdef SUPPORT_BATTERY_SRV
+    bool stateKnown_ = false;
+    void QueryInitialChargingState();
+    PowerManager::Observer::PowerEvent CurrentEvent();
+    static bool IsPluggedConnected(int32_t pluggedType);
+#endif
 };
 } // namespace OHOS::DistributedData
 #endif // OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_POWER_MANAGER_H

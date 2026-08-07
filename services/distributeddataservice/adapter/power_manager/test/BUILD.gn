@@ -32,6 +32,17 @@ config("module_private_config") {
   ]
 }
 
+# 初始充电态查询走 BatterySrvClient，与 adapter/power_manager/BUILD.gn 对齐。
+battery_srv_deps = []
+if (datamgr_service_batterymgr) {
+  battery_srv_deps = [ "battery_manager:batterysrv_client" ]
+}
+battery_srv_defines = []
+if (datamgr_service_batterymgr) {
+  battery_srv_defines = [ "SUPPORT_BATTERY_SRV" ]
+}
+
+
 ###############################################################################
 # PowerManagerImplTest - Unified test for PowerManager implementation
 ohos_unittest("PowerManagerImplTest") {
@@ -55,6 +66,10 @@ ohos_unittest("PowerManagerImplTest") {
     "hilog:libhilog",
     "kv_store:datamgr_common",
   ]
+  external_deps += battery_srv_deps
+
+  defines = battery_srv_defines
+  defines += [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 
   deps = [
     "${data_service_path}/adapter/test:common_event_mock",
@@ -63,7 +78,6 @@ ohos_unittest("PowerManagerImplTest") {
 
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
-  defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
 ###############################################################################
