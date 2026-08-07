@@ -37,6 +37,7 @@
 #include "log_print.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "mock/access_token_mock.h"
+#include "mock/device_manager_adapter_mock.h"
 #include "mock/meta_data_manager_mock.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
@@ -79,6 +80,7 @@ public:
     static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
+    static inline std::shared_ptr<DeviceManagerAdapterMock> deviceManagerAdapterMock = nullptr;
     static constexpr size_t NUM_MIN = 5;
     static constexpr size_t NUM_MAX = 12;
     static constexpr uint32_t TOKENID1 = 123;
@@ -158,6 +160,8 @@ void KvdbServiceImplTest::SetUpTestCase(void)
     BMetaDataManager::metaDataManager = metaDataManagerMock;
     metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
     BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
+    deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+    BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
 }
 
 void KvdbServiceImplTest::TearDownTestCase()
@@ -172,6 +176,8 @@ void KvdbServiceImplTest::TearDownTestCase()
     BMetaDataManager::metaDataManager = nullptr;
     metaDataMock = nullptr;
     BMetaData<StoreMetaData>::metaDataManager = nullptr;
+    deviceManagerAdapterMock = nullptr;
+    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 void KvdbServiceImplTest::SetUp(void)
@@ -763,6 +769,66 @@ HWTEST_F(KvdbServiceImplTest, DoSyncBeginTest001, TestSize.Level0)
     status = kvdbServiceImpl_->DoSyncBegin(device2, meta, syncInfo, syncEnd, DBStatus::OK);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
     status = kvdbServiceImpl_->DoSyncBegin(device1, meta, syncInfo, syncEnd, DBStatus::OK);
+    ASSERT_EQ(status, Status::ERROR);
+}
+
+/**
+* @tc.name: DoSyncBegin_OHOSType_ShouldNotSetEqualIdentifier
+* @tc.desc: Test DoSyncBegin when device is OHOS type, SetEqualIdentifier should not be called
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, DoSyncBegin_OHOSType_ShouldNotSetEqualIdentifier, TestSize.Level0)
+{
+    Status status = manager.GetSingleKvStore(create, appId, storeId, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    std::vector<std::string> devices{ "ohos_device_01" };
+    StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId);
+    SyncInfo syncInfo;
+    syncInfo.devices = { "ohos_device_01" };
+    syncInfo.query = "query";
+    SyncEnd syncEnd = SyncEndCallback;
+    
+    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType("ohos_device_01"))
+        .WillOnce(testing::Return(true));
+    
+    std::map<std::string, DistributedDB::DBStatus> statusMap;
+    statusMap.insert_or_assign("DoSyncBegin_OHOSType", DBStatus::OK);
+    syncEnd(statusMap);
+    
+    status = kvdbServiceImpl_->DoSyncBegin(devices, meta, syncInfo, syncEnd, DBStatus::OK);
+    ASSERT_EQ(status, Status::ERROR);
+}
+
+/**
+* @tc.name: DoSyncBegin_NonOHOSType_ShouldSetEqualIdentifier
+* @tc.desc: Test DoSyncBegin when device is non-OHOS type, SetEqualIdentifier should be called
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, DoSyncBegin_NonOHOSType_ShouldSetEqualIdentifier, TestSize.Level0)
+{
+    Status status = manager.GetSingleKvStore(create, appId, storeId, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+    
+    std::vector<std::string> devices{ "non_ohos_device_01" };
+    StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId);
+    SyncInfo syncInfo;
+    syncInfo.devices = { "non_ohos_device_01" };
+    syncInfo.query = "query";
+    SyncEnd syncEnd = SyncEndCallback;
+    
+    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType("non_ohos_device_01"))
+        .WillOnce(testing::Return(false));
+    
+    std::map<std::string, DistributedDB::DBStatus> statusMap;
+    statusMap.insert_or_assign("DoSyncBegin_NonOHOSType", DBStatus::OK);
+    syncEnd(statusMap);
+    
+    status = kvdbServiceImpl_->DoSyncBegin(devices, meta, syncInfo, syncEnd, DBStatus::OK);
     ASSERT_EQ(status, Status::ERROR);
 }
 
