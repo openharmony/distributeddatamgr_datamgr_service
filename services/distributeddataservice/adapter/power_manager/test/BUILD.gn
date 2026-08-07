@@ -32,7 +32,6 @@ config("module_private_config") {
   ]
 }
 
-# 初始充电态查询走 BatterySrvClient，与 adapter/power_manager/BUILD.gn 对齐。
 battery_srv_deps = []
 if (datamgr_service_batterymgr) {
   battery_srv_deps = [ "battery_manager:batterysrv_client" ]
