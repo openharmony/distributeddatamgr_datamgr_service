@@ -2998,6 +2998,7 @@ HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
     auto *accountDelegateMock = new AccountDelegateMock();
     AccountDelegate::instance_ = nullptr;
     AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     CloudData::CloudServiceImpl::CloudStatic cloudStatic;
     int32_t userId = 1001;
