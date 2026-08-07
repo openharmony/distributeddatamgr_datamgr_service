@@ -547,7 +547,7 @@ HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest UpdateSchemaFromServerTest_001 start");
     testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
-    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     CloudServer cloudServer;
     CloudServer::RegisterCloudInstance(&cloudServer);
     int user = 100;
