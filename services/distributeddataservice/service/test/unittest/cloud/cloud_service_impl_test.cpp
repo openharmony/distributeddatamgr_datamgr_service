@@ -3002,10 +3002,11 @@ HWTEST_F(CloudServiceImplTest, OnAppUninstall_NotVerified, TestSize.Level0)
     ZLOGI("CloudServiceImplTest OnAppUninstall_NotVerified start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
-    auto *mock = new AccountDelegateMock();
+    accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+    ASSERT_NE(accountDelegateMock, nullptr);
     AccountDelegate::instance_ = nullptr;
-    AccountDelegate::RegisterAccountInstance(mock);
-    EXPECT_CALL(*mock, IsVerified(_)).WillRepeatedly(Return(false));
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(false));
     int32_t user = 101;
     int32_t index = 0;
     int32_t tokenId = 0;
