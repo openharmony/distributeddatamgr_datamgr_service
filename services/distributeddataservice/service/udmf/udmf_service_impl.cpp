@@ -47,6 +47,7 @@
 #include "uri_permission_manager.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
+#include "unified_html_record_process.h"
 #include "utils/anonymous.h"
 #include "permission_validator.h"
 #include "synced_device_container.h"
@@ -163,6 +164,9 @@ int32_t UdmfServiceImpl::SetData(CustomOption &option, UnifiedData &unifiedData,
 int32_t UdmfServiceImpl::SaveData(CustomOption &option, UnifiedData &unifiedData,
     Summary &summary, std::string &key)
 {
+    if (option.intention != UD_INTENTION_DRAG) {
+        UnifiedHtmlRecordProcess::ClearValidatedHtmlUris(unifiedData);
+    }
     if (!unifiedData.IsValid()) {
         ZLOGE("UnifiedData is invalid.");
         return E_INVALID_PARAMETERS;
@@ -471,6 +475,7 @@ int32_t UdmfServiceImpl::GetBatchData(const QueryOption &query, std::vector<Unif
 
 int32_t UdmfServiceImpl::UpdateData(const QueryOption &query, UnifiedData &unifiedData)
 {
+    UnifiedHtmlRecordProcess::ClearValidatedHtmlUris(unifiedData);
     UnifiedKey key(query.key);
     if (!IsValidInput(query, unifiedData, key)) {
         return E_INVALID_PARAMETERS;
