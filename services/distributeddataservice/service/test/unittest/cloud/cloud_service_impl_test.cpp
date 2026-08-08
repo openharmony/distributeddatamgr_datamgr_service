@@ -488,6 +488,11 @@ HWTEST_F(CloudServiceImplTest, OnAppInstallTest, TestSize.Level0)
     ZLOGI("CloudServiceImplTest OnAppInstallTest start.");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    accountDelegateMock = new (std::nothrow) AccountDelegateMock();
+    ASSERT_NE(accountDelegateMock, nullptr);
+    AccountDelegate::instance_ = nullptr;
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     int32_t user = 0;
     int32_t index = 0;
     auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, user, index);
@@ -505,6 +510,8 @@ HWTEST_F(CloudServiceImplTest, OnAppUpdateTest, TestSize.Level0)
     ZLOGI("CloudServiceImplTest OnAppUpdateTest start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     int32_t user = 0;
     int32_t index = 0;
     auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, user, index);
@@ -541,9 +548,11 @@ HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_001, TestSize.Level0)
     ZLOGI("CloudServiceImplTest UpdateSchemaFromServerTest_001 start");
     CloudServer cloudServer;
     CloudServer::RegisterCloudInstance(&cloudServer);
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(false));
     int user = 100;
     auto status = cloudServiceImpl_->UpdateSchemaFromServer(user);
-    EXPECT_EQ(status, E_ERROR);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
     CloudServer::instance_ = nullptr;
 }
 
@@ -2928,6 +2937,78 @@ HWTEST_F(CloudServiceImplTest, DoSync_CloudEvent, TestSize.Level1)
     cloudServiceImpl_->DoSync(cloudEvent);
 
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true), true);
+}
+
+/**
+ * @tc.name: OnAppInstall_Verified
+ * @tc.desc: Test OnAppInstall when user is verified
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppInstall_Verified, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest OnAppInstall_Verified start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, user, index);
+    EXPECT_NE(status, E_OK);
+}
+
+/**
+ * @tc.name: OnAppUpdate_Verified
+ * @tc.desc: Test OnAppUpdate when user is verified
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppUpdate_Verified, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest OnAppUpdate_Verified start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, user, index);
+    EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: OnAppInstall_NotVerified
+ * @tc.desc: Test OnAppInstall when user is not verified
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppInstall_NotVerified, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest OnAppInstall_NotVerified start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(false));
+    int32_t user = 101;
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, user, index);
+    EXPECT_EQ(status, E_OK);
+}
+
+/**
+ * @tc.name: OnAppUpdate_NotVerified
+ * @tc.desc: Test OnAppUpdate when user is not verified
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, OnAppUpdate_NotVerified, TestSize.Level0)
+{
+    ZLOGI("CloudServiceImplTest OnAppUpdate_NotVerified start");
+    ASSERT_NE(cloudServiceImpl_, nullptr);
+    ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(false));
+    int32_t user = 101;
+    int32_t index = 0;
+    auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, user, index);
+    EXPECT_EQ(status, E_OK);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
