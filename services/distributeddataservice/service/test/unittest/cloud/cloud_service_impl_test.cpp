@@ -546,13 +546,13 @@ HWTEST_F(CloudServiceImplTest, CloudDriverCheckTest, TestSize.Level0)
 HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_001, TestSize.Level0)
 {
     ZLOGI("CloudServiceImplTest UpdateSchemaFromServerTest_001 start");
-    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
-    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     CloudServer cloudServer;
     CloudServer::RegisterCloudInstance(&cloudServer);
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(false));
     int user = 100;
     auto status = cloudServiceImpl_->UpdateSchemaFromServer(user);
-    EXPECT_EQ(status, E_ERROR);
+    EXPECT_EQ(status, CloudData::CloudService::E_ERROR);
     CloudServer::instance_ = nullptr;
 }
 
@@ -2508,14 +2508,16 @@ HWTEST_F(CloudServiceImplTest, DoCloudSync_GetCloudInfoFailed_MetaNotExistAndUse
 {
     ZLOGI("CloudServiceImplTest DoCloudSync_GetCloudInfoFailed_MetaNotExistAndUserNotVerified start");
     testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
-    // When user is not verified and meta doesn't exist, GetCloudInfo returns ERROR
-    EXPECT_CALL(*accountDelegateMock, IsVerified(MOCK_USER)).WillOnce(Return(false));
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, IsLoginAccount()).WillRepeatedly(Return(true));
     EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
     // Delete cloudInfo meta so GetCloudInfoFromMeta fails
     CloudInfo cloudInfoToDelete;
     cloudInfoToDelete.user = MOCK_USER;
     MetaDataManager::GetInstance().DelMeta(cloudInfoToDelete.GetKey(), true);
+
+    // When user is not verified and meta doesn't exist, GetCloudInfo returns ERROR
+    EXPECT_CALL(*accountDelegateMock, IsVerified(MOCK_USER)).WillOnce(Return(false));
 
     auto result = cloudServiceImpl_->DoCloudSync(MOCK_USER, CloudSyncScene::PUSH);
     EXPECT_EQ(result, false);
