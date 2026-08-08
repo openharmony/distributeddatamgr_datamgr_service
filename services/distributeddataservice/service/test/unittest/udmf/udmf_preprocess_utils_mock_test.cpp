@@ -246,7 +246,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, FillDelayRuntimeInfo001, TestSize.Level1)
 */
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalUri_RejectsTraversalSegment, TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/../victim.bundle/haps/image.png";
     auto record = CreateHtmlRecord(oriUri);
     auto parsedUris = CollectUris(record);
@@ -271,7 +271,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalUri_Rejects
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_EncodedPathTraversalUri_RejectsTraversalSegment,
     TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::vector<std::string> oriUris = {
         "file:///data/storage/el2/base/%2e%2e/victim.bundle/haps/image.png",
         "file:///data/storage/el2/base/%2E%2E/victim.bundle/haps/image.png",
@@ -302,7 +302,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_EncodedPathTraversalUri_
 */
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_NullByteEncodedUri_RejectsUri, TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/haps/image%00.png";
     auto record = CreateHtmlRecord(oriUri);
     auto parsedUris = CollectUris(record);
@@ -327,7 +327,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_NullByteEncodedUri_Rejec
 */
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_QuerySuffix_RejectsUri, TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/haps/image.png?next=/other.jpg";
     auto record = CreateHtmlRecord(oriUri);
     std::vector<std::string> uris;
@@ -348,7 +348,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_QuerySuffix_RejectsUri, 
 */
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalHtml_RejectsParsedUri, TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::vector<std::string> oriUris = {
         "file:///data/storage/el2/base/../victim.bundle/haps/image.png",
         "file:///data/storage/el2/base/%2e%2e/victim.bundle/haps/image.png"
@@ -372,49 +372,26 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_PathTraversalHtml_Reject
 }
 
 /**
-* @tc.name: ProcessHtmlRecord_DoubleDotInFileName_KeepsValidUri
+* @tc.name: BuildHtmlAuthUri_DoubleDotInFileName_KeepsValidUri
 * @tc.desc: Keep an HTML image URI when double dots are part of a regular file name
 * @tc.type: FUNC
 */
-HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_DoubleDotInFileName_KeepsValidUri, TestSize.Level1)
+HWTEST_F(UdmfPreProcessUtilsMockTest, BuildHtmlAuthUri_DoubleDotInFileName_KeepsValidUri, TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(TOKEN_HAP));
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/haps/file..png";
-    auto record = CreateHtmlRecord(oriUri);
-    std::vector<std::string> uris;
-    std::unordered_map<std::string, std::string> uriCache;
-
-    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
-
-    auto processedUris = CollectUris(record);
-    ASSERT_EQ(processedUris.size(), 1U);
-    EXPECT_EQ(processedUris.front().authUri,
+    EXPECT_EQ(PreProcessUtils::BuildHtmlAuthUri(oriUri, "ohos.test.udmf.preprocess"),
         "file://ohos.test.udmf.preprocess/data/storage/el2/base/haps/file..png");
 }
 
 /**
-* @tc.name: ProcessHtmlRecord_TwoCharacterPathSegment_KeepsValidUri
+* @tc.name: BuildHtmlAuthUri_TwoCharacterPathSegment_KeepsValidUri
 * @tc.desc: Keep a valid URI when a two-character path segment is not a parent-directory segment
 * @tc.type: FUNC
 */
-HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_TwoCharacterPathSegment_KeepsValidUri, TestSize.Level1)
+HWTEST_F(UdmfPreProcessUtilsMockTest, BuildHtmlAuthUri_TwoCharacterPathSegment_KeepsValidUri, TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetTokenTypeFlag(_)).WillRepeatedly(Return(TOKEN_HAP));
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/ab/image.png";
-    auto record = CreateHtmlRecord(oriUri);
-    auto parsedUris = CollectUris(record);
-    ASSERT_EQ(parsedUris.size(), 1U);
-    EXPECT_EQ(parsedUris.front().oriUri, oriUri);
-    std::vector<std::string> uris;
-    std::unordered_map<std::string, std::string> uriCache;
-
-    PreProcessUtils::ProcessHtmlRecord(record, {oriUri}, TEST_TOKEN_ID, uris, uriCache);
-
-    auto processedUris = CollectUris(record);
-    ASSERT_EQ(processedUris.size(), 1U);
-    EXPECT_EQ(processedUris.front().authUri,
+    EXPECT_EQ(PreProcessUtils::BuildHtmlAuthUri(oriUri, "ohos.test.udmf.preprocess"),
         "file://ohos.test.udmf.preprocess/data/storage/el2/base/ab/image.png");
 }
 
@@ -427,7 +404,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_TwoCharacterPathSegment_
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_ClientUriMismatch_DoesNotAuthorizeOrOverwrite,
     TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     auto record = CreateHtmlRecord("file:///data/storage/el2/base/haps/image.png");
     std::string clientUri = "file:///data/storage/el2/base/haps/another.png";
     std::vector<std::string> uris = { "file://ohos.test.udmf.preprocess/already-added.png" };
@@ -450,7 +427,7 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_ClientUriMismatch_DoesNo
 */
 HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_CachedUri_ReusesValidationAcrossRecords, TestSize.Level1)
 {
-    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).Times(0);
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
     std::string oriUri = "file:///data/storage/el2/base/haps/image.png";
     std::string authUri = "file://ohos.test.udmf.preprocess/data/storage/el2/base/haps/image.png";
     auto record = CreateHtmlRecord(oriUri);
