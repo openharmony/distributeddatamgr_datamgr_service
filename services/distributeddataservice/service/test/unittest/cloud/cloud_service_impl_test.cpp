@@ -552,7 +552,7 @@ HWTEST_F(CloudServiceImplTest, UpdateSchemaFromServerTest_001, TestSize.Level0)
     EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(false));
     int user = 100;
     auto status = cloudServiceImpl_->UpdateSchemaFromServer(user);
-    EXPECT_EQ(status, CloudData::CloudService::E_ERROR);
+    EXPECT_EQ(status, CloudData::CloudService::ERROR);
     CloudServer::instance_ = nullptr;
 }
 
