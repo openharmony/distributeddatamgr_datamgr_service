@@ -1415,10 +1415,6 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
     int32_t tokenId)
 {
     (void)tokenId;
-    if (!Account::GetInstance()->IsVerified(user)) {
-        ZLOGW("user:%{public}d is not verified, bundleName:%{public}s", user, bundleName.c_str());
-        return E_OK;
-    }
     Subscription sub;
     if (MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(user), sub, true) &&
         sub.expiresTime.find(bundleName) != sub.expiresTime.end()) {
