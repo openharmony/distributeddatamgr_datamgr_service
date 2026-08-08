@@ -2995,7 +2995,7 @@ HWTEST_F(CloudDataTest, GetAppSchemaFromServer, TestSize.Level0)
 HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
 {
     CloudData::CloudServiceImpl::CloudStatic cloudStatic;
-    int32_t userId = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
+    int32_t userId = 1001;
     Subscription sub;
     sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, 0);
     MetaDataManager::GetInstance().SaveMeta(Subscription::GetKey(userId), sub, true);
