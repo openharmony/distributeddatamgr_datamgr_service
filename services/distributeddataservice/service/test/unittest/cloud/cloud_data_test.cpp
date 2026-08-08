@@ -18,7 +18,6 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "account_delegate_mock.h"
 #include "bootstrap.h"
 #include "checker_mock.h"
 #include "cloud/cloud_conflict_handler.h"
@@ -2995,13 +2994,8 @@ HWTEST_F(CloudDataTest, GetAppSchemaFromServer, TestSize.Level0)
  */
 HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
 {
-    auto *accountDelegateMock = new AccountDelegateMock();
-    AccountDelegate::instance_ = nullptr;
-    AccountDelegate::RegisterAccountInstance(accountDelegateMock);
-    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
-    EXPECT_CALL(*accountDelegateMock, IsVerified(testing::_)).WillRepeatedly(testing::Return(true));
     CloudData::CloudServiceImpl::CloudStatic cloudStatic;
-    int32_t userId = 1001;
+    int32_t userId = AccountDelegate::GetInstance()->GetUserByToken(metaData_.tokenId);
     Subscription sub;
     sub.expiresTime.insert_or_assign(TEST_CLOUD_BUNDLE, 0);
     MetaDataManager::GetInstance().SaveMeta(Subscription::GetKey(userId), sub, true);
