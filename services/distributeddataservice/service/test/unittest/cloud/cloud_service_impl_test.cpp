@@ -2950,7 +2950,7 @@ HWTEST_F(CloudServiceImplTest, OnAppUninstall_Verified, TestSize.Level0)
     ZLOGI("CloudServiceImplTest OnAppUninstall_Verified start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     int32_t index = 0;
     int32_t tokenId = 0;
     auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUninstall(TEST_CLOUD_BUNDLE, user, index, tokenId);
@@ -2968,7 +2968,7 @@ HWTEST_F(CloudServiceImplTest, OnAppInstall_Verified, TestSize.Level0)
     ZLOGI("CloudServiceImplTest OnAppInstall_Verified start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     int32_t index = 0;
     auto status = cloudServiceImpl_->factory_.staticActs_->OnAppInstall(TEST_CLOUD_BUNDLE, user, index);
     EXPECT_NE(status, E_OK);
@@ -2985,7 +2985,7 @@ HWTEST_F(CloudServiceImplTest, OnAppUpdate_Verified, TestSize.Level0)
     ZLOGI("CloudServiceImplTest OnAppUpdate_Verified start");
     ASSERT_NE(cloudServiceImpl_, nullptr);
     ASSERT_NE(cloudServiceImpl_->factory_.staticActs_, nullptr);
-    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(OHOS::IPCSkeleton::GetCallingTokenID());
+    int32_t user = AccountDelegate::GetInstance()->GetUserByToken(IPCSkeleton::GetCallingTokenID());
     int32_t index = 0;
     auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, user, index);
     EXPECT_EQ(status, CloudData::CloudService::SUCCESS);
