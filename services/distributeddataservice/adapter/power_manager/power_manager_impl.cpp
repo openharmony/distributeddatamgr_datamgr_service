@@ -52,7 +52,6 @@ void PowerEventSubscriber::OnReceiveEvent(const CommonEventData &event)
     }
 }
 
-// ---- Delegate ----
 int32_t PowerManagerImpl::Delegate::Add(std::shared_ptr<Observer> observer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -114,7 +113,6 @@ bool PowerManagerImpl::Delegate::IsCharging()
     return isCharging_;
 }
 
-// ---- PowerManagerImpl ----
 PowerManagerImpl::PowerManagerImpl() : delegate_(std::make_shared<Delegate>()) {}
 
 PowerManagerImpl::~PowerManagerImpl()
