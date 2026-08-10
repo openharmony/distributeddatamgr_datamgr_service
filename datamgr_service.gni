@@ -47,6 +47,12 @@ declare_args() {
     datamgr_service_power = false
   }
 
+  datamgr_service_batterymgr = true
+  if (defined(global_parts_info) &&
+      !defined(global_parts_info.powermgr_battery_manager)) {
+    datamgr_service_batterymgr = false
+  }
+
   if (!defined(global_parts_info) ||
       defined(global_parts_info.account_os_account)) {
     os_account_part_is_enabled = true

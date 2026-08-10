@@ -52,12 +52,10 @@ void PowerEventSubscriber::OnReceiveEvent(const CommonEventData &event)
     }
 }
 
-// Delegate implementation
 int32_t PowerManagerImpl::Delegate::Add(std::shared_ptr<Observer> observer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto it = observers_.begin();
-    while (it != observers_.end()) {
+    for (auto it = observers_.begin(); it != observers_.end();) {
         auto obs = it->lock();
         if (obs == nullptr) {
             it = observers_.erase(it);
@@ -76,8 +74,7 @@ int32_t PowerManagerImpl::Delegate::Add(std::shared_ptr<Observer> observer)
 int32_t PowerManagerImpl::Delegate::Remove(std::shared_ptr<Observer> observer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto it = observers_.begin();
-    while (it != observers_.end()) {
+    for (auto it = observers_.begin(); it != observers_.end();) {
         auto obs = it->lock();
         if (obs == nullptr) {
             it = observers_.erase(it);
@@ -96,8 +93,7 @@ int32_t PowerManagerImpl::Delegate::Remove(std::shared_ptr<Observer> observer)
 std::list<std::weak_ptr<PowerManager::Observer>> PowerManagerImpl::Delegate::GetObs()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto it = observers_.begin();
-    while (it != observers_.end()) {
+    for (auto it = observers_.begin(); it != observers_.end();) {
         if (it->expired()) {
             it = observers_.erase(it);
         } else {
@@ -119,12 +115,26 @@ bool PowerManagerImpl::Delegate::IsCharging()
 
 PowerManagerImpl::PowerManagerImpl() : delegate_(std::make_shared<Delegate>()) {}
 
+PowerManagerImpl::~PowerManagerImpl()
+{
+    UnsubscribePowerEvent();
+}
+
 int32_t PowerManagerImpl::Subscribe(std::shared_ptr<Observer> observer)
 {
     if (observer == nullptr) {
         return -1;
     }
-    return delegate_->Add(observer);
+    if (delegate_->Add(observer) != 0) {
+        return -1;
+    }
+#ifdef SUPPORT_BATTERY_SRV
+    QueryInitialChargingState();
+    if (stateKnown_) {
+        observer->OnChange(CurrentEvent());
+    }
+#endif
+    return 0;
 }
 
 int32_t PowerManagerImpl::Unsubscribe(std::shared_ptr<Observer> observer)
@@ -133,6 +143,14 @@ int32_t PowerManagerImpl::Unsubscribe(std::shared_ptr<Observer> observer)
         return -1;
     }
     return delegate_->Remove(observer);
+}
+
+bool PowerManagerImpl::IsCharging()
+{
+#ifdef SUPPORT_BATTERY_SRV
+    QueryInitialChargingState();
+#endif
+    return delegate_->IsCharging();
 }
 
 std::shared_ptr<PowerEventSubscriber> PowerManagerImpl::GetSubscriber()
@@ -178,18 +196,40 @@ void PowerManagerImpl::SubscribePowerEvent()
 {
     auto result = CommonEventManager::SubscribeCommonEvent(GetSubscriber());
     ZLOGI("register power subscriber: %{public}d.", result);
+#ifdef SUPPORT_BATTERY_SRV
+    QueryInitialChargingState();
+#endif
 }
 
 void PowerManagerImpl::UnsubscribePowerEvent()
 {
     auto res = CommonEventManager::UnSubscribeCommonEvent(GetSubscriber());
-    ZLOGW("unregister power event res:%d", res);
+    ZLOGW("unregister power event res:%{public}d", res);
 }
 
-bool PowerManagerImpl::IsCharging()
+#ifdef SUPPORT_BATTERY_SRV
+bool PowerManagerImpl::IsPluggedConnected(int32_t pluggedType)
 {
-    return delegate_->IsCharging();
+    using PT = OHOS::PowerMgr::BatteryPluggedType;
+    auto type = static_cast<PT>(pluggedType);
+    return type != PT::PLUGGED_TYPE_NONE;
 }
 
-PowerManagerImpl::~PowerManagerImpl() {}
+PowerManager::Observer::PowerEvent PowerManagerImpl::CurrentEvent()
+{
+    return delegate_->IsCharging() ? Observer::PowerEvent::CHARGING
+                                   : Observer::PowerEvent::DIS_CHARGING;
+}
+
+void PowerManagerImpl::QueryInitialChargingState()
+{
+    if (stateKnown_) {
+        return;
+    }
+    auto plugged = OHOS::PowerMgr::BatterySrvClient::GetInstance().GetPluggedType();
+    delegate_->SetCharging(IsPluggedConnected(static_cast<int32_t>(plugged)));
+    stateKnown_ = true;
+    ZLOGI("init charging state from batterysrv: %{public}d", delegate_->IsCharging());
+}
+#endif
 } // namespace OHOS::DistributedData
