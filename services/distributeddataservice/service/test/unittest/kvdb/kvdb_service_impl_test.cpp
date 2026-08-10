@@ -160,7 +160,7 @@ void KvdbServiceImplTest::SetUpTestCase(void)
     BMetaDataManager::metaDataManager = metaDataManagerMock;
     metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
     BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
-    deviceManagerAdapterMock = std::make_shared<DeviceManagerAdapterMock>();
+    deviceManagerAdapterMock = std::make_shared<testing::NiceMock<DeviceManagerAdapterMock>>();
     BDeviceManagerAdapter::deviceManagerAdapter = deviceManagerAdapterMock;
 }
 
@@ -185,6 +185,10 @@ void KvdbServiceImplTest::SetUp(void)
     kvdbServiceImpl_ = std::make_shared<DistributedKv::KVDBServiceImpl>();
 
     options_.isNeedCompress = true;
+    DeviceInfo localDevice;
+    localDevice.uuid = "local_uuid";
+    EXPECT_CALL(*deviceManagerAdapterMock, GetLocalDevice())
+        .WillRepeatedly(testing::Return(localDevice));
     metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData_.bundleName = appId.appId;
     metaData_.storeId = storeId.storeId;
@@ -769,35 +773,6 @@ HWTEST_F(KvdbServiceImplTest, DoSyncBeginTest001, TestSize.Level0)
     status = kvdbServiceImpl_->DoSyncBegin(device2, meta, syncInfo, syncEnd, DBStatus::OK);
     ASSERT_EQ(status, Status::INVALID_ARGUMENT);
     status = kvdbServiceImpl_->DoSyncBegin(device1, meta, syncInfo, syncEnd, DBStatus::OK);
-    ASSERT_EQ(status, Status::ERROR);
-}
-
-/**
-* @tc.name: DoSyncBegin_OHOSType_ShouldNotSetEqualIdentifier
-* @tc.desc: Test DoSyncBegin when device is OHOS type, SetEqualIdentifier should not be called
-* @tc.type: FUNC
-* @tc.author: agent
-*/
-HWTEST_F(KvdbServiceImplTest, DoSyncBegin_OHOSType_ShouldNotSetEqualIdentifier, TestSize.Level0)
-{
-    Status status = manager.GetSingleKvStore(create, appId, storeId, kvStore);
-    ASSERT_NE(kvStore, nullptr);
-    ASSERT_EQ(status, Status::SUCCESS);
-    
-    std::vector<std::string> devices{ "ohos_device_01" };
-    StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId);
-    SyncInfo syncInfo;
-    syncInfo.devices = { "ohos_device_01" };
-    syncInfo.query = "query";
-    SyncEnd syncEnd = SyncEndCallback;
-    
-    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType("ohos_device_01")).WillRepeatedly(testing::Return(true));
-    
-    std::map<std::string, DistributedDB::DBStatus> statusMap;
-    statusMap.insert_or_assign("DoSyncBegin_OHOSType", DBStatus::OK);
-    syncEnd(statusMap);
-    
-    status = kvdbServiceImpl_->DoSyncBegin(devices, meta, syncInfo, syncEnd, DBStatus::OK);
     ASSERT_EQ(status, Status::ERROR);
 }
 
@@ -2132,6 +2107,35 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithValidAreaEL5, TestSize.Level0)
     kvdbServiceImpl_->AddOptions(options, metaData);
     
     ASSERT_EQ(metaData.area, GeneralStore::EL5);
+}
+
+/**
+* @tc.name: DoSyncBegin_OHOSType_ShouldNotSetEqualIdentifier
+* @tc.desc: Test DoSyncBegin when device is OHOS type, SetEqualIdentifier should not be called
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, DoSyncBegin_OHOSType_ShouldNotSetEqualIdentifier, TestSize.Level0)
+{
+    Status status = manager.GetSingleKvStore(create, appId, storeId, kvStore);
+    ASSERT_NE(kvStore, nullptr);
+    ASSERT_EQ(status, Status::SUCCESS);
+
+    std::vector<std::string> devices{ "ohos_device_01" };
+    StoreMetaData meta = kvdbServiceImpl_->GetStoreMetaData(appId, storeId);
+    SyncInfo syncInfo;
+    syncInfo.devices = { "ohos_device_01" };
+    syncInfo.query = "query";
+    SyncEnd syncEnd = SyncEndCallback;
+
+    EXPECT_CALL(*deviceManagerAdapterMock, IsOHOSType("ohos_device_01")).WillRepeatedly(testing::Return(true));
+
+    std::map<std::string, DistributedDB::DBStatus> statusMap;
+    statusMap.insert_or_assign("DoSyncBegin_OHOSType", DBStatus::OK);
+    syncEnd(statusMap);
+
+    status = kvdbServiceImpl_->DoSyncBegin(devices, meta, syncInfo, syncEnd, DBStatus::OK);
+    ASSERT_EQ(status, Status::ERROR);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
