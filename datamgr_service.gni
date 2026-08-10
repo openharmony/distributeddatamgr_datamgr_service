@@ -48,8 +48,8 @@ declare_args() {
   }
 
   datamgr_service_batterymgr = true
-  if (!defined(global_parts_info) ||
-      !defined(global_parts_info.power_battery_manager)) {
+  if (defined(global_parts_info) &&
+      !defined(global_parts_info.powermgr_battery_manager)) {
     datamgr_service_batterymgr = false
   }
 

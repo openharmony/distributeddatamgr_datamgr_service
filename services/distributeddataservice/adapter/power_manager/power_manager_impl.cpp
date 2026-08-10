@@ -212,7 +212,7 @@ bool PowerManagerImpl::IsPluggedConnected(int32_t pluggedType)
 {
     using PT = OHOS::PowerMgr::BatteryPluggedType;
     auto type = static_cast<PT>(pluggedType);
-    return type != PT::PLUGGED_TYPE_NONE && type != PT::PLUGGED_TYPE_BUTT;
+    return type != PT::PLUGGED_TYPE_NONE;
 }
 
 PowerManager::Observer::PowerEvent PowerManagerImpl::CurrentEvent()
