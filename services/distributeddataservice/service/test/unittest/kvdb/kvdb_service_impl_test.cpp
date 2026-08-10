@@ -2098,6 +2098,5 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithValidAreaEL5, TestSize.Level0)
     
     ASSERT_EQ(metaData.area, GeneralStore::EL5);
 }
-
 } // namespace DistributedDataTest
 } // namespace OHOS::Test
