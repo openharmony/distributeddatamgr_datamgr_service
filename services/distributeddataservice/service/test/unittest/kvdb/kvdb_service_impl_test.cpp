@@ -2098,5 +2098,178 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithValidAreaEL5, TestSize.Level0)
     
     ASSERT_EQ(metaData.area, GeneralStore::EL5);
 }
+
+/**
+* @tc.name: IsValidParam_StoreIdWithSlash
+* @tc.desc: BeforeCreate with storeId containing slash returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_StoreIdWithSlash, TestSize.Level0)
+{
+    StoreId invalidStoreId = { "invalid/store" };
+    Options opts;
+    opts.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    opts.area = OHOS::DistributedKv::EL1;
+    opts.baseDir = "/data/service/el1/public/database/test";
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, invalidStoreId, opts);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: IsValidParam_AppIdWithDotDot
+ * @tc.desc: BeforeCreate with appId containing ".." traversal returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_AppIdWithDotDot, TestSize.Level0)
+{
+    AppId invalidAppId = { "../etc" };
+    Options opts;
+    opts.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    opts.area = OHOS::DistributedKv::EL1;
+    opts.baseDir = "/data/service/el1/public/database/test";
+    auto status = kvdbServiceImpl_->BeforeCreate(invalidAppId, storeId, opts);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: IsValidParam_HapNameWithDotDot
+ * @tc.desc: BeforeCreate with hapName containing ".." traversal returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_HapNameWithDotDot, TestSize.Level0)
+{
+    Options opts;
+    opts.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    opts.area = OHOS::DistributedKv::EL1;
+    opts.hapName = "../traversal";
+    opts.baseDir = "/data/service/el1/public/database/test";
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, opts);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: IsValidParam_BaseDirWithTraversal
+* @tc.desc: BeforeCreate with baseDir containing ".." traversal returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_BaseDirWithTraversal, TestSize.Level0)
+{
+    Options opts;
+    opts.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    opts.area = OHOS::DistributedKv::EL1;
+    opts.hapName = "testModule";
+    opts.baseDir = "/data/../../../etc/passwd";
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, opts);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: IsValidParam_EmptyBaseDir
+* @tc.desc: BeforeCreate with empty baseDir passes validation
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_EmptyBaseDir, TestSize.Level0)
+{
+    Options opts;
+    opts.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    opts.area = OHOS::DistributedKv::EL1;
+    opts.baseDir = "";
+    EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
+        .WillOnce(testing::Return(false))
+        .WillRepeatedly(testing::Return(false));
+    auto status = kvdbServiceImpl_->BeforeCreate(appId, storeId, opts);
+    EXPECT_EQ(status, Status::SUCCESS);
+}
+
+/**
+* @tc.name: IsValidParam_AfterCreateInvalidBaseDir
+* @tc.desc: AfterCreate with invalid baseDir returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_AfterCreateInvalidBaseDir, TestSize.Level0)
+{
+    Options opts;
+    opts.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    opts.area = OHOS::DistributedKv::EL1;
+    opts.baseDir = "/data/../../../etc";
+    std::vector<uint8_t> password;
+    auto status = kvdbServiceImpl_->AfterCreate(appId, storeId, opts, password);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: IsValidParam_DeleteWithInvalidBaseDir
+* @tc.desc: Delete with invalid baseDir returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_DeleteWithInvalidBaseDir, TestSize.Level0)
+{
+    Options opts;
+    opts.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    opts.area = OHOS::DistributedKv::EL1;
+    opts.baseDir = "/data/../../../etc";
+    auto status = kvdbServiceImpl_->Delete(appId, storeId, opts);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: IsValidParam_GetBackupPasswordInvalidBaseDir
+* @tc.desc: GetBackupPassword with invalid baseDir returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_GetBackupPasswordInvalidBaseDir, TestSize.Level0)
+{
+    BackupInfo info;
+    info.baseDir = "/data/../../../etc";
+    info.subUser = 0;
+    std::vector<std::vector<uint8_t>> passwords;
+    auto status = kvdbServiceImpl_->GetBackupPassword(appId, storeId, info, passwords,
+        DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: IsValidParam_AfterCreateInvalidAppId
+* @tc.desc: AfterCreate with invalid appId returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_AfterCreateInvalidAppId, TestSize.Level0)
+{
+    AppId invalidAppId = { "../bad" };
+    Options opts;
+    opts.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    opts.area = OHOS::DistributedKv::EL1;
+    opts.baseDir = "/data/service/el1/public/database/test";
+    std::vector<uint8_t> password;
+    auto status = kvdbServiceImpl_->AfterCreate(invalidAppId, storeId, opts, password);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: IsValidParam_GetBackupPasswordInvalidStoreId
+* @tc.desc: GetBackupPassword with invalid storeId returns INVALID_ARGUMENT
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, IsValidParam_GetBackupPasswordInvalidStoreId, TestSize.Level0)
+{
+    StoreId invalidStoreId = { "bad/store" };
+    BackupInfo info;
+    info.baseDir = "/data/service/el1/public/database/test";
+    info.subUser = 0;
+    std::vector<std::vector<uint8_t>> passwords;
+    auto status = kvdbServiceImpl_->GetBackupPassword(appId, invalidStoreId, info, passwords,
+        DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
+    EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

@@ -476,5 +476,58 @@ HWTEST_F(BackupManagerServiceTest, IsFileExist, TestSize.Level1)
     bool status = BackupManager::GetInstance().IsFileExist(path);
     EXPECT_FALSE(status);
 }
+
+/**
+* @tc.name: Init_InvalidPathWithDotDot
+* @tc.desc: Init skips meta with bundleName containing ".." without creating backup file
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(BackupManagerServiceTest, Init_InvalidPathWithDotDot, TestSize.Level1)
+{
+    StoreMetaData meta;
+    meta = metaData_;
+    meta.isBackup = true;
+    meta.isDirty = false;
+    meta.bundleName = "../etc";
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(StoreMetaData::GetPrefix(
+        { DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid }), meta, true));
+    BackupManager::GetInstance().Init();
+    auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
+    EXPECT_FALSE(BackupManager::GetInstance().IsFileExist(backupPath));
+}
+
+/**
+* @tc.name: DoBackup_InvalidPathWithDotDot
+* @tc.desc: DoBackup with meta bundleName containing ".." returns early without creating backup file
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(BackupManagerServiceTest, DoBackup_InvalidPathWithDotDot, TestSize.Level1)
+{
+    StoreMetaData meta;
+    meta = metaData_;
+    meta.isBackup = true;
+    meta.isDirty = false;
+    meta.bundleName = "../etc";
+    BackupManager::GetInstance().DoBackup(meta);
+    auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
+    EXPECT_FALSE(BackupManager::GetInstance().IsFileExist(backupPath));
+}
+
+/**
+* @tc.name: GetClearType_InvalidPathWithDotDot
+* @tc.desc: GetClearType with meta bundleName containing ".." returns DO_NOTHING
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(BackupManagerServiceTest, GetClearType_InvalidPathWithDotDot, TestSize.Level1)
+{
+    StoreMetaData meta;
+    meta = metaData_;
+    meta.bundleName = "../etc";
+    auto result = BackupManager::GetInstance().GetClearType(meta);
+    EXPECT_EQ(result, BackupManager::DO_NOTHING);
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

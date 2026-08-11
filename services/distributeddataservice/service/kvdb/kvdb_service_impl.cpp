@@ -195,6 +195,11 @@ Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, int32
 
 Status KVDBServiceImpl::Delete(const AppId &appId, const StoreId &storeId, const Options &options)
 {
+    if (!IsValidParam(appId, storeId, options.baseDir, options.hapName)) {
+        ZLOGE("param is invalid, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return INVALID_ARGUMENT;
+    }
     StoreMetaData metaData = LoadStoreMetaData(appId, storeId, options.subUser);
     if (metaData.instanceId < 0) {
         return ILLEGAL_STATE;
@@ -647,6 +652,11 @@ std::vector<uint8_t> KVDBServiceImpl::LoadSecretKey(const StoreMetaData &metaDat
 Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &storeId,
     const BackupInfo &info, std::vector<std::vector<uint8_t>> &passwords, int32_t passwordType)
 {
+    if (!IsValidParam(appId, storeId, info.baseDir)) {
+        ZLOGE("param is invalid, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return INVALID_ARGUMENT;
+    }
     StoreMetaData metaData = LoadStoreMetaData(appId, storeId, info.subUser);
     metaData.dataDir = info.isCustomDir ? info.baseDir : DirectoryManager::GetInstance().GetStorePath(metaData);
     if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
@@ -717,6 +727,11 @@ Status KVDBServiceImpl::SetConfig(const AppId &appId, const StoreId &storeId, co
 
 Status KVDBServiceImpl::BeforeCreate(const AppId &appId, const StoreId &storeId, const Options &options)
 {
+    if (!IsValidParam(appId, storeId, options.baseDir, options.hapName)) {
+        ZLOGE("param is invalid, appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
+            Anonymous::Change(storeId.storeId).c_str());
+        return INVALID_ARGUMENT;
+    }
     ZLOGD("appId:%{public}s storeId:%{public}s to export data", appId.appId.c_str(),
         Anonymous::Change(storeId.storeId).c_str());
     StoreMetaData meta = GetStoreMetaData(appId, storeId, options.subUser);
@@ -793,7 +808,8 @@ void KVDBServiceImpl::SaveSecretKeyMeta(const StoreMetaData &metaData, const std
 Status KVDBServiceImpl::AfterCreate(
     const AppId &appId, const StoreId &storeId, const Options &options, const std::vector<uint8_t> &password)
 {
-    if (!appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
+    if (!IsValidParam(appId, storeId, options.baseDir, options.hapName) ||
+        !appId.IsValid() || !storeId.IsValid() || !options.IsValidType()) {
         ZLOGE("failed please check type:%{public}d appId:%{public}s storeId:%{public}s dataType:%{public}d",
             options.kvStoreType, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str(), options.dataType);
         return INVALID_ARGUMENT;
@@ -1690,6 +1706,28 @@ void KVDBServiceImpl::DeleteInner(const AppId &appId, const StoreId &storeId, co
     AutoCache::GetInstance().CloseStore(metaData.tokenId, metaData.dataDir, storeId);
     ZLOGD("appId:%{public}s storeId:%{public}s instanceId:%{public}d", appId.appId.c_str(),
           Anonymous::Change(storeId.storeId).c_str(), metaData.instanceId);
+}
+
+bool KVDBServiceImpl::IsValidParam(const AppId &appId, const StoreId &storeId, const std::string &baseDir,
+    const std::string &hapName)
+{
+    if (storeId.storeId.find("/") != std::string::npos) {
+        ZLOGE("storeId is Invalid, storeId is %{public}s.", Anonymous::Change(storeId.storeId).c_str());
+        return false;
+    }
+    if (!Constant::IsValidPath(appId.appId)) {
+        ZLOGE("appId is Invalid, appId is %{public}s.", appId.appId.c_str());
+        return false;
+    }
+    if (!Constant::IsValidPath(hapName)) {
+        ZLOGE("hapName is Invalid, hapName is %{public}s.", hapName.c_str());
+        return false;
+    }
+    if (!baseDir.empty() && !Constant::IsValidPath(baseDir)) {
+        ZLOGE("baseDir is Invalid, baseDir is %{public}s.", Anonymous::Change(baseDir).c_str());
+        return false;
+    }
+    return true;
 }
 
 void KVDBServiceImpl::SaveLaunchInfo(StoreMetaData &meta)
