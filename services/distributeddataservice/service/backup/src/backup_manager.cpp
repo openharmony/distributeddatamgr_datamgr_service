@@ -26,8 +26,10 @@
 #include "directory/directory_manager.h"
 #include "log_print.h"
 #include "metadata/meta_data_manager.h"
+#include "securec.h"
 #include "types.h"
 #include "utils/anonymous.h"
+#include "utils/constant.h"
 namespace OHOS::DistributedData {
 namespace {
 constexpr const int COPY_SIZE = 1024;
@@ -61,6 +63,10 @@ void BackupManager::Init()
             continue;
         }
         auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
+        if (!Constant::IsValidPath(backupPath)) {
+            ZLOGE("Invalid backup path detected, path:%{public}s", Anonymous::Change(backupPath).c_str());
+            continue;
+        }
         switch (GetClearType(meta)) {
             case ROLLBACK:
                 RollBackData(backupPath);
@@ -139,6 +145,10 @@ void BackupManager::DoBackup(const StoreMetaData &meta)
     }
     auto backupPath = DirectoryManager::GetInstance().GetStoreBackupPath(meta);
     std::string backupFullPath = backupPath + "/" + AUTO_BACKUP_NAME;
+    if (!Constant::IsValidPath(backupFullPath)) {
+        ZLOGE("Invalid backup full path detected, path:%{public}s", Anonymous::Change(backupFullPath).c_str());
+        return;
+    }
     KeepData(backupFullPath);
     bool result = false;
     exporters_[meta.storeType](meta, backupFullPath + BACKUP_TMP_POSTFIX, result);
@@ -251,6 +261,10 @@ void BackupManager::CleanData(const std::string &path)
 BackupManager::ClearType BackupManager::GetClearType(const StoreMetaData &meta)
 {
     auto backupFile = DirectoryManager::GetInstance().GetStoreBackupPath(meta) + "/" + AUTO_BACKUP_NAME;
+    if (!Constant::IsValidPath(backupFile)) {
+        ZLOGE("Invalid backup file path detected, path:%{public}s", Anonymous::Change(backupFile).c_str());
+        return DO_NOTHING;
+    }
     auto dbKey = meta.GetSecretKey();
     auto backupKey = meta.GetBackupSecretKey();
     auto bkFile = backupFile + BACKUP_BK_POSTFIX;
@@ -306,6 +320,7 @@ void BackupManager::CopyFile(const std::string &oldPath, const std::string &newP
     }
     fin.close();
     fout.close();
+    (void)memset_s(buf, COPY_SIZE, 0, COPY_SIZE);
 }
 
 std::vector<uint8_t> BackupManager::GetPassWord(const StoreMetaData &meta)
