@@ -435,5 +435,71 @@ HWTEST_F(RdbGeneralStoreTest2, SetSubscribeSchema_Failed, TestSize.Level1)
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
     remove(meta.dataDir.c_str());
 }
+ 
+/**
+ * @tc.name: Sync_CloudSyncIsCompensationFalse
+ * @tc.desc: RdbGeneralStore DoCloudSync isCompensation=false, if branch is entered
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest2, Sync_CloudSyncIsCompensationFalse, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
+    ASSERT_NE(store_, nullptr);
+
+    GeneralStore::Devices devices;
+    MockQuery query;
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::CLOUD_TIME_FIRST;
+    syncParam.isCompensation = false;
+    auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: Sync_CloudSyncIsCompensationTrue
+ * @tc.desc: RdbGeneralStore DoCloudSync isCompensation=true, if branch is skipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest2, Sync_CloudSyncIsCompensationTrue, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
+    ASSERT_NE(store_, nullptr);
+
+    GeneralStore::Devices devices;
+    MockQuery query;
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::CLOUD_TIME_FIRST;
+    syncParam.isCompensation = true;
+    auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: Sync_CloudSyncExecutorNull
+ * @tc.desc: RdbGeneralStore DoCloudSync executor=nullptr, if branch is skipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(RdbGeneralStoreTest2, Sync_CloudSyncExecutorNull, TestSize.Level1)
+{
+    metaData_.storeId = "mock";
+    store_ = std::make_shared<RdbGeneralStore>(metaData_);
+    store_->Init();
+    ASSERT_NE(store_, nullptr);
+
+    GeneralStore::Devices devices;
+    MockQuery query;
+    GeneralStore::DetailAsync async;
+    SyncParam syncParam;
+    syncParam.mode = GeneralStore::CLOUD_TIME_FIRST;
+    syncParam.isCompensation = false;
+    auto [result1, result2] = store_->Sync(devices, query, async, syncParam);
+    EXPECT_EQ(result1, GeneralError::E_OK);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
