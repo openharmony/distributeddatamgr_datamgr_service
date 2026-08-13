@@ -332,6 +332,9 @@ HWTEST_F(PowerManagerImplTest, OnReceiveEvent_MultipleEvents_AllCallbacksInvoked
     auto observer = CreateObserver();
     ASSERT_EQ(manager->Subscribe(observer), 0);
 
+    // Reset counter because Subscribe may trigger initial state callback
+    observer->Reset();
+
     // Publish charging and discharging events
     CommonEventManager::PublishChargingEvent(80);
 
@@ -358,6 +361,9 @@ HWTEST_F(PowerManagerImplTest, EventSubscriber_ChargingAndDisCharging_HandleCorr
     auto *manager = GetManager();
     auto observer = CreateObserver();
     ASSERT_EQ(manager->Subscribe(observer), 0);
+
+    // Reset counter because Subscribe may trigger initial state callback
+    observer->Reset();
 
     // Test charging
     CommonEventManager::PublishChargingEvent(50);
@@ -578,6 +584,9 @@ HWTEST_F(PowerManagerImplTest, CompletePowerLifecycle_Successful, TestSize.Level
     auto *manager = GetManager();
     auto observer = CreateObserver("Lifecycle");
     ASSERT_EQ(manager->Subscribe(observer), 0);
+
+    // Reset counter because Subscribe may trigger initial state callback
+    observer->Reset();
 
     // Initial state: not charging
     ASSERT_FALSE(manager->IsCharging());
