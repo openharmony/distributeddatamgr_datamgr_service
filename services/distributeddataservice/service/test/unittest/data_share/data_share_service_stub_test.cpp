@@ -458,7 +458,7 @@ HWTEST_F(DataShareServiceStubTest, OnSubscribeProxyData_RemoteObjNull_ReturnErro
     MessageParcel reply;
     auto result = dataShareServiceStub->OnSubscribeProxyData(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
-ZLOGI("DataShareServiceStubTest::OnSubscribeProxyData_RemoteObjNull_ReturnError end");
+    ZLOGI("DataShareServiceStubTest::OnSubscribeProxyData_RemoteObjNull_ReturnError end");
 }
 
 /**
