@@ -458,6 +458,54 @@ HWTEST_F(DataShareServiceStubTest, OnSubscribeProxyData_RemoteObjNull_ReturnErro
     MessageParcel reply;
     auto result = dataShareServiceStub->OnSubscribeProxyData(request, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
-    ZLOGI("DataShareServiceStubTest::OnSubscribeProxyData_RemoteObjNull_ReturnError end");
+ZLOGI("DataShareServiceStubTest::OnSubscribeProxyData_RemoteObjNull_ReturnError end");
 }
+
+/**
+ * @tc.name: OnRemoteRequest_QueryCode_FreqLogNoFatal
+ * @tc.desc: test OnRemoteRequest with QUERY code exercises ReportFreqCodeCall path without crash
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareServiceStubTest, OnRemoteRequest_QueryCode_FreqLogNoFatal, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest_QueryCode_FreqLogNoFatal start");
+    auto originalToken = GetSelfTokenID();
+    SetSelfTokenID(SYSTEM_TOKENID);
+    uint32_t code = IDataShareService::DATA_SHARE_SERVICE_CMD_QUERY;
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    std::string uri = "datashare:///com.example.app/module/store/table";
+    std::string extUri = "";
+    DataSharePredicates predicates;
+    std::vector<std::string> columns;
+    ITypesUtil::Marshal(request, uri, extUri, predicates, columns);
+    MessageParcel reply;
+    EXPECT_NO_FATAL_FAILURE(dataShareServiceStub->OnRemoteRequest(code, request, reply));
+    SetSelfTokenID(originalToken);
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest_QueryCode_FreqLogNoFatal end");
+}
+
+/**
+ * @tc.name: OnRemoteRequest_SilentProxyCode_FreqLogNoFatal
+ * @tc.desc: test OnRemoteRequest with GET_SILENT_PROXY_STATUS code exercises ReportFreqCodeCall path without crash
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareServiceStubTest, OnRemoteRequest_SilentProxyCode_FreqLogNoFatal, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest_SilentProxyCode_FreqLogNoFatal start");
+    auto originalToken = GetSelfTokenID();
+    SetSelfTokenID(SYSTEM_TOKENID);
+    uint32_t code = IDataShareService::DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS;
+    MessageParcel request;
+    request.WriteInterfaceToken(INTERFACE_TOKEN);
+    std::string uri = "datashare:///com.example.app";
+    ITypesUtil::Marshal(request, uri);
+    MessageParcel reply;
+    EXPECT_NO_FATAL_FAILURE(dataShareServiceStub->OnRemoteRequest(code, request, reply));
+    SetSelfTokenID(originalToken);
+    ZLOGI("DataShareServiceStubTest::OnRemoteRequest_SilentProxyCode_FreqLogNoFatal end");
+}
+
 } // namespace OHOS::Test
