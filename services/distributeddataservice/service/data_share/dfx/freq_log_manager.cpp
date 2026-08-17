@@ -19,6 +19,7 @@
 #include <algorithm>
 #include "hiview_fault_adapter.h"
 #include "idata_share_service.h"
+#include "ipc_skeleton.h"
 #include "log_print.h"
 #include "utils.h"
 
@@ -50,9 +51,11 @@ void FreqLogManager::StartTimer()
     executors_->Schedule(fun, interval);
 }
 
-void FreqLogManager::ReportCall(uint32_t code, uint64_t tokenId, uint64_t uid, uint64_t pid,
-    uint64_t costMs, const std::string &uri)
+void FreqLogManager::ReportCall(uint32_t code, uint64_t costMs, const std::string &uri)
 {
+    uint64_t tokenId = IPCSkeleton::GetCallingTokenID();
+    uint64_t uid = IPCSkeleton::GetCallingUid();
+    uint64_t pid = IPCSkeleton::GetCallingPid();
     callers_.Compute(tokenId, [code, uid, pid, costMs, &uri](const uint64_t &key, CallerStats &stats) {
         if (stats.uid == 0) {
             stats.uid = uid;

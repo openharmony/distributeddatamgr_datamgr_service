@@ -373,14 +373,12 @@ bool DataShareServiceStub::IsTemplateRequest(uint32_t requestCode)
     return false;
 }
 
-void DataShareServiceStub::ReportFreqCodeCall(uint32_t code, uint64_t callingTokenid, uint64_t callingPid,
-    uint64_t durationMs)
+void DataShareServiceStub::ReportFreqCodeCall(uint32_t code, uint64_t durationMs)
 {
     if (code != DATA_SHARE_SERVICE_CMD_QUERY && code != DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS) {
         return;
     }
-    FreqLogManager::GetInstance().ReportCall(code, callingTokenid,
-        IPCSkeleton::GetCallingUid(), callingPid, durationMs, g_freqCodeUri);
+    FreqLogManager::GetInstance().ReportCall(code, durationMs, g_freqCodeUri);
     g_freqCodeUri.clear();
 }
 
@@ -429,7 +427,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
             callerInfo.isSlowRequest = true;
         }
         HiViewAdapter::GetInstance().ReportDataStatistic(callerInfo);
-        ReportFreqCodeCall(code, callingTokenid, callingPid, static_cast<uint64_t>(duration.count()));
+        ReportFreqCodeCall(code, static_cast<uint64_t>(duration.count()));
     }
     DataShareThreadLocal::CleanFromSystemApp();
 

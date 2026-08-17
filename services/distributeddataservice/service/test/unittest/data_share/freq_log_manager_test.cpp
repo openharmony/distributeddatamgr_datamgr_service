@@ -58,12 +58,9 @@ HWTEST_F(FreqLogManagerTest, ReportCall_ValidParams_NoFatal, TestSize.Level1)
     ZLOGI("FreqLogManagerTest::ReportCall_ValidParams_NoFatal start");
     auto &mgr = FreqLogManager::GetInstance();
     uint32_t code = IDataShareService::DATA_SHARE_SERVICE_CMD_QUERY;
-    uint64_t tokenId = 1000;
-    uint64_t uid = 10001;
-    uint64_t pid = 1234;
     uint64_t costMs = 5;
     std::string uri = "datashare:///com.example.app/module/store/table";
-    EXPECT_NO_FATAL_FAILURE(mgr.ReportCall(code, tokenId, uid, pid, costMs, uri));
+    EXPECT_NO_FATAL_FAILURE(mgr.ReportCall(code, costMs, uri));
     ZLOGI("FreqLogManagerTest::ReportCall_ValidParams_NoFatal end");
 }
 
@@ -78,7 +75,7 @@ HWTEST_F(FreqLogManagerTest, ReportCall_EmptyUri_NoFatal, TestSize.Level1)
     ZLOGI("FreqLogManagerTest::ReportCall_EmptyUri_NoFatal start");
     auto &mgr = FreqLogManager::GetInstance();
     uint32_t code = IDataShareService::DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS;
-    EXPECT_NO_FATAL_FAILURE(mgr.ReportCall(code, 2000, 10002, 5678, 10, ""));
+    EXPECT_NO_FATAL_FAILURE(mgr.ReportCall(code, 10, ""));
     ZLOGI("FreqLogManagerTest::ReportCall_EmptyUri_NoFatal end");
 }
 
@@ -95,7 +92,7 @@ HWTEST_F(FreqLogManagerTest, ReportCall_MultipleCalls_NoFatal, TestSize.Level1)
     uint32_t code = IDataShareService::DATA_SHARE_SERVICE_CMD_QUERY;
     std::string uri = "datashare:///com.target.app/module/store/table";
     for (int i = 0; i < 100; i++) {
-        EXPECT_NO_FATAL_FAILURE(mgr.ReportCall(code, 3000, 10003, 9012, i, uri));
+        EXPECT_NO_FATAL_FAILURE(mgr.ReportCall(code, i, uri));
     }
     ZLOGI("FreqLogManagerTest::ReportCall_MultipleCalls_NoFatal end");
 }
@@ -110,14 +107,11 @@ HWTEST_F(FreqLogManagerTest, ReportCall_DifferentCodes_NoFatal, TestSize.Level1)
 {
     ZLOGI("FreqLogManagerTest::ReportCall_DifferentCodes_NoFatal start");
     auto &mgr = FreqLogManager::GetInstance();
-    uint64_t tokenId = 4000;
-    uint64_t uid = 10004;
-    uint64_t pid = 3456;
     std::string uri = "datashare:///com.multi.app/module/store/table";
     EXPECT_NO_FATAL_FAILURE(
-        mgr.ReportCall(IDataShareService::DATA_SHARE_SERVICE_CMD_QUERY, tokenId, uid, pid, 5, uri));
+        mgr.ReportCall(IDataShareService::DATA_SHARE_SERVICE_CMD_QUERY, 5, uri));
     EXPECT_NO_FATAL_FAILURE(
-        mgr.ReportCall(IDataShareService::DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS, tokenId, uid, pid, 3, uri));
+        mgr.ReportCall(IDataShareService::DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS, 3, uri));
     ZLOGI("FreqLogManagerTest::ReportCall_DifferentCodes_NoFatal end");
 }
 

@@ -34,8 +34,7 @@ class FreqLogManager {
 public:
     static FreqLogManager &GetInstance();
     void SetThreadPool(std::shared_ptr<ExecutorPool> executors);
-    void ReportCall(uint32_t code, uint64_t tokenId, uint64_t uid, uint64_t pid,
-        uint64_t costMs, const std::string &uri);
+    void ReportCall(uint32_t code, uint64_t costMs, const std::string &uri);
 
 private:
     struct CodeStats {
