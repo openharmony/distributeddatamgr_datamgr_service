@@ -33,12 +33,8 @@ FlowControlManager::~FlowControlManager()
         auto tasks = std::move(tasks_);
     }
     if (pool_ != nullptr && taskId != ExecutorPool::INVALID_TASK_ID) {
-        pool_->Remove(taskId, true);
+        pool_->Remove(taskId, false);
     }
-    std::unique_lock<decltype(mutex_)> lock(mutex_);
-    condition_.wait(lock, [this]() {
-        return inFlightCount_ == 0;
-    });
 }
 
 void FlowControlManager::Execute(Task task, uint32_t type)
@@ -136,27 +132,15 @@ void FlowControlManager::Schedule()
         pool_->Reset(taskId_, duration);
         return;
     }
-    taskId_ = pool_->Schedule(duration, [this]() {
-        {
-            std::lock_guard<decltype(mutex_)> lock(mutex_);
-            if (!isRunning_) {
-                return;
-            }
-            ++inFlightCount_;
+    auto weakThis = weak_from_this();
+    taskId_ = pool_->Schedule(duration, [weakThis]() {
+        auto self = weakThis.lock();
+        if (self == nullptr) {
+            return;
         }
-        InFlightTaskGuard guard(*this);
-        ExecuteTask();
-        Schedule();
+        self->ExecuteTask();
+        self->Schedule();
     });
-}
-
-void FlowControlManager::CompleteTask()
-{
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    --inFlightCount_;
-    if (inFlightCount_ == 0) {
-        condition_.notify_all();
-    }
 }
 
 void FlowControlManager::Remove(uint32_t type)

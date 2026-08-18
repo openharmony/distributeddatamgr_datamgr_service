@@ -45,7 +45,7 @@ void FlowControlManagerFuzz(FuzzedDataProvider &provider)
     int valueRangeMinPool = provider.ConsumeIntegralInRange<int>(1, 2);
     int valueRangeMaxPool = provider.ConsumeIntegralInRange<int>(3, 4);
     auto pool = std::make_shared<ExecutorPool>(valueRangeMaxPool, valueRangeMinPool);
-    FlowControlManager flowControlManager(pool, std::make_shared<PriorityStrategy>());
+    auto flowControlManager = std::make_shared<FlowControlManager>(pool, std::make_shared<PriorityStrategy>());
 
     auto highPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
     auto mediumPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
@@ -62,18 +62,18 @@ void FlowControlManagerFuzz(FuzzedDataProvider &provider)
 
     // Submit tasks with different priorities
     int taskType1 = provider.ConsumeIntegralInRange<int>(0, 2);
-    flowControlManager.Execute(lowPriorityTask, taskType1);
+    flowControlManager->Execute(lowPriorityTask, taskType1);
     int taskType2 = provider.ConsumeIntegralInRange<int>(0, 2);
-    flowControlManager.Execute(highPriorityTask, taskType2);
+    flowControlManager->Execute(highPriorityTask, taskType2);
     int taskType3 = provider.ConsumeIntegralInRange<int>(0, 2);
-    flowControlManager.Execute(mediumPriorityTask, taskType3);
-    flowControlManager.Remove(taskType1);
+    flowControlManager->Execute(mediumPriorityTask, taskType3);
+    flowControlManager->Remove(taskType1);
 }
 
 void FlowControlManagerPoolNullFuzz(FuzzedDataProvider &provider)
 {
     auto poolNull = nullptr;
-    FlowControlManager flowControlManagerNull(poolNull, std::make_shared<PriorityStrategy>());
+    auto flowControlManagerNull = std::make_shared<FlowControlManager>(poolNull, std::make_shared<PriorityStrategy>());
 
     auto highPriorityTask = []() mutable {};
     auto mediumPriorityTask = []() mutable {};
@@ -81,12 +81,12 @@ void FlowControlManagerPoolNullFuzz(FuzzedDataProvider &provider)
 
     // Submit tasks with different priorities
     int taskType1 = provider.ConsumeIntegralInRange<int>(0, 2);
-    flowControlManagerNull.Execute(lowPriorityTask, taskType1);
+    flowControlManagerNull->Execute(lowPriorityTask, taskType1);
     int taskType2 = provider.ConsumeIntegralInRange<int>(0, 2);
-    flowControlManagerNull.Execute(highPriorityTask, taskType2);
+    flowControlManagerNull->Execute(highPriorityTask, taskType2);
     int taskType3 = provider.ConsumeIntegralInRange<int>(0, 2);
-    flowControlManagerNull.Execute(mediumPriorityTask, taskType3);
-    flowControlManagerNull.Remove(taskType1);
+    flowControlManagerNull->Execute(mediumPriorityTask, taskType3);
+    flowControlManagerNull->Remove(taskType1);
 }
 } // namespace OHOS
 

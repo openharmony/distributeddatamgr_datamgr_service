@@ -17,8 +17,8 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <priority_queue.h>
 #include <string>
@@ -27,7 +27,7 @@
 #include "visibility.h"
 namespace OHOS {
 namespace DistributedData {
-class API_EXPORT FlowControlManager {
+class API_EXPORT FlowControlManager : public std::enable_shared_from_this<FlowControlManager> {
 public:
     using Task = std::function<void()>;
     using Tp = std::chrono::steady_clock::time_point;
@@ -43,6 +43,7 @@ public:
     };
     using Filter = std::function<bool(const TaskInfo &)>;
 
+    // FlowControlManager must be owned by std::shared_ptr because scheduled tasks use weak_from_this().
     FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy);
     ~FlowControlManager();
     void Execute(Task task, uint32_t type = 0);
@@ -71,23 +72,6 @@ private:
 
     void ExecuteTask();
 
-    void CompleteTask();
-
-    class InFlightTaskGuard {
-    public:
-        explicit InFlightTaskGuard(FlowControlManager &manager) : manager_(manager) {}
-        ~InFlightTaskGuard()
-        {
-            manager_.CompleteTask();
-        }
-
-        InFlightTaskGuard(const InFlightTaskGuard &) = delete;
-        InFlightTaskGuard &operator=(const InFlightTaskGuard &) = delete;
-
-    private:
-        FlowControlManager &manager_;
-    };
-
     uint64_t GenTaskId()
     {
         auto taskId = ++innerTaskId_;
@@ -101,10 +85,8 @@ private:
     const std::shared_ptr<Strategy> strategy_;
     bool isRunning_ = true;
     std::mutex mutex_;
-    std::condition_variable condition_;
     std::priority_queue<InnerTask> tasks_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
-    uint32_t inFlightCount_ = 0;
     std::atomic_uint64_t innerTaskId_ = INVALID_INNER_TASK_ID;
 };
 
