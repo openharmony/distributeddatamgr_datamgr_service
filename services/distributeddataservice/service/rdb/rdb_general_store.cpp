@@ -735,9 +735,12 @@ std::pair<int32_t, int32_t> RdbGeneralStore::DoCloudSync(const Devices &devices,
     SyncId syncId = ++syncTaskId_;
     auto callback = GetDBProcessCB(std::move(async), syncMode, syncId, highMode);
     auto executor = GetExecutor();
-    if (executor != nullptr && tasks_ != nullptr && !syncParam.isCompensation) {
-        auto id = executor->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
-        tasks_->Insert(syncId, { id, callback });
+    if (executor != nullptr && tasks_ != nullptr) {
+        TaskId taskId = Executor::INVALID_TASK_ID;
+        if (!syncParam.isCompensation) {
+            taskId = executor->Schedule(std::chrono::minutes(INTERVAL), GetFinishTask(syncId));
+        }
+        tasks_->Insert(syncId, { taskId, callback });
     }
     UpdateCloudConfig(syncParam);
     CloudSyncOption option;
