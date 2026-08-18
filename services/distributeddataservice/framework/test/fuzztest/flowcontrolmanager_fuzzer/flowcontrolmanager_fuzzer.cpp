@@ -45,7 +45,7 @@ void FlowControlManagerFuzz(FuzzedDataProvider &provider)
     int valueRangeMinPool = provider.ConsumeIntegralInRange<int>(1, 2);
     int valueRangeMaxPool = provider.ConsumeIntegralInRange<int>(3, 4);
     auto pool = std::make_shared<ExecutorPool>(valueRangeMaxPool, valueRangeMinPool);
-    auto flowControlManager = std::make_shared<FlowControlManager>(pool, std::make_shared<PriorityStrategy>());
+    auto flowControlManager = FlowControlManager::Create(pool, std::make_shared<PriorityStrategy>());
 
     auto highPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
     auto mediumPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
@@ -73,7 +73,7 @@ void FlowControlManagerFuzz(FuzzedDataProvider &provider)
 void FlowControlManagerPoolNullFuzz(FuzzedDataProvider &provider)
 {
     auto poolNull = nullptr;
-    auto flowControlManagerNull = std::make_shared<FlowControlManager>(poolNull, std::make_shared<PriorityStrategy>());
+    auto flowControlManagerNull = FlowControlManager::Create(poolNull, std::make_shared<PriorityStrategy>());
 
     auto highPriorityTask = []() mutable {};
     auto mediumPriorityTask = []() mutable {};

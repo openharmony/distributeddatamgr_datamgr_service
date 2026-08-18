@@ -58,7 +58,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithDelayStrategy_Tes
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(
+    auto flowControlManager = FlowControlManager::Create(
         pool, std::make_shared<ExecuteWithDelayStrategyImpl>());
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
@@ -111,7 +111,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithIntervalStrategy_
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(
+    auto flowControlManager = FlowControlManager::Create(
         pool, std::make_shared<ExecuteWithIntervalStrategyImpl>());
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
@@ -145,7 +145,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteWithoutStrategy_Test,
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(pool, nullptr); // No strategy
+    auto flowControlManager = FlowControlManager::Create(pool, nullptr); // No strategy
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
         (*flag)++;
@@ -217,7 +217,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PeakLimitStrategy_Test, Test
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
     // Initialize with peak limit strategy allowing max 2 tasks per second
-    auto flowControlManager = std::make_shared<FlowControlManager>(pool, std::make_shared<PeakLimitStrategy>(2));
+    auto flowControlManager = FlowControlManager::Create(pool, std::make_shared<PeakLimitStrategy>(2));
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
         (*flag)++;
@@ -278,7 +278,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityStrategy_Test, TestS
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(pool, std::make_shared<PriorityStrategy>());
+    auto flowControlManager = FlowControlManager::Create(pool, std::make_shared<PriorityStrategy>());
 
     auto highPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
     auto mediumPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
@@ -348,7 +348,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelScheduledTask_Test, Te
 
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(pool, std::make_shared<DelayStrategy>());
+    auto flowControlManager = FlowControlManager::Create(pool, std::make_shared<DelayStrategy>());
 
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
@@ -415,7 +415,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentTaskSubmission_Tes
 
     // Create enlarged executor pool with 3 initial threads and 5 max threads
     auto pool = std::make_shared<ExecutorPool>(5, 3);
-    auto flowControlManager = std::make_shared<FlowControlManager>(pool, std::make_shared<ConcurrentStrategy>());
+    auto flowControlManager = FlowControlManager::Create(pool, std::make_shared<ConcurrentStrategy>());
 
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
@@ -478,7 +478,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_PriorityPreemption_Test, Tes
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(
+    auto flowControlManager = FlowControlManager::Create(
         pool, std::make_shared<PriorityPreemptionStrategy>());
 
     auto highPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
@@ -562,7 +562,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_CancelSpecificPriorityTask_T
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(
+    auto flowControlManager = FlowControlManager::Create(
         pool, std::make_shared<PriorityCancellationStrategy>());
 
     auto priority0Flag = std::make_shared<std::atomic_uint32_t>(0);
@@ -642,7 +642,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteAfterDestruction_Test
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(pool, std::make_shared<DelayStrategy>());
+    auto flowControlManager = FlowControlManager::Create(pool, std::make_shared<DelayStrategy>());
 
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {
@@ -667,6 +667,53 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteAfterDestruction_Test
 
     // Note: Cannot test submitting new tasks as the object has been destroyed
     // The test confirms that destruction properly cancels pending tasks
+}
+
+/**
+* @tc.name: FlowControlManager_ConcurrentDestruction_Test
+* @tc.desc: Test concurrent task submission and manager destruction
+* @tc.type: FUNC
+* @tc.step: 1. Create a delayed FlowControlManager
+* @tc.step: 2. Submit tasks from another thread while destroying the manager
+* @tc.step: 3. Repeat the lifecycle to exercise the scheduled callback race
+* @tc.step: 4. Verify that no delayed task executes after destruction
+* @tc.expected: Concurrent submission and destruction should be safe
+*/
+HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentDestruction_Test, TestSize.Level1)
+{
+    auto pool = std::make_shared<ExecutorPool>(5, 3);
+    auto strategy = std::make_shared<DelayStrategy>();
+    auto flag = std::make_shared<std::atomic_uint32_t>(0);
+    constexpr int32_t managerCount = 50;
+
+    for (int32_t i = 0; i < managerCount; i++) {
+        auto flowControlManager = FlowControlManager::Create(pool, strategy);
+        std::weak_ptr<FlowControlManager> weakManager = flowControlManager;
+        std::atomic_bool stop = false;
+        std::atomic_bool started = false;
+        std::thread submitter([weakManager, flag, &stop, &started]() {
+            started.store(true, std::memory_order_release);
+            while (!stop.load(std::memory_order_acquire)) {
+                auto manager = weakManager.lock();
+                if (manager == nullptr) {
+                    break;
+                }
+                manager->Execute([flag]() {
+                    (*flag)++;
+                });
+            }
+        });
+        while (!started.load(std::memory_order_acquire)) {
+            std::this_thread::yield();
+        }
+        std::this_thread::yield();
+        flowControlManager.reset();
+        stop.store(true, std::memory_order_release);
+        submitter.join();
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
+    EXPECT_EQ(flag->load(), 0);
 }
 
 class LabelBasedStrategy : public FlowControlManager::Strategy {
@@ -711,7 +758,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_LabelBasedFlowControl_Test, 
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(pool, std::make_shared<LabelBasedStrategy>());
+    auto flowControlManager = FlowControlManager::Create(pool, std::make_shared<LabelBasedStrategy>());
 
     auto highPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
     auto mediumPriorityFlag = std::make_shared<std::atomic_uint32_t>(0);
@@ -785,7 +832,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_RemoveByTypeRangeFilter_Test
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(
+    auto flowControlManager = FlowControlManager::Create(
         pool, std::make_shared<RemoveByTypeRangeFilterStrategy>());
 
     std::vector<std::shared_ptr<std::atomic_uint32_t>> flags(10);
@@ -844,7 +891,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_RemoveByComplexFilter_Test, 
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(
+    auto flowControlManager = FlowControlManager::Create(
         pool, std::make_shared<RemoveByComplexFilterStrategy>());
 
     auto flag1 = std::make_shared<std::atomic_uint32_t>(0); // type=1, label="A"
@@ -923,7 +970,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_RemoveWithEmptyFilter_Test, 
 {
     // Create executor pool with 2 initial threads and 3 max threads
     auto pool = std::make_shared<ExecutorPool>(3, 2);
-    auto flowControlManager = std::make_shared<FlowControlManager>(
+    auto flowControlManager = FlowControlManager::Create(
         pool, std::make_shared<RemoveWithEmptyFilterStrategy>());
 
     auto flag1 = std::make_shared<std::atomic_uint32_t>(0);
@@ -1006,7 +1053,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_NullPoolOnInit_Test, TestSiz
 {
     // Create null executor pool
     std::shared_ptr<ExecutorPool> pool = nullptr;
-    auto flowControlManager = std::make_shared<FlowControlManager>(
+    auto flowControlManager = FlowControlManager::Create(
         pool, std::make_shared<NullPoolOnInitStrategy>()); // Null pool
     auto flag = std::make_shared<std::atomic_uint32_t>(0);
     auto task = [flag]() mutable {

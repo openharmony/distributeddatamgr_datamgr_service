@@ -43,8 +43,9 @@ public:
     };
     using Filter = std::function<bool(const TaskInfo &)>;
 
-    // FlowControlManager must be owned by std::shared_ptr because scheduled tasks use weak_from_this().
-    FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy);
+    // Use Create() to initialize the shared ownership required by scheduled callbacks.
+    static std::shared_ptr<FlowControlManager> Create(std::shared_ptr<ExecutorPool> pool,
+        std::shared_ptr<Strategy> strategy);
     ~FlowControlManager();
     void Execute(Task task, uint32_t type = 0);
     void Execute(Task task, TaskInfo info);
@@ -52,6 +53,8 @@ public:
     void Remove(Filter filter = nullptr);
 
 private:
+    FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy);
+
     static constexpr uint32_t INVALID_INNER_TASK_ID = 0;
     struct InnerTask {
         InnerTask(Task task, TaskInfo taskInfo, Tp tp, uint64_t taskId)

@@ -28,7 +28,7 @@ void RdbFlowControlManager::Init(std::shared_ptr<ExecutorPool> pool)
     }
     pool_ = pool;
     auto strategy = std::make_shared<RdbFlowControlStrategy>(globalLimit_, duration_);
-    globalManager_ = std::make_shared<DistributedData::FlowControlManager>(std::move(pool), std::move(strategy));
+    globalManager_ = DistributedData::FlowControlManager::Create(std::move(pool), std::move(strategy));
 }
 
 int32_t RdbFlowControlManager::Execute(Task task, TaskInfo taskInfo)
@@ -45,7 +45,7 @@ int32_t RdbFlowControlManager::Execute(Task task, TaskInfo taskInfo)
             const auto &key, std::shared_ptr<DistributedData::FlowControlManager> &value) {
             if (value == nullptr && pool != nullptr) {
                 auto strategy = std::make_shared<RdbFlowControlStrategy>(appLimit, duration);
-                value = std::make_shared<DistributedData::FlowControlManager>(pool, std::move(strategy));
+                value = DistributedData::FlowControlManager::Create(pool, std::move(strategy));
             }
             manager = value;
             return true;
