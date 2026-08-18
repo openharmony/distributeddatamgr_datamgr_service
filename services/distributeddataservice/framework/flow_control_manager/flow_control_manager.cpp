@@ -37,6 +37,7 @@ FlowControlManager::~FlowControlManager()
 {
     ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
     {
+        // Declare before lock so task closures are destroyed after mutex_ is released.
         decltype(tasks_) tasks;
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         isRunning_ = false;
@@ -173,6 +174,7 @@ void FlowControlManager::Remove(uint32_t type)
 void FlowControlManager::Remove(Filter filter)
 {
     {
+        // Declare before lock so task closures are destroyed after mutex_ is released.
         decltype(tasks_) tasks;
         std::lock_guard<decltype(mutex_)> lock(mutex_);
         tasks = std::move(tasks_);
