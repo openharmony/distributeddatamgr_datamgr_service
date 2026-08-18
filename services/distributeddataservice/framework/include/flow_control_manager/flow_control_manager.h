@@ -15,8 +15,11 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_FLOW_CONTROL_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_FRAMEWORK_FLOW_CONTROL_MANAGER_H
 
+#include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <functional>
+#include <mutex>
 #include <priority_queue.h>
 #include <string>
 
@@ -68,6 +71,23 @@ private:
 
     void ExecuteTask();
 
+    void CompleteTask();
+
+    class InFlightTaskGuard {
+    public:
+        explicit InFlightTaskGuard(FlowControlManager &manager) : manager_(manager) {}
+        ~InFlightTaskGuard()
+        {
+            manager_.CompleteTask();
+        }
+
+        InFlightTaskGuard(const InFlightTaskGuard &) = delete;
+        InFlightTaskGuard &operator=(const InFlightTaskGuard &) = delete;
+
+    private:
+        FlowControlManager &manager_;
+    };
+
     uint64_t GenTaskId()
     {
         auto taskId = ++innerTaskId_;
@@ -81,8 +101,10 @@ private:
     const std::shared_ptr<Strategy> strategy_;
     bool isRunning_ = true;
     std::mutex mutex_;
+    std::condition_variable condition_;
     std::priority_queue<InnerTask> tasks_;
     ExecutorPool::TaskId taskId_ = ExecutorPool::INVALID_TASK_ID;
+    uint32_t inFlightCount_ = 0;
     std::atomic_uint64_t innerTaskId_ = INVALID_INNER_TASK_ID;
 };
 
