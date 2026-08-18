@@ -16,6 +16,7 @@
 #include "flow_control_manager/flow_control_manager.h"
 
 #include <list>
+#include <new>
 
 #include "log_print.h"
 
@@ -23,7 +24,8 @@ namespace OHOS::DistributedData {
 std::shared_ptr<FlowControlManager> FlowControlManager::Create(std::shared_ptr<ExecutorPool> pool,
     std::shared_ptr<Strategy> strategy)
 {
-    return std::shared_ptr<FlowControlManager>(new FlowControlManager(std::move(pool), std::move(strategy)));
+    return std::shared_ptr<FlowControlManager>(
+        new (std::nothrow) FlowControlManager(std::move(pool), std::move(strategy)));
 }
 
 FlowControlManager::FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy)

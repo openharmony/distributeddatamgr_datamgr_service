@@ -670,6 +670,36 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ExecuteAfterDestruction_Test
 }
 
 /**
+* @tc.name: FlowControlManager_NullTask_Test
+* @tc.desc: Test that an empty task is discarded and later tasks still execute
+* @tc.type: FUNC
+* @tc.step: 1. Initialize FlowControlManager with an executor pool and no strategy
+* @tc.step: 2. Submit an empty task and verify that it produces no execution
+* @tc.step: 3. Submit a valid task after the empty task
+* @tc.step: 4. Verify that the valid task is executed normally
+* @tc.expected: Empty tasks should be discarded without affecting subsequent tasks
+*/
+HWTEST_F(FlowControlManagerTest, FlowControlManager_NullTask_Test, TestSize.Level1)
+{
+    auto pool = std::make_shared<ExecutorPool>(3, 2);
+    auto flowControlManager = FlowControlManager::Create(pool, nullptr);
+    ASSERT_NE(flowControlManager, nullptr);
+
+    FlowControlManager::Task emptyTask = nullptr;
+    flowControlManager->Execute(emptyTask);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    auto flag = std::make_shared<std::atomic_uint32_t>(0);
+    flowControlManager->Execute([flag]() {
+        (*flag)++;
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    EXPECT_EQ(flag->load(), 1);
+    flowControlManager->Remove();
+}
+
+/**
 * @tc.name: FlowControlManager_ConcurrentDestruction_Test
 * @tc.desc: Test concurrent task submission and manager destruction
 * @tc.type: FUNC
