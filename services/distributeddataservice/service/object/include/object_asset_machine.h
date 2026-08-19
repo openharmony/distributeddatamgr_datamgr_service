@@ -40,7 +40,8 @@ struct ChangedAssetInfo {
 };
 
 typedef int32_t (*Action)
-    (int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset, const std::pair<std::string, Asset>& newAsset);
+    (int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
+    const std::pair<std::string, Asset>& newAsset);
 
 struct DFAAction {
     int32_t next;
@@ -50,7 +51,7 @@ struct DFAAction {
 
 class ObjectAssetMachine {
 public:
-    static int32_t DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+    static int32_t DFAPostEvent(AssetEvent eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
         const std::pair<std::string, Asset>& newAsset = std::pair<std::string, Asset>());
 };
 } // namespace DistributedObject

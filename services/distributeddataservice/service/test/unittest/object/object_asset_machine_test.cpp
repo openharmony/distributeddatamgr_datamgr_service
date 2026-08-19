@@ -23,6 +23,8 @@
 #include "object_asset_loader.h"
 #include "snapshot/machine_status.h"
 
+#include <thread>
+
 using namespace testing::ext;
 using namespace OHOS::DistributedObject;
 using namespace OHOS::DistributedData;
@@ -39,7 +41,7 @@ protected:
     Asset asset_;
     std::string uri_;
     std::string bundleName_ = "test_bundleName";
-    std::map<std::string, ChangedAssetInfo> changedAssets_;
+    std::map<std::string, std::shared_ptr<ChangedAssetInfo>> changedAssets_;
     std::string sessionId_ = "123";
     StoreInfo storeInfo_;
     std::shared_ptr<ObjectAssetMachine> machine_;
@@ -80,9 +82,9 @@ void ObjectAssetMachineTest::SetUp()
         .user = 100,
     };
     storeInfo_ = storeInfo;
-    ChangedAssetInfo changedAssetInfo(asset, AssetBindInfo, storeInfo);
-    changedAssets_[uri_] = changedAssetInfo;
-    changedAssets_[uri_].status = STATUS_STABLE;
+    auto info = std::make_shared<ChangedAssetInfo>(asset, AssetBindInfo, storeInfo);
+    info->status = STATUS_STABLE;
+    changedAssets_[uri_] = info;
     if (machine_ == nullptr) {
         machine_ = std::make_shared<ObjectAssetMachine>();
     }
@@ -107,11 +109,11 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer001, TestSize.Level0)
         .hash = "modifyTime2_size2",
     };
     std::pair<std::string, Asset> changedAsset{ "device_2", asset };
-    changedAssets_[uri_].status = STATUS_TRANSFERRING;
+    changedAssets_[uri_]->status = STATUS_TRANSFERRING;
     machine_->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
-    ASSERT_EQ(changedAssets_[uri_].deviceId, changedAsset.first);
-    ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
+    ASSERT_EQ(changedAssets_[uri_]->status, STATUS_WAIT_TRANSFER);
+    ASSERT_EQ(changedAssets_[uri_]->deviceId, changedAsset.first);
+    ASSERT_EQ(changedAssets_[uri_]->asset.hash, asset.hash);
 }
 
 /**
@@ -131,9 +133,9 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer002, TestSize.Level0)
         .hash = "modifyTime2_size2",
     };
     std::pair<std::string, Asset> changedAsset{ "device_2", asset };
-    changedAssets_[uri_].status = STATUS_TRANSFERRING;
+    changedAssets_[uri_]->status = STATUS_TRANSFERRING;
     machine_->DFAPostEvent(TRANSFER_FINISHED, changedAssets_[uri_], asset, changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+    ASSERT_EQ(changedAssets_[uri_]->status, STATUS_STABLE);
 }
 
 /**
@@ -153,11 +155,11 @@ HWTEST_F(ObjectAssetMachineTest, StatusTransfer003, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_2", asset };
-    changedAssets_[uri_].status = STATUS_UPLOADING;
+    changedAssets_[uri_]->status = STATUS_UPLOADING;
     machine_->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_WAIT_TRANSFER);
-    ASSERT_EQ(changedAssets_[uri_].deviceId, changedAsset.first);
-    ASSERT_EQ(changedAssets_[uri_].asset.hash, asset.hash);
+    ASSERT_EQ(changedAssets_[uri_]->status, STATUS_WAIT_TRANSFER);
+    ASSERT_EQ(changedAssets_[uri_]->deviceId, changedAsset.first);
+    ASSERT_EQ(changedAssets_[uri_]->asset.hash, asset.hash);
 }
 
 /**
@@ -175,7 +177,7 @@ HWTEST_F(ObjectAssetMachineTest, DFAPostEvent001, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_2", asset };
-    changedAssets_[uri_].status = STATUS_UPLOADING;
+    changedAssets_[uri_]->status = STATUS_UPLOADING;
     auto ret = machine_->DFAPostEvent(EVENT_BUTT, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(ret, GeneralError::E_ERROR);
 }
@@ -195,18 +197,39 @@ HWTEST_F(ObjectAssetMachineTest, DFAPostEvent002, TestSize.Level0)
         .hash = "modifyTime1_size1",
     };
     std::pair<std::string, Asset> changedAsset{ "device_2", asset };
-    changedAssets_[uri_].status = DistributedData::STATUS_NO_CHANGE;
+    changedAssets_[uri_]->status = DistributedData::STATUS_NO_CHANGE;
     auto ret = machine_->DFAPostEvent(UPLOAD, changedAssets_[uri_], asset, changedAsset);
     ASSERT_EQ(ret, GeneralError::E_ERROR);
 }
 
 /**
-* @tc.name: StatusUpload001
-* @tc.desc: No conflict scenarios: normal cloud sync.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: whj
-*/
+ * @tc.name: DFAPostEvent_NullChangedAssetInfo_ReturnsError
+ * @tc.desc: DFAPostEvent with null shared_ptr returns error
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ObjectAssetMachineTest, DFAPostEvent_NullChangedAssetInfo_ReturnsError, TestSize.Level0)
+{
+    std::shared_ptr<ChangedAssetInfo> nullInfo = nullptr;
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    auto ret = machine_->DFAPostEvent(UPLOAD, nullInfo, asset);
+    ASSERT_EQ(ret, GeneralError::E_ERROR);
+}
+
+/**
+ * @tc.name: StatusUpload001
+ * @tc.desc: No conflict scenarios: normal cloud sync.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: whj
+ */
 HWTEST_F(ObjectAssetMachineTest, StatusUpload001, TestSize.Level0)
 {
     Asset asset{
@@ -218,13 +241,13 @@ HWTEST_F(ObjectAssetMachineTest, StatusUpload001, TestSize.Level0)
     };
     std::pair<std::string, Asset> changedAsset{ "device_1", asset };
     machine_->DFAPostEvent(UPLOAD, changedAssets_[uri_], asset, changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_UPLOADING);
+    ASSERT_EQ(changedAssets_[uri_]->status, STATUS_UPLOADING);
 
     machine_->DFAPostEvent(UPLOAD_FINISHED, changedAssets_[uri_], asset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_STABLE);
+    ASSERT_EQ(changedAssets_[uri_]->status, STATUS_STABLE);
     // dotransfer
     machine_->DFAPostEvent(REMOTE_CHANGED, changedAssets_[uri_], asset, changedAsset);
-    ASSERT_EQ(changedAssets_[uri_].status, STATUS_TRANSFERRING);
+    ASSERT_EQ(changedAssets_[uri_]->status, STATUS_TRANSFERRING);
 }
 
 /**
@@ -259,18 +282,18 @@ HWTEST_F(ObjectAssetMachineTest, StatusUpload002, TestSize.Level0)
         .instanceId = time,
         .user = time,
     };
-    ChangedAssetInfo changedAssetInfo(asset, bindInfo, storeInfo);
+    auto changedAssetInfo = std::make_shared<ChangedAssetInfo>(asset, bindInfo, storeInfo);
     std::pair<std::string, Asset> changedAsset{ "device_" + timestamp, asset };
 
     machine_->DFAPostEvent(UPLOAD, changedAssetInfo, asset);
-    ASSERT_EQ(changedAssetInfo.status, STATUS_UPLOADING);
+    ASSERT_EQ(changedAssetInfo->status, STATUS_UPLOADING);
 
     machine_->DFAPostEvent(REMOTE_CHANGED, changedAssetInfo, asset, changedAsset);
-    ASSERT_EQ(changedAssetInfo.status, STATUS_WAIT_TRANSFER);
-    ASSERT_EQ(changedAssetInfo.asset.hash, asset.hash);
+    ASSERT_EQ(changedAssetInfo->status, STATUS_WAIT_TRANSFER);
+    ASSERT_EQ(changedAssetInfo->asset.hash, asset.hash);
 
     machine_->DFAPostEvent(UPLOAD_FINISHED, changedAssetInfo, asset);
-    ASSERT_EQ(changedAssetInfo.status, STATUS_TRANSFERRING);
+    ASSERT_EQ(changedAssetInfo->status, STATUS_TRANSFERRING);
 }
 
 /**
@@ -303,13 +326,49 @@ HWTEST_F(ObjectAssetMachineTest, StatusDownload001, TestSize.Level0)
         .instanceId = 600,
         .user = 600,
     };
-    ChangedAssetInfo changedAssetInfo(asset, AssetBindInfo, storeInfo);
+    auto changedAssetInfo = std::make_shared<ChangedAssetInfo>(asset, AssetBindInfo, storeInfo);
     std::pair<std::string, Asset> changedAsset{ "device_006", asset };
 
     machine_->DFAPostEvent(DOWNLOAD, changedAssetInfo, asset, changedAsset);
-    ASSERT_EQ(changedAssetInfo.status, STATUS_DOWNLOADING);
+    ASSERT_EQ(changedAssetInfo->status, STATUS_DOWNLOADING);
 
     machine_->DFAPostEvent(DOWNLOAD_FINISHED, changedAssetInfo, asset);
-    ASSERT_EQ(changedAssetInfo.status, STATUS_STABLE);
+    ASSERT_EQ(changedAssetInfo->status, STATUS_STABLE);
 }
+/**
+ * @tc.name: DoTransfer_CallbackAfterRelease_SharedPtrKeepsAlive
+ * @tc.desc: Verify DoTransfer's async callback does not UAF after the owner shared_ptr is released.
+ *           The lambda captures shared_ptr by value, so the ChangedAssetInfo stays alive.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ObjectAssetMachineTest, DoTransfer_CallbackAfterRelease_SharedPtrKeepsAlive, TestSize.Level0)
+{
+    auto info = std::make_shared<ChangedAssetInfo>(asset_, AssetBindInfo_, storeInfo_);
+    info->status = STATUS_STABLE;
+    auto observer = info;
+
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime2",
+        .size = "size2",
+        .hash = "modifyTime2_size2",
+    };
+    std::pair<std::string, Asset> newAsset{ "device_2", asset };
+
+    machine_->DFAPostEvent(REMOTE_CHANGED, info, asset, newAsset);
+    ASSERT_EQ(observer->status, STATUS_TRANSFERRING);
+
+    info.reset();
+
+    int timeout = 100;
+    while (timeout > 0 && observer->status != STATUS_STABLE) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        timeout--;
+    }
+    ASSERT_EQ(observer->status, STATUS_STABLE);
+}
+
 } // namespace OHOS::Test
