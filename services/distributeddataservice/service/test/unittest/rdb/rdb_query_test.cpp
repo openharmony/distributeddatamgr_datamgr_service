@@ -647,5 +647,48 @@ HWTEST_F(RdbQueryTest, RdbQuery_NotGlobMixedWithValid_HandleSkippedValidApplied,
     // The valid operation's field is still present.
     EXPECT_TRUE(stmtMixed.find("equal_field") != std::string::npos);
 }
+
+/**
+ * @tc.name: RdbQuery_OperatorZero_LowerBoundaryDispatched
+ * @tc.desc: RdbQuery with operator_=0 (EQUAL_TO, lower boundary of valid range), should dispatch normally.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_OperatorZero_LowerBoundaryDispatched, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "lower_field", "val");
+    RdbQuery rdbQuery(predicates);
+    // operator_=0 passes >= 0 check, has valid handle, statement contains the field.
+    EXPECT_EQ(static_cast<int>(predicates.operations_[0].operator_), 0);
+    std::string stmt = rdbQuery.GetStatement();
+    ASSERT_FALSE(stmt.empty());
+    EXPECT_TRUE(stmt.find("lower_field") != std::string::npos);
+}
+
+/**
+ * @tc.name: RdbQuery_OperatorMaxMinusOne_UpperBoundaryNullHandleSkipped
+ * @tc.desc: RdbQuery with operator_=OPERATOR_MAX-1 (NOT_GLOB, upper boundary of valid range),
+ *           passes range check but hits null handle, should be skipped.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_OperatorMaxMinusOne_UpperBoundaryNullHandleSkipped, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    auto boundaryOp = static_cast<DistributedRdb::RdbPredicateOperator>(
+        DistributedRdb::RdbPredicateOperator::OPERATOR_MAX - 1);
+    predicates.AddOperation(boundaryOp, "upper_field", "val");
+    RdbQuery rdbQuery(predicates);
+    // OPERATOR_MAX-1 passes >= 0 && < OPERATOR_MAX, but HANDLES[OPERATOR_MAX-1] is nullptr.
+    EXPECT_EQ(static_cast<int>(predicates.operations_[0].operator_),
+              static_cast<int>(DistributedRdb::RdbPredicateOperator::OPERATOR_MAX) - 1);
+    // Operation is skipped, no where clause built.
+    EXPECT_TRUE(rdbQuery.GetStatement().empty());
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
