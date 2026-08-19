@@ -670,8 +670,11 @@ HWTEST_F(RdbQueryTest, RdbQuery_OperatorZero_LowerBoundaryDispatched, TestSize.L
 
 /**
  * @tc.name: RdbQuery_OperatorMaxMinusOne_UpperBoundaryNullHandleSkipped
- * @tc.desc: RdbQuery with operator_=OPERATOR_MAX-1 (NOT_GLOB, upper boundary of valid range),
+ * @tc.desc: RdbQuery with operator_=OPERATOR_MAX-1 (upper boundary of valid range),
  *           passes range check but hits null handle, should be skipped.
+ *           Note: currently OPERATOR_MAX-1 == NOT_GLOB, but this test guards the
+ *           boundary itself — if a new operator is inserted before OPERATOR_MAX,
+ *           this test automatically tracks the new upper boundary.
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author: agent
