@@ -574,5 +574,78 @@ HWTEST_F(RdbQueryTest, RdbQuery_AssetsOnly_IntValue, TestSize.Level1)
     RdbQuery rdbQuery(predicates);
     EXPECT_EQ(predicates.operations_.size(), 1);
 }
+
+/**
+ * @tc.name: RdbQuery_NotGlobOperator_NullHandleSkipped
+ * @tc.desc: RdbQuery construction with NOT_GLOB hits null handle branch and is skipped.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_NotGlobOperator_NullHandleSkipped, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    predicates.AddOperation(DistributedRdb::RdbPredicateOperator::NOT_GLOB, "notglob_field", "pattern");
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+    // NOT_GLOB maps to nullptr in HANDLES, the operation is skipped, no where clause is built.
+    EXPECT_TRUE(rdbQuery.GetStatement().empty());
+}
+
+/**
+ * @tc.name: RdbQuery_NegativeOperator_OutOfRangeSkipped
+ * @tc.desc: RdbQuery construction with negative operator is out of range and skipped.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_NegativeOperator_OutOfRangeSkipped, TestSize.Level1)
+{
+    DistributedRdb::PredicatesMemo predicates;
+    predicates.tables_.push_back("table");
+    DistributedRdb::RdbPredicateOperation op;
+    op.operator_ = static_cast<DistributedRdb::RdbPredicateOperator>(-1);
+    op.field_ = "neg_field";
+    op.values_.emplace_back("value");
+    predicates.operations_.push_back(std::move(op));
+    RdbQuery rdbQuery(predicates);
+    EXPECT_EQ(predicates.operations_.size(), 1);
+    // Negative operator fails the >= 0 check, operation is skipped, no where clause is built.
+    EXPECT_TRUE(rdbQuery.GetStatement().empty());
+}
+
+/**
+ * @tc.name: RdbQuery_NotGlobMixedWithValid_HandleSkippedValidApplied
+ * @tc.desc: RdbQuery with NOT_GLOB and EQUAL_TO, NOT_GLOB is skipped while EQUAL_TO is applied.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbQueryTest, RdbQuery_NotGlobMixedWithValid_HandleSkippedValidApplied, TestSize.Level1)
+{
+    // Baseline: query with only EQUAL_TO.
+    DistributedRdb::PredicatesMemo predEqualOnly;
+    predEqualOnly.tables_.push_back("table");
+    predEqualOnly.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "equal_field", "value");
+    RdbQuery queryEqualOnly(predEqualOnly);
+    std::string stmtEqualOnly = queryEqualOnly.GetStatement();
+    ASSERT_FALSE(stmtEqualOnly.empty());
+    ASSERT_TRUE(stmtEqualOnly.find("equal_field") != std::string::npos);
+
+    // Mixed: NOT_GLOB (skipped) + EQUAL_TO (applied).
+    DistributedRdb::PredicatesMemo predMixed;
+    predMixed.tables_.push_back("table");
+    predMixed.AddOperation(DistributedRdb::RdbPredicateOperator::NOT_GLOB, "notglob_field", "pattern");
+    predMixed.AddOperation(DistributedRdb::RdbPredicateOperator::EQUAL_TO, "equal_field", "value");
+    RdbQuery queryMixed(predMixed);
+    std::string stmtMixed = queryMixed.GetStatement();
+    // NOT_GLOB is skipped, so the statement equals the EQUAL_TO-only statement.
+    EXPECT_EQ(stmtEqualOnly, stmtMixed);
+    // The skipped operation's field must not leak into the statement.
+    EXPECT_TRUE(stmtMixed.find("notglob_field") == std::string::npos);
+    // The valid operation's field is still present.
+    EXPECT_TRUE(stmtMixed.find("equal_field") != std::string::npos);
+}
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test
