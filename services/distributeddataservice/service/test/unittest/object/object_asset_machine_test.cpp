@@ -203,12 +203,33 @@ HWTEST_F(ObjectAssetMachineTest, DFAPostEvent002, TestSize.Level0)
 }
 
 /**
-* @tc.name: StatusUpload001
-* @tc.desc: No conflict scenarios: normal cloud sync.
-* @tc.type: FUNC
-* @tc.require:
-* @tc.author: whj
-*/
+ * @tc.name: DFAPostEvent_NullChangedAssetInfo_ReturnsError
+ * @tc.desc: DFAPostEvent with null shared_ptr returns error
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(ObjectAssetMachineTest, DFAPostEvent_NullChangedAssetInfo_ReturnsError, TestSize.Level0)
+{
+    std::shared_ptr<ChangedAssetInfo> nullInfo = nullptr;
+    Asset asset{
+        .name = "test_name",
+        .uri = uri_,
+        .modifyTime = "modifyTime1",
+        .size = "size1",
+        .hash = "modifyTime1_size1",
+    };
+    auto ret = machine_->DFAPostEvent(UPLOAD, nullInfo, asset);
+    ASSERT_EQ(ret, GeneralError::E_ERROR);
+}
+
+/**
+ * @tc.name: StatusUpload001
+ * @tc.desc: No conflict scenarios: normal cloud sync.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: whj
+ */
 HWTEST_F(ObjectAssetMachineTest, StatusUpload001, TestSize.Level0)
 {
     Asset asset{
