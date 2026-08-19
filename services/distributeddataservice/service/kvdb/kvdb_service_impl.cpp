@@ -1635,8 +1635,9 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     HapTokenInfo hapInfo;
     if (isTokenHap && (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) != AccessTokenKitRet::RET_SUCCESS
         || metaData.dataDir.find(hapInfo.bundleName) == std::string::npos)) {
-        ZLOGE("Hap caller access denied! appId:%{public}s storeId:%{public}s dir:%{public}s", metaData.bundleName.c_str(),
-            Anonymous::Change(metaData.storeId).c_str(), Anonymous::Change(metaData.dataDir).c_str());
+        ZLOGE("Hap caller access denied! appId:%{public}s storeId:%{public}s dir:%{public}s",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(),
+            Anonymous::Change(metaData.dataDir).c_str());
         return Status::ERROR;
     }
     auto watcher = GetWatchers(metaData.tokenId, metaData.storeId, metaData.user);
