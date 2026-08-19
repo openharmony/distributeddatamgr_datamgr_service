@@ -41,7 +41,7 @@ struct ChangedAssetInfo {
 
 typedef int32_t (*Action)
     (int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
-        const std::pair<std::string, Asset>& newAsset);
+    const std::pair<std::string, Asset>& newAsset);
 
 struct DFAAction {
     int32_t next;
