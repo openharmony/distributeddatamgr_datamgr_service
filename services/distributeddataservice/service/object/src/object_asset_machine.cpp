@@ -58,6 +58,10 @@ static int32_t Recover(int32_t eventId, std::shared_ptr<ChangedAssetInfo> change
 static int32_t UpdateStore(const std::shared_ptr<ChangedAssetInfo>& changedAsset);
 
 static AutoCache::Store GetStore(const std::shared_ptr<ChangedAssetInfo>& changedAsset);
+static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBindInfo, const Asset& newAsset);
+static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBindInfo& assetBindInfo);
+static void MergeAsset(Asset& oldAsset, const Asset& newAsset);
+static std::string BuildSql(const AssetBindInfo& bindInfo, Values& args);
 static BindEvent::BindEventInfo MakeBindInfo(const std::shared_ptr<ChangedAssetInfo>& changedAsset);
 
 static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
