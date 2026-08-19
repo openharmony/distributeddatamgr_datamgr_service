@@ -1632,10 +1632,9 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     bool isTokenHap = AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_HAP;
-    Security::AccessToken::HapTokenInfo hapInfo;
+    HapTokenInfo hapInfo;
     std::string bundleName;
-    if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
-        == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
+    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) == AccessTokenKitRet::RET_SUCCESS) {
         bundleName = hapInfo.bundleName;
     }
     if (isTokenHap && metaData.dataDir.find(bundleName) == std::string::npos) {
