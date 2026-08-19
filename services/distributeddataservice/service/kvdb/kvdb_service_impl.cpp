@@ -1633,12 +1633,9 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     bool isTokenHap = AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_HAP;
     HapTokenInfo hapInfo;
-    std::string bundleName;
-    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) == AccessTokenKitRet::RET_SUCCESS) {
-        bundleName = hapInfo.bundleName;
-    }
-    if (isTokenHap && metaData.dataDir.find(bundleName) == std::string::npos) {
-        ZLOGE("DataDir is invalid! appId:%{public}s storeId:%{public}s dir:%{public}s", metaData.bundleName.c_str(),
+    if (isTokenHap && (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) != AccessTokenKitRet::RET_SUCCESS
+        || metaData.dataDir.find(hapInfo.bundleName) == std::string::npos)) {
+        ZLOGE("Hap caller access denied! appId:%{public}s storeId:%{public}s dir:%{public}s", metaData.bundleName.c_str(),
             Anonymous::Change(metaData.storeId).c_str(), Anonymous::Change(metaData.dataDir).c_str());
         return Status::ERROR;
     }
