@@ -44,6 +44,11 @@ RdbQuery::RdbQuery(const PredicatesMemo &predicates, bool isPriority)
     predicates_ = std::make_shared<Predicates>(*predicates.tables_.begin());
     for (const auto& operation : predicates.operations_) {
         if (operation.operator_ >= 0 && operation.operator_ < OPERATOR_MAX) {
+            if (HANDLES[operation.operator_] == nullptr) {
+                ZLOGW("operator %{public}d has no handle, field=%{public}s, skipped",
+                      static_cast<int>(operation.operator_), Anonymous::Change(operation.field_).c_str());
+                continue;
+            }
             (this->*HANDLES[operation.operator_])(operation);
         }
     }
