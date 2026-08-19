@@ -1646,6 +1646,16 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
 {
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    bool isTokenHap = AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_HAP;
+    HapTokenInfo hapInfo;
+    if (isTokenHap && (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) != AccessTokenKitRet::RET_SUCCESS
+        || metaData.dataDir.find(hapInfo.bundleName) == std::string::npos)) {
+        ZLOGE("Hap caller access denied! appId:%{public}s storeId:%{public}s dir:%{public}s",
+            metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(),
+            Anonymous::Change(metaData.dataDir).c_str());
+        return Status::ERROR;
+    }
     auto watcher = GetWatchers(metaData.tokenId, metaData.storeId, metaData.user);
     auto store = AutoCache::GetInstance().GetStore(metaData, watcher);
     if (store == nullptr) {
@@ -1660,8 +1670,7 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     } else {
         auto uuid = DMAdapter::GetInstance().ToUUID(device);
         if (uuid.empty()) {
-            auto tokenId = IPCSkeleton::GetCallingTokenID();
-            if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+            if (!isTokenHap) {
                 ZLOGW("uuid convert empty! device:%{public}s", Anonymous::Change(device).c_str());
                 uuid = device;
             }
