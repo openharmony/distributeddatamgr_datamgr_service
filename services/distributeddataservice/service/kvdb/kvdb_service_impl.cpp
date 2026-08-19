@@ -1631,8 +1631,14 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    bool isHap = AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_HAP;
-    if (isHap && metaData.dataDir.find(metaData.bundleName) == std::string::npos) {
+    bool isTokenHap = AccessTokenKit::GetTokenTypeFlag(tokenId) == TOKEN_HAP;
+    Security::AccessToken::HapTokenInfo hapInfo;
+    std::string bundleName;
+    if (Security::AccessToken::AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo)
+        == Security::AccessToken::AccessTokenKitRet::RET_SUCCESS) {
+        bundleName = hapInfo.bundleName;
+    }
+    if (isTokenHap && metaData.dataDir.find(bundleName) == std::string::npos) {
         ZLOGE("DataDir is invalid! appId:%{public}s storeId:%{public}s dir:%{public}s", metaData.bundleName.c_str(),
             Anonymous::Change(metaData.storeId).c_str(), Anonymous::Change(metaData.dataDir).c_str());
         return Status::ERROR;
@@ -1651,7 +1657,7 @@ Status KVDBServiceImpl::RemoveDeviceData(const AppId &appId, const StoreId &stor
     } else {
         auto uuid = DMAdapter::GetInstance().ToUUID(device);
         if (uuid.empty()) {
-            if (!isHap) {
+            if (!isTokenHap) {
                 ZLOGW("uuid convert empty! device:%{public}s", Anonymous::Change(device).c_str());
                 uuid = device;
             }
