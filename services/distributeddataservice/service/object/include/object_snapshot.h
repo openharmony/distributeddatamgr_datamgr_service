@@ -39,7 +39,7 @@ public:
     bool IsBoundAsset(const Asset& asset) override;
 
 private:
-    std::map<std::string, ChangedAssetInfo> changedAssets_;
+    std::map<std::string, std::shared_ptr<ChangedAssetInfo>> changedAssets_;
     std::shared_ptr<ObjectAssetMachine> assetMachine_;
 };
 } // namespace DistributedObject
