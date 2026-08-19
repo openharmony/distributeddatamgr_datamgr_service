@@ -53,7 +53,7 @@ TransferStatus ObjectSnapshot::GetAssetStatus(Asset& asset)
     if (!IsBoundAsset(asset)) {
         return STATUS_BUTT;
     }
-    return changedAssets_[asset.uri].status;
+    return changedAssets_[asset.uri]->status;
 }
 
 int32_t ObjectSnapshot::Uploaded(Asset& asset)
@@ -88,7 +88,7 @@ int32_t ObjectSnapshot::BindAsset(const Asset& asset, const DistributedData::Ass
         ZLOGD("Asset is bound. asset.uri:%{public}s :", Anonymous::Change(asset.uri).c_str());
         return E_OK;
     }
-    changedAssets_[asset.uri] = ChangedAssetInfo(asset, bindInfo, storeInfo);
+    changedAssets_[asset.uri] = std::make_shared<ChangedAssetInfo>(asset, bindInfo, storeInfo);
     return E_OK;
 }
 

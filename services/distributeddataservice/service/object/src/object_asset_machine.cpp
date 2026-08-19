@@ -37,32 +37,28 @@ using DmAdapter = OHOS::DistributedData::DeviceManagerAdapter;
 
 constexpr static const char* SQL_AND = " = ? and ";
 constexpr static const int32_t AND_SIZE = 5;
-static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t DoTransfer(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset);
 
-static int32_t ChangeAssetToNormal(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t ChangeAssetToNormal(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset);
 
-static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t CompensateSync(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset);
 
-static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t CompensateTransferring(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset);
 
-static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t SaveNewAsset(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset);
 
-static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t Recover(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset);
 
-static int32_t UpdateStore(ChangedAssetInfo& changedAsset);
+static int32_t UpdateStore(const std::shared_ptr<ChangedAssetInfo>& changedAsset);
 
-static AutoCache::Store GetStore(const ChangedAssetInfo& changedAsset);
-static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBindInfo, const Asset& newAsset);
-static void MergeAssetData(VBucket& record, const Asset& newAsset, const AssetBindInfo& assetBindInfo);
-static void MergeAsset(Asset& oldAsset, const Asset& newAsset);
-static std::string BuildSql(const AssetBindInfo& bindInfo, Values& args);
-static BindEvent::BindEventInfo MakeBindInfo(const ChangedAssetInfo& changedAsset);
+static AutoCache::Store GetStore(const std::shared_ptr<ChangedAssetInfo>& changedAsset);
+static BindEvent::BindEventInfo MakeBindInfo(const std::shared_ptr<ChangedAssetInfo>& changedAsset);
 
 static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
     {
@@ -130,15 +126,15 @@ static const DFAAction AssetDFA[STATUS_BUTT][EVENT_BUTT] = {
     }
 };
 
-int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& changedAssetInfo, Asset& asset,
-    const std::pair<std::string, Asset>& newAsset)
+int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, std::shared_ptr<ChangedAssetInfo> changedAssetInfo,
+    Asset& asset, const std::pair<std::string, Asset>& newAsset)
 {
-    if (eventId < 0 || eventId >= EVENT_BUTT || changedAssetInfo.status >= STATUS_BUTT) {
-        ZLOGE("invalid parameters, eventId: %{public}d, status:%{public}d", eventId, changedAssetInfo.status);
+    if (eventId < 0 || eventId >= EVENT_BUTT || changedAssetInfo->status >= STATUS_BUTT) {
+        ZLOGE("invalid parameters, eventId: %{public}d, status:%{public}d", eventId, changedAssetInfo->status);
         return GeneralError::E_ERROR;
     }
 
-    const DFAAction* action = &AssetDFA[changedAssetInfo.status][eventId];
+    const DFAAction* action = &AssetDFA[changedAssetInfo->status][eventId];
     if (action->before != nullptr) {
         int32_t res = action->before(eventId, changedAssetInfo, asset, newAsset);
         if (res != GeneralError::E_OK) {
@@ -146,9 +142,9 @@ int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& c
         }
     }
     if (action->next != STATUS_NO_CHANGE) {
-        ZLOGI("status before:%{public}d, eventId: %{public}d, status after:%{public}d", changedAssetInfo.status,
+        ZLOGI("status before:%{public}d, eventId: %{public}d, status after:%{public}d", changedAssetInfo->status,
             eventId, action->next);
-        changedAssetInfo.status = static_cast<TransferStatus>(action->next);
+        changedAssetInfo->status = static_cast<TransferStatus>(action->next);
     }
     if (action->after != nullptr) {
         int32_t res = action->after(eventId, changedAssetInfo, asset, newAsset);
@@ -159,42 +155,42 @@ int32_t ObjectAssetMachine::DFAPostEvent(AssetEvent eventId, ChangedAssetInfo& c
     return GeneralError::E_OK;
 }
 
-static int32_t DoTransfer(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t DoTransfer(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset)
 {
-    changedAsset.deviceId = newAsset.first;
-    changedAsset.asset = newAsset.second;
-    std::vector<Asset> assets{ changedAsset.asset };
-    ObjectAssetLoader::GetInstance().TransferAssetsAsync(changedAsset.storeInfo.user,
-        changedAsset.storeInfo.bundleName, changedAsset.deviceId, assets, [&changedAsset](bool success) {
+    changedAsset->deviceId = newAsset.first;
+    changedAsset->asset = newAsset.second;
+    std::vector<Asset> assets{ changedAsset->asset };
+    ObjectAssetLoader::GetInstance().TransferAssetsAsync(changedAsset->storeInfo.user,
+        changedAsset->storeInfo.bundleName, changedAsset->deviceId, assets, [changedAsset](bool success) {
             if (success) {
                 auto status = UpdateStore(changedAsset);
                 if (status != E_OK) {
                     ZLOGE("UpdateStore error, error:%{public}d, assetName:%{public}s, store:%{public}s, "
                           "table:%{public}s",
-                        status, Anonymous::Change(changedAsset.asset.name).c_str(),
-                        Anonymous::Change(changedAsset.bindInfo.storeName).c_str(),
-                        Anonymous::Change(changedAsset.bindInfo.tableName).c_str());
+                        status, Anonymous::Change(changedAsset->asset.name).c_str(),
+                        Anonymous::Change(changedAsset->bindInfo.storeName).c_str(),
+                        Anonymous::Change(changedAsset->bindInfo.tableName).c_str());
                 }
             }
-            ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset.asset);
+            ObjectAssetMachine::DFAPostEvent(TRANSFER_FINISHED, changedAsset, changedAsset->asset);
         });
     return E_OK;
 }
 
-static int32_t UpdateStore(ChangedAssetInfo& changedAsset)
+static int32_t UpdateStore(const std::shared_ptr<ChangedAssetInfo>& changedAsset)
 {
     auto store = GetStore(changedAsset);
     if (store == nullptr) {
-        ZLOGE("store null, storeId:%{public}s", Anonymous::Change(changedAsset.bindInfo.storeName).c_str());
+        ZLOGE("store null, storeId:%{public}s", Anonymous::Change(changedAsset->bindInfo.storeName).c_str());
         return E_ERROR;
     }
 
-    VBuckets vBuckets = GetMigratedData(store, changedAsset.bindInfo, changedAsset.asset);
+    VBuckets vBuckets = GetMigratedData(store, changedAsset->bindInfo, changedAsset->asset);
     if (vBuckets.empty()) {
         return E_OK;
     }
-    return store->MergeMigratedData(changedAsset.bindInfo.tableName, std::move(vBuckets));
+    return store->MergeMigratedData(changedAsset->bindInfo.tableName, std::move(vBuckets));
 }
 
 static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBindInfo, const Asset& newAsset)
@@ -288,13 +284,13 @@ static void MergeAsset(Asset& oldAsset, const Asset& newAsset)
     oldAsset.path = newAsset.path;
 }
 
-static AutoCache::Store GetStore(const ChangedAssetInfo& changedAsset)
+static AutoCache::Store GetStore(const std::shared_ptr<ChangedAssetInfo>& changedAsset)
 {
     StoreMetaData meta;
-    meta.storeId = changedAsset.bindInfo.storeName;
-    meta.bundleName = changedAsset.storeInfo.bundleName;
-    meta.user = std::to_string(changedAsset.storeInfo.user);
-    meta.instanceId = changedAsset.storeInfo.instanceId;
+    meta.storeId = changedAsset->bindInfo.storeName;
+    meta.bundleName = changedAsset->storeInfo.bundleName;
+    meta.user = std::to_string(changedAsset->storeInfo.user);
+    meta.instanceId = changedAsset->storeInfo.instanceId;
     meta.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyWithoutPath(), meta)) {
         ZLOGE("meta empty, bundleName:%{public}s, storeId:%{public}s", meta.bundleName.c_str(),
@@ -304,14 +300,14 @@ static AutoCache::Store GetStore(const ChangedAssetInfo& changedAsset)
     return AutoCache::GetInstance().GetStore(meta, {});
 }
 
-static int32_t CompensateTransferring(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t CompensateTransferring(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset)
 {
-    std::pair<std::string, Asset> newChangedAsset{ changedAsset.deviceId, changedAsset.asset };
-    return ObjectAssetMachine::DFAPostEvent(REMOTE_CHANGED, changedAsset, changedAsset.asset, newChangedAsset);
+    std::pair<std::string, Asset> newChangedAsset{ changedAsset->deviceId, changedAsset->asset };
+    return ObjectAssetMachine::DFAPostEvent(REMOTE_CHANGED, changedAsset, changedAsset->asset, newChangedAsset);
 }
 
-static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t CompensateSync(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset)
 {
     BindEvent::BindEventInfo bindEventInfo = MakeBindInfo(changedAsset);
@@ -320,46 +316,46 @@ static int32_t CompensateSync(int32_t eventId, ChangedAssetInfo& changedAsset, A
     return E_OK;
 }
 
-static int32_t SaveNewAsset(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t SaveNewAsset(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset)
 {
-    changedAsset.deviceId = newAsset.first;
-    changedAsset.asset = newAsset.second;
+    changedAsset->deviceId = newAsset.first;
+    changedAsset->asset = newAsset.second;
     return E_OK;
 }
 
-static int32_t ChangeAssetToNormal(int32_t eventId, ChangedAssetInfo& changedAssetInfo, Asset& asset,
+static int32_t ChangeAssetToNormal(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAssetInfo, Asset& asset,
     const std::pair<std::string, Asset>& newAsset)
 {
     asset.status = Asset::STATUS_NORMAL;
     return E_OK;
 }
 
-static int32_t Recover(int32_t eventId, ChangedAssetInfo& changedAsset, Asset& asset,
+static int32_t Recover(int32_t eventId, std::shared_ptr<ChangedAssetInfo> changedAsset, Asset& asset,
     const std::pair<std::string, Asset>& newAsset)
 {
     ZLOGI("An abnormal event has occurred, eventId:%{public}d, status:%{public}d, assetName:%{public}s", eventId,
-        changedAsset.status, Anonymous::Change(changedAsset.asset.name).c_str());
+        changedAsset->status, Anonymous::Change(changedAsset->asset.name).c_str());
 
     BindEvent::BindEventInfo bindEventInfo = MakeBindInfo(changedAsset);
-    changedAsset.status = TransferStatus::STATUS_STABLE;
+    changedAsset->status = TransferStatus::STATUS_STABLE;
     auto evt = std::make_unique<BindEvent>(BindEvent::RECOVER_SYNC, std::move(bindEventInfo));
     EventCenter::GetInstance().PostEvent(std::move(evt));
     return E_OK;
 }
 
-static BindEvent::BindEventInfo MakeBindInfo(const ChangedAssetInfo& changedAsset)
+static BindEvent::BindEventInfo MakeBindInfo(const std::shared_ptr<ChangedAssetInfo>& changedAsset)
 {
     BindEvent::BindEventInfo bindEventInfo;
-    bindEventInfo.bundleName = changedAsset.storeInfo.bundleName;
-    bindEventInfo.user = changedAsset.storeInfo.user;
-    bindEventInfo.tokenId = changedAsset.storeInfo.tokenId;
-    bindEventInfo.instanceId = changedAsset.storeInfo.instanceId;
-    bindEventInfo.storeName = changedAsset.bindInfo.storeName;
-    bindEventInfo.tableName = changedAsset.bindInfo.tableName;
-    bindEventInfo.filed = changedAsset.bindInfo.field;
-    bindEventInfo.primaryKey = changedAsset.bindInfo.primaryKey;
-    bindEventInfo.assetName = changedAsset.bindInfo.assetName;
+    bindEventInfo.bundleName = changedAsset->storeInfo.bundleName;
+    bindEventInfo.user = changedAsset->storeInfo.user;
+    bindEventInfo.tokenId = changedAsset->storeInfo.tokenId;
+    bindEventInfo.instanceId = changedAsset->storeInfo.instanceId;
+    bindEventInfo.storeName = changedAsset->bindInfo.storeName;
+    bindEventInfo.tableName = changedAsset->bindInfo.tableName;
+    bindEventInfo.filed = changedAsset->bindInfo.field;
+    bindEventInfo.primaryKey = changedAsset->bindInfo.primaryKey;
+    bindEventInfo.assetName = changedAsset->bindInfo.assetName;
     return bindEventInfo;
 }
 } // namespace DistributedObject
