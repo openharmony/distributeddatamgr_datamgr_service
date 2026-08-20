@@ -318,6 +318,8 @@ HWTEST_F(DataShareServiceStubTest, OnEnableRdbSubs001, TestSize.Level1)
  */
 HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo, TestSize.Level1)
 {
+    auto originalToken = GetSelfTokenID();
+    SetSelfTokenID(SYSTEM_TOKENID);
     DataShareServiceImpl service;
     MessageParcel data;
     MessageParcel reply;
@@ -331,6 +333,7 @@ HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo, TestSize.Level1
     int32_t code = DataShare::DataShareServiceImpl::DATA_SHARE_SERVICE_CMD_GET_CONNECTION_INTERFACE_INFO;
     int32_t result = service.OnRemoteRequest(code, data, reply);
     EXPECT_EQ(result, IDataShareService::DATA_SHARE_OK);
+    SetSelfTokenID(originalToken);
 }
 
 /**
@@ -346,7 +349,6 @@ HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo_NotSystemApp_Rej
     DataShareThreadLocal::SetFromSystemApp(false);
     MessageParcel data;
     MessageParcel reply;
-    data.WriteInterfaceToken(IDataShareService::GetDescriptor());
     data.WriteInt32(1001);
     data.WriteUint32(10);
     auto result = dataShareServiceStub->OnGetConnectionInterfaceInfo(data, reply);
@@ -368,7 +370,6 @@ HWTEST_F(DataShareServiceStubTest, OnGetConnectionInterfaceInfo_InvalidSaId_Reje
     DataShareThreadLocal::SetFromSystemApp(true);
     MessageParcel data;
     MessageParcel reply;
-    data.WriteInterfaceToken(IDataShareService::GetDescriptor());
     data.WriteInt32(0);
     data.WriteUint32(10);
     auto result = dataShareServiceStub->OnGetConnectionInterfaceInfo(data, reply);
