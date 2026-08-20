@@ -703,7 +703,6 @@ int32_t KVDBGeneralStore::Watch(int32_t origin, Watcher &watcher)
     if (observer_ == nullptr) {
         return GeneralError::E_ERROR;
     }
-    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (origin != Watcher::Origin::ORIGIN_ALL || observer_->watcher_ != nullptr) {
         return GeneralError::E_INVALID_ARGS;
     }
@@ -718,7 +717,6 @@ int32_t KVDBGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
     if (observer_ == nullptr) {
         return GeneralError::E_ERROR;
     }
-    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (origin != Watcher::Origin::ORIGIN_ALL || observer_->watcher_ != &watcher) {
         return GeneralError::E_INVALID_ARGS;
     }
