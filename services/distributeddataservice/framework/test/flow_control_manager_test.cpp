@@ -699,6 +699,27 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_NullTask_Test, TestSize.Leve
     flowControlManager->Remove();
 }
 
+static bool SubmitTask(const std::weak_ptr<FlowControlManager> &weakManager,
+    const std::shared_ptr<std::atomic_uint32_t> &flag)
+{
+    auto manager = weakManager.lock();
+    if (manager == nullptr) {
+        return false;
+    }
+    manager->Execute([flag]() {
+        (*flag)++;
+    });
+    return true;
+}
+
+static void SubmitTasks(const std::weak_ptr<FlowControlManager> &weakManager,
+    const std::shared_ptr<std::atomic_uint32_t> &flag, std::atomic_bool *stop, std::atomic_bool *started)
+{
+    started->store(true, std::memory_order_release);
+    while (!stop->load(std::memory_order_acquire) && SubmitTask(weakManager, flag)) {
+    }
+}
+
 /**
 * @tc.name: FlowControlManager_ConcurrentDestruction_Test
 * @tc.desc: Test concurrent task submission and manager destruction
@@ -721,18 +742,7 @@ HWTEST_F(FlowControlManagerTest, FlowControlManager_ConcurrentDestruction_Test, 
         std::weak_ptr<FlowControlManager> weakManager = flowControlManager;
         std::atomic_bool stop = false;
         std::atomic_bool started = false;
-        std::thread submitter([weakManager, flag, &stop, &started]() {
-            started.store(true, std::memory_order_release);
-            while (!stop.load(std::memory_order_acquire)) {
-                auto manager = weakManager.lock();
-                if (manager == nullptr) {
-                    break;
-                }
-                manager->Execute([flag]() {
-                    (*flag)++;
-                });
-            }
-        });
+        std::thread submitter(SubmitTasks, weakManager, flag, &stop, &started);
         while (!started.load(std::memory_order_acquire)) {
             std::this_thread::yield();
         }
