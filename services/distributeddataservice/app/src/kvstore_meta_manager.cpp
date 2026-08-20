@@ -63,7 +63,7 @@ using namespace std::chrono;
 using namespace OHOS::DistributedData;
 using namespace DistributedDB;
 using namespace OHOS::AppDistributedKv;
-
+static const int META_DB_RELEASE_DELAY_MS = 60000;
 KvStoreMetaManager::MetaDeviceChangeListenerImpl KvStoreMetaManager::listener_;
 KvStoreMetaManager::DBInfoDeviceChangeListenerImpl KvStoreMetaManager::dbInfoListener_;
 
@@ -476,6 +476,7 @@ DistributedDB::KvStoreNbDelegate::Option KvStoreMetaManager::InitDBOption()
     option.isNeedCompressOnSync = true;
     option.compressionRate = COMPRESS_RATE;
     option.secOption = { DistributedDB::S1, DistributedDB::ECE };
+    option.connPoolConfig = { true, META_DB_RELEASE_DELAY_MS };
     return option;
 }
 
