@@ -699,6 +699,7 @@ int32_t KVDBGeneralStore::Clean(const std::string &device, const std::string &us
 
 int32_t KVDBGeneralStore::Watch(int32_t origin, Watcher &watcher)
 {
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (observer_ == nullptr) {
         return GeneralError::E_ERROR;
     }
@@ -712,6 +713,7 @@ int32_t KVDBGeneralStore::Watch(int32_t origin, Watcher &watcher)
 
 int32_t KVDBGeneralStore::Unwatch(int32_t origin, Watcher &watcher)
 {
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (observer_ == nullptr) {
         return GeneralError::E_ERROR;
     }
@@ -998,7 +1000,7 @@ std::pair<int32_t, uint32_t> KVDBGeneralStore::LockCloudDB()
 {
     return { GeneralError::E_NOT_SUPPORT, 0 };
 }
- 
+
 int32_t KVDBGeneralStore::UnLockCloudDB()
 {
     return GeneralError::E_NOT_SUPPORT;
@@ -1055,7 +1057,8 @@ void KVDBGeneralStore::SetCacheFlag(bool isCache)
 
 void KVDBGeneralStore::PublishCacheChange()
 {
-    if (!IsValid() || observer_ == nullptr || observer_->watcher_ == nullptr) {
+    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    if (delegate_ == nullptr || observer_ == nullptr || observer_->watcher_ == nullptr) {
         return;
     }
     std::vector<DistributedDB::Entry> entries;
