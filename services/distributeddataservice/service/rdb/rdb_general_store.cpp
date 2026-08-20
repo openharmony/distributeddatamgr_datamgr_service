@@ -185,6 +185,7 @@ RdbGeneralStore::DBOption RdbGeneralStore::GetOption(const StoreMetaData &meta)
     }
     option.isNeedCompressOnSync = true;
     option.observer = &observer_;
+    option.skipMetadataTable = isEnableBinlog_;
     if (meta.isEncrypt) {
         auto password = RdbGeneralStore::GetDBPassword(meta);
         DBPassword dbPassword;
@@ -288,9 +289,10 @@ int32_t RdbGeneralStore::InitDelegate()
     return ConvertStatus(ret);
 }
 
-RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta, bool createRequired)
+RdbGeneralStore::RdbGeneralStore(const StoreMetaData &meta, bool createRequired, bool isEnableBinlog)
     : observer_(meta), meta_(observer_.meta_), manager_(meta.appId, meta.user, meta.instanceId),
-      createRequired_(createRequired), isClosed_(false), tasks_(std::make_shared<ConcurrentMap<SyncId, FinishTask>>())
+      createRequired_(createRequired), isEnableBinlog_(isEnableBinlog), isClosed_(false),
+      tasks_(std::make_shared<ConcurrentMap<SyncId, FinishTask>>())
 {
     if (meta.isSearchable) {
         syncNotifyFlag_ |= SEARCHABLE_FLAG;
