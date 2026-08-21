@@ -642,7 +642,10 @@ void PreProcessUtils::ProcessHtmlEntryAuthorization(const std::shared_ptr<Unifie
         if (scheme != FILE_SCHEME || !UnifiedHtmlRecordProcess::MatchImgExtension(uri.GetPath())) {
             return true;
         }
-        strUris.emplace(uriStr, permissionMask);
+        auto [iter, inserted] = strUris.emplace(uriStr, permissionMask);
+        if (!inserted) {
+            iter->second |= permissionMask;
+        }
         return true;
     });
 }
@@ -665,7 +668,10 @@ void PreProcessUtils::ProcessFileEntryAuthorization(const std::shared_ptr<Unifie
         if (permissionMask == 0) {
             return false;
         }
-        strUris.emplace(uriStr, permissionMask);
+        auto [iter, inserted] = strUris.emplace(uriStr, permissionMask);
+        if (!inserted) {
+            iter->second |= permissionMask;
+        }
         return true;
     });
 }
