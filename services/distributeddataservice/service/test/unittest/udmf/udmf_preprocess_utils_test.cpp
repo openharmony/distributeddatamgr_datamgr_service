@@ -770,7 +770,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization001, TestSize.Level1)
 HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization_SameUriInHtmlAndFile_MergesPermissionMasks,
     TestSize.Level1)
 {
-    constexpr const char *SHARED_URI = "file://test.com/shared.png";
+    constexpr const char *sharedUri = "file://test.com/shared.png";
     UnifiedData data;
     Runtime runtime;
     runtime.permissionPolicyMode = PERMISSION_POLICY_MODE_MASK;
@@ -778,13 +778,13 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization_SameUriInHtmlAndFile_
 
     auto htmlObject = std::make_shared<Object>();
     htmlObject->value_[UNIFORM_DATA_TYPE] = "general.html";
-    htmlObject->value_["htmlContent"] = std::string("<img data-ohos='clipboard' src='") + SHARED_URI + "'>";
+    htmlObject->value_["htmlContent"] = std::string("<img data-ohos='clipboard' src='") + sharedUri + "'>";
     htmlObject->value_["plainContent"] = "";
     auto record = std::make_shared<UnifiedRecord>(UDType::HTML, htmlObject);
     UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
     size_t htmlUriCount = 0;
-    record->ComputeUris([&htmlUriCount] (UriInfo &uriInfo) {
-        uriInfo.authUri = "file://test.com/shared.png";
+    record->ComputeUris([&htmlUriCount, sharedUri] (UriInfo &uriInfo) {
+        uriInfo.authUri = sharedUri;
         uriInfo.permissionMask = UriPermissionUtil::READ_FLAG;
         ++htmlUriCount;
         return true;
@@ -793,7 +793,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization_SameUriInHtmlAndFile_
 
     auto fileObject = std::make_shared<Object>();
     fileObject->value_[UNIFORM_DATA_TYPE] = GENERAL_FILE_URI;
-    fileObject->value_[ORI_URI] = SHARED_URI;
+    fileObject->value_[ORI_URI] = sharedUri;
     fileObject->value_[URI_PERMISSION_MASK] = static_cast<int32_t>(
         UriPermissionUtil::WRITE_FLAG | UriPermissionUtil::PERSIST_FLAG);
     record->AddEntry(GENERAL_FILE_URI, fileObject);
@@ -804,7 +804,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization_SameUriInHtmlAndFile_
     PreProcessUtils::ProcessFileAuthorization(hasError, data, true, uriPermissions);
 
     ASSERT_FALSE(hasError);
-    auto iter = uriPermissions.find(SHARED_URI);
+    auto iter = uriPermissions.find(sharedUri);
     ASSERT_NE(iter, uriPermissions.end());
     EXPECT_EQ(iter->second, AAFwk::Want::FLAG_AUTH_READ_URI_PERMISSION |
         AAFwk::Want::FLAG_AUTH_WRITE_URI_PERMISSION |
