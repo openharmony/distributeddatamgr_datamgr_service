@@ -12,11 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#define LOG_TAG "FlowControlManager"
 #include "flow_control_manager/flow_control_manager.h"
 
 #include <list>
+#include <new>
+
+#include "log_print.h"
 
 namespace OHOS::DistributedData {
+std::shared_ptr<FlowControlManager> FlowControlManager::Create(std::shared_ptr<ExecutorPool> pool,
+    std::shared_ptr<Strategy> strategy)
+{
+    return std::shared_ptr<FlowControlManager>(
+        new (std::nothrow) FlowControlManager(std::move(pool), std::move(strategy)));
+}
+
 FlowControlManager::FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::shared_ptr<Strategy> strategy)
     : pool_(std::move(pool)), strategy_(std::move(strategy))
 {
@@ -24,16 +35,18 @@ FlowControlManager::FlowControlManager(std::shared_ptr<ExecutorPool> pool, std::
 
 FlowControlManager::~FlowControlManager()
 {
-    isRunning_ = false;
     ExecutorPool::TaskId taskId = ExecutorPool::INVALID_TASK_ID;
     {
+        // Declare before lock so task closures are destroyed after mutex_ is released.
+        decltype(tasks_) tasks;
         std::lock_guard<decltype(mutex_)> lock(mutex_);
+        isRunning_ = false;
         taskId = taskId_;
         taskId_ = ExecutorPool::INVALID_TASK_ID;
-        auto tasks = std::move(tasks_);
+        tasks = std::move(tasks_);
     }
-    if (pool_ != nullptr) {
-        pool_->Remove(taskId, true);
+    if (pool_ != nullptr && taskId != ExecutorPool::INVALID_TASK_ID) {
+        pool_->Remove(taskId, false);
     }
 }
 
@@ -46,8 +59,11 @@ void FlowControlManager::Execute(Task task, uint32_t type)
 
 void FlowControlManager::Execute(Task task, TaskInfo info)
 {
-    if (!isRunning_ || pool_ == nullptr) {
-        return;
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (!isRunning_ || pool_ == nullptr) {
+            return;
+        }
     }
     Tp executeTime = std::chrono::steady_clock::now();
     if (strategy_ != nullptr) {
@@ -57,6 +73,9 @@ void FlowControlManager::Execute(Task task, TaskInfo info)
     InnerTask innerTask{ std::move(task), std::move(info), executeTime, id };
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (!isRunning_ || pool_ == nullptr) {
+            return;
+        }
         tasks_.push(std::move(innerTask));
         // If the added task is not the first task or not the earliest task, return directly
         if (tasks_.top().id != id) {
@@ -68,43 +87,45 @@ void FlowControlManager::Execute(Task task, TaskInfo info)
 
 void FlowControlManager::ExecuteTask()
 {
-    if (!isRunning_ || pool_ == nullptr) {
-        return;
-    }
     std::list<Task> tasks;
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    Tp now = std::chrono::steady_clock::now();
-    while (!tasks_.empty()) {
-        const InnerTask &task = tasks_.top();
-        if (task.task == nullptr || !isRunning_) {
-            tasks_.pop();
-            continue;
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (!isRunning_ || pool_ == nullptr) {
+            return;
         }
-        if (task.time <= now) {
-            tasks.push_back(task.task);
-            tasks_.pop();
-            continue;
+        Tp now = std::chrono::steady_clock::now();
+        while (!tasks_.empty()) {
+            const InnerTask &task = tasks_.top();
+            if (task.task == nullptr || !isRunning_) {
+                tasks_.pop();
+                continue;
+            }
+            if (task.time <= now) {
+                tasks.push_back(task.task);
+                tasks_.pop();
+                continue;
+            }
+            break;
         }
-        break;
+        taskId_ = ExecutorPool::INVALID_TASK_ID;
     }
-    if (!tasks.empty() && isRunning_) {
+    if (!tasks.empty()) {
         pool_->Execute([executeTasks = std::move(tasks)]() {
             for (auto &task : executeTasks) {
                 task();
             }
         });
     }
-    taskId_ = ExecutorPool::INVALID_TASK_ID;
 }
 
 void FlowControlManager::Schedule()
 {
-    if (!isRunning_ || pool_ == nullptr) {
-        return;
-    }
     auto taskId = ExecutorPool::INVALID_TASK_ID;
     {
         std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (!isRunning_ || pool_ == nullptr) {
+            return;
+        }
         if (tasks_.empty() && taskId_ != ExecutorPool::INVALID_TASK_ID) {
             taskId = taskId_;
             taskId_ = ExecutorPool::INVALID_TASK_ID;
@@ -114,22 +135,33 @@ void FlowControlManager::Schedule()
         pool_->Remove(taskId, true);
         return;
     }
-    std::lock_guard<decltype(mutex_)> lock(mutex_);
-    if (tasks_.empty() || !isRunning_) {
+    auto weakThis = weak_from_this();
+    if (weakThis.expired()) {
+        ZLOGE("FlowControlManager must be managed by std::shared_ptr");
         return;
     }
-    const InnerTask &task = tasks_.top();
-    Tp now = std::chrono::steady_clock::now();
-    auto duration = task.time < now ? std::chrono::steady_clock::duration(0) : task.time - now;
-    // If there is a task running, execute according to the earliest time
-    if (taskId_ != ExecutorPool::INVALID_TASK_ID) {
-        pool_->Reset(taskId_, duration);
-        return;
+    {
+        std::lock_guard<decltype(mutex_)> lock(mutex_);
+        if (tasks_.empty() || !isRunning_) {
+            return;
+        }
+        const InnerTask &task = tasks_.top();
+        Tp now = std::chrono::steady_clock::now();
+        auto duration = task.time < now ? std::chrono::steady_clock::duration(0) : task.time - now;
+        // If there is a task running, execute according to the earliest time
+        if (taskId_ != ExecutorPool::INVALID_TASK_ID) {
+            pool_->Reset(taskId_, duration);
+            return;
+        }
+        taskId_ = pool_->Schedule(duration, [weakThis]() {
+            auto self = weakThis.lock();
+            if (self == nullptr) {
+                return;
+            }
+            self->ExecuteTask();
+            self->Schedule();
+        });
     }
-    taskId_ = pool_->Schedule(duration, [this]() {
-        ExecuteTask();
-        Schedule();
-    });
 }
 
 void FlowControlManager::Remove(uint32_t type)
@@ -142,8 +174,10 @@ void FlowControlManager::Remove(uint32_t type)
 void FlowControlManager::Remove(Filter filter)
 {
     {
+        // Declare before lock so task closures are destroyed after mutex_ is released.
+        decltype(tasks_) tasks;
         std::lock_guard<decltype(mutex_)> lock(mutex_);
-        auto tasks = std::move(tasks_);
+        tasks = std::move(tasks_);
         while (!tasks.empty()) {
             if (!filter || filter(tasks.top().info)) {
                 tasks.pop();
