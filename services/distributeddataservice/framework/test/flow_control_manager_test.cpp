@@ -716,7 +716,9 @@ static void SubmitTasks(const std::weak_ptr<FlowControlManager> &weakManager,
     const std::shared_ptr<std::atomic_uint32_t> &flag, std::atomic_bool *stop, std::atomic_bool *started)
 {
     started->store(true, std::memory_order_release);
-    while (!stop->load(std::memory_order_acquire) && SubmitTask(weakManager, flag)) {
+    bool shouldContinue = !stop->load(std::memory_order_acquire);
+    while (shouldContinue) {
+        shouldContinue = !stop->load(std::memory_order_acquire) && SubmitTask(weakManager, flag);
     }
 }
 
