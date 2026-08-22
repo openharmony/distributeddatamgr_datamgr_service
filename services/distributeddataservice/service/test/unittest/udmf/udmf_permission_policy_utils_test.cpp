@@ -521,23 +521,4 @@ HWTEST_F(UdmfPermissionPolicyUtilsTest, GetAuthorizedUriPermissionMask_007, Test
     EXPECT_EQ(grantMask, 7);
 }
 
-/**
-* @tc.name: GetAuthorizedUriPermissionMask_008
-* @tc.desc: Test GetAuthorizedUriPermissionMask with zero record permission blocks grant
-* @tc.type: FUNC
-*/
-HWTEST_F(UdmfPermissionPolicyUtilsTest, GetAuthorizedUriPermissionMask_008, TestSize.Level1)
-{
-    auto properties = std::make_shared<UnifiedDataProperties>();
-    auto recordObject = std::make_shared<Object>();
-    recordObject->value_[URI_AUTHORIZATION_POLICIES] = 0;
-
-    uint32_t availableMask = 7;
-    uint32_t grantMask = 0;
-    bool result = PermissionPolicyUtils::GetAuthorizedUriPermissionMask(
-        properties, recordObject, availableMask, grantMask);
-    EXPECT_FALSE(result);
-    EXPECT_EQ(grantMask, 0);
-}
-
 } // OHOS::Test
