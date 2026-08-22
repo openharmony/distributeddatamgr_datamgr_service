@@ -171,6 +171,8 @@ private:
     void SetCriticalTask();
     bool VerifyPredicates(const DataSharePredicates &predicates, uint32_t callingTokenId,
         DataProviderConfig::ProviderInfo &providerInfo, std::string &func);
+    bool VerifyQueryLanguage(const DataSharePredicates &predicates, uint32_t callingTokenId,
+        DataProviderConfig::ProviderInfo &providerInfo, std::string &func);
     std::shared_ptr<DataShareServiceImpl::TimerReceiver> GetTimerReceiver();
     std::vector<DataProxyResult> DeleteAndNotifyProxyData(const std::vector<std::string> &uris,
         const BundleInfo &callerBundleInfo);
