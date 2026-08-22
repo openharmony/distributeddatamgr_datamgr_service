@@ -50,6 +50,7 @@ constexpr char SPECIAL = '^';
 constexpr const char *FILE_SCHEME = "file";
 constexpr const char *TAG = "PreProcessUtils::";
 constexpr const char *FILE_SCHEME_PREFIX = "file://";
+static constexpr const char *RECORDS_TRANSFER_TAG = "records_to_entries_data_format";
 constexpr const char *DOCS_LOCAL_TAG = "/docs/";
 constexpr const char *DOC_LEVEL_SEPERATOR = "/\\";
 constexpr char PARENT_DIRECTORY_SEGMENT[] = "..";
@@ -265,21 +266,26 @@ int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
     std::vector<std::string> fileUrisToCheck;
     std::vector<std::string> htmlAuthUrisToCheck;
     std::unordered_map<std::string, std::string> htmlUriValidationCache;
+    auto properties = data.GetProperties();
+    bool isArkwebTransfer = properties != nullptr && properties->tag == RECORDS_TRANSFER_TAG;
     for (const auto &record : data.GetRecords()) {
-        if (record == nullptr) {
-            continue;
-        }
+        if (record == nullptr) { continue; }
         auto clientValidatedUris = record->GetValidatedHtmlUris();
         record->ClearValidatedHtmlUris();
         auto entries = record->GetEntries();
-        if (entries == nullptr) {
-            continue;
-        }
+        if (entries == nullptr) { continue; }
         auto htmlEntryIter = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
         if (htmlEntryIter != entries->end() &&
             std::holds_alternative<std::shared_ptr<Object>>(htmlEntryIter->second)) {
-            UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
-            ProcessHtmlRecord(record, clientValidatedUris, tokenId, htmlAuthUrisToCheck, htmlUriValidationCache);
+            auto htmlObject = std::get<std::shared_ptr<Object>>(htmlEntryIter->second);
+            // Arkweb transfer: skip HTML URI authorization check
+            if (isArkwebTransfer && htmlObject != nullptr) {
+                htmlObject->value_[URI_AUTHORIZATION_POLICIES] = 0;
+                record->ClearUris();
+            } else {
+                UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
+                ProcessHtmlRecord(record, clientValidatedUris, tokenId, htmlAuthUrisToCheck, htmlUriValidationCache);
+            }
         }
         auto fileEntryIter = entries->find(GENERAL_FILE_URI);
         if (fileEntryIter != entries->end() &&

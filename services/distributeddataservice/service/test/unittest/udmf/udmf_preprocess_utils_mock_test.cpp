@@ -442,4 +442,62 @@ HWTEST_F(UdmfPreProcessUtilsMockTest, ProcessHtmlRecord_CachedUri_ReusesValidati
     ASSERT_EQ(processedUris.size(), 1U);
     EXPECT_EQ(processedUris.front().authUri, authUri);
 }
+
+/**
+* @tc.name: HandleFileUris_ArkwebTag_ZeroesHtmlAuthorizationPolicy
+* @tc.desc: Zero the HTML authorization policy and keep URIs unauthorized when the tag identifies arkweb
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(UdmfPreProcessUtilsMockTest, HandleFileUris_ArkwebTag_ZeroesHtmlAuthorizationPolicy, TestSize.Level1)
+{
+    std::string html = "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/image.png'>";
+    auto htmlObject = std::make_shared<Object>();
+    htmlObject->value_[UNIFORM_DATA_TYPE] = "general.html";
+    htmlObject->value_["htmlContent"] = html;
+    htmlObject->value_["plainContent"] = "";
+    htmlObject->value_[URI_AUTHORIZATION_POLICIES] = 5;
+    auto record = std::make_shared<UnifiedRecord>(UDType::HTML, htmlObject);
+    record->SetUris({ { "file:///data/storage/el2/base/haps/image.png", "", "", 0, 3, 7 } });
+
+    UnifiedData data;
+    data.GetProperties()->tag = "records_to_entries_data_format";
+    data.AddRecord(record);
+
+    int32_t ret = PreProcessUtils::HandleFileUris(TEST_TOKEN_ID, data);
+    EXPECT_EQ(ret, E_OK);
+
+    int32_t permissionMask = -1;
+    ASSERT_TRUE(htmlObject->GetValue(URI_AUTHORIZATION_POLICIES, permissionMask));
+    EXPECT_EQ(permissionMask, 0);
+    EXPECT_TRUE(record->GetUris().empty());
+}
+
+/**
+* @tc.name: HandleFileUris_NonArkwebTag_PreservesHtmlAuthorizationPolicy
+* @tc.desc: Keep the HTML authorization policy unchanged when the tag does not identify arkweb
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(UdmfPreProcessUtilsMockTest, HandleFileUris_NonArkwebTag_PreservesHtmlAuthorizationPolicy, TestSize.Level1)
+{
+    EXPECT_CALL(*accessTokenKitMock, GetHapTokenInfo(_, _)).WillRepeatedly(Invoke(FillHapTokenInfo));
+    std::string html = "<img data-ohos='clipboard' src='file:///data/storage/el2/base/haps/image.png'>";
+    auto htmlObject = std::make_shared<Object>();
+    htmlObject->value_[UNIFORM_DATA_TYPE] = "general.html";
+    htmlObject->value_["htmlContent"] = html;
+    htmlObject->value_["plainContent"] = "";
+    htmlObject->value_[URI_AUTHORIZATION_POLICIES] = 5;
+    auto record = std::make_shared<UnifiedRecord>(UDType::HTML, htmlObject);
+
+    UnifiedData data;
+    data.AddRecord(record);
+
+    int32_t ret = PreProcessUtils::HandleFileUris(TEST_TOKEN_ID, data);
+    EXPECT_EQ(ret, E_OK);
+
+    int32_t permissionMask = -1;
+    ASSERT_TRUE(htmlObject->GetValue(URI_AUTHORIZATION_POLICIES, permissionMask));
+    EXPECT_EQ(permissionMask, 5);
+}
 }; // namespace UDMF
