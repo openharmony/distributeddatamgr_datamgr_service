@@ -35,6 +35,7 @@ class AutoCache {
 public:
     struct StoreOption {
         bool createRequired = false;
+        bool isEnableBinlog = false;
     };
     using Error = GeneralError;
     using Store = std::shared_ptr<GeneralStore>;
@@ -58,7 +59,7 @@ public:
     API_EXPORT Store GetStore(const StoreMetaData &meta, const Watchers &watchers);
 
     API_EXPORT std::pair<int32_t, Store> GetDBStore(const StoreMetaData &meta, const Watchers &watchers,
-        const StoreOption &option = { false });
+        const StoreOption &option = { false, false });
 
     API_EXPORT Stores GetStoresIfPresent(
         uint32_t tokenId, const std::string &path = "", const std::string &storeId = "");

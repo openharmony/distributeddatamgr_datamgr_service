@@ -50,7 +50,7 @@ public:
     using CloudConflictHandler = DistributedData::CloudConflictHandler;
     using SubscribeCur = DistributedData::SubscribeCur;
 
-    explicit RdbGeneralStore(const StoreMetaData &, bool createRequired = false);
+    explicit RdbGeneralStore(const StoreMetaData &, bool createRequired = false, bool isEnableBinlog = false);
     ~RdbGeneralStore();
 
     int32_t Init();
@@ -219,6 +219,7 @@ private:
     const StoreMetaData &meta_;
     RdbManager manager_;
     const bool createRequired_ = false;
+    const bool isEnableBinlog_ = false;
 
     bool isClosed_ = false;
     mutable std::shared_timed_mutex dbMutex_;

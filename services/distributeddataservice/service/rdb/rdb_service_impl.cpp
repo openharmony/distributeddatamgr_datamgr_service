@@ -99,7 +99,7 @@ RdbServiceImpl::Factory::Factory()
     });
     AutoCache::GetInstance().RegCreator(RDB_DEVICE_COLLABORATION,
         [](const StoreMetaData &metaData, const AutoCache::StoreOption &option) -> std::pair<int32_t, GeneralStore *> {
-            auto store = new (std::nothrow) RdbGeneralStore(metaData, option.createRequired);
+            auto store = new (std::nothrow) RdbGeneralStore(metaData, option.createRequired, option.isEnableBinlog);
             if (store == nullptr) {
                 return { GeneralError::E_ERROR, nullptr };
             }
