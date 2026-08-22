@@ -281,7 +281,6 @@ int32_t PreProcessUtils::HandleFileUris(uint32_t tokenId, UnifiedData &data)
             // Arkweb transfer: skip HTML URI authorization check
             if (isArkwebTransfer && htmlObject != nullptr) {
                 htmlObject->value_[URI_AUTHORIZATION_POLICIES] = 0;
-                record->ClearUris();
             } else {
                 UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
                 ProcessHtmlRecord(record, clientValidatedUris, tokenId, htmlAuthUrisToCheck, htmlUriValidationCache);
@@ -628,6 +627,13 @@ void PreProcessUtils::ProcessHtmlEntryAuthorization(const std::shared_ptr<Unifie
     auto entries = record->GetEntries();
     auto htmlIter = entries->find(UtdUtils::GetUtdIdFromUtdEnum(UDType::HTML));
     if (htmlIter == entries->end() || !std::holds_alternative<std::shared_ptr<Object>>(htmlIter->second)) {
+        return;
+    }
+    auto htmlObject = std::get<std::shared_ptr<Object>>(htmlIter->second);
+    int32_t uriAuthorizationPolicies = 0;
+    if (htmlObject != nullptr &&
+        htmlObject->GetValue(URI_AUTHORIZATION_POLICIES, uriAuthorizationPolicies) &&
+        uriAuthorizationPolicies == 0) {
         return;
     }
     record->ComputeUris([&strUris, &isLocal, permissionPolicyMode] (UriInfo &uriInfo) {
