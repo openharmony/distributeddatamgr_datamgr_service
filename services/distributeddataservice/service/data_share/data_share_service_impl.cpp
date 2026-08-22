@@ -19,6 +19,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <regex>
 #include <utility>
 
 #include "account/account_delegate.h"
@@ -80,6 +81,13 @@ __attribute__((used)) DataShareServiceImpl::Factory DataShareServiceImpl::factor
 // decimal base
 static constexpr int DECIMAL_BASE = 10;
 static constexpr std::chrono::milliseconds SET_CRITICAL_WAIT_TIME(10000); // 10s
+// SQL keywords indicating cross-table operations (subquery/join/union) or DDL/DML.
+// \b word boundary keeps legal column names like update_time from false positives.
+static const std::regex DANGEROUS_SQL_KEYWORDS(R"(\b(SELECT|FROM|JOIN|UNION|INTO|EXISTS|DROP|DELETE|INSERT|)"
+                                               R"(UPDATE|CREATE|ALTER|TRUNCATE|EXEC|EXECUTE)\b)",
+    std::regex::icase | std::regex::optimize);
+// Statement separator and comment markers, blocks keyword-splitting like SEL/**/ECT
+static const std::regex DANGEROUS_SQL_PATTERNS(R"(;|--|/\*)", std::regex::optimize);
 DataShareServiceImpl::BindInfo DataShareServiceImpl::binderInfo_;
 class DataShareServiceImpl::SystemAbilityStatusChangeListener
     : public SystemAbilityStatusChangeStub {
@@ -177,11 +185,38 @@ bool DataShareServiceImpl::VerifyPredicates(const DataSharePredicates &predicate
         ZLOGW("callingName:%{public}s %{public}s predicates:%{public}d, bundle:%{public}s invalid, err:%{public}d",
             callingName.c_str(), func.c_str(), predicatesType, providerInfo.bundleName.c_str(), errCode);
     }
+    if (predicates.GetSettingMode() == QUERY_LANGUAGE &&
+        !VerifyQueryLanguage(predicates, callingTokenId, providerInfo, func)) {
+        return false;
+    }
     // E_FIELD_INVALID only add HiviewReport
     if (errCode == E_FIELD_INVALID || errCode == E_OK) {
         return true;
     }
     return false;
+}
+
+bool DataShareServiceImpl::VerifyQueryLanguage(const DataSharePredicates &predicates, uint32_t callingTokenId,
+    DataProviderConfig::ProviderInfo &providerInfo, std::string &func)
+{
+    auto checkAndReport = [&callingTokenId, &providerInfo, &func](
+                              const std::string &target, const std::string &targetName) -> bool {
+        if (target.empty()) {
+            return true;
+        }
+        if (std::regex_search(target, DANGEROUS_SQL_KEYWORDS) || std::regex_search(target, DANGEROUS_SQL_PATTERNS)) {
+            std::string callingName = HiViewFaultAdapter::GetCallingName(callingTokenId).first;
+            std::string appendix = "callingName:" + callingName + " " + targetName + " contains dangerous SQL";
+            DataShareFaultInfo faultInfo = { HiViewFaultAdapter::invalidPredicates, providerInfo.bundleName,
+                providerInfo.moduleName, providerInfo.storeName, func, E_FIELD_ILLEGAL, appendix };
+            HiViewFaultAdapter::ReportDataFault(faultInfo);
+            ZLOGW("callingName:%{public}s %{public}s QUERY_LANGUAGE %{public}s invalid, bundle:%{public}s",
+                callingName.c_str(), func.c_str(), targetName.c_str(), providerInfo.bundleName.c_str());
+            return false;
+        }
+        return true;
+    };
+    return checkAndReport(predicates.GetWhereClause(), "whereClause") && checkAndReport(predicates.GetOrder(), "order");
 }
 
 std::pair<int32_t, int32_t> DataShareServiceImpl::UpdateEx(const std::string &uri, const std::string &extUri,

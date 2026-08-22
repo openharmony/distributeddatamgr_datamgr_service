@@ -1176,11 +1176,11 @@ HWTEST_F(DataShareServiceImplTest, SubscribeTimeChanged001, TestSize.Level1)
 }
 
 /**
-* @tc.name: BundleMgrProxyTest_GetSilentAccessStoresWithStores
-* @tc.desc: Test GetSilentAccessStores when cache miss and BMS returns stores
-* @tc.type: FUNC
-* @tc.require:
-*/
+ * @tc.name: BundleMgrProxyTest_GetSilentAccessStoresWithStores
+ * @tc.desc: Test GetSilentAccessStores when cache miss and BMS returns stores
+ * @tc.type: FUNC
+ * @tc.require:
+ */
 HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_GetSilentAccessStoresWithStores, TestSize.Level1)
 {
     ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_GetSilentAccessStoresWithStores start");
@@ -1197,5 +1197,264 @@ HWTEST_F(DataShareServiceImplTest, BundleMgrProxyTest_GetSilentAccessStoresWithS
     EXPECT_TRUE(stores.empty());
 
     ZLOGI("DataShareServiceImplTest BundleMgrProxyTest_GetSilentAccessStoresWithStores end");
+}
+
+/**
+ * @tc.name: VerifyQueryLanguage001
+ * @tc.desc: VerifyQueryLanguage with legal whereClause and order should pass
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.author: agent
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create QUERY_LANGUAGE predicates with normal whereClause and order
+ *     2. Call VerifyQueryLanguage
+ * @tc.expect:
+ *     1. Return true for legal whereClause and order
+ *     2. Return true for empty whereClause and order
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyQueryLanguage001, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage001 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // legal whereClause only references current table columns
+    DataSharePredicates dp1;
+    dp1.SetWhereClause("col1 = 'a' AND col2 > 10");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyQueryLanguage(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    // qualified column name of current table is legal
+    DataSharePredicates dp2;
+    dp2.SetWhereClause("t1.col = 'a' OR t2.col = 'b'");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyQueryLanguage(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // legal order with ASC/DESC and case expression
+    DataSharePredicates dp3;
+    dp3.SetWhereClause("col1 = 'a'");
+    dp3.SetOrder("col1 ASC, col2 DESC");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyQueryLanguage(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    // empty whereClause and order pass
+    DataSharePredicates dp4;
+    EXPECT_TRUE(dataShareServiceImpl.VerifyQueryLanguage(dp4, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage001 end");
+}
+
+/**
+ * @tc.name: VerifyQueryLanguage002
+ * @tc.desc: VerifyQueryLanguage with subquery or join or union in whereClause should be blocked
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.author: agent
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create QUERY_LANGUAGE predicates with subquery/join/union whereClause
+ *     2. Call VerifyQueryLanguage
+ * @tc.expect:
+ *     1. Return false for all cross-table operations
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyQueryLanguage002, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage002 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // IN subquery cross-table read
+    DataSharePredicates dp1;
+    dp1.SetWhereClause("id IN (SELECT id FROM other_table)");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    // EXISTS correlated subquery
+    DataSharePredicates dp2;
+    dp2.SetWhereClause("EXISTS (SELECT 1 FROM t2 WHERE t2.id = t1.id)");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // UNION injection
+    DataSharePredicates dp3;
+    dp3.SetWhereClause("1=1 UNION SELECT * FROM secret");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    // JOIN cross table
+    DataSharePredicates dp4;
+    dp4.SetWhereClause("id = other_table.id JOIN other_table ON 1=1");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // scalar subquery
+    DataSharePredicates dp5;
+    dp5.SetWhereClause("col = (SELECT max(x) FROM t2)");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp5, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage002 end");
+}
+
+/**
+ * @tc.name: VerifyQueryLanguage003
+ * @tc.desc: VerifyQueryLanguage with obfuscated or multi-statement SQL should be blocked
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.author: agent
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create QUERY_LANGUAGE predicates with case-mixed/comment-split/multi-statement whereClause
+ *     2. Call VerifyQueryLanguage
+ * @tc.expect:
+ *     1. Return false for all obfuscation attempts
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyQueryLanguage003, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage003 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // case-mixed keyword
+    DataSharePredicates dp1;
+    dp1.SetWhereClause("id IN (sElEcT id FrOm other_table)");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    // comment-split keyword
+    DataSharePredicates dp2;
+    dp2.SetWhereClause("id IN (SEL/**/ECT id FROM other_table)");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // statement separator
+    DataSharePredicates dp3;
+    dp3.SetWhereClause("1=1; DROP TABLE t");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    // line comment truncation
+    DataSharePredicates dp4;
+    dp4.SetWhereClause("1=1 --");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp4, tokenId, providerConfig.providerInfo_, func));
+
+    // DML keyword
+    DataSharePredicates dp5;
+    dp5.SetWhereClause("1=1 DELETE FROM t");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp5, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage003 end");
+}
+
+/**
+ * @tc.name: VerifyQueryLanguage004
+ * @tc.desc: VerifyQueryLanguage with dangerous order should be blocked
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.author: agent
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create QUERY_LANGUAGE predicates with subquery in order
+ *     2. Call VerifyQueryLanguage
+ * @tc.expect:
+ *     1. Return false for dangerous order
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyQueryLanguage004, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage004 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // subquery in order
+    DataSharePredicates dp1;
+    dp1.SetWhereClause("col1 = 'a'");
+    dp1.SetOrder("(SELECT col FROM other_table)");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    // union in order
+    DataSharePredicates dp2;
+    dp2.SetWhereClause("col1 = 'a'");
+    dp2.SetOrder("col1 UNION SELECT * FROM t");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyQueryLanguage(dp2, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage004 end");
+}
+
+/**
+ * @tc.name: VerifyQueryLanguage005
+ * @tc.desc: VerifyQueryLanguage with legal column names containing keyword substrings should pass
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.author: agent
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create QUERY_LANGUAGE predicates with keyword-like column names
+ *     2. Call VerifyQueryLanguage
+ * @tc.expect:
+ *     1. Return true, no false positive on legal column names
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyQueryLanguage005, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage005 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // keyword-like column names should not be falsely matched due to \b word boundary
+    DataSharePredicates dp1;
+    dp1.SetWhereClause("update_time > 0 AND creation_source = 'app' AND is_deleted = 0");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyQueryLanguage(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    // literal value containing keyword-like word is still legal usage
+    DataSharePredicates dp2;
+    dp2.SetWhereClause("status = 'selection' AND deleted_flag = 0");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyQueryLanguage(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // keyword-like column in order
+    DataSharePredicates dp3;
+    dp3.SetWhereClause("col1 = 'a'");
+    dp3.SetOrder("updated_at DESC, form_id ASC");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyQueryLanguage(dp3, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyQueryLanguage005 end");
+}
+
+/**
+ * @tc.name: VerifyPredicates006
+ * @tc.desc: VerifyPredicates in QUERY_LANGUAGE mode with dangerous SQL should return false
+ * @tc.type: FUNC
+ * @tc.require: None
+ * @tc.author: agent
+ * @tc.precon: DataShareServiceImpl and related configurations initialized
+ * @tc.step:
+ *     1. Create QUERY_LANGUAGE predicates with dangerous whereClause
+ *     2. Create PREDICATES_METHOD predicates
+ *     3. Call VerifyPredicates for both
+ * @tc.expect:
+ *     1. Return false for dangerous QUERY_LANGUAGE predicates
+ *     2. Return true for PREDICATES_METHOD predicates, behavior unchanged
+ */
+HWTEST_F(DataShareServiceImplTest, VerifyPredicates006, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest VerifyPredicates006 start");
+    DataShareServiceImpl dataShareServiceImpl;
+    uint32_t tokenId = 0;
+    std::string uri = "test";
+    DataProviderConfig providerConfig(uri, tokenId);
+    std::string func = "func";
+    // QUERY_LANGUAGE mode with dangerous whereClause is blocked
+    DataSharePredicates dp1;
+    dp1.SetWhereClause("id IN (SELECT id FROM other_table)");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp1, tokenId, providerConfig.providerInfo_, func));
+
+    // QUERY_LANGUAGE mode with legal whereClause passes
+    DataSharePredicates dp2;
+    dp2.SetWhereClause("col1 = 'a' AND col2 > 10");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp2, tokenId, providerConfig.providerInfo_, func));
+
+    // PREDICATES_METHOD mode is not affected by QUERY_LANGUAGE check
+    DataSharePredicates dp3;
+    dp3.EqualTo("name", "value");
+    EXPECT_TRUE(dataShareServiceImpl.VerifyPredicates(dp3, tokenId, providerConfig.providerInfo_, func));
+
+    // PREDICATES_METHOD mode illegal field still blocked by existing verification
+    DataSharePredicates dp4;
+    dp4.NotEqualTo("true as name", "value");
+    EXPECT_FALSE(dataShareServiceImpl.VerifyPredicates(dp4, tokenId, providerConfig.providerInfo_, func));
+    ZLOGI("DataShareServiceImplTest VerifyPredicates006 end");
 }
 } // namespace OHOS::Test
