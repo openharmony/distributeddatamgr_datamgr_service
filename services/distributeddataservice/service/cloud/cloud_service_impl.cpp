@@ -1429,7 +1429,8 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
         cloudInfo.apps.find(bundleName) != cloudInfo.apps.end()) {
         cloudInfo.apps.erase(bundleName);
         MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true);
-        MetaDataManager::GetInstance().DelMeta(CloudLastSyncInfo::GetKey(user, bundleName), true);
+        StoreInfo info{ .bundleName = bundleName, .instanceId = index, .user = user };
+        EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::CLEAR_LAST_SYNC_INFO, info));
     }
 
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);

@@ -126,6 +126,7 @@ static constexpr const char *TEST_CLOUD_BUNDLE = "test_cloud_bundleName";
 static constexpr const char *TEST_CLOUD_APPID = "test_cloud_appid";
 static constexpr const char *TEST_CLOUD_STORE = "test_cloud_store";
 static constexpr const char *TEST_CLOUD_STORE_1 = "test_cloud_store1";
+static constexpr const char *TEST_CLOUD_BUNDLE_OTHER = "test_cloud_bundleName_other";
 static constexpr const char *TEST_CLOUD_ID = "test_cloud_id";
 static constexpr const char *TEST_CLOUD_TABLE = "teat_cloud_table";
 static constexpr const char *TEST_CLOUD_DATABASE_ALIAS_1 = "test_cloud_database_alias_1";
@@ -3010,6 +3011,224 @@ HWTEST_F(CloudDataTest, OnAppUninstall, TestSize.Level0)
     Subscription sub1;
     EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(Subscription::GetKey(userId), sub1, true));
     EXPECT_EQ(sub1.expiresTime.size(), 0);
+}
+
+/**
+* @tc.name: ClearLastSyncInfoMeta_MultiStoreRecords_AllDeleted
+* @tc.desc: Test ClearLastSyncInfoMeta deletes all persisted records of the bundle
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(CloudDataTest, ClearLastSyncInfoMeta_MultiStoreRecords_AllDeleted, TestSize.Level0)
+{
+    int32_t userId = 2001;
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.startTime = 123456789;
+    lastSyncInfo.finishTime = 123456799;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true));
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_2;
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo, true));
+
+    CloudData::SyncManager::ClearLastSyncInfoMeta(userId, TEST_CLOUD_BUNDLE);
+
+    std::vector<CloudLastSyncInfo> remain;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, ""), remain, true));
+    EXPECT_TRUE(remain.empty());
+    CloudLastSyncInfo loaded;
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), loaded, true));
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_2), loaded, true));
+}
+
+/**
+* @tc.name: ClearLastSyncInfoMeta_SingleBundle_OtherBundleAndUserRetained
+* @tc.desc: Test ClearLastSyncInfoMeta only deletes records of the specified bundle and user
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(CloudDataTest, ClearLastSyncInfoMeta_SingleBundle_OtherBundleAndUserRetained, TestSize.Level0)
+{
+    int32_t userId = 2002;
+    int32_t otherUserId = 2003;
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.startTime = 123456789;
+    lastSyncInfo.finishTime = 123456799;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE_OTHER, TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(otherUserId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true));
+
+    CloudData::SyncManager::ClearLastSyncInfoMeta(userId, TEST_CLOUD_BUNDLE);
+
+    CloudLastSyncInfo loaded;
+    EXPECT_FALSE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), loaded, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE_OTHER, TEST_CLOUD_DATABASE_ALIAS_1), loaded, true));
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(otherUserId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), loaded, true));
+
+    MetaDataManager::GetInstance().DelMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE_OTHER, TEST_CLOUD_DATABASE_ALIAS_1), true);
+    MetaDataManager::GetInstance().DelMeta(
+        CloudLastSyncInfo::GetKey(otherUserId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), true);
+}
+
+/**
+* @tc.name: ClearLastSyncInfoMeta_EmptyBundle_AllUserRecordsDeleted
+* @tc.desc: Test ClearLastSyncInfoMeta with empty bundleName deletes all records of the user
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(CloudDataTest, ClearLastSyncInfoMeta_EmptyBundle_AllUserRecordsDeleted, TestSize.Level0)
+{
+    int32_t userId = 2004;
+    CloudInfo cloudInfo;
+    cloudInfo.user = userId;
+    CloudInfo::AppInfo appInfo;
+    appInfo.bundleName = TEST_CLOUD_BUNDLE;
+    cloudInfo.apps.insert_or_assign(TEST_CLOUD_BUNDLE, appInfo);
+    appInfo.bundleName = TEST_CLOUD_BUNDLE_OTHER;
+    cloudInfo.apps.insert_or_assign(TEST_CLOUD_BUNDLE_OTHER, appInfo);
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true));
+
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.startTime = 123456789;
+    lastSyncInfo.finishTime = 123456799;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true));
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_2;
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE_OTHER, TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo, true));
+
+    CloudData::SyncManager::ClearLastSyncInfoMeta(userId);
+
+    std::vector<CloudLastSyncInfo> remain;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, ""), remain, true));
+    EXPECT_TRUE(remain.empty());
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE_OTHER, ""), remain, true));
+    EXPECT_TRUE(remain.empty());
+    MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+}
+
+/**
+* @tc.name: ClearLastSyncInfoMeta_NoRecords_NoSideEffect
+* @tc.desc: Test ClearLastSyncInfoMeta with no persisted records has no side effect
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(CloudDataTest, ClearLastSyncInfoMeta_NoRecords_NoSideEffect, TestSize.Level0)
+{
+    int32_t userId = 2005;
+    CloudData::SyncManager::ClearLastSyncInfoMeta(userId, TEST_CLOUD_BUNDLE);
+    CloudData::SyncManager::ClearLastSyncInfoMeta(userId);
+
+    std::vector<CloudLastSyncInfo> remain;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, ""), remain, true));
+    EXPECT_TRUE(remain.empty());
+}
+
+/**
+* @tc.name: OnAppUninstall_DeletesCloudLastSyncInfoRecords
+* @tc.desc: Test OnAppUninstall deletes in-memory and persisted CloudLastSyncInfo records of the bundle
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(CloudDataTest, OnAppUninstall_DeletesCloudLastSyncInfoRecords, TestSize.Level0)
+{
+    CloudData::CloudServiceImpl::CloudStatic cloudStatic;
+    int32_t userId = 2006;
+    int32_t index = 0;
+    CloudInfo cloudInfo;
+    cloudInfo.user = userId;
+    cloudInfo.id = TEST_CLOUD_ID;
+    CloudInfo::AppInfo appInfo;
+    cloudInfo.apps.insert_or_assign(TEST_CLOUD_BUNDLE, appInfo);
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(cloudInfo.GetKey(), cloudInfo, true));
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    lastSyncInfo.startTime = 123456789;
+    lastSyncInfo.finishTime = 123456799;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true));
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_2;
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_2), lastSyncInfo, true));
+    Querykey queryKey{ userId, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1 };
+    cloudServiceImpl_->syncManager_.lastSyncInfos_.Compute(
+        queryKey, [&lastSyncInfo](const Querykey &, std::map<uint64_t, CloudLastSyncInfo> &val) {
+            val[1] = lastSyncInfo;
+            return true;
+        });
+
+    auto ret = cloudStatic.OnAppUninstall(TEST_CLOUD_BUNDLE, userId, index);
+    EXPECT_EQ(ret, E_OK);
+
+    auto result = cloudServiceImpl_->syncManager_.lastSyncInfos_.Find(queryKey);
+    EXPECT_FALSE(result.first);
+    std::vector<CloudLastSyncInfo> remain;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, ""), remain, true));
+    EXPECT_TRUE(remain.empty());
+    MetaDataManager::GetInstance().DelMeta(cloudInfo.GetKey(), true);
+}
+
+/**
+* @tc.name: ClearLastSyncInfo_ByBundle_PersistedRecordsDeleted
+* @tc.desc: Test ClearLastSyncInfo deletes persisted records of the specified bundle
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(CloudDataTest, ClearLastSyncInfo_ByBundle_PersistedRecordsDeleted, TestSize.Level0)
+{
+    int32_t userId = 2007;
+    CloudLastSyncInfo lastSyncInfo;
+    lastSyncInfo.id = TEST_CLOUD_ID;
+    lastSyncInfo.storeId = TEST_CLOUD_DATABASE_ALIAS_1;
+    lastSyncInfo.startTime = 123456789;
+    lastSyncInfo.finishTime = 123456799;
+    lastSyncInfo.code = 0;
+    lastSyncInfo.syncStatus = 1;
+    EXPECT_TRUE(MetaDataManager::GetInstance().SaveMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, TEST_CLOUD_DATABASE_ALIAS_1), lastSyncInfo, true));
+
+    CloudData::SyncManager sync;
+    sync.ClearLastSyncInfo(userId, TEST_CLOUD_ID, TEST_CLOUD_BUNDLE);
+
+    std::vector<CloudLastSyncInfo> remain;
+    EXPECT_TRUE(MetaDataManager::GetInstance().LoadMeta(
+        CloudLastSyncInfo::GetKey(userId, TEST_CLOUD_BUNDLE, ""), remain, true));
+    EXPECT_TRUE(remain.empty());
 }
 
 /**

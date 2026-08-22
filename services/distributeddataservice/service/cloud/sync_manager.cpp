@@ -242,6 +242,7 @@ SyncManager::SyncManager()
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCK_CLOUD_CONTAINER, SyncManager::GetLockChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::UNLOCK_CLOUD_CONTAINER, SyncManager::GetLockChangeHandler());
     EventCenter::GetInstance().Subscribe(CloudEvent::LOCAL_CHANGE, GetClientChangeHandler());
+    EventCenter::GetInstance().Subscribe(CloudEvent::CLEAR_LAST_SYNC_INFO, GetClearLastSyncInfoHandler());
     syncStrategy_ = std::make_shared<NetworkSyncStrategy>();
     auto metaName = Bootstrap::GetInstance().GetProcessLabel();
     kvApps_.insert(std::move(metaName));
@@ -257,6 +258,7 @@ SyncManager::SyncManager()
 
 SyncManager::~SyncManager()
 {
+    alive_->store(false);
     if (executor_ != nullptr) {
         actives_.ForEachCopies([this](auto &syncId, auto &taskId) {
             executor_->Remove(taskId);
@@ -578,6 +580,25 @@ std::function<void(const Event &)> SyncManager::GetClientChangeHandler()
         syncInfo.SetFullSync(evt.GetFullSync());
         auto times = evt.AutoRetry() ? RETRY_TIMES - CLIENT_RETRY_TIMES : RETRY_TIMES;
         executor_->Execute(GetSyncTask(times, evt.AutoRetry(), RefCount(), std::move(syncInfo)));
+    };
+}
+
+std::function<void(const Event &)> SyncManager::GetClearLastSyncInfoHandler()
+{
+    return [this, alive = alive_](const Event &event) {
+        if (!alive->load()) {
+            return;
+        }
+        auto &evt = static_cast<const CloudEvent &>(event);
+        auto &storeInfo = evt.GetStoreInfo();
+        CloudInfo cloudInfo;
+        cloudInfo.user = storeInfo.user;
+        if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
+            ZLOGW("no cloud info meta, user:%{public}d, bundleName:%{public}s", storeInfo.user,
+                storeInfo.bundleName.c_str());
+            return;
+        }
+        ClearLastSyncInfo(storeInfo.user, cloudInfo.id, storeInfo.bundleName);
     };
 }
 
@@ -1288,7 +1309,40 @@ void SyncManager::ClearLastSyncInfo(int32_t user, const std::string &accountId, 
         }
         return bundleName.empty() || key.bundleName == bundleName;
     });
-    MetaDataManager::GetInstance().DelMeta(CloudLastSyncInfo::GetKey(user, bundleName), true);
+    ClearLastSyncInfoMeta(user, bundleName);
+}
+
+void SyncManager::ClearLastSyncInfoMeta(int32_t user, const std::string &bundleName)
+{
+    if (bundleName.empty()) {
+        CloudInfo cloudInfo;
+        cloudInfo.user = user;
+        if (!MetaDataManager::GetInstance().LoadMeta(cloudInfo.GetKey(), cloudInfo, true)) {
+            ZLOGW("no cloud info meta, user:%{public}d", user);
+            return;
+        }
+        for (const auto &[bundle, _] : cloudInfo.apps) {
+            ClearLastSyncInfoMeta(user, bundle);
+        }
+        return;
+    }
+    std::vector<CloudLastSyncInfo> infos;
+    if (!MetaDataManager::GetInstance().LoadMeta(CloudLastSyncInfo::GetKey(user, bundleName, ""), infos, true)) {
+        ZLOGW("load last sync info failed, user:%{public}d, bundleName:%{public}s", user, bundleName.c_str());
+        return;
+    }
+    if (infos.empty()) {
+        return;
+    }
+    std::vector<std::string> keys;
+    keys.reserve(infos.size());
+    for (const auto &info : infos) {
+        keys.push_back(CloudLastSyncInfo::GetKey(user, bundleName, info.storeId));
+    }
+    if (!MetaDataManager::GetInstance().DelMeta(keys, true)) {
+        ZLOGW("del last sync info failed, user:%{public}d, bundleName:%{public}s, size:%{public}zu", user,
+            bundleName.c_str(), keys.size());
+    }
 }
 
 void SyncManager::AddCompensateSync(const StoreMetaData &meta)
