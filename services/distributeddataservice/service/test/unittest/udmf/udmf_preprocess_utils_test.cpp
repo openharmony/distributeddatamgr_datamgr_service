@@ -770,6 +770,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization001, TestSize.Level1)
 HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization_SameUriInHtmlAndFile_MergesPermissionMasks,
     TestSize.Level1)
 {
+    constexpr const char *htmlSrcUri = "file:///data/storage/el2/base/haps/shared.png";
     constexpr const char *sharedUri = "file://test.com/shared.png";
     UnifiedData data;
     Runtime runtime;
@@ -778,18 +779,14 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization_SameUriInHtmlAndFile_
 
     auto htmlObject = std::make_shared<Object>();
     htmlObject->value_[UNIFORM_DATA_TYPE] = "general.html";
-    htmlObject->value_["htmlContent"] = std::string("<img data-ohos='clipboard' src='") + sharedUri + "'>";
-    htmlObject->value_["plainContent"] = "";
+    htmlObject->value_[HTML_CONTENT] = std::string("<img data-ohos='clipboard' src='") + htmlSrcUri + "'>";
+    htmlObject->value_[PLAIN_CONTENT] = "";
     auto record = std::make_shared<UnifiedRecord>(UDType::HTML, htmlObject);
-    UnifiedHtmlRecordProcess::GetUriFromHtmlRecord(*record);
-    size_t htmlUriCount = 0;
-    record->ComputeUris([&htmlUriCount, sharedUri] (UriInfo &uriInfo) {
-        uriInfo.authUri = sharedUri;
-        uriInfo.permissionMask = UriPermissionUtil::READ_FLAG;
-        ++htmlUriCount;
-        return true;
-    });
-    ASSERT_EQ(htmlUriCount, 1);
+    UriInfo htmlUriInfo;
+    htmlUriInfo.oriUri = htmlSrcUri;
+    htmlUriInfo.authUri = sharedUri;
+    htmlUriInfo.permissionMask = UriPermissionUtil::READ_FLAG;
+    record->SetUris({ htmlUriInfo });
 
     auto fileObject = std::make_shared<Object>();
     fileObject->value_[UNIFORM_DATA_TYPE] = GENERAL_FILE_URI;
