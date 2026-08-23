@@ -106,6 +106,7 @@ void DataShareServiceImplTest::SetUp(void)
 
 void DataShareServiceImplTest::TearDown(void)
 {
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
     auto tokenId = AccessTokenKit::GetHapTokenID(USER_TEST, "ohos.datasharetest.demo", 0);
     AccessTokenKit::DeleteToken(tokenId);
 }
