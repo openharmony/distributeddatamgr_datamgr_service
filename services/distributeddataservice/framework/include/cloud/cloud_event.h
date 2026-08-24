@@ -46,6 +46,7 @@ public:
         UPGRADE_SCHEMA,
         DATABASE_DELETED,
         CREATE_MATRIX_FILE,
+        CLEAR_LAST_SYNC_INFO,
         CLOUD_BUTT
     };
 

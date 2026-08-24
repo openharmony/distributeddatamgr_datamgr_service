@@ -16,13 +16,16 @@
 #ifndef OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 #define OHOS_DISTRIBUTED_DATA_SERVICES_CLOUD_SYNC_MANAGER_H
 
+#include <atomic>
+#include <memory>
+
 #include "cloud/cloud_conflict_handler.h"
 #include "cloud/cloud_event.h"
 #include "cloud/cloud_info.h"
 #include "cloud/cloud_last_sync_info.h"
+#include "cloud/sync_event.h"
 #include "cloud/sync_strategy.h"
 #include "cloud_types.h"
-#include "cloud/sync_event.h"
 #include "concurrent_map.h"
 #include "dfx/radar_reporter.h"
 #include "eventcenter/event.h"
@@ -189,6 +192,7 @@ private:
     static std::pair<int32_t, CloudLastSyncInfo> GetLastResults(std::map<SyncId, CloudLastSyncInfo> &infos);
     static std::pair<int32_t, CloudLastSyncInfo> GetLastSyncInfoFromMeta(const QueryKey &queryKey);
     static void SaveLastSyncInfo(const QueryKey &queryKey, CloudLastSyncInfo &&info);
+    static void ClearLastSyncInfoMeta(int32_t user, const std::string &bundleName = "");
     static void BatchReport(int32_t userId, const TraceIds &traceIds, SyncStage syncStage, int32_t errCode,
         const std::string &message = "");
     static void ReportSyncEvent(const DistributedData::SyncEvent &evt, DistributedDataDfx::BizState bizState,
@@ -199,6 +203,7 @@ private:
     void UpdateSchema(const SyncInfo &syncInfo);
     std::function<void(const Event &)> GetSyncHandler(Retryer retryer);
     std::function<void(const Event &)> GetClientChangeHandler();
+    std::function<void(const Event &)> GetClearLastSyncInfoHandler();
     Retryer GetRetryer(int32_t times, const SyncInfo &syncInfo, int32_t user);
     RefCount GenSyncRef(uint64_t syncId);
     int32_t Compare(uint64_t syncId, int32_t user);
@@ -250,6 +255,7 @@ private:
     ConcurrentMap<uint64_t, uint64_t> activeInfos_;
     std::shared_ptr<SyncStrategy> syncStrategy_;
     ConcurrentMap<QueryKey, std::map<SyncId, CloudLastSyncInfo>> lastSyncInfos_;
+    std::shared_ptr<std::atomic<bool>> alive_ = std::make_shared<std::atomic<bool>>(true);
     std::set<std::string> kvApps_;
     ConcurrentMap<int32_t, std::map<std::string, std::set<std::string>>> compensateSyncInfos_;
     NetworkRecoveryManager networkRecoveryManager_{ *this };
