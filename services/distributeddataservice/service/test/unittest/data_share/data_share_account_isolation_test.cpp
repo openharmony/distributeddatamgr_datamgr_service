@@ -315,14 +315,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_NoCloneAccountIs
     TestSize.Level1)
 {
     ZLOGI("ResolveProviderAppIndex_NoCloneAccountIsolationTrue start");
-    auto dmMock = std::make_shared<DeviceManagerAdapterMock>();
-    DeviceInfo localDev;
-    localDev.uuid = "test_car_uuid";
-    EXPECT_CALL(*dmMock, GetLocalDevice()).WillRepeatedly(Return(localDev));
-    EXPECT_CALL(*dmMock, GetDeviceTypeByUuid("test_car_uuid"))
-        .WillRepeatedly(Return(DeviceManagerAdapter::DEVICE_TYPE_CAR));
-    BDeviceManagerAdapter::deviceManagerAdapter = dmMock;
-
     DataProviderConfig::ProviderInfo providerInfo;
     providerInfo.accountIsolation = true;
     providerInfo.accountId = 200;
@@ -333,7 +325,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_NoCloneAccountIs
     DataShareServiceImpl serviceImpl;
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 0);
-    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 /**
@@ -389,14 +380,6 @@ HWTEST_F(DataShareAccountIsolationTest,
 HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNull_ExpectNoChange, TestSize.Level1)
 {
     ZLOGI("ResolveProviderAppIndex_DelegateNull start");
-    auto dmMock = std::make_shared<DeviceManagerAdapterMock>();
-    DeviceInfo localDev;
-    localDev.uuid = "test_car_uuid";
-    EXPECT_CALL(*dmMock, GetLocalDevice()).WillRepeatedly(Return(localDev));
-    EXPECT_CALL(*dmMock, GetDeviceTypeByUuid("test_car_uuid"))
-        .WillRepeatedly(Return(DeviceManagerAdapter::DEVICE_TYPE_CAR));
-    BDeviceManagerAdapter::deviceManagerAdapter = dmMock;
-
     AccountDelegate::instance_ = nullptr;
 
     DataProviderConfig::ProviderInfo providerInfo;
@@ -408,7 +391,6 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveProviderAppIndex_DelegateNull_Exp
     DataShareServiceImpl serviceImpl;
     serviceImpl.ResolveProviderAppIndex(providerInfo);
     EXPECT_EQ(providerInfo.appIndex, 2);
-    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 // ===== ResolveAccessorAppIndexForSilentProxy mock tests =====
@@ -423,19 +405,10 @@ HWTEST_F(DataShareAccountIsolationTest, ResolveAccessorAppIndexForSilentProxy_No
     TestSize.Level1)
 {
     ZLOGI("ResolveAccessorAppIndexForSilentProxy_NoCloneApp start");
-    auto dmMock = std::make_shared<DeviceManagerAdapterMock>();
-    DeviceInfo localDev;
-    localDev.uuid = "test_car_uuid";
-    EXPECT_CALL(*dmMock, GetLocalDevice()).WillRepeatedly(Return(localDev));
-    EXPECT_CALL(*dmMock, GetDeviceTypeByUuid("test_car_uuid"))
-        .WillRepeatedly(Return(DeviceManagerAdapter::DEVICE_TYPE_CAR));
-    BDeviceManagerAdapter::deviceManagerAdapter = dmMock;
-
     DataShareServiceImpl serviceImpl;
     std::string uri = "datashareproxy://com.test/module/store/table?accountId=300";
     auto result = serviceImpl.ResolveAccessorAppIndexForSilentProxy(uri, "com.test", 100, 0);
     EXPECT_EQ(result, 0);
-    BDeviceManagerAdapter::deviceManagerAdapter = nullptr;
 }
 
 /**
