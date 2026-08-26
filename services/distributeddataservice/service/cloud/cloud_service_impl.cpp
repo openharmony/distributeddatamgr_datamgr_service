@@ -19,6 +19,7 @@
 
 #include <chrono>
 #include <cinttypes>
+#include <set>
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
@@ -114,6 +115,9 @@ CloudServiceImpl::CloudServiceImpl()
     });
     EventCenter::GetInstance().Subscribe(CloudEvent::CLOUD_SYNC_FINISHED, [this](const Event &event) {
         OnSyncInfoChanged(event);
+    });
+    EventCenter::GetInstance().Subscribe(CloudEvent::APP_UNINSTALL, [this](const Event &event) {
+        OnAppUninstallEvent(event);
     });
     MetaDataManager::GetInstance().Subscribe(
         Subscription::GetPrefix({ "" }), [this](const std::string &key,
@@ -1056,6 +1060,7 @@ int32_t CloudServiceImpl::OnUserChange(uint32_t code, const std::string &user, c
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPING):
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPED):
             Execute(GenTask(0, userId, CloudSyncScene::ACCOUNT_STOP, { WORK_STOP_CLOUD_SYNC, WORK_RELEASE }));
+            RemoveSubscriptionByUser(userId);
             break;
         case static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_UNLOCKED):
             Execute(GenTask(0, userId, CloudSyncScene::USER_UNLOCK,
@@ -1436,6 +1441,9 @@ int32_t CloudServiceImpl::CloudStatic::OnAppUninstall(const std::string &bundleN
     MetaDataManager::GetInstance().DelMeta(Subscription::GetRelationKey(user, bundleName), true);
     MetaDataManager::GetInstance().DelMeta(CloudInfo::GetSchemaKey(user, bundleName, index), true);
     MetaDataManager::GetInstance().DelMeta(NetworkSyncStrategy::GetKey(user, bundleName), true);
+
+    StoreInfo info{ .bundleName = bundleName, .instanceId = index, .user = user };
+    EventCenter::GetInstance().PostEvent(std::make_unique<CloudEvent>(CloudEvent::APP_UNINSTALL, info));
     return E_OK;
 }
 
@@ -1657,6 +1665,18 @@ int32_t CloudServiceImpl::OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, 
         agents.erase(pid);
         return !agents.empty();
     });
+    return SUCCESS;
+}
+
+int32_t CloudServiceImpl::OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName)
+{
+    ZLOGI("pid:%{public}d uid:%{public}d tokenId:%{public}x bundleName:%{public}s",
+        pid, uid, tokenId, bundleName.c_str());
+    syncAgents_.ComputeIfPresent(tokenId, [pid](auto, SyncAgents &agents) {
+        agents.erase(pid);
+        return !agents.empty();
+    });
+    RemoveSubscriptionByPid(pid);
     return SUCCESS;
 }
 
@@ -2462,6 +2482,7 @@ int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<B
         return ERROR;
     }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     int32_t user = instance->GetUserByToken(tokenId);
 
     std::lock_guard<std::mutex> lock(subscribeMutex_);
@@ -2470,11 +2491,7 @@ int32_t CloudServiceImpl::Subscribe(CloudSubscribeType type, const std::vector<B
             continue;
         }
         std::string key = info.bundleName + "_" + std::to_string(user);
-        auto &vec = subscribes_[type][key];
-        auto it = std::find(vec.begin(), vec.end(), tokenId);
-        if (it == vec.end()) {
-            vec.push_back(tokenId);
-        }
+        subscribes_[type][key][pid] = tokenId;
     }
     return SUCCESS;
 }
@@ -2494,6 +2511,7 @@ int32_t CloudServiceImpl::Unsubscribe(CloudSubscribeType type, const std::vector
         return ERROR;
     }
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     int32_t user = instance->GetUserByToken(tokenId);
 
     std::lock_guard<std::mutex> lock(subscribeMutex_);
@@ -2509,14 +2527,60 @@ int32_t CloudServiceImpl::Unsubscribe(CloudSubscribeType type, const std::vector
         std::string key = info.bundleName + "_" + std::to_string(user);
         auto it = subscribe->second.find(key);
         if (it != subscribe->second.end()) {
-            auto &tokenList = it->second;
-            tokenList.erase(std::remove(tokenList.begin(), tokenList.end(), tokenId), tokenList.end());
-            if (tokenList.empty()) {
+            it->second.erase(pid);
+            if (it->second.empty()) {
                 subscribe->second.erase(it);
             }
         }
     }
     return SUCCESS;
+}
+
+void CloudServiceImpl::RemoveSubscriptionByPid(pid_t pid)
+{
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    for (auto &[type, keyMap] : subscribes_) {
+        for (auto keyIt = keyMap.begin(); keyIt != keyMap.end();) {
+            keyIt->second.erase(pid);
+            if (keyIt->second.empty()) {
+                keyIt = keyMap.erase(keyIt);
+            } else {
+                ++keyIt;
+            }
+        }
+    }
+}
+
+void CloudServiceImpl::RemoveSubscriptionByBundleName(const std::string &bundleName, int32_t user)
+{
+    std::string key = bundleName + "_" + std::to_string(user);
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    for (auto &[type, keyMap] : subscribes_) {
+        keyMap.erase(key);
+    }
+}
+
+void CloudServiceImpl::RemoveSubscriptionByUser(int32_t user)
+{
+    std::string suffix = "_" + std::to_string(user);
+    std::lock_guard<std::mutex> lock(subscribeMutex_);
+    for (auto &[type, keyMap] : subscribes_) {
+        for (auto it = keyMap.begin(); it != keyMap.end();) {
+            if (it->first.size() >= suffix.size() &&
+                it->first.compare(it->first.size() - suffix.size(), suffix.size(), suffix) == 0) {
+                it = keyMap.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
+void CloudServiceImpl::OnAppUninstallEvent(const Event &event)
+{
+    auto &cloudEvent = static_cast<const CloudEvent &>(event);
+    auto &storeInfo = cloudEvent.GetStoreInfo();
+    RemoveSubscriptionByBundleName(storeInfo.bundleName, storeInfo.user);
 }
 
 void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
@@ -2531,7 +2595,7 @@ void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
         return;
     }
     std::string bundleKey = bundleName + "_" + std::to_string(user);
-    std::vector<uint32_t> tokenIds;
+    std::set<uint32_t> tokenIdSet;
     {
         std::lock_guard<std::mutex> lock(subscribeMutex_);
         auto subscribe = subscribes_.find(CloudSubscribeType::SYNC_INFO_CHANGED);
@@ -2542,11 +2606,13 @@ void CloudServiceImpl::OnSyncInfoChanged(const Event &event)
         if (subIt == subscribe->second.end()) {
             return;
         }
-        tokenIds = subIt->second;
+        for (const auto &[pid, tokenId] : subIt->second) {
+            tokenIdSet.insert(tokenId);
+        }
     }
     CloudSyncInfo cloudSyncInfo{ syncInfo.startTime, syncInfo.finishTime, syncInfo.code, syncInfo.syncStatus };
     std::lock_guard<std::mutex> lock(notifyMutex_);
-    for (const auto &tokenId : tokenIds) {
+    for (const auto &tokenId : tokenIdSet) {
         pendingNotifies_[tokenId][bundleName][storeId] = cloudSyncInfo;
     }
     ZLOGI("add pendingNotifies bundleName:%{public}s, storeId:%{public}s, code:%{public}d, SyncStatus:%{public}d",

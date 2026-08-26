@@ -4995,5 +4995,625 @@ HWTEST_F(CloudDataTest, PrepareForCloudSync_ManualSync_EmptyCloudInfo, TestSize.
     EXPECT_FALSE(ret);
     EXPECT_TRUE(cloudSyncInfos.empty());
 }
+
+/**
+ * @tc.name: OnAppExit_AgentsNotEmpty_SkipCleanup
+ * @tc.desc: Verify OnAppExit does not cleanup when agents remain after erasing pid
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppExit_AgentsNotEmpty_SkipCleanup, TestSize.Level1)
+{
+    uint32_t tokenId = 0xABCD;
+    pid_t pidA = 1000;
+    pid_t pidB = 2000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(pidA);
+    agents[pidA].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    agents.try_emplace(pidB);
+    agents[pidB].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    cloudServiceImpl_->syncAgents_.Insert(tokenId, agents);
+
+    std::string key = "com.test.bundle_100";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][pidA] = tokenId;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][pidB] = tokenId;
+
+    int32_t ret = cloudServiceImpl_->OnAppExit(0, pidA, tokenId, "com.test.bundle");
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto agentResult = cloudServiceImpl_->syncAgents_.Find(tokenId);
+    EXPECT_TRUE(agentResult.first);
+    EXPECT_EQ(static_cast<int32_t>(agentResult.second.size()), 1);
+    EXPECT_NE(agentResult.second.find(pidB), agentResult.second.end());
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    auto keyIt = keyMap.find(key);
+    EXPECT_NE(keyIt, keyMap.end());
+    EXPECT_EQ(keyIt->second.find(pidA), keyIt->second.end());
+    EXPECT_NE(keyIt->second.find(pidB), keyIt->second.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+    cloudServiceImpl_->syncAgents_.Erase(tokenId);
+}
+
+/**
+ * @tc.name: OnAppExit_AgentsEmpty_PerformCleanup
+ * @tc.desc: Verify OnAppExit cleanup when agents become empty after erasing the last pid
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppExit_AgentsEmpty_PerformCleanup, TestSize.Level1)
+{
+    uint32_t tokenId = 0xBCDE;
+    pid_t onlyPid = 1000;
+
+    CloudData::CloudServiceImpl::SyncAgents agents;
+    agents.try_emplace(onlyPid);
+    agents[onlyPid].notifier_ = new CloudData::CloudNotifierProxy(new MockRemoteObjectForNotifier());
+    cloudServiceImpl_->syncAgents_.Insert(tokenId, agents);
+
+    std::string key = "com.test.bundle_100";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][onlyPid] = tokenId;
+
+    int32_t ret = cloudServiceImpl_->OnAppExit(0, onlyPid, tokenId, "com.test.bundle");
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto agentResult = cloudServiceImpl_->syncAgents_.Find(tokenId);
+    EXPECT_FALSE(agentResult.first);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(key), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: OnAppExit_TokenIdNotExist_PerformCleanup
+ * @tc.desc: Verify OnAppExit cleanup when tokenId does not exist in syncAgents
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppExit_TokenIdNotExist_PerformCleanup, TestSize.Level1)
+{
+    uint32_t nonexistentTokenId = 0xDEAD;
+
+    std::string key = "com.test.bundle_100";
+    pid_t pid = 1000;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][pid] = nonexistentTokenId;
+
+    int32_t ret = cloudServiceImpl_->OnAppExit(0, pid, nonexistentTokenId, "com.test.bundle");
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto agentResult = cloudServiceImpl_->syncAgents_.Find(nonexistentTokenId);
+    EXPECT_FALSE(agentResult.first);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(key), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByBundleName_KeyExists
+ * @tc.desc: Verify RemoveSubscriptionByBundleName erases the matching key
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByBundleName_KeyExists, TestSize.Level1)
+{
+    std::string bundleName = "com.test.bundle";
+    int32_t user = 100;
+    std::string key = bundleName + "_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][1000] = 0x1234;
+
+    cloudServiceImpl_->RemoveSubscriptionByBundleName(bundleName, user);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(key), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByBundleName_KeyNotExist
+ * @tc.desc: Verify RemoveSubscriptionByBundleName does nothing when key does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByBundleName_KeyNotExist, TestSize.Level1)
+{
+    std::string bundleName = "com.nonexistent.bundle";
+    int32_t user = 100;
+    std::string existingKey = "com.other.bundle_100";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][existingKey][1000] = 0x1234;
+
+    cloudServiceImpl_->RemoveSubscriptionByBundleName(bundleName, user);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_NE(keyMap.find(existingKey), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByUser_MatchingUser
+ * @tc.desc: Verify RemoveSubscriptionByUser erases keys matching the given user
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByUser_MatchingUser, TestSize.Level1)
+{
+    int32_t user = 100;
+    std::string keyA = "com.test.bundleA_" + std::to_string(user);
+    std::string keyB = "com.test.bundleB_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyA][1000] = 0x1234;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyB][1000] = 0x5678;
+
+    cloudServiceImpl_->RemoveSubscriptionByUser(user);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(keyA), keyMap.end());
+    EXPECT_EQ(keyMap.find(keyB), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByUser_NonMatchingUser
+ * @tc.desc: Verify RemoveSubscriptionByUser keeps keys belonging to a different user
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByUser_NonMatchingUser, TestSize.Level1)
+{
+    int32_t targetUser = 100;
+    int32_t otherUser = 200;
+    std::string keyTarget = "com.test.bundleA_" + std::to_string(targetUser);
+    std::string keyOther = "com.test.bundleB_" + std::to_string(otherUser);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyTarget][1000] = 0x1234;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyOther][1000] = 0x5678;
+
+    cloudServiceImpl_->RemoveSubscriptionByUser(targetUser);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(keyTarget), keyMap.end());
+    EXPECT_NE(keyMap.find(keyOther), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByUser_KeyShorterThanSuffix
+ * @tc.desc: Verify RemoveSubscriptionByUser skips keys shorter than the suffix
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByUser_KeyShorterThanSuffix, TestSize.Level1)
+{
+    int32_t user = 100;
+    std::string keyShort = "ab";
+    std::string keyMatch = "com.test.bundle_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyShort][1000] = 0x1234;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyMatch][1000] = 0x5678;
+
+    cloudServiceImpl_->RemoveSubscriptionByUser(user);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_NE(keyMap.find(keyShort), keyMap.end());
+    EXPECT_EQ(keyMap.find(keyMatch), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: OnAppUninstallEvent_RemovesSubscription
+ * @tc.desc: Verify OnAppUninstallEvent removes subscription by bundleName and user via PostEvent
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppUninstallEvent_RemovesSubscription, TestSize.Level1)
+{
+    std::string bundleName = "com.test.uninstall";
+    int32_t user = 100;
+    std::string key = bundleName + "_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][1000] = 0x1234;
+
+    StoreInfo info{ .bundleName = bundleName, .user = user };
+    auto evt = std::make_unique<CloudEvent>(CloudEvent::APP_UNINSTALL, info);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(key), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: OnAppUninstall_TriggersSubscriptionCleanup
+ * @tc.desc: Verify CloudStatic::OnAppUninstall posts APP_UNINSTALL event and subscription gets cleaned up
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnAppUninstall_TriggersSubscriptionCleanup, TestSize.Level0)
+{
+    std::string bundleName = "com.test.uninstall2";
+    int32_t user = 100;
+    int32_t index = 0;
+    std::string key = bundleName + "_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][1000] = 0x1234;
+
+    CloudData::CloudServiceImpl::CloudStatic cloudStatic;
+    auto ret = cloudStatic.OnAppUninstall(bundleName, user, index);
+    EXPECT_EQ(ret, E_OK);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(key), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: OnUserChange_AccountStop_RemovesSubscriptionByUser
+ * @tc.desc: Verify OnUserChange removes subscriptions for the user on ACCOUNT_STOP
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnUserChange_AccountStop_RemovesSubscriptionByUser, TestSize.Level1)
+{
+    int32_t user = 100;
+    std::string keyA = "com.test.bundleA_" + std::to_string(user);
+    std::string keyB = "com.test.bundleB_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyA][1000] = 0x1234;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyB][1000] = 0x5678;
+
+    uint32_t code = static_cast<uint32_t>(AccountStatus::DEVICE_ACCOUNT_STOPPED);
+    cloudServiceImpl_->OnUserChange(code, std::to_string(user), "test_account");
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(keyA), keyMap.end());
+    EXPECT_EQ(keyMap.find(keyB), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: Unsubscribe_ErasePidAndKeyWhenPidMapEmpty
+ * @tc.desc: Verify Unsubscribe erases pid and removes key when pidMap becomes empty
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, Unsubscribe_ErasePidAndKeyWhenPidMapEmpty, TestSize.Level1)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    auto instance = AccountDelegate::GetInstance();
+    ASSERT_NE(instance, nullptr);
+    int32_t user = instance->GetUserByToken(tokenId);
+
+    std::string bundleName = "com.test.bundle";
+    std::string key = bundleName + "_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][pid] = tokenId;
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = bundleName;
+    bundleInfos.push_back(info);
+    auto ret = cloudServiceImpl_->Unsubscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED, bundleInfos, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(key), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: Unsubscribe_KeepKeyWhenOtherPidsRemain
+ * @tc.desc: Verify Unsubscribe removes only the calling pid and keeps key when other pids remain
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, Unsubscribe_KeepKeyWhenOtherPidsRemain, TestSize.Level1)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    auto instance = AccountDelegate::GetInstance();
+    ASSERT_NE(instance, nullptr);
+    int32_t user = instance->GetUserByToken(tokenId);
+
+    pid_t otherPid = 9999;
+    uint32_t otherTokenId = 0xFFFF;
+    std::string bundleName = "com.test.bundle";
+    std::string key = bundleName + "_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][pid] = tokenId;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][otherPid] = otherTokenId;
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = bundleName;
+    bundleInfos.push_back(info);
+    auto ret = cloudServiceImpl_->Unsubscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED, bundleInfos, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    auto it = keyMap.find(key);
+    EXPECT_NE(it, keyMap.end());
+    EXPECT_EQ(it->second.find(pid), it->second.end());
+    EXPECT_NE(it->second.find(otherPid), it->second.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: OnSyncInfoChanged_CollectsTokenIdsFromMultiplePids
+ * @tc.desc: Verify OnSyncInfoChanged collects all tokenIds from multiple pids under the same key
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnSyncInfoChanged_CollectsTokenIdsFromMultiplePids, TestSize.Level1)
+{
+    uint32_t tokenIdA = 0x1111;
+    uint32_t tokenIdB = 0x2222;
+    pid_t pidA = 1000;
+    pid_t pidB = 2000;
+    int32_t user = 100;
+    std::string bundleName = "com.test.bundle";
+    std::string key = bundleName + "_" + std::to_string(user);
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][pidA] = tokenIdA;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][pidB] = tokenIdB;
+
+    StoreInfo storeInfo;
+    storeInfo.bundleName = bundleName;
+    storeInfo.user = user;
+    storeInfo.storeName = "test_store";
+    CloudLastSyncInfo syncInfo;
+    syncInfo.startTime = 1;
+    syncInfo.finishTime = 2;
+    syncInfo.code = 0;
+    syncInfo.syncStatus = 0;
+    auto evt = std::make_unique<CloudSyncFinishedEvent>(storeInfo, syncInfo);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    sleep(1);
+
+    EXPECT_NE(cloudServiceImpl_->pendingNotifies_.find(tokenIdA), cloudServiceImpl_->pendingNotifies_.end());
+    EXPECT_NE(cloudServiceImpl_->pendingNotifies_.find(tokenIdB), cloudServiceImpl_->pendingNotifies_.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+    cloudServiceImpl_->pendingNotifies_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByPid_EraseKeyWhenPidMapEmpty
+ * @tc.desc: Verify RemoveSubscriptionByPid erases key when pidMap becomes empty after removing pid
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByPid_EraseKeyWhenPidMapEmpty, TestSize.Level1)
+{
+    pid_t pid = 1000;
+    std::string key = "com.test.bundle_100";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][pid] = 0x1234;
+
+    cloudServiceImpl_->RemoveSubscriptionByPid(pid);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(key), keyMap.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByPid_KeepKeyWhenOtherPidsRemain
+ * @tc.desc: Verify RemoveSubscriptionByPid keeps key when other pids remain after removing the target pid
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByPid_KeepKeyWhenOtherPidsRemain, TestSize.Level1)
+{
+    pid_t targetPid = 1000;
+    pid_t otherPid = 2000;
+    std::string key = "com.test.bundle_100";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][targetPid] = 0x1111;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][otherPid] = 0x2222;
+
+    cloudServiceImpl_->RemoveSubscriptionByPid(targetPid);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    auto it = keyMap.find(key);
+    EXPECT_NE(it, keyMap.end());
+    EXPECT_EQ(it->second.find(targetPid), it->second.end());
+    EXPECT_NE(it->second.find(otherPid), it->second.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByPid_PidNotExist
+ * @tc.desc: Verify RemoveSubscriptionByPid does nothing when pid is not found in any pidMap
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByPid_PidNotExist, TestSize.Level1)
+{
+    pid_t existingPid = 1000;
+    pid_t nonexistentPid = 9999;
+    std::string key = "com.test.bundle_100";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][existingPid] = 0x1234;
+
+    cloudServiceImpl_->RemoveSubscriptionByPid(nonexistentPid);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    auto it = keyMap.find(key);
+    EXPECT_NE(it, keyMap.end());
+    EXPECT_NE(it->second.find(existingPid), it->second.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: RemoveSubscriptionByPid_MultipleKeysWithSamePid
+ * @tc.desc: Verify RemoveSubscriptionByPid removes pid from all keys, erasing keys that become empty
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, RemoveSubscriptionByPid_MultipleKeysWithSamePid, TestSize.Level1)
+{
+    pid_t pid = 1000;
+    pid_t otherPid = 2000;
+    std::string keyA = "com.test.bundleA_100";
+    std::string keyB = "com.test.bundleB_100";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyA][pid] = 0x1234;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyB][pid] = 0x5678;
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][keyB][otherPid] = 0x9999;
+
+    cloudServiceImpl_->RemoveSubscriptionByPid(pid);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    EXPECT_EQ(keyMap.find(keyA), keyMap.end());
+    auto itB = keyMap.find(keyB);
+    EXPECT_NE(itB, keyMap.end());
+    EXPECT_EQ(itB->second.find(pid), itB->second.end());
+    EXPECT_NE(itB->second.find(otherPid), itB->second.end());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: Subscribe_WritesPidEntry
+ * @tc.desc: Verify Subscribe writes pid→tokenId entry into subscribes_
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, Subscribe_WritesPidEntry, TestSize.Level1)
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    auto instance = AccountDelegate::GetInstance();
+    ASSERT_NE(instance, nullptr);
+    int32_t user = instance->GetUserByToken(tokenId);
+
+    std::string bundleName = "com.test.sub";
+    std::string key = bundleName + "_" + std::to_string(user);
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = bundleName;
+    bundleInfos.push_back(info);
+
+    auto ret = cloudServiceImpl_->Subscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED, bundleInfos, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+
+    auto &keyMap = cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED];
+    auto it = keyMap.find(key);
+    ASSERT_NE(it, keyMap.end());
+    auto pidIt = it->second.find(pid);
+    ASSERT_NE(pidIt, it->second.end());
+    EXPECT_EQ(pidIt->second, tokenId);
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: Unsubscribe_TypeNotExist
+ * @tc.desc: Verify Unsubscribe returns SUCCESS when type does not exist in subscribes_
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, Unsubscribe_TypeNotExist, TestSize.Level1)
+{
+    cloudServiceImpl_->subscribes_.clear();
+
+    std::vector<CloudData::BundleInfo> bundleInfos;
+    CloudData::BundleInfo info;
+    info.bundleName = "com.test.bundle";
+    bundleInfos.push_back(info);
+
+    auto ret = cloudServiceImpl_->Unsubscribe(CloudData::CloudSubscribeType::SYNC_INFO_CHANGED, bundleInfos, nullptr);
+    EXPECT_EQ(ret, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: OnSyncInfoChanged_NoSubscribeType
+ * @tc.desc: Verify OnSyncInfoChanged returns early when SYNC_INFO_CHANGED type does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnSyncInfoChanged_NoSubscribeType, TestSize.Level1)
+{
+    cloudServiceImpl_->subscribes_.clear();
+
+    StoreInfo storeInfo;
+    storeInfo.bundleName = "com.test.bundle";
+    storeInfo.user = 100;
+    storeInfo.storeName = "test_store";
+    CloudLastSyncInfo syncInfo;
+    syncInfo.startTime = 1;
+    syncInfo.finishTime = 2;
+    syncInfo.code = 0;
+    syncInfo.syncStatus = 0;
+    auto evt = std::make_unique<CloudSyncFinishedEvent>(storeInfo, syncInfo);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    sleep(1);
+
+    EXPECT_TRUE(cloudServiceImpl_->pendingNotifies_.empty());
+}
+
+/**
+ * @tc.name: OnSyncInfoChanged_KeyNotExist
+ * @tc.desc: Verify OnSyncInfoChanged returns early when bundleKey does not exist
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnSyncInfoChanged_KeyNotExist, TestSize.Level1)
+{
+    std::string key = "com.other.bundle_200";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][1000] = 0x1234;
+
+    StoreInfo storeInfo;
+    storeInfo.bundleName = "com.test.bundle";
+    storeInfo.user = 100;
+    storeInfo.storeName = "test_store";
+    CloudLastSyncInfo syncInfo;
+    syncInfo.startTime = 1;
+    syncInfo.finishTime = 2;
+    syncInfo.code = 0;
+    syncInfo.syncStatus = 0;
+    auto evt = std::make_unique<CloudSyncFinishedEvent>(storeInfo, syncInfo);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    sleep(1);
+
+    EXPECT_TRUE(cloudServiceImpl_->pendingNotifies_.empty());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
+
+/**
+ * @tc.name: OnSyncInfoChanged_BundleNameEmpty
+ * @tc.desc: Verify OnSyncInfoChanged returns early when bundleName is empty
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudDataTest, OnSyncInfoChanged_BundleNameEmpty, TestSize.Level1)
+{
+    std::string key = "com.test.bundle_100";
+    cloudServiceImpl_->subscribes_[CloudData::CloudSubscribeType::SYNC_INFO_CHANGED][key][1000] = 0x1234;
+
+    StoreInfo storeInfo;
+    storeInfo.bundleName = "";
+    storeInfo.user = 100;
+    storeInfo.storeName = "test_store";
+    CloudLastSyncInfo syncInfo;
+    syncInfo.startTime = 1;
+    syncInfo.finishTime = 2;
+    syncInfo.code = 0;
+    syncInfo.syncStatus = 0;
+    auto evt = std::make_unique<CloudSyncFinishedEvent>(storeInfo, syncInfo);
+    EventCenter::GetInstance().PostEvent(std::move(evt));
+    sleep(1);
+
+    EXPECT_TRUE(cloudServiceImpl_->pendingNotifies_.empty());
+
+    cloudServiceImpl_->subscribes_.clear();
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

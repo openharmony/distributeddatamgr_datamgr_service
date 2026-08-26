@@ -95,6 +95,7 @@ public:
     int32_t OnReady(const std::string &device) override;
     int32_t Offline(const std::string &device) override;
     int32_t OnScreenUnlocked(int32_t user) override;
+    int32_t OnAppExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
     int32_t OnFeatureExit(pid_t uid, pid_t pid, uint32_t tokenId, const std::string &bundleName) override;
 
 private:
@@ -202,6 +203,10 @@ private:
     void NotifySyncAgentsByTokenId(uint32_t tokenId, int32_t innerTriggerMode);
     std::vector<std::pair<pid_t, sptr<CloudNotifierProxy>>> CollectNotifiersByTokenId(uint32_t tokenId);
     void ExecuteBatchNotify();
+    void RemoveSubscriptionByPid(pid_t pid);
+    void RemoveSubscriptionByBundleName(const std::string &bundleName, int32_t user);
+    void RemoveSubscriptionByUser(int32_t user);
+    void OnAppUninstallEvent(const Event &event);
 
     Task GenTask(int32_t retry, int32_t user, CloudSyncScene scene, Handles handles = { WORK_SUB });
     Task GenSubTask(Task task, int32_t user);
@@ -263,7 +268,7 @@ private:
     CloudSyncTriggerObservers cloudSyncTriggerObservers_;
 
     std::mutex subscribeMutex_;
-    std::map<CloudSubscribeType, std::map<std::string, std::vector<uint32_t>>> subscribes_;
+    std::map<CloudSubscribeType, std::map<std::string, std::map<pid_t, uint32_t>>> subscribes_;
 
     std::mutex notifyMutex_;
     std::map<uint32_t, BatchQueryLastResults> pendingNotifies_;
