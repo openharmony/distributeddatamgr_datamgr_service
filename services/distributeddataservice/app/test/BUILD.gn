@@ -115,6 +115,7 @@ ohos_unittest("KvStoreDataServiceTest") {
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_core",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "device_auth:deviceauth_sdk",
@@ -201,6 +202,7 @@ ohos_unittest("KvStoreDataServiceMockTest") {
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_core",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "device_auth:deviceauth_sdk",
@@ -279,6 +281,7 @@ ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_core",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "device_auth:deviceauth_sdk",
@@ -344,6 +347,7 @@ ohos_unittest("SessionManagerTest") {
   configs = [ ":module_private_config" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
@@ -415,6 +419,7 @@ ohos_unittest("KvStoreDataServiceClearTest") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "device_auth:deviceauth_sdk",
     "file_api:securitylabel",
@@ -547,6 +552,7 @@ ohos_unittest("UpgradeManagerTest") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "googletest:gtest_main",
     "hilog:libhilog",
@@ -608,6 +614,7 @@ ohos_unittest("RouteHeadHandlerImplTest") {
   cflags_cc = [ "-DUT_TEST", "-Werror=vla", ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libtoken_setproc",
@@ -723,6 +730,7 @@ ohos_unittest("DDMSDumpTest") {
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_core",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "device_auth:deviceauth_sdk",

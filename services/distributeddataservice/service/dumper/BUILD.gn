@@ -42,6 +42,7 @@ ohos_source_set("distributeddata_dumper") {
 
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "json:nlohmann_json_static",

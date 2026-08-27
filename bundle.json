@@ -62,6 +62,7 @@
                 "ability_runtime",
                 "access_token",
                 "battery_manager",
+                "bounds_checking_function",
                 "bundle_framework",
                 "common_event_service",
                 "c_utils",

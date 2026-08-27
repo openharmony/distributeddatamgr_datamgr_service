@@ -233,6 +233,7 @@ ohos_unittest("SoftBusAdapterStandardTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "json:nlohmann_json_static",
@@ -273,6 +274,7 @@ ohos_unittest("SoftbusClientTest") {
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "json:nlohmann_json_static",
@@ -319,6 +321,7 @@ ohos_unittest("AppPipeMgrServiceTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "json:nlohmann_json_static",

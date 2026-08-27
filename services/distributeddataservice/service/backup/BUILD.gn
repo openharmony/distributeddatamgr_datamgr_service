@@ -56,6 +56,7 @@ ohos_source_set("distributeddata_backup") {
   external_deps = [
     "hilog:libhilog",
     "json:nlohmann_json_static",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "kv_store:datamgr_common",
   ]

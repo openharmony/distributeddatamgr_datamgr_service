@@ -141,6 +141,7 @@ ohos_shared_library("distributeddatasvcfwk") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
@@ -265,6 +266,7 @@ ohos_source_set("distributeddatasvcfwk_src") {
 
     external_deps = [
       "access_token:libaccesstoken_sdk",
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "common_event_service:cesfwk_innerkits",
       "hilog:libhilog",

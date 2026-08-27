@@ -93,6 +93,7 @@ ohos_fuzztest("ObjectServiceStubConcurrentFuzzTest") {
     "ability_runtime:dataobs_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "data_object:data_object_inner",
     "data_object:distributeddataobject_impl",

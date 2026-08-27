@@ -134,6 +134,7 @@ ohos_shared_library("distributeddataservice") {
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "file_api:securitylabel",
     "hilog:libhilog",
