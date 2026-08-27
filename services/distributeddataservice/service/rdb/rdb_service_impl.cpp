@@ -620,7 +620,7 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
     }
 
     auto [exists, meta] = LoadStoreMetaData(param);
-    if (meta.instanceId != 0) { // the exists flag should
+    if (!exists || meta.instanceId != 0) { // the exists flag should
         ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
             meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
         return RDB_ERROR;
