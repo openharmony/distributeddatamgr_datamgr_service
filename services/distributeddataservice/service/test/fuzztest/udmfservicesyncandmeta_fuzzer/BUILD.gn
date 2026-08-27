@@ -67,6 +67,7 @@ ohos_fuzztest("UdmfServiceSyncAndMetaFuzzTest") {
     "access_token:libtoken_setproc",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",

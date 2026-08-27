@@ -75,6 +75,7 @@ ohos_source_set("distributeddata_kvdb") {
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libtokenid_sdk",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",

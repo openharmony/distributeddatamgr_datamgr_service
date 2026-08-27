@@ -41,6 +41,7 @@ ohos_unittest("CloneManagerTest") {
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "googletest:gtest_main",
     "hilog:libhilog",

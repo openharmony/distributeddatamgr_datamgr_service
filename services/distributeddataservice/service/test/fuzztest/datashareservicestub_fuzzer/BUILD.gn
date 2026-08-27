@@ -126,6 +126,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "access_token:libtokenid_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
