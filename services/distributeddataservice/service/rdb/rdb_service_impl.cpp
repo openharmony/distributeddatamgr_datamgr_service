@@ -620,7 +620,7 @@ int32_t RdbServiceImpl::Sync(const RdbSyncerParam &param, const Option &option, 
     }
 
     auto [exists, meta] = LoadStoreMetaData(param);
-    if (!exists || meta.instanceId != 0) { // the exists flag should
+    if (meta.instanceId != 0) { // the exists flag should
         ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
             meta.bundleName.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
         return RDB_ERROR;
@@ -1941,7 +1941,7 @@ void RdbServiceImpl::UpdateBundleVerison()
                 entry.bundleName.c_str());
             continue;
         }
-        if (bundleInfo.versionCode == entry.versionCode) {
+        if (static_cast<int32_t>(bundleInfo.versionCode) == entry.versionCode) {
             continue;
         }
         ZLOGI("Bundle version upgraded , bundleName: %{public}s, old: %{public}d, new: %{public}d",
