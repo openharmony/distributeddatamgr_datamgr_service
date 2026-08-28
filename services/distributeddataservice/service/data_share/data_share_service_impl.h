@@ -167,6 +167,9 @@ private:
     void ResolveProviderAppIndex(DataProviderConfig::ProviderInfo &providerInfo);
     int32_t ResolveAccessorAppIndexForSilentProxy(
         const std::string &uri, const std::string &calledBundleName, int32_t visitedUserId, int32_t appIndex);
+    uint32_t QueryCalledTokenId(int32_t currentUserId, const std::string &calledBundleName, int32_t appIndex);
+    uint32_t GetCalledTokenId(int32_t currentUserId, const std::string &calledBundleName, int32_t appIndex);
+    void EraseCalledTokenIdCache(const std::string &bundleName);
     bool GetCallerBundleInfo(BundleInfo &callerBundleInfo);
     void SetCriticalTask();
     bool VerifyPredicates(const DataSharePredicates &predicates, uint32_t callingTokenId,
@@ -180,6 +183,7 @@ private:
     static constexpr const char *PROXY_URI_SCHEMA = "datashareproxy";
     static constexpr const char *EXT_URI_SCHEMA = "datashare://";
     static constexpr const char *NO_PERMISSION = "noPermission";
+    static constexpr const char *SETTINGS_DATA_BUNDLE_NAME = "com.ohos.settingsdata";
     PublishStrategy publishStrategy_;
     GetDataStrategy getDataStrategy_;
     SubscribeStrategy subscribeStrategy_;
@@ -189,6 +193,7 @@ private:
     static BindInfo binderInfo_;
     std::shared_ptr<TimerReceiver> timerReceiver_ = nullptr;
     DataShareSilentConfig dataShareSilentConfig_;
+    ConcurrentMap<std::string, uint32_t> settingsDataTokenIdCache_;
     std::mutex mutex_;
 };
 } // namespace OHOS::DataShare
