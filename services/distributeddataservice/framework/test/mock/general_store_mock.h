@@ -50,7 +50,8 @@ public:
     MOCK_METHOD((std::pair<int32_t, int64_t>), Insert,
         (const std::string &table, VBucket &&value, ConflictResolution resolution), (override));
     MOCK_METHOD((std::pair<int32_t, int64_t>), BatchInsert,
-        (const std::string &table, VBuckets &&values, ConflictResolution resolution), (override));
+        (const std::string &table, VBuckets &&values, ConflictResolution resolution, bool autoSplit),
+        (override));
     MOCK_METHOD((std::pair<int32_t, int64_t>), Update,
         (GenQuery & query, VBucket &&value, ConflictResolution resolution), (override));
     MOCK_METHOD((std::pair<int32_t, int64_t>), Delete, (GenQuery & query), (override));

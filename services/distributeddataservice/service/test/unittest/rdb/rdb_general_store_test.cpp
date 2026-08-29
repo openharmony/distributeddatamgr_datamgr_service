@@ -2208,6 +2208,195 @@ HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsertRecords, TestSize.Level
 }
 
 /**
+* @tc.name: RdbGeneralStore_BatchInsert_AutoSplitOversized_InsertAllSuccess
+* @tc.desc: Test batch insert with autoSplit when rows*fields exceeds SQLITE_MAX_VARIABLE_NUMBER
+* Test scenarios:
+* 1. Initialize database and create test table
+* 2. Prepare oversized batch data, 10000 rows x 4 fields = 40000 bind variables (> 32766)
+* 3. Execute batch insert with autoSplit=true and verify all rows are inserted
+* 4. Query all inserted records and verify count
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsert_AutoSplitOversized_InsertAllSuccess, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and create test table
+    std::string storeId = "RdbGeneralStore_BatchInsertAutoSplit.db";
+    std::string tableName = "RdbGeneralStore_BatchInsertAutoSplit";
+    auto[store, meta] = InitRdbStore(storeId, tableName);
+
+    // Step 2: Prepare oversized batch data, 10000 rows x 4 fields = 40000 > 32766
+    std::vector<DistributedData::VBucket> values;
+    DistributedData::VBucket vBucket;
+    vBucket["name"] = "tom";
+    vBucket["age"] = 15;
+    vBucket["salary"] = 300;
+    vBucket["data"] = std::vector<uint8_t>{ 2, 2, 2 };
+    const int64_t size = 10000;
+    for (int64_t i = 0; i < size; i++) {
+        values.push_back(vBucket);
+    }
+
+    // Step 3: Execute batch insert with autoSplit=true, RDB splits oversized batch internally
+    int64_t res = -1;
+    int32_t code;
+    std::tie(code, res) = store->BatchInsert(tableName, std::move(values),
+        GeneralStore::ON_CONFLICT_REPLACE, true);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, size);
+
+    // Step 4: Query all inserted records and verify count
+    RdbGeneralQuery query;
+    query.table = tableName;
+    NativeRdb::AbsRdbPredicates predicates(tableName);
+    query.whereClause = predicates.GetWhereClause();
+    query.args = ValueProxy::Convert(predicates.GetBindArgs());
+    std::shared_ptr<Cursor> cursor = nullptr;
+    std::tie(code, cursor) = store->Query(query);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    ASSERT_NE(cursor, nullptr);
+    EXPECT_EQ(cursor->MoveToFirst(), GeneralError::E_OK);
+    EXPECT_EQ(cursor->GetCount(), static_cast<int32_t>(size));
+
+    // Cleanup test environment
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    remove(meta.dataDir.c_str());
+}
+
+/**
+* @tc.name: RdbGeneralStore_BatchInsert_OversizedWithoutAutoSplit_Rejected
+* @tc.desc: Test oversized batch insert keeps strict single-SQL atomicity by default (autoSplit=false)
+* Test scenarios:
+* 1. Initialize database and create test table
+* 2. Prepare oversized batch data, 10000 rows x 4 fields = 40000 bind variables (> 32766)
+* 3. Execute batch insert without autoSplit and verify it is rejected with E_INVALID_ARGS
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsert_OversizedWithoutAutoSplit_Rejected, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and create test table
+    std::string storeId = "RdbGeneralStore_BatchInsertNoSplit.db";
+    std::string tableName = "RdbGeneralStore_BatchInsertNoSplit";
+    auto[store, meta] = InitRdbStore(storeId, tableName);
+
+    // Step 2: Prepare oversized batch data, 10000 rows x 4 fields = 40000 > 32766
+    std::vector<DistributedData::VBucket> values;
+    DistributedData::VBucket vBucket;
+    vBucket["name"] = "tom";
+    vBucket["age"] = 15;
+    vBucket["salary"] = 300;
+    vBucket["data"] = std::vector<uint8_t>{ 2, 2, 2 };
+    const int64_t size = 10000;
+    for (int64_t i = 0; i < size; i++) {
+        values.push_back(vBucket);
+    }
+
+    // Step 3: Execute batch insert without autoSplit, whole batch is rejected
+    int64_t res = -1;
+    int32_t code;
+    std::tie(code, res) = store->BatchInsert(tableName, std::move(values),
+        GeneralStore::ON_CONFLICT_REPLACE);
+    EXPECT_EQ(code, GeneralError::E_INVALID_ARGS);
+    EXPECT_EQ(res, -1);
+
+    // Cleanup test environment
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    remove(meta.dataDir.c_str());
+}
+
+/**
+* @tc.name: RdbGeneralStore_BatchInsert_AutoSplitConflict_ReplaceByDefault
+* @tc.desc: Test autoSplit batch insert replaces conflicting primary keys by default (OR REPLACE)
+* Test scenarios:
+* 1. Initialize database and create test table, insert one row with id=1
+* 2. Execute autoSplit batch insert containing the same id=1 with new values
+* 3. Verify the insert succeeds and the conflicting row is replaced instead of reported
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsert_AutoSplitConflict_ReplaceByDefault, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and insert one existing row
+    std::string storeId = "RdbGeneralStore_BatchInsertReplace.db";
+    std::string tableName = "RdbGeneralStore_BatchInsertReplace";
+    auto[store, meta] = InitRdbStore(storeId, tableName);
+    ASSERT_NE(store, nullptr);
+    DistributedData::Values insertArgs;
+    auto [insertCode, insertRet] = store->Execute(
+        "INSERT INTO " + tableName + "(id, name, age, salary) VALUES(1, 'old', 10, 100)",
+        std::move(insertArgs));
+    EXPECT_EQ(insertCode, GeneralError::E_OK);
+
+    // Step 2: Execute autoSplit batch insert with conflicting primary key id=1
+    std::vector<DistributedData::VBucket> values;
+    DistributedData::VBucket conflictRow;
+    conflictRow["id"] = static_cast<int64_t>(1);
+    conflictRow["name"] = "new";
+    conflictRow["age"] = 20;
+    conflictRow["salary"] = 200.0;
+    values.push_back(std::move(conflictRow));
+    int64_t res = -1;
+    int32_t code;
+    std::tie(code, res) = store->BatchInsert(tableName, std::move(values),
+        GeneralStore::ON_CONFLICT_REPLACE, true);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    EXPECT_EQ(res, static_cast<int64_t>(1));
+
+    // Step 3: Verify the conflicting row is replaced (count stays 1, without OR REPLACE it fails)
+    RdbGeneralQuery query;
+    query.table = tableName;
+    NativeRdb::AbsRdbPredicates predicates(tableName);
+    query.whereClause = predicates.GetWhereClause();
+    query.args = ValueProxy::Convert(predicates.GetBindArgs());
+    std::shared_ptr<Cursor> cursor = nullptr;
+    std::tie(code, cursor) = store->Query(query);
+    EXPECT_EQ(code, GeneralError::E_OK);
+    ASSERT_NE(cursor, nullptr);
+    EXPECT_EQ(cursor->MoveToFirst(), GeneralError::E_OK);
+    EXPECT_EQ(cursor->GetCount(), static_cast<int32_t>(1));
+
+    // Cleanup test environment
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    remove(meta.dataDir.c_str());
+}
+
+/**
+* @tc.name: RdbGeneralStore_BatchInsert_AutoSplitFailure_ReturnsError
+* @tc.desc: Test autoSplit batch insert returns an explicit error when execution fails
+* Test scenarios:
+* 1. Initialize database and create test table
+* 2. Execute autoSplit batch insert into a non-existent table (RDB reports {E_OK, -1})
+* 3. Verify an explicit E_ERROR is returned instead of the ambiguous {E_OK, -1}
+* @tc.type: FUNC
+*/
+HWTEST_F(RdbGeneralStoreTest, RdbGeneralStore_BatchInsert_AutoSplitFailure_ReturnsError, TestSize.Level1)
+{
+    // Step 1: Initialize database environment and create test table
+    std::string storeId = "RdbGeneralStore_BatchInsertFail.db";
+    std::string tableName = "RdbGeneralStore_BatchInsertFail";
+    auto[store, meta] = InitRdbStore(storeId, tableName);
+
+    // Step 2: Insert into a non-existent table, RDB 2-param BatchInsert reports {E_OK, -1}
+    std::vector<DistributedData::VBucket> values;
+    DistributedData::VBucket vBucket;
+    vBucket["name"] = "tom";
+    vBucket["age"] = 15;
+    vBucket["salary"] = 300;
+    vBucket["data"] = std::vector<uint8_t>{ 2, 2, 2 };
+    values.push_back(vBucket);
+    int64_t res = 0;
+    int32_t code;
+    std::tie(code, res) = store->BatchInsert("table_not_exist", std::move(values),
+        GeneralStore::ON_CONFLICT_REPLACE, true);
+
+    // Step 3: Verify explicit error instead of ambiguous {E_OK, -1}
+    EXPECT_EQ(code, GeneralError::E_ERROR);
+    EXPECT_EQ(res, -1);
+
+    // Cleanup test environment
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+    remove(meta.dataDir.c_str());
+}
+
+/**
 * @tc.name: RdbGeneralStore_CRUDAfterClose
 * @tc.desc: Test CRUD operations after closing RdbGeneralStore
 * Test scenarios:

@@ -1017,7 +1017,7 @@ std::pair<int32_t, int64_t> KVDBGeneralStore::Insert(const std::string &table, V
     return { GeneralError::E_NOT_SUPPORT, -1 };
 }
 std::pair<int32_t, int64_t> KVDBGeneralStore::BatchInsert(const std::string &table, VBuckets &&values,
-    GeneralStore::ConflictResolution resolution)
+    GeneralStore::ConflictResolution resolution, bool autoSplit)
 {
     return { GeneralError::E_NOT_SUPPORT, -1 };
 }
