@@ -197,7 +197,7 @@ std::pair<int32_t, int64_t> GeneralStoreMock::Insert(const std::string &table, V
 }
 
 std::pair<int32_t, int64_t> GeneralStoreMock::BatchInsert(const std::string &table, VBuckets &&values,
-    ConflictResolution resolution)
+    ConflictResolution resolution, bool autoSplit)
 {
     return { E_OK, E_OK };
 }

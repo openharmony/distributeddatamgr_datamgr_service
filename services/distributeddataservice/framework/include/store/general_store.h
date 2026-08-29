@@ -189,7 +189,7 @@ public:
     virtual std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value,
         ConflictResolution resolution) = 0;
     virtual std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values,
-        ConflictResolution resolution) = 0;
+        ConflictResolution resolution, bool autoSplit = false) = 0;
     virtual std::pair<int32_t, int64_t> Update(GenQuery &query, VBucket &&value, ConflictResolution resolution) = 0;
     virtual std::pair<int32_t, int64_t> Delete(GenQuery &query) = 0;
     virtual std::pair<int32_t, Value> Execute(const std::string &sql, Values &&args) = 0;

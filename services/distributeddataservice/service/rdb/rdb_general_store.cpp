@@ -1846,7 +1846,7 @@ std::pair<int32_t, int64_t> RdbGeneralStore::Insert(const std::string &table, VB
 }
 
 std::pair<int32_t, int64_t> RdbGeneralStore::BatchInsert(const std::string &table, VBuckets &&values,
-    GeneralStore::ConflictResolution resolution)
+    GeneralStore::ConflictResolution resolution, bool autoSplit)
 {
     auto [ret, store] = InitRdbStore();
     if (store == nullptr || ret != GenErr::E_OK) {
@@ -1855,6 +1855,13 @@ std::pair<int32_t, int64_t> RdbGeneralStore::BatchInsert(const std::string &tabl
         return { ret, -1 };
     }
     NativeRdb::ValuesBuckets valuesBuckets(ValueProxy::Convert(std::move(values)));
+    if (autoSplit) {
+        auto [code, count] = store->BatchInsert(table, valuesBuckets);
+        if (code == NativeRdb::E_OK && count == -1) {
+            return { GenErr::E_ERROR, -1 };
+        }
+        return { RdbCommonUtils::ConvertNativeRdbStatus(code), count };
+    }
     auto [code, count] = store->BatchInsert(table, valuesBuckets, ConvertResolution(resolution));
     return { RdbCommonUtils::ConvertNativeRdbStatus(code), count };
 }

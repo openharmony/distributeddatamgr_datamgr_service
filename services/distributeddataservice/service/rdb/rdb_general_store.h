@@ -71,7 +71,7 @@ public:
     std::pair<int32_t, int64_t> Insert(const std::string &table, VBucket &&value,
         ConflictResolution resolution) override;
     std::pair<int32_t, int64_t> BatchInsert(const std::string &table, VBuckets &&values,
-        ConflictResolution resolution) override;
+        ConflictResolution resolution, bool autoSplit = false) override;
     std::pair<int32_t, int64_t> Update(GenQuery &query, VBucket &&value, ConflictResolution resolution) override;
     std::pair<int32_t, int64_t> Delete(GenQuery &query) override;
     std::pair<int32_t, Value> Execute(const std::string &sql, Values &&args) override;
