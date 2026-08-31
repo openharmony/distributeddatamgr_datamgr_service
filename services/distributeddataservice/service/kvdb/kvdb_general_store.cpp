@@ -42,6 +42,7 @@
 #include "user_delegate.h"
 #include "utils/anonymous.h"
 #include "utils/constant.h"
+#include "utils/parse_user_id.h"
 
 namespace OHOS::DistributedKv {
 using namespace DistributedData;
@@ -216,7 +217,9 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     storeInfo_.bundleName = meta.bundleName;
     storeInfo_.storeName = meta.storeId;
     storeInfo_.instanceId = meta.instanceId;
-    storeInfo_.user = std::atoi(meta.user.c_str());
+    if (!ParseUserIdInt32(meta.user, storeInfo_.user)) {
+        ZLOGE("invalid user id %{public}s", meta.user.c_str());
+    }
     enableCloud_ = meta.enableCloud;
 }
 
