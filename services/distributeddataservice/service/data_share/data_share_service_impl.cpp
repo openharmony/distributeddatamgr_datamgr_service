@@ -1099,6 +1099,9 @@ uint32_t DataShareServiceImpl::GetCalledTokenId(
     if (calledBundleName != SETTINGS_DATA_BUNDLE_NAME) {
         return QueryCalledTokenId(currentUserId, calledBundleName, appIndex);
     }
+    // The settings app is queried with a very high frequency during boot, and it is a preinstalled
+    // system app under user 0 whose token id never changes, so cache its token id in the service
+    // process to avoid repeated IPC to the access token manager.
     auto [success, tokenId] = settingsDataTokenIdCache_.Find(calledBundleName);
     if (success) {
         return tokenId;
