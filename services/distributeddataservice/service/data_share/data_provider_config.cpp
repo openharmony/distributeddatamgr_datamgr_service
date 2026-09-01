@@ -20,6 +20,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bundle_constants.h"
 #include "bundle_mgr_proxy.h"
 #include "common_utils.h"
 #include "config_factory.h"
@@ -37,7 +38,7 @@ using namespace OHOS::DistributedData;
 DataProviderConfig::DataProviderConfig(const std::string &uri, uint32_t callerTokenId)
 {
     providerInfo_.uri = uri;
-    providerInfo_.currentUserId = AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    providerInfo_.currentUserId = IPCSkeleton::GetCallingUid() / AppExecFwk::Constants::BASE_USER_RANGE;
     providerInfo_.visitedUserId = providerInfo_.currentUserId;
     URIUtils::GetAppIndexFromProxyURI(providerInfo_.uri, providerInfo_.appIndex);
     if (providerInfo_.currentUserId == 0) {
