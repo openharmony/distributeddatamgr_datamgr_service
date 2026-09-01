@@ -17,6 +17,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "bundle_constants.h"
 #include "bundle_mgr_proxy.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
@@ -34,7 +35,7 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     if (context->callerTokenId == 0) {
         context->callerTokenId = IPCSkeleton::GetCallingTokenID();
     }
-    context->currentUserId = AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId);
+    context->currentUserId = IPCSkeleton::GetCallingUid() / AppExecFwk::Constants::BASE_USER_RANGE;
     context->visitedUserId = context->currentUserId;
     if (!URIUtils::GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
         return false;
