@@ -25,6 +25,10 @@
 #include "log_print.h"
 #include "want.h"
 
+#if defined(DATAMGR_BATTERY_PART_ENABLED)
+#include "battery_srv_client.h"
+#endif
+
 namespace OHOS::DistributedData {
 namespace {
 constexpr const char *BATTERY_CHANGED_EVENT = "usual.event.BATTERY_CHANGED";
@@ -94,6 +98,8 @@ bool BatteryStateMonitorImpl::Register()
     return true;
 }
 
+BatteryStateMonitorImpl::BatteryStateMonitorImpl() = default;
+
 int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer observer)
 {
     if (name.empty() || observer == nullptr) {
@@ -101,6 +107,7 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
     }
     Snapshot snapshot;
     std::shared_ptr<BatteryStateEventSubscriber> subscriber;
+    uint64_t queryStateVersion = 0;
     {
         std::unique_lock<std::mutex> lock(mutex_);
         condition_.wait(lock, [this]() {
@@ -111,14 +118,17 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
         if (!started_) {
             subscriber = GetSubscriberLocked();
             subscribing_ = true;
+            queryStateVersion = stateVersion_;
         }
     }
     if (subscriber != nullptr) {
         bool result = EventFwk::CommonEventManager::SubscribeCommonEvent(subscriber);
+        bool shouldQuery = false;
         {
             std::lock_guard<std::mutex> lock(mutex_);
             subscribing_ = false;
             started_ = result;
+            shouldQuery = result;
             if (!result) {
                 observers_.erase(name);
                 if (batterySubscriber_ == subscriber) {
@@ -131,6 +141,15 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
             ZLOGE("subscribe battery state event failed, name:%{public}s", name.c_str());
             return E_ERROR;
         }
+        if (shouldQuery) {
+            auto level = QueryCapacityLevel();
+            if (!ApplyInitialLevel(level, queryStateVersion, snapshot)) {
+                snapshot = GetSnapshot();
+            }
+        }
+    }
+    if (subscriber == nullptr) {
+        snapshot = GetSnapshot();
     }
     observer(snapshot);
     return E_OK;
@@ -227,17 +246,55 @@ void BatteryStateMonitorImpl::OnBatteryEvent(const EventFwk::CommonEventData &ev
     }
 }
 
-bool BatteryStateMonitorImpl::UpdateBatteryLevel(int32_t level, Snapshot &snapshot)
+int32_t BatteryStateMonitorImpl::QueryCapacityLevel() const
+{
+#if defined(DATAMGR_BATTERY_PART_ENABLED)
+    return static_cast<int32_t>(OHOS::PowerMgr::BatterySrvClient::GetInstance().GetCapacityLevel());
+#else
+    return INVALID_LEVEL;
+#endif
+}
+
+bool BatteryStateMonitorImpl::ApplyInitialLevel(
+    int32_t level, uint64_t stateVersion, Snapshot &snapshot)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!started_) {
         return false;
     }
-    int32_t normalized = ClampLevel(level);
-    if (snapshot_.batteryLevel == normalized) {
+    int32_t clampedLevel = ClampLevel(level);
+    if (level != clampedLevel) {
+        ZLOGW("clamp initial battery level, raw:%{public}d, clamped:%{public}d", level, clampedLevel);
+    }
+    if (stateVersion_ != stateVersion) {
+        ZLOGI("ignore stale initial battery query result");
         return false;
     }
-    snapshot_.batteryLevel = normalized;
+    snapshot_.batteryLevel = clampedLevel;
+    snapshot = snapshot_;
+    return true;
+}
+
+bool BatteryStateMonitorImpl::UpdateBatteryLevel(int32_t level, Snapshot &snapshot, bool fromEvent)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!started_ && !subscribing_) {
+        return false;
+    }
+    int32_t clampedLevel = ClampLevel(level);
+    if (level != clampedLevel) {
+        ZLOGW("clamp battery level, raw:%{public}d, clamped:%{public}d", level, clampedLevel);
+    }
+    if (snapshot_.batteryLevel == clampedLevel) {
+        if (fromEvent) {
+            ++stateVersion_;
+        }
+        return false;
+    }
+    snapshot_.batteryLevel = clampedLevel;
+    if (fromEvent) {
+        ++stateVersion_;
+    }
     snapshot = snapshot_;
     return true;
 }

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_BATTERY_STATE_MONITOR_IMPL_H
-#define OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_BATTERY_STATE_MONITOR_IMPL_H
+#ifndef OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_SYSTEM_LOAD_MONITOR_IMPL_H
+#define OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_SYSTEM_LOAD_MONITOR_IMPL_H
 
 #include <condition_variable>
 #include <map>
@@ -22,15 +22,15 @@
 #include <mutex>
 #include <string>
 
-#include "battery_state/battery_state_monitor.h"
-#include "common_event_data.h"
-#include "common_event_subscriber.h"
+#include "system_load/system_load_monitor.h"
 #include "visibility.h"
 
-namespace OHOS::DistributedData {
-class BatteryStateEventSubscriber;
+#if defined(DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED)
+#include "res_sched_systemload_notifier_client.h"
+#endif
 
-class BatteryStateMonitorImpl final : public BatteryStateMonitor {
+namespace OHOS::DistributedData {
+class SystemLoadMonitorImpl final : public SystemLoadMonitor {
 public:
     static bool Register();
 
@@ -39,24 +39,32 @@ public:
     API_EXPORT Snapshot GetSnapshot() const override;
 
 private:
-    BatteryStateMonitorImpl();
-    std::shared_ptr<BatteryStateEventSubscriber> GetSubscriberLocked();
-    void UnsubscribeBatteryEvent();
-    void OnBatteryEvent(const EventFwk::CommonEventData &event);
-    int32_t QueryCapacityLevel() const;
-    bool ApplyInitialLevel(int32_t level, uint64_t stateVersion, Snapshot &snapshot);
-    bool UpdateBatteryLevel(int32_t level, Snapshot &snapshot, bool fromEvent = true);
+#if defined(DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED)
+    class SystemLoadNotifier final : public OHOS::ResourceSchedule::ResSchedSystemloadNotifierClient {
+    public:
+        explicit SystemLoadNotifier(SystemLoadMonitorImpl &monitor);
+        void OnSystemloadLevel(int32_t level) override;
+
+    private:
+        SystemLoadMonitorImpl &monitor_;
+    };
+#endif
+
+    void OnSystemLoadChanged(int32_t level);
+    bool NormalizeInitialLevel(int32_t rawLevel, int32_t &level) const;
     void Notify(const Snapshot &snapshot);
 
     mutable std::mutex mutex_;
+    std::condition_variable condition_;
     Snapshot snapshot_;
     std::map<std::string, Observer> observers_;
-    std::shared_ptr<BatteryStateEventSubscriber> batterySubscriber_;
+    uint64_t updateSequence_ = 0;
     bool started_ = false;
     bool subscribing_ = false;
-    uint64_t stateVersion_ = 0;
-    std::condition_variable condition_;
+#if defined(DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED)
+    sptr<OHOS::ResourceSchedule::ResSchedSystemloadNotifierClient> notifier_;
+#endif
 };
 } // namespace OHOS::DistributedData
 
-#endif // OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_BATTERY_STATE_MONITOR_IMPL_H
+#endif // OHOS_DISTRIBUTED_DATA_SERVICES_ADAPTER_SYSTEM_LOAD_MONITOR_IMPL_H

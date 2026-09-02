@@ -10,10 +10,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import("//build/ohos.gni")
+import("//build/test.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-ohos_source_set("distributeddata_battery_state") {
+ohos_unittest("SystemLoadMonitorTest") {
+  module_out_path = "datamgr_service/datamgr_service/distributeddatafwk"
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -22,31 +25,30 @@ ohos_source_set("distributeddata_battery_state") {
     boundary_sanitize = true
     ubsan = true
   }
-
-  sources = [ "battery_state_monitor_impl.cpp" ]
-
-  include_dirs = [
-    "../include/log",
-    ".",
-  ]
-
-  cflags_cc = [ "-fvisibility=hidden" ]
-
+  sources = [ "system_load_monitor_test.cpp" ]
+  include_dirs = [ ".." ]
+  cflags = [ "-fno-access-control" ]
   external_deps = [
-    "ability_base:want",
-    "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
+    "googletest:gtest_main",
     "hilog:libhilog",
     "kv_store:datamgr_common",
   ]
-
-  if (datamgr_service_batterymgr) {
-    defines = [ "DATAMGR_BATTERY_PART_ENABLED" ]
-    external_deps += [ "battery_manager:batterysrv_client" ]
+  if (datamgr_service_resource_schedule) {
+    defines = [ "DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED" ]
+    external_deps += [
+      "resource_schedule_service:ressched_client",
+      "samgr:samgr_proxy",
+    ]
   }
-
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
-
+  deps = [
+    "${data_service_path}/adapter/system_load:distributeddata_system_load",
+    "${data_service_path}/framework:distributeddatasvcfwk",
+  ]
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"
+}
+
+group("unittest") {
+  testonly = true
+  deps = [ ":SystemLoadMonitorTest" ]
 }

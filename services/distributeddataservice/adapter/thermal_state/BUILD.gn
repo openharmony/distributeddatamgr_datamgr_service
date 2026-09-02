@@ -10,42 +10,39 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import("//build/ohos.gni")
 import("//foundation/distributeddatamgr/datamgr_service/datamgr_service.gni")
 
-ohos_source_set("distributeddata_battery_state") {
+ohos_source_set("distributeddata_thermal_state") {
   branch_protector_ret = "pac_ret"
   sanitize = {
+    ubsan = true
+    boundary_sanitize = true
     cfi = true
     cfi_cross_dso = true
     debug = false
-    boundary_sanitize = true
-    ubsan = true
   }
 
-  sources = [ "battery_state_monitor_impl.cpp" ]
-
-  include_dirs = [
-    "../include/log",
-    ".",
-  ]
-
+  sources = [ "thermal_state_monitor_impl.cpp" ]
+  include_dirs = [ "." ]
   cflags_cc = [ "-fvisibility=hidden" ]
 
+  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
   external_deps = [
-    "ability_base:want",
     "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
     "kv_store:datamgr_common",
   ]
 
-  if (datamgr_service_batterymgr) {
-    defines = [ "DATAMGR_BATTERY_PART_ENABLED" ]
-    external_deps += [ "battery_manager:batterysrv_client" ]
+  if (datamgr_service_thermal) {
+    defines = [ "DATAMGR_THERMAL_PART_ENABLED" ]
+    external_deps += [
+      "ipc:ipc_core",
+      "thermal_manager:thermalmgr_listener",
+      "thermal_manager:thermalsrv_client",
+    ]
   }
-
-  deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   subsystem_name = "distributeddatamgr"
   part_name = "datamgr_service"

@@ -56,6 +56,7 @@ public:
         monitor_.snapshot_ = BatteryStateMonitor::Snapshot {};
         monitor_.started_ = false;
         monitor_.subscribing_ = false;
+        monitor_.stateVersion_ = 0;
     }
 
     BatteryStateMonitorImpl monitor_;
@@ -185,7 +186,7 @@ HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_LowAndOkay_UpdateSnapshot006, T
 
 /**
  * @tc.name: OnBatteryEvent_LevelEvents_ParseKnownKeysAndClamp007
- * @tc.desc: Verify capacity events parse known keys and clamp battery levels to the valid range.
+ * @tc.desc: Verify capacity events parse known keys and clamp out-of-range levels to the nearest boundary.
  * @tc.type: FUNC
  */
 HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_LevelEvents_ParseKnownKeysAndClamp007, TestSize.Level1)
@@ -237,5 +238,35 @@ HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_UnknownActionOrDuplicateLevel_D
     monitor_.OnBatteryEvent(MakeBatteryEvent(BATTERY_LOW_EVENT));
     EXPECT_EQ(callbackCount, 1);
     EXPECT_EQ(monitor_.GetSnapshot().batteryLevel, 4);
+}
+
+/**
+ * @tc.name: ApplyInitialLevel_EventArrivesDuringQuery_PreservesEventSnapshot009
+ * @tc.desc: Verify a stale initial query cannot overwrite a newer CommonEvent sample.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, ApplyInitialLevel_EventArrivesDuringQuery_PreservesEventSnapshot009,
+    TestSize.Level1)
+{
+    monitor_.started_ = true;
+    BatteryStateMonitor::Snapshot snapshot;
+
+    ASSERT_TRUE(monitor_.UpdateBatteryLevel(4, snapshot));
+    EXPECT_FALSE(monitor_.ApplyInitialLevel(2, 0, snapshot));
+    EXPECT_EQ(monitor_.GetSnapshot().batteryLevel, 4);
+}
+
+/**
+ * @tc.name: ApplyInitialLevel_NoNewEvent_CachesQueriedSnapshot010
+ * @tc.desc: Verify a valid initial capacity query populates the cache when no event races with it.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, ApplyInitialLevel_NoNewEvent_CachesQueriedSnapshot010, TestSize.Level1)
+{
+    monitor_.started_ = true;
+    BatteryStateMonitor::Snapshot snapshot;
+
+    ASSERT_TRUE(monitor_.ApplyInitialLevel(2, 0, snapshot));
+    EXPECT_EQ(snapshot.batteryLevel, 2);
 }
 } // namespace OHOS::Test
