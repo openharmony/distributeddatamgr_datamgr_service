@@ -33,7 +33,7 @@ ohos_unittest("SystemLoadMonitorTest") {
     "hilog:libhilog",
     "kv_store:datamgr_common",
   ]
-  if (datamgr_service_resource_schedule) {
+  if (datamgr_service_resource) {
     defines = [ "DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED" ]
     external_deps += [
       "resource_schedule_service:ressched_client",

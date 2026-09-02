@@ -53,10 +53,10 @@ declare_args() {
     datamgr_service_batterymgr = false
   }
 
-  datamgr_service_resource_schedule = true
+  datamgr_service_resource = true
   if (!defined(global_parts_info) ||
       !defined(global_parts_info.resourceschedule_resource_schedule_service)) {
-    datamgr_service_resource_schedule = false
+    datamgr_service_resource = false
   }
 
   datamgr_service_thermal = true
