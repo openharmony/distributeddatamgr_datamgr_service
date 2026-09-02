@@ -88,7 +88,7 @@
                 "qos_manager",
                 "relational_store",
                 "resource_management",
-                "resource_schedule_manager",
+                "resource_schedule_service",
                 "safwk",
                 "samgr",
                 "screenlock_mgr",
