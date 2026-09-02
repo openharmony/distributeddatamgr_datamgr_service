@@ -38,7 +38,7 @@ ohos_source_set("distributeddata_thermal_state") {
   if (datamgr_service_thermal) {
     defines = [ "DATAMGR_THERMAL_PART_ENABLED" ]
     external_deps += [
-      "ability_base:base",
+      "bundle_framework:appexecfwk_base",
       "ipc:ipc_core",
       "thermal_manager:thermalmgr_listener",
       "thermal_manager:thermalsrv_client",
