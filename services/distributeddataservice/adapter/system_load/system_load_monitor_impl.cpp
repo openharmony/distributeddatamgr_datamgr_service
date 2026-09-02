@@ -71,15 +71,30 @@ int32_t SystemLoadMonitorImpl::Subscribe(const std::string &name, Observer obser
         return E_INVALID_ARGS;
     }
     Snapshot snapshot;
+    SubscriptionContext context;
+    int32_t status = PrepareSubscription(name, observer, snapshot, context);
+    if (status != E_OK) {
+        return status;
+    }
 #if defined(DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED)
-    sptr<OHOS::ResourceSchedule::ResSchedSystemloadNotifierClient> notifier;
-    uint64_t querySequence = 0;
+    if (context.notifier != nullptr) {
+        CompleteSubscription(context, snapshot);
+    }
+#else
+    ZLOGW("system load capability is disabled");
+#endif
+    observer(snapshot);
+    return E_OK;
+}
+
+int32_t SystemLoadMonitorImpl::PrepareSubscription(
+    const std::string &name, const Observer &observer, Snapshot &snapshot, SubscriptionContext &context)
+{
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        condition_.wait(lock, [this]() {
-            return !subscribing_;
-        });
+        condition_.wait(lock, [this]() { return !subscribing_; });
         observers_[name] = observer;
+#if defined(DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED)
         if (started_) {
             snapshot = snapshot_;
         } else {
@@ -90,41 +105,39 @@ int32_t SystemLoadMonitorImpl::Subscribe(const std::string &name, Observer obser
                 observers_.erase(name);
                 return E_ERROR;
             }
-            notifier = notifier_;
+            context.notifier = notifier_;
             subscribing_ = true;
-            querySequence = updateSequence_;
+            context.updateSequence = updateSequence_;
         }
-    }
-    if (notifier != nullptr) {
-        auto &client = OHOS::ResourceSchedule::ResSchedClient::GetInstance();
-        client.RegisterSystemloadNotifier(notifier);
-        int32_t rawLevel = client.GetSystemloadLevel();
-        int32_t initialLevel = SYSTEM_LOAD_MIN;
-        bool querySucceeded = NormalizeInitialLevel(rawLevel, initialLevel);
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            started_ = true;
-            subscribing_ = false;
-            if (querySucceeded && updateSequence_ == querySequence) {
-                snapshot_.level = initialLevel;
-                ++updateSequence_;
-            }
-            snapshot = snapshot_;
-        }
-        condition_.notify_all();
-    }
 #else
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        observers_[name] = observer;
         started_ = true;
         snapshot = snapshot_;
-    }
-    ZLOGW("system load capability is disabled");
 #endif
-    observer(snapshot);
+    }
     return E_OK;
 }
+
+#if defined(DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED)
+void SystemLoadMonitorImpl::CompleteSubscription(const SubscriptionContext &context, Snapshot &snapshot)
+{
+    auto &client = OHOS::ResourceSchedule::ResSchedClient::GetInstance();
+    client.RegisterSystemloadNotifier(context.notifier);
+    int32_t rawLevel = client.GetSystemloadLevel();
+    int32_t initialLevel = SYSTEM_LOAD_MIN;
+    bool querySucceeded = NormalizeInitialLevel(rawLevel, initialLevel);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        started_ = true;
+        subscribing_ = false;
+        if (querySucceeded && updateSequence_ == context.updateSequence) {
+            snapshot_.level = initialLevel;
+            ++updateSequence_;
+        }
+        snapshot = snapshot_;
+    }
+    condition_.notify_all();
+}
+#endif
 
 int32_t SystemLoadMonitorImpl::Unsubscribe(const std::string &name)
 {

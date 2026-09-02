@@ -40,6 +40,10 @@ public:
 
 private:
     BatteryStateMonitorImpl();
+    void PrepareSubscription(const std::string &name, const Observer &observer,
+        std::shared_ptr<BatteryStateEventSubscriber> &subscriber, uint64_t &stateVersion, Snapshot &snapshot);
+    int32_t CompleteSubscription(const std::string &name,
+        const std::shared_ptr<BatteryStateEventSubscriber> &subscriber, uint64_t stateVersion, Snapshot &snapshot);
     std::shared_ptr<BatteryStateEventSubscriber> GetSubscriberLocked();
     void UnsubscribeBatteryEvent();
     void OnBatteryEvent(const EventFwk::CommonEventData &event);

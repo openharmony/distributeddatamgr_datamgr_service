@@ -108,50 +108,59 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
     Snapshot snapshot;
     std::shared_ptr<BatteryStateEventSubscriber> subscriber;
     uint64_t queryStateVersion = 0;
+    PrepareSubscription(name, observer, subscriber, queryStateVersion, snapshot);
+    if (subscriber != nullptr) {
+        int32_t status = CompleteSubscription(name, subscriber, queryStateVersion, snapshot);
+        if (status != E_OK) {
+            return status;
+        }
+    } else {
+        snapshot = GetSnapshot();
+    }
+    observer(snapshot);
+    return E_OK;
+}
+
+void BatteryStateMonitorImpl::PrepareSubscription(const std::string &name, const Observer &observer,
+    std::shared_ptr<BatteryStateEventSubscriber> &subscriber, uint64_t &stateVersion, Snapshot &snapshot)
+{
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        condition_.wait(lock, [this]() {
-            return !subscribing_;
-        });
+        condition_.wait(lock, [this]() { return !subscribing_; });
         observers_[name] = observer;
         snapshot = snapshot_;
         if (!started_) {
             subscriber = GetSubscriberLocked();
             subscribing_ = true;
-            queryStateVersion = stateVersion_;
+            stateVersion = stateVersion_;
         }
     }
-    if (subscriber != nullptr) {
-        bool result = EventFwk::CommonEventManager::SubscribeCommonEvent(subscriber);
-        bool shouldQuery = false;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            subscribing_ = false;
-            started_ = result;
-            shouldQuery = result;
-            if (!result) {
-                observers_.erase(name);
-                if (batterySubscriber_ == subscriber) {
-                    batterySubscriber_.reset();
-                }
-            }
-        }
-        condition_.notify_all();
+}
+
+int32_t BatteryStateMonitorImpl::CompleteSubscription(const std::string &name,
+    const std::shared_ptr<BatteryStateEventSubscriber> &subscriber, uint64_t stateVersion, Snapshot &snapshot)
+{
+    bool result = EventFwk::CommonEventManager::SubscribeCommonEvent(subscriber);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        subscribing_ = false;
+        started_ = result;
         if (!result) {
-            ZLOGE("subscribe battery state event failed, name:%{public}s", name.c_str());
-            return E_ERROR;
-        }
-        if (shouldQuery) {
-            auto level = QueryCapacityLevel();
-            if (!ApplyInitialLevel(level, queryStateVersion, snapshot)) {
-                snapshot = GetSnapshot();
+            observers_.erase(name);
+            if (batterySubscriber_ == subscriber) {
+                batterySubscriber_.reset();
             }
         }
     }
-    if (subscriber == nullptr) {
+    condition_.notify_all();
+    if (!result) {
+        ZLOGE("subscribe battery state event failed, name:%{public}s", name.c_str());
+        return E_ERROR;
+    }
+    auto level = QueryCapacityLevel();
+    if (!ApplyInitialLevel(level, stateVersion, snapshot)) {
         snapshot = GetSnapshot();
     }
-    observer(snapshot);
     return E_OK;
 }
 

@@ -74,15 +74,33 @@ int32_t ThermalStateMonitorImpl::Subscribe(const std::string &name, Observer obs
         return E_INVALID_ARGS;
     }
     Snapshot snapshot;
+    SubscriptionContext context;
+    int32_t status = PrepareSubscription(name, observer, snapshot, context);
+    if (status != E_OK) {
+        return status;
+    }
 #if defined(DATAMGR_THERMAL_PART_ENABLED)
-    sptr<OHOS::PowerMgr::IThermalLevelCallback> callback;
-    uint64_t querySequence = 0;
+    if (context.callback != nullptr) {
+        status = CompleteSubscription(name, context, snapshot);
+        if (status != E_OK) {
+            return status;
+        }
+    }
+#else
+    ZLOGW("thermal capability is disabled");
+#endif
+    observer(snapshot);
+    return E_OK;
+}
+
+int32_t ThermalStateMonitorImpl::PrepareSubscription(
+    const std::string &name, const Observer &observer, Snapshot &snapshot, SubscriptionContext &context)
+{
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        condition_.wait(lock, [this]() {
-            return !subscribing_;
-        });
+        condition_.wait(lock, [this]() { return !subscribing_; });
         observers_[name] = observer;
+#if defined(DATAMGR_THERMAL_PART_ENABLED)
         if (started_) {
             snapshot = snapshot_;
         } else {
@@ -93,49 +111,48 @@ int32_t ThermalStateMonitorImpl::Subscribe(const std::string &name, Observer obs
                 observers_.erase(name);
                 return E_ERROR;
             }
-            callback = callback_;
+            context.callback = callback_;
             subscribing_ = true;
-            querySequence = updateSequence_;
+            context.updateSequence = updateSequence_;
         }
-    }
-    if (callback != nullptr) {
-        auto &client = OHOS::PowerMgr::ThermalMgrClient::GetInstance();
-        bool subscribed = client.SubscribeThermalLevelCallback(callback, true);
-        auto level = client.GetThermalLevel();
-        int32_t rawLevel = static_cast<int32_t>(level);
-        int32_t initialLevel = THERMAL_LEVEL_MIN;
-        bool querySucceeded = NormalizeInitialLevel(rawLevel, initialLevel);
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            started_ = subscribed;
-            subscribing_ = false;
-            if (subscribed && querySucceeded && updateSequence_ == querySequence) {
-                snapshot_.level = initialLevel;
-                ++updateSequence_;
-            }
-            if (!subscribed) {
-                observers_.erase(name);
-            }
-            snapshot = snapshot_;
-        }
-        condition_.notify_all();
-        if (!subscribed) {
-            ZLOGW("subscribe thermal level failed");
-            return E_ERROR;
-        }
-    }
 #else
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        observers_[name] = observer;
         started_ = true;
         snapshot = snapshot_;
-    }
-    ZLOGW("thermal capability is disabled");
 #endif
-    observer(snapshot);
+    }
     return E_OK;
 }
+
+#if defined(DATAMGR_THERMAL_PART_ENABLED)
+int32_t ThermalStateMonitorImpl::CompleteSubscription(
+    const std::string &name, const SubscriptionContext &context, Snapshot &snapshot)
+{
+    auto &client = OHOS::PowerMgr::ThermalMgrClient::GetInstance();
+    bool subscribed = client.SubscribeThermalLevelCallback(context.callback, true);
+    int32_t rawLevel = static_cast<int32_t>(client.GetThermalLevel());
+    int32_t initialLevel = THERMAL_LEVEL_MIN;
+    bool querySucceeded = NormalizeInitialLevel(rawLevel, initialLevel);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        started_ = subscribed;
+        subscribing_ = false;
+        if (subscribed && querySucceeded && updateSequence_ == context.updateSequence) {
+            snapshot_.level = initialLevel;
+            ++updateSequence_;
+        }
+        if (!subscribed) {
+            observers_.erase(name);
+        }
+        snapshot = snapshot_;
+    }
+    condition_.notify_all();
+    if (!subscribed) {
+        ZLOGW("subscribe thermal level failed");
+        return E_ERROR;
+    }
+    return E_OK;
+}
+#endif
 
 int32_t ThermalStateMonitorImpl::Unsubscribe(const std::string &name)
 {

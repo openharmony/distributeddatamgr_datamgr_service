@@ -50,6 +50,18 @@ private:
     };
 #endif
 
+    struct SubscriptionContext {
+#if defined(DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED)
+        sptr<OHOS::ResourceSchedule::ResSchedSystemloadNotifierClient> notifier;
+        uint64_t updateSequence = 0;
+#endif
+    };
+
+    int32_t PrepareSubscription(
+        const std::string &name, const Observer &observer, Snapshot &snapshot, SubscriptionContext &context);
+#if defined(DATAMGR_RESOURCE_SCHEDULE_PART_ENABLED)
+    void CompleteSubscription(const SubscriptionContext &context, Snapshot &snapshot);
+#endif
     void OnSystemLoadChanged(int32_t level);
     bool NormalizeInitialLevel(int32_t rawLevel, int32_t &level) const;
     void Notify(const Snapshot &snapshot);

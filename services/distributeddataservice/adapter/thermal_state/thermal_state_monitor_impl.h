@@ -50,6 +50,18 @@ private:
     };
 #endif
 
+    struct SubscriptionContext {
+#if defined(DATAMGR_THERMAL_PART_ENABLED)
+        sptr<OHOS::PowerMgr::IThermalLevelCallback> callback;
+        uint64_t updateSequence = 0;
+#endif
+    };
+
+    int32_t PrepareSubscription(
+        const std::string &name, const Observer &observer, Snapshot &snapshot, SubscriptionContext &context);
+#if defined(DATAMGR_THERMAL_PART_ENABLED)
+    int32_t CompleteSubscription(const std::string &name, const SubscriptionContext &context, Snapshot &snapshot);
+#endif
     void OnThermalLevelChanged(int32_t level);
     bool NormalizeInitialLevel(int32_t rawLevel, int32_t &level) const;
     void Notify(const Snapshot &snapshot);
