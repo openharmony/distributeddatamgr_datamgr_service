@@ -46,6 +46,7 @@ void KVDBExporter::Exporter(const StoreMetaData &meta, const std::string &backup
             ZLOGE("CheckIntegrity fail, dbStatus:%{public}d, backupPath:%{public}s", dbStatus,
                 Anonymous::Change(backupPath).c_str());
             result = false;
+            manager.CloseKvStore(delegate);
             return;
         }
         dbStatus = delegate->Export(backupPath, dbPassword);
