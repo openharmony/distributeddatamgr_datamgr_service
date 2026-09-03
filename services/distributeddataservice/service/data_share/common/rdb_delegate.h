@@ -52,6 +52,8 @@ private:
     void TryAndSend(int errCode);
     std::pair<int, RdbStoreConfig> GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
     bool IsLimit(int count, int32_t callingPid, uint32_t callingTokenId);
+    static void AddCallingPidCount(int32_t callingPid);
+    static void RemoveCallingPidCount(int32_t callingPid);
     static std::atomic<int32_t> resultSetCount;
     static ConcurrentMap<uint32_t, int32_t> resultSetCallingPids;
     static constexpr std::chrono::milliseconds WAIT_TIME = std::chrono::milliseconds(50);
