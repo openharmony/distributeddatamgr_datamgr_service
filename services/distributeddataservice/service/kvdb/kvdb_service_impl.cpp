@@ -254,11 +254,6 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
     }
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
-    if (!ResolveCustomDirSyncPath(metaData)) {
-        ZLOGE("custom dir not allow sync, appId:%{public}s, storeId:%{public}s",
-            appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
-        return Status::NOT_SUPPORT;
-    }
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
         DeviceMatrix::GetInstance().OnChanged(metaData);
@@ -666,20 +661,7 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         return INVALID_ARGUMENT;
     }
     StoreMetaData metaData = LoadStoreMetaData(appId, storeId, info.subUser);
-    if (info.isCustomDir) {
-        if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP
-            && SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
-            size_t pos = info.baseDir.find_last_of(PATH_SEPARATOR);
-            if (pos != std::string::npos && pos < info.baseDir.size() - 1) {
-                metaData.customDir = info.baseDir.substr(pos + 1);
-            }
-            metaData.dataDir = AssembleCustomDirPath(metaData);
-        } else {
-            metaData.dataDir = info.baseDir;
-        }
-    } else {
-        metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
-    }
+    metaData.dataDir = info.isCustomDir ? info.baseDir : DirectoryManager::GetInstance().GetStorePath(metaData);
     if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
         auto backupPwd = BackupManager::GetInstance().GetPassWord(metaData);
         if (backupPwd.empty()) {
@@ -858,9 +840,7 @@ Status KVDBServiceImpl::AfterCreate(
         SaveStoreMeta(metaData, oldMeta);
     }
 
-    bool isWhitelisted = options.isCustomDir &&
-        SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId);
-    if (isWhitelisted) {
+    if (options.isCustomDir && SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
     }
 
@@ -1065,30 +1045,6 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.authType = static_cast<int32_t>(options.authType);
 }
 
-bool KVDBServiceImpl::ResolveCustomDirSyncPath(StoreMetaData &metaData)
-{
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        return true;
-    }
-    if (metaData.customDir.empty()) {
-        return true;
-    }
-    HapTokenInfo hapInfo;
-    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) != AccessTokenKitRet::RET_SUCCESS
-        || !SyncManager::GetInstance().IsAutoSyncApp(hapInfo.bundleName, metaData.appId)) {
-        ZLOGE("custom dir sync not allowed, tokenId:0x%{public}x", tokenId);
-        return false;
-    }
-    auto subProfileId = AccountDelegate::GetInstance()->GetSubProfileIdByToken(tokenId);
-    if (metaData.customDir != std::to_string(subProfileId)) {
-        ZLOGE("customDir mismatch, customDir:%{public}s subProfileId:%{public}d",
-            Anonymous::Change(metaData.customDir).c_str(), subProfileId);
-        return false;
-    }
-    return true;
-}
-
 std::string KVDBServiceImpl::AssembleCustomDirPath(StoreMetaData &metaData)
 {
     auto basePath = DirectoryManager::GetInstance().GetStorePath(metaData);
@@ -1119,7 +1075,8 @@ void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaD
     localMetaData.isAutoSync = options.autoSync;
     localMetaData.isBackup = options.backup;
     localMetaData.isEncrypt = options.encrypt;
-    localMetaData.dataDir = metaData.dataDir;
+    localMetaData.dataDir = options.isCustomDir ? options.baseDir :
+        DirectoryManager::GetInstance().GetStorePath(metaData);
     localMetaData.schema = options.schema;
     localMetaData.isPublic = options.isPublic;
     for (auto &policy : options.policies) {

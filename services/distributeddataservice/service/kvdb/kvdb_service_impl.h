@@ -129,7 +129,6 @@ private:
     void Init();
     void AddOptions(const Options &options, StoreMetaData &metaData);
     std::string AssembleCustomDirPath(StoreMetaData &metaData);
-    bool ResolveCustomDirSyncPath(StoreMetaData &metaData);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     StoreMetaData LoadStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     StoreMetaData GetDistributedDataMeta(const std::string &deviceId);

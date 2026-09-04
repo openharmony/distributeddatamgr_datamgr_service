@@ -2323,175 +2323,6 @@ HWTEST_F(KvdbServiceImplTest, IsValidParam_GetBackupPasswordInvalidStoreId, Test
 }
 
 /**
-* @tc.name: ResolveCustomDirSyncPath001
-* @tc.desc: Test ResolveCustomDirSyncPath with non-HAP token
-* @tc.type: FUNC
-* @tc.author: agent
-*/
-HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath001, TestSize.Level0)
-{
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
-    StoreMetaData metaData;
-    metaData.bundleName = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.user = TEST_USER;
-    metaData.dataDir = "/data/custom/test/path";
-    metaData.account = "testAccount";
-
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(metaData.dataDir, "/data/custom/test/path");
-}
-
-/**
-* @tc.name: ResolveCustomDirSyncPath002
-* @tc.desc: Test ResolveCustomDirSyncPath with empty customDir (backward compat)
-* @tc.type: FUNC
-* @tc.author: agent
-*/
-HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath002, TestSize.Level0)
-{
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    StoreMetaData metaData;
-    metaData.bundleName = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.user = TEST_USER;
-    metaData.dataDir = "/data/custom/test/path";
-    metaData.account = "testAccount";
-
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
-    EXPECT_TRUE(result);
-}
-
-/**
-* @tc.name: ResolveCustomDirSyncPath003
-* @tc.desc: Test ResolveCustomDirSyncPath with GetHapTokenInfo failure
-* @tc.type: FUNC
-* @tc.author: agent
-*/
-HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath003, TestSize.Level0)
-{
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
-        .WillRepeatedly(testing::Return(-1));
-
-    StoreMetaData metaData;
-    metaData.bundleName = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.user = TEST_USER;
-    metaData.dataDir = "/data/custom/test/path";
-    metaData.account = "testAccount";
-    metaData.customDir = "100001";
-
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
-    EXPECT_FALSE(result);
-}
-
-/**
-* @tc.name: ResolveCustomDirSyncPath004
-* @tc.desc: Test ResolveCustomDirSyncPath with HAP token but not in whitelist
-* @tc.type: FUNC
-* @tc.author: agent
-*/
-HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath004, TestSize.Level0)
-{
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    HapTokenInfo hapInfo;
-    hapInfo.bundleName = "com.not.in.whitelist";
-    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
-        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(hapInfo),
-            testing::Return(AccessTokenKitRet::RET_SUCCESS)));
-
-    StoreMetaData metaData;
-    metaData.bundleName = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.user = TEST_USER;
-    metaData.dataDir = std::string("/data/storage/") + hapInfo.bundleName + "/100001";
-    metaData.account = "testAccount";
-    metaData.customDir = "100001";
-
-    SyncManager::AutoSyncInfo empty;
-    SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
-    EXPECT_FALSE(result);
-}
-
-/**
-* @tc.name: ResolveCustomDirSyncPath005
-* @tc.desc: Test ResolveCustomDirSyncPath with HAP in whitelist but customDir mismatch
-* @tc.type: FUNC
-* @tc.author: agent
-*/
-HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath005, TestSize.Level0)
-{
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    HapTokenInfo hapInfo;
-    hapInfo.bundleName = appId.appId;
-    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
-        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(hapInfo),
-            testing::Return(AccessTokenKitRet::RET_SUCCESS)));
-    EXPECT_CALL(*accountDelegateMock, GetSubProfileIdByToken(testing::_))
-        .WillRepeatedly(testing::Return(200));
-
-    StoreMetaData metaData;
-    metaData.bundleName = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.user = TEST_USER;
-    metaData.dataDir = std::string("/data/storage/") + appId.appId + "/100001";
-    metaData.account = "testAccount";
-    metaData.customDir = "100001";
-
-    SyncManager::AutoSyncInfo info;
-    info.bundleName = appId.appId;
-    info.appId = appId.appId;
-    SyncManager::GetInstance().SetAutoSyncAppInfo(info);
-
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
-    EXPECT_FALSE(result);
-}
-
-/**
-* @tc.name: ResolveCustomDirSyncPath006
-* @tc.desc: Test ResolveCustomDirSyncPath with HAP in whitelist and customDir matches
-* @tc.type: FUNC
-* @tc.author: agent
-*/
-HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath006, TestSize.Level0)
-{
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    HapTokenInfo hapInfo;
-    hapInfo.bundleName = appId.appId;
-    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
-        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(hapInfo),
-            testing::Return(AccessTokenKitRet::RET_SUCCESS)));
-    EXPECT_CALL(*accountDelegateMock, GetSubProfileIdByToken(testing::_))
-        .WillRepeatedly(testing::Return(200));
-
-    StoreMetaData metaData;
-    metaData.bundleName = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.user = TEST_USER;
-    metaData.dataDir = std::string("/data/storage/") + appId.appId + "/200";
-    metaData.account = "testAccount";
-    metaData.customDir = "200";
-
-    SyncManager::AutoSyncInfo info;
-    info.bundleName = appId.appId;
-    info.appId = appId.appId;
-    SyncManager::GetInstance().SetAutoSyncAppInfo(info);
-
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
-    EXPECT_TRUE(result);
-    EXPECT_EQ(metaData.customDir, "200");
-}
-
-/**
 * @tc.name: AddOptionsWithCustomDirHAPNotWhitelisted002
 * @tc.desc: Test AddOptions HAP custom dir but not in whitelist
 * @tc.type: FUNC
@@ -2527,14 +2358,14 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAPNotWhitelisted002, TestS
 }
 
 /**
-* @tc.name: GetBackupPasswordWithCustomDirHAP001
-* @tc.desc: Test GetBackupPassword with isCustomDir + HAP + whitelisted
+* @tc.name: GetBackupPasswordWithCustomDir001
+* @tc.desc: Test GetBackupPassword with isCustomDir=true
 * @tc.type: FUNC
 * @tc.author: agent
 */
-HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithCustomDirHAP001, TestSize.Level0)
+HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithCustomDir001, TestSize.Level0)
 {
-    ZLOGI("GetBackupPasswordWithCustomDirHAP001 start");
+    ZLOGI("GetBackupPasswordWithCustomDir001 start");
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
@@ -2547,6 +2378,32 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithCustomDirHAP001, TestSize.Lev
     BackupInfo info;
     info.baseDir = "/data/storage/el1/database/com.test.app/100001";
     info.isCustomDir = true;
+    info.subUser = 0;
+    std::vector<std::vector<uint8_t>> passwords;
+    auto status = kvdbServiceImpl_->GetBackupPassword(backupAppId, backupStoreId, info, passwords,
+        DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
+    EXPECT_NE(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: GetBackupPasswordWithoutCustomDir002
+* @tc.desc: Test GetBackupPassword with isCustomDir=false
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithoutCustomDir002, TestSize.Level0)
+{
+    ZLOGI("GetBackupPasswordWithoutCustomDir002 start");
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
+
+    AppId backupAppId;
+    backupAppId.appId = appId.appId;
+    StoreId backupStoreId;
+    backupStoreId.storeId = storeId.storeId;
+    BackupInfo info;
+    info.baseDir = "/data/custom/test/path";
+    info.isCustomDir = false;
     info.subUser = 0;
     std::vector<std::vector<uint8_t>> passwords;
     auto status = kvdbServiceImpl_->GetBackupPassword(backupAppId, backupStoreId, info, passwords,
