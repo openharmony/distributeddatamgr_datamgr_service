@@ -344,6 +344,7 @@ void KvStoreDataService::InitExecutor()
 void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
+    fdsan_set_error_level(FDSAN_ERROR_LEVEL_FATAL);
     LoadConfigs();
     EventCenter::Defer defer;
     Reporter::GetInstance()->SetThreadPool(executors_);

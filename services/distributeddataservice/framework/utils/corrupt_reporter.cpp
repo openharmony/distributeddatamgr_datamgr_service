@@ -41,7 +41,9 @@ bool CorruptReporter::CreateCorruptedFlag(const std::string &path, const std::st
             Anonymous::Change(flagFileName).c_str(), errno);
         return false;
     }
-    close(fd);
+    uint64_t tag = fdsan_create_owner_tag(FDSAN_OWNER_TYPE_DEFAULT, 0xD001611);
+    fdsan_exchange_owner_tag(fd, 0, tag);
+    fdsan_close_with_tag(fd, tag);
     return true;
 }
 

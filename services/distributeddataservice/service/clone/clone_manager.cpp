@@ -194,14 +194,21 @@ int32_t OnBackup(MessageParcel &data, MessageParcel &reply, const std::string &l
 
     UniqueFd fd(-1);
     fd = UniqueFd(open(backupPath.c_str(), O_RDONLY));
+    if (fd < 0) {
+        ZLOGE("OnBackup open failed, errno:%{public}d", errno);
+        return -1;
+    }
+    uint64_t cloneTag = fdsan_create_owner_tag(FDSAN_OWNER_TYPE_DEFAULT, 0xD001610);
+    fdsan_exchange_owner_tag(fd, 0, cloneTag);
+
     std::string replyCode = GetBackupReplyCode(0);
     if (!reply.WriteFileDescriptor(fd) || !reply.WriteString(replyCode)) {
         ZLOGE("OnBackup fail: reply wirte fail, fd:%{public}d", fd.Get());
-        close(fd.Release());
+        fdsan_close_with_tag(fd.Release(), cloneTag);
         return -1;
     }
 
-    close(fd.Release());
+    fdsan_close_with_tag(fd.Release(), cloneTag);
     return 0;
 }
 
