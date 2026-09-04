@@ -91,6 +91,7 @@ public:
 private:
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
     using StoreMetaDataLocal = OHOS::DistributedData::StoreMetaDataLocal;
+    using StoreMetaMapping = OHOS::DistributedData::StoreMetaMapping;
     using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
     using DBStore = DistributedDB::KvStoreNbDelegate;
     using DBManager = DistributedDB::KvStoreDelegateManager;
