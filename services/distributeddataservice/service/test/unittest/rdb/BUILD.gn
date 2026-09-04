@@ -63,8 +63,9 @@ ohos_unittest("RdbResultSetImplTest") {
 
 ohos_unittest("RdbServiceTest") {
   module_out_path = module_output_path
-  ldflags = [ "-fno-sanitize=cfi" ]
+  ldflags = [ "-Wl,--allow-multiple-definition" ]
   sources = [
+    "${data_service_path}/test/cfi_check_override.cpp",
     "anonymous_test.cpp",
     "cache_cursor_test.cpp",
     "../../mock/db_change_data_mock.cpp",
@@ -269,8 +270,9 @@ ohos_unittest("RdbFlowControlManagerTest") {
 
 ohos_unittest("RdbServiceImplTest") {
   module_out_path = module_output_path
-  ldflags = [ "-fno-sanitize=cfi" ]
+  ldflags = [ "-Wl,--allow-multiple-definition" ]
   sources = [
+    "${data_service_path}/test/cfi_check_override.cpp",
     "../../mock/cursor_mock.cpp",
     "../../mock/general_store_mock.cpp",
     "../../mock/checker_mock.cpp",
