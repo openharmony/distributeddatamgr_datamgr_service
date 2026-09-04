@@ -76,7 +76,7 @@ ohos_unittest("KVDBGeneralStoreAbnormalTest") {
   module_out_path = module_output_path
   ldflags = [ "-Wl,--allow-multiple-definition" ]
   sources = [
-    "${data_service_path}/test/cfi_check_override.cpp",
+    "${data_service_path}/service/test/cfi_check_override.cpp",
     "${data_service_path}/service/common/value_proxy.cpp",
     "${data_service_path}/service/kvdb/kvdb_general_store.cpp",
     "${data_service_path}/service/rdb/rdb_cloud.cpp",
