@@ -18,7 +18,6 @@
 #include <dlfcn.h>
 
 #include "access_check/app_access_check_config_manager.h"
-#include "kv_sync/kv_custom_dir_sync_apps_manager.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "backup_manager.h"
 #include "backuprule/backup_rule_manager.h"
