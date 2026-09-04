@@ -1029,7 +1029,7 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
             if (pos != std::string::npos && pos < options.baseDir.size() - 1) {
                 metaData.customDir = options.baseDir.substr(pos + 1);
             }
-            metaData.dataDir = AssembleCustomDirPath(metaData);
+            metaData.customDir = AssembleCustomDirPath(metaData);
         } else {
             metaData.dataDir = options.baseDir;
         }
