@@ -187,12 +187,11 @@ KVDBGeneralStore::KVDBGeneralStore(const StoreMetaData &meta)
     MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), local, true);
     isPublic_ = local.isPublic;
     DBStatus status = DBStatus::NOT_FOUND;
-    std::string dataDir = meta.dataDir;
+    manager_.SetKvStoreConfig({ meta.dataDir });
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (!meta.customDir.empty() && SyncManager::GetInstance().IsAutoSyncApp(meta.bundleName, meta.appId)) {
         meta.dataDir = meta.customDir;
     }
-    manager_.SetKvStoreConfig({ dataDir });
-    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     manager_.GetKvStore(
         meta.storeId, GetDBOption(meta, GetDBPassword(meta)), [&status, this](auto dbStatus, auto *tmpStore) {
             status = dbStatus;
