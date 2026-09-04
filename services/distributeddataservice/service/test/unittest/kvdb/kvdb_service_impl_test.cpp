@@ -530,7 +530,7 @@ HWTEST_F(KvdbServiceImplTest, syncTest001, TestSize.Level0)
     ASSERT_NE(kvStore, nullptr);
     ASSERT_EQ(status1, Status::SUCCESS);
     SyncInfo syncInfo;
-    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo, "");
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
     ZLOGI("syncTest001 status = :%{public}d", status);
     ASSERT_NE(status, Status::SUCCESS);
 }
@@ -1491,7 +1491,7 @@ HWTEST_F(KvdbServiceImplTest, syncTest002, TestSize.Level0)
     syncInfo.devices = { "device1", "device2" };
     syncInfo.query = "query";
     syncInfo.seqId = mm; // test
-    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo, "");
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
     ASSERT_EQ(syncInfo.seqId, std::numeric_limits<uint64_t>::max());
     ZLOGI("syncTest002 status = :%{public}d", status);
     ASSERT_NE(status, Status::SUCCESS);
@@ -1518,13 +1518,13 @@ HWTEST_F(KvdbServiceImplTest, syncTest003, TestSize.Level0)
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
         .WillOnce(testing::Return(true))
         .WillRepeatedly(testing::Return(true));
-    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo, "");
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
     EXPECT_EQ(localMeta.HasPolicy(DistributedKv::IMMEDIATE_SYNC_ON_CHANGE), false);
     EXPECT_NE(status, Status::SUCCESS);
     EXPECT_CALL(*metaDataManagerMock, LoadMeta(testing::_, testing::_, testing::_))
         .WillOnce(testing::Return(false))
         .WillRepeatedly(testing::Return(false));
-    status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo, "");
+    status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
     EXPECT_EQ(localMeta.HasPolicy(DistributedKv::IMMEDIATE_SYNC_ON_ONLINE), true);
 }
 
@@ -1542,7 +1542,7 @@ HWTEST_F(KvdbServiceImplTest, SyncTest004, TestSize.Level0)
         .WillOnce(testing::Return(0))
         .WillRepeatedly(testing::Return(0));
     SyncInfo syncInfo;
-    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo, "");
+    auto status = kvdbServiceImpl_->Sync(appId, storeId, 0, syncInfo);
     ASSERT_EQ(status, Status::NOT_SUPPORT);
 }
 
