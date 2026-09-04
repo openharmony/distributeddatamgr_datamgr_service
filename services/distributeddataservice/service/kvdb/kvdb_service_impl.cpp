@@ -20,7 +20,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
-#include "kv_sync/kv_custom_dir_sync_apps_manager.h"
+#include "sync_mgr/sync_mgr.h"
 #include "backup_manager.h"
 #include "bootstrap.h"
 #include "changeevent/remote_change_event.h"
@@ -668,7 +668,7 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     StoreMetaData metaData = LoadStoreMetaData(appId, storeId, info.subUser);
     if (info.isCustomDir) {
         if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP
-            && KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName)) {
+            && SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
             size_t pos = info.baseDir.find_last_of(PATH_SEPARATOR);
             if (pos != std::string::npos && pos < info.baseDir.size() - 1) {
                 metaData.customDir = info.baseDir.substr(pos + 1);
@@ -859,7 +859,7 @@ Status KVDBServiceImpl::AfterCreate(
     }
 
     bool isWhitelisted = options.isCustomDir &&
-        KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName);
+        SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId);
     if (isWhitelisted) {
         MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
     }
@@ -1044,7 +1044,7 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     if (options.isCustomDir) {
         if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP
-            && KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName)) {
+            && SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
             size_t pos = options.baseDir.find_last_of(PATH_SEPARATOR);
             if (pos != std::string::npos && pos < options.baseDir.size() - 1) {
                 metaData.customDir = options.baseDir.substr(pos + 1);
@@ -1076,7 +1076,7 @@ bool KVDBServiceImpl::ResolveCustomDirSyncPath(StoreMetaData &metaData)
     }
     HapTokenInfo hapInfo;
     if (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) != AccessTokenKitRet::RET_SUCCESS
-        || !KvCustomDirSyncAppsManager::GetInstance().IsAllowed(hapInfo.bundleName)) {
+        || !SyncManager::GetInstance().IsAutoSyncApp(hapInfo.bundleName, metaData.appId)) {
         ZLOGE("custom dir sync not allowed, tokenId:0x%{public}x", tokenId);
         return false;
     }

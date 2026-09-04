@@ -107,11 +107,6 @@ AppAccessCheckConfig *ConfigFactory::GetSyncAppsConfig()
     return config_.syncAppList;
 }
 
-std::vector<KvCustomDirSyncAppsConfig::TrustApp> *ConfigFactory::GetKvCustomDirSyncApps()
-{
-    return config_.kvCustomDirSyncApps;
-}
-
 std::vector<DoubleSyncConfig> *ConfigFactory::GetDoubleSyncConfig()
 {
     return config_.doubleSyncApps;

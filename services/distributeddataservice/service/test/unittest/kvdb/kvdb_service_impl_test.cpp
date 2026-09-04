@@ -39,7 +39,7 @@
 #include "mock/access_token_mock.h"
 #include "account_delegate_mock.h"
 #include "mock/meta_data_manager_mock.h"
-#include "kv_sync/kv_custom_dir_sync_apps_manager.h"
+#include "sync_mgr/sync_mgr.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "types.h"
@@ -1726,8 +1726,10 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAP001, TestSize.Level0)
     metaData.user = TEST_USER;
     metaData.bundleName = appId.appId;
 
-    std::set<std::string> whitelist = { appId.appId };
-    KvCustomDirSyncAppsManager::GetInstance().Initialize(whitelist);
+    SyncManager::AutoSyncInfo info;
+    info.bundleName = appId.appId;
+    info.appId = appId.appId;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(info);
 
     kvdbServiceImpl_->AddOptions(options, metaData);
 
@@ -2412,7 +2414,8 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath004, TestSize.Level0)
     metaData.account = "testAccount";
     metaData.customDir = "100001";
 
-    KvCustomDirSyncAppsManager::GetInstance().Initialize({});
+    SyncManager::AutoSyncInfo empty;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
     auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_FALSE(result);
 }
@@ -2443,8 +2446,10 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath005, TestSize.Level0)
     metaData.account = "testAccount";
     metaData.customDir = "100001";
 
-    std::set<std::string> whitelist = { appId.appId };
-    KvCustomDirSyncAppsManager::GetInstance().Initialize(whitelist);
+    SyncManager::AutoSyncInfo info;
+    info.bundleName = appId.appId;
+    info.appId = appId.appId;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(info);
 
     auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_FALSE(result);
@@ -2476,8 +2481,10 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath006, TestSize.Level0)
     metaData.account = "testAccount";
     metaData.customDir = "200";
 
-    std::set<std::string> whitelist = { appId.appId };
-    KvCustomDirSyncAppsManager::GetInstance().Initialize(whitelist);
+    SyncManager::AutoSyncInfo info;
+    info.bundleName = appId.appId;
+    info.appId = appId.appId;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(info);
 
     auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_TRUE(result);
@@ -2511,7 +2518,8 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAPNotWhitelisted002, TestS
     metaData.user = TEST_USER;
     metaData.bundleName = appId.appId;
 
-    KvCustomDirSyncAppsManager::GetInstance().Initialize({});
+    SyncManager::AutoSyncInfo empty;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
     kvdbServiceImpl_->AddOptions(options, metaData);
 
     ASSERT_EQ(metaData.customDir, "");

@@ -35,7 +35,6 @@ public:
     API_EXPORT void LoadThread();
     API_EXPORT void LoadAutoSyncApps();
     API_EXPORT void LoadSyncTrustedApp();
-    API_EXPORT void LoadKvCustomDirSyncApps();
     API_EXPORT void LoadDoubleSyncConfig();
 private:
     static constexpr const char *DEFAULT_LABEL = "distributeddata";

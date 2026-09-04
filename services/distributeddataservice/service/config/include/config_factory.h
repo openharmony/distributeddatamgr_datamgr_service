@@ -36,7 +36,6 @@ public:
     DataShareConfig *GetDataShareConfig();
     std::vector<AutoSyncAppConfig> *GetAutoSyncAppConfig();
     AppAccessCheckConfig *GetSyncAppsConfig();
-    std::vector<KvCustomDirSyncAppsConfig::TrustApp> *GetKvCustomDirSyncApps();
     std::vector<DoubleSyncConfig> *GetDoubleSyncConfig();
 private:
     static constexpr const char *CONF_PATH = "/system/etc/distributeddata/conf";

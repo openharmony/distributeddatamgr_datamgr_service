@@ -224,19 +224,6 @@ void Bootstrap::LoadSyncTrustedApp()
     AppAccessCheckConfigManager::GetInstance().Initialize(infos);
 }
 
-void Bootstrap::LoadKvCustomDirSyncApps()
-{
-    auto *apps = ConfigFactory::GetInstance().GetKvCustomDirSyncApps();
-    if (apps == nullptr) {
-        return;
-    }
-    std::set<std::string> bundleNames;
-    for (const auto &info : *apps) {
-        bundleNames.insert(info.bundleName);
-    }
-    KvCustomDirSyncAppsManager::GetInstance().Initialize(bundleNames);
-}
-
 void Bootstrap::LoadDoubleSyncConfig()
 {
     auto *doubleSyncApps = ConfigFactory::GetInstance().GetDoubleSyncConfig();
