@@ -65,7 +65,7 @@ using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
 static constexpr const char *KEY_SEPARATOR = "###";
 static constexpr const char *STORE_DIR = "/kvdb";
-static constexpr char PATH_SEPARATOR = '/';
+static constexpr const char *PATH_SEPARATOR = "/";
 static const size_t SECRET_KEY_COUNT = 2;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
