@@ -1710,8 +1710,6 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAP001, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
         .WillRepeatedly(testing::Return("testAccount"));
-    EXPECT_CALL(*accountDelegateMock, GetSubProfileIdByToken(testing::_))
-        .WillRepeatedly(testing::Return(100001));
     Options options;
     options.isCustomDir = true;
     options.baseDir = "/data/storage/el1/database/com.test.app/100001";
@@ -2533,8 +2531,6 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithCustomDirHAP001, TestSize.Lev
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
         .WillRepeatedly(testing::Return("testAccount"));
-    EXPECT_CALL(*accountDelegateMock, GetSubProfileIdByToken(testing::_))
-        .WillRepeatedly(testing::Return(100001));
 
     AppId backupAppId;
     backupAppId.appId = appId.appId;

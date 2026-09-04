@@ -65,6 +65,7 @@ using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
 static constexpr const char *KEY_SEPARATOR = "###";
 static constexpr const char *STORE_DIR = "/kvdb";
+static constexpr char PATH_SEPARATOR = '/';
 static const size_t SECRET_KEY_COUNT = 2;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
@@ -668,8 +669,10 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
     if (info.isCustomDir) {
         if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP
             && KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName)) {
-            auto subProfileId = AccountDelegate::GetInstance()->GetSubProfileIdByToken(metaData.tokenId);
-            metaData.customDir = std::to_string(subProfileId);
+            size_t pos = info.baseDir.find_last_of(PATH_SEPARATOR);
+            if (pos != std::string::npos && pos < info.baseDir.size() - 1) {
+                metaData.customDir = info.baseDir.substr(pos + 1);
+            }
             metaData.dataDir = AssembleCustomDirPath(metaData);
         } else {
             metaData.dataDir = info.baseDir;
@@ -1040,10 +1043,12 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.hapName = options.hapName;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
     if (options.isCustomDir) {
-        if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP &&
-            KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName)) {
-            auto subProfileId = AccountDelegate::GetInstance()->GetSubProfileIdByToken(metaData.tokenId);
-            metaData.customDir = std::to_string(subProfileId);
+        if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP
+            && KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName)) {
+            size_t pos = options.baseDir.find_last_of(PATH_SEPARATOR);
+            if (pos != std::string::npos && pos < options.baseDir.size() - 1) {
+                metaData.customDir = options.baseDir.substr(pos + 1);
+            }
             metaData.dataDir = AssembleCustomDirPath(metaData);
         } else {
             metaData.dataDir = options.baseDir;
@@ -1089,9 +1094,9 @@ std::string KVDBServiceImpl::AssembleCustomDirPath(StoreMetaData &metaData)
     auto basePath = DirectoryManager::GetInstance().GetStorePath(metaData);
     size_t storePos = basePath.rfind(STORE_DIR);
     if (storePos != std::string::npos) {
-        return basePath.substr(0, storePos) + "/" + metaData.customDir + STORE_DIR;
+        return basePath.substr(0, storePos) + PATH_SEPARATOR + metaData.customDir + STORE_DIR;
     }
-    return basePath + "/" + metaData.customDir;
+    return basePath + PATH_SEPARATOR + metaData.customDir;
 }
 
 void KVDBServiceImpl::SaveStoreMeta(StoreMetaData &metaData, StoreMetaMapping &oldMeta)
@@ -1793,7 +1798,7 @@ void KVDBServiceImpl::DeleteInner(const AppId &appId, const StoreId &storeId, co
 bool KVDBServiceImpl::IsValidParam(const AppId &appId, const StoreId &storeId, const std::string &baseDir,
     const std::string &hapName)
 {
-    if (storeId.storeId.find("/") != std::string::npos) {
+    if (storeId.storeId.find(PATH_SEPARATOR) != std::string::npos) {
         ZLOGE("storeId is Invalid, storeId is %{public}s.", Anonymous::Change(storeId.storeId).c_str());
         return false;
     }
