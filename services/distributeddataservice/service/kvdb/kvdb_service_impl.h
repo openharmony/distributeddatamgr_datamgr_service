@@ -162,6 +162,7 @@ private:
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
+    void SaveStoreMeta(StoreMetaData &metaData, StoreMetaMapping &oldMeta);
     void RegisterKvServiceInfo();
     void RegisterHandler();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);

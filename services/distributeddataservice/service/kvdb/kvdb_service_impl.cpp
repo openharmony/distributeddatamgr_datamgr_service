@@ -851,16 +851,7 @@ Status KVDBServiceImpl::AfterCreate(
     }
 
     if (!isCreated || oldMeta != metaData) {
-        if (!CheckerManager::GetInstance().IsDistrust(Converter::ConvertToStoreInfo(metaData))) {
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
-        }
-        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-        oldMeta = metaData;
-        MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
-        AutoLaunchMetaData launchData;
-        if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetAutoLaunchKey(), launchData, true)) {
-            SaveLaunchInfo(metaData);
-        }
+        SaveStoreMeta(metaData, oldMeta);
     }
 
     bool isWhitelisted = options.isCustomDir && !options.sandboxBaseDir.empty()
@@ -1113,6 +1104,20 @@ std::string KVDBServiceImpl::AssembleCustomDirPath(StoreMetaData &metaData)
         return basePath.substr(0, storePos) + "/" + metaData.customDir + STORE_DIR;
     }
     return basePath + "/" + metaData.customDir;
+}
+
+void KVDBServiceImpl::SaveStoreMeta(StoreMetaData &metaData, StoreMetaMapping &oldMeta)
+{
+    if (!CheckerManager::GetInstance().IsDistrust(Converter::ConvertToStoreInfo(metaData))) {
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
+    }
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+    oldMeta = metaData;
+    MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
+    AutoLaunchMetaData launchData;
+    if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetAutoLaunchKey(), launchData, true)) {
+        SaveLaunchInfo(metaData);
+    }
 }
 
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
