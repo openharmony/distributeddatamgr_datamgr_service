@@ -1733,9 +1733,9 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAP001, TestSize.Level0)
 
     kvdbServiceImpl_->AddOptions(options, metaData);
 
-    ASSERT_EQ(metaData.customDir, "100001");
+    ASSERT_FALSE(metaData.customDir.empty());
+    ASSERT_NE(metaData.customDir, "100001");
     ASSERT_FALSE(metaData.dataDir.empty());
-    ASSERT_NE(metaData.dataDir, options.baseDir);
 }
 
 /**

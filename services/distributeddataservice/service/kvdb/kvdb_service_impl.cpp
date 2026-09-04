@@ -1026,10 +1026,11 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
         if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP
             && SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
             size_t pos = options.baseDir.find_last_of(PATH_SEPARATOR);
+            std::string customDir;
             if (pos != std::string::npos && pos < options.baseDir.size() - 1) {
-                metaData.customDir = options.baseDir.substr(pos + 1);
+                customDir = options.baseDir.substr(pos + 1);
             }
-            metaData.customDir = AssembleCustomDirPath(metaData);
+            metaData.customDir = AssembleCustomDir(metaData, customDir);
         } else {
             metaData.dataDir = options.baseDir;
         }
@@ -1045,14 +1046,14 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.authType = static_cast<int32_t>(options.authType);
 }
 
-std::string KVDBServiceImpl::AssembleCustomDirPath(StoreMetaData &metaData)
+std::string KVDBServiceImpl::AssembleCustomDir(StoreMetaData &metaData, const std::string &customDir)
 {
     auto basePath = DirectoryManager::GetInstance().GetStorePath(metaData);
     size_t storePos = basePath.rfind(STORE_DIR);
     if (storePos != std::string::npos) {
-        return basePath.substr(0, storePos) + PATH_SEPARATOR + metaData.customDir + STORE_DIR;
+        return basePath.substr(0, storePos) + PATH_SEPARATOR + customDir + STORE_DIR;
     }
-    return basePath + PATH_SEPARATOR + metaData.customDir;
+    return basePath + PATH_SEPARATOR + customDir;
 }
 
 void KVDBServiceImpl::SaveStoreMeta(StoreMetaData &metaData, StoreMetaMapping &oldMeta)
