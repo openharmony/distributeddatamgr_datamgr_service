@@ -22,6 +22,7 @@
 #include "model/checker_config.h"
 #include "model/cloud_config.h"
 #include "model/component_config.h"
+#include "model/kv_custom_dir_sync_apps_config.h"
 #include "model/datashare_config.h"
 #include "model/directory_config.h"
 #include "model/double_sync_config.h"
@@ -47,6 +48,7 @@ public:
     DataShareConfig *dataShare = nullptr;
     std::vector<AutoSyncAppConfig> *autoSyncApps = nullptr;
     AppAccessCheckConfig *syncAppList = nullptr;
+    std::vector<KvCustomDirSyncAppsConfig::TrustApp> *kvCustomDirSyncApps = nullptr;
     std::vector<DoubleSyncConfig> *doubleSyncApps = nullptr;
     ~GlobalConfig();
     bool Marshal(json &node) const override;

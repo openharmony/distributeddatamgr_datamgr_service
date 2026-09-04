@@ -31,6 +31,7 @@ ohos_source_set("distributeddata_config") {
     "src/model/checker_config.cpp",
     "src/model/cloud_config.cpp",
     "src/model/component_config.cpp",
+    "src/model/kv_custom_dir_sync_apps_config.cpp",
     "src/model/datashare_config.cpp",
     "src/model/directory_config.cpp",
     "src/model/double_sync_config.cpp",

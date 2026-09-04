@@ -23,6 +23,11 @@
     "distrusts": [],
     "switches": []
   },
+  "kvCustomDirSyncApps": [
+    {
+      "bundleName": "com.example.app"
+    }
+  ],
   "networks": {
     "chains": [
       "loadBalance",

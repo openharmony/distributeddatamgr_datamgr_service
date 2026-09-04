@@ -20,6 +20,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "kv_sync/kv_custom_dir_sync_apps_manager.h"
 #include "backup_manager.h"
 #include "bootstrap.h"
 #include "changeevent/remote_change_event.h"
@@ -63,6 +64,7 @@ using CommContext = OHOS::DistributedData::CommunicatorContext;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
 static constexpr const char *KEY_SEPARATOR = "###";
+static constexpr const char *STORE_DIR = "/kvdb";
 static const size_t SECRET_KEY_COUNT = 2;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
@@ -241,7 +243,8 @@ void KVDBServiceImpl::OnAsyncComplete(uint32_t tokenId, uint64_t seqNum, Progres
     }
 }
 
-Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo)
+Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo,
+    const std::string &customDir)
 {
     auto instanceId = GetInstIndex(IPCSkeleton::GetCallingTokenID(), appId);
     if (instanceId != 0) {
@@ -251,6 +254,11 @@ Status KVDBServiceImpl::Sync(const AppId &appId, const StoreId &storeId, int32_t
     }
     StoreMetaData metaData = GetStoreMetaData(appId, storeId, subUser);
     MetaDataManager::GetInstance().LoadMeta(metaData.GetKeyWithoutPath(), metaData);
+    if (!ResolveCustomDirSyncPath(metaData, customDir)) {
+        ZLOGE("custom dir not allow sync, instanceId:%{public}d, appId:%{public}s, storeId:%{public}s",
+            instanceId, appId.appId.c_str(), Anonymous::Change(storeId.storeId).c_str());
+        return Status::NOT_SUPPORT;
+    }
     auto delay = GetSyncDelayTime(syncInfo.delay, storeId, metaData.user);
     if (metaData.isAutoSync && syncInfo.seqId == std::numeric_limits<uint64_t>::max()) {
         DeviceMatrix::GetInstance().OnChanged(metaData);
@@ -658,7 +666,16 @@ Status KVDBServiceImpl::GetBackupPassword(const AppId &appId, const StoreId &sto
         return INVALID_ARGUMENT;
     }
     StoreMetaData metaData = LoadStoreMetaData(appId, storeId, info.subUser);
-    metaData.dataDir = info.isCustomDir ? info.baseDir : DirectoryManager::GetInstance().GetStorePath(metaData);
+    if (info.isCustomDir) {
+        if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP && !info.sandboxBaseDir.empty()
+            && KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName)) {
+            metaData.dataDir = ResolveCustomDirPath(metaData, info.sandboxBaseDir, info.baseDir);
+        } else {
+            metaData.dataDir = info.baseDir;
+        }
+    } else {
+        metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    }
     if (passwordType == KVDBService::PasswordType::BACKUP_SECRET_KEY) {
         auto backupPwd = BackupManager::GetInstance().GetPassWord(metaData);
         if (backupPwd.empty()) {
@@ -846,6 +863,12 @@ Status KVDBServiceImpl::AfterCreate(
         }
     }
 
+    bool isWhitelisted = options.isCustomDir && !options.sandboxBaseDir.empty()
+        && KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName);
+    if (isWhitelisted) {
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
+    }
+
     AppIDMetaData appIdMeta;
     appIdMeta.bundleName = metaData.bundleName;
     appIdMeta.appId = metaData.appId;
@@ -1023,9 +1046,18 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = options.hapName;
-    metaData.dataDir = options.isCustomDir ? options.baseDir : DirectoryManager::GetInstance().GetStorePath(metaData);
-    metaData.schema = options.schema;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
+    if (options.isCustomDir) {
+        if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP && !options.sandboxBaseDir.empty()
+            && KvCustomDirSyncAppsManager::GetInstance().IsAllowed(metaData.bundleName)) {
+            metaData.dataDir = ResolveCustomDirPath(metaData, options.sandboxBaseDir, options.baseDir);
+        } else {
+            metaData.dataDir = options.baseDir;
+        }
+    } else {
+        metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    }
+    metaData.schema = options.schema;
     metaData.isNeedCompress = options.isNeedCompress;
     metaData.dataType = options.dataType;
     metaData.enableCloud = options.cloudConfig.enableCloud;
@@ -1034,14 +1066,62 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.authType = static_cast<int32_t>(options.authType);
 }
 
+std::string KVDBServiceImpl::ResolveCustomDirPath(StoreMetaData &metaData, const std::string &sandboxBaseDir,
+    const std::string &baseDir)
+{
+    if (baseDir.find(sandboxBaseDir) == 0) {
+        metaData.customDir = baseDir.substr(sandboxBaseDir.size());
+        if (!metaData.customDir.empty() && metaData.customDir[0] == '/') {
+            metaData.customDir = metaData.customDir.substr(1);
+        }
+    }
+    if (metaData.customDir.empty()) {
+        return DirectoryManager::GetInstance().GetStorePath(metaData);
+    }
+    return AssembleCustomDirPath(metaData);
+}
+
+bool KVDBServiceImpl::ResolveCustomDirSyncPath(StoreMetaData &metaData, const std::string &customDir)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        return true;
+    }
+    if (customDir.empty()) {
+        return true;
+    }
+    HapTokenInfo hapInfo;
+    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo) != AccessTokenKitRet::RET_SUCCESS
+        || !KvCustomDirSyncAppsManager::GetInstance().IsAllowed(hapInfo.bundleName)) {
+        ZLOGE("custom dir sync not allowed, tokenId:0x%{public}x", tokenId);
+        return false;
+    }
+    auto subProfileId = AccountDelegate::GetInstance()->GetSubProfileIdByToken(tokenId);
+    if (customDir != std::to_string(subProfileId)) {
+        ZLOGE("customDir mismatch, customDir:%{public}s subProfileId:%{public}d",
+            Anonymous::Change(customDir).c_str(), subProfileId);
+        return false;
+    }
+    return true;
+}
+
+std::string KVDBServiceImpl::AssembleCustomDirPath(StoreMetaData &metaData)
+{
+    auto basePath = DirectoryManager::GetInstance().GetStorePath(metaData);
+    size_t storePos = basePath.rfind(STORE_DIR);
+    if (storePos != std::string::npos) {
+        return basePath.substr(0, storePos) + "/" + metaData.customDir + STORE_DIR;
+    }
+    return basePath + "/" + metaData.customDir;
+}
+
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
 {
     StoreMetaDataLocal localMetaData;
     localMetaData.isAutoSync = options.autoSync;
     localMetaData.isBackup = options.backup;
     localMetaData.isEncrypt = options.encrypt;
-    localMetaData.dataDir = options.isCustomDir ? options.baseDir :
-        DirectoryManager::GetInstance().GetStorePath(metaData);
+    localMetaData.dataDir = metaData.dataDir;
     localMetaData.schema = options.schema;
     localMetaData.isPublic = options.isPublic;
     for (auto &policy : options.policies) {

@@ -402,6 +402,7 @@ void KvStoreDataService::LoadConfigs()
     Bootstrap::GetInstance().LoadAppIdMappings();
     Bootstrap::GetInstance().LoadAutoSyncApps();
     Bootstrap::GetInstance().LoadSyncTrustedApp();
+    Bootstrap::GetInstance().LoadKvCustomDirSyncApps();
     Bootstrap::GetInstance().LoadDoubleSyncConfig();
 }
 

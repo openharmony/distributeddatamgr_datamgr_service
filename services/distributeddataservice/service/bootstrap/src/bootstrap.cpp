@@ -18,6 +18,7 @@
 #include <dlfcn.h>
 
 #include "access_check/app_access_check_config_manager.h"
+#include "kv_sync/kv_custom_dir_sync_apps_manager.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
 #include "backup_manager.h"
 #include "backuprule/backup_rule_manager.h"
@@ -221,6 +222,19 @@ void Bootstrap::LoadSyncTrustedApp()
         infos.push_back({ info.bundleName, info.appId });
     }
     AppAccessCheckConfigManager::GetInstance().Initialize(infos);
+}
+
+void Bootstrap::LoadKvCustomDirSyncApps()
+{
+    auto *apps = ConfigFactory::GetInstance().GetKvCustomDirSyncApps();
+    if (apps == nullptr) {
+        return;
+    }
+    std::set<std::string> bundleNames;
+    for (const auto &info : *apps) {
+        bundleNames.insert(info.bundleName);
+    }
+    KvCustomDirSyncAppsManager::GetInstance().Initialize(bundleNames);
 }
 
 void Bootstrap::LoadDoubleSyncConfig()
