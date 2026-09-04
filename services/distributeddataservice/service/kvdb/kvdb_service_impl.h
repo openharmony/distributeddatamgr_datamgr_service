@@ -52,8 +52,7 @@ public:
     Status Delete(const AppId &appId, const StoreId &storeId, const Options &options) override;
     Status Close(const AppId &appId, const StoreId &storeId, int32_t subUser) override;
     Status CloudSync(const AppId &appId, const StoreId &storeId, const SyncInfo &syncInfo) override;
-    Status Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo,
-        const std::string &customDir) override;
+    Status Sync(const AppId &appId, const StoreId &storeId, int32_t subUser, SyncInfo &syncInfo) override;
     Status RegServiceNotifier(const AppId &appId, sptr<IKVDBNotifier> notifier) override;
     Status UnregServiceNotifier(const AppId &appId) override;
     Status SetSyncParam(const AppId &appId, const StoreId &storeId, int32_t subUser,
@@ -129,10 +128,8 @@ private:
 
     void Init();
     void AddOptions(const Options &options, StoreMetaData &metaData);
-    std::string ResolveCustomDirPath(StoreMetaData &metaData, const std::string &sandboxBaseDir,
-        const std::string &baseDir);
     std::string AssembleCustomDirPath(StoreMetaData &metaData);
-    bool ResolveCustomDirSyncPath(StoreMetaData &metaData, const std::string &customDir);
+    bool ResolveCustomDirSyncPath(StoreMetaData &metaData);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     StoreMetaData LoadStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     StoreMetaData GetDistributedDataMeta(const std::string &deviceId);

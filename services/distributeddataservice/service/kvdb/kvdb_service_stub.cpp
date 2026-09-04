@@ -212,14 +212,13 @@ int32_t KVDBServiceStub::OnSync(const AppId &appId, const StoreId &storeId, Mess
 {
     SyncInfo syncInfo;
     int32_t subUser;
-    std::string customDir;
     if (!ITypesUtil::Unmarshal(data, syncInfo.seqId, syncInfo.mode, syncInfo.devices, syncInfo.delay, syncInfo.query,
-        subUser, syncInfo.isRetry, customDir)) {
+        subUser, syncInfo.isRetry)) {
         ZLOGE("Unmarshal appId:%{public}s storeId:%{public}s", appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
-    int32_t status = Sync(appId, storeId, subUser, syncInfo, customDir);
+    int32_t status = Sync(appId, storeId, subUser, syncInfo);
     if (!ITypesUtil::Marshal(reply, status)) {
         ZLOGE("Marshal status:0x%{public}x appId:%{public}s storeId:%{public}s", status, appId.appId.c_str(),
             Anonymous::Change(storeId.storeId).c_str());

@@ -1694,7 +1694,7 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDir001, TestSize.Level0)
 
     kvdbServiceImpl_->AddOptions(options, metaData);
 
-    ASSERT_EQ(metaData.dataDir, "/data/custom/test/path/kvdb");
+    ASSERT_EQ(metaData.dataDir, "/data/custom/test/path");
 }
 
 /**
@@ -1710,9 +1710,10 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAP001, TestSize.Level0)
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
         .WillRepeatedly(testing::Return("testAccount"));
+    EXPECT_CALL(*accountDelegateMock, GetSubProfileIdByToken(testing::_))
+        .WillRepeatedly(testing::Return(100001));
     Options options;
     options.isCustomDir = true;
-    options.sandboxBaseDir = "/data/storage/el1/database/com.test.app";
     options.baseDir = "/data/storage/el1/database/com.test.app/100001";
     options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
     options.area = OHOS::DistributedKv::EL1;
@@ -2338,7 +2339,7 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath001, TestSize.Level0)
     metaData.dataDir = "/data/custom/test/path";
     metaData.account = "testAccount";
 
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData, "100001");
+    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_TRUE(result);
     EXPECT_EQ(metaData.dataDir, "/data/custom/test/path");
 }
@@ -2360,7 +2361,7 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath002, TestSize.Level0)
     metaData.dataDir = "/data/custom/test/path";
     metaData.account = "testAccount";
 
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData, "");
+    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_TRUE(result);
 }
 
@@ -2383,8 +2384,9 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath003, TestSize.Level0)
     metaData.user = TEST_USER;
     metaData.dataDir = "/data/custom/test/path";
     metaData.account = "testAccount";
+    metaData.customDir = "100001";
 
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData, "100001");
+    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_FALSE(result);
 }
 
@@ -2410,9 +2412,10 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath004, TestSize.Level0)
     metaData.user = TEST_USER;
     metaData.dataDir = std::string("/data/storage/") + hapInfo.bundleName + "/100001";
     metaData.account = "testAccount";
+    metaData.customDir = "100001";
 
     KvCustomDirSyncAppsManager::GetInstance().Initialize({});
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData, "100001");
+    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_FALSE(result);
 }
 
@@ -2440,11 +2443,12 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath005, TestSize.Level0)
     metaData.user = TEST_USER;
     metaData.dataDir = std::string("/data/storage/") + appId.appId + "/100001";
     metaData.account = "testAccount";
+    metaData.customDir = "100001";
 
     std::set<std::string> whitelist = { appId.appId };
     KvCustomDirSyncAppsManager::GetInstance().Initialize(whitelist);
 
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData, "100001");
+    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_FALSE(result);
 }
 
@@ -2472,33 +2476,32 @@ HWTEST_F(KvdbServiceImplTest, ResolveCustomDirSyncPath006, TestSize.Level0)
     metaData.user = TEST_USER;
     metaData.dataDir = std::string("/data/storage/") + appId.appId + "/200";
     metaData.account = "testAccount";
+    metaData.customDir = "200";
 
     std::set<std::string> whitelist = { appId.appId };
     KvCustomDirSyncAppsManager::GetInstance().Initialize(whitelist);
 
-    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData, "200");
+    auto result = kvdbServiceImpl_->ResolveCustomDirSyncPath(metaData);
     EXPECT_TRUE(result);
     EXPECT_EQ(metaData.customDir, "200");
-    EXPECT_FALSE(metaData.dataDir.empty());
 }
 
 /**
-* @tc.name: AddOptionsWithCustomDirHAPNoMatch002
-* @tc.desc: Test AddOptions HAP with baseDir not matching sandboxBaseDir
+* @tc.name: AddOptionsWithCustomDirHAPNotWhitelisted002
+* @tc.desc: Test AddOptions HAP custom dir but not in whitelist
 * @tc.type: FUNC
 * @tc.author: agent
 */
-HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAPNoMatch002, TestSize.Level0)
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAPNotWhitelisted002, TestSize.Level0)
 {
-    ZLOGI("AddOptionsWithCustomDirHAPNoMatch002 start");
+    ZLOGI("AddOptionsWithCustomDirHAPNotWhitelisted002 start");
     EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
         .WillRepeatedly(testing::Return("testAccount"));
     Options options;
     options.isCustomDir = true;
-    options.sandboxBaseDir = "/data/storage/el1/database/com.test.app";
-    options.baseDir = "/data/storage/el2/other/com.test.app/100001";
+    options.baseDir = "/data/storage/el1/database/com.test.app/100001";
     options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
     options.area = OHOS::DistributedKv::EL1;
     options.subUser = 0;
@@ -2508,16 +2511,18 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAPNoMatch002, TestSize.Lev
     metaData.appId = appId.appId;
     metaData.storeId = storeId.storeId;
     metaData.user = TEST_USER;
+    metaData.bundleName = appId.appId;
 
+    KvCustomDirSyncAppsManager::GetInstance().Initialize({});
     kvdbServiceImpl_->AddOptions(options, metaData);
 
     ASSERT_EQ(metaData.customDir, "");
-    ASSERT_FALSE(metaData.dataDir.empty());
+    ASSERT_EQ(metaData.dataDir, options.baseDir);
 }
 
 /**
 * @tc.name: GetBackupPasswordWithCustomDirHAP001
-* @tc.desc: Test GetBackupPassword with isCustomDir + HAP + sandboxBaseDir
+* @tc.desc: Test GetBackupPassword with isCustomDir + HAP + whitelisted
 * @tc.type: FUNC
 * @tc.author: agent
 */
@@ -2528,6 +2533,8 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithCustomDirHAP001, TestSize.Lev
         .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
     EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
         .WillRepeatedly(testing::Return("testAccount"));
+    EXPECT_CALL(*accountDelegateMock, GetSubProfileIdByToken(testing::_))
+        .WillRepeatedly(testing::Return(100001));
 
     AppId backupAppId;
     backupAppId.appId = appId.appId;
@@ -2535,7 +2542,6 @@ HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithCustomDirHAP001, TestSize.Lev
     backupStoreId.storeId = storeId.storeId;
     BackupInfo info;
     info.baseDir = "/data/storage/el1/database/com.test.app/100001";
-    info.sandboxBaseDir = "/data/storage/el1/database/com.test.app";
     info.isCustomDir = true;
     info.subUser = 0;
     std::vector<std::vector<uint8_t>> passwords;
