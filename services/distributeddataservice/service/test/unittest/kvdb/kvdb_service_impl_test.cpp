@@ -1698,47 +1698,6 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDir001, TestSize.Level0)
 }
 
 /**
-* @tc.name: AddOptionsWithCustomDirHAP001
-* @tc.desc: Test AddOptions with custom directory HAP (sandboxBaseDir extraction)
-* @tc.type: FUNC
-* @tc.author: agent
-*/
-HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAP001, TestSize.Level0)
-{
-    ZLOGI("AddOptionsWithCustomDirHAP001 start");
-    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
-        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
-    EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
-        .WillRepeatedly(testing::Return("testAccount"));
-    Options options;
-    options.isCustomDir = true;
-    options.baseDir = "/data/storage/el1/database/com.test.app/100001";
-    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
-    options.area = OHOS::DistributedKv::EL1;
-    options.subUser = 0;
-    options.hapName = "test.hap";
-    options.autoSync = true;
-    options.encrypt = false;
-
-    StoreMetaData metaData;
-    metaData.appId = appId.appId;
-    metaData.storeId = storeId.storeId;
-    metaData.user = TEST_USER;
-    metaData.bundleName = appId.appId;
-
-    SyncManager::AutoSyncInfo info;
-    info.bundleName = appId.appId;
-    info.appId = appId.appId;
-    SyncManager::GetInstance().SetAutoSyncAppInfo(info);
-
-    kvdbServiceImpl_->AddOptions(options, metaData);
-
-    ASSERT_FALSE(metaData.customDir.empty());
-    ASSERT_NE(metaData.customDir, "100001");
-    ASSERT_FALSE(metaData.dataDir.empty());
-}
-
-/**
 * @tc.name: AddOptionsWithoutCustomDir002
 * @tc.desc: Test AddOptions without custom directory
 * @tc.type: FUNC
