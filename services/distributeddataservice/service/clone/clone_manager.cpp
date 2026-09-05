@@ -198,7 +198,7 @@ int32_t OnBackup(MessageParcel &data, MessageParcel &reply, const std::string &l
         ZLOGE("OnBackup open failed, errno:%{public}d", errno);
         return -1;
     }
-    uint64_t cloneTag = fdsan_create_owner_tag(FDSAN_OWNER_TYPE_DEFAULT, 0xD001610);
+    uint64_t cloneTag = fdsan_create_owner_tag(FDSAN_OWNER_TYPE_FILE, 0xD001610);
     fdsan_exchange_owner_tag(fd, 0, cloneTag);
 
     std::string replyCode = GetBackupReplyCode(0);
