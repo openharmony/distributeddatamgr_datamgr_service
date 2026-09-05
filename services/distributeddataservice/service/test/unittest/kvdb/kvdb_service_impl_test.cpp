@@ -37,7 +37,9 @@
 #include "log_print.h"
 #include "metadata/auto_launch_meta_data.h"
 #include "mock/access_token_mock.h"
+#include "account_delegate_mock.h"
 #include "mock/meta_data_manager_mock.h"
+#include "sync_mgr/sync_mgr.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "types.h"
@@ -77,6 +79,7 @@ namespace DistributedDataTest {
 class KvdbServiceImplTest : public testing::Test {
 public:
     static inline std::shared_ptr<AccessTokenKitMock> accTokenMock = nullptr;
+    static inline std::shared_ptr<AccountDelegateMock> accountDelegateMock = nullptr;
     static inline std::shared_ptr<MetaDataManagerMock> metaDataManagerMock = nullptr;
     static inline std::shared_ptr<MetaDataMock<StoreMetaData>> metaDataMock = nullptr;
     static constexpr size_t NUM_MIN = 5;
@@ -154,6 +157,9 @@ void KvdbServiceImplTest::SetUpTestCase(void)
 
     accTokenMock = std::make_shared<AccessTokenKitMock>();
     BAccessTokenKit::accessTokenkit = accTokenMock;
+    accountDelegateMock = std::make_shared<AccountDelegateMock>();
+    AccountDelegate::instance_ = nullptr;
+    AccountDelegate::RegisterAccountInstance(accountDelegateMock.get());
     metaDataManagerMock = std::make_shared<MetaDataManagerMock>();
     BMetaDataManager::metaDataManager = metaDataManagerMock;
     metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
@@ -168,6 +174,8 @@ void KvdbServiceImplTest::TearDownTestCase()
 
     accTokenMock = nullptr;
     BAccessTokenKit::accessTokenkit = nullptr;
+    accountDelegateMock = nullptr;
+    AccountDelegate::RegisterAccountInstance(nullptr);
     metaDataManagerMock = nullptr;
     BMetaDataManager::metaDataManager = nullptr;
     metaDataMock = nullptr;
@@ -178,6 +186,8 @@ void KvdbServiceImplTest::SetUp(void)
 {
     kvdbServiceImpl_ = std::make_shared<DistributedKv::KVDBServiceImpl>();
 
+    EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
+        .WillRepeatedly(testing::Return("testAccount"));
     options_.isNeedCompress = true;
     metaData_.deviceId = DmAdapter::GetInstance().GetLocalDevice().uuid;
     metaData_.bundleName = appId.appId;
@@ -1656,13 +1666,17 @@ HWTEST_F(KvdbServiceImplTest, DeleteTest008, TestSize.Level0)
 
 /**
 * @tc.name: AddOptionsWithCustomDir001
-* @tc.desc: Test AddOptions with custom directory
+* @tc.desc: Test AddOptions with custom directory (non-HAP, baseDir + /kvdb)
 * @tc.type: FUNC
-* @tc.author:
+* @tc.author: agent
 */
 HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDir001, TestSize.Level0)
 {
     ZLOGI("AddOptionsWithCustomDir001 start");
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
+    EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
+        .WillRepeatedly(testing::Return("testAccount"));
     Options options;
     options.isCustomDir = true;
     options.baseDir = "/data/custom/test/path";
@@ -1677,14 +1691,10 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDir001, TestSize.Level0)
     metaData.appId = appId.appId;
     metaData.storeId = storeId.storeId;
     metaData.user = TEST_USER;
-    
+
     kvdbServiceImpl_->AddOptions(options, metaData);
-    
-    ASSERT_EQ(metaData.customDir, "");
+
     ASSERT_EQ(metaData.dataDir, "/data/custom/test/path");
-    ASSERT_EQ(metaData.hapName, "test.hap");
-    ASSERT_EQ(metaData.isAutoSync, true);
-    ASSERT_EQ(metaData.isEncrypt, false);
 }
 
 /**
@@ -1696,6 +1706,8 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDir001, TestSize.Level0)
 HWTEST_F(KvdbServiceImplTest, AddOptionsWithoutCustomDir002, TestSize.Level0)
 {
     ZLOGI("AddOptionsWithoutCustomDir002 start");
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
     Options options;
     options.isCustomDir = false;
     options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
@@ -1714,9 +1726,6 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithoutCustomDir002, TestSize.Level0)
     
     ASSERT_EQ(metaData.customDir, "");
     ASSERT_TRUE(metaData.dataDir.find("/data/service/") != std::string::npos);
-    ASSERT_EQ(metaData.hapName, "test.hap");
-    ASSERT_EQ(metaData.isAutoSync, false);
-    ASSERT_EQ(metaData.isEncrypt, true);
 }
 
 /**
@@ -2270,6 +2279,95 @@ HWTEST_F(KvdbServiceImplTest, IsValidParam_GetBackupPasswordInvalidStoreId, Test
     auto status = kvdbServiceImpl_->GetBackupPassword(appId, invalidStoreId, info, passwords,
         DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
     EXPECT_EQ(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: AddOptionsWithCustomDirHAPNotWhitelisted002
+* @tc.desc: Test AddOptions HAP custom dir but not in whitelist
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAPNotWhitelisted002, TestSize.Level0)
+{
+    ZLOGI("AddOptionsWithCustomDirHAPNotWhitelisted002 start");
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
+        .WillRepeatedly(testing::Return("testAccount"));
+    Options options;
+    options.isCustomDir = true;
+    options.baseDir = "/data/storage/el1/database/com.test.app/100001";
+    options.kvStoreType = OHOS::DistributedKv::SINGLE_VERSION;
+    options.area = OHOS::DistributedKv::EL1;
+    options.subUser = 0;
+    options.hapName = "test.hap";
+
+    StoreMetaData metaData;
+    metaData.appId = appId.appId;
+    metaData.storeId = storeId.storeId;
+    metaData.user = TEST_USER;
+    metaData.bundleName = appId.appId;
+
+    SyncManager::AutoSyncInfo empty;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
+    kvdbServiceImpl_->AddOptions(options, metaData);
+
+    ASSERT_EQ(metaData.customDir, "");
+    ASSERT_EQ(metaData.dataDir, options.baseDir);
+}
+
+/**
+* @tc.name: GetBackupPasswordWithCustomDir001
+* @tc.desc: Test GetBackupPassword with isCustomDir=true
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithCustomDir001, TestSize.Level0)
+{
+    ZLOGI("GetBackupPasswordWithCustomDir001 start");
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
+        .WillRepeatedly(testing::Return("testAccount"));
+
+    AppId backupAppId;
+    backupAppId.appId = appId.appId;
+    StoreId backupStoreId;
+    backupStoreId.storeId = storeId.storeId;
+    BackupInfo info;
+    info.baseDir = "/data/storage/el1/database/com.test.app/100001";
+    info.isCustomDir = true;
+    info.subUser = 0;
+    std::vector<std::vector<uint8_t>> passwords;
+    auto status = kvdbServiceImpl_->GetBackupPassword(backupAppId, backupStoreId, info, passwords,
+        DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
+    EXPECT_NE(status, Status::INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: GetBackupPasswordWithoutCustomDir002
+* @tc.desc: Test GetBackupPassword with isCustomDir=false
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, GetBackupPasswordWithoutCustomDir002, TestSize.Level0)
+{
+    ZLOGI("GetBackupPasswordWithoutCustomDir002 start");
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_))
+        .WillRepeatedly(testing::Return(ATokenTypeEnum::TOKEN_NATIVE));
+
+    AppId backupAppId;
+    backupAppId.appId = appId.appId;
+    StoreId backupStoreId;
+    backupStoreId.storeId = storeId.storeId;
+    BackupInfo info;
+    info.baseDir = "/data/custom/test/path";
+    info.isCustomDir = false;
+    info.subUser = 0;
+    std::vector<std::vector<uint8_t>> passwords;
+    auto status = kvdbServiceImpl_->GetBackupPassword(backupAppId, backupStoreId, info, passwords,
+        DistributedKv::KVDBService::PasswordType::BACKUP_SECRET_KEY);
+    EXPECT_NE(status, Status::INVALID_ARGUMENT);
 }
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

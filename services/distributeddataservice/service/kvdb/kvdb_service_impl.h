@@ -90,6 +90,7 @@ public:
 private:
     using StrategyMeta = OHOS::DistributedData::StrategyMeta;
     using StoreMetaDataLocal = OHOS::DistributedData::StoreMetaDataLocal;
+    using StoreMetaMapping = OHOS::DistributedData::StoreMetaMapping;
     using ChangeType = OHOS::DistributedData::DeviceMatrix::ChangeType;
     using DBStore = DistributedDB::KvStoreNbDelegate;
     using DBManager = DistributedDB::KvStoreDelegateManager;
@@ -127,6 +128,7 @@ private:
 
     void Init();
     void AddOptions(const Options &options, StoreMetaData &metaData);
+    std::string AssembleCustomDir(StoreMetaData &metaData, const std::string &customDir);
     StoreMetaData GetStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     StoreMetaData LoadStoreMetaData(const AppId &appId, const StoreId &storeId, int32_t subUser = 0);
     StoreMetaData GetDistributedDataMeta(const std::string &deviceId);
@@ -157,6 +159,7 @@ private:
     using SyncResult = std::pair<std::vector<std::string>, std::map<std::string, DBStatus>>;
     SyncResult ProcessResult(const std::map<std::string, int32_t> &results);
     void SaveLocalMetaData(const Options &options, const StoreMetaData &metaData);
+    void SaveStoreMeta(StoreMetaData &metaData, StoreMetaMapping &oldMeta);
     void RegisterKvServiceInfo();
     void RegisterHandler();
     void DumpKvServiceInfo(int fd, std::map<std::string, std::vector<std::string>> &params);

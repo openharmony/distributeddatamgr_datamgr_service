@@ -20,6 +20,7 @@
 
 #include "accesstoken_kit.h"
 #include "account/account_delegate.h"
+#include "sync_mgr/sync_mgr.h"
 #include "backup_manager.h"
 #include "bootstrap.h"
 #include "changeevent/remote_change_event.h"
@@ -63,6 +64,8 @@ using CommContext = OHOS::DistributedData::CommunicatorContext;
 using SecretKeyMeta = DistributedData::SecretKeyMetaData;
 static constexpr const char *DEFAULT_USER_ID = "0";
 static constexpr const char *KEY_SEPARATOR = "###";
+static constexpr const char *STORE_DIR = "/kvdb";
+static constexpr const char *PATH_SEPARATOR = "/";
 static const size_t SECRET_KEY_COUNT = 2;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
@@ -834,16 +837,11 @@ Status KVDBServiceImpl::AfterCreate(
     }
 
     if (!isCreated || oldMeta != metaData) {
-        if (!CheckerManager::GetInstance().IsDistrust(Converter::ConvertToStoreInfo(metaData))) {
-            MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
-        }
-        MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
-        oldMeta = metaData;
-        MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
-        AutoLaunchMetaData launchData;
-        if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetAutoLaunchKey(), launchData, true)) {
-            SaveLaunchInfo(metaData);
-        }
+        SaveStoreMeta(metaData, oldMeta);
+    }
+
+    if (options.isCustomDir && SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
     }
 
     AppIDMetaData appIdMeta;
@@ -1023,15 +1021,53 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = options.hapName;
-    metaData.dataDir = options.isCustomDir ? options.baseDir : DirectoryManager::GetInstance().GetStorePath(metaData);
-    metaData.schema = options.schema;
     metaData.account = AccountDelegate::GetInstance()->GetCurrentAccountId();
+    if (options.isCustomDir) {
+        if (AccessTokenKit::GetTokenTypeFlag(metaData.tokenId) == TOKEN_HAP
+            && SyncManager::GetInstance().IsAutoSyncApp(metaData.bundleName, metaData.appId)) {
+            size_t pos = options.baseDir.find_last_of(PATH_SEPARATOR);
+            std::string customDir;
+            if (pos != std::string::npos && pos < options.baseDir.size() - 1) {
+                customDir = options.baseDir.substr(pos + 1);
+            }
+            metaData.customDir = AssembleCustomDir(metaData, customDir);
+        } else {
+            metaData.dataDir = options.baseDir;
+        }
+    } else {
+        metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
+    }
+    metaData.schema = options.schema;
     metaData.isNeedCompress = options.isNeedCompress;
     metaData.dataType = options.dataType;
     metaData.enableCloud = options.cloudConfig.enableCloud;
     metaData.cloudAutoSync = options.cloudConfig.autoSync;
     metaData.filterMode = options.cloudConfig.filterMode;
     metaData.authType = static_cast<int32_t>(options.authType);
+}
+
+std::string KVDBServiceImpl::AssembleCustomDir(StoreMetaData &metaData, const std::string &customDir)
+{
+    auto basePath = DirectoryManager::GetInstance().GetStorePath(metaData);
+    size_t storePos = basePath.rfind(STORE_DIR);
+    if (storePos != std::string::npos) {
+        return basePath.substr(0, storePos) + PATH_SEPARATOR + customDir + STORE_DIR;
+    }
+    return basePath + PATH_SEPARATOR + customDir;
+}
+
+void KVDBServiceImpl::SaveStoreMeta(StoreMetaData &metaData, StoreMetaMapping &oldMeta)
+{
+    if (!CheckerManager::GetInstance().IsDistrust(Converter::ConvertToStoreInfo(metaData))) {
+        MetaDataManager::GetInstance().SaveMeta(metaData.GetKeyWithoutPath(), metaData);
+    }
+    MetaDataManager::GetInstance().SaveMeta(metaData.GetKey(), metaData, true);
+    oldMeta = metaData;
+    MetaDataManager::GetInstance().SaveMeta(oldMeta.GetKey(), oldMeta, true);
+    AutoLaunchMetaData launchData;
+    if (!MetaDataManager::GetInstance().LoadMeta(metaData.GetAutoLaunchKey(), launchData, true)) {
+        SaveLaunchInfo(metaData);
+    }
 }
 
 void KVDBServiceImpl::SaveLocalMetaData(const Options &options, const StoreMetaData &metaData)
@@ -1720,7 +1756,7 @@ void KVDBServiceImpl::DeleteInner(const AppId &appId, const StoreId &storeId, co
 bool KVDBServiceImpl::IsValidParam(const AppId &appId, const StoreId &storeId, const std::string &baseDir,
     const std::string &hapName)
 {
-    if (storeId.storeId.find("/") != std::string::npos) {
+    if (storeId.storeId.find(PATH_SEPARATOR) != std::string::npos) {
         ZLOGE("storeId is Invalid, storeId is %{public}s.", Anonymous::Change(storeId.storeId).c_str());
         return false;
     }

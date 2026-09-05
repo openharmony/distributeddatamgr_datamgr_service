@@ -215,6 +215,7 @@ ohos_unittest("KvdbServiceImplTest") {
   }
   sources = [
     "${data_service_path}/app/src/kvstore_meta_manager.cpp",
+    "${data_service_path}/framework/test/mock/account_delegate_mock.cpp",
     "kvdb_service_impl_test.cpp",
     "kvdb_service_stub_unittest.cpp",
     "kvdb_service_test.cpp",
@@ -261,7 +262,6 @@ ohos_unittest("KvdbServiceImplTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/account:distributeddata_account",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/kvdb:distributeddata_kvdb",
