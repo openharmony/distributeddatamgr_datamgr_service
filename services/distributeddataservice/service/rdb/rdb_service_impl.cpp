@@ -383,6 +383,10 @@ int32_t RdbServiceImpl::SetDistributedTables(const RdbSyncerParam &param, const 
         return RDB_ERROR;
     }
     auto [exists, metaData] = LoadStoreMetaData(param);
+    if (!exists) {
+        // AfterOpen is executed asynchronously on the client side, so the meta may not be saved yet.
+        AfterOpen(param);
+    }
     if (!exists || metaData.instanceId != 0) {
         ZLOGW("bundleName:%{public}s, storeName:%{public}s instance:%{public}d. No store meta",
             metaData.bundleName.c_str(), Anonymous::Change(metaData.storeId).c_str(), metaData.instanceId);
