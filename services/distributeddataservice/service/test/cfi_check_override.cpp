@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
+#include <cstdint>
 
 extern "C" __attribute__((aligned(4096))) void __cfi_check(
     uint64_t call_site_type_id, void *target, void *diag_data)
