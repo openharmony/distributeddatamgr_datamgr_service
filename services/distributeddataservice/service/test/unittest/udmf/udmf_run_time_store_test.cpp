@@ -660,6 +660,331 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummary, TestSize.Level1)
 
 
 /**
+* @tc.name: UpgradeSummaryUnavailableData001
+* @tc.desc: version 1 Summary with unavailable UnifiedData keeps old version and empty extensions
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, UpgradeSummaryUnavailableData001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Summary summary;
+    summary.summary = { { "general.file", 10 } };
+    summary.version = SUMMARY_VERSION_FORMAT;
+
+    UnifiedKey key(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    auto status = store->PutSummary(key, summary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary outSummary;
+    status = store->GetSummary(key, outSummary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(outSummary.version, SUMMARY_VERSION_FORMAT);
+    EXPECT_TRUE(outSummary.filenameExtensions.empty());
+    store->Delete(key.GetKeyCommonPrefix());
+}
+
+/**
+ * @tc.name: GetSummaryMiss001
+* @tc.desc: GetSummary returns error when both summary entry and UnifiedData are missing
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetSummaryMiss001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    UnifiedKey key(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    key.GetUnifiedKey();
+    Summary outSummary;
+    auto status = store->GetSummary(key, outSummary);
+    EXPECT_EQ(status, E_NOT_FOUND);
+}
+
+/**
+* @tc.name: GetSummaryRecomputeOnMiss001
+* @tc.desc: GetSummary recomputes filenameExtensions when summary entry is missing
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(UdmfRunTimeStoreTest, GetSummaryRecomputeOnMiss001, TestSize.Level1)
+{
+    UnifiedKey udKey("DataHub", "com.test", "111");
+    udKey.GetUnifiedKey();
+    Runtime runtime { .key = udKey };
+    auto object = std::make_shared<Object>();
+    object->value_[ORI_URI] = std::string("file:///data/test.jpg");
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE, object);
+    UnifiedData inputData;
+    inputData.SetRuntime(runtime);
+    inputData.SetRecords({ record });
+
+    auto store = std::make_shared<RuntimeStore>("DataHub");
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Summary summary;
+    auto status = store->Put(inputData, summary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary outSummary;
+    status = store->GetSummary(udKey, outSummary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(outSummary.version, CURRENT_SUMMARY_VERSION);
+    ASSERT_EQ(outSummary.filenameExtensions.size(), 1);
+    EXPECT_EQ(outSummary.filenameExtensions[0], ".jpg");
+}
+
+/**
+ * @tc.name: GetSummaryMissTempUData001
+ * @tc.desc: GetSummary reconstructs filenameExtensions from temp data details when summary entry is missing
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(UdmfRunTimeStoreTest, GetSummaryMissTempUData001, TestSize.Level1)
+{
+    UnifiedKey udKey("DataHub", "com.test", "111");
+    udKey.GetUnifiedKey();
+    Runtime runtime { .key = udKey };
+
+    UDDetails details;
+    details.insert(std::make_pair(TEMP_UNIFIED_DATA_FLAG, true));
+    details.insert(std::make_pair("general.file", static_cast<int64_t>(100)));
+    details.insert(std::make_pair(FILENAME_EXTENSIONS, std::string(".jpg .png")));
+    auto object = std::make_shared<Object>();
+    object->value_[ORI_URI] = std::string("file:///data/temp.jpg");
+    object->value_[DETAILS] = ObjectUtils::ConvertToObject(details);
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE, object);
+    UnifiedData inputData;
+    inputData.SetRuntime(runtime);
+    inputData.SetRecords({ record });
+
+    auto store = std::make_shared<RuntimeStore>("DataHub");
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Summary summary;
+    auto status = store->Put(inputData, summary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary outSummary;
+    status = store->GetSummary(udKey, outSummary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(outSummary.version, CURRENT_SUMMARY_VERSION);
+    ASSERT_EQ(outSummary.filenameExtensions.size(), 2);
+    EXPECT_EQ(outSummary.filenameExtensions[0], ".jpg");
+    EXPECT_EQ(outSummary.filenameExtensions[1], ".png");
+}
+
+/**
+ * @tc.name: PutSummaryNonTempUData001
+ * @tc.desc: PutSummary collects and deduplicates filenameExtensions from multiple file records
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(UdmfRunTimeStoreTest, PutSummaryNonTempUData001, TestSize.Level1)
+{
+    UnifiedKey udKey(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    udKey.GetUnifiedKey();
+    Runtime runtime { .key = udKey };
+
+    auto obj1 = std::make_shared<Object>();
+    obj1->value_[ORI_URI] = std::string("file:///data/a.jpg");
+    auto record1 = std::make_shared<UnifiedRecord>(UDType::FILE, obj1);
+    auto obj2 = std::make_shared<Object>();
+    obj2->value_[ORI_URI] = std::string("file:///data/b.png");
+    auto record2 = std::make_shared<UnifiedRecord>(UDType::FILE, obj2);
+    auto obj3 = std::make_shared<Object>();
+    obj3->value_[ORI_URI] = std::string("file:///data/c.JPG");
+    auto record3 = std::make_shared<UnifiedRecord>(UDType::FILE, obj3);
+    UnifiedData inputData;
+    inputData.SetRuntime(runtime);
+    inputData.SetRecords({ record1, record2, record3 });
+
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Summary summary;
+    auto status = store->Put(inputData, summary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary outSummary;
+    status = store->GetSummary(udKey, outSummary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(outSummary.version, CURRENT_SUMMARY_VERSION);
+    ASSERT_EQ(outSummary.filenameExtensions.size(), 2);
+    EXPECT_EQ(outSummary.filenameExtensions[0], ".jpg");
+    EXPECT_EQ(outSummary.filenameExtensions[1], ".png");
+}
+
+/**
+ * @tc.name: GetSummaryVersion2EmptyExtensions001
+ * @tc.desc: version 2 Summary with empty extensions returns directly without reading UnifiedData
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfRunTimeStoreTest, GetSummaryVersion2EmptyExtensions001, TestSize.Level1)
+{
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Summary summary;
+    summary.summary = { { "general.file", 10 } };
+    summary.version = SUMMARY_VERSION_FILENAME_EXTENSIONS;
+
+    UnifiedKey key(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    auto status = store->PutSummary(key, summary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary outSummary;
+    status = store->GetSummary(key, outSummary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(outSummary.version, SUMMARY_VERSION_FILENAME_EXTENSIONS);
+    EXPECT_TRUE(outSummary.filenameExtensions.empty());
+    EXPECT_EQ(outSummary.summary["general.file"], 10);
+    store->Delete(key.GetKeyCommonPrefix());
+}
+
+/**
+ * @tc.name: UpgradeSummaryNoOriginalUri001
+ * @tc.desc: legacy packed data without original URI upgrades to version 2 with empty extensions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfRunTimeStoreTest, UpgradeSummaryNoOriginalUri001, TestSize.Level1)
+{
+    UnifiedKey udKey(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    udKey.GetUnifiedKey();
+    Runtime runtime { .key = udKey };
+    runtime.recordTotalNum = 1;
+
+    UDDetails details;
+    details.insert(std::make_pair(TEMP_UNIFIED_DATA_FLAG, true));
+    details.insert(std::make_pair("general.file", static_cast<int64_t>(100)));
+    auto object = std::make_shared<Object>();
+    object->value_[ORI_URI] = std::string("file:///data/temp_pack.zip");
+    object->value_[DETAILS] = ObjectUtils::ConvertToObject(details);
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE, object);
+    UnifiedData inputData;
+    inputData.SetRuntime(runtime);
+    inputData.SetRecords({ record });
+
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Summary tmpSummary;
+    auto status = store->Put(inputData, tmpSummary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary legacySummary;
+    legacySummary.summary = { { "general.file", 100 } };
+    legacySummary.version = SUMMARY_VERSION_FORMAT;
+    status = store->PutSummary(udKey, legacySummary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary outSummary;
+    status = store->GetSummary(udKey, outSummary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(outSummary.version, SUMMARY_VERSION_FILENAME_EXTENSIONS);
+    EXPECT_TRUE(outSummary.filenameExtensions.empty());
+    EXPECT_EQ(outSummary.summary["general.file"], 100);
+}
+
+/**
+ * @tc.name: UpgradeSummaryWithFileData001
+ * @tc.desc: version 1 Summary with available file data upgrades to version 2 with extensions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfRunTimeStoreTest, UpgradeSummaryWithFileData001, TestSize.Level1)
+{
+    UnifiedKey udKey(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    udKey.GetUnifiedKey();
+    Runtime runtime { .key = udKey };
+    runtime.recordTotalNum = 1;
+
+    auto object = std::make_shared<Object>();
+    object->value_[ORI_URI] = std::string("file:///data/test.png");
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE, object);
+    UnifiedData inputData;
+    inputData.SetRuntime(runtime);
+    inputData.SetRecords({ record });
+
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Summary tmpSummary;
+    auto status = store->Put(inputData, tmpSummary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary legacySummary;
+    legacySummary.summary = { { "general.file", 100 } };
+    legacySummary.version = SUMMARY_VERSION_FORMAT;
+    status = store->PutSummary(udKey, legacySummary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary outSummary;
+    status = store->GetSummary(udKey, outSummary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(outSummary.version, SUMMARY_VERSION_FILENAME_EXTENSIONS);
+    ASSERT_EQ(outSummary.filenameExtensions.size(), 1);
+    EXPECT_EQ(outSummary.filenameExtensions[0], ".png");
+    EXPECT_EQ(outSummary.summary["general.file"], 100);
+}
+
+/**
+ * @tc.name: PutSummaryTempUData001
+* @tc.desc: PutSummary keeps filenameExtensions reconstructed from temp unified data details
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(UdmfRunTimeStoreTest, PutSummaryTempUData001, TestSize.Level1)
+{
+    UnifiedKey udKey(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
+    Runtime runtime { .key = udKey };
+
+    UDDetails details;
+    details.insert(std::make_pair(TEMP_UNIFIED_DATA_FLAG, true));
+    details.insert(std::make_pair("general.file", static_cast<int64_t>(100)));
+    details.insert(std::make_pair(FILENAME_EXTENSIONS, std::string(".jpg .png")));
+    auto object = std::make_shared<Object>();
+    object->value_[ORI_URI] = std::string("file:///data/temp.jpg");
+    object->value_[DETAILS] = ObjectUtils::ConvertToObject(details);
+    auto record = std::make_shared<UnifiedRecord>(UDType::FILE, object);
+    UnifiedData inputData;
+    inputData.SetRuntime(runtime);
+    inputData.SetRecords({ record });
+
+    auto store = std::make_shared<RuntimeStore>(STORE_ID);
+    bool result = store->Init();
+    EXPECT_TRUE(result);
+
+    Summary summary;
+    auto status = store->Put(inputData, summary);
+    EXPECT_EQ(status, E_OK);
+
+    Summary outSummary;
+    status = store->GetSummary(udKey, outSummary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(outSummary.version, CURRENT_SUMMARY_VERSION);
+    ASSERT_EQ(outSummary.filenameExtensions.size(), 2);
+    EXPECT_EQ(outSummary.filenameExtensions[0], ".jpg");
+    EXPECT_EQ(outSummary.filenameExtensions[1], ".png");
+}
+
+/**
 * @tc.name: GetRuntime001
 * @tc.desc: Normal testcase of GetRuntime
 * @tc.type: FUNC

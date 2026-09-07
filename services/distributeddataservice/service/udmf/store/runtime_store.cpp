@@ -31,6 +31,7 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "preprocess_utils.h"
+#include "unified_data_helper.h"
 #include "observer_factory.h"
 #include "synced_device_container.h"
 
@@ -165,7 +166,10 @@ Status RuntimeStore::PutSummary(const UnifiedData &data, Summary &summary, std::
         Summary summaryFromDetails;
         PreProcessUtils::GetSummaryFromDetails(details, summaryFromDetails);
         summary = std::move(summaryFromDetails);
+    } else {
+        summary.filenameExtensions = CollectFilenameExtensions(data);
     }
+    summary.version = CURRENT_SUMMARY_VERSION;
     auto propertyKey = data.GetRuntime()->key.GetKeyCommonPrefix();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
@@ -209,14 +213,42 @@ Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
         }
         UDDetails details {};
         if (PreProcessUtils::GetDetailsFromUData(unifiedData, details)) {
-            return PreProcessUtils::GetSummaryFromDetails(details, summary);
+            status = PreProcessUtils::GetSummaryFromDetails(details, summary);
+            if (status != E_OK) {
+                return status;
+            }
+        } else {
+            summary.filenameExtensions = CollectFilenameExtensions(unifiedData);
         }
+        summary.version = CURRENT_SUMMARY_VERSION;
         return E_OK;
     }
     auto status = DataHandler::UnmarshalEntries(value, summary, TAG::TAG_SUMMARY);
     if (status != E_OK) {
         ZLOGE("Unmarshal summary failed, key: %{public}s, status:%{public}d", summaryKey.c_str(), status);
         return status;
+    }
+    return UpgradeSummaryIfNeeded(key, summary);
+}
+
+Status RuntimeStore::UpgradeSummaryIfNeeded(UnifiedKey &key, Summary &summary)
+{
+    if (summary.version >= SUMMARY_VERSION_FILENAME_EXTENSIONS) {
+        return E_OK;
+    }
+    UnifiedData data;
+    auto status = Get(key.GetUnifiedKey(), data);
+    if (status != E_OK || !data.IsComplete()) {
+        // UnifiedData is not available. Keep the legacy version and empty extensions
+        // so a later query can retry; the original overview is still returned.
+        return E_OK;
+    }
+    summary.filenameExtensions = CollectFilenameExtensions(data);
+    summary.version = SUMMARY_VERSION_FILENAME_EXTENSIONS;
+    // best-effort write back; failure must not affect the current successful query.
+    auto writeStatus = PutSummary(key, summary);
+    if (writeStatus != E_OK) {
+        ZLOGE("Upgrade summary write back failed, status:%{public}d", writeStatus);
     }
     return E_OK;
 }

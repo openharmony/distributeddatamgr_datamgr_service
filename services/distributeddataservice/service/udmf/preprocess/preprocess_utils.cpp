@@ -57,7 +57,6 @@ constexpr char PARENT_DIRECTORY_SEGMENT[] = "..";
 constexpr size_t PARENT_DIRECTORY_SEGMENT_LENGTH = sizeof(PARENT_DIRECTORY_SEGMENT) - 1;
 static constexpr uint32_t DOCS_LOCAL_PATH_SUBSTR_START_INDEX = 1;
 static constexpr uint32_t VERIFY_URI_PERMISSION_MAX_SIZE = 500;
-constexpr const char *TEMP_UNIFIED_DATA_FLAG = "temp_udmf_file_flag";
 static constexpr size_t TEMP_UDATA_RECORD_SIZE = 1;
 static constexpr uint32_t PREFIX_LEN = 24;
 static constexpr uint32_t INDEX_LEN = 8;
@@ -845,6 +844,17 @@ Status PreProcessUtils::GetSummaryFromDetails(const UDDetails &details, Summary 
         if (int64Value != nullptr) {
             summary.summary[item.first] = *int64Value;
             summary.totalSize += *int64Value;
+        }
+    }
+    auto extIt = details.find(FILENAME_EXTENSIONS);
+    if (extIt != details.end()) {
+        auto extStr = std::get_if<std::string>(&extIt->second);
+        if (extStr != nullptr && !extStr->empty()) {
+            std::istringstream iss(*extStr);
+            std::string ext;
+            while (iss >> ext) {
+                summary.filenameExtensions.emplace_back(ext);
+            }
         }
     }
     return E_OK;

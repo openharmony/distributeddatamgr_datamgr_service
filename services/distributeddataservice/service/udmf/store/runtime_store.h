@@ -70,6 +70,7 @@ private:
     void NotifySyncProcss(const DevSyncProcessMap &processMap, ProcessCallback callback,
         const DevNameMap &deviceNameMap);
     Status PutSummary(const UnifiedData &unifiedData, Summary &summary, std::vector<DistributedDB::Entry> &entries);
+    Status UpgradeSummaryIfNeeded(UnifiedKey &key, Summary &summary);
     Status MarkWhenCorrupted(DistributedDB::DBStatus status);
     void ReleaseStore(DistributedDB::KvStoreNbDelegate *delegate);
     void UnRegisterAllObserver();
