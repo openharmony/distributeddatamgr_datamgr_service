@@ -244,7 +244,7 @@ void KvStoreMetaManager::CleanStoreMetaData()
 {
     auto option = InitDBOption();
     delegateManager_.GetKvStore(Bootstrap::GetInstance().GetMetaDBName(), option,
-        [](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *delegate) {
+        [this](DistributedDB::DBStatus dbStatus, DistributedDB::KvStoreNbDelegate *delegate) {
             if (dbStatus != DistributedDB::DBStatus::OK || delegate == nullptr) {
                 return;
             }
@@ -252,7 +252,12 @@ void KvStoreMetaManager::CleanStoreMetaData()
             param.limit = CLEAN_BATCH_SIZE;
             
             auto data = static_cast<DistributedDB::PragmaData>(&param);
-            delegate->Pragma(PragmaCmd::REMOVE_LOCAL_DATA_BY_KEY_PATTERN, data);
+            auto pragmaStatus = delegate->Pragma(PragmaCmd::REMOVE_LOCAL_DATA_BY_KEY_PATTERN, data);
+            if (pragmaStatus != DistributedDB::DBStatus::OK) {
+                ZLOGE("Pragma REMOVE_LOCAL_DATA_BY_KEY_PATTERN failed, status:%{public}d", pragmaStatus);
+                delegateManager_.CloseKvStore(delegate);
+                return;
+            }
             ZLOGI("CleanStoreMetaData deletedCount: %{public}d", param.deletedCount);
 
             if (param.deletedCount < CLEAN_BATCH_SIZE) {
@@ -261,6 +266,7 @@ void KvStoreMetaManager::CleanStoreMetaData()
                 versionMeta.version = VersionMetaData::CLEAN_STORE_META_DATA_VERSION;
                 MetaDataManager::GetInstance().SaveMeta(versionMeta.GetKey(), versionMeta, true);
             }
+            delegateManager_.CloseKvStore(delegate);
         });
 }
 

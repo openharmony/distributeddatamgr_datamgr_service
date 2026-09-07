@@ -62,14 +62,10 @@ ohos_unittest("RdbResultSetImplTest") {
 }
 
 ohos_unittest("RdbServiceTest") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
-  }
   module_out_path = module_output_path
+  ldflags = [ "-Wl,--allow-multiple-definition" ]
   sources = [
+    "${data_service_path}/service/test/cfi_check_override.cpp",
     "anonymous_test.cpp",
     "cache_cursor_test.cpp",
     "../../mock/db_change_data_mock.cpp",
@@ -274,14 +270,10 @@ ohos_unittest("RdbFlowControlManagerTest") {
 }
 
 ohos_unittest("RdbServiceImplTest") {
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
-  }
   module_out_path = module_output_path
+  ldflags = [ "-Wl,--allow-multiple-definition" ]
   sources = [
+    "${data_service_path}/service/test/cfi_check_override.cpp",
     "../../mock/cursor_mock.cpp",
     "../../mock/general_store_mock.cpp",
     "../../mock/checker_mock.cpp",

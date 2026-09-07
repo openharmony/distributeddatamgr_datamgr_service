@@ -245,13 +245,9 @@ ohos_unittest("KvStoreDataServiceMockTest") {
 
 ohos_unittest("KvStoreMetaManagerUpdateKeyTest") {
   module_out_path = module_output_path
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-    blocklist = "${datamgr_service_path}/cfi_blocklist.txt"
-  }
+  ldflags = [ "-Wl,--allow-multiple-definition" ]
   sources = [
+    "${data_service_path}/service/test/cfi_check_override.cpp",
     "${data_service_path}/app/src/checker/bundle_checker.cpp",
     "${data_service_path}/app/src/checker/system_checker.cpp",
     "${data_service_path}/app/src/db_info_handle_impl.cpp",

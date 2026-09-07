@@ -267,6 +267,7 @@ bool RestoreSecretKey(
     if (secretKey.sKey.empty()) {
         ZLOGE("Encrypt failed, bundleName:%{public}s, storeName:%{public}s, storeType:%{public}d",
             item.bundleName.c_str(), Anonymous::Change(item.dbName).c_str(), item.storeType);
+        return false;
     }
     secretKey.storeType = item.storeType;
     secretKey.nonce = encryptParams.nonce;
