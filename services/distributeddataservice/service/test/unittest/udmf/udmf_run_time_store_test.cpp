@@ -688,7 +688,7 @@ HWTEST_F(UdmfRunTimeStoreTest, UpgradeSummaryUnavailableData001, TestSize.Level1
 }
 
 /**
- * @tc.name: GetSummaryMiss001
+* @tc.name: GetSummaryMiss001
 * @tc.desc: GetSummary returns error when both summary entry and UnifiedData are missing
 * @tc.type: FUNC
 * @tc.require:
@@ -944,7 +944,7 @@ HWTEST_F(UdmfRunTimeStoreTest, UpgradeSummaryWithFileData001, TestSize.Level1)
 }
 
 /**
- * @tc.name: PutSummaryTempUData001
+* @tc.name: PutSummaryTempUData001
 * @tc.desc: PutSummary keeps filenameExtensions reconstructed from temp unified data details
 * @tc.type: FUNC
 * @tc.require:

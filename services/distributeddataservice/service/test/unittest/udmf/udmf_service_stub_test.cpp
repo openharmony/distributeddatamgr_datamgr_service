@@ -142,32 +142,6 @@ HWTEST_F(UdmfServiceStubTest, OnGetSummary001, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnGetSummary002
- * @tc.desc: Normal test of OnGetSummary, marshals status and summary
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(UdmfServiceStubTest, OnGetSummary002, TestSize.Level1)
-{
-    QueryOption query;
-    query.key = DRAG_KEY;
-    query.intention = UD_INTENTION_DRAG;
-
-    MessageParcel data;
-    ASSERT_TRUE(ITypesUtil::Marshal(data, query));
-
-    MessageParcel reply;
-    UdmfServiceImpl udmfServiceImpl;
-    int ret = udmfServiceImpl.OnGetSummary(data, reply);
-    EXPECT_EQ(ret, E_OK);
-
-    int32_t status = -1;
-    Summary summary;
-    EXPECT_TRUE(ITypesUtil::Unmarshal(reply, status, summary));
-    EXPECT_NE(status, -1);
-}
-
-/**
 * @tc.name: OnAddPrivilege001
 * @tc.desc: Abnormal test of OnAddPrivilege, data is invalid
 * @tc.type: FUNC

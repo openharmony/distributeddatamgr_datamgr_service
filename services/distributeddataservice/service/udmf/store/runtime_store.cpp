@@ -31,7 +31,7 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "preprocess_utils.h"
-#include "unified_data_helper.h"
+#include "unified_data_extension.h"
 #include "observer_factory.h"
 #include "synced_device_container.h"
 
@@ -245,11 +245,6 @@ Status RuntimeStore::UpgradeSummaryIfNeeded(UnifiedKey &key, Summary &summary)
     }
     summary.filenameExtensions = CollectFilenameExtensions(data);
     summary.version = SUMMARY_VERSION_FILENAME_EXTENSIONS;
-    // best-effort write back; failure must not affect the current successful query.
-    auto writeStatus = PutSummary(key, summary);
-    if (writeStatus != E_OK) {
-        ZLOGE("Upgrade summary write back failed, status:%{public}d", writeStatus);
-    }
     return E_OK;
 }
 

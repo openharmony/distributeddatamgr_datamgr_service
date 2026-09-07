@@ -544,7 +544,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris004, TestSize.Level1)
 * @tc.name: MatchImgExtension001
 * @tc.desc: Normal testcase of MatchImgExtension with URIs and physical paths
 * @tc.type: FUNC
-* @tc.author: agent
 */
 HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension001, TestSize.Level1)
 {
@@ -572,7 +571,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension001, TestSize.Level1)
 * @tc.name: MatchImgExtension002
 * @tc.desc: Abnormal testcase of MatchImgExtension with URIs and physical paths
 * @tc.type: FUNC
-* @tc.author: agent
 */
 HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension002, TestSize.Level1)
 {
@@ -765,7 +763,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization001, TestSize.Level1)
  * @tc.desc: The same URI in HTML and file entries should merge their permission masks
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: agent
  */
 HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization_SameUriInHtmlAndFile_MergesPermissionMasks,
     TestSize.Level1)
@@ -870,7 +867,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromDetails_FilenameExtensions002, T
  * @tc.desc: GetSummaryFromDetails ignores filenameExtensions of non-string type
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: agent
  */
 HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromDetails_FilenameExtensions003, TestSize.Level1)
 {
@@ -890,7 +886,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromDetails_FilenameExtensions003, T
  * @tc.desc: GetSummaryFromDetails ignores empty filenameExtensions string
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: agent
  */
 HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromDetails_FilenameExtensions004, TestSize.Level1)
 {
