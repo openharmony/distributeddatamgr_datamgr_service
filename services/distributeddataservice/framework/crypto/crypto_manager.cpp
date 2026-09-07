@@ -420,6 +420,7 @@ bool CryptoManager::DeleteKey(const std::vector<uint8_t> &keyAlias)
         HksFreeParamSet(&params);
         return false;
     }
+    HksFreeParamSet(&params);
     return true;
 }
 
