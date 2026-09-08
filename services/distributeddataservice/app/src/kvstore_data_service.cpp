@@ -77,6 +77,11 @@
 #include "utils/block_integer.h"
 #include "utils/constant.h"
 #include "utils/crypto.h"
+
+#ifndef DATAMGR_FDSAN_ERROR_LEVEL
+#define DATAMGR_FDSAN_ERROR_LEVEL FDSAN_ERROR_LEVEL_WARN_ALWAYS
+#endif
+
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
@@ -344,9 +349,7 @@ void KvStoreDataService::InitExecutor()
 void KvStoreDataService::OnStart()
 {
     ZLOGI("distributeddata service onStart");
-#ifdef FDSAN_FATAL_MODE
-    fdsan_set_error_level(FDSAN_ERROR_LEVEL_FATAL);
-#endif
+    fdsan_set_error_level(DATAMGR_FDSAN_ERROR_LEVEL);
     LoadConfigs();
     EventCenter::Defer defer;
     Reporter::GetInstance()->SetThreadPool(executors_);
