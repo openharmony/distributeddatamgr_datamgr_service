@@ -265,14 +265,14 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
         ZLOGE("query failed, err:%{public}d, pid:%{public}d", E_SQLITE_ERROR, callingPid);
         EraseStoreCache(tokenId_);
     }
-    resultSetCallingPids.Compute(callingPid, [](const uint32_t &, int32_t &value) {
-        ++value;
-        return true;
-    });
+    AddCallingPidCount(callingPid);
     int64_t beginTime = GetSystemTime();
     auto bridge = RdbDataShareAdapter::RdbUtils::ToResultSetBridge(resultSet);
     auto resultSetPtr = new (std::nothrow) DataShareResultSet(bridge);
     if (resultSetPtr == nullptr) {
+        ZLOGE("new DataShareResultSet failed, pid: %{public}d", callingPid);
+        resultSetCount--;
+        RemoveCallingPidCount(callingPid);
         return std::make_pair(E_ERROR, nullptr);
     }
     auto result = std::shared_ptr<DataShareResultSet>(resultSetPtr, [callingPid, beginTime](auto p) {
@@ -282,10 +282,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
             ZLOGE("pid %{public}d query time is %{public}" PRId64 ", %{public}d resultSet is used.", callingPid,
                 (endTime - beginTime), resultSetCount.load());
         }
-        resultSetCallingPids.ComputeIfPresent(callingPid, [](const uint32_t &, int32_t &value) {
-            --value;
-            return value > 0;
-        });
+        RemoveCallingPidCount(callingPid);
         delete p;
     });
     return std::make_pair(E_OK, result);
@@ -375,5 +372,21 @@ bool RdbDelegate::IsLimit(int count, int32_t callingPid, uint32_t callingTokenId
         "Pid:" + std::to_string(callingPid), "owner:" + logStr, __FUNCTION__, E_RESULTSET_BUSY, appendix};
     HiViewFaultAdapter::ReportDataFault(faultInfo);
     return true;
+}
+
+void RdbDelegate::AddCallingPidCount(int32_t callingPid)
+{
+    resultSetCallingPids.Compute(callingPid, [](const uint32_t &, int32_t &value) {
+        ++value;
+        return true;
+    });
+}
+
+void RdbDelegate::RemoveCallingPidCount(int32_t callingPid)
+{
+    resultSetCallingPids.ComputeIfPresent(callingPid, [](const uint32_t &, int32_t &value) {
+        --value;
+        return value > 0;
+    });
 }
 } // namespace OHOS::DataShare
