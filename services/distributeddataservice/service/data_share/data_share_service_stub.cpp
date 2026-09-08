@@ -31,10 +31,14 @@
 #include "utils.h"
 #include "utils/anonymous.h"
 #include "dataproxy_handle_common.h"
+#include "freq_log_manager.h"
 #include "qos_manager.h"
 
 namespace OHOS {
 namespace DataShare {
+namespace {
+thread_local std::string g_freqCodeUri;
+}
 using OHOS::DistributedData::QosManager;
 
 bool DataShareServiceStub::CheckInterfaceToken(MessageParcel &data)
@@ -119,6 +123,7 @@ int32_t DataShareServiceStub::OnQuery(MessageParcel &data, MessageParcel &reply)
             columns.size());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    g_freqCodeUri = uri;
     int status = 0;
     auto result = ISharedResultSet::WriteToParcel(Query(uri, extUri, predicate, columns, status), reply);
     if (!ITypesUtil::Marshal(reply, status)) {
@@ -368,6 +373,15 @@ bool DataShareServiceStub::IsTemplateRequest(uint32_t requestCode)
     return false;
 }
 
+void DataShareServiceStub::ReportFreqCodeCall(uint32_t code, uint64_t durationMs)
+{
+    if (code != DATA_SHARE_SERVICE_CMD_QUERY && code != DATA_SHARE_SERVICE_CMD_GET_SILENT_PROXY_STATUS) {
+        return;
+    }
+    FreqLogManager::GetInstance().ReportCall(code, durationMs, g_freqCodeUri);
+    g_freqCodeUri.clear();
+}
+
 int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     QosManager qos(true);
@@ -413,6 +427,7 @@ int DataShareServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Me
             callerInfo.isSlowRequest = true;
         }
         HiViewAdapter::GetInstance().ReportDataStatistic(callerInfo);
+        ReportFreqCodeCall(code, static_cast<uint64_t>(duration.count()));
     }
     DataShareThreadLocal::CleanFromSystemApp();
 
@@ -453,6 +468,7 @@ int32_t DataShareServiceStub::OnGetSilentProxyStatus(MessageParcel &data, Messag
         ZLOGE("Unmarshal silent enable failed. uri: %{public}s", URIUtils::Anonymous(uri).c_str());
         return IPC_STUB_INVALID_DATA_ERR;
     }
+    g_freqCodeUri = uri;
     int32_t enable = GetSilentProxyStatus(uri);
     if (!ITypesUtil::Marshal(reply, enable)) {
         ZLOGE("Marshal enable:%{public}d failed.", enable);

@@ -45,6 +45,7 @@
 #include "extension_ability_manager.h"
 #include "hap_token_info.h"
 #include "hiview_adapter.h"
+#include "freq_log_manager.h"
 #include "if_system_ability_manager.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -693,6 +694,7 @@ int32_t DataShareServiceImpl::OnBind(const BindInfo &binderInfo)
     ExtensionAbilityManager::GetInstance().SetExecutorPool(binderInfo.executors);
     DBDelegate::SetExecutorPool(binderInfo.executors);
     HiViewAdapter::GetInstance().SetThreadPool(binderInfo.executors);
+    FreqLogManager::GetInstance().SetThreadPool(binderInfo.executors);
     SubscribeCommonEvent();
     SubscribeTimeChanged();
     SubscribeChange();
