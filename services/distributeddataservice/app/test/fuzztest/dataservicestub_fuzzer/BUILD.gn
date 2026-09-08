@@ -57,10 +57,7 @@ ohos_fuzztest("DataServiceStubFuzzTest") {
     "-Werror=vla",
   ]
 
-  defines = [
-    "CLONE_SO_PATH=\"${clone_so_path}\"",
-    "DATAMGR_FDSAN_ERROR_LEVEL=FDSAN_ERROR_LEVEL_WARN_ALWAYS",
-  ]
+  defines = [ "CLONE_SO_PATH=\"${clone_so_path}\"" ]
 
   sources = [
     "${data_service_path}/app/src/db_info_handle_impl.cpp",

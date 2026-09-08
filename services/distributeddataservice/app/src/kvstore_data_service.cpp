@@ -18,6 +18,7 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <ipc_skeleton.h>
+#include <stdio.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -77,6 +78,14 @@
 #include "utils/block_integer.h"
 #include "utils/constant.h"
 #include "utils/crypto.h"
+
+// fdsan declarations live in the OHOS musl <stdio.h>. The build overrides
+// this to FDSAN_ERROR_LEVEL_FATAL on root builds; anything else falls back
+// to the platform-default WARN_ALWAYS.
+#ifndef DATAMGR_FDSAN_ERROR_LEVEL
+#define DATAMGR_FDSAN_ERROR_LEVEL FDSAN_ERROR_LEVEL_WARN_ALWAYS
+#endif
+
 namespace OHOS::DistributedKv {
 using namespace std::chrono;
 using namespace OHOS::DistributedData;
