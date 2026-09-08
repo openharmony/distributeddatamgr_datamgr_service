@@ -63,6 +63,7 @@ config("module_private_config") {
   defines = [
     "TEST_ON_DEVICE",
     "OPENSSL_SUPPRESS_DEPRECATED",
+    "DATAMGR_FDSAN_ERROR_LEVEL=FDSAN_ERROR_LEVEL_WARN_ALWAYS",
   ]
 
   defines += [ "CLONE_SO_PATH=\"${clone_so_path}\"" ]
