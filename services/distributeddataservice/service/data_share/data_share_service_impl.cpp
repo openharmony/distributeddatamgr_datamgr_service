@@ -24,6 +24,7 @@
 
 #include "account/account_delegate.h"
 #include "app_connect_manager.h"
+#include "bundle_constants.h"
 #include "bundle_mgr_proxy.h"
 #include "bundle_utils.h"
 #include "common_event_manager.h"
@@ -968,6 +969,7 @@ int32_t DataShareServiceImpl::OnAppUninstall(const std::string &bundleName, int3
     ZLOGI("AppUninstall user=%{public}d, index=%{public}d, bundleName=%{public}s",
         user, index, bundleName.c_str());
     BundleMgrProxy::GetInstance()->Delete(bundleName, user, index);
+    EraseCalledTokenIdCache(bundleName);
     return E_OK;
 }
 
@@ -1117,6 +1119,44 @@ int32_t DataShareServiceImpl::ResolveAccessorAppIndexForSilentProxy(
     return appIndex;
 }
 
+uint32_t DataShareServiceImpl::QueryCalledTokenId(
+    int32_t currentUserId, const std::string &calledBundleName, int32_t appIndex)
+{
+    uint32_t calledTokenId =
+        Security::AccessToken::AccessTokenKit::GetHapTokenID(currentUserId, calledBundleName, appIndex);
+    if (calledTokenId == 0) {
+        calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(0, calledBundleName, 0);
+    }
+    return calledTokenId;
+}
+
+uint32_t DataShareServiceImpl::GetCalledTokenId(
+    int32_t currentUserId, const std::string &calledBundleName, int32_t appIndex)
+{
+    if (calledBundleName != SETTINGS_DATA_BUNDLE_NAME) {
+        return QueryCalledTokenId(currentUserId, calledBundleName, appIndex);
+    }
+    // The settings app is queried with a very high frequency during boot, and it is a preinstalled
+    // system app under user 0 whose token id never changes, so cache its token id in the service
+    // process to avoid repeated IPC to the access token manager.
+    auto [success, tokenId] = settingsDataTokenIdCache_.Find(calledBundleName);
+    if (success) {
+        return tokenId;
+    }
+    tokenId = QueryCalledTokenId(0, calledBundleName, 0);
+    if (tokenId != 0) {
+        settingsDataTokenIdCache_.InsertOrAssign(calledBundleName, tokenId);
+    }
+    return tokenId;
+}
+
+void DataShareServiceImpl::EraseCalledTokenIdCache(const std::string &bundleName)
+{
+    if (bundleName == SETTINGS_DATA_BUNDLE_NAME) {
+        settingsDataTokenIdCache_.Erase(bundleName);
+    }
+}
+
 int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool isCreateHelper)
 {
     XCollie xcollie(std::string(LOG_TAG) + "::" + std::string(__FUNCTION__),
@@ -1130,7 +1170,7 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
             return errCode;
         }
     }
-    int32_t currentUserId = AccountDelegate::GetInstance()->GetUserByToken(callerTokenId);
+    int32_t currentUserId = IPCSkeleton::GetCallingUid() / AppExecFwk::Constants::BASE_USER_RANGE;
     UriInfo uriInfo;
     // GetInfoFromUri will first perform a four-part URI check. Only if the URI contains more than four parts
     // is it necessary to continue to check the SilentProxyEnable status. The URI part length is used as an
@@ -1146,11 +1186,7 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
 #ifdef ACCOUNT_ISOLATION_ENABLED
     appIndex = ResolveAccessorAppIndexForSilentProxy(uri, calledBundleName, currentUserId, appIndex);
 #endif
-    uint32_t calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(
-        currentUserId, calledBundleName, appIndex);
-    if (calledTokenId == 0) {
-        calledTokenId = Security::AccessToken::AccessTokenKit::GetHapTokenID(0, calledBundleName, 0);
-    }
+    uint32_t calledTokenId = GetCalledTokenId(currentUserId, calledBundleName, appIndex);
     // SA has no extension configuration, IsSilentProxyEnable is not usable yet, just return true
     auto success = dataShareSilentConfig_.IsSilentProxyEnable(calledTokenId, currentUserId, calledBundleName, uri);
     if (!success) {

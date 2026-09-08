@@ -935,6 +935,100 @@ HWTEST_F(DataShareServiceImplTest, GetSilentProxyStatus001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetSilentProxyStatus_SettingsDataUri_ExpectOk
+ * @tc.desc: Verify GetSilentProxyStatus with a four-segment settings data uri, the repeated query
+ *           takes the called token id from the cache
+ * @tc.type: FUNC
+ * @tc.author: agent
+ * @tc.step:
+ *   1. Call GetSilentProxyStatus with a settings data uri and isCreateHelper is false
+ *   2. Call it again with the same uri to take the called token id from the cache
+ * @tc.expect:
+ *   1. Return E_OK for both calls
+ */
+HWTEST_F(DataShareServiceImplTest, GetSilentProxyStatus_SettingsDataUri_ExpectOk, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus_SettingsDataUri_ExpectOk start");
+    SetSelfTokenInfo(NATIVE_USER_ID);
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
+    auto result = dataShareServiceImpl.GetSilentProxyStatus(uri, false);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+
+    result = dataShareServiceImpl.GetSilentProxyStatus(uri, false);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+    SetSelfTokenInfo(USER_TEST);
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus_SettingsDataUri_ExpectOk end");
+}
+
+/**
+ * @tc.name: GetSilentProxyStatus_SettingsDataUriWithAppIndex_ExpectOk
+ * @tc.desc: Verify GetSilentProxyStatus with a settings data uri that carries a valid appIndex
+ * @tc.type: FUNC
+ * @tc.author: agent
+ * @tc.step:
+ *   1. Call GetSilentProxyStatus with a settings data uri whose appIndex is 0
+ * @tc.expect:
+ *   1. Return E_OK
+ */
+HWTEST_F(DataShareServiceImplTest, GetSilentProxyStatus_SettingsDataUriWithAppIndex_ExpectOk, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus_SettingsDataUriWithAppIndex_ExpectOk start");
+    SetSelfTokenInfo(NATIVE_USER_ID);
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?appIndex=0";
+    auto result = dataShareServiceImpl.GetSilentProxyStatus(uri, false);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+    SetSelfTokenInfo(USER_TEST);
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus_SettingsDataUriWithAppIndex_ExpectOk end");
+}
+
+/**
+ * @tc.name: GetSilentProxyStatus_InvalidAppIndex_ExpectAppIndexInvalid
+ * @tc.desc: Verify GetSilentProxyStatus returns E_APPINDEX_INVALID when the appIndex param is illegal
+ * @tc.type: FUNC
+ * @tc.author: agent
+ * @tc.step:
+ *   1. Call GetSilentProxyStatus with a settings data uri whose appIndex is not a number
+ * @tc.expect:
+ *   1. Return E_APPINDEX_INVALID
+ */
+HWTEST_F(DataShareServiceImplTest, GetSilentProxyStatus_InvalidAppIndex_ExpectAppIndexInvalid, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus_InvalidAppIndex_ExpectAppIndexInvalid start");
+    SetSelfTokenInfo(NATIVE_USER_ID);
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?appIndex=abc";
+    auto result = dataShareServiceImpl.GetSilentProxyStatus(uri, false);
+    EXPECT_EQ(result, OHOS::DataShare::E_APPINDEX_INVALID);
+    SetSelfTokenInfo(USER_TEST);
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus_InvalidAppIndex_ExpectAppIndexInvalid end");
+}
+
+/**
+ * @tc.name: GetSilentProxyStatus_NotInstalledBundleUri_ExpectOk
+ * @tc.desc: Verify GetSilentProxyStatus with a bundle that has no token id in ATM, silent proxy is
+ *           enabled by default when the profile is not found
+ * @tc.type: FUNC
+ * @tc.author: agent
+ * @tc.step:
+ *   1. Call GetSilentProxyStatus with a uri whose bundle is not installed
+ * @tc.expect:
+ *   1. Return E_OK
+ */
+HWTEST_F(DataShareServiceImplTest, GetSilentProxyStatus_NotInstalledBundleUri_ExpectOk, TestSize.Level1)
+{
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus_NotInstalledBundleUri_ExpectOk start");
+    SetSelfTokenInfo(NATIVE_USER_ID);
+    DataShareServiceImpl dataShareServiceImpl;
+    std::string uri = "datashare:///com.datasharetest.notinstalled/module/store/table";
+    auto result = dataShareServiceImpl.GetSilentProxyStatus(uri, false);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+    SetSelfTokenInfo(USER_TEST);
+    ZLOGI("DataShareServiceImplTest GetSilentProxyStatus_NotInstalledBundleUri_ExpectOk end");
+}
+
+/**
 * @tc.name: DataProviderConfig001
 * @tc.desc: test get provider info function
 * @tc.type: FUNC
