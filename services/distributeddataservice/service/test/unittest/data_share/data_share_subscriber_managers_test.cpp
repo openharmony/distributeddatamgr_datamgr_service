@@ -41,6 +41,18 @@ std::string DATA_SHARE_SUBSCRIBE_TEST_URI = "datashareproxy://com.acts.ohos.data
 std::string BUNDLE_NAME_TEST = "ohos.subscribermanagertest.demo";
 namespace OHOS::Test {
 using OHOS::DataShare::LogLabel;
+class PublishedDataObserverMockTest : public IDataProxyPublishedDataObserver {
+public:
+    sptr<IRemoteObject> AsObject() override
+    {
+        return nullptr;
+    }
+
+    void OnChangeFromPublishedData(PublishedDataChangeNode &changeNode) override
+    {
+    }
+};
+
 class DataShareSubscriberManagersTest : public testing::Test {
 public:
     static constexpr int64_t USER_TEST = 100;
@@ -461,5 +473,64 @@ HWTEST_F(DataShareSubscriberManagersTest, BuildChangeInfo004, TestSize.Level1)
     EXPECT_TRUE(result.isMultiValues_);
     EXPECT_TRUE(result.multiValues_.empty());
     ZLOGI("DataShareSubscriberManagersTest BuildChangeInfo004 end");
+}
+
+/**
+* @tc.name: AddPublishedDataSubscriberSameFirstCaller
+* @tc.desc: add the same firstCallerTokenId twice, the second add should update the existing node
+* @tc.type: FUNC
+* @tc.require: deduplicate the subscriber with the same firstCallerTokenId
+*/
+HWTEST_F(DataShareSubscriberManagersTest, AddPublishedDataSubscriberSameFirstCaller, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest AddPublishedDataSubscriberSameFirstCaller start");
+    PublishedDataKey key(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID);
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    uint32_t firstCallerTokenId = 0x2001;
+    sptr<PublishedDataObserverMockTest> observer1 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer1, nullptr);
+
+    auto result1 = PublishedDataSubscriberManager::GetInstance().Add(key, observer1, firstCallerTokenId, USER_TEST);
+    EXPECT_EQ(result1, DataShare::E_OK);
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key), 1);
+
+    sptr<PublishedDataObserverMockTest> observer2 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer2, nullptr);
+    auto result2 = PublishedDataSubscriberManager::GetInstance().Add(key, observer2, firstCallerTokenId, USER_TEST);
+    EXPECT_EQ(result2, DataShare::E_OK);
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key), 1);
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest AddPublishedDataSubscriberSameFirstCaller end");
+}
+
+/**
+* @tc.name: AddPublishedDataSubscriberDifferentFirstCallerTokenId
+* @tc.desc: Add with different firstCallerTokenId, node count should increase
+* @tc.type: FUNC
+* @tc.require: new node branch of PublishedDataSubscriberManager::Add
+*/
+HWTEST_F(DataShareSubscriberManagersTest, AddPublishedDataSubscriberDifferentFirstCallerTokenId, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest AddPublishedDataSubscriberDifferentFirstCallerTokenId start");
+    PublishedDataKey key(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID);
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    uint32_t firstCallerTokenId1 = 0x2001;
+    uint32_t firstCallerTokenId2 = 0x2002;
+
+    sptr<PublishedDataObserverMockTest> observer1 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer1, nullptr);
+
+    auto result1 = PublishedDataSubscriberManager::GetInstance().Add(key, observer1, firstCallerTokenId1, USER_TEST);
+    EXPECT_EQ(result1, DataShare::E_OK);
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key), 1);
+
+    sptr<PublishedDataObserverMockTest> observer2 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer2, nullptr);
+    auto result2 = PublishedDataSubscriberManager::GetInstance().Add(key, observer2, firstCallerTokenId2, USER_TEST);
+    EXPECT_EQ(result2, DataShare::E_OK);
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key), 2);
+    
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest AddPublishedDataSubscriberDifferentFirstCallerTokenId end");
 }
 } // namespace OHOS::Test
