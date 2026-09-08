@@ -43,7 +43,7 @@ int PublishedDataSubscriberManager::Add(const PublishedDataKey &key,
             for (auto &node : value) {
                 if (node.firstCallerTokenId == firstCallerTokenId) {
                     node.observer = observer;
-                    node.enable = true;
+                    node.enabled = true;
                     node.isNotifyOnEnabled = false;
                     return true;
                 }
