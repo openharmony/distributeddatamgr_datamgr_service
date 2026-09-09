@@ -136,7 +136,8 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
             }
         }
         if (!isDuplicate) {
-            ObserverNode observerNode(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);
+            ObserverNode observerNode(observer, context->callerTokenId, callerTokenId, callerPid,
+                context->visitedUserId);
             observerNode.enabled = enabled;
             value.emplace_back(observerNode);
             node.emplace_back(observerNode);
