@@ -66,6 +66,7 @@ void ObjectAssetLoader::TransferAssetsAsync(const int32_t userId, const std::str
     }
     if (task.downloadAssets.empty()) {
         callback(true);
+        return;
     }
     tasks_.ComputeIfAbsent(++taskSeq_, [task](const uint32_t key) {
         return task;

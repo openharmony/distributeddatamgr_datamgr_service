@@ -1156,7 +1156,7 @@ int32_t ObjectStoreManager::SaveToStore(const std::string &appId, const std::str
         entries.emplace_back(entry);
     }
     {
-        std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+        std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
         if (delegate_ == nullptr) {
             ZLOGE("delegate is nullptr.");
             return E_DB_ERROR;
