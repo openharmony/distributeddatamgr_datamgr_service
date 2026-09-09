@@ -53,6 +53,18 @@ public:
     }
 };
 
+class RdbObserverMockTest : public IDataProxyRdbObserver {
+public:
+    sptr<IRemoteObject> AsObject() override
+    {
+        return nullptr;
+    }
+
+    void OnChangeFromRdb(RdbChangeNode &changeNode) override
+    {
+    }
+};
+
 class DataShareSubscriberManagersTest : public testing::Test {
 public:
     static constexpr int64_t USER_TEST = 100;
@@ -529,8 +541,86 @@ HWTEST_F(DataShareSubscriberManagersTest, AddPublishedDataSubscriberDifferentFir
     auto result2 = PublishedDataSubscriberManager::GetInstance().Add(key, observer2, firstCallerTokenId2, USER_TEST);
     EXPECT_EQ(result2, DataShare::E_OK);
     EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key), 2);
-    
+
     PublishedDataSubscriberManager::GetInstance().Clear();
     ZLOGI("DataShareSubscriberManagersTest AddPublishedDataSubscriberDifferentFirstCallerTokenId end");
+}
+
+/**
+* @tc.name: AddRdbSubscriberSameFirstCaller
+* @tc.desc: add the same callerTokenId twice, the second add should update the existing node
+* @tc.type: FUNC
+* @tc.require: deduplicate the subscriber with the same callerTokenId
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, AddRdbSubscriberSameFirstCaller, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest AddRdbSubscriberSameFirstCaller start");
+    DataShare::Key key(DATA_SHARE_SUBSCRIBE_TEST_URI, TEST_SUB_ID, BUNDLE_NAME_TEST);
+    RdbSubscriberManager::GetInstance().Clear();
+    uint32_t callerTokenId = 0x2001;
+    auto executorPool = std::make_shared<ExecutorPool>(1, 1);
+    ASSERT_NE(executorPool, nullptr);
+
+    auto context1 = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
+    context1->visitedUserId = USER_TEST;
+    context1->callerTokenId = callerTokenId;
+    sptr<RdbObserverMockTest> observer1 = new (std::nothrow) RdbObserverMockTest();
+    ASSERT_NE(observer1, nullptr);
+
+    auto result1 = RdbSubscriberManager::GetInstance().Add(key, observer1, context1, executorPool);
+    EXPECT_EQ(result1, DataShare::E_OK);
+    EXPECT_EQ(RdbSubscriberManager::GetInstance().GetEnableObserverCount(key), 1);
+
+    auto context2 = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
+    context2->visitedUserId = USER_TEST;
+    context2->callerTokenId = callerTokenId;
+    sptr<RdbObserverMockTest> observer2 = new (std::nothrow) RdbObserverMockTest();
+    ASSERT_NE(observer2, nullptr);
+    auto result2 = RdbSubscriberManager::GetInstance().Add(key, observer2, context2, executorPool);
+    EXPECT_EQ(result2, DataShare::E_OK);
+    EXPECT_EQ(RdbSubscriberManager::GetInstance().GetEnableObserverCount(key), 1);
+    RdbSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest AddRdbSubscriberSameFirstCaller end");
+}
+
+/**
+* @tc.name: AddRdbSubscriberDifferentFirstCallerTokenId
+* @tc.desc: Add with different callerTokenId, node count should increase
+* @tc.type: FUNC
+* @tc.require: new node branch of RdbSubscriberManager::Add
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, AddRdbSubscriberDifferentFirstCallerTokenId, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest AddRdbSubscriberDifferentFirstCallerTokenId start");
+    DataShare::Key key(DATA_SHARE_SUBSCRIBE_TEST_URI, TEST_SUB_ID, BUNDLE_NAME_TEST);
+    RdbSubscriberManager::GetInstance().Clear();
+    uint32_t callerTokenId1 = 0x2001;
+    uint32_t callerTokenId2 = 0x2002;
+    auto executorPool = std::make_shared<ExecutorPool>(1, 1);
+    ASSERT_NE(executorPool, nullptr);
+
+    auto context1 = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
+    context1->visitedUserId = USER_TEST;
+    context1->callerTokenId = callerTokenId1;
+    sptr<RdbObserverMockTest> observer1 = new (std::nothrow) RdbObserverMockTest();
+    ASSERT_NE(observer1, nullptr);
+
+    auto result1 = RdbSubscriberManager::GetInstance().Add(key, observer1, context1, executorPool);
+    EXPECT_EQ(result1, DataShare::E_OK);
+    EXPECT_EQ(RdbSubscriberManager::GetInstance().GetEnableObserverCount(key), 1);
+
+    auto context2 = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
+    context2->visitedUserId = USER_TEST;
+    context2->callerTokenId = callerTokenId2;
+    sptr<RdbObserverMockTest> observer2 = new (std::nothrow) RdbObserverMockTest();
+    ASSERT_NE(observer2, nullptr);
+    auto result2 = RdbSubscriberManager::GetInstance().Add(key, observer2, context2, executorPool);
+    EXPECT_EQ(result2, DataShare::E_OK);
+    EXPECT_EQ(RdbSubscriberManager::GetInstance().GetEnableObserverCount(key), 2);
+
+    RdbSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest AddRdbSubscriberDifferentFirstCallerTokenId end");
 }
 } // namespace OHOS::Test
