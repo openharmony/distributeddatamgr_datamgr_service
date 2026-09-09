@@ -245,6 +245,12 @@ Status RuntimeStore::UpgradeSummaryIfNeeded(UnifiedKey &key, Summary &summary)
     }
     summary.filenameExtensions = CollectFilenameExtensions(data);
     summary.version = SUMMARY_VERSION_FILENAME_EXTENSIONS;
+    // The caller (GetSummary) holds dataMutex_, so this write-back is atomic against
+    // Delete/Update/Put, avoiding resurrecting a deleted summary or overwriting newer ones.
+    auto writeStatus = PutSummary(key, summary);
+    if (writeStatus != E_OK) {
+        ZLOGE("Upgrade summary write back failed, status:%{public}d", writeStatus);
+    }
     return E_OK;
 }
 
