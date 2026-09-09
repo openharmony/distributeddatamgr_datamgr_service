@@ -416,8 +416,8 @@ bool CryptoManager::DeleteKey(const std::vector<uint8_t> &keyAlias)
         return false;
     }
     int32_t ret = HksDeleteKey(&keyName, params);
+    HksFreeParamSet(&params);
     if (ret != HKS_SUCCESS) {
-        HksFreeParamSet(&params);
         return false;
     }
     return true;
