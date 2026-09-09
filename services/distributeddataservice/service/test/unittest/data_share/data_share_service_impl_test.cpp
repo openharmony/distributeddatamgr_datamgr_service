@@ -62,10 +62,6 @@ public:
     }
     static void TearDownTestCase(void)
     {
-        if (accountDelegateMock != nullptr) {
-            delete accountDelegateMock;
-            accountDelegateMock = nullptr;
-        }
     }
     void SetSelfTokenInfo(int32_t user);
     void SetUp();
