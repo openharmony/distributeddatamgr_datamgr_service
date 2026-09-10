@@ -532,6 +532,7 @@ void KvStoreDataService::StartService()
     ZLOGI("begin.");
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
+    KvStoreMetaManager::GetInstance().InitBroadcast();
     LoadFeatures();
     bool ret = SystemAbility::Publish(this);
     if (!ret) {

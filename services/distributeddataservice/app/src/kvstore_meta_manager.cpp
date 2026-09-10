@@ -107,7 +107,6 @@ void KvStoreMetaManager::InitMetaListener()
         return;
     }
     SubscribeMetaKvStore();
-    InitBroadcast();
     NotifyAllAutoSyncDBInfo();
 }
 
