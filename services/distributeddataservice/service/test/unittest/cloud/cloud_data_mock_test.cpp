@@ -665,7 +665,8 @@ HWTEST_F(CloudDataMockTest, GetStore001, TestSize.Level0)
     auto meta = metaData_;
     meta.storeType = MOCK_STORE_TYPE;
     auto [ret, store] = syncManager.GetStore(meta, 0, true); // 0 is SYSTEM_USER
-    EXPECT_EQ(ret, E_ERROR);
+    // user 0 queries foreground users, IsLoginAccount returns false, so cloud infos empty
+    EXPECT_EQ(ret, E_GET_CLOUD_USER_INFO);
     result = AutoCache::GetInstance().RegCreator(MOCK_STORE_TYPE, nullptr);
     EXPECT_EQ(result, E_OK);
     AutoCache::GetInstance().CloseStore([&meta](const StoreMetaData &closeMeta) {
