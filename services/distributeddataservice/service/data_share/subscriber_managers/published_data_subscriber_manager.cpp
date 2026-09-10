@@ -46,7 +46,7 @@ int PublishedDataSubscriberManager::Add(const PublishedDataKey &key,
                     node.enabled = true;
                     node.isNotifyOnEnabled = false;
                     node.callerTokenId = IPCSkeleton::GetCallingTokenID();
-                    node.callerPid = IPCSkeleton::GetCallingPid();
+                    node.callerPid = static_cast<uint32_t>(IPCSkeleton::GetCallingPid());
                     node.userId = userId;
                     return true;
                 }

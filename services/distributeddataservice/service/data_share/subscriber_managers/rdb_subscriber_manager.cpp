@@ -128,7 +128,7 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
                 item.enabled = enabled;
                 item.isNotifyOnEnabled = false;
                 item.callerTokenId = callerTokenId;
-                item.callerPid = callerPid;
+                item.callerPid = static_cast<uint32_t>(callerPid);
                 item.userId = context->visitedUserId;
                 node.emplace_back(item);
                 isDuplicate = true;
