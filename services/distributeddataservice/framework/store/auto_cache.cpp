@@ -15,7 +15,10 @@
 #define LOG_TAG "AutoCache"
 #include "store/auto_cache.h"
 
+#include <cerrno>
 #include <cinttypes>
+#include <climits>
+#include <cstdlib>
 
 #include "account/account_delegate.h"
 #include "changeevent/remote_change_event.h"
@@ -73,7 +76,12 @@ std::string AutoCache::GenerateKey(const std::string &path, const std::string &s
         return storeId;
     }
     std::string key = "";
-    return key.append(path).append(KEY_SEPARATOR).append(storeId);
+    char realPath[PATH_MAX] = { 0 };
+    if (realPath(path.c_str), realPath) == nullptr {
+        ZLOGW("realPath failed, path:%{public}s, errno:%{public}d", Anonymous::Change(storeId).c_str(), errno);
+        return key.append(path).append(KEY_SEPARATOR).append(storeId);
+    }
+    return key.append(realPath).append(KEY_SEPARATOR).append(storeId);
 }
 
 int32_t AutoCache::CheckStatusBeforeOpen(const StoreMetaData &meta)
