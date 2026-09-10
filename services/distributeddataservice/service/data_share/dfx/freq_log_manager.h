@@ -24,6 +24,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <sys/types.h>
 #include "concurrent_map.h"
 #include "executor_pool.h"
 
@@ -44,8 +45,8 @@ private:
     };
 
     struct CallerStats {
-        uint64_t uid = 0;
-        uint64_t pid = 0;
+        pid_t uid = 0;
+        pid_t pid = 0;
         std::string callerBundleName;
         std::map<uint32_t, CodeStats> codeStats;
         std::set<std::string> targetBundleNames;
