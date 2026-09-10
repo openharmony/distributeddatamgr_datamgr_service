@@ -58,6 +58,7 @@ public:
         if (accountDelegateMock != nullptr) {
             AccountDelegate::instance_ = nullptr;
             AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+            testing::Mock::AllowLeak(accountDelegateMock);
         }
     }
     static void TearDownTestCase(void)

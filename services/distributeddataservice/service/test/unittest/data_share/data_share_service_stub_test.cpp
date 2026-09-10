@@ -44,6 +44,7 @@ public:
     {
         OHOS::DistributedData::AccountDelegate::instance_ = nullptr;
         OHOS::DistributedData::AccountDelegate::RegisterAccountInstance(&accountDelegateMock_);
+        testing::Mock::AllowLeak(&accountDelegateMock_);
     };
     static void TearDownTestCase(void){};
     void SetUp(){};
