@@ -40,6 +40,17 @@ int PublishedDataSubscriberManager::Add(const PublishedDataKey &key,
         std::vector<ObserverNode> &value) {
             ZLOGI("add publish subscriber, uri %{public}s tokenId 0x%{public}x",
                 URIUtils::Anonymous(key.key).c_str(), firstCallerTokenId);
+            for (auto &node : value) {
+                if (node.firstCallerTokenId == firstCallerTokenId) {
+                    node.observer = observer;
+                    node.enabled = true;
+                    node.isNotifyOnEnabled = false;
+                    node.callerTokenId = IPCSkeleton::GetCallingTokenID();
+                    node.callerPid = static_cast<uint32_t>(IPCSkeleton::GetCallingPid());
+                    node.userId = userId;
+                    return true;
+                }
+            }
             value.emplace_back(observer, firstCallerTokenId, IPCSkeleton::GetCallingTokenID(),
                 IPCSkeleton::GetCallingPid(), userId);
             return true;

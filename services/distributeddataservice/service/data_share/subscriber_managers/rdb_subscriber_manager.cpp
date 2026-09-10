@@ -120,11 +120,28 @@ int RdbSubscriberManager::Add(const Key &key, const sptr<IDataProxyRdbObserver> 
             URIUtils::Anonymous(key.uri).c_str(), context->callerTokenId, enabled);
         auto callerTokenId = IPCSkeleton::GetCallingTokenID();
         auto callerPid = IPCSkeleton::GetCallingPid();
-        ObserverNode observerNode(observer, context->callerTokenId, callerTokenId, callerPid, context->visitedUserId);
-        observerNode.enabled = enabled;
-        value.emplace_back(observerNode);
         std::vector<ObserverNode> node;
-        node.emplace_back(observerNode);
+        bool isDuplicate = false;
+        for (auto &item : value) {
+            if (item.firstCallerTokenId == context->callerTokenId) {
+                item.observer = observer;
+                item.enabled = enabled;
+                item.isNotifyOnEnabled = false;
+                item.callerTokenId = callerTokenId;
+                item.callerPid = static_cast<uint32_t>(callerPid);
+                item.userId = context->visitedUserId;
+                node.emplace_back(item);
+                isDuplicate = true;
+                break;
+            }
+        }
+        if (!isDuplicate) {
+            ObserverNode observerNode(observer, context->callerTokenId, callerTokenId, callerPid,
+                context->visitedUserId);
+            observerNode.enabled = enabled;
+            value.emplace_back(observerNode);
+            node.emplace_back(observerNode);
+        }
         bool isFirstSubscribe = SchedulerManager::GetInstance().Add(key);
         ExecutorPool::Task task = [key, node, context = std::move(context), isFirstSubscribe, this]() {
             LoadConfigDataInfoStrategy loadDataInfo;
