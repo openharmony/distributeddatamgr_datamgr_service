@@ -77,8 +77,8 @@ std::string AutoCache::GenerateKey(const std::string &path, const std::string &s
     }
     std::string key = "";
     char realPath[PATH_MAX] = { 0 };
-    if (realPath(path.c_str(), realPath) == nullptr) {
-        ZLOGW("realPath failed, path:%{public}s, errno:%{public}d", Anonymous::Change(path).c_str(), errno);
+    if (realpath(path.c_str(), realPath) == nullptr) {
+        ZLOGW("realpath failed, path:%{public}s, errno:%{public}d", Anonymous::Change(path).c_str(), errno);
         return key.append(path).append(KEY_SEPARATOR).append(storeId);
     }
     return key.append(realPath).append(KEY_SEPARATOR).append(storeId);
