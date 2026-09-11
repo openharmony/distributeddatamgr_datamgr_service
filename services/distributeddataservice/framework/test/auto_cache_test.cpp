@@ -1242,7 +1242,7 @@ HWTEST_F(AutoCacheTest, AutoCache_GenerateKey_GetStoresIfPresent_NonEmptyPath, T
     ASSERT_NE(store2, nullptr);
 
     // Verify match with the same invalid path
-    stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, 
+    stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId,
         "/nonexistent/get_stores/path", "get_stores_invalid.db");
     EXPECT_EQ(stores.size(), 1);
 
