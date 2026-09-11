@@ -15,10 +15,7 @@
 #define LOG_TAG "AutoCache"
 #include "store/auto_cache.h"
 
-#include <cerrno>
 #include <cinttypes>
-#include <climits>
-#include <cstdlib>
 
 #include "account/account_delegate.h"
 #include "changeevent/remote_change_event.h"
