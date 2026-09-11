@@ -226,6 +226,19 @@ private:
     void AddCompensateSync(const StoreMetaData &meta);
     static DistributedData::GenDetails ConvertGenDetailsCode(const GenDetails &details);
     static int32_t ConvertValidGeneralCode(int32_t code);
+    enum StoreErrorScene : int32_t {
+        SCENE_STORE_OPEN_FAILED = 10001,
+        SCENE_SCREEN_LOCKED = 10002,
+        SCENE_USER_NOT_VERIFIED = 10003,
+        SCENE_USER_DEACTIVATING = 10004,
+        SCENE_CLOUD_NOT_INIT = 10005,
+        SCENE_CLOUD_USER_INFO = 10006,
+        SCENE_CLOUD_DISABLED = 10007,
+        SCENE_CONFLICT_HANDLER_FAILED = 10008,
+        SCENE_UNKNOWN_ERROR = 10999,
+    };
+    static std::string FormatErrorMsg(StoreErrorScene sceneCode, const std::string &msg);
+    static std::string GetStoreErrorMessage(int32_t code);
     int32_t SetCloudConflictHandler(const AutoCache::Store &store);
     static std::vector<CloudInfo> GetCloudInfos(int32_t user);
     using UserBindInfo =

@@ -223,8 +223,9 @@ std::function<void(const Event &)> SyncManager::GetLockChangeHandler()
         }
         auto [status, store] = GetStore(meta, storeInfo.user);
         if (store == nullptr) {
-            ZLOGE("failed to get store. bundleName: %{public}s, storeName: %{public}s, user: %{public}d.",
-                storeInfo.bundleName.c_str(), Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
+            ZLOGE("get store failed, status:%{public}d. bundleName: %{public}s, storeName: %{public}s, "
+                "user: %{public}d.", status, storeInfo.bundleName.c_str(),
+                Anonymous::Change(storeInfo.storeName).c_str(), storeInfo.user);
             return;
         }
         if (evt.GetEventId() == CloudEvent::LOCK_CLOUD_CONTAINER) {
@@ -514,26 +515,29 @@ std::function<void(const Event &)> SyncManager::GetSyncHandler(Retryer retryer)
         };
         auto [hasMeta, meta] = GetMetaData(storeInfo);
         if (!hasMeta) {
-            return exCallback(GeneralError::E_ERROR, "no meta");
+            return exCallback(E_UNOPENED,
+                FormatErrorMsg(SCENE_STORE_OPEN_FAILED, "store metadata not found in meta db"));
         }
         auto [code, store] = GetStore(meta, storeInfo.user);
         if (code == E_SCREEN_LOCKED) {
             AddCompensateSync(meta);
         }
         if (store == nullptr) {
-            ZLOGE("store null, storeId:%{public}s, prepareTraceId:%{public}s", meta.GetStoreAlias().c_str(),
-                prepareTraceId.c_str());
-            return exCallback(GeneralError::E_ERROR, "store null");
+            ZLOGE("get store failed, status:%{public}d, storeId:%{public}s, prepareTraceId:%{public}s",
+                code, meta.GetStoreAlias().c_str(), prepareTraceId.c_str());
+            return exCallback(E_UNOPENED, GetStoreErrorMessage(E_UNOPENED));
         }
         if (!meta.enableCloud) {
             ZLOGW("meta.enableCloud is false, storeId:%{public}s, prepareTraceId:%{public}s",
                 meta.GetStoreAlias().c_str(), prepareTraceId.c_str());
-            return exCallback(E_CLOUD_DISABLED, "disable cloud");
+            return exCallback(E_CLOUD_DISABLED, FormatErrorMsg(SCENE_CLOUD_DISABLED, "cloud disabled"));
         }
         if (meta.customSwitch) {
             auto ret = SetCloudConflictHandler(store);
             if (ret != E_OK) {
-                return exCallback(GeneralError::E_ERROR, "SetCloudConflictHandler failed, ret:" + std::to_string(ret));
+                return exCallback(GeneralError::E_ERROR,
+                    FormatErrorMsg(SCENE_CONFLICT_HANDLER_FAILED,
+                        "conflict handler setup failed, ret:" + std::to_string(ret)));
             }
         }
         ZLOGI("database:<%{public}d:%{public}s:%{public}s:%{public}s> sync start, aDA?[%{public}d], "
@@ -754,12 +758,12 @@ std::pair<int32_t, AutoCache::Store> SyncManager::GetStore(const StoreMetaData &
     if (status == E_SCREEN_LOCKED) {
         return { E_SCREEN_LOCKED, nullptr };
     } else if (store == nullptr) {
-        return { E_ERROR, nullptr };
+        return { status, nullptr };
     }
     auto infos = GetCloudInfos(user);
     if (infos.empty()) {
         ZLOGE("invalid cloud users, bundleName:%{public}s", meta.bundleName.c_str());
-        return { E_ERROR, nullptr };
+        return { E_GET_CLOUD_USER_INFO, nullptr };
     }
     UserBindInfo bindInfos;
     bool hasSuccess = false;
@@ -1172,7 +1176,7 @@ void SyncManager::DoExceptionalCallback(const GenAsync &async, GenDetails &detai
     const ReportParam &param)
 {
     if (async) {
-        details[SyncInfo::DEFAULT_ID].code = param.errCode;
+        details[SyncInfo::DEFAULT_ID].code = ConvertValidGeneralCode(param.errCode);
         details[SyncInfo::DEFAULT_ID].message = param.message;
         async(details);
     }
@@ -1400,6 +1404,31 @@ GenDetails SyncManager::ConvertGenDetailsCode(const GenDetails &details)
 int32_t SyncManager::ConvertValidGeneralCode(int32_t code)
 {
     return (code >= E_OK && code < E_BUSY) ? code : E_ERROR;
+}
+
+std::string SyncManager::FormatErrorMsg(StoreErrorScene sceneCode, const std::string &msg)
+{
+    return "code:" + std::to_string(sceneCode) + ",msg:" + msg;
+}
+
+std::string SyncManager::GetStoreErrorMessage(int32_t code)
+{
+    switch (code) {
+        case E_UNOPENED:
+            return FormatErrorMsg(SCENE_STORE_OPEN_FAILED, "store open failed");
+        case E_SCREEN_LOCKED:
+            return FormatErrorMsg(SCENE_SCREEN_LOCKED, "screen locked");
+        case E_USER_LOCKED:
+            return FormatErrorMsg(SCENE_USER_NOT_VERIFIED, "user not verified");
+        case E_USER_DEACTIVATING:
+            return FormatErrorMsg(SCENE_USER_DEACTIVATING, "user deactivating");
+        case E_NOT_SUPPORT:
+            return FormatErrorMsg(SCENE_CLOUD_NOT_INIT, "cloud server not initialized");
+        case E_GET_CLOUD_USER_INFO:
+            return FormatErrorMsg(SCENE_CLOUD_USER_INFO, "cloud user info unavailable");
+        default:
+            return FormatErrorMsg(SCENE_UNKNOWN_ERROR, "unknown error");
+    }
 }
 
 void SyncManager::OnNetworkDisconnected()

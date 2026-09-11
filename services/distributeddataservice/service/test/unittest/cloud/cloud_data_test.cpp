@@ -3901,6 +3901,32 @@ HWTEST_F(CloudDataTest, GetValidGeneralCode, TestSize.Level0)
 }
 
 /**
+* @tc.name: GetStoreErrorMessage
+* @tc.desc: Test GetStoreErrorMessage function for each error code branch.
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(CloudDataTest, GetStoreErrorMessage, TestSize.Level0)
+{
+    auto msg = CloudData::SyncManager::GetStoreErrorMessage(E_UNOPENED);
+    EXPECT_TRUE(msg == "code:10001,msg:store open failed");
+    msg = CloudData::SyncManager::GetStoreErrorMessage(E_SCREEN_LOCKED);
+    EXPECT_TRUE(msg == "code:10002,msg:screen locked");
+    msg = CloudData::SyncManager::GetStoreErrorMessage(E_USER_LOCKED);
+    EXPECT_TRUE(msg == "code:10003,msg:user not verified");
+    msg = CloudData::SyncManager::GetStoreErrorMessage(E_USER_DEACTIVATING);
+    EXPECT_TRUE(msg == "code:10004,msg:user deactivating");
+    msg = CloudData::SyncManager::GetStoreErrorMessage(E_NOT_SUPPORT);
+    EXPECT_TRUE(msg == "code:10005,msg:cloud server not initialized");
+    msg = CloudData::SyncManager::GetStoreErrorMessage(E_GET_CLOUD_USER_INFO);
+    EXPECT_TRUE(msg == "code:10006,msg:cloud user info unavailable");
+    msg = CloudData::SyncManager::GetStoreErrorMessage(E_ERROR);
+    EXPECT_TRUE(msg == "code:10999,msg:unknown error");
+    msg = CloudData::SyncManager::GetStoreErrorMessage(E_BUSY);
+    EXPECT_TRUE(msg == "code:10999,msg:unknown error");
+}
+
+/**
 * @tc.name: StrategyInfo
 * @tc.desc: StrategyInfo Overload function test.
 * @tc.type: FUNC
