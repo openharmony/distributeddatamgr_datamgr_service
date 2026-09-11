@@ -693,6 +693,14 @@ bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, con
     return DeviceManager::GetInstance().CheckAccessControl(dmAccessCaller, dmAccessCallee);
 }
 
+bool DeviceManagerAdapter::CheckSrcAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    DmAccessCaller dmAccessCaller = { .accountId = accCaller.accountId, .pkgName = accCaller.bundleName,
+        .networkId = accCaller.networkId, .userId = accCaller.userId, .tokenId = accCaller.tokenId };
+    DmAccessCallee dmAccessCallee = { .networkId = accCallee.networkId };
+    return DeviceManager::GetInstance().CheckSrcAccessControl(dmAccessCaller, dmAccessCallee);
+}
+
 bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee)
 {
     DmAccessCaller dmAccessCaller = { .accountId = accCaller.accountId, .networkId = accCaller.networkId,

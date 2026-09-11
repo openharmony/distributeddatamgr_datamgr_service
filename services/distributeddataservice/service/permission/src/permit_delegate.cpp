@@ -16,6 +16,7 @@
 #define LOG_TAG "PermitDelegate"
 #include "permit_delegate.h"
 #include "accesstoken_kit.h"
+#include "account/account_delegate.h"
 #include "device_manager_adapter.h"
 #include "log_print.h"
 #include "metadata/appid_meta_data.h"
@@ -34,6 +35,8 @@ using DBStatus = DistributedDB::DBStatus;
 using DBConfig = DistributedDB::RuntimeConfig;
 using DBFlag = DistributedDB::PermissionCheckFlag;
 using PermissionValidator = OHOS::DistributedKv::PermissionValidator;
+static constexpr int32_t AUTH_FORM_SHARE = 3;
+static const std::string META_STORE_ID = "service_meta";
 
 PermitDelegate::PermitDelegate()
 {}
@@ -187,21 +190,33 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
     }
     AppIDMetaData appIDMeta;
     MetaDataManager::GetInstance().LoadMeta(param.appId, appIDMeta, true);
-    if (!accountDelegate->IsOsAccountConstraintEnabled()) {
-        return DataFlowCheckRet::DEFAULT;
-    }
-    if (appIDMeta.appId == "") {
-        ZLOGE("appId is empty.");
-        return DataFlowCheckRet::DENIED_SEND;
-    }
+
+    uint32_t tokenId = 0;
+    bool hasTokenId = false;
     auto it = property.find(Constant::TOKEN_ID);
     if (it != property.end()) {
         auto tokenIdPtr = std::get_if<uint32_t>(&it->second);
         if (tokenIdPtr == nullptr) {
             return DataFlowCheckRet::DENIED_SEND;
         }
+        tokenId = *tokenIdPtr;
+        hasTokenId = true;
+    }
+
+    if (!IsSrcTransferAllowed(param, appIDMeta, tokenId)) {
+        ZLOGI("src access control denied, deviceId:%{public}s", Anonymous::Change(param.deviceId).c_str());
+        return DataFlowCheckRet::DENIED_SEND;
+    }
+    if (!accountDelegate->IsOsAccountConstraintEnabled()) {
+        return DataFlowCheckRet::DEFAULT;
+    }
+    if (appIDMeta.appId.empty()) {
+        ZLOGE("appId is empty.");
+        return DataFlowCheckRet::DENIED_SEND;
+    }
+    if (hasTokenId) {
         SyncManager::DoubleSyncInfo info;
-        info.tokenId = *tokenIdPtr;
+        info.tokenId = tokenId;
         info.appId = appIDMeta.appId;
         info.bundleName = appIDMeta.bundleName;
         if (!SyncManager::GetInstance().IsAccessRestricted(info)) {
@@ -209,5 +224,58 @@ DataFlowCheckRet PermitDelegate::IsTransferAllowed(const CheckParam &param, cons
         }
     }
     return DataFlowCheckRet::DENIED_SEND;
+}
+
+bool PermitDelegate::IsSrcTransferAllowed(const CheckParam &param, const AppIDMetaData &appIDMeta, uint64_t tokenId)
+{
+    if (param.storeId == META_STORE_ID) {
+        return true;
+    }
+    StoreMetaData data;
+    auto &dmAdapter = DeviceManagerAdapter::GetInstance();
+    auto remoteAuthForm = dmAdapter.GetAuthType(param.deviceId);
+    auto localDevice = dmAdapter.GetLocalDevice();
+    data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
+    data.storeId = param.storeId;
+    data.deviceId = localDevice.uuid;
+    data.instanceId = param.instanceId;
+    auto key = data.GetKeyWithoutPath();
+    if (!metaDataBucket_.Get(key, data) && MetaDataManager::GetInstance().LoadMeta(key, data)) {
+        metaDataBucket_.Set(data.GetKeyWithoutPath(), data);
+    }
+    if (data.storeType >= StoreMetaData::STORE_KV_BEGIN && data.storeType <= StoreMetaData::STORE_KV_END) {
+        return true;
+    }
+    if (remoteAuthForm != AUTH_FORM_SHARE) {
+        return true;
+    }
+    auto *accountDelegate = AccountDelegate::GetInstance();
+    if (accountDelegate == nullptr) {
+        return false;
+    }
+    int32_t foregroundUserId = 0;
+    if (!accountDelegate->QueryForegroundUserId(foregroundUserId)) {
+        ZLOGE("query foreground user id failed");
+        return false;
+    }
+    auto localNetworkId = dmAdapter.GetLocalDevice().networkId;
+    if (localNetworkId.empty()) {
+        return false;
+    }
+    auto remoteNetworkId = dmAdapter.ToNetworkID(param.deviceId);
+    if (remoteNetworkId.empty()) {
+        return false;
+    }
+    DeviceManagerAdapter::AccessCaller caller;
+    caller.accountId = accountDelegate->GetCurrentAccountId();
+    caller.bundleName = appIDMeta.bundleName;
+    caller.networkId = localNetworkId;
+    caller.userId = foregroundUserId;
+    caller.tokenId = tokenId;
+
+    DeviceManagerAdapter::AccessCallee callee{};
+    callee.networkId = remoteNetworkId;
+
+    return dmAdapter.CheckSrcAccessControl(caller, callee);
 }
 } // namespace OHOS::DistributedData

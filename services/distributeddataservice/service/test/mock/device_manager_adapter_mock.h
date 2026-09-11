@@ -43,7 +43,9 @@ public:
     virtual DeviceInfo GetDeviceInfo(const std::string &) = 0;
     virtual uint32_t GetDeviceTypeByUuid(const std::string &uuid) = 0;
     virtual std::string ToNetworkID(const std::string &) = 0;
+    virtual int32_t GetAuthType(const std::string &) = 0;
     virtual bool CheckAccessControl(const AccessCaller &, const AccessCallee &) = 0;
+    virtual bool CheckSrcAccessControl(const AccessCaller &, const AccessCallee &) = 0;
     virtual DeviceInfo GetLocalDevice() = 0;
     virtual std::string CalcClientUuid(const std::string &appId, const std::string &uuid) = 0;
     virtual std::function<void()> RegDevCallback() = 0;
@@ -66,7 +68,9 @@ public:
     MOCK_METHOD(std::string, GetUuidByNetworkId, (const std::string &));
     MOCK_METHOD(DeviceInfo, GetDeviceInfo, (const std::string &));
     MOCK_METHOD(std::string, ToNetworkID, (const std::string &));
+    MOCK_METHOD(int32_t, GetAuthType, (const std::string &));
     MOCK_METHOD(bool, CheckAccessControl, (const AccessCaller &, const AccessCallee &));
+    MOCK_METHOD(bool, CheckSrcAccessControl, (const AccessCaller &, const AccessCallee &));
     MOCK_METHOD(DeviceInfo, GetLocalDevice, ());
     MOCK_METHOD(std::string, CalcClientUuid, (const std::string &, const std::string &));
     MOCK_METHOD(uint32_t, GetDeviceTypeByUuid, (const std::string &));

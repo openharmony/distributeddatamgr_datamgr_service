@@ -28,6 +28,7 @@ struct API_EXPORT AccessCaller {
     std::string bundleName;
     std::string networkId;
     int32_t userId;
+    int64_t tokenId;
 };
 
 struct API_EXPORT AccessCallee {
