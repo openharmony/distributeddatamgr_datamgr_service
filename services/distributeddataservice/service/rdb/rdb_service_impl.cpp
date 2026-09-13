@@ -2152,6 +2152,27 @@ int32_t RdbServiceImpl::SetSearchable(const RdbSyncerParam &param, bool isSearch
     return PostSearchEvent(CloudEvent::SET_SEARCHABLE, meta, eventInfo);
 }
 
+int32_t RdbServiceImpl::RequestFullDataDonation(const RdbSyncerParam &param, bool isRebuild)
+{
+    if (!TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID())) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. non-system app", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_NON_SYSTEM_APP;
+    }
+    if (!IsValidAccess(param.bundleName_, param.storeName_)) {
+        ZLOGE("bundleName:%{public}s, storeName:%{public}s. Permission error", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+        return RDB_ERROR;
+    }
+    auto [exists, metaData] = LoadStoreMetaData(param);
+    if (!exists) {
+        ZLOGW("bundleName:%{public}s, storeName:%{public}s. no meta", param.bundleName_.c_str(),
+            Anonymous::Change(param.storeName_).c_str());
+    }
+    DistributedData::SetSearchableEvent::EventInfo eventInfo{ .isRebuild = isRebuild };
+    return PostSearchEvent(CloudEvent::SET_SEARCH_TRIGGER, metaData, eventInfo);
+}
+
 int32_t RdbServiceImpl::PostSearchEvent(int32_t evtId, const StoreMetaData &meta,
     SetSearchableEvent::EventInfo &eventInfo)
 {

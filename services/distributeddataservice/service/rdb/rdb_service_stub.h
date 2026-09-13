@@ -65,6 +65,8 @@ private:
 
     int32_t OnRemoteSetSearchable(MessageParcel& data, MessageParcel& reply);
 
+    int32_t OnRemoteRequestFullDataDonation(MessageParcel& data, MessageParcel& reply);
+
     int32_t OnRemoteQuerySharingResource(MessageParcel& data, MessageParcel& reply);
 
     int32_t OnBeforeOpen(MessageParcel& data, MessageParcel& reply);
@@ -143,6 +145,8 @@ RDB_UTILS_DISABLE_WARNING("-Wc99-designator")
             &RdbServiceStub::OnRemoteStopCloudSync,
         [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REGISTER_MATRIX)] =
             &RdbServiceStub::OnRegisterMatrix,
+        [static_cast<uint32_t>(RdbServiceCode::RDB_SERVICE_CMD_REQUEST_FULL_DATA_DONATION)] =
+            &RdbServiceStub::OnRemoteRequestFullDataDonation,
     };
 RDB_UTILS_POP_WARNING
 };
