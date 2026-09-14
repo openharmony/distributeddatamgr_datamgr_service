@@ -276,7 +276,11 @@ void RdbSubscriberManager::Emit(const std::string &uri, std::shared_ptr<Context>
     }
     if (context->calledSourceDir.empty()) {
         LoadConfigDataInfoStrategy loadDataInfo;
-        loadDataInfo(context);
+        if (!loadDataInfo(context)) {
+            ZLOGE("loadDataInfo failed, uri %{public}s tokenId 0x%{public}x",
+                URIUtils::Anonymous(uri).c_str(), context->callerTokenId);
+            return;
+        }
     }
     DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
     std::map<Key, std::vector<ObserverNode>> obsMap;
@@ -446,7 +450,11 @@ void RdbSubscriberManager::Emit(const std::string &uri, int64_t subscriberId,
     }
     if (context->calledSourceDir.empty()) {
         LoadConfigDataInfoStrategy loadDataInfo;
-        loadDataInfo(context);
+        if (!loadDataInfo(context)) {
+            ZLOGE("loadDataInfo failed, uri %{public}s tokenId 0x%{public}x",
+                URIUtils::Anonymous(uri).c_str(), context->callerTokenId);
+            return;
+        }
     }
     DistributedData::StoreMetaData metaData = RdbSubscriberManager::GenMetaDataFromContext(context);
     std::map<Key, std::vector<ObserverNode>> obsMap;

@@ -216,8 +216,12 @@ DBValue CloudCursorImpl::GetExtend(OhCloudExtValueBucket *vb, const std::string 
         return result;
     }
     if (col == OPERATION_KEY) {
-        auto flag = *reinterpret_cast<int *>(content);
-        result = (flag == DELETE) ? true : false;
+        if (type != OhCloudExtValueType::VALUEINNERTYPE_INT) {
+            ZLOGW("operation value type is %{public}d, not int", static_cast<int32_t>(type));
+            return result;
+        }
+        auto flag = *reinterpret_cast<int64_t *>(content);
+        result = (flag == DELETE);
     } else if (col == GID_KEY) {
         result = std::string(reinterpret_cast<char *>(content), ctLen);
     } else if (col == CREATE_TIME_KEY) {

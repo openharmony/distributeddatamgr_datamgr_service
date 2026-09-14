@@ -194,7 +194,7 @@ int32_t CloudServiceStub::OnQueryLastSyncInfoBatch(MessageParcel &data, MessageP
 
 int32_t CloudServiceStub::OnSetGlobalCloudStrategy(MessageParcel &data, MessageParcel &reply)
 {
-    Strategy strategy;
+    Strategy strategy = Strategy::STRATEGY_BUTT;
     std::vector<CommonType::Value> values;
     if (!ITypesUtil::Unmarshal(data, strategy, values)) {
         ZLOGE("Unmarshal strategy:%{public}d, values size:%{public}zu", strategy, values.size());
@@ -347,7 +347,7 @@ int32_t CloudServiceStub::OnChangeConfirmation(MessageParcel &data, MessageParce
 
 int32_t CloudServiceStub::OnSetCloudStrategy(MessageParcel &data, MessageParcel &reply)
 {
-    Strategy strategy;
+    Strategy strategy = Strategy::STRATEGY_BUTT;
     std::vector<CommonType::Value> values;
     if (!ITypesUtil::Unmarshal(data, strategy, values)) {
         ZLOGE("Unmarshal strategy:%{public}d, values size:%{public}zu", strategy, values.size());
@@ -407,7 +407,7 @@ int32_t CloudServiceStub::OnUnSubscribeCloudSyncTrigger(MessageParcel &data, Mes
 
 int32_t CloudServiceStub::OnSubscribe(MessageParcel &data, MessageParcel &reply)
 {
-    CloudSubscribeType type;
+    CloudSubscribeType type = CloudSubscribeType::SUBSCRIBE_TYPE_MAX;
     std::vector<BundleInfo> bundleInfos;
     if (!ITypesUtil::Unmarshal(data, type, bundleInfos)) {
         ZLOGE("read subscribe data failed, type:%{public}d", type);
@@ -423,7 +423,7 @@ int32_t CloudServiceStub::OnSubscribe(MessageParcel &data, MessageParcel &reply)
 
 int32_t CloudServiceStub::OnUnsubscribe(MessageParcel &data, MessageParcel &reply)
 {
-    CloudSubscribeType type;
+    CloudSubscribeType type = CloudSubscribeType::SUBSCRIBE_TYPE_MAX;
     std::vector<BundleInfo> bundleInfos;
     if (!ITypesUtil::Unmarshal(data, type, bundleInfos)) {
         ZLOGE("read unsubscribe data failed, type:%{public}d", type);
