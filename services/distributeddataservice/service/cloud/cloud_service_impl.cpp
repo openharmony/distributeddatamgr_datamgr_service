@@ -1102,7 +1102,12 @@ int32_t CloudServiceImpl::Offline(const std::string &device)
         return SUCCESS;
     }
     std::vector<int32_t> users;
-    Account::GetInstance()->QueryUsers(users);
+    auto account = Account::GetInstance();
+    if (account == nullptr) {
+        ZLOGE("Get Account instance failed");
+        return ERROR;
+    }
+    account->QueryUsers(users);
     if (users.empty()) {
         return SUCCESS;
     }
