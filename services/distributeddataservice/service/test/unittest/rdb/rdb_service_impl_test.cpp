@@ -1242,6 +1242,133 @@ HWTEST_F(RdbServiceImplTest, SetSearchable002, TestSize.Level0)
 }
 
 /**
+ * @tc.name: RequestFullDataDonation001
+ * @tc.desc: Test RequestFullDataDonation when non-system app.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, RequestFullDataDonation001, TestSize.Level0)
+{
+    MockIsSystemAppByFullTokenID(false);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+
+    bool isRebuild = true;
+    int32_t result = service.RequestFullDataDonation(param, isRebuild);
+
+    EXPECT_EQ(result, RDB_NON_SYSTEM_APP);
+    MockIsSystemAppByFullTokenID(true);
+}
+
+/**
+ * @tc.name: RequestFullDataDonation002
+ * @tc.desc: Test RequestFullDataDonation when CheckAccess fails.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, RequestFullDataDonation002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+
+    bool isRebuild = true;
+    int32_t result = service.RequestFullDataDonation(param, isRebuild);
+
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: RequestFullDataDonation003
+ * @tc.desc: Test RequestFullDataDonation when CheckAccess succeeds and PostSearchEvent is called.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, RequestFullDataDonation003, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+
+    bool isRebuild = false;
+    int32_t result = service.RequestFullDataDonation(param, isRebuild);
+
+    EXPECT_EQ(result, RDB_OK);
+}
+
+/**
+ * @tc.name: RequestFullDataDonation004
+ * @tc.desc: Test RequestFullDataDonation when LoadStoreMetaData returns exists=true.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, RequestFullDataDonation004, TestSize.Level0)
+{
+    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaData_.GetKeyWithoutPath(), metaData_, false), true);
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+
+    bool isRebuild = true;
+    int32_t result = service.RequestFullDataDonation(param, isRebuild);
+
+    EXPECT_EQ(result, RDB_OK);
+    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaData_.GetKeyWithoutPath(), false), true);
+}
+
+/**
+ * @tc.name: OnRemoteRequestFullDataDonation001
+ * @tc.desc: Test OnRemoteRequestFullDataDonation when unmarshal succeeds.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, OnRemoteRequestFullDataDonation001, TestSize.Level0)
+{
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    param.bundleName_ = metaData_.bundleName;
+    param.storeName_ = metaData_.storeId;
+
+    MessageParcel data;
+    MessageParcel reply;
+    ASSERT_TRUE(ITypesUtil::Marshal(data, param, false));
+
+    int32_t result = service.OnRemoteRequestFullDataDonation(data, reply);
+
+    EXPECT_EQ(result, RDB_OK);
+    int32_t status = -1;
+    ASSERT_TRUE(ITypesUtil::Unmarshal(reply, status));
+    EXPECT_EQ(status, RDB_OK);
+}
+
+/**
+ * @tc.name: OnRemoteRequestFullDataDonation002
+ * @tc.desc: Test OnRemoteRequestFullDataDonation when unmarshal fails.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, OnRemoteRequestFullDataDonation002, TestSize.Level0)
+{
+    RdbServiceImpl service;
+
+    MessageParcel data;
+    MessageParcel reply;
+
+    int32_t result = service.OnRemoteRequestFullDataDonation(data, reply);
+
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
  * @tc.name: GetPassword001
  * @tc.desc: Test GetPassword when CheckAccess fails.
  * @tc.type: FUNC

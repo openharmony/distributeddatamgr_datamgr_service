@@ -431,6 +431,24 @@ int32_t RdbServiceStub::OnRemoteSetSearchable(MessageParcel &data, MessageParcel
     return RDB_OK;
 }
 
+int32_t RdbServiceStub::OnRemoteRequestFullDataDonation(MessageParcel &data, MessageParcel &reply)
+{
+    RdbSyncerParam param;
+    bool isRebuild = false;
+    if (!ITypesUtil::Unmarshal(data, param, isRebuild)) {
+        ZLOGE("Unmarshal bundleName_:%{public}s storeName_:%{public}s ", param.bundleName_.c_str(),
+              Anonymous::Change(param.storeName_).c_str());
+        return IPC_STUB_INVALID_DATA_ERR;
+    }
+
+    auto status = RequestFullDataDonation(param, isRebuild);
+    if (!ITypesUtil::Marshal(reply, status)) {
+        ZLOGE("Marshal status:0x%{public}x", status);
+        return IPC_STUB_WRITE_PARCEL_ERR;
+    }
+    return RDB_OK;
+}
+
 int32_t RdbServiceStub::OnRemoteQuerySharingResource(MessageParcel& data, MessageParcel& reply)
 {
     RdbSyncerParam param;
