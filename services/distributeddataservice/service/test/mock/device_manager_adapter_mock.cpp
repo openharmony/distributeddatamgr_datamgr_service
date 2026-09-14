@@ -83,6 +83,14 @@ bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, con
     return BDeviceManagerAdapter::deviceManagerAdapter->CheckAccessControl(accCaller, accCallee);
 }
 
+bool DeviceManagerAdapter::CheckSrcAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return false;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->CheckSrcAccessControl(accCaller, accCallee);
+}
+
 Status OHOS::DistributedData::DeviceManagerAdapter::StartWatchDeviceChange(const AppDeviceChangeListener *observer,
     __attribute__((unused)) const PipeInfo &pipeInfo)
 {
@@ -149,6 +157,14 @@ std::string OHOS::DistributedData::DeviceManagerAdapter::ToNetworkID(const std::
         return " ";
     }
     return BDeviceManagerAdapter::deviceManagerAdapter->ToNetworkID(id);
+}
+
+int32_t DeviceManagerAdapter::GetAuthType(const std::string &id)
+{
+    if (BDeviceManagerAdapter::deviceManagerAdapter == nullptr) {
+        return 0;
+    }
+    return BDeviceManagerAdapter::deviceManagerAdapter->GetAuthType(id);
 }
 
 std::string OHOS::DistributedData::DeviceManagerAdapter::CalcClientUuid(

@@ -136,6 +136,34 @@ bool DeviceManager::CheckAccessControl(const DmAccessCaller &caller, const DmAcc
     return true;
 }
 
+bool DeviceManager::CheckSrcAccessControl(const DmAccessCaller &caller, const DmAccessCallee &callee)
+{
+    lastSrcAccessCaller_ = caller;
+    lastSrcAccessCallee_ = callee;
+    return checkSrcAccessControlResult_;
+}
+
+void DeviceManager::SetCheckSrcAccessControlResult(bool result)
+{
+    checkSrcAccessControlResult_ = result;
+}
+
+DmAccessCaller DeviceManager::GetLastSrcAccessCaller() const
+{
+    return lastSrcAccessCaller_;
+}
+
+DmAccessCallee DeviceManager::GetLastSrcAccessCallee() const
+{
+    return lastSrcAccessCallee_;
+}
+
+void DeviceManager::ResetSrcAccessControlRecord()
+{
+    lastSrcAccessCaller_ = {};
+    lastSrcAccessCallee_ = {};
+}
+
 bool DeviceManager::CheckIsSameAccount(const DmAccessCaller &caller, const DmAccessCallee &callee)
 {
     (void)caller;

@@ -95,6 +95,7 @@ ohos_unittest("PermitDelegateMockTest") {
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/framework/include",
+    "${data_service_path}/framework/test/mock",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/test/mock",
@@ -106,6 +107,7 @@ ohos_unittest("PermitDelegateMockTest") {
     "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "../../mock/access_token_mock.cpp",
+    "../../mock/device_manager_adapter_mock.cpp",
     "../../mock/meta_data_manager_mock.cpp",
     "permit_delegate_mock_test.cpp",
   ]
@@ -120,7 +122,6 @@ ohos_unittest("PermitDelegateMockTest") {
   ]
 
   deps = [
-    "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
   ]

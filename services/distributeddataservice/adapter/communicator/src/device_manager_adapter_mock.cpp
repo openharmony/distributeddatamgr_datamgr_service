@@ -268,6 +268,13 @@ bool DeviceManagerAdapter::CheckAccessControl(const AccessCaller &accCaller, con
     return true;
 }
 
+bool DeviceManagerAdapter::CheckSrcAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee)
+{
+    (void)accCaller;
+    (void)accCallee;
+    return true;
+}
+
 bool DeviceManagerAdapter::IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee)
 {
     (void)accCaller;

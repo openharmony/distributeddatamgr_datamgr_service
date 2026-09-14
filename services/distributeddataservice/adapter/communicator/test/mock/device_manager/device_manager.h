@@ -40,16 +40,24 @@ public:
     int32_t GetEncryptedUuidByNetworkId(const std::string &pkgName, const std::string &networkId, std::string &uuid);
     bool IsSameAccount(const std::string &networkId);
     bool CheckAccessControl(const DmAccessCaller &caller, const DmAccessCallee &callee);
+    bool CheckSrcAccessControl(const DmAccessCaller &caller, const DmAccessCallee &callee);
     bool CheckIsSameAccount(const DmAccessCaller &caller, const DmAccessCallee &callee);
     void Online(const DmDeviceInfo &info);
     void Offline(const DmDeviceInfo &info);
     void OnChanged(const DmDeviceInfo &info);
     void OnReady(const DmDeviceInfo &info);
+    void SetCheckSrcAccessControlResult(bool result);
+    DmAccessCaller GetLastSrcAccessCaller() const;
+    DmAccessCallee GetLastSrcAccessCallee() const;
+    void ResetSrcAccessControlRecord();
 
 private:
     DeviceManager() = default;
     ~DeviceManager() = default;
     std::shared_ptr<DeviceStateCallback> callback_;
+    bool checkSrcAccessControlResult_ = true;
+    DmAccessCaller lastSrcAccessCaller_{};
+    DmAccessCallee lastSrcAccessCallee_{};
 };
 } // namespace OHOS::DistributedHardware
 #endif // MOCK_DEVICE_MANAGER_H

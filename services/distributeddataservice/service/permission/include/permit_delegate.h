@@ -19,6 +19,7 @@
 #include <string>
 #include "concurrent_map.h"
 #include "lru_bucket.h"
+#include "metadata/appid_meta_data.h"
 #include "metadata/store_meta_data.h"
 #include "store_errno.h"
 #include "types_export.h"
@@ -50,6 +51,7 @@ private:
     std::map<std::string, std::string> GetExtraCondition(const CondParam &param);
     Status LoadStoreMeta(const std::string &prefix, const CheckParam &param, StoreMetaData &data) const;
     DataFlowCheckRet IsTransferAllowed(const CheckParam &param, const DBProperty &property);
+    bool IsSrcTransferAllowed(const CheckParam &param, const AppIDMetaData &appIDMeta, uint64_t tokenId);
 
     ConcurrentMap<std::string, std::string> appId2BundleNameMap_;
     LRUBucket<std::string, StoreMetaData> metaDataBucket_ {32};

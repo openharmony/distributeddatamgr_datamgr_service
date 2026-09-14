@@ -80,6 +80,7 @@ public:
     bool IsSameAccount(const std::string &id);
     bool IsSameAccount(const AccessCaller &accCaller, const AccessCallee &accCallee);
     bool CheckAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
+    bool CheckSrcAccessControl(const AccessCaller &accCaller, const AccessCallee &accCallee);
     void Offline(const DeviceInfo &dvInfo);
     void OnReady(const DeviceInfo &dvInfo);
     friend class DataMgrDmStateCall;
