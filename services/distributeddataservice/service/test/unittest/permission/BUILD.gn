@@ -35,10 +35,6 @@ ohos_unittest("PermissionValidatorTest") {
     "permission_validator_test.cpp",
   ]
 
-  cflags = [
-    "-fno-access-control",
-  ]
-
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -69,10 +65,6 @@ ohos_unittest("PermissionValidatorMockTest") {
     "permission_validator_mock_test.cpp",
   ]
 
-  cflags = [
-    "-fno-access-control",
-  ]
-
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -86,6 +78,12 @@ ohos_unittest("PermissionValidatorMockTest") {
     "hilog:libhilog",
     "kv_store:distributeddata_inner",
   ]
+  
+  cflags = [
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -113,8 +111,10 @@ ohos_unittest("PermitDelegateMockTest") {
   ]
 
   cflags = [
-    "-fno-access-control",
+    "-Dprivate=public",
+    "-Dprotected=public",
   ]
+
   cflags_cc = cflags
   defines = [
     "TEST_ON_DEVICE",
@@ -170,8 +170,10 @@ ohos_unittest("UserDelegateMockTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   cflags = [
-    "-fno-access-control",
+    "-Dprivate=public",
+    "-Dprotected=public",
   ]
+  
   cflags_cc = cflags
 }
 
@@ -185,8 +187,6 @@ group("unittests") {
     ":PermissionValidatorMockTest",
     ":PermissionValidatorTest",
     ":PermitDelegateMockTest",
+    ":UserDelegateMockTest",
   ]
-  if (datamgr_service_kvdb) {
-    deps += [ ":UserDelegateMockTest" ]
-  }
 }

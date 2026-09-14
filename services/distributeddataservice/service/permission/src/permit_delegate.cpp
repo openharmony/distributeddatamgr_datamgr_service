@@ -233,7 +233,9 @@ bool PermitDelegate::IsSrcTransferAllowed(const CheckParam &param, const AppIDMe
     }
     StoreMetaData data;
     auto &dmAdapter = DeviceManagerAdapter::GetInstance();
-    auto remoteAuthForm = dmAdapter.GetAuthType(param.deviceId);
+    if (dmAdapter.GetAuthType(param.deviceId) != AUTH_FORM_SHARE) {
+        return true;
+    }
     auto localDevice = dmAdapter.GetLocalDevice();
     data.user = param.userId == "default" ? DEFAULT_USER : param.userId;
     data.storeId = param.storeId;
@@ -244,9 +246,6 @@ bool PermitDelegate::IsSrcTransferAllowed(const CheckParam &param, const AppIDMe
         metaDataBucket_.Set(data.GetKeyWithoutPath(), data);
     }
     if (data.storeType >= StoreMetaData::STORE_KV_BEGIN && data.storeType <= StoreMetaData::STORE_KV_END) {
-        return true;
-    }
-    if (remoteAuthForm != AUTH_FORM_SHARE) {
         return true;
     }
     auto *accountDelegate = AccountDelegate::GetInstance();
@@ -275,7 +274,6 @@ bool PermitDelegate::IsSrcTransferAllowed(const CheckParam &param, const AppIDMe
 
     DeviceManagerAdapter::AccessCallee callee{};
     callee.networkId = remoteNetworkId;
-
     return dmAdapter.CheckSrcAccessControl(caller, callee);
 }
 } // namespace OHOS::DistributedData
