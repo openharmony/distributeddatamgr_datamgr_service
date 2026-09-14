@@ -106,7 +106,7 @@ ohos_unittest("PermitDelegateMockTest") {
     "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "../../mock/access_token_mock.cpp",
-    "../../mock/device_manager_adapter_mock.cpp"
+    "../../mock/device_manager_adapter_mock.cpp",
     "../../mock/meta_data_manager_mock.cpp",
     "permit_delegate_mock_test.cpp",
   ]
