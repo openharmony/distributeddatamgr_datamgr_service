@@ -35,6 +35,10 @@ ohos_unittest("PermissionValidatorTest") {
     "permission_validator_test.cpp",
   ]
 
+  cflags = [
+    "-fno-access-control",
+  ]
+
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -65,6 +69,10 @@ ohos_unittest("PermissionValidatorMockTest") {
     "permission_validator_mock_test.cpp",
   ]
 
+  cflags = [
+    "-fno-access-control",
+  ]
+
   deps = [
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
@@ -78,12 +86,6 @@ ohos_unittest("PermissionValidatorMockTest") {
     "hilog:libhilog",
     "kv_store:distributeddata_inner",
   ]
-  
-  cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
   defines = [ "OPENSSL_SUPPRESS_DEPRECATED" ]
 }
 
@@ -93,7 +95,6 @@ ohos_unittest("PermitDelegateMockTest") {
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/framework/include",
-    "${data_service_path}/framework/test/mock",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/test/mock",
@@ -105,16 +106,14 @@ ohos_unittest("PermitDelegateMockTest") {
     "${data_service_path}/service/permission/src/permission_validator.cpp",
     "${data_service_path}/service/permission/src/permit_delegate.cpp",
     "../../mock/access_token_mock.cpp",
-    "../../mock/device_manager_adapter_mock.cpp",
+    "../../mock/device_manager_adapter_mock.cpp"
     "../../mock/meta_data_manager_mock.cpp",
     "permit_delegate_mock_test.cpp",
   ]
 
   cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
+    "-fno-access-control",
   ]
-
   cflags_cc = cflags
   defines = [
     "TEST_ON_DEVICE",
@@ -170,10 +169,8 @@ ohos_unittest("UserDelegateMockTest") {
   deps = [ "${data_service_path}/framework:distributeddatasvcfwk" ]
 
   cflags = [
-    "-Dprivate=public",
-    "-Dprotected=public",
+    "-fno-access-control",
   ]
-  
   cflags_cc = cflags
 }
 
@@ -187,6 +184,8 @@ group("unittests") {
     ":PermissionValidatorMockTest",
     ":PermissionValidatorTest",
     ":PermitDelegateMockTest",
-    ":UserDelegateMockTest",
   ]
+  if (datamgr_service_kvdb) {
+    deps += [ ":UserDelegateMockTest" ]
+  }
 }
