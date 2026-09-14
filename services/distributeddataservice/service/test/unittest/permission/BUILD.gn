@@ -95,6 +95,7 @@ ohos_unittest("PermitDelegateMockTest") {
   include_dirs = [
     "${data_service_path}/adapter/include/communicator",
     "${data_service_path}/framework/include",
+    "${data_service_path}/framework/test/mock",
     "${data_service_path}/service/kvdb",
     "${data_service_path}/service/permission/include",
     "${data_service_path}/service/test/mock",
