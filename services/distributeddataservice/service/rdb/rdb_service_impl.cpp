@@ -1420,6 +1420,7 @@ void RdbServiceImpl::DoChannelsMemento(bool immediately)
         return;
     }
 
+    std::lock_guard<std::mutex> lock(channelsMutex_);
     if (saveChannelsTask_ != ExecutorPool::INVALID_TASK_ID) {
         executors_->Remove(saveChannelsTask_);
         saveChannelsTask_ = ExecutorPool::INVALID_TASK_ID;

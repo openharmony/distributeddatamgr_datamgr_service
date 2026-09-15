@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <random>
+#include <thread>
 
 #include "itypes_util.h"
 
@@ -4617,6 +4618,82 @@ HWTEST_F(RdbServiceImplTest, CreateMatrixFile002, TestSize.Level0)
     EXPECT_EQ(fileInfo.matrixFilePath,
         std::string(OHOS::DistributedData::MatrixFileInfo::MATRIX_FILE_PATH) + matrixFileName);
     EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(matrixFileName, true), true);
+}
+
+/**
+ * @tc.name: IsSpecialChannel_ConcurrentAccess_SaveChannelsTaskConsistent
+ * @tc.desc: Concurrent IsSpecialChannel and SaveAutoSyncInfo on pre-seeded devices must serialize via channelsMutex_,
+ *           keeping saveChannelsTask_ valid and removable with no crash and all devices retained.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, IsSpecialChannel_ConcurrentAccess_SaveChannelsTaskConsistent, TestSize.Level0)
+{
+    const int32_t threadCount = 8;
+    const int32_t iterations = 20;
+    std::vector<std::string> devices;
+    for (int32_t i = 0; i < threadCount; ++i) {
+        devices.emplace_back("conc_deferred_" + std::to_string(i));
+    }
+    RdbServiceImpl service;
+    service.OnInitialize();
+    service.SaveAutoSyncInfo(metaData_, devices);
+    auto executors = std::make_shared<ExecutorPool>(1, 0);
+    service.OnBind({ .executors = executors });
+    std::vector<std::thread> threads;
+    for (int32_t t = 0; t < threadCount; ++t) {
+        threads.emplace_back([&, t]() {
+            for (int32_t i = 0; i < iterations; ++i) {
+                service.IsSpecialChannel(devices[t]);
+                service.SaveAutoSyncInfo(metaData_, { devices[t] });
+            }
+        });
+    }
+    for (auto &thread : threads) {
+        thread.join();
+    }
+    for (const auto &device : devices) {
+        EXPECT_TRUE(service.IsSpecialChannel(device));
+    }
+    EXPECT_NE(service.saveChannelsTask_, ExecutorPool::INVALID_TASK_ID);
+    EXPECT_TRUE(executors->Remove(service.saveChannelsTask_));
+    service.saveChannelsTask_ = ExecutorPool::INVALID_TASK_ID;
+    service.OnBind({ .executors = nullptr });
+    executors = nullptr;
+}
+
+/**
+ * @tc.name: SaveAutoSyncInfo_ConcurrentImmediateAccess_AllDevicesPersisted
+ * @tc.desc: Concurrent SaveAutoSyncInfo with no executor bound must take the immediate SaveMeta path for new devices,
+ *           persisting every device and leaving saveChannelsTask_ as INVALID_TASK_ID with no crash.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTest, SaveAutoSyncInfo_ConcurrentImmediateAccess_AllDevicesPersisted, TestSize.Level0)
+{
+    const int32_t threadCount = 8;
+    std::vector<std::string> devices;
+    for (int32_t i = 0; i < threadCount; ++i) {
+        devices.emplace_back("conc_immediate_" + std::to_string(i));
+    }
+    RdbServiceImpl service;
+    service.OnInitialize();
+    std::vector<std::thread> threads;
+    for (int32_t t = 0; t < threadCount; ++t) {
+        threads.emplace_back([&, t]() {
+            service.SaveAutoSyncInfo(metaData_, { devices[t] });
+            service.IsSpecialChannel(devices[t]);
+        });
+    }
+    for (auto &thread : threads) {
+        thread.join();
+    }
+    for (const auto &device : devices) {
+        EXPECT_TRUE(service.IsSpecialChannel(device));
+    }
+    EXPECT_EQ(service.saveChannelsTask_, ExecutorPool::INVALID_TASK_ID);
 }
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

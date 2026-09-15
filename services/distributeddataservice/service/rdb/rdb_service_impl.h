@@ -344,6 +344,7 @@ private:
 
     LRUBucket<std::string, std::monostate> specialChannels_ { 10 };
     ExecutorPool::TaskId saveChannelsTask_ = ExecutorPool::INVALID_TASK_ID;
+    std::mutex channelsMutex_;
 };
 } // namespace OHOS::DistributedRdb
 #endif
