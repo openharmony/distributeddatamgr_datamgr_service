@@ -544,7 +544,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris004, TestSize.Level1)
 * @tc.name: MatchImgExtension001
 * @tc.desc: Normal testcase of MatchImgExtension with URIs and physical paths
 * @tc.type: FUNC
-* @tc.author: agent
 */
 HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension001, TestSize.Level1)
 {
@@ -572,7 +571,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension001, TestSize.Level1)
 * @tc.name: MatchImgExtension002
 * @tc.desc: Abnormal testcase of MatchImgExtension with URIs and physical paths
 * @tc.type: FUNC
-* @tc.author: agent
 */
 HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension002, TestSize.Level1)
 {
@@ -765,7 +763,6 @@ HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization001, TestSize.Level1)
  * @tc.desc: The same URI in HTML and file entries should merge their permission masks
  * @tc.type: FUNC
  * @tc.require:
- * @tc.author: agent
  */
 HWTEST_F(UdmfPreProcessUtilsTest, ProcessFileAuthorization_SameUriInHtmlAndFile_MergesPermissionMasks,
     TestSize.Level1)
@@ -828,5 +825,76 @@ HWTEST_F(UdmfPreProcessUtilsTest, SetRemoteData005, TestSize.Level1)
     PreProcessUtils::SetRemoteData(data);
     auto detailGet = std::get<std::shared_ptr<Object>>(obj->value_[DETAILS]);
     EXPECT_TRUE(detailGet == nullptr);
+}
+
+/**
+ * @tc.name: GetSummaryFromDetails_FilenameExtensions001
+ * @tc.desc: Normal test of GetSummaryFromDetails decoding filenameExtensions
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromDetails_FilenameExtensions001, TestSize.Level1)
+{
+    UDDetails details;
+    details.insert(std::make_pair("general.file", static_cast<int64_t>(100)));
+    details.insert(std::make_pair(FILENAME_EXTENSIONS, std::string(".jpg .png")));
+    Summary summary;
+    auto status = PreProcessUtils::GetSummaryFromDetails(details, summary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_EQ(summary.summary.size(), 1);
+    EXPECT_EQ(summary.totalSize, 100);
+    ASSERT_EQ(summary.filenameExtensions.size(), 2);
+    EXPECT_EQ(summary.filenameExtensions[0], ".jpg");
+    EXPECT_EQ(summary.filenameExtensions[1], ".png");
+}
+
+/**
+ * @tc.name: GetSummaryFromDetails_FilenameExtensions002
+ * @tc.desc: Normal test of GetSummaryFromDetails without filenameExtensions
+ * @tc.type: FUNC
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromDetails_FilenameExtensions002, TestSize.Level1)
+{
+    UDDetails details;
+    details.insert(std::make_pair("general.file", static_cast<int64_t>(100)));
+    Summary summary;
+    auto status = PreProcessUtils::GetSummaryFromDetails(details, summary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_TRUE(summary.filenameExtensions.empty());
+}
+
+/**
+ * @tc.name: GetSummaryFromDetails_FilenameExtensions003
+ * @tc.desc: GetSummaryFromDetails ignores filenameExtensions of non-string type
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromDetails_FilenameExtensions003, TestSize.Level1)
+{
+    UDDetails details;
+    details.insert(std::make_pair("general.file", static_cast<int64_t>(100)));
+    details.insert(std::make_pair(FILENAME_EXTENSIONS, true));
+    Summary summary;
+    auto status = PreProcessUtils::GetSummaryFromDetails(details, summary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_TRUE(summary.filenameExtensions.empty());
+    EXPECT_EQ(summary.summary.size(), 1);
+    EXPECT_EQ(summary.totalSize, 100);
+}
+
+/**
+ * @tc.name: GetSummaryFromDetails_FilenameExtensions004
+ * @tc.desc: GetSummaryFromDetails ignores empty filenameExtensions string
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromDetails_FilenameExtensions004, TestSize.Level1)
+{
+    UDDetails details;
+    details.insert(std::make_pair("general.file", static_cast<int64_t>(100)));
+    details.insert(std::make_pair(FILENAME_EXTENSIONS, std::string("")));
+    Summary summary;
+    auto status = PreProcessUtils::GetSummaryFromDetails(details, summary);
+    EXPECT_EQ(status, E_OK);
+    EXPECT_TRUE(summary.filenameExtensions.empty());
 }
 }
