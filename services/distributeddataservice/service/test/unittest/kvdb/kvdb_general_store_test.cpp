@@ -39,6 +39,7 @@
 #include "account_delegate_mock.h"
 #include "mock/db_store_mock.h"
 #include "mock/general_watcher_mock.h"
+#include "sync_mgr/sync_mgr.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -1343,6 +1344,74 @@ HWTEST_F(KVDBGeneralStoreTest, ConstructorTest002, TestSize.Level0)
     ASSERT_NE(invalidStore, nullptr);
     EXPECT_EQ(invalidStore->delegate_, nullptr);
     delete invalidStore;
+}
+
+/**
+* @tc.name: ConstructorWithCustomDir001
+* @tc.desc: Test constructor with customDir set + whitelist hit uses customDir as dataDir
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KVDBGeneralStoreTest, ConstructorWithCustomDir001, TestSize.Level0)
+{
+    InitMetaData();
+    metaData_.customDir = "/data/service/el1/public/database/" + std::string(BUNDLE_NAME) + "/custom_kvdb";
+    SyncManager::AutoSyncInfo info;
+    info.bundleName = BUNDLE_NAME;
+    info.appId = BUNDLE_NAME;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(info);
+
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store->delegate_, nullptr);
+    EXPECT_FALSE(store->IsValid());
+    delete store;
+
+    SyncManager::AutoSyncInfo empty;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
+}
+
+/**
+* @tc.name: ConstructorWithCustomDir002
+* @tc.desc: Test constructor with customDir set but not in whitelist uses dataDir
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KVDBGeneralStoreTest, ConstructorWithCustomDir002, TestSize.Level0)
+{
+    InitMetaData();
+    metaData_.customDir = "/data/service/el1/public/database/" + std::string(BUNDLE_NAME) + "/custom_kvdb";
+    SyncManager::AutoSyncInfo empty;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
+
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    delete store;
+}
+
+/**
+* @tc.name: ConstructorWithCustomDir003
+* @tc.desc: Test constructor with invalid customDir path returns early
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KVDBGeneralStoreTest, ConstructorWithCustomDir003, TestSize.Level0)
+{
+    InitMetaData();
+    metaData_.customDir = "../invalid_custom_dir";
+    SyncManager::AutoSyncInfo info;
+    info.bundleName = BUNDLE_NAME;
+    info.appId = BUNDLE_NAME;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(info);
+
+    auto store = new (std::nothrow) KVDBGeneralStore(metaData_);
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store->delegate_, nullptr);
+    EXPECT_FALSE(store->IsValid());
+    delete store;
+
+    SyncManager::AutoSyncInfo empty;
+    SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
 }
 
 /**
