@@ -312,8 +312,6 @@ HWTEST_F(PermitDelegateMockTest, IsSrcTransferAllowed_SkipBranches_ReturnTrue, t
     // remote auth form is not share
     auto otherParam = BuildCheckParam("store_other");
     EXPECT_CALL(*dmAdapterMock, GetAuthType(_)).WillOnce(Return(AUTH_FORM_OTHER));
-    EXPECT_CALL(*dmAdapterMock, GetLocalDevice()).WillOnce(Return(BuildLocalDevice("")));
-    EXPECT_CALL(*metaDataMgrMock, LoadMeta(_, _, false)).WillOnce(Return(false));
     EXPECT_TRUE(PermitDelegate::GetInstance().IsSrcTransferAllowed(otherParam, appIDMeta, 0));
     ResetMocks();
 }
@@ -371,6 +369,73 @@ HWTEST_F(PermitDelegateMockTest, IsSrcTransferAllowed_DenyBranches_ReturnFalse, 
     EXPECT_FALSE(PermitDelegate::GetInstance().IsSrcTransferAllowed(
         BuildCheckParam("denied"), appIDMeta, TEST_TOKEN_ID));
     ResetMocks();
+}
+
+/**
+  * @tc.name: IsSrcTransferAllowed_DefaultUserAndDbStoreType
+  * @tc.desc: default user is mapped to the root user and a non-kv store type skips the kv fast path.
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: agent
+  */
+HWTEST_F(PermitDelegateMockTest, IsSrcTransferAllowed_DefaultUserAndDbStoreType, testing::ext::TestSize.Level0)
+{
+    AppIDMetaData appIDMeta(TEST_APP_ID, TEST_BUNDLE_NAME);
+    auto param = BuildCheckParam("store_default_user_relational");
+    param.userId = "default";
+    auto localDevice = BuildLocalDevice(TEST_LOCAL_NETWORK_ID);
+
+    // cache hit: cover the default-user branch and storeType > STORE_KV_END
+    StoreMetaData cachedData;
+    cachedData.user = "0";
+    cachedData.storeId = param.storeId;
+    cachedData.deviceId = localDevice.uuid;
+    cachedData.instanceId = param.instanceId;
+    cachedData.storeType = StoreMetaData::STORE_RELATIONAL_BEGIN;
+    auto key = BuildMetaKey(param, localDevice);
+    PermitDelegate::GetInstance().metaDataBucket_.Set(key, cachedData);
+
+    EXPECT_CALL(*dmAdapterMock, GetAuthType(_)).WillOnce(Return(AUTH_FORM_SHARE));
+    EXPECT_CALL(*dmAdapterMock, GetLocalDevice()).WillRepeatedly(Return(localDevice));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_))
+        .WillOnce(DoAll(SetArgReferee<0>(TEST_FOREGROUND_USER_ID), Return(true)));
+    EXPECT_CALL(*dmAdapterMock, ToNetworkID(_))
+        .WillOnce(Return(std::string(TEST_REMOTE_NETWORK_ID)));
+    EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
+        .WillOnce(Return(std::string(TEST_ACCOUNT_ID)));
+    EXPECT_CALL(*dmAdapterMock, CheckSrcAccessControl(_, _)).WillOnce(Return(false));
+
+    EXPECT_FALSE(PermitDelegate::GetInstance().IsSrcTransferAllowed(param, appIDMeta, 0));
+    PermitDelegate::GetInstance().DelCache(key);
+}
+
+/**
+  * @tc.name: IsSrcTransferAllowed_LoadMetaTrueBackfillCache
+  * @tc.desc: a cache miss with LoadMeta success backfills the meta cache.
+  * @tc.type: FUNC
+  * @tc.require:
+  * @tc.author: agent
+  */
+HWTEST_F(PermitDelegateMockTest, IsSrcTransferAllowed_LoadMetaTrueBackfillCache, testing::ext::TestSize.Level0)
+{
+    AppIDMetaData appIDMeta(TEST_APP_ID, TEST_BUNDLE_NAME);
+    auto param = BuildCheckParam("store_load_meta_true");
+    auto localDevice = BuildLocalDevice(TEST_LOCAL_NETWORK_ID);
+
+    // cache miss + LoadMeta returns true: cover the right side of the cache condition and the backfill
+    EXPECT_CALL(*dmAdapterMock, GetAuthType(_)).WillOnce(Return(AUTH_FORM_SHARE));
+    EXPECT_CALL(*dmAdapterMock, GetLocalDevice()).WillRepeatedly(Return(localDevice));
+    EXPECT_CALL(*metaDataMgrMock, LoadMeta(_, _, false)).WillOnce(Return(true));
+    EXPECT_CALL(*accountDelegateMock, QueryForegroundUserId(_))
+        .WillOnce(DoAll(SetArgReferee<0>(TEST_FOREGROUND_USER_ID), Return(true)));
+    EXPECT_CALL(*dmAdapterMock, ToNetworkID(_))
+        .WillOnce(Return(std::string(TEST_REMOTE_NETWORK_ID)));
+    EXPECT_CALL(*accountDelegateMock, GetCurrentAccountId())
+        .WillOnce(Return(std::string(TEST_ACCOUNT_ID)));
+    EXPECT_CALL(*dmAdapterMock, CheckSrcAccessControl(_, _)).WillOnce(Return(false));
+
+    EXPECT_FALSE(PermitDelegate::GetInstance().IsSrcTransferAllowed(param, appIDMeta, 0));
+    PermitDelegate::GetInstance().DelCache(BuildMetaKey(param, localDevice));
 }
 
 /**
