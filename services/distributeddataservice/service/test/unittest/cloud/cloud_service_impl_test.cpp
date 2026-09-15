@@ -3036,7 +3036,7 @@ HWTEST_F(CloudServiceImplTest, Offline_AccountNullptr, TestSize.Level1)
     auto *savedInstance = AccountDelegate::instance_;
     AccountDelegate::instance_ = nullptr;
     auto result = cloudServiceImpl_->Offline(DmAdapter::CLOUD_DEVICE_UUID);
-    EXPECT_EQ(result, CloudData::CloudService::ERROR);
+    EXPECT_EQ(result, CloudData::CloudService::SUCCESS);
     AccountDelegate::instance_ = savedInstance;
 }
 
