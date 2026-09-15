@@ -3010,5 +3010,51 @@ HWTEST_F(CloudServiceImplTest, OnAppUpdate_NotVerified, TestSize.Level0)
     auto status = cloudServiceImpl_->factory_.staticActs_->OnAppUpdate(TEST_CLOUD_BUNDLE, user, index);
     EXPECT_EQ(status, E_OK);
 }
+
+/**
+ * @tc.name: Offline_NotCloudDevice
+ * @tc.desc: Test Offline with non-cloud device returns SUCCESS immediately
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Offline_NotCloudDevice, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Offline_NotCloudDevice start");
+    auto result = cloudServiceImpl_->Offline("not_cloud_device");
+    EXPECT_EQ(result, CloudData::CloudService::SUCCESS);
+}
+
+/**
+ * @tc.name: Offline_AccountNullptr
+ * @tc.desc: Test Offline when AccountDelegate GetInstance returns nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Offline_AccountNullptr, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Offline_AccountNullptr start");
+    auto *savedInstance = AccountDelegate::instance_;
+    AccountDelegate::instance_ = nullptr;
+    auto result = cloudServiceImpl_->Offline(DmAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(result, CloudData::CloudService::SUCCESS);
+    AccountDelegate::instance_ = savedInstance;
+}
+
+/**
+ * @tc.name: Offline_EmptyUsers
+ * @tc.desc: Test Offline when QueryUsers returns empty user list
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceImplTest, Offline_EmptyUsers, TestSize.Level1)
+{
+    ZLOGI("CloudServiceImplTest Offline_EmptyUsers start");
+    testing::Mock::VerifyAndClearExpectations(accountDelegateMock);
+    EXPECT_CALL(*accountDelegateMock, QueryUsers(_)).WillOnce(Return(false));
+    auto result = cloudServiceImpl_->Offline(DmAdapter::CLOUD_DEVICE_UUID);
+    EXPECT_EQ(result, CloudData::CloudService::SUCCESS);
+    EXPECT_CALL(*accountDelegateMock, IsVerified(_)).WillRepeatedly(Return(true));
+    EXPECT_CALL(*accountDelegateMock, GetUserByToken(_)).WillRepeatedly(Return(MOCK_USER));
+}
 } // namespace DistributedDataTest
 } // namespace OHOS::Test

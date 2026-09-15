@@ -259,5 +259,35 @@ HWTEST_F(CloudServiceStubTest, OnUnsubscribe_UnmarshalFailed, TestSize.Level1)
     auto result = cloudServiceStub->OnUnsubscribe(data, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 }
+
+/**
+ * @tc.name: OnSetGlobalCloudStrategy_UnmarshalFailed
+ * @tc.desc: Test OnSetGlobalCloudStrategy with empty parcel that fails to unmarshal
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceStubTest, OnSetGlobalCloudStrategy_UnmarshalFailed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto result = cloudServiceStub->OnSetGlobalCloudStrategy(data, reply);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnSetCloudStrategy_UnmarshalFailed
+ * @tc.desc: Test OnSetCloudStrategy with empty parcel that fails to unmarshal
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceStubTest, OnSetCloudStrategy_UnmarshalFailed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto result = cloudServiceStub->OnSetCloudStrategy(data, reply);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
+}
 } // namespace CloudDataTest
 } // namespace OHOS::Test

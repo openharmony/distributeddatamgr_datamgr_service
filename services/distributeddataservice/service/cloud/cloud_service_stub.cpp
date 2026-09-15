@@ -197,7 +197,7 @@ int32_t CloudServiceStub::OnSetGlobalCloudStrategy(MessageParcel &data, MessageP
     Strategy strategy;
     std::vector<CommonType::Value> values;
     if (!ITypesUtil::Unmarshal(data, strategy, values)) {
-        ZLOGE("Unmarshal strategy:%{public}d, values size:%{public}zu", strategy, values.size());
+        ZLOGE("Unmarshal strategy failed");
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = SetGlobalCloudStrategy(strategy, values);
@@ -350,7 +350,7 @@ int32_t CloudServiceStub::OnSetCloudStrategy(MessageParcel &data, MessageParcel 
     Strategy strategy;
     std::vector<CommonType::Value> values;
     if (!ITypesUtil::Unmarshal(data, strategy, values)) {
-        ZLOGE("Unmarshal strategy:%{public}d, values size:%{public}zu", strategy, values.size());
+        ZLOGE("Unmarshal strategy failed");
         return IPC_STUB_INVALID_DATA_ERR;
     }
     auto status = SetCloudStrategy(strategy, values);
