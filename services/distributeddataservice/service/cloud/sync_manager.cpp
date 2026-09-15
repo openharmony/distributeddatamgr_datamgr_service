@@ -1408,7 +1408,7 @@ int32_t SyncManager::ConvertValidGeneralCode(int32_t code)
 
 std::string SyncManager::FormatErrorMsg(StoreErrorScene sceneCode, const std::string &msg)
 {
-    return "code:" + std::to_string(sceneCode) + ",msg:" + msg;
+    return "{\"code\":" + std::to_string(sceneCode) + ",\"msg\":\"" + msg + "\"}";
 }
 
 std::string SyncManager::GetStoreErrorMessage(int32_t code)
