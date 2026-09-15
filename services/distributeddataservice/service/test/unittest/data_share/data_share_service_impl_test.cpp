@@ -58,14 +58,11 @@ public:
         if (accountDelegateMock != nullptr) {
             AccountDelegate::instance_ = nullptr;
             AccountDelegate::RegisterAccountInstance(accountDelegateMock);
+            testing::Mock::AllowLeak(accountDelegateMock);
         }
     }
     static void TearDownTestCase(void)
     {
-        if (accountDelegateMock != nullptr) {
-            delete accountDelegateMock;
-            accountDelegateMock = nullptr;
-        }
     }
     void SetSelfTokenInfo(int32_t user);
     void SetUp();

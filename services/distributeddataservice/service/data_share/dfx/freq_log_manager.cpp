@@ -54,8 +54,8 @@ void FreqLogManager::StartTimer()
 void FreqLogManager::ReportCall(uint32_t code, uint64_t costMs, const std::string &uri)
 {
     uint64_t tokenId = IPCSkeleton::GetCallingTokenID();
-    uint64_t uid = IPCSkeleton::GetCallingUid();
-    uint64_t pid = IPCSkeleton::GetCallingPid();
+    pid_t uid = IPCSkeleton::GetCallingUid();
+    pid_t pid = IPCSkeleton::GetCallingPid();
     callers_.Compute(tokenId, [code, uid, pid, costMs, &uri](const uint64_t &key, CallerStats &stats) {
         if (stats.uid == 0) {
             stats.uid = uid;
@@ -129,7 +129,7 @@ void FreqLogManager::PrintCodeGroup(uint32_t code, std::vector<CallerStats> &cal
         uint64_t count = (it != c.codeStats.end()) ? it->second.count : 0;
         uint64_t avgCost = (count > 0) ? (it->second.totalCostMs / count) : 0;
         uint64_t maxCost = (it != c.codeStats.end()) ? it->second.maxCostMs : 0;
-        ZLOGI("  caller[%{public}zu]:%{public}s(pid=%{public}" PRIu64 "), calls=%{public}" PRIu64
+        ZLOGI("  caller[%{public}zu]:%{public}s(pid=%{public}d), calls=%{public}" PRIu64
               ", avgCost=%{public}" PRIu64 "ms, maxCost=%{public}" PRIu64 "ms, targets=[%{public}s]",
               i, c.callerBundleName.c_str(), c.pid, count, avgCost, maxCost,
               FormatTargets(c.targetBundleNames).c_str());

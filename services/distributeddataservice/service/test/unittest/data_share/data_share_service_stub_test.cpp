@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "data_share_service_impl.h"
+#include "account_delegate_mock.h"
 #include "common_utils.h"
 #include "data_share_types_util.h"
 #include "dataproxy_handle_common.h"
@@ -39,10 +40,18 @@ constexpr uint64_t SYSTEM_TOKENID = static_cast<uint64_t>(1) << 32;
 namespace OHOS::Test {
 class DataShareServiceStubTest : public testing::Test {
 public:
-    static void SetUpTestCase(void){};
+    static void SetUpTestCase(void)
+    {
+        OHOS::DistributedData::AccountDelegate::instance_ = nullptr;
+        OHOS::DistributedData::AccountDelegate::RegisterAccountInstance(&accountDelegateMock_);
+        testing::Mock::AllowLeak(&accountDelegateMock_);
+    };
     static void TearDownTestCase(void){};
     void SetUp(){};
     void TearDown(){};
+
+private:
+    static inline OHOS::DistributedData::AccountDelegateMock accountDelegateMock_;
 };
 std::shared_ptr<DataShareServiceImpl> dataShareServiceImpl = std::make_shared<DataShareServiceImpl>();
 std::shared_ptr<DataShareServiceStub> dataShareServiceStub = dataShareServiceImpl;
