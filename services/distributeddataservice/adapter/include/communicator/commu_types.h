@@ -117,6 +117,7 @@ struct BundleEventInfo {
     int32_t userId = 0;
     int32_t appIndex = 0;
     int32_t tokenId = -1;
+    std::string appIdentifier = "";
 };
 }
 #endif // OHOS_DISTRIBUTED_DATA_ADAPTER_COMMUNICATOR_COMMU_TYPES_H

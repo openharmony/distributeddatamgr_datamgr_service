@@ -34,6 +34,7 @@ private:
     static constexpr const char *SANDBOX_APP_INDEX = "sandbox_app_index";
     static constexpr const char *APP_INDEX = "appIndex";
     static constexpr const char *TOKEN_ID = "accessTokenId";
+    static constexpr const char *appIdentifier = "appIdentifier";
     void OnUninstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
     void OnUpdate(const AppDistributedKv::BundleEventInfo &bundleEventInfo);
     void OnInstall(const AppDistributedKv::BundleEventInfo &bundleEventInfo);

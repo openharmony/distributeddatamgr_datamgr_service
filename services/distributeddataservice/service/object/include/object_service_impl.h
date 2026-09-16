@@ -61,7 +61,7 @@ private:
     public:
         ~ObjectStatic() override {};
         int32_t OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
-            int32_t tokenId = -1) override;
+            int32_t tokenId = -1, const std::string &appIdentifier = "") override;
     };
     class Factory {
     public:

@@ -60,6 +60,7 @@ void InstallEventSubscriber::OnReceiveEvent(const CommonEventData &event)
         bundleEventInfo.userId = want.GetIntParam(USER_ID, -1);
         bundleEventInfo.appIndex = want.GetIntParam(SANDBOX_APP_INDEX, 0);
         bundleEventInfo.tokenId = want.GetIntParam(TOKEN_ID, -1);
+        bundleEventInfo.appIdentifier = want.GetStringParam(appIdentifier);
         int32_t newAppIndex = want.GetIntParam(APP_INDEX, 0);
         ZLOGI("bundleName:%{public}s, user:%{public}d, appIndex:%{public}d, newAppIndex:%{public}d",
             bundleEventInfo.bundleName.c_str(), bundleEventInfo.userId, bundleEventInfo.appIndex, newAppIndex);

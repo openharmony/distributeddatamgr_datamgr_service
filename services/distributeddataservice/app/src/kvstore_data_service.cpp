@@ -868,7 +868,7 @@ int32_t KvStoreDataService::OnUninstall(const AppDistributedKv::BundleEventInfo 
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies([bundleEventInfo](const auto &, const std::shared_ptr<StaticActs> &acts) {
         acts->OnAppUninstall(bundleEventInfo.bundleName, bundleEventInfo.userId,
-            bundleEventInfo.appIndex, bundleEventInfo.tokenId);
+            bundleEventInfo.appIndex, bundleEventInfo.tokenId, bundleEventInfo.appIdentifier);
         return false;
     });
     return SUCCESS;

@@ -18,7 +18,8 @@ StaticActs::~StaticActs()
 {
 }
 
-int32_t StaticActs::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index, int32_t tokenId)
+int32_t StaticActs::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
+    int32_t tokenId, const std::string &appIdentifier)
 {
     return E_OK;
 }
