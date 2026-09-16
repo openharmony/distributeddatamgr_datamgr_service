@@ -44,6 +44,7 @@
 #include "utils/anonymous.h"
 #include "utils/constant.h"
 #include "utils/crypto.h"
+#include "utils/parse_user_id.h"
 #include "value_proxy.h"
 namespace OHOS::DistributedRdb {
 using namespace DistributedData;
@@ -366,7 +367,10 @@ int32_t RdbGeneralStore::Bind(const std::map<uint32_t, std::tuple<Database, Bind
     eventInfo.tokenId = meta_.tokenId;
     eventInfo.bundleName = meta_.bundleName;
     eventInfo.storeName = meta_.storeId;
-    eventInfo.user = atoi(meta_.user.c_str());
+    eventInfo.user = 0;
+    if (!ParseUserIdInt32(meta_.user, eventInfo.user)) {
+        ZLOGE("invalid user id %{public}s", meta_.user.c_str());
+    }
     eventInfo.instanceId = meta_.instanceId;
 
     auto evt = std::make_unique<BindEvent>(BindEvent::BIND_SNAPSHOT, std::move(eventInfo));
@@ -1761,7 +1765,9 @@ DistributedData::StoreInfo RdbGeneralStore::GetStoreInfo() const
     storeInfo.bundleName = meta_.bundleName;
     storeInfo.storeName = meta_.storeId;
     storeInfo.instanceId = meta_.instanceId;
-    storeInfo.user = std::atoi(meta_.user.c_str());
+    if (!ParseUserIdInt32(meta_.user, storeInfo.user)) {
+        ZLOGE("invalid user id %{public}s", meta_.user.c_str());
+    }
     storeInfo.deviceId = DeviceManagerAdapter::GetInstance().GetLocalDevice().uuid;
     storeInfo.path = meta_.dataDir;
     return storeInfo;
