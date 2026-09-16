@@ -116,7 +116,7 @@ public:
     std::string GetOverlongPath()
     {
         // Component longer than NAME_MAX triggers ENAMETOOLONG in weakly_canonical
-        return "/" + std::string(300, 'a');
+        return "/" + std::string(OVERLONG_PATH_COMPONENT_LEN, 'a');
     }
 
     static uint64_t GetUniqueId()
