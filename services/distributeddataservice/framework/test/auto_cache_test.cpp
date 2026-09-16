@@ -47,6 +47,7 @@ public:
 class AutoCacheTest : public testing::Test {
 public:
     static constexpr int32_t MOCK_STORE_TYPE = 21;
+    static constexpr uint32_t OVERLONG_PATH_COMPONENT_LEN = 300;
     static AccountDelegateMockProxy *accountDelegatProxy;
     static std::shared_ptr<AccountDelegateMock> defaultAccountDelegateMock;
     static void SetUpTestCase(void)
