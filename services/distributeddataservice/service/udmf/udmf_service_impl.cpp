@@ -1616,8 +1616,9 @@ int32_t UdmfServiceImpl::HandleRemoteDelayData(const std::string &key)
 }
 
 int32_t UdmfServiceImpl::UdmfStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
-    int32_t tokenId)
+    int32_t tokenId, const std::string &appIdentifier)
 {
+    (void)appIdentifier;
     LifeCycleManager::GetInstance().OnAppUninstall(static_cast<uint32_t>(tokenId));
     return E_OK;
 }

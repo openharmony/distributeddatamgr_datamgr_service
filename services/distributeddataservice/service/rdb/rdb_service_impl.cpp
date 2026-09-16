@@ -1802,8 +1802,9 @@ int32_t RdbServiceImpl::RdbStatic::CloseStore(const std::string &bundleName, int
 }
 
 int32_t RdbServiceImpl::RdbStatic::OnAppUninstall(const std::string &bundleName, int32_t user,
-    int32_t index, int32_t tokenId)
+    int32_t index, int32_t tokenId, const std::string &appIdentifier)
 {
+    (void)appIdentifier;
     if (rdbFlowControlManager_ != nullptr) {
         rdbFlowControlManager_->Remove(bundleName);
     }

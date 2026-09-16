@@ -332,8 +332,9 @@ int32_t ObjectServiceImpl::IsBundleNameEqualTokenId(
 }
 
 int32_t ObjectServiceImpl::ObjectStatic::OnAppUninstall(const std::string &bundleName, int32_t user, int32_t index,
-    int32_t tokenId)
+    int32_t tokenId, const std::string &appIdentifier)
 {
+    (void)appIdentifier;
     int32_t result = ObjectStoreManager::GetInstance().DeleteByAppId(bundleName, user);
     if (result != OBJECT_SUCCESS) {
         ZLOGE("Delete object data failed, result:%{public}d, bundleName:%{public}s, user:%{public}d, index:%{public}d",
