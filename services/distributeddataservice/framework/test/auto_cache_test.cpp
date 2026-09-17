@@ -47,6 +47,7 @@ public:
 class AutoCacheTest : public testing::Test {
 public:
     static constexpr int32_t MOCK_STORE_TYPE = 21;
+    static constexpr uint32_t overLongPathComponentLen = 300;
     static AccountDelegateMockProxy *accountDelegatProxy;
     static std::shared_ptr<AccountDelegateMock> defaultAccountDelegateMock;
     static void SetUpTestCase(void)
@@ -102,6 +103,27 @@ public:
         metaData.storeId = storeId;
         metaData.storeType = MOCK_STORE_TYPE;
         return metaData;
+    }
+
+    std::string GetValidPath()
+    {
+        auto base = std::filesystem::temp_directory_path();
+        auto path = base / ("AutoCacheTest_" + std::to_string(GetUniqueId()));
+        std::error_code ec;
+        std::filesystem::create_directories(path, ec);
+        return path.string();
+    }
+
+    std::string GetOverlongPath()
+    {
+        // Component longer than NAME_MAX triggers ENAMETOOLONG in weakly_canonical
+        return "/" + std::string(overLongPathComponentLen, 'a');
+    }
+
+    static uint64_t GetUniqueId()
+    {
+        static std::atomic_uint64_t id = 0;
+        return ++id;
     }
 };
 
@@ -967,6 +989,352 @@ HWTEST_F(AutoCacheTest, AutoCache_GetDBStore_CheckStatusBeforeOpen_ValidUserVeri
     ASSERT_NE(store, nullptr);
     EXPECT_EQ(store.get(), mock.get());
     EXPECT_EQ(creationCount, 1);
+}
+
+/**
+ * @tc.name: AutoCache_GenerateKey_NonEmptyPath_NonExistentPath
+ * @tc.desc: Test GenerateKey indirectly when path is non-empty but does not exist.
+ * weakly_canonical does not fail on non-existent paths and returns a normalized
+ * path, so the store must still be created and cached consistently.
+ * Step 1: Register mock creator for store type 22
+ * Step 2: Create metadata with non-existent dataDir path
+ * Step 3: GetStore to trigger GenerateKey with invalid path branch
+ * Step 4: Verify store is created and cached
+ * Step 5: Disable store using the same invalid path
+ * Step 6: Verify GetDBStore fails when store is disabled (confirms key was generated with the invalid path)
+ * Step 7: Enable store and verify it works again
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AutoCacheTest, AutoCache_GenerateKey_NonEmptyPath_NonExistentPath, TestSize.Level1)
+{
+    const uint32_t storeType = 22;
+    const uint32_t tokenId = 500;
+    const std::string invalidPath = "/nonexistent/path/to/database";
+    const std::string storeId = "invalid_path_test.db";
+
+    auto mock = std::make_shared<AutoCacheTestGeneralStoreMock>();
+    EXPECT_CALL(*mock, SetExecutor).Times(2);
+
+    auto result = AutoCache::GetInstance().RegCreator(storeType,
+        [mock](const StoreMetaData &meta, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+
+    auto meta = GetStoreMetaData(storeId);
+    meta.storeType = storeType;
+    meta.tokenId = tokenId;
+    meta.dataDir = invalidPath;
+
+    auto store = AutoCache::GetInstance().GetStore(meta, {});
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store.get(), mock.get());
+
+    // Cache hit
+    auto store2 = AutoCache::GetInstance().GetStore(meta, {});
+    ASSERT_NE(store2, nullptr);
+    EXPECT_EQ(store.get(), store2.get());
+
+    // Disable using the same invalid path - this exercises GenerateKey with invalid path in Disable
+    AutoCache::GetInstance().Disable(tokenId, invalidPath, storeId);
+
+    // GetDBStore should fail because the store is disabled with key generated from invalid path
+    auto [err, disabledStore] = AutoCache::GetInstance().GetDBStore(meta, {}, {});
+    EXPECT_EQ(err, E_ERROR);
+    EXPECT_EQ(disabledStore, nullptr);
+
+    // Enable and verify
+    AutoCache::GetInstance().Enable(tokenId, invalidPath, storeId);
+    auto [err2, enabledStore] = AutoCache::GetInstance().GetDBStore(meta, {}, {});
+    EXPECT_EQ(err2, E_OK);
+    ASSERT_NE(enabledStore, nullptr);
+}
+
+/**
+ * @tc.name: AutoCache_GenerateKey_NonEmptyPath_OverlongPathFallback
+ * @tc.desc: Test GenerateKey fallback when weakly_canonical fails.
+ * A path component longer than NAME_MAX triggers ENAMETOOLONG in weakly_canonical,
+ * so the key must fall back to the raw path passed by the caller.
+ * Step 1: Register mock creator for store type 27
+ * Step 2: Create metadata with an overlong dataDir path
+ * Step 3: GetStore to trigger GenerateKey error fallback branch
+ * Step 4: Verify store is created and cached with the raw path key
+ * Step 5: Disable store using the same overlong path
+ * Step 6: Verify GetDBStore fails when store is disabled (key matches the fallback path)
+ * Step 7: Enable store and verify it works again
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AutoCacheTest, AutoCache_GenerateKey_NonEmptyPath_OverlongPathFallback, TestSize.Level1)
+{
+    const uint32_t storeType = 27;
+    const uint32_t tokenId = 505;
+    const std::string overlongPath = GetOverlongPath();
+    const std::string storeId = "overlong_path_test.db";
+
+    auto mock = std::make_shared<AutoCacheTestGeneralStoreMock>();
+    EXPECT_CALL(*mock, SetExecutor).Times(2);
+
+    auto result = AutoCache::GetInstance().RegCreator(storeType,
+        [mock](const StoreMetaData &meta, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+
+    auto meta = GetStoreMetaData(storeId);
+    meta.storeType = storeType;
+    meta.tokenId = tokenId;
+    meta.dataDir = overlongPath;
+
+    auto store = AutoCache::GetInstance().GetStore(meta, {});
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store.get(), mock.get());
+
+    // Cache hit proves the key is stable across calls
+    auto store2 = AutoCache::GetInstance().GetStore(meta, {});
+    ASSERT_NE(store2, nullptr);
+    EXPECT_EQ(store.get(), store2.get());
+
+    // Disable with the same overlong path - exercises GenerateKey fallback in Disable
+    AutoCache::GetInstance().Disable(tokenId, overlongPath, storeId);
+
+    // GetDBStore should fail because the store is disabled with the fallback key
+    auto [err, disabledStore] = AutoCache::GetInstance().GetDBStore(meta, {}, {});
+    EXPECT_EQ(err, E_ERROR);
+    EXPECT_EQ(disabledStore, nullptr);
+
+    // Enable and verify
+    AutoCache::GetInstance().Enable(tokenId, overlongPath, storeId);
+    auto [err2, enabledStore] = AutoCache::GetInstance().GetDBStore(meta, {}, {});
+    EXPECT_EQ(err2, E_OK);
+    ASSERT_NE(enabledStore, nullptr);
+}
+
+/**
+ * @tc.name: AutoCache_GenerateKey_NonEmptyPath_ValidPath
+ * @tc.desc: Test GenerateKey indirectly when path is non-empty and weakly_canonical succeeds (valid path)
+ * Step 1: Register mock creator for store type 23
+ * Step 2: Create metadata with existing dataDir path (created temp directory)
+ * Step 3: GetStore to trigger GenerateKey with valid path branch
+ * Step 4: Verify store is created and cached
+ * Step 5: Disable store using the same valid path
+ * Step 6: Verify GetDBStore fails when store is disabled (confirms key was generated with resolved path)
+ * Step 7: Enable store and verify it works again
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AutoCacheTest, AutoCache_GenerateKey_NonEmptyPath_ValidPath, TestSize.Level1)
+{
+    const uint32_t storeType = 23;
+    const uint32_t tokenId = 501;
+    const std::string validPath = GetValidPath();
+    const std::string storeId = "valid_path_test.db";
+
+    auto mock = std::make_shared<AutoCacheTestGeneralStoreMock>();
+    EXPECT_CALL(*mock, SetExecutor).Times(2);
+
+    auto result = AutoCache::GetInstance().RegCreator(storeType,
+        [mock](const StoreMetaData &meta, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+
+    auto meta = GetStoreMetaData(storeId);
+    meta.storeType = storeType;
+    meta.tokenId = tokenId;
+    meta.dataDir = validPath;
+
+    auto store = AutoCache::GetInstance().GetStore(meta, {});
+    ASSERT_NE(store, nullptr);
+    EXPECT_EQ(store.get(), mock.get());
+
+    // Cache hit
+    auto store2 = AutoCache::GetInstance().GetStore(meta, {});
+    ASSERT_NE(store2, nullptr);
+    EXPECT_EQ(store.get(), store2.get());
+
+    // Disable using the same valid path - exercises GenerateKey with valid path in Disable
+    AutoCache::GetInstance().Disable(tokenId, validPath, storeId);
+
+    auto [err, disabledStore] = AutoCache::GetInstance().GetDBStore(meta, {}, {});
+    EXPECT_EQ(err, E_ERROR);
+    EXPECT_EQ(disabledStore, nullptr);
+
+    // Enable and verify
+    AutoCache::GetInstance().Enable(tokenId, validPath, storeId);
+    auto [err2, enabledStore] = AutoCache::GetInstance().GetDBStore(meta, {}, {});
+    EXPECT_EQ(err2, E_OK);
+    ASSERT_NE(enabledStore, nullptr);
+}
+
+/**
+ * @tc.name: AutoCache_GenerateKey_CloseStore_NonEmptyPath
+ * @tc.desc: Test GenerateKey indirectly through CloseStore with non-empty path
+ * Step 1: Register mock creator for store type 24
+ * Step 2: Create store with invalid path, verify it works
+ * Step 3: Create store with valid path, verify it works
+ * Step 4: Close store with invalid path only
+ * Step 5: Verify invalid-path store is closed but valid-path store remains
+ * Step 6: Close store with valid path
+ * Step 7: Verify all stores are closed
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AutoCacheTest, AutoCache_GenerateKey_CloseStore_NonEmptyPath, TestSize.Level1)
+{
+    const uint32_t storeType = 24;
+    const uint32_t tokenId = 502;
+    const std::string invalidPath = "/nonexistent/db/path";
+    const std::string validPath = GetValidPath();
+    const std::string storeId = "close_path_test.db";
+
+    auto mock = std::make_shared<AutoCacheTestGeneralStoreMock>();
+    EXPECT_CALL(*mock, SetExecutor).Times(2);
+
+    auto result = AutoCache::GetInstance().RegCreator(storeType,
+        [mock](const StoreMetaData &meta, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+
+    // Create store with invalid path
+    auto meta1 = GetStoreMetaData(storeId);
+    meta1.storeType = storeType;
+    meta1.tokenId = tokenId;
+    meta1.dataDir = invalidPath;
+    auto store1 = AutoCache::GetInstance().GetStore(meta1, {});
+    ASSERT_NE(store1, nullptr);
+
+    // Create store with valid path (same storeId but different path → different key)
+    auto meta2 = GetStoreMetaData(storeId);
+    meta2.storeType = storeType;
+    meta2.tokenId = tokenId;
+    meta2.dataDir = validPath;
+    auto store2 = AutoCache::GetInstance().GetStore(meta2, {});
+    ASSERT_NE(store2, nullptr);
+
+    // Both stores should be present
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId);
+    EXPECT_EQ(stores.size(), 2);
+
+    // Close only the invalid path store
+    AutoCache::GetInstance().CloseStore(tokenId, invalidPath, storeId);
+
+    // Only one store should remain
+    stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId);
+    EXPECT_EQ(stores.size(), 1);
+
+    // Close the valid path store
+    AutoCache::GetInstance().CloseStore(tokenId, validPath, storeId);
+
+    // No stores should remain
+    stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId);
+    EXPECT_EQ(stores.size(), 0);
+}
+
+/**
+ * @tc.name: AutoCache_GenerateKey_SetObserver_NonEmptyPath
+ * @tc.desc: Test GenerateKey indirectly through SetObserver with non-empty path
+ * Step 1: Register mock creator for store type 25
+ * Step 2: Create store with invalid path and get a watcher callback
+ * Step 3: Call SetObserver with the same invalid path to trigger GenerateKey branch 2
+ * Step 4: Verify observer is set (no crash, correct key generation)
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AutoCacheTest, AutoCache_GenerateKey_SetObserver_NonEmptyPath, TestSize.Level1)
+{
+    const uint32_t storeType = 25;
+    const uint32_t tokenId = 503;
+    const std::string invalidPath = "/nonexistent/observer/path";
+    const std::string storeId = "observer_path_test.db";
+
+    auto mock = std::make_shared<AutoCacheTestGeneralStoreMock>();
+    EXPECT_CALL(*mock, SetExecutor).Times(1);
+
+    auto result = AutoCache::GetInstance().RegCreator(storeType,
+        [mock](const StoreMetaData &meta, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+
+    auto meta = GetStoreMetaData(storeId);
+    meta.storeType = storeType;
+    meta.tokenId = tokenId;
+    meta.dataDir = invalidPath;
+
+    auto store = AutoCache::GetInstance().GetStore(meta, {});
+    ASSERT_NE(store, nullptr);
+
+    // Call SetObserver with the same invalid path - exercises GenerateKey branch 2
+    AutoCache::GetInstance().SetObserver(tokenId, {}, invalidPath, storeId);
+
+    // Verify store is still accessible (observer was set without error)
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, invalidPath, storeId);
+    EXPECT_EQ(stores.size(), 1);
+}
+
+/**
+ * @tc.name: AutoCache_GenerateKey_GetStoresIfPresent_NonEmptyPath
+ * @tc.desc: Test GenerateKey indirectly through GetStoresIfPresent with non-empty paths
+ * Step 1: Register mock creator for store type 26
+ * Step 2: Create store with valid path (created temp directory)
+ * Step 3: Call GetStoresIfPresent with the same valid path to verify key matching
+ * Step 4: Call GetStoresIfPresent with a different path to verify no match
+ * Step 5: Create store with invalid path
+ * Step 6: Call GetStoresIfPresent with the invalid path to verify branch 2 key matching
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(AutoCacheTest, AutoCache_GenerateKey_GetStoresIfPresent_NonEmptyPath, TestSize.Level1)
+{
+    const uint32_t storeType = 26;
+    const uint32_t tokenId = 504;
+
+    auto mock = std::make_shared<AutoCacheTestGeneralStoreMock>();
+    EXPECT_CALL(*mock, SetExecutor).Times(2);
+
+    auto result = AutoCache::GetInstance().RegCreator(storeType,
+        [mock](const StoreMetaData &meta, const AutoCache::StoreOption &) -> std::pair<int32_t, GeneralStore *> {
+            return { E_OK, mock.get() };
+        });
+    EXPECT_EQ(result, E_OK);
+
+    const std::string validPath = GetValidPath();
+
+    // Create store with valid path
+    auto meta1 = GetStoreMetaData("get_stores_valid.db");
+    meta1.storeType = storeType;
+    meta1.tokenId = tokenId;
+    meta1.dataDir = validPath;
+    auto store1 = AutoCache::GetInstance().GetStore(meta1, {});
+    ASSERT_NE(store1, nullptr);
+
+    // Verify match with the same valid path
+    auto stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, validPath, "get_stores_valid.db");
+    EXPECT_EQ(stores.size(), 1);
+
+    // Verify no match with different path
+    stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, "/different/path", "get_stores_valid.db");
+    EXPECT_EQ(stores.size(), 0);
+
+    // Create store with invalid path (different storeId to avoid confusion)
+    auto meta2 = GetStoreMetaData("get_stores_invalid.db");
+    meta2.storeType = storeType;
+    meta2.tokenId = tokenId;
+    meta2.dataDir = "/nonexistent/get_stores/path";
+    auto store2 = AutoCache::GetInstance().GetStore(meta2, {});
+    ASSERT_NE(store2, nullptr);
+
+    // Verify match with the same invalid path
+    stores =
+        AutoCache::GetInstance().GetStoresIfPresent(tokenId, "/nonexistent/get_stores/path", "get_stores_invalid.db");
+    EXPECT_EQ(stores.size(), 1);
+
+    // Verify no match with different invalid path
+    stores = AutoCache::GetInstance().GetStoresIfPresent(tokenId, "/nonexistent/other/path", "get_stores_invalid.db");
+    EXPECT_EQ(stores.size(), 0);
 }
 } // namespace DistributedDataAutoCacheTest
 } // namespace OHOS::Test

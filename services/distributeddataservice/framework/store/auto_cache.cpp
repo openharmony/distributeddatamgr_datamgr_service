@@ -72,8 +72,13 @@ std::string AutoCache::GenerateKey(const std::string &path, const std::string &s
     if (path.empty()) {
         return storeId;
     }
-    std::string key = "";
-    return key.append(path).append(KEY_SEPARATOR).append(storeId);
+    std::error_code ec;
+    auto canonicalPath = std::filesystem::weakly_canonical(path, ec);
+    if (ec || canonicalPath.empty()) {
+        ZLOGW("canonical failed, path:%{public}s, error:%{public}d", Anonymous::Change(path).c_str(), ec.value());
+        return std::string(path).append(KEY_SEPARATOR).append(storeId);
+    }
+    return canonicalPath.string().append(KEY_SEPARATOR).append(storeId);
 }
 
 int32_t AutoCache::CheckStatusBeforeOpen(const StoreMetaData &meta)
