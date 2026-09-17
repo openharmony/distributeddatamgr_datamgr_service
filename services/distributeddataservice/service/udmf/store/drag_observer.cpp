@@ -27,6 +27,7 @@
 namespace OHOS {
 namespace UDMF {
 constexpr int32_t SLASH_COUNT_IN_KEY = 4;
+constexpr size_t MAX_RUNTIME_ENTRIES = 10000;
 
 void DragObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
@@ -48,8 +49,8 @@ void DragObserver::ExtractEntries(const DistributedDB::KvStoreChangedData &data,
     const auto &insertedEntries = data.GetEntriesInserted();
     const auto &updatedEntries = data.GetEntriesUpdated();
     const auto &deleteEntries = data.GetEntriesDeleted();
-    runtimeEntries.reserve(updatedEntries.size() + insertedEntries.size());
-    deleteRuntimeEntries.reserve(deleteEntries.size());
+    runtimeEntries.reserve(std::min(updatedEntries.size() + insertedEntries.size(), MAX_RUNTIME_ENTRIES));
+    deleteRuntimeEntries.reserve(std::min(deleteEntries.size(), MAX_RUNTIME_ENTRIES));
 
     CollectIfRuntimeKey(insertedEntries, runtimeEntries);
     CollectIfRuntimeKey(updatedEntries, runtimeEntries);
@@ -69,7 +70,7 @@ void DragObserver::CollectIfRuntimeKey(const std::list<DistributedDB::Entry> &sr
 void DragObserver::ProcessRuntimeInfo(const std::vector<DistributedDB::Entry> &runtimeEntries)
 {
     std::vector<std::string> runtimeKeys;
-    runtimeKeys.reserve(runtimeEntries.size());
+    runtimeKeys.reserve(std::min(runtimeEntries.size(), MAX_RUNTIME_ENTRIES));
     for (const auto &entry : runtimeEntries) {
         runtimeKeys.emplace_back(entry.key.begin(), entry.key.end());
     }
@@ -96,7 +97,7 @@ void DragObserver::ProcessRuntimeInfo(const std::vector<DistributedDB::Entry> &r
 void DragObserver::ProcessDelete(const std::vector<DistributedDB::Entry> &deleteEntries)
 {
     std::vector<std::string> runtimeKeys;
-    runtimeKeys.reserve(deleteEntries.size());
+    runtimeKeys.reserve(std::min(deleteEntries.size(), MAX_RUNTIME_ENTRIES));
     for (const auto &entry : deleteEntries) {
         runtimeKeys.emplace_back(entry.key.begin(), entry.key.end());
     }
