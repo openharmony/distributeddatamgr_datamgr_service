@@ -398,6 +398,7 @@ HWTEST_F(GeneralStoreTest, GeneralStoreDefaultImpl001, TestSize.Level1)
     EXPECT_EQ(store.QuerySubscribeOutput(cursorIn, cursorOut, dataOut), 0);
 
     EXPECT_EQ(store.SetSubscribeCursor(cursorIn), 0);
-    EXPECT_EQ(store.SetSubscribeSchema("test_schema"), 0);
+    SubscribeSchema subscribeSchema{ "test_schema" };
+    EXPECT_EQ(store.SetSubscribeSchema(subscribeSchema), 0);
 }
 } // namespace OHOS::Test

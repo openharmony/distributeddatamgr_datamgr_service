@@ -258,7 +258,7 @@ public:
         return true;
     }
 
-    DBStatus SetSubscribeSchema(const std::string &schema) override
+    DBStatus SetSubscribeSchema(const SubscribeSchema &schema) override
     {
         return resSetSubscribeSchema_;
     }

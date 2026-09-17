@@ -18,6 +18,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -138,6 +139,11 @@ enum class SubQueryType : uint32_t {
 struct SubscribeCur {
     SubQueryType queryType;
     uint64_t cursor = 0;
+};
+
+struct SubscribeSchema {
+    std::optional<std::string> searchSchema;
+    std::optional<std::string> notifySchema;
 };
 
 using Assets = std::vector<Asset>;
