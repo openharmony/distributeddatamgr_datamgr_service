@@ -113,7 +113,6 @@ private:
     TaskId taskId_ = Executor::INVALID_TASK_ID;
     ConcurrentStripedMap<uint32_t, std::map<std::string, Delegate>> stores_;
     ConcurrentMap<uint32_t, std::set<std::string>> disables_;
-    mutable ConcurrentMap<std::string, std::string> canonicalPathCache_;
     Creator creators_[MAX_CREATOR_NUM];
 };
 } // namespace OHOS::DistributedData
