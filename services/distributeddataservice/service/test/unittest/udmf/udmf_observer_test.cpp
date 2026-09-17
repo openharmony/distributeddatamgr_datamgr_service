@@ -42,6 +42,7 @@ namespace OHOS::Test {
 namespace DistributedDataTest {
 constexpr size_t NUM_MIN = 1;
 constexpr size_t NUM_MAX = 3;
+constexpr size_t MAX_ENTRIES = 10000;
 static void GrantPermissionNative()
 {
     const char **perms = new const char *[3];
@@ -317,6 +318,39 @@ HWTEST_F(UdmfObserverTest, DragObserverTest004, TestSize.Level1)
     EXPECT_NO_FATAL_FAILURE(observer->OnChange(changedData));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     EXPECT_EQ(0, LifeCycleManager::GetInstance().udKeys_.Size());
+}
+
+/**
+* @tc.name: DragObserverTest005
+* @tc.desc: Test DragObserver batch processing runtime entries exceeding MAX_RUNTIME_ENTRIES
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(UdmfObserverTest, DragObserverTest005, TestSize.Level1)
+{
+    auto observer = ObserverFactory::GetObserver("drag");
+    EXPECT_NE(observer, nullptr);
+
+    std::list<DistributedDB::Entry> entriesList;
+    for (size_t i = 0; i < MAX_ENTRIES + 1; ++i) {
+        Runtime runtime;
+        runtime.key = UnifiedKey("drag", "com.example.test", std::to_string(i));
+        runtime.key.GetUnifiedKey();
+        runtime.dataStatus = DataStatus::WORKING;
+        runtime.tokenId = static_cast<uint32_t>(i + 1);
+        UnifiedData data;
+        data.SetRuntime(runtime);
+        std::vector<DistributedDB::Entry> entries;
+        DataHandler::MarshalToEntries(data, entries);
+        entriesList.insert(entriesList.end(), entries.begin(), entries.end());
+    }
+
+    StoreChangedData changedData;
+    changedData.insertedEntries_ = entriesList;
+
+    observer->OnChange(changedData);
+    EXPECT_EQ(LifeCycleManager::GetInstance().udKeys_.Size(), MAX_ENTRIES + 1);
 }
 
 } // DistributedDataTest

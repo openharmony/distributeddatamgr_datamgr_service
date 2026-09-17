@@ -162,6 +162,22 @@ HWTEST_F(UtdServiceImplTest, OnBind001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: NotifyUtdClients001
+ * @tc.desc: Abnormal test of NotifyUtdClients, executors_ is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UtdServiceImplTest, NotifyUtdClients001, TestSize.Level1)
+{
+    UtdServiceImpl utdServiceImpl;
+    EXPECT_TRUE(utdServiceImpl.executors_ == nullptr);
+
+    uint32_t callingTokenId = 0;
+    int32_t ret = utdServiceImpl.NotifyUtdClients(callingTokenId);
+    EXPECT_EQ(ret, static_cast<int32_t>(OHOS::UDMF::E_ERROR));
+}
+
+/**
 * @tc.name: GetHapBundleNameByToken001
 * @tc.desc: Normal test of GetHapBundleNameByToken
 * @tc.type: FUNC
