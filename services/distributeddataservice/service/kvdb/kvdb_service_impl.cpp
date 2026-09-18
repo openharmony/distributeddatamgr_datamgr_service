@@ -52,6 +52,7 @@
 #include "utils/constant.h"
 #include "utils/converter.h"
 #include "app_id_mapping/app_id_mapping_config_manager.h"
+#include "network/network_delegate.h"
 
 namespace OHOS::DistributedKv {
 using namespace OHOS::DistributedData;
@@ -66,6 +67,7 @@ static constexpr const char *DEFAULT_USER_ID = "0";
 static constexpr const char *KEY_SEPARATOR = "###";
 static constexpr const char *STORE_DIR = "/kvdb";
 static constexpr const char *PATH_SEPARATOR = "/";
+static constexpr const char *DSOFTBUS_BUNDLE_NAME = "dsoftbus";
 static const size_t SECRET_KEY_COUNT = 2;
 __attribute__((used)) KVDBServiceImpl::Factory KVDBServiceImpl::factory_;
 KVDBServiceImpl::Factory::Factory()
@@ -1167,6 +1169,14 @@ Status KVDBServiceImpl::DoCloudSync(const StoreMetaData &meta, const SyncInfo &s
     auto instance = CloudServer::GetInstance();
     if (instance == nullptr) {
         return Status::CLOUD_DISABLED;
+    }
+    if (meta.bundleName == DSOFTBUS_BUNDLE_NAME) {
+        auto network = NetworkDelegate::GetInstance();
+        if (network == nullptr || !network->IsNetworkAvailable()) {
+            ZLOGE("appId:%{public}s storeId:%{public}s instanceId:%{public}d network is not available",
+                meta.appId.c_str(), Anonymous::Change(meta.storeId).c_str(), meta.instanceId);
+            return Status::NETWORK_ERROR;
+        }
     }
     std::vector<int32_t> users;
     if (meta.user != StoreMetaData::ROOT_USER) {

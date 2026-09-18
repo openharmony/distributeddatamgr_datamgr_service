@@ -41,6 +41,8 @@
 #include "mock/meta_data_manager_mock.h"
 #include "sync_mgr/sync_mgr.h"
 #include "nativetoken_kit.h"
+#include "network/network_delegate.h"
+#include "network_delegate_mock.h"
 #include "token_setproc.h"
 #include "types.h"
 #include "utils/anonymous.h"
@@ -106,6 +108,7 @@ public:
 
 protected:
     std::shared_ptr<DistributedKv::KVDBServiceImpl> kvdbServiceImpl_;
+    static NetworkDelegateMock delegate_;
     StoreMetaData metaData_;
     Options options_;
 };
@@ -128,6 +131,7 @@ UserId KvdbServiceImplTest::userId;
 AppId KvdbServiceImplTest::appId;
 StoreId KvdbServiceImplTest::storeId64;
 StoreId KvdbServiceImplTest::storeId65;
+NetworkDelegateMock KvdbServiceImplTest::delegate_;
 
 void KvdbServiceImplTest::RemoveAllStore(DistributedKvDataManager &manager)
 {
@@ -164,6 +168,7 @@ void KvdbServiceImplTest::SetUpTestCase(void)
     BMetaDataManager::metaDataManager = metaDataManagerMock;
     metaDataMock = std::make_shared<MetaDataMock<StoreMetaData>>();
     BMetaData<StoreMetaData>::metaDataManager = metaDataMock;
+    NetworkDelegate::RegisterNetworkInstance(&delegate_);
 }
 
 void KvdbServiceImplTest::TearDownTestCase()
@@ -1374,8 +1379,8 @@ HWTEST_F(KvdbServiceImplTest, GetSyncMode, TestSize.Level0)
 }
 
 /**
-* @tc.name: DoCloudSync
-* @tc.desc: DoCloudSync error function test.
+* @tc.name: DoCloudSync01
+* @tc.desc: DoCloudSync enableCloud false returns NOT_SUPPORT.
 * @tc.type: FUNC
 * @tc.author: agent
 */
@@ -1391,6 +1396,85 @@ HWTEST_F(KvdbServiceImplTest, DoCloudSync01, TestSize.Level0)
     SyncInfo syncInfo;
     status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
     EXPECT_EQ(status, Status::NOT_SUPPORT);
+}
+
+/**
+* @tc.name: DoCloudSync02
+* @tc.desc: DoCloudSync dsoftbus with network unavailable returns NETWORK_ERROR.
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, DoCloudSync02, TestSize.Level0)
+{
+    delegate_.isNetworkAvailable_ = false;
+    auto cloudServerMock = new CloudServerMock();
+    CloudServer::RegisterCloudInstance(cloudServerMock);
+    StoreMetaData metaData;
+    metaData.enableCloud = true;
+    metaData.bundleName = "dsoftbus";
+    SyncInfo syncInfo;
+    auto status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, OHOS::DistributedKv::Status::NETWORK_ERROR);
+}
+
+/**
+* @tc.name: DoCloudSync03
+* @tc.desc: DoCloudSync dsoftbus with network available passes network check.
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, DoCloudSync03, TestSize.Level0)
+{
+    delegate_.isNetworkAvailable_ = true;
+    auto cloudServerMock = new CloudServerMock();
+    CloudServer::RegisterCloudInstance(cloudServerMock);
+    StoreMetaData metaData;
+    metaData.enableCloud = true;
+    metaData.bundleName = "dsoftbus";
+    metaData.user = StoreMetaData::ROOT_USER;
+    SyncInfo syncInfo;
+    auto status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, OHOS::DistributedKv::Status::CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: DoCloudSync04
+* @tc.desc: DoCloudSync non-dsoftbus skips network check even if network unavailable.
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, DoCloudSync04, TestSize.Level0)
+{
+    delegate_.isNetworkAvailable_ = false;
+    auto cloudServerMock = new CloudServerMock();
+    CloudServer::RegisterCloudInstance(cloudServerMock);
+    StoreMetaData metaData;
+    metaData.enableCloud = true;
+    metaData.bundleName = "com.test.app";
+    metaData.user = StoreMetaData::ROOT_USER;
+    SyncInfo syncInfo;
+    auto status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, OHOS::DistributedKv::Status::CLOUD_DISABLED);
+}
+
+/**
+* @tc.name: DoCloudSync05
+* @tc.desc: DoCloudSync dsoftbus with NetworkDelegate nullptr returns NETWORK_ERROR.
+* @tc.type: FUNC
+* @tc.author: agent
+*/
+HWTEST_F(KvdbServiceImplTest, DoCloudSync05, TestSize.Level0)
+{
+    NetworkDelegate::instance_ = nullptr;
+    auto cloudServerMock = new CloudServerMock();
+    CloudServer::RegisterCloudInstance(cloudServerMock);
+    StoreMetaData metaData;
+    metaData.enableCloud = true;
+    metaData.bundleName = "dsoftbus";
+    SyncInfo syncInfo;
+    auto status = kvdbServiceImpl_->DoCloudSync(metaData, syncInfo);
+    EXPECT_EQ(status, OHOS::DistributedKv::Status::NETWORK_ERROR);
+    NetworkDelegate::instance_ = &delegate_;
 }
 
 /**
