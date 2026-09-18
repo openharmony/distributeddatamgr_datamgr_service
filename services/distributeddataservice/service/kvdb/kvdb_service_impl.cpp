@@ -1031,9 +1031,8 @@ void KVDBServiceImpl::AddOptions(const Options &options, StoreMetaData &metaData
                 customDir = options.baseDir.substr(pos + 1);
             }
             metaData.customDir = AssembleCustomDir(metaData, customDir);
-        } else {
-            metaData.dataDir = options.baseDir;
         }
+        metaData.dataDir = options.baseDir;
     } else {
         metaData.dataDir = DirectoryManager::GetInstance().GetStorePath(metaData);
     }
