@@ -220,7 +220,7 @@ public:
         return DBStatus::OK;
     }
 
-    DBStatus SetBinlogEnabled(bool enabled) override
+    DBStatus SetBinlogEnabled(bool enabled, const std::string &binlogDirPath = "") override
     {
         return resSetBinlogEnabled_;
     }

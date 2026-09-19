@@ -267,7 +267,7 @@ public:
         return 0;
     }
 
-    virtual int32_t SetSubscribeSchema(const SubscribeSchema &schema)
+    virtual int32_t SetSubscribeSchema(const std::string &schema)
     {
         return 0;
     }
