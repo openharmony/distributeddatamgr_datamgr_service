@@ -137,4 +137,97 @@ HWTEST_F(ThermalStateMonitorTest, GetInstanceAndRegisterInstance_Registered_Retu
     EXPECT_FALSE(ThermalStateMonitor::RegisterInstance(&other));
     EXPECT_EQ(ThermalStateMonitor::GetInstance(), instance);
 }
+
+/**
+ * @tc.name: NormalizeInitialLevel_ValidLevel_ReturnsTrue007
+ * @tc.desc: Verify an in-range raw level is normalized to itself.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ThermalStateMonitorTest, NormalizeInitialLevel_ValidLevel_ReturnsTrue007, TestSize.Level1)
+{
+    ThermalStateMonitorImpl monitor;
+    int32_t level = -1;
+
+    ASSERT_TRUE(monitor.NormalizeInitialLevel(5, level));
+    EXPECT_EQ(level, 5);
+}
+
+/**
+ * @tc.name: NormalizeInitialLevel_OutOfRangeLevel_ClampsToBoundary008
+ * @tc.desc: Verify an out-of-range raw level is clamped to the nearest boundary.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ThermalStateMonitorTest, NormalizeInitialLevel_OutOfRangeLevel_ClampsToBoundary008, TestSize.Level1)
+{
+    ThermalStateMonitorImpl monitor;
+    int32_t level = -1;
+
+    ASSERT_TRUE(monitor.NormalizeInitialLevel(9, level));
+    EXPECT_EQ(level, 7);
+
+    ASSERT_TRUE(monitor.NormalizeInitialLevel(-2, level));
+    EXPECT_EQ(level, 0);
+}
+
+/**
+ * @tc.name: OnThermalLevelChanged_NotStartedAndNotSubscribing_ReturnsEarly009
+ * @tc.desc: Verify a level change is ignored when the monitor is neither started nor subscribing.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ThermalStateMonitorTest, OnThermalLevelChanged_NotStartedAndNotSubscribing_ReturnsEarly009, TestSize.Level1)
+{
+    ThermalStateMonitorImpl monitor;
+    int32_t count = 0;
+    monitor.observers_["observer"] = [&count](const ThermalStateMonitor::Snapshot &) {
+        ++count;
+    };
+
+    monitor.OnThermalLevelChanged(3);
+
+    EXPECT_EQ(count, 0);
+    EXPECT_EQ(monitor.GetSnapshot().level, 0);
+}
+
+#if defined(DATAMGR_THERMAL_PART_ENABLED)
+/**
+ * @tc.name: ThermalLevelCallback_OnThermalLevelChanged_ForwardsToMonitor010
+ * @tc.desc: Verify the callback stub forwards a thermal level change to the owning monitor.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ThermalStateMonitorTest, ThermalLevelCallback_OnThermalLevelChanged_ForwardsToMonitor010, TestSize.Level1)
+{
+    ThermalStateMonitorImpl monitor;
+    ThermalStateMonitorImpl::ThermalLevelCallback callback(monitor);
+
+    EXPECT_TRUE(callback.OnThermalLevelChanged(OHOS::PowerMgr::ThermalLevel::COOL));
+}
+
+/**
+ * @tc.name: PrepareSubscription_FirstObserver_AllocatesCallbackAndSetsSubscribing011
+ * @tc.desc: Verify the first cold-start subscription allocates a callback and marks the subscribing state.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ThermalStateMonitorTest, PrepareSubscription_FirstObserver_AllocatesCallbackAndSetsSubscribing011,
+    TestSize.Level1)
+{
+    ThermalStateMonitorImpl monitor;
+    ThermalStateMonitor::Snapshot snapshot;
+    ThermalStateMonitorImpl::SubscriptionContext context;
+    uint64_t sequence = monitor.updateSequence_;
+    int32_t count = 0;
+    ThermalStateMonitor::Observer observer = [&count](const ThermalStateMonitor::Snapshot &) {
+        ++count;
+    };
+
+    int32_t status = monitor.PrepareSubscription("observer", observer, snapshot, context);
+
+    EXPECT_EQ(status, E_OK);
+    EXPECT_NE(context.callback, nullptr);
+    EXPECT_NE(monitor.callback_, nullptr);
+    EXPECT_EQ(monitor.callback_, context.callback);
+    EXPECT_TRUE(monitor.subscribing_);
+    EXPECT_EQ(context.updateSequence, sequence);
+    EXPECT_EQ(monitor.observers_.size(), 1U);
+}
+#endif
 } // namespace OHOS::Test

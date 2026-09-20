@@ -269,4 +269,173 @@ HWTEST_F(BatteryStateMonitorTest, ApplyInitialLevel_NoNewEvent_CachesQueriedSnap
     ASSERT_TRUE(monitor_.ApplyInitialLevel(2, 0, snapshot));
     EXPECT_EQ(snapshot.batteryLevel, 2);
 }
+
+/**
+ * @tc.name: GetInstanceAndRegisterInstance_Registered_ReturnsStableInstance011
+ * @tc.desc: Verify the battery getter returns the load-time instance and duplicate registration is rejected.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, GetInstanceAndRegisterInstance_Registered_ReturnsStableInstance011, TestSize.Level1)
+{
+    BatteryStateMonitor *instance = BatteryStateMonitor::GetInstance();
+    ASSERT_NE(instance, nullptr);
+
+    BatteryStateMonitorImpl other;
+    EXPECT_FALSE(BatteryStateMonitor::RegisterInstance(&other));
+    EXPECT_EQ(BatteryStateMonitor::GetInstance(), instance);
+}
+
+/**
+ * @tc.name: PrepareSubscription_FirstObserver_AllocatesSubscriber012
+ * @tc.desc: Verify the first cold-start subscription allocates the event subscriber and marks the subscribing state.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, PrepareSubscription_FirstObserver_AllocatesSubscriber012, TestSize.Level1)
+{
+    BatteryStateMonitor::Snapshot snapshot;
+    std::shared_ptr<BatteryStateEventSubscriber> subscriber;
+    uint64_t stateVersion = 42;
+    int32_t count = 0;
+    BatteryStateMonitor::Observer observer = [&count](const BatteryStateMonitor::Snapshot &) {
+        ++count;
+    };
+
+    monitor_.PrepareSubscription("observer", observer, subscriber, stateVersion, snapshot);
+
+    EXPECT_NE(subscriber, nullptr);
+    EXPECT_EQ(monitor_.batterySubscriber_, subscriber);
+    EXPECT_TRUE(monitor_.subscribing_);
+    EXPECT_EQ(stateVersion, monitor_.stateVersion_);
+    EXPECT_EQ(snapshot.batteryLevel, monitor_.snapshot_.batteryLevel);
+    EXPECT_EQ(monitor_.observers_.size(), 1U);
+}
+
+/**
+ * @tc.name: GetSubscriberLocked_RepeatedCalls_ReusesExistingSubscriber013
+ * @tc.desc: Verify the lazily created battery subscriber is reused on subsequent lookups.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, GetSubscriberLocked_RepeatedCalls_ReusesExistingSubscriber013, TestSize.Level1)
+{
+    auto first = monitor_.GetSubscriberLocked();
+    ASSERT_NE(first, nullptr);
+
+    auto second = monitor_.GetSubscriberLocked();
+
+    EXPECT_EQ(first, second);
+    EXPECT_EQ(monitor_.batterySubscriber_, first);
+}
+
+/**
+ * @tc.name: ApplyInitialLevel_NotStarted_ReturnsFalse014
+ * @tc.desc: Verify the initial capacity query is rejected before the monitor is started.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, ApplyInitialLevel_NotStarted_ReturnsFalse014, TestSize.Level1)
+{
+    BatteryStateMonitor::Snapshot snapshot;
+
+    EXPECT_FALSE(monitor_.ApplyInitialLevel(3, 0, snapshot));
+    EXPECT_EQ(snapshot.batteryLevel, 0);
+}
+
+/**
+ * @tc.name: ApplyInitialLevel_OutOfRangeLevel_ClampsToBoundary015
+ * @tc.desc: Verify an out-of-range initial capacity query is clamped to the nearest boundary.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, ApplyInitialLevel_OutOfRangeLevel_ClampsToBoundary015, TestSize.Level1)
+{
+    monitor_.started_ = true;
+    BatteryStateMonitor::Snapshot snapshot;
+
+    ASSERT_TRUE(monitor_.ApplyInitialLevel(9, 0, snapshot));
+    EXPECT_EQ(snapshot.batteryLevel, 7);
+
+    ASSERT_TRUE(monitor_.ApplyInitialLevel(-2, 0, snapshot));
+    EXPECT_EQ(snapshot.batteryLevel, 0);
+}
+
+/**
+ * @tc.name: UpdateBatteryLevel_OutOfRangeLevel_ClampsToBoundary016
+ * @tc.desc: Verify an out-of-range event level is clamped before being stored.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, UpdateBatteryLevel_OutOfRangeLevel_ClampsToBoundary016, TestSize.Level1)
+{
+    monitor_.started_ = true;
+    BatteryStateMonitor::Snapshot snapshot;
+
+    ASSERT_TRUE(monitor_.UpdateBatteryLevel(9, snapshot));
+    EXPECT_EQ(snapshot.batteryLevel, 7);
+
+    ASSERT_TRUE(monitor_.UpdateBatteryLevel(-2, snapshot));
+    EXPECT_EQ(snapshot.batteryLevel, 0);
+}
+
+/**
+ * @tc.name: UpdateBatteryLevel_NotStartedAndNotSubscribing_ReturnsFalse017
+ * @tc.desc: Verify a level update is ignored when the monitor is neither started nor subscribing.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, UpdateBatteryLevel_NotStartedAndNotSubscribing_ReturnsFalse017, TestSize.Level1)
+{
+    BatteryStateMonitor::Snapshot snapshot;
+
+    EXPECT_FALSE(monitor_.UpdateBatteryLevel(5, snapshot));
+    EXPECT_EQ(snapshot.batteryLevel, 0);
+}
+
+/**
+ * @tc.name: UpdateBatteryLevel_NotFromEvent_SkipsVersionIncrement018
+ * @tc.desc: Verify a non-event update does not advance the state version.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, UpdateBatteryLevel_NotFromEvent_SkipsVersionIncrement018, TestSize.Level1)
+{
+    monitor_.started_ = true;
+    uint64_t version = monitor_.stateVersion_;
+    BatteryStateMonitor::Snapshot snapshot;
+
+    EXPECT_TRUE(monitor_.UpdateBatteryLevel(5, snapshot, false));
+    EXPECT_EQ(snapshot.batteryLevel, 5);
+    EXPECT_EQ(monitor_.stateVersion_, version);
+
+    EXPECT_FALSE(monitor_.UpdateBatteryLevel(5, snapshot, false));
+    EXPECT_EQ(monitor_.stateVersion_, version);
+}
+
+/**
+ * @tc.name: UnsubscribeBatteryEvent_StartedWithoutSubscriber_ResetsStarted019
+ * @tc.desc: Verify unsubscribing a started monitor without a live subscriber only clears the started state.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, UnsubscribeBatteryEvent_StartedWithoutSubscriber_ResetsStarted019, TestSize.Level1)
+{
+    monitor_.started_ = true;
+
+    monitor_.UnsubscribeBatteryEvent();
+
+    EXPECT_FALSE(monitor_.started_);
+}
+
+/**
+ * @tc.name: OnBatteryEvent_ChangedWithoutLevelParam_KeepsSnapshot020
+ * @tc.desc: Verify a changed event carrying no level param falls through to an invalid level without notifying.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BatteryStateMonitorTest, OnBatteryEvent_ChangedWithoutLevelParam_KeepsSnapshot020, TestSize.Level1)
+{
+    monitor_.started_ = true;
+    monitor_.snapshot_.batteryLevel = 2;
+    int32_t count = 0;
+    ASSERT_EQ(monitor_.Subscribe("observer", [&count](const BatteryStateMonitor::Snapshot &) {
+        ++count;
+    }), E_OK);
+
+    monitor_.OnBatteryEvent(MakeBatteryEvent(BATTERY_CHANGED_EVENT));
+
+    EXPECT_EQ(count, 1);
+    EXPECT_EQ(monitor_.GetSnapshot().batteryLevel, 2);
+}
 } // namespace OHOS::Test

@@ -107,4 +107,71 @@ HWTEST_F(MemoryPressureMonitorTest, GetInstanceAndRegisterInstance_Registered_Re
     EXPECT_FALSE(MemoryPressureMonitor::RegisterInstance(&other));
     EXPECT_EQ(MemoryPressureMonitor::GetInstance(), instance);
 }
+
+/**
+ * @tc.name: Subscribe_AlreadyStarted_ReturnsOk006
+ * @tc.desc: Verify a subscribe on an already started monitor records the observer and returns
+ *           immediately without reaching Memory Manager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(MemoryPressureMonitorTest, Subscribe_AlreadyStarted_ReturnsOk006, TestSize.Level1)
+{
+    MemoryPressureMonitorImpl monitor;
+    monitor.started_ = true;
+
+    EXPECT_EQ(monitor.Subscribe("observer", [](int32_t) {}), E_OK);
+    EXPECT_NE(monitor.observers_.find("observer"), monitor.observers_.end());
+}
+
+/**
+ * @tc.name: Unsubscribe_ExistingObserver_NotLast_ReturnsOk007
+ * @tc.desc: Verify removing an existing observer keeps the monitor started while others remain.
+ * @tc.type: FUNC
+ */
+HWTEST_F(MemoryPressureMonitorTest, Unsubscribe_ExistingObserver_NotLast_ReturnsOk007, TestSize.Level1)
+{
+    MemoryPressureMonitorImpl monitor;
+    monitor.observers_["first"] = [](int32_t) {};
+    monitor.observers_["second"] = [](int32_t) {};
+    monitor.started_ = true;
+
+    EXPECT_EQ(monitor.Unsubscribe("first"), E_OK);
+    EXPECT_EQ(monitor.observers_.size(), 1U);
+    EXPECT_TRUE(monitor.started_);
+}
+
+/**
+ * @tc.name: Unsubscribe_ExistingObserver_NotStarted_ReturnsOk008
+ * @tc.desc: Verify removing the last observer on a stopped monitor returns without touching Memory Manager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(MemoryPressureMonitorTest, Unsubscribe_ExistingObserver_NotStarted_ReturnsOk008, TestSize.Level1)
+{
+    MemoryPressureMonitorImpl monitor;
+    monitor.observers_["observer"] = [](int32_t) {};
+
+    EXPECT_EQ(monitor.Unsubscribe("observer"), E_OK);
+    EXPECT_TRUE(monitor.observers_.empty());
+    EXPECT_FALSE(monitor.started_);
+}
+
+/**
+ * @tc.name: OnTrim_NullObserver_SkipsInvocation009
+ * @tc.desc: Verify a started monitor skips null observers while still invoking valid ones.
+ * @tc.type: FUNC
+ */
+HWTEST_F(MemoryPressureMonitorTest, OnTrim_NullObserver_SkipsInvocation009, TestSize.Level1)
+{
+    MemoryPressureMonitorImpl monitor;
+    int32_t count = 0;
+    monitor.started_ = true;
+    monitor.observers_["valid"] = [&count](int32_t) {
+        ++count;
+    };
+    monitor.observers_["null"] = nullptr;
+
+    monitor.OnTrim(3);
+
+    EXPECT_EQ(count, 1);
+}
 } // namespace OHOS::Test
