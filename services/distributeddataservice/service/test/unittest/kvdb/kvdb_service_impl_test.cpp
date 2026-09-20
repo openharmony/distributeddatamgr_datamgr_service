@@ -2488,7 +2488,7 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirHAPWhitelisted003, TestSize
     kvdbServiceImpl_->AddOptions(options, metaData);
 
     ASSERT_FALSE(metaData.customDir.empty());
-    ASSERT_TRUE(metaData.dataDir.empty());
+    ASSERT_EQ(metaData.dataDir, options.baseDir);
 
     SyncManager::AutoSyncInfo empty;
     SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
@@ -2528,6 +2528,7 @@ HWTEST_F(KvdbServiceImplTest, AddOptionsWithCustomDirNoSeparator004, TestSize.Le
     kvdbServiceImpl_->AddOptions(options, metaData);
 
     ASSERT_FALSE(metaData.customDir.empty());
+    ASSERT_EQ(metaData.dataDir, options.baseDir);
 
     SyncManager::AutoSyncInfo empty;
     SyncManager::GetInstance().SetAutoSyncAppInfo(empty);
