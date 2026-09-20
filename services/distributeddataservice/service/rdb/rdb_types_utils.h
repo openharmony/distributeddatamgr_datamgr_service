@@ -34,7 +34,7 @@ using Reference = DistributedRdb::Reference;
 using StatReporter = DistributedRdb::RdbStatEvent;
 using RdbPredicates = DistributedRdb::PredicatesMemo;
 using RdbOperation = DistributedRdb::RdbPredicateOperation;
-using SyncerParam = DistributedRdb::RdbSyncerParam;
+using RdbSyncerParam = DistributedRdb::RdbSyncerParam;
 using Origin = DistributedRdb::Origin;
 using BigInt = NativeRdb::BigInteger;
 using RdbProperties = DistributedRdb::RdbChangeProperties;
@@ -99,10 +99,10 @@ template<>
 bool Unmarshalling(RdbOperation &output, MessageParcel &data);
 
 template<>
-bool Marshalling(const SyncerParam &input, MessageParcel &data);
+bool Marshalling(const RdbSyncerParam &input, MessageParcel &data);
 
 template<>
-bool Unmarshalling(SyncerParam &output, MessageParcel &data);
+bool Unmarshalling(RdbSyncerParam &output, MessageParcel &data);
 
 template<>
 bool Marshalling(const Origin &input, MessageParcel &data);

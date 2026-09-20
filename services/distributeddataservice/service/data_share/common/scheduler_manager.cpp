@@ -281,7 +281,8 @@ void SchedulerManager::GenRemindTimerFuncParams(
     index += REMIND_TIMER_FUNC_LEN;
     std::string keyStr = "'" + metaData.dataDir + "', " + std::to_string(metaData.tokenId) + ", '" + key.uri + "', " +
                          std::to_string(key.subscriberId) + ", '" + key.bundleName + "', " + std::to_string(userId) +
-                         ", '" + metaData.storeId + "', " + std::to_string(metaData.haMode) + ", ";
+                         ", '" + metaData.storeId + "', " + std::to_string(metaData.haMode) + ", '" +
+                         metaData.replicaPath + "', ";
     schedulerSQL.insert(index, keyStr);
     return;
 }

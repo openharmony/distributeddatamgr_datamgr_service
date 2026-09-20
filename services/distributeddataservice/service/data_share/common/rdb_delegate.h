@@ -50,6 +50,9 @@ public:
         const DataSharePredicates &predicate) override;
 private:
     void TryAndSend(int errCode);
+    // Init may close and reopen store_ when the replica path changes; readers must
+    // snapshot the handle under initMutex_ and use the local copy outside the lock.
+    std::shared_ptr<RdbStore> GetStore();
     std::pair<int, RdbStoreConfig> GetConfig(const DistributedData::StoreMetaData &meta, bool registerFunction);
     bool IsLimit(int count, int32_t callingPid, uint32_t callingTokenId);
     static void AddCallingPidCount(int32_t callingPid);
@@ -69,6 +72,7 @@ private:
     std::string extUri_ = "";
     std::string backup_ = "";
     std::string user_ = "";
+    std::string replicaPath_ = "";
     std::mutex initMutex_;
     bool isInited_ = false;
 };

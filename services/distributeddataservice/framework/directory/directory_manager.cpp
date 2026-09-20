@@ -45,6 +45,11 @@ std::string DirectoryManager::GetStorePath(const StoreMetaData &metaData, uint32
     return GenPath(metaData, version, "");
 }
 
+std::string DirectoryManager::GetStorePathPrefix(const StoreMetaData &metaData, uint32_t version)
+{
+    return GenPath(metaData, version, "", true);
+}
+
 std::string DirectoryManager::GetStoreBackupPath(const StoreMetaData &metaData, uint32_t version)
 {
     auto rootBackupPath = GenPath(metaData, version, "backup");
@@ -220,7 +225,8 @@ int32_t DirectoryManager::GetVersionIndex(uint32_t version) const
     return int32_t(strategies_.size()) - 1;
 }
 
-std::string DirectoryManager::GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath) const
+std::string DirectoryManager::GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath,
+    bool rootPathOnly) const
 {
     int32_t index = GetVersionIndex(version);
     if (index < 0) {
@@ -239,6 +245,9 @@ std::string DirectoryManager::GenPath(const StoreMetaData &metaData, uint32_t ve
             continue;
         }
         path += "/" + section;
+        if (rootPathOnly && strategy.path[i] == "{bundleName}") {
+            break;
+        }
     }
     if (!exPath.empty()) {
         path += "/" + exPath;

@@ -74,6 +74,7 @@ bool StoreMetaData::Marshal(json &node) const
     SetValue(node[GET_NAME(customDir)], customDir);
     SetValue(node[GET_NAME(authType)], authType);
     SetValue(node[GET_NAME(haMode)], haMode);
+    SetValue(node[GET_NAME(replicaPath)], replicaPath);
     return true;
 }
 
@@ -125,6 +126,8 @@ bool StoreMetaData::Unmarshal(const json &node)
     GetValue(node, GET_NAME(customDir), customDir);
     GetValue(node, GET_NAME(authType), authType);
     GetValue(node, GET_NAME(haMode), haMode);
+    replicaPath.clear();
+    GetValue(node, GET_NAME(replicaPath), replicaPath);
     return true;
 }
 
@@ -168,7 +171,8 @@ bool StoreMetaData::operator==(const StoreMetaData &metaData) const
             tokenId == metaData.tokenId && instanceId == metaData.instanceId && appId == metaData.appId &&
             appType == metaData.appType && bundleName == metaData.bundleName && dataDir == metaData.dataDir &&
             storeId == metaData.storeId && user == metaData.user && deviceId == metaData.deviceId &&
-            account == metaData.account && authType == metaData.authType && haMode == metaData.haMode);
+            account == metaData.account && authType == metaData.authType && haMode == metaData.haMode &&
+            replicaPath == metaData.replicaPath);
 }
 
 bool StoreMetaData::operator!=(const StoreMetaData &metaData) const

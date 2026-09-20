@@ -473,6 +473,7 @@ DistributedData::StoreMetaData RdbSubscriberManager::GenMetaDataFromContext(cons
     metaData.dataDir = context->calledSourceDir;
     metaData.storeId = context->calledStoreName;
     metaData.haMode = context->haMode;
+    metaData.replicaPath = context->replicaPath;
     metaData.isEncrypt = context->isEncryptDb;
     metaData.bundleName = context->calledBundleName;
     return metaData;

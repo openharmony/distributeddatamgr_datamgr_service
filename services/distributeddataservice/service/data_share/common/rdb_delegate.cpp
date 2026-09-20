@@ -52,6 +52,7 @@ enum REMIND_TIMER_ARGS : int32_t {
     ARG_USER_ID,
     ARG_STORE_ID,
     ARG_HA_MODE,
+    ARG_REPLICA_PATH,
     ARG_TIME,
     ARGS_SIZE
 };
@@ -67,6 +68,7 @@ std::string RemindTimerFunc(const std::vector<std::string> &args)
     metaData.storeId = args[ARG_STORE_ID];
     metaData.dataDir = args[ARG_DB_PATH];
     metaData.haMode = std::atol(args[ARG_HA_MODE].c_str());
+    metaData.replicaPath = args[ARG_REPLICA_PATH];
     Key key(args[ARG_URI], std::atoll(args[ARG_SUBSCRIBER_ID].c_str()), args[ARG_BUNDLE_NAME]);
     int64_t reminderTime = std::atoll(args[ARG_TIME].c_str());
     int32_t userId = std::atol(args[ARG_USER_ID].c_str());
@@ -80,6 +82,7 @@ std::pair<int, RdbStoreConfig> RdbDelegate::GetConfig(const DistributedData::Sto
     RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(false);
     config.SetHaMode(meta.haMode);
+    config.SetReplicaPath(meta.replicaPath);
     config.SetBundleName(meta.bundleName);
     if (meta.isEncrypt) {
         DistributedData::SecretKeyMetaData secretKeyMeta;
@@ -112,12 +115,13 @@ RdbDelegate::RdbDelegate()
 bool RdbDelegate::Init(const DistributedData::StoreMetaData &meta, int version,
     bool registerFunction, const std::string &extUri, const std::string &backup)
 {
-    if (isInited_) {
+    std::lock_guard<std::mutex> lock(initMutex_);
+    if (isInited_ && replicaPath_ == meta.replicaPath) {
         return true;
     }
-    std::lock_guard<std::mutex> lock(initMutex_);
     if (isInited_) {
-        return true;
+        store_.reset();
+        isInited_ = false;
     }
     tokenId_ = meta.tokenId;
     bundleName_ = meta.bundleName;
@@ -143,6 +147,7 @@ bool RdbDelegate::Init(const DistributedData::StoreMetaData &meta, int version,
         RdbDelegate::TryAndSend(errCode_);
         return false;
     }
+    replicaPath_ = meta.replicaPath;
     isInited_ = true;
     return true;
 }
@@ -151,6 +156,12 @@ RdbDelegate::~RdbDelegate()
 {
     ZLOGI("Destruct. BundleName: %{public}s. StoreName: %{public}s. user: %{public}s", bundleName_.c_str(),
         StringUtils::GeneralAnonymous(storeName_).c_str(), user_.c_str());
+}
+
+std::shared_ptr<RdbStore> RdbDelegate::GetStore()
+{
+    std::lock_guard<std::mutex> lock(initMutex_);
+    return store_;
 }
 
 void RdbDelegate::TryAndSend(int errCode)
@@ -171,13 +182,14 @@ void RdbDelegate::TryAndSend(int errCode)
 std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
     const DataShareValuesBucket &valuesBucket)
 {
-    if (store_ == nullptr) {
+    auto store = GetStore();
+    if (store == nullptr) {
         ZLOGE("store is null");
         return std::make_pair(E_DB_ERROR, 0);
     }
     int64_t rowId = 0;
     ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
-    int ret = store_->Insert(rowId, tableName, bucket);
+    int ret = store->Insert(rowId, tableName, bucket);
     if (ret != E_OK) {
         ZLOGE("Insert failed %{public}s %{public}d", StringUtils::GeneralAnonymous(tableName).c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
@@ -194,14 +206,15 @@ std::pair<int64_t, int64_t> RdbDelegate::InsertEx(const std::string &tableName,
 std::pair<int64_t, int64_t> RdbDelegate::UpdateEx(
     const std::string &tableName, const DataSharePredicates &predicate, const DataShareValuesBucket &valuesBucket)
 {
-    if (store_ == nullptr) {
+    auto store = GetStore();
+    if (store == nullptr) {
         ZLOGE("store is null");
         return std::make_pair(E_DB_ERROR, 0);
     }
     int changeCount = 0;
     ValuesBucket bucket = RdbDataShareAdapter::RdbUtils::ToValuesBucket(valuesBucket);
     RdbPredicates predicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicate, tableName);
-    int ret = store_->Update(changeCount, bucket, predicates);
+    int ret = store->Update(changeCount, bucket, predicates);
     if (ret != E_OK) {
         ZLOGE("Update failed  %{public}s %{public}d", StringUtils::GeneralAnonymous(tableName).c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
@@ -217,13 +230,14 @@ std::pair<int64_t, int64_t> RdbDelegate::UpdateEx(
 
 std::pair<int64_t, int64_t> RdbDelegate::DeleteEx(const std::string &tableName, const DataSharePredicates &predicate)
 {
-    if (store_ == nullptr) {
+    auto store = GetStore();
+    if (store == nullptr) {
         ZLOGE("store is null");
         return std::make_pair(E_DB_ERROR, 0);
     }
     int changeCount = 0;
     RdbPredicates predicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicate, tableName);
-    int ret = store_->Delete(changeCount, predicates);
+    int ret = store->Delete(changeCount, predicates);
     if (ret != E_OK) {
         ZLOGE("Delete failed  %{public}s %{public}d", StringUtils::GeneralAnonymous(tableName).c_str(), ret);
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
@@ -241,7 +255,8 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
     const DataSharePredicates &predicates, const std::vector<std::string> &columns,
     int32_t callingPid, uint32_t callingTokenId)
 {
-    if (store_ == nullptr) {
+    auto store = GetStore();
+    if (store == nullptr) {
         ZLOGE("store is null");
         return std::make_pair(errCode_, nullptr);
     }
@@ -251,7 +266,7 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
         return std::make_pair(E_RESULTSET_BUSY, nullptr);
     }
     RdbPredicates rdbPredicates = RdbDataShareAdapter::RdbUtils::ToPredicates(predicates, tableName);
-    std::shared_ptr<NativeRdb::ResultSet> resultSet = store_->QueryByStep(rdbPredicates, columns);
+    std::shared_ptr<NativeRdb::ResultSet> resultSet = store->QueryByStep(rdbPredicates, columns);
     if (resultSet == nullptr) {
         RADAR_REPORT(__FUNCTION__, RadarReporter::SILENT_ACCESS, RadarReporter::PROXY_CALL_RDB,
             RadarReporter::FAILED, RadarReporter::ERROR_CODE, RadarReporter::QUERY_RDB_ERROR);
@@ -290,11 +305,12 @@ std::pair<int, std::shared_ptr<DataShareResultSet>> RdbDelegate::Query(const std
 
 std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::string> &selectionArgs)
 {
-    if (store_ == nullptr) {
+    auto store = GetStore();
+    if (store == nullptr) {
         ZLOGE("store is null");
         return "";
     }
-    auto resultSet = store_->QueryByStep(sql, selectionArgs);
+    auto resultSet = store->QueryByStep(sql, selectionArgs);
     if (resultSet == nullptr) {
         ZLOGE("Query failed %{public}s", StringUtils::GeneralAnonymous(sql).c_str());
         return "";
@@ -310,11 +326,12 @@ std::string RdbDelegate::Query(const std::string &sql, const std::vector<std::st
 
 std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &sql)
 {
-    if (store_ == nullptr) {
+    auto store = GetStore();
+    if (store == nullptr) {
         ZLOGE("store is null");
         return nullptr;
     }
-    auto resultSet = store_->QuerySql(sql);
+    auto resultSet = store->QuerySql(sql);
     if (resultSet == nullptr) {
         ZLOGE("Query failed %{public}s", StringUtils::GeneralAnonymous(sql).c_str());
         return resultSet;
@@ -329,11 +346,12 @@ std::shared_ptr<NativeRdb::ResultSet> RdbDelegate::QuerySql(const std::string &s
 
 std::pair<int, int64_t> RdbDelegate::UpdateSql(const std::string &sql)
 {
-    if (store_ == nullptr) {
+    auto store = GetStore();
+    if (store == nullptr) {
         ZLOGE("store is null");
         return std::make_pair(E_ERROR, 0);
     }
-    auto[ret, outValue] = store_->Execute(sql);
+    auto[ret, outValue] = store->Execute(sql);
     if (ret != E_OK) {
         ZLOGE("execute update sql failed, err:%{public}d", ret);
         return std::make_pair(ret, 0);
@@ -345,7 +363,7 @@ std::pair<int, int64_t> RdbDelegate::UpdateSql(const std::string &sql)
 
 bool RdbDelegate::IsInvalid()
 {
-    return store_ == nullptr;
+    return GetStore() == nullptr;
 }
 
 bool RdbDelegate::IsLimit(int count, int32_t callingPid, uint32_t callingTokenId)

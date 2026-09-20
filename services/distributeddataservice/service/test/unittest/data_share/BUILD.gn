@@ -252,6 +252,8 @@ ohos_unittest("DataShareServiceImplMockTest") {
     "../../mock/config_factory_mock.cpp",
     "../../mock/data_share_sa_config_info_manager_mock.cpp",
     "../../mock/native_and_hap_token_mock.cpp",
+    "../../mock/db_change_data_mock.cpp",
+    "../../mock/db_store_mock.cpp",
   ]
 
   configs = [ "//foundation/distributeddatamgr/datamgr_service/services/distributeddataservice/service/test:module_private_config" ]

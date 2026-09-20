@@ -141,6 +141,27 @@ static RdbProperties CreateTestProperties(bool isTracked = true, bool isP2p = fa
     return props;
 }
 
+/**
+ * @tc.name: RdbTypesUtil_RdbSyncerParam_ReplicaPath_RoundTrip
+ * @tc.desc: Test that the replica path survives RDB service IPC serialization
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(RdbTypesUtilsTest, RdbTypesUtil_RdbSyncerParam_ReplicaPath_RoundTrip, TestSize.Level1)
+{
+    RdbSyncerParam input;
+    input.dbPath_ = "/data/service/el1/public/database/app/rdb";
+    input.replicaPath_ = "/data/service/el1/public/database/app/replica";
+
+    MessageParcel parcel;
+    ASSERT_TRUE(ITypesUtil::Marshalling(input, parcel));
+
+    RdbSyncerParam output;
+    ASSERT_TRUE(ITypesUtil::Unmarshalling(output, parcel));
+    EXPECT_EQ(output.dbPath_, input.dbPath_);
+    EXPECT_EQ(output.replicaPath_, input.replicaPath_);
+}
+
 static Reference CreateTestReference(const std::string &source = "source_table",
     const std::string &target = "target_table", const std::vector<std::pair<std::string, std::string>> &fields = {})
 {

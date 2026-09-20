@@ -90,6 +90,7 @@ bool LoadConfigNormalDataInfoStrategy::operator()(std::shared_ptr<Context> conte
     context->calledTokenId = metaData.tokenId;
     context->calledStoreName = metaData.storeId;
     context->haMode = metaData.haMode;
+    context->replicaPath = metaData.replicaPath;
     if (context->isEncryptDb) {
         context->secretMetaKey = metaData.GetSecretKey();
     }
@@ -113,6 +114,7 @@ bool LoadConfigSingleDataInfoStrategy::operator()(std::shared_ptr<Context> conte
     context->calledTokenId = metaData.tokenId;
     context->calledStoreName = metaData.storeId;
     context->haMode = metaData.haMode;
+    context->replicaPath = metaData.replicaPath;
     return true;
 }
 } // namespace OHOS::DataShare

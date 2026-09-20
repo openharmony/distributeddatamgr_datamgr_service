@@ -355,12 +355,14 @@ HWTEST_F(AutoCacheTest, SetCloudConflictHandler001, TestSize.Level2)
 */
 HWTEST_F(AutoCacheTest, StoreMetaDatacustomSwitch, TestSize.Level2)
 {
+    EXPECT_EQ(StoreMetaData::CURRENT_VERSION, 0x03000006U);
     StoreMetaData metaData1;
     metaData1.bundleName = "test_bundle";
     metaData1.appId = "test_app";
     metaData1.user = "0";
     metaData1.storeId = "test_store";
     metaData1.dataDir = "/data/test";
+    metaData1.replicaPath = "/data/test/replica";
     metaData1.enableCloud = true;
     metaData1.customSwitch = true;
 
@@ -370,12 +372,24 @@ HWTEST_F(AutoCacheTest, StoreMetaDatacustomSwitch, TestSize.Level2)
     StoreMetaData metaData2;
     EXPECT_TRUE(metaData2.Unmarshal(node));
     EXPECT_TRUE(metaData2.customSwitch);
+    EXPECT_EQ(metaData2.replicaPath, metaData1.replicaPath);
 
     StoreMetaData metaData3 = metaData1;
     EXPECT_TRUE(metaData3 == metaData1);
 
     metaData3.customSwitch = false;
     EXPECT_FALSE(metaData3 == metaData1);
+
+    metaData3.customSwitch = metaData1.customSwitch;
+    metaData3.replicaPath.clear();
+    EXPECT_FALSE(metaData3 == metaData1);
+
+    auto legacyNode = node;
+    legacyNode.erase(GET_NAME(replicaPath));
+    StoreMetaData legacyMetaData;
+    legacyMetaData.replicaPath = metaData1.replicaPath;
+    EXPECT_TRUE(legacyMetaData.Unmarshal(legacyNode));
+    EXPECT_TRUE(legacyMetaData.replicaPath.empty());
 }
 
 /**

@@ -222,14 +222,21 @@ public:
 
     DBStatus SetBinlogEnabled(bool enabled, const std::string &binlogDirPath = "") override
     {
+        lastBinlogDirPath_ = binlogDirPath;
         return resSetBinlogEnabled_;
     }
 
     static inline DBStatus resSetBinlogEnabled_ = DBStatus::OK;
+    static inline std::string lastBinlogDirPath_;
     static bool SetResSetBinlogEnabled(DBStatus res)
     {
         resSetBinlogEnabled_ = res;
         return true;
+    }
+
+    static const std::string &GetLastBinlogDirPath()
+    {
+        return lastBinlogDirPath_;
     }
 
     DBStatus QuerySubscribeOutput(const DBSubscribeCursor &cursorIn, DBSubscribeCursor &cursorOut,

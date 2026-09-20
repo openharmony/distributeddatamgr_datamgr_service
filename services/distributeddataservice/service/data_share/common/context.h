@@ -49,6 +49,7 @@ public:
     int32_t accountId = -1;
     bool accountIsolation = false;
     int32_t haMode = 0;
+    std::string replicaPath;
     std::string permission;
     uint32_t callerTokenId = 0;
     uint32_t calledTokenId = 0;

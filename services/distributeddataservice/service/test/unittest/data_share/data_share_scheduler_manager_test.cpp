@@ -34,6 +34,28 @@ public:
 };
 
 /**
+ * @tc.name: GenRemindTimerFuncParamsIncludesReplicaPath
+ * @tc.desc: pass the custom replica path through the DataShare scalar function arguments
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareSchedulerManagerTest, GenRemindTimerFuncParamsIncludesReplicaPath, TestSize.Level1)
+{
+    DistributedData::StoreMetaData metaData;
+    metaData.dataDir = "/data/test/scheduler";
+    metaData.tokenId = 100;
+    metaData.storeId = "store";
+    metaData.haMode = 1;
+    metaData.replicaPath = "/data/test/replica";
+    Key key("datashareproxy://com.example.provider/test", 1, "subscriber");
+    std::string sql = "select remindTimer()";
+
+    SchedulerManager::GenRemindTimerFuncParams(USER_TEST, metaData, key, sql);
+
+    EXPECT_NE(sql.find("'" + metaData.replicaPath + "'"), std::string::npos);
+}
+
+/**
 * @tc.name: EnableScheduler001
 * @tc.desc: test EnableScheduler function when not find key
 * @tc.type: FUNC
