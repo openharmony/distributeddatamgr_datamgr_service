@@ -121,4 +121,26 @@ HWTEST_F(ThermalStateMonitorTest, Subscribe_StartedMonitorMultipleObservers_Stop
     EXPECT_TRUE(monitor.observers_.empty());
 }
 
+/**
+ * @tc.name: GetInstanceAndRegisterInstance_BothBranches_Covered006
+ * @tc.desc: Verify the getter returns the registered instance and RegisterInstance covers both the
+ *           duplicate-registration and first-registration branches.
+ * @tc.type: FUNC
+ */
+HWTEST_F(ThermalStateMonitorTest, GetInstanceAndRegisterInstance_BothBranches_Covered006, TestSize.Level1)
+{
+    ThermalStateMonitor *instance = ThermalStateMonitor::GetInstance();
+    ASSERT_NE(instance, nullptr);
+
+    ThermalStateMonitorImpl other;
+    EXPECT_FALSE(ThermalStateMonitor::RegisterInstance(&other));
+    EXPECT_EQ(ThermalStateMonitor::GetInstance(), instance);
+
+    ThermalStateMonitor *saved = ThermalStateMonitor::instance_;
+    ThermalStateMonitor::instance_ = nullptr;
+    EXPECT_TRUE(ThermalStateMonitor::RegisterInstance(&other));
+    EXPECT_EQ(ThermalStateMonitor::GetInstance(), &other);
+
+    ThermalStateMonitor::instance_ = saved;
+}
 } // namespace OHOS::Test

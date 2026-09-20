@@ -90,4 +90,27 @@ HWTEST_F(MemoryPressureMonitorTest, Unsubscribe_MissingObserver_ReturnsError004,
 
     EXPECT_EQ(monitor.Unsubscribe("missing"), E_ERROR);
 }
+
+/**
+ * @tc.name: GetInstanceAndRegisterInstance_BothBranches_Covered005
+ * @tc.desc: Verify the getter returns the registered instance and RegisterInstance covers both the
+ *           duplicate-registration and first-registration branches.
+ * @tc.type: FUNC
+ */
+HWTEST_F(MemoryPressureMonitorTest, GetInstanceAndRegisterInstance_BothBranches_Covered005, TestSize.Level1)
+{
+    MemoryPressureMonitor *instance = MemoryPressureMonitor::GetInstance();
+    ASSERT_NE(instance, nullptr);
+
+    MemoryPressureMonitorImpl other;
+    EXPECT_FALSE(MemoryPressureMonitor::RegisterInstance(&other));
+    EXPECT_EQ(MemoryPressureMonitor::GetInstance(), instance);
+
+    MemoryPressureMonitor *saved = MemoryPressureMonitor::instance_;
+    MemoryPressureMonitor::instance_ = nullptr;
+    EXPECT_TRUE(MemoryPressureMonitor::RegisterInstance(&other));
+    EXPECT_EQ(MemoryPressureMonitor::GetInstance(), &other);
+
+    MemoryPressureMonitor::instance_ = saved;
+}
 } // namespace OHOS::Test
