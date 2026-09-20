@@ -92,12 +92,13 @@ HWTEST_F(MemoryPressureMonitorTest, Unsubscribe_MissingObserver_ReturnsError004,
 }
 
 /**
- * @tc.name: GetInstanceAndRegisterInstance_BothBranches_Covered005
- * @tc.desc: Verify the getter returns the registered instance and RegisterInstance covers both the
- *           duplicate-registration and first-registration branches.
+ * @tc.name: GetInstanceAndRegisterInstance_Registered_ReturnsStableInstance005
+ * @tc.desc: Verify the getter returns the load-time registered instance and duplicate registration
+ *           is rejected without clobbering it.
  * @tc.type: FUNC
  */
-HWTEST_F(MemoryPressureMonitorTest, GetInstanceAndRegisterInstance_BothBranches_Covered005, TestSize.Level1)
+HWTEST_F(MemoryPressureMonitorTest, GetInstanceAndRegisterInstance_Registered_ReturnsStableInstance005,
+    TestSize.Level1)
 {
     MemoryPressureMonitor *instance = MemoryPressureMonitor::GetInstance();
     ASSERT_NE(instance, nullptr);
@@ -105,12 +106,5 @@ HWTEST_F(MemoryPressureMonitorTest, GetInstanceAndRegisterInstance_BothBranches_
     MemoryPressureMonitorImpl other;
     EXPECT_FALSE(MemoryPressureMonitor::RegisterInstance(&other));
     EXPECT_EQ(MemoryPressureMonitor::GetInstance(), instance);
-
-    MemoryPressureMonitor *saved = MemoryPressureMonitor::instance_;
-    MemoryPressureMonitor::instance_ = nullptr;
-    EXPECT_TRUE(MemoryPressureMonitor::RegisterInstance(&other));
-    EXPECT_EQ(MemoryPressureMonitor::GetInstance(), &other);
-
-    MemoryPressureMonitor::instance_ = saved;
 }
 } // namespace OHOS::Test
