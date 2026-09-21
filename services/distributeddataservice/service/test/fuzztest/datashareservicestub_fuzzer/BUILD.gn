@@ -136,6 +136,7 @@ ohos_fuzztest("DataShareServiceStubFuzzTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "huks:libhukssdk",
+    "icu:shared_icuuc",
     "ipc:ipc_core",
     "kv_store:distributeddata_inner",
     "kv_store:distributeddb",
