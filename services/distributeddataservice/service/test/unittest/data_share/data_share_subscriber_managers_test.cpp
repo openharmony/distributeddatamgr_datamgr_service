@@ -29,6 +29,7 @@
 #include "proxy_data_subscriber_manager.h"
 #include "published_data_subscriber_manager.h"
 #include "rdb_subscriber_manager.h"
+#include "scheduler_manager.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
 
@@ -622,5 +623,25 @@ HWTEST_F(DataShareSubscriberManagersTest, AddRdbSubscriberDifferentFirstCallerTo
 
     RdbSubscriberManager::GetInstance().Clear();
     ZLOGI("DataShareSubscriberManagersTest AddRdbSubscriberDifferentFirstCallerTokenId end");
+}
+
+/**
+* @tc.name: EmitAbortedWhenLoadDataInfoFailed
+* @tc.desc: test Emit aborts when LoadConfigDataInfoStrategy failed, no scheduler task is started
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(DataShareSubscriberManagersTest, EmitAbortedWhenLoadDataInfoFailed, TestSize.Level1)
+{
+    // Metadata of the proxy uri is absent in test env, LoadConfigDataInfoStrategy fails on emit.
+    // Use a subscriber id not used by other cases to keep scheduler status clean.
+    constexpr int64_t subscriberId = 200;
+    auto context = std::make_shared<Context>(DATA_SHARE_SUBSCRIBE_TEST_URI);
+    RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_SUBSCRIBE_TEST_URI, context);
+    RdbSubscriberManager::GetInstance().Emit(DATA_SHARE_SUBSCRIBE_TEST_URI, subscriberId, BUNDLE_NAME_TEST,
+        context);
+    DataShare::Key key(DATA_SHARE_SUBSCRIBE_TEST_URI, subscriberId, BUNDLE_NAME_TEST);
+    // Emit should abort before SchedulerManager::Start, so the key is never registered.
+    EXPECT_FALSE(SchedulerManager::GetInstance().GetSchedulerStatus(key));
 }
 } // namespace OHOS::Test

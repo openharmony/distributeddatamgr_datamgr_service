@@ -31,6 +31,7 @@
 #include "log_print.h"
 #include "log_debug.h"
 #include "time_service_client.h"
+#include "utils.h"
 
 namespace OHOS::DataShare {
 constexpr int64_t TIME_LIMIT_BY_MILLISECONDS = 18 * 3600 * 1000; // 18 hours
@@ -169,7 +170,7 @@ std::pair<int32_t, int32_t> KvDelegate::Delete(const std::string &collectionName
 
     int32_t status = GetBatch(collectionName, filter, "{\"id_\": true}", queryResults);
     if (status != E_OK) {
-        ZLOGE("db GetBatch failed, %{public}s %{public}d", filter.c_str(), status);
+        ZLOGE("db GetBatch failed, %{public}s %{public}d", StringUtils::GeneralAnonymous(filter).c_str(), status);
         // `GetBatch` should decide whether to restore before errors are returned, so skip restoration here.
         return std::make_pair(status, 0);
     }
@@ -177,7 +178,8 @@ std::pair<int32_t, int32_t> KvDelegate::Delete(const std::string &collectionName
     for (auto &result : queryResults) {
         auto count = GRD_DeleteDoc(db_, collectionName.c_str(), result.c_str(), 0);
         if (count < 0) {
-            ZLOGE("GRD_DeleteDoc failed,status %{public}d %{public}s", count, result.c_str());
+            ZLOGE("GRD_DeleteDoc failed,status %{public}d %{public}s", count,
+                StringUtils::GeneralAnonymous(result).c_str());
             if (RestoreIfNeed(count)) {
                 return std::make_pair(count, 0);
             }
@@ -313,7 +315,8 @@ int32_t KvDelegate::Get(const std::string &collectionName, const Id &id, std::st
 {
     std::string filter = DistributedData::Serializable::Marshall(id);
     if (Get(collectionName, filter, "{}", value) != E_OK) {
-        ZLOGE("Get failed, %{public}s %{public}s", collectionName.c_str(), filter.c_str());
+        ZLOGE("Get failed, %{public}s %{public}s", collectionName.c_str(),
+            StringUtils::GeneralAnonymous(filter).c_str());
         return E_ERROR;
     }
     return E_OK;
@@ -323,12 +326,13 @@ bool KvDelegate::GetVersion(const std::string &collectionName, const std::string
 {
     std::string value;
     if (Get(collectionName, filter, "{}", value) != E_OK) {
-        ZLOGE("Get failed, %{public}s %{public}s", collectionName.c_str(), filter.c_str());
+        ZLOGE("Get failed, %{public}s %{public}s", collectionName.c_str(),
+            StringUtils::GeneralAnonymous(filter).c_str());
         return false;
     }
     VersionData data(-1);
     if (!DistributedData::Serializable::Unmarshall(value, data)) {
-        ZLOGE("Unmarshall failed,data %{public}s", value.c_str());
+        ZLOGE("Unmarshall failed,data %{public}s", StringUtils::GeneralAnonymous(value).c_str());
         return false;
     }
     version = data.GetVersion();

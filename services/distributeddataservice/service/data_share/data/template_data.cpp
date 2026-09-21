@@ -118,7 +118,7 @@ int32_t TemplateData::Query(const std::string &filter, Template &aTemplate)
     std::string queryResult;
     int32_t status = delegate->Get(KvDBDelegate::TEMPLATE_TABLE, filter, "{}", queryResult);
     if (status != E_OK) {
-        ZLOGE("db Get failed, %{public}s %{public}d", filter.c_str(), status);
+        ZLOGE("db Get failed, %{public}s %{public}d", StringUtils::GeneralAnonymous(filter).c_str(), status);
         return status;
     }
     TemplateRootNode data;

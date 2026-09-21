@@ -194,8 +194,38 @@ HWTEST_F(CloudServiceStubTest, OnSubscribe_UnmarshalFailed_EmptyParcel, TestSize
 {
     MessageParcel data;
     MessageParcel reply;
-    
+
     auto result = cloudServiceStub->OnSubscribe(data, reply);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnSetGlobalCloudStrategy_UnmarshalFailed_EmptyParcel
+ * @tc.desc: Test OnSetGlobalCloudStrategy with empty parcel that fails to unmarshal
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceStubTest, OnSetGlobalCloudStrategy_UnmarshalFailed_EmptyParcel, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto result = cloudServiceStub->OnSetGlobalCloudStrategy(data, reply);
+    EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
+}
+
+/**
+ * @tc.name: OnSetCloudStrategy_UnmarshalFailed_EmptyParcel
+ * @tc.desc: Test OnSetCloudStrategy with empty parcel that fails to unmarshal
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(CloudServiceStubTest, OnSetCloudStrategy_UnmarshalFailed_EmptyParcel, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+
+    auto result = cloudServiceStub->OnSetCloudStrategy(data, reply);
     EXPECT_EQ(result, IPC_STUB_INVALID_DATA_ERR);
 }
 
