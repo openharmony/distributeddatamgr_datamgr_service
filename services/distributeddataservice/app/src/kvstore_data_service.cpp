@@ -530,6 +530,12 @@ void KvStoreDataService::StartService()
 {
     // register this to ServiceManager.
     ZLOGI("begin.");
+    // SubscribeMeta must run before InitMetaListener: once the db observer is registered there,
+    // change notifications are dispatched on executor threads and race with a late registration.
+    KvStoreMetaManager::GetInstance().SubscribeMeta(
+        StoreMetaData::GetKey({}), [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value,
+                                       CHANGE_FLAG flag) { OnStoreMetaChanged(key, value, flag); });
+    // Initialize meta db delegate manager.
     KvStoreMetaManager::GetInstance().InitMetaListener();
     DeviceMatrix::GetInstance().Initialize(IPCSkeleton::GetCallingTokenID(), Bootstrap::GetInstance().GetMetaDBName());
     KvStoreMetaManager::GetInstance().InitBroadcast();
@@ -538,11 +544,6 @@ void KvStoreDataService::StartService()
     if (!ret) {
         DumpHelper::GetInstance().AddErrorInfo(SERVER_UNAVAILABLE, "StartService: Service publish failed.");
     }
-    // Initialize meta db delegate manager.
-    KvStoreMetaManager::GetInstance().SubscribeMeta(StoreMetaData::GetKey({}),
-        [this](const std::vector<uint8_t> &key, const std::vector<uint8_t> &value, CHANGE_FLAG flag) {
-            OnStoreMetaChanged(key, value, flag);
-        });
     UpgradeManager::GetInstance().Init(executors_);
     UserDelegate::GetInstance().Init(executors_);
 
