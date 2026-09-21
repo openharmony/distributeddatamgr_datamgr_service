@@ -220,7 +220,7 @@ public:
         return DBStatus::OK;
     }
 
-    DBStatus SetBinlogEnabled(bool enabled) override
+    DBStatus SetBinlogEnabled(bool enabled, const std::string &binlogDirPath = "") override
     {
         return resSetBinlogEnabled_;
     }
@@ -258,7 +258,7 @@ public:
         return true;
     }
 
-    DBStatus SetSubscribeSchema(const std::string &schema) override
+    DBStatus SetSubscribeSchema(const SubscribeSchema &schema) override
     {
         return resSetSubscribeSchema_;
     }

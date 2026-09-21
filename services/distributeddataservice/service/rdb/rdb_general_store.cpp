@@ -1363,7 +1363,7 @@ int32_t RdbGeneralStore::SetSubscribeCursor(const SubscribeCur &cursorIn)
     return GeneralError::E_OK;
 }
 
-int32_t RdbGeneralStore::SetSubscribeSchema(const std::string &schema)
+int32_t RdbGeneralStore::SetSubscribeSchema(const SubscribeSchema &schema)
 {
     if (isClosed_) {
         ZLOGE("database:%{public}s already closed!", meta_.GetStoreAlias().c_str());
@@ -1373,7 +1373,10 @@ int32_t RdbGeneralStore::SetSubscribeSchema(const std::string &schema)
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
     }
-    auto status = delegate_->SetSubscribeSchema(schema);
+    DistributedDB::SubscribeSchema dbSchema;
+    dbSchema.searchSchema = schema.searchSchema;
+    dbSchema.notifySchema = schema.notifySchema;
+    auto status = delegate_->SetSubscribeSchema(dbSchema);
     if (status != DBStatus::OK) {
         ZLOGE("SetSubscribeSchema failed! ret:%{public}d, database:%{public}s", status,
             meta_.GetStoreAlias().c_str());

@@ -386,7 +386,8 @@ HWTEST_F(RdbGeneralStoreTest2, SetSubscribeSchema_DatabaseClosed, TestSize.Level
 {
     std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
-    auto result = store->SetSubscribeSchema("test_schema");
+    SubscribeSchema schema{ "test_schema" };
+    auto result = store->SetSubscribeSchema(schema);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
  
@@ -398,7 +399,8 @@ HWTEST_F(RdbGeneralStoreTest2, SetSubscribeSchema_DatabaseClosed, TestSize.Level
 HWTEST_F(RdbGeneralStoreTest2, SetSubscribeSchema_DelegateNull, TestSize.Level1)
 {
     std::shared_ptr<RdbGeneralStore> store = std::make_shared<RdbGeneralStore>(metaData_);
-    auto result = store->SetSubscribeSchema("test_schema");
+    SubscribeSchema schema{ "test_schema" };
+    auto result = store->SetSubscribeSchema(schema);
     EXPECT_EQ(result, GeneralError::E_ALREADY_CLOSED);
 }
  
@@ -413,7 +415,8 @@ HWTEST_F(RdbGeneralStoreTest2, SetSubscribeSchema_Success, TestSize.Level1)
     std::string tableName = "SetSubscribeSchema_Success";
     auto[store, meta] = InitRdbStore(storeId, tableName);
     MockRelationalStoreDelegate::SetResSetSubscribeSchema(DBStatus::OK);
-    auto result = store->SetSubscribeSchema("test_schema");
+    SubscribeSchema schema{ "test_schema" };
+    auto result = store->SetSubscribeSchema(schema);
     EXPECT_EQ(result, GeneralError::E_OK);
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
     remove(meta.dataDir.c_str());
@@ -430,7 +433,8 @@ HWTEST_F(RdbGeneralStoreTest2, SetSubscribeSchema_Failed, TestSize.Level1)
     std::string tableName = "SetSubscribeSchema_Failed";
     auto[store, meta] = InitRdbStore(storeId, tableName);
     MockRelationalStoreDelegate::SetResSetSubscribeSchema(DBStatus::DB_ERROR);
-    auto result = store->SetSubscribeSchema("test_schema");
+    SubscribeSchema schema{ "test_schema" };
+    auto result = store->SetSubscribeSchema(schema);
     EXPECT_EQ(result, GeneralError::E_ERROR);
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
     remove(meta.dataDir.c_str());
