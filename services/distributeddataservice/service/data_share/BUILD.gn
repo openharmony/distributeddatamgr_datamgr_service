@@ -142,6 +142,7 @@ ohos_source_set("data_share_service") {
     "data_share:datashare_common_lite",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
+    "icu:shared_icuuc",
     "ipc:ipc_core",
     "json:nlohmann_json_static",
     "kv_store:datamgr_common",
