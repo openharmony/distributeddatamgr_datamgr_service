@@ -35,7 +35,10 @@ bool LoadConfigCommonStrategy::operator()(std::shared_ptr<Context> context)
     if (context->callerTokenId == 0) {
         context->callerTokenId = IPCSkeleton::GetCallingTokenID();
     }
-    context->currentUserId = IPCSkeleton::GetCallingUid() / AppExecFwk::Constants::BASE_USER_RANGE;
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    context->currentUserId = (callingUid == 0)
+        ? AccountDelegate::GetInstance()->GetUserByToken(context->callerTokenId)
+        : callingUid / AppExecFwk::Constants::BASE_USER_RANGE;
     context->visitedUserId = context->currentUserId;
     if (!URIUtils::GetAppIndexFromProxyURI(context->uri, context->appIndex)) {
         return false;

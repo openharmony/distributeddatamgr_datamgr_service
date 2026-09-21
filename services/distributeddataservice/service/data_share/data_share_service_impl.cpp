@@ -1171,7 +1171,10 @@ int32_t DataShareServiceImpl::GetSilentProxyStatus(const std::string &uri, bool 
             return errCode;
         }
     }
-    int32_t currentUserId = IPCSkeleton::GetCallingUid() / AppExecFwk::Constants::BASE_USER_RANGE;
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    int32_t currentUserId = (callingUid == 0)
+        ? AccountDelegate::GetInstance()->GetUserByToken(callerTokenId)
+        : callingUid / AppExecFwk::Constants::BASE_USER_RANGE;
     UriInfo uriInfo;
     // GetInfoFromUri will first perform a four-part URI check. Only if the URI contains more than four parts
     // is it necessary to continue to check the SilentProxyEnable status. The URI part length is used as an
