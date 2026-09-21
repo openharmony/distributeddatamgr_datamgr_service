@@ -47,6 +47,7 @@ public:
         DATABASE_DELETED,
         CREATE_MATRIX_FILE,
         CLEAR_LAST_SYNC_INFO,
+        APP_UNINSTALL,
         CLOUD_BUTT
     };
 
