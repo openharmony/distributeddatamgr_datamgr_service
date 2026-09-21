@@ -91,6 +91,7 @@
                 "safwk",
                 "samgr",
                 "screenlock_mgr",
+                "thermal_manager",
                 "time_service",
                 "udmf",
                 "app_file_service",

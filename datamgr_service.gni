@@ -53,6 +53,18 @@ declare_args() {
     datamgr_service_batterymgr = false
   }
 
+  datamgr_service_thermal = true
+  if (!defined(global_parts_info) ||
+      !defined(global_parts_info.powermgr_thermal_manager)) {
+    datamgr_service_thermal = false
+  }
+
+  datamgr_service_memory_manager = true
+  if (!defined(global_parts_info) ||
+      !defined(global_parts_info.resourceschedule_memmgr_override)) {
+    datamgr_service_memory_manager = false
+  }
+
   if (!defined(global_parts_info) ||
       defined(global_parts_info.account_os_account)) {
     os_account_part_is_enabled = true

@@ -39,10 +39,17 @@ public:
     API_EXPORT Snapshot GetSnapshot() const override;
 
 private:
+    BatteryStateMonitorImpl();
+    void PrepareSubscription(const std::string &name, const Observer &observer,
+        std::shared_ptr<BatteryStateEventSubscriber> &subscriber, uint64_t &stateVersion, Snapshot &snapshot);
+    int32_t CompleteSubscription(const std::string &name,
+        const std::shared_ptr<BatteryStateEventSubscriber> &subscriber, uint64_t stateVersion, Snapshot &snapshot);
     std::shared_ptr<BatteryStateEventSubscriber> GetSubscriberLocked();
     void UnsubscribeBatteryEvent();
     void OnBatteryEvent(const EventFwk::CommonEventData &event);
-    bool UpdateBatteryLevel(int32_t level, Snapshot &snapshot);
+    int32_t QueryCapacityLevel() const;
+    bool ApplyInitialLevel(int32_t level, uint64_t stateVersion, Snapshot &snapshot);
+    bool UpdateBatteryLevel(int32_t level, Snapshot &snapshot, bool fromEvent = true);
     void Notify(const Snapshot &snapshot);
 
     mutable std::mutex mutex_;
@@ -51,6 +58,7 @@ private:
     std::shared_ptr<BatteryStateEventSubscriber> batterySubscriber_;
     bool started_ = false;
     bool subscribing_ = false;
+    uint64_t stateVersion_ = 0;
     std::condition_variable condition_;
 };
 } // namespace OHOS::DistributedData

@@ -25,6 +25,10 @@
 #include "log_print.h"
 #include "want.h"
 
+#if defined(DATAMGR_BATTERY_PART_ENABLED)
+#include "battery_srv_client.h"
+#endif
+
 namespace OHOS::DistributedData {
 namespace {
 constexpr const char *BATTERY_CHANGED_EVENT = "usual.event.BATTERY_CHANGED";
@@ -94,6 +98,8 @@ bool BatteryStateMonitorImpl::Register()
     return true;
 }
 
+BatteryStateMonitorImpl::BatteryStateMonitorImpl() = default;
+
 int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer observer)
 {
     if (name.empty() || observer == nullptr) {
@@ -101,38 +107,60 @@ int32_t BatteryStateMonitorImpl::Subscribe(const std::string &name, Observer obs
     }
     Snapshot snapshot;
     std::shared_ptr<BatteryStateEventSubscriber> subscriber;
+    uint64_t queryStateVersion = 0;
+    PrepareSubscription(name, observer, subscriber, queryStateVersion, snapshot);
+    if (subscriber != nullptr) {
+        int32_t status = CompleteSubscription(name, subscriber, queryStateVersion, snapshot);
+        if (status != E_OK) {
+            return status;
+        }
+    } else {
+        snapshot = GetSnapshot();
+    }
+    observer(snapshot);
+    return E_OK;
+}
+
+void BatteryStateMonitorImpl::PrepareSubscription(const std::string &name, const Observer &observer,
+    std::shared_ptr<BatteryStateEventSubscriber> &subscriber, uint64_t &stateVersion, Snapshot &snapshot)
+{
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        condition_.wait(lock, [this]() {
-            return !subscribing_;
-        });
+        condition_.wait(lock, [this]() { return !subscribing_; });
         observers_[name] = observer;
         snapshot = snapshot_;
         if (!started_) {
             subscriber = GetSubscriberLocked();
             subscribing_ = true;
+            stateVersion = stateVersion_;
         }
     }
-    if (subscriber != nullptr) {
-        bool result = EventFwk::CommonEventManager::SubscribeCommonEvent(subscriber);
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            subscribing_ = false;
-            started_ = result;
-            if (!result) {
-                observers_.erase(name);
-                if (batterySubscriber_ == subscriber) {
-                    batterySubscriber_.reset();
-                }
+}
+
+int32_t BatteryStateMonitorImpl::CompleteSubscription(const std::string &name,
+    const std::shared_ptr<BatteryStateEventSubscriber> &subscriber, uint64_t stateVersion, Snapshot &snapshot)
+{
+    bool result = EventFwk::CommonEventManager::SubscribeCommonEvent(subscriber);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        subscribing_ = false;
+        started_ = result;
+        if (!result) {
+            observers_.erase(name);
+            if (batterySubscriber_ == subscriber) {
+                batterySubscriber_.reset();
             }
         }
-        condition_.notify_all();
-        if (!result) {
-            ZLOGE("subscribe battery state event failed, name:%{public}s", name.c_str());
-            return E_ERROR;
-        }
     }
-    observer(snapshot);
+    condition_.notify_all();
+    if (!result) {
+        ZLOGE("subscribe battery state event failed, name:%{public}s", name.c_str());
+        return E_ERROR;
+    }
+    auto level = QueryCapacityLevel();
+    if (!ApplyInitialLevel(level, stateVersion, snapshot)) {
+        snapshot = GetSnapshot();
+    }
     return E_OK;
 }
 
@@ -227,17 +255,55 @@ void BatteryStateMonitorImpl::OnBatteryEvent(const EventFwk::CommonEventData &ev
     }
 }
 
-bool BatteryStateMonitorImpl::UpdateBatteryLevel(int32_t level, Snapshot &snapshot)
+int32_t BatteryStateMonitorImpl::QueryCapacityLevel() const
+{
+#if defined(DATAMGR_BATTERY_PART_ENABLED)
+    return static_cast<int32_t>(OHOS::PowerMgr::BatterySrvClient::GetInstance().GetCapacityLevel());
+#else
+    return INVALID_LEVEL;
+#endif
+}
+
+bool BatteryStateMonitorImpl::ApplyInitialLevel(
+    int32_t level, uint64_t stateVersion, Snapshot &snapshot)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!started_) {
         return false;
     }
-    int32_t normalized = ClampLevel(level);
-    if (snapshot_.batteryLevel == normalized) {
+    int32_t clampedLevel = ClampLevel(level);
+    if (level != clampedLevel) {
+        ZLOGW("clamp initial battery level, raw:%{public}d, clamped:%{public}d", level, clampedLevel);
+    }
+    if (stateVersion_ != stateVersion) {
+        ZLOGI("ignore stale initial battery query result");
         return false;
     }
-    snapshot_.batteryLevel = normalized;
+    snapshot_.batteryLevel = clampedLevel;
+    snapshot = snapshot_;
+    return true;
+}
+
+bool BatteryStateMonitorImpl::UpdateBatteryLevel(int32_t level, Snapshot &snapshot, bool fromEvent)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!started_ && !subscribing_) {
+        return false;
+    }
+    int32_t clampedLevel = ClampLevel(level);
+    if (level != clampedLevel) {
+        ZLOGW("clamp battery level, raw:%{public}d, clamped:%{public}d", level, clampedLevel);
+    }
+    if (snapshot_.batteryLevel == clampedLevel) {
+        if (fromEvent) {
+            ++stateVersion_;
+        }
+        return false;
+    }
+    snapshot_.batteryLevel = clampedLevel;
+    if (fromEvent) {
+        ++stateVersion_;
+    }
     snapshot = snapshot_;
     return true;
 }

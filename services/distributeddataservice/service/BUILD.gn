@@ -75,12 +75,15 @@ ohos_shared_library("distributeddatasvc") {
 
   deps = [
     "${data_service_path}/adapter/account:distributeddata_account",
+    "${data_service_path}/adapter/battery_state:distributeddata_battery_state",
     "${data_service_path}/adapter/bms:distributeddata_bms_delegate",
     "${data_service_path}/adapter/communicator:distributeddata_communicator",
     "${data_service_path}/adapter/dfx:distributeddata_dfx",
     "${data_service_path}/adapter/network:distributeddata_network",
+    "${data_service_path}/adapter/memory_pressure:distributeddata_memory_pressure",
     "${data_service_path}/adapter/power_manager:distributeddata_power_manager",
     "${data_service_path}/adapter/qos:distributeddata_qos",
+    "${data_service_path}/adapter/thermal_state:distributeddata_thermal_state",
     "${data_service_path}/adapter/utils:distributeddata_utils",
     "${data_service_path}/framework:distributeddatasvcfwk",
     "${data_service_path}/service/backup:distributeddata_backup",
