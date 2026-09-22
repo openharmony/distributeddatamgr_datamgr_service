@@ -205,7 +205,42 @@ HWTEST_F(RdbGeneralStoreTest2, SetBinlogEnabled_Success, TestSize.Level1)
     EXPECT_EQ(store->Close(true), GeneralError::E_OK);
     remove(meta.dataDir.c_str());
 }
- 
+
+/**
+ * @tc.name: SetBinlogEnabled_CustomReplicaPath_Forwarded
+ * @tc.desc: Test that the configured replica path is forwarded to the database delegate
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(RdbGeneralStoreTest2, SetBinlogEnabled_CustomReplicaPath_Forwarded, TestSize.Level1)
+{
+    auto meta = GetStoreMeta("SetBinlogEnabled_CustomReplicaPath_Forwarded.db");
+    meta.replicaPath = "/data/service/el1/public/database/test_rdb_general_store/replica";
+    auto store = std::make_shared<RdbGeneralStore>(meta);
+    ASSERT_EQ(store->Init(), GeneralError::E_OK);
+
+    MockRelationalStoreDelegate::lastBinlogDirPath_.clear();
+    MockRelationalStoreDelegate::SetResSetBinlogEnabled(DBStatus::OK);
+    EXPECT_EQ(store->SetBinlogEnabled(true), GeneralError::E_OK);
+    EXPECT_EQ(MockRelationalStoreDelegate::GetLastBinlogDirPath(), meta.replicaPath);
+    EXPECT_EQ(store->Close(true), GeneralError::E_OK);
+}
+
+/**
+ * @tc.name: GetRdbConfig_CustomReplicaPath_Preserved
+ * @tc.desc: Test that opening a native RDB store keeps the configured replica path
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(RdbGeneralStoreTest2, GetRdbConfig_CustomReplicaPath_Preserved, TestSize.Level1)
+{
+    auto meta = GetStoreMeta("GetRdbConfig_CustomReplicaPath_Preserved.db");
+    meta.replicaPath = "/data/service/el1/public/database/test_rdb_general_store/replica";
+    auto config = RdbGeneralStore::GetRdbConfig(meta, false);
+    EXPECT_EQ(config.GetPath(), meta.dataDir);
+    EXPECT_EQ(config.GetReplicaPath(), meta.replicaPath);
+}
+
 /**
  * @tc.name: SetBinlogEnabled_Failed
  * @tc.desc: Test SetBinlogEnabled returns E_ERROR when delegate returns error

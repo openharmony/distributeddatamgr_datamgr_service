@@ -115,6 +115,7 @@ void RdbServiceImplTokenTest::SetUpTestCase()
     BTokenIdKit::tokenkIdKit = tokenIdMock;
     InitMetaData();
     InitMetaDataManager();
+    Bootstrap::GetInstance().LoadDirectory();
     Bootstrap::GetInstance().LoadCheckers();
     CryptoManager::GetInstance().GenerateRootKey();
         // Construct the statisticInfo data
@@ -1089,5 +1090,269 @@ HWTEST_F(RdbServiceImplTokenTest, BeforeOpen003, TestSize.Level0)
     auto result = service.BeforeOpen(param);
     EXPECT_EQ(result, RDB_NO_META);
 }
+
+/**
+ * @tc.name: ReplicaPathRejectsNonSystemApp
+ * @tc.desc: Reject a custom replica path from an ordinary HAP caller.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, ReplicaPathRejectsNonSystemApp, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_HAP));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(false));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.replicaPath_ = "/data/service/el1/public/database/replica";
+
+    EXPECT_FALSE(service.IsValidParam(param));
+}
+
+/**
+ * @tc.name: ReplicaPathAllowsSystemApp
+ * @tc.desc: Allow a valid absolute replica path from a system app caller.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, ReplicaPathAllowsSystemApp, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_HAP));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
+    HapTokenInfo hapInfo{};
+    hapInfo.userID = 0;
+    hapInfo.instIndex = 0;
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
+        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(hapInfo), testing::Return(0)));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    // HAP caller: /data/app/el<area>/<user>/database/<bundleName>; user resolves to 0 under the token mock.
+    param.replicaPath_ = "/data/app/el1/0/database/" + std::string(TEST_BUNDLE) + "/replica";
+
+    EXPECT_TRUE(service.IsValidParam(param));
+}
+
+/**
+ * @tc.name: ReplicaPathAllowsNative
+ * @tc.desc: Allow a valid absolute replica path from a Native/SA caller.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, ReplicaPathAllowsNative, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_NATIVE));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.replicaPath_ = "/data/service/el1/public/database/" + std::string(TEST_BUNDLE) + "/replica";
+
+    EXPECT_TRUE(service.IsValidParam(param));
+}
+
+/**
+ * @tc.name: ReplicaPathRejectsTraversal
+ * @tc.desc: Reject replica paths that can escape the caller's directory through traversal syntax.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, ReplicaPathRejectsTraversal, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_NATIVE));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+
+    for (const auto &path : { std::string("relative/replica"), std::string("/"), std::string("/data/./replica"),
+        std::string("/data/../replica"), std::string("/data/replica/.."), std::string("/data/replica\\dir") }) {
+        param.replicaPath_ = path;
+        EXPECT_FALSE(service.IsValidParam(param));
+    }
+    param.replicaPath_ = "/data/replica";
+    param.replicaPath_.push_back('\0');
+    param.replicaPath_ += "suffix";
+    EXPECT_FALSE(service.IsValidParam(param));
+}
+/**
+ * @tc.name: ReplicaPathRejectsOutsideCallerRoot
+ * @tc.desc: Reject replica paths that are not under the caller-owned store root.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, ReplicaPathRejectsOutsideCallerRoot, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_NATIVE));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+
+    param.replicaPath_ = "/data/service/el1/public/database/" + std::string(TEST_BUNDLE) + "/replica";
+    EXPECT_TRUE(service.IsValidParam(param));
+    param.replicaPath_ = "/data/service/el1/public/database/other_bundle/replica";
+    EXPECT_FALSE(service.IsValidParam(param));
+    param.replicaPath_ = "/mnt/custom/replica";
+    EXPECT_FALSE(service.IsValidParam(param));
+    // bundleName must match on a section boundary, not as a string prefix.
+    param.replicaPath_ = "/data/service/el1/public/database/" + std::string(TEST_BUNDLE) + "_suffix/replica";
+    EXPECT_FALSE(service.IsValidParam(param));
+}
+
+/**
+ * @tc.name: AfterOpen_SandboxReplicaPath_PhysicalMetadataAndSandboxReply
+ * @tc.desc: Persist physical paths and return sandbox paths for users and application clones.
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, AfterOpen_SandboxReplicaPath_PhysicalMetadataAndSandboxReply, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_HAP));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
+    RdbServiceImpl service;
+    for (int32_t user : { 100, 101 }) {
+        for (int32_t instance : { 0, 1 }) {
+            HapTokenInfo hapInfo{};
+            hapInfo.userID = user;
+            hapInfo.instIndex = instance;
+            EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
+                .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(hapInfo), testing::Return(0)));
+            RdbSyncerParam param;
+            GetRdbSyncerParam(param);
+            param.storeName_ = "sandbox_replica_roundtrip";
+            param.hapName_ = "entry";
+            param.customDir_ = "custom";
+            std::string bundle = instance == 0 ? TEST_BUNDLE : "+clone-1+" + std::string(TEST_BUNDLE);
+            auto physicalRoot = "/data/app/el1/" + std::to_string(user) + "/database/" + bundle;
+            for (const auto &suffix : { "", "/", "/entry/replica", "/entry/custom/replica" }) {
+                param.replicaPath_ = std::string("/data/storage/el1/database") + suffix;
+                EXPECT_EQ(service.AfterOpen(param), RDB_OK);
+                auto [exists, stored] = service.LoadStoreMetaData(param);
+                EXPECT_TRUE(exists);
+                EXPECT_EQ(stored.replicaPath, physicalRoot + suffix);
+                auto reply = param;
+                EXPECT_EQ(service.BeforeOpen(reply), RDB_OK);
+                EXPECT_EQ(reply.replicaPath_, param.replicaPath_);
+                EXPECT_TRUE(MetaDataManager::GetInstance().DelMeta(stored.GetKey(), true));
+                MetaDataManager::GetInstance().DelMeta(stored.GetKeyWithoutPath(), true);
+                StoreMetaMapping mapping(stored);
+                MetaDataManager::GetInstance().DelMeta(mapping.GetKey(), true);
+            }
+        }
+    }
+}
+
+/**
+ * @tc.name: AfterOpen_InvalidSandboxReplicaPath_RejectsRegistration
+ * @tc.desc: Reject unsupported sandbox roots, prefix collisions and traversal before saving metadata.
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, AfterOpen_InvalidSandboxReplicaPath_RejectsRegistration, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_HAP));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
+    HapTokenInfo hapInfo{};
+    hapInfo.userID = 100;
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
+        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(hapInfo), testing::Return(0)));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.storeName_ = "invalid_sandbox_replica";
+    for (const auto &path : { "/data/storage/el2/database/replica", "/data/storage/el1/base/files/replica",
+        "/data/storage/el1/database_suffix/replica", "/data/storage/el1/database/../other",
+        "/data/storage/el1/database/./replica", "/data/storage/el1/database/replica/..",
+        "/data/storage/el1/database/replica\\other" }) {
+        param.replicaPath_ = path;
+        EXPECT_EQ(service.AfterOpen(param), RDB_ERROR) << path;
+        EXPECT_EQ(service.BeforeOpen(param), RDB_ERROR) << path;
+    }
+    param.replicaPath_ = "/data/storage/el1/database/replica";
+    param.replicaPath_.push_back('\0');
+    param.replicaPath_ += "suffix";
+    EXPECT_EQ(service.AfterOpen(param), RDB_ERROR);
+    EXPECT_FALSE(service.LoadStoreMetaData(param).first);
+}
+
+/**
+ * @tc.name: AfterOpen_SandboxReplicaPath_RejectsUntrustedCaller
+ * @tc.desc: Ordinary applications and Native callers cannot use the HAP sandbox mapping.
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, AfterOpen_SandboxReplicaPath_RejectsUntrustedCaller, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_HAP));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(false));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.replicaPath_ = "/data/storage/el1/database/replica";
+    EXPECT_EQ(service.AfterOpen(param), RDB_ERROR);
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_NATIVE));
+    EXPECT_EQ(service.AfterOpen(param), RDB_ERROR);
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_HAP));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_)).WillRepeatedly(testing::Return(-1));
+    EXPECT_EQ(service.AfterOpen(param), RDB_ERROR);
+}
+
+/**
+ * @tc.name: AfterOpen_SandboxReplicaPathWithoutDirectory_RejectsRegistration
+ * @tc.desc: Missing directory configuration cannot turn a custom replica path into the default path.
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, AfterOpen_SandboxReplicaPathWithoutDirectory_RejectsRegistration, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_HAP));
+    EXPECT_CALL(*tokenIdMock, IsSystemAppByFullTokenID(testing::_)).WillRepeatedly(testing::Return(true));
+    HapTokenInfo hapInfo{};
+    hapInfo.userID = 100;
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(testing::_, testing::_))
+        .WillRepeatedly(testing::DoAll(testing::SetArgReferee<1>(hapInfo), testing::Return(0)));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.replicaPath_ = "/data/storage/el1/database/replica";
+    DirectoryManager::GetInstance().Initialize({}, {});
+    auto result = service.AfterOpen(param);
+    Bootstrap::GetInstance().LoadDirectory();
+    EXPECT_EQ(result, RDB_ERROR);
+}
+
+/**
+ * @tc.name: BeforeOpen_NativeReplicaPathAndEmptyPath_PreservesValue
+ * @tc.desc: Native physical paths and legacy empty paths remain unchanged in metadata and replies.
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(RdbServiceImplTokenTest, BeforeOpen_NativeReplicaPathAndEmptyPath_PreservesValue, TestSize.Level0)
+{
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(testing::_)).WillRepeatedly(testing::Return(TOKEN_NATIVE));
+    RdbServiceImpl service;
+    RdbSyncerParam param;
+    GetRdbSyncerParam(param);
+    param.storeName_ = "native_replica_roundtrip";
+    auto root = "/data/service/el1/public/database/" + std::string(TEST_BUNDLE);
+    for (const auto &path : { std::string(), root + "/replica" }) {
+        param.replicaPath_ = path;
+        EXPECT_EQ(service.AfterOpen(param), RDB_OK);
+        auto [exists, stored] = service.LoadStoreMetaData(param);
+        EXPECT_TRUE(exists);
+        EXPECT_EQ(stored.replicaPath, path);
+        EXPECT_EQ(service.BeforeOpen(param), RDB_OK);
+        EXPECT_EQ(param.replicaPath_, path);
+        EXPECT_TRUE(MetaDataManager::GetInstance().DelMeta(stored.GetKey(), true));
+        MetaDataManager::GetInstance().DelMeta(stored.GetKeyWithoutPath(), true);
+        StoreMetaMapping mapping(stored);
+        MetaDataManager::GetInstance().DelMeta(mapping.GetKey(), true);
+    }
+}
+
 } // namespace DistributedRDBTest
 } // namespace OHOS::Test

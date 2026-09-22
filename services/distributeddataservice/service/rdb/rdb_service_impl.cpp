@@ -87,6 +87,21 @@ constexpr uint32_t ALLOW_ONLINE_AUTO_SYNC = 8;
 constexpr int32_t VALID_PARAM_LENGTH = 2;
 const size_t KEY_COUNT = 2;
 namespace OHOS::DistributedRdb {
+namespace {
+std::string GetSandboxDatabaseRoot(int32_t area)
+{
+    if (area < GeneralStore::EL0 || area > GeneralStore::EL5) {
+        return "";
+    }
+    return "/data/storage/el" + std::to_string(area) + "/database";
+}
+
+bool IsPathStartWithRoot(const std::string &path, const std::string &root)
+{
+    return !root.empty() && path.compare(0, root.size(), root) == 0 &&
+        (path.size() == root.size() || path[root.size()] == '/');
+}
+} // namespace
 __attribute__((used)) RdbServiceImpl::Factory RdbServiceImpl::factory_;
 __attribute__((used)) std::shared_ptr<RdbFlowControlManager> RdbServiceImpl::rdbFlowControlManager_;
 RdbServiceImpl::Factory::Factory()
@@ -1140,6 +1155,51 @@ bool RdbServiceImpl::IsValidPath(const std::string &param)
     return true;
 }
 
+bool RdbServiceImpl::IsValidReplicaPath(const RdbSyncerParam &param)
+{
+    const auto &path = param.replicaPath_;
+    if (path.empty()) {
+        return true;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    auto tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    bool isNative = tokenType == TOKEN_NATIVE;
+    bool isSystemApp = !isNative && TokenIdKit::IsSystemAppByFullTokenID(IPCSkeleton::GetCallingFullTokenID());
+    if ((!isNative && !isSystemApp) || path.front() != '/' || path == "/" ||
+        path.find('\0') != std::string::npos || !Constant::IsValidPath(path)) {
+        return false;
+    }
+    for (const auto &component : Constant::Split(path, "/")) {
+        if (component == ".") {
+            return false;
+        }
+    }
+    // Sandbox paths are converted and rejected centrally in GetStoreMetaData and AfterOpen.
+    if (tokenType == TOKEN_HAP && IsPathStartWithRoot(path, GetSandboxDatabaseRoot(param.area_))) {
+        return true;
+    }
+    // The replica directory must stay inside the caller-owned store root identified by bundleName.
+    StoreMetaData metaData;
+    metaData.tokenId = tokenId;
+    auto [instanceId, user] = GetInstIndexAndUser(tokenId, param.bundleName_);
+    metaData.instanceId = instanceId;
+    metaData.bundleName = param.bundleName_;
+    if (tokenType != TOKEN_HAP && param.subUser_ != 0) {
+        metaData.user = std::to_string(param.subUser_);
+    } else {
+        metaData.user = std::to_string(user);
+    }
+    metaData.storeType = param.type_;
+    metaData.securityLevel = param.level_;
+    metaData.area = NormalizeArea(param.area_);
+    metaData.appType = "harmony";
+    if (!IsPathStartWithRoot(path, DirectoryManager::GetInstance().GetStorePathPrefix(metaData))) {
+        ZLOGE("replicaPath is outside the caller store root, path:%{public}s", Anonymous::Change(path).c_str());
+        return false;
+    }
+    return true;
+}
+
 bool RdbServiceImpl::IsValidCustomDir(const std::string &customDir, int32_t upLimit)
 {
     if (customDir.empty()) {
@@ -1167,6 +1227,10 @@ bool RdbServiceImpl::IsValidCustomDir(const std::string &customDir, int32_t upLi
 
 bool RdbServiceImpl::IsValidParam(const RdbSyncerParam &param)
 {
+    if (!IsValidReplicaPath(param)) {
+        ZLOGE("replicaPath is invalid, path:%{public}s", Anonymous::Change(param.replicaPath_).c_str());
+        return false;
+    }
     if (param.storeName_.find("/") != std::string::npos) {
         ZLOGE("storeName is Invalid, storeName is %{public}s.", Anonymous::Change(param.storeName_).c_str());
         return false;
@@ -1247,6 +1311,15 @@ void RdbServiceImpl::SetReturnParam(const StoreMetaData &metadata, RdbSyncerPara
     }
     param.isSearchable_ = metadata.isSearchable;
     param.haMode_ = metadata.haMode;
+    param.replicaPath_ = metadata.replicaPath;
+    if (!metadata.replicaPath.empty() &&
+        AccessTokenKit::GetTokenTypeFlag(IPCSkeleton::GetCallingTokenID()) == TOKEN_HAP) {
+        auto prefix = DirectoryManager::GetInstance().GetStorePathPrefix(metadata);
+        auto sandboxRoot = GetSandboxDatabaseRoot(metadata.area);
+        if (!sandboxRoot.empty() && IsPathStartWithRoot(metadata.replicaPath, prefix)) {
+            param.replicaPath_ = sandboxRoot + metadata.replicaPath.substr(prefix.size());
+        }
+    }
 }
 
 void RdbServiceImpl::SaveLaunchInfo(StoreMetaData &meta)
@@ -1306,49 +1379,65 @@ int32_t RdbServiceImpl::AfterOpen(const RdbSyncerParam &param)
         return RDB_ERROR;
     }
     auto meta = GetStoreMetaData(param);
+    // A requested replica path resolving to empty means a sandbox path whose physical root could not
+    // be derived (directory config missing or token info unavailable). Reject the registration instead
+    // of persisting an empty path, which would silently fall back to the default replica directory.
+    if (!param.replicaPath_.empty() && meta.replicaPath.empty()) {
+        ZLOGE("Cannot resolve replica directory, bundleName:%{public}s", param.bundleName_.c_str());
+        return RDB_ERROR;
+    }
     StoreMetaData old;
     auto isCreated = MetaDataManager::GetInstance().LoadMeta(meta.GetKey(), old, true);
     meta.enableCloud = isCreated ? old.enableCloud : meta.enableCloud;
     meta.customSwitch = isCreated ? old.customSwitch : meta.customSwitch;
     meta.autoSyncSwitch = isCreated ? old.autoSyncSwitch : meta.autoSyncSwitch;
-    // MetaDataSaver destructor will automatically flush all entries
-    {
-        // Search relies on metadata, which needs to be stored in the database before being used by search
-        MetaDataSaver saver(true);
-        if (!isCreated || meta != old) {
-            Upgrade(meta, old);
-            ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
-                "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
-                meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
-            meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId(old, meta);
-            MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
-            saver.Add(meta.GetKey(), meta);
-            AutoLaunchMetaData launchData;
-            if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
-                SaveLaunchInfo(meta);
-            }
-        }
-
-        StoreMetaMapping metaMapping(meta);
-        MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
-        if (meta.isSearchable) {
-            metaMapping.searchPath = meta.dataDir;
-        }
-        metaMapping = meta;
-        saver.Add(metaMapping.GetKey(), metaMapping);
-
-        // Collect metadata entries using batch saver
-        SaveDebugInfo(meta, param, saver);
-        SavePromiseInfo(meta, param, saver);
-        SaveDfxInfo(meta, param, saver);
-        SaveAppIDMeta(meta, old, saver);
-
-        if (param.isEncrypt_ && !param.password_.empty()) {
-            SaveSecretKeyMeta(meta, param.password_, saver);
-        }
-    }
+    SaveOpenedMeta(param, meta, old, isCreated);
     GetCloudSchema(meta);
     return RDB_OK;
+}
+
+void RdbServiceImpl::SaveOpenedMeta(const RdbSyncerParam &param, StoreMetaData &meta, const StoreMetaData &old,
+    bool isCreated)
+{
+    // MetaDataSaver destructor will automatically flush all entries.
+    // Search relies on metadata, which needs to be stored in the database before being used by search.
+    MetaDataSaver saver(true);
+    if (!isCreated || meta != old) {
+        if (isCreated && meta.replicaPath != old.replicaPath) {
+            // AutoCache delegates keep the replica path used when they were created. Invalidate the old
+            // delegate before saving the new metadata so the next GetStore opens it with the new path.
+            AutoCache::GetInstance().CloseStore(meta.tokenId, old.dataDir, old.storeId);
+        }
+        Upgrade(meta, old);
+        ZLOGI("meta bundle:%{public}s store:%{public}s type:%{public}d->%{public}d encrypt:%{public}d->%{public}d "
+            "area:%{public}d->%{public}d", meta.bundleName.c_str(), meta.GetStoreAlias().c_str(), old.storeType,
+            meta.storeType, old.isEncrypt, meta.isEncrypt, old.area, meta.area);
+        meta.isNeedUpdateDeviceId = isCreated && !TryUpdateDeviceId(old, meta);
+        MetaDataManager::GetInstance().SaveMeta(meta.GetKey(), meta, true);
+        saver.Add(meta.GetKey(), meta);
+        AutoLaunchMetaData launchData;
+        if (!MetaDataManager::GetInstance().LoadMeta(meta.GetAutoLaunchKey(), launchData, true)) {
+            SaveLaunchInfo(meta);
+        }
+    }
+
+    StoreMetaMapping metaMapping(meta);
+    MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
+    if (meta.isSearchable) {
+        metaMapping.searchPath = meta.dataDir;
+    }
+    metaMapping = meta;
+    saver.Add(metaMapping.GetKey(), metaMapping);
+
+    // Collect metadata entries using batch saver
+    SaveDebugInfo(meta, param, saver);
+    SavePromiseInfo(meta, param, saver);
+    SaveDfxInfo(meta, param, saver);
+    SaveAppIDMeta(meta, old, saver);
+
+    if (param.isEncrypt_ && !param.password_.empty()) {
+        SaveSecretKeyMeta(meta, param.password_, saver);
+    }
 }
 
 int32_t RdbServiceImpl::RegisterMatrix(const RdbSyncerParam &param, DistributedRdb::MatrixFileInfo &fileInfo)
@@ -1504,13 +1593,7 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     }
     metaData.storeType = param.type_;
     metaData.securityLevel = param.level_;
-    // Normalize invalid area to 0xff to prevent invalid area value
-    if (param.area_ < GeneralStore::EL0 || param.area_ > GeneralStore::EL5) {
-        ZLOGW("area is invalid %{public}d, normalize to 0xff", param.area_);
-        metaData.area = 0xff;
-    } else {
-        metaData.area = param.area_;
-    }
+    metaData.area = NormalizeArea(param.area_);
     metaData.appId = CheckerManager::GetInstance().GetAppId(Converter::ConvertToStoreInfo(metaData));
     metaData.appType = "harmony";
     metaData.hapName = param.hapName_;
@@ -1529,12 +1612,41 @@ StoreMetaData RdbServiceImpl::GetStoreMetaData(const RdbSyncerParam &param)
     }
     metaData.isSearchable = param.isSearchable_;
     metaData.haMode = param.haMode_;
+    metaData.replicaPath = param.replicaPath_;
+    if (type == TOKEN_HAP) {
+        metaData.replicaPath = NormalizeReplicaPath(param.replicaPath_, metaData);
+    }
     metaData.asyncDownloadAsset = param.asyncDownloadAsset_;
     metaData.autoSyncSwitch = param.autoSyncSwitch_;
     metaData.assetConflictPolicy = param.assetConflictPolicy_;
     metaData.assetTempPath = param.assetTempPath_;
     metaData.assetDownloadOnDemand = param.assetDownloadOnDemand_;
     return metaData;
+}
+
+int32_t RdbServiceImpl::NormalizeArea(int32_t area)
+{
+    // Normalize invalid area to 0xff to prevent invalid area value
+    if (area < GeneralStore::EL0 || area > GeneralStore::EL5) {
+        ZLOGW("area is invalid %{public}d, normalize to 0xff", area);
+        return 0xff;
+    }
+    return area;
+}
+
+std::string RdbServiceImpl::NormalizeReplicaPath(const std::string &path, const StoreMetaData &metaData)
+{
+    auto sandboxRoot = GetSandboxDatabaseRoot(metaData.area);
+    if (!IsPathStartWithRoot(path, sandboxRoot)) {
+        return path;
+    }
+    // instanceId < 0 means token info is unavailable; keep the path empty so
+    // AfterOpen rejects the registration instead of persisting a wrong directory.
+    if (metaData.instanceId < 0) {
+        return "";
+    }
+    auto prefix = DirectoryManager::GetInstance().GetStorePathPrefix(metaData);
+    return prefix.empty() ? "" : prefix + path.substr(sandboxRoot.size());
 }
 
 std::pair<bool, StoreMetaData> RdbServiceImpl::LoadStoreMetaData(const RdbSyncerParam &param)

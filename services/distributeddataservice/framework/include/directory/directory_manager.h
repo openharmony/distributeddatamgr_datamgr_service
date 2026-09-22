@@ -38,6 +38,9 @@ public:
     };
     API_EXPORT static DirectoryManager &GetInstance();
     API_EXPORT std::string GetStorePath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
+    // Expanded store path up to and including the bundleName section, e.g. the caller-owned root
+    // "/data/{type}/{area}/{userId}/database/{bundleName}" used to confine custom replica directories.
+    API_EXPORT std::string GetStorePathPrefix(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetStoreBackupPath(const StoreMetaData &metaData, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetClonePath(const std::string &userId, uint32_t version = INVALID_VERSION);
     API_EXPORT std::string GetMetaStorePath(uint32_t version = INVALID_VERSION);
@@ -67,7 +70,9 @@ private:
     std::string GetCustomDir(const StoreMetaData &metaData) const;
     std::vector<std::string> Split(const std::string &source, const std::string &pattern) const;
     int32_t GetVersionIndex(uint32_t version) const;
-    std::string GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath = "") const;
+    // rootPathOnly: generate only the app/SA root path, i.e. the path up to and including {bundleName}.
+    std::string GenPath(const StoreMetaData &metaData, uint32_t version, const std::string &exPath = "",
+        bool rootPathOnly = false) const;
     const std::map<std::string, Action> actions_;
     std::vector<StrategyImpl> strategies_;
     std::vector<StoreType> storeTypes_;

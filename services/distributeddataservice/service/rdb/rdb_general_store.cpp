@@ -1309,7 +1309,7 @@ int32_t RdbGeneralStore::SetBinlogEnabled(bool enabled)
     if (delegate_ == nullptr) {
         return GeneralError::E_ALREADY_CLOSED;
     }
-    auto status = delegate_->SetBinlogEnabled(enabled);
+    auto status = delegate_->SetBinlogEnabled(enabled, meta_.replicaPath);
     if (status != DBStatus::OK) {
         ZLOGE("SetBinlogEnabled failed! ret:%{public}d, database:%{public}s", status,
             meta_.GetStoreAlias().c_str());
@@ -1798,6 +1798,7 @@ NativeRdb::RdbStoreConfig RdbGeneralStore::GetRdbConfig(const StoreMetaData &met
 {
     RdbStoreConfig config(meta.dataDir);
     config.SetCreateNecessary(createRequired);
+    config.SetReplicaPath(meta.replicaPath);
     if (meta.isEncrypt) {
         auto key = RdbGeneralStore::GetDBPassword(meta, createRequired);
         if (key.empty()) {

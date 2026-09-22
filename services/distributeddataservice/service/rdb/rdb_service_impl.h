@@ -258,6 +258,9 @@ private:
 
     void SaveLaunchInfo(StoreMetaData &meta);
 
+    void SaveOpenedMeta(const RdbSyncerParam &param, StoreMetaData &meta, const StoreMetaData &old,
+        bool isCreated);
+
     void SaveAutoSyncInfo(const StoreMetaData &meta, const std::vector<std::string> &devices);
 
     void DoChannelsMemento(bool immediately = false);
@@ -268,11 +271,17 @@ private:
 
     static bool IsValidPath(const std::string& param);
 
+    static bool IsValidReplicaPath(const RdbSyncerParam &param);
+
     static bool IsValidCustomDir(const std::string &customDir, int32_t upLimit);
 
     static bool IsValidParam(const RdbSyncerParam &param);
 
     static StoreMetaData GetStoreMetaData(const RdbSyncerParam &param);
+
+    static int32_t NormalizeArea(int32_t area);
+
+    static std::string NormalizeReplicaPath(const std::string &path, const StoreMetaData &metaData);
 
     static std::pair<bool, StoreMetaData> LoadStoreMetaData(const RdbSyncerParam &param);
 

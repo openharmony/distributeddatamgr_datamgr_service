@@ -573,6 +573,99 @@ HWTEST_F(DataShareCommonTest, ClearTimer003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RdbDelegateGetConfigReplicaPath
+ * @tc.desc: preserve the custom replica path when DataShare builds RDB config
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareCommonTest, RdbDelegateGetConfigReplicaPath, TestSize.Level1)
+{
+    RdbDelegate delegate;
+    DistributedData::StoreMetaData meta;
+    meta.dataDir = "/data/service/el1/public/database/datashare/config";
+    meta.replicaPath = "/data/service/el1/public/database/datashare/replica";
+
+    auto [result, config] = delegate.GetConfig(meta, false);
+    EXPECT_EQ(result, OHOS::DataShare::E_OK);
+    EXPECT_EQ(config.GetPath(), meta.dataDir);
+    EXPECT_EQ(config.GetReplicaPath(), meta.replicaPath);
+}
+
+/**
+ * @tc.name: RdbDelegateInitSameReplicaPathSkipsReopen
+ * @tc.desc: Init keeps the current handle when the replica path is unchanged
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareCommonTest, RdbDelegateInitSameReplicaPathSkipsReopen, TestSize.Level1)
+{
+    RdbDelegate delegate;
+    delegate.isInited_ = true;
+    delegate.replicaPath_ = "/data/replica/a";
+    delegate.tokenId_ = 7;
+    DistributedData::StoreMetaData meta;
+    meta.tokenId = 1;
+    meta.replicaPath = "/data/replica/a";
+
+    EXPECT_TRUE(delegate.Init(meta, 0, false, "", ""));
+    EXPECT_EQ(delegate.tokenId_, 7);
+}
+
+/**
+ * @tc.name: RdbDelegateInitReplicaPathChangeReopens
+ * @tc.desc: Init releases the old handle and resets the state when the replica path changes
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareCommonTest, RdbDelegateInitReplicaPathChangeReopens, TestSize.Level1)
+{
+    RdbDelegate delegate;
+    delegate.isInited_ = true;
+    delegate.replicaPath_ = "/data/replica/a";
+    delegate.tokenId_ = 7;
+    DistributedData::StoreMetaData meta;
+    meta.tokenId = 1;
+    meta.replicaPath = "/data/replica/b";
+
+    // The reopen path runs first (state reset), then Init fails on the invalid empty dataDir.
+    EXPECT_FALSE(delegate.Init(meta, 0, false, "", ""));
+    EXPECT_FALSE(delegate.isInited_);
+    EXPECT_EQ(delegate.replicaPath_, "/data/replica/a");
+}
+
+/**
+ * @tc.name: DBDelegateCreateFailedInitErasesCache
+ * @tc.desc: a failed Create clears the cached entry so the next call rebuilds the delegate
+ * @tc.type: FUNC
+ * @tc.author: agent
+ */
+HWTEST_F(DataShareCommonTest, DBDelegateCreateFailedInitErasesCache, TestSize.Level1)
+{
+    DistributedData::StoreMetaData base;
+    base.user = "0";
+    base.tokenId = 1;
+    base.storeId = "replica_cache_guard_test";
+
+    auto cachedStore = std::make_shared<RdbDelegate>();
+    DBDelegate::stores_.Compute(base.tokenId,
+        [&base, &cachedStore](auto &, std::map<std::string, std::shared_ptr<DBDelegate::Entity>> &stores) {
+            stores[base.storeId] = std::make_shared<DBDelegate::Entity>(cachedStore, base);
+            return true;
+        });
+
+    // Hits the cached entry, fails Init on the empty dataDir, and must clear the entry.
+    EXPECT_EQ(DBDelegate::Create(base, "", "", 0), nullptr);
+
+    bool emptied = false;
+    DBDelegate::stores_.Compute(base.tokenId,
+        [&base, &emptied](auto &, std::map<std::string, std::shared_ptr<DBDelegate::Entity>> &stores) {
+            emptied = stores.find(base.storeId) == stores.end();
+            return true;
+        });
+    EXPECT_TRUE(emptied);
+}
+
+/**
  * @tc.name: DBDelegateTest001
  * @tc.desc: do nothing when delegate already inited
  * @tc.type: FUNC

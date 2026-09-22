@@ -147,6 +147,38 @@ HWTEST_F(DirectoryManagerTest, GetSaStorePath, TestSize.Level0)
 }
 
 /**
+* @tc.name: GetStorePathPrefix
+* @tc.desc: test get the caller-owned store root up to the bundleName section
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(DirectoryManagerTest, GetStorePathPrefix, TestSize.Level0)
+{
+    StoreMetaData saMeta;
+    saMeta.user = "0";
+    saMeta.bundleName = "bundle_manager_service";
+    saMeta.appId = "bundle_manager_service";
+    saMeta.securityLevel = SecurityLevel::S2;
+    saMeta.area = 1;
+    saMeta.tokenId = GetAccessTokenId(&tokenParam_);
+    saMeta.storeType = KvStoreType::SINGLE_VERSION;
+    auto saPrefix = DirectoryManager::GetInstance().GetStorePathPrefix(saMeta);
+    EXPECT_EQ(saPrefix, "/data/service/el1/public/database/bundle_manager_service");
+
+    StoreMetaData hapMeta;
+    hapMeta.user = "100";
+    hapMeta.bundleName = "com.sample.helloworld";
+    hapMeta.hapName = "example.hap";
+    hapMeta.securityLevel = SecurityLevel::S2;
+    hapMeta.area = 2;
+    hapMeta.tokenId = AccessTokenKit::GetHapTokenID(100, "ohos.test.demo", 0);
+    hapMeta.storeType = KvStoreType::SINGLE_VERSION;
+    auto hapPrefix = DirectoryManager::GetInstance().GetStorePathPrefix(hapMeta);
+    EXPECT_EQ(hapPrefix, "/data/app/el2/100/database/com.sample.helloworld");
+}
+
+/**
 * @tc.name: GetRdbBackupPath
 * @tc.desc: test get rdb backup dir
 * @tc.type: FUNC

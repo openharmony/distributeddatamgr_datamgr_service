@@ -281,6 +281,7 @@ ohos_unittest("RdbServiceImplTest") {
     "../../mock/db_store_mock.cpp",
     "../../mock/device_manager_adapter_mock.cpp",
     "rdb_service_impl_test.cpp",
+    "rdb_service_impl_replica_path_test.cpp",
     "rdb_types_utils_test.cpp",
   ]
 
