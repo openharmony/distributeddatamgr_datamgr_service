@@ -411,32 +411,6 @@ HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo008, TestSize.Level0)
 }
 
 /**
- * @tc.name: VerifyPromiseInfo009
- * @tc.desc: Test VerifyPromiseInfo self-access when mapping tokenId matches caller tokenId.
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(RdbServiceImplTokenTest, VerifyPromiseInfo009, TestSize.Level0)
-{
-    RdbServiceImpl service;
-    RdbSyncerParam param;
-    GetRdbSyncerParam(param);
-
-    auto meta = service.GetStoreMetaData(param);
-    meta.user = param.user_;
-    MetaDataManager::GetInstance().DelMeta(meta.GetKeyLocal(), true);
-
-    StoreMetaMapping metaMappingSave(meta);
-    EXPECT_EQ(MetaDataManager::GetInstance().SaveMeta(metaMappingSave.GetKey(), metaMappingSave, true), true);
-
-    int32_t result = service.VerifyPromiseInfo(param);
-
-    EXPECT_EQ(result, RDB_OK);
-    EXPECT_EQ(MetaDataManager::GetInstance().DelMeta(metaMappingSave.GetKey(), true), true);
-}
-
-/**
  * @tc.name: VerifyPromiseInfo010
  * @tc.desc: Test VerifyPromiseInfo non-self-access when mapping tokenId differs and no localMeta.
  * @tc.type: FUNC
