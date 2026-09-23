@@ -36,7 +36,9 @@
 #include "system_ability_definition.h"
 #include "udmf_radar_reporter.h"
 #include "udmf_utils.h"
+#include "unified_data_extension.h"
 #include "unified_html_record_process.h"
+#include "utd_client.h"
 #include "utils/crypto.h"
 #include "uri_permission_manager_client.h"
 #include "uri_permission_util.h"
@@ -857,6 +859,7 @@ Status PreProcessUtils::GetSummaryFromDetails(const UDDetails &details, Summary 
             }
         }
     }
+    summary.version = CURRENT_SUMMARY_VERSION;
     return E_OK;
 }
 
@@ -866,6 +869,8 @@ void PreProcessUtils::GetSummaryFromLoadInfo(const DataLoadInfo &dataLoadInfo, S
     for (const auto &type : dataLoadInfo.types) {
         summary.summary.emplace(type, 0);
     }
+    summary.filenameExtensions = CollectFilenameExtensionsByTypesWithSubtypes(dataLoadInfo.types);
+    summary.version = CURRENT_SUMMARY_VERSION;
 }
 
 std::string PreProcessUtils::GetSdkVersionByToken(uint32_t tokenId)
