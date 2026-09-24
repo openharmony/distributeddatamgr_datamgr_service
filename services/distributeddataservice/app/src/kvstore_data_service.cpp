@@ -915,7 +915,6 @@ int32_t KvStoreDataService::OnScreenUnlocked(int32_t user)
 int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32_t userId, int32_t appIndex,
     int32_t tokenId)
 {
-    CheckerManager::GetInstance().DeleteCache(bundleName, userId, appIndex);
     auto callerToken = IPCSkeleton::GetCallingTokenID();
     NativeTokenInfo nativeTokenInfo;
     if (AccessTokenKit::GetNativeTokenInfo(callerToken, nativeTokenInfo) != RET_SUCCESS ||
@@ -924,7 +923,7 @@ int32_t KvStoreDataService::ClearAppStorage(const std::string &bundleName, int32
             tokenId, bundleName.c_str(), userId, appIndex);
         return ERROR;
     }
-
+    CheckerManager::GetInstance().DeleteCache(bundleName, userId, appIndex);
     auto staticActs = FeatureSystem::GetInstance().GetStaticActs();
     staticActs.ForEachCopies(
         [bundleName, userId, appIndex, tokenId](const auto &, const std::shared_ptr<StaticActs> &acts) {

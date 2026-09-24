@@ -2533,10 +2533,7 @@ int32_t RdbServiceImpl::VerifyPromiseInfo(const RdbSyncerParam &param)
     StoreMetaDataLocal localMeta;
     if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true)) {
         StoreMetaMapping metaMapping(meta);
-        if (MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true) &&
-            meta.tokenId == metaMapping.tokenId) {
-            return RDB_OK;
-        }
+        MetaDataManager::GetInstance().LoadMeta(metaMapping.GetKey(), metaMapping, true);
         meta.dataDir = metaMapping.dataDir;
         if (!MetaDataManager::GetInstance().LoadMeta(meta.GetKeyLocal(), localMeta, true)) {
             ZLOGE("Store not exist. bundleName:%{public}s, storeName:%{public}s", meta.bundleName.c_str(),
