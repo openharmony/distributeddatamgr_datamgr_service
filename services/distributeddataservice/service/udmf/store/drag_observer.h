@@ -16,6 +16,8 @@
 #ifndef UDMF_DRAG_OBSERVER_H
 #define UDMF_DRAG_OBSERVER_H
 
+#include <functional>
+
 #include "kv_store_observer.h"
 
 #include "types_export.h"
@@ -34,6 +36,11 @@ private:
         std::vector<DistributedDB::Entry> &deleteRuntimeEntries);
     void ProcessRuntimeInfo(const std::vector<DistributedDB::Entry> &runtimeEntries);
     void ProcessDelete(const std::vector<DistributedDB::Entry> &deleteEntries);
+    bool ProcessRuntimeInfoBatch(const std::vector<DistributedDB::Entry> &runtimeEntries);
+    bool ProcessDeleteBatch(const std::vector<DistributedDB::Entry> &deleteEntries);
+    void ProcessBatches(const std::vector<DistributedDB::Entry> &entries,
+        const std::function<bool(const std::vector<DistributedDB::Entry> &)> &processBatch,
+        const char *batchName);
     bool IsRuntimeKey(const std::vector<uint8_t> &key);
     void CollectIfRuntimeKey(const std::list<DistributedDB::Entry> &srcEntries,
         std::vector<DistributedDB::Entry> &dstEntries);

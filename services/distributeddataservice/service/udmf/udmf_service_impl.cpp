@@ -738,9 +738,9 @@ int32_t UdmfServiceImpl::StoreSync(const UnifiedKey &key, const QueryOption &que
         if (query.key.empty()) {
             return;
         }
+        std::lock_guard<std::mutex> lock(mutex_);
         syncInfo.businessUdKey = query.key;
         syncInfo.tokenId = query.tokenId;
-        std::lock_guard<std::mutex> lock(mutex_);
         asyncProcessInfoMap_.insert_or_assign(syncInfo.businessUdKey, syncInfo);
     };
     RadarReporterAdapter::ReportNormal(std::string(__FUNCTION__),
@@ -1393,7 +1393,11 @@ int32_t UdmfServiceImpl::UpdateDelayData(const std::string &key, UnifiedData &un
         ZLOGE("Devices is empty, key:%{public}s", key.c_str());
         return E_ERROR;
     }
-    PushDelayDataToRemote(queryOption, devices);
+    int32_t pushRes = PushDelayDataToRemote(queryOption, devices);
+    if (pushRes != E_OK) {
+        ZLOGE("Push delay data to remote failed, key:%{public}s, res:%{public}d", key.c_str(), pushRes);
+        return pushRes;
+    }
     return E_OK;
 }
 

@@ -159,6 +159,10 @@ int32_t UtdServiceImpl::UnregisterTypeDescriptors(const std::vector<std::string>
 int32_t UtdServiceImpl::NotifyUtdClients(uint32_t callingTokenId)
 {
     ZLOGI("utdNotifiers_.Size = %{public}zu", utdNotifiers_.Size());
+    if (executors_ == nullptr) {
+        ZLOGE("executors_ is null");
+        return E_ERROR;
+    }
     ExecutorPool::TaskId taskId = executors_->Execute([this, callingTokenId] {
         utdNotifiers_.EraseIf([this, callingTokenId](auto tokenId, const sptr<IUtdNotifier>& notifier) {
             if (tokenId == foundationTokenId_ || tokenId == callingTokenId) {

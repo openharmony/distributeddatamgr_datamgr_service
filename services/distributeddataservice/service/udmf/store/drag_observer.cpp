@@ -27,6 +27,7 @@
 namespace OHOS {
 namespace UDMF {
 constexpr int32_t SLASH_COUNT_IN_KEY = 4;
+constexpr size_t MAX_RUNTIME_ENTRIES = 10000;
 
 void DragObserver::OnChange(const DistributedDB::KvStoreChangedData &data)
 {
@@ -66,7 +67,7 @@ void DragObserver::CollectIfRuntimeKey(const std::list<DistributedDB::Entry> &sr
     }
 }
 
-void DragObserver::ProcessRuntimeInfo(const std::vector<DistributedDB::Entry> &runtimeEntries)
+bool DragObserver::ProcessRuntimeInfoBatch(const std::vector<DistributedDB::Entry> &runtimeEntries)
 {
     std::vector<std::string> runtimeKeys;
     runtimeKeys.reserve(runtimeEntries.size());
@@ -78,7 +79,7 @@ void DragObserver::ProcessRuntimeInfo(const std::vector<DistributedDB::Entry> &r
     auto status = DataHandler::UnmarshalRuntimes(runtimeKeys, runtimeEntries, runtimes);
     if (status != E_OK) {
         ZLOGE("Unmarshal runtime failed, key count: %{public}zu", runtimeKeys.size());
-        return;
+        return false;
     }
     auto service = UdmfServiceImpl::GetService();
     for (const auto &runtime : runtimes) {
@@ -91,9 +92,10 @@ void DragObserver::ProcessRuntimeInfo(const std::vector<DistributedDB::Entry> &r
         }
     }
     ZLOGI("Processed %{public}zu runtimes", runtimes.size());
+    return true;
 }
 
-void DragObserver::ProcessDelete(const std::vector<DistributedDB::Entry> &deleteEntries)
+bool DragObserver::ProcessDeleteBatch(const std::vector<DistributedDB::Entry> &deleteEntries)
 {
     std::vector<std::string> runtimeKeys;
     runtimeKeys.reserve(deleteEntries.size());
@@ -105,11 +107,50 @@ void DragObserver::ProcessDelete(const std::vector<DistributedDB::Entry> &delete
     auto status = DataHandler::UnmarshalRuntimes(runtimeKeys, deleteEntries, runtimes);
     if (status != E_OK) {
         ZLOGE("Unmarshal runtime failed, key count: %{public}zu", runtimeKeys.size());
-        return;
+        return false;
     }
     for (auto &runtime : runtimes) {
         runtime.key.GetUnifiedKey();
         LifeCycleManager::GetInstance().OnGot(runtime.key, runtime.tokenId, false);
+    }
+    return true;
+}
+
+void DragObserver::ProcessRuntimeInfo(const std::vector<DistributedDB::Entry> &runtimeEntries)
+{
+    if (runtimeEntries.empty()) {
+        return;
+    }
+    ProcessBatches(runtimeEntries,
+        [this](const std::vector<DistributedDB::Entry> &batchEntries) {
+            return ProcessRuntimeInfoBatch(batchEntries);
+        }, "ProcessRuntimeInfo");
+}
+
+void DragObserver::ProcessDelete(const std::vector<DistributedDB::Entry> &deleteEntries)
+{
+    if (deleteEntries.empty()) {
+        return;
+    }
+    ProcessBatches(deleteEntries,
+        [this](const std::vector<DistributedDB::Entry> &batchEntries) {
+            return ProcessDeleteBatch(batchEntries);
+        }, "ProcessDelete");
+}
+
+void DragObserver::ProcessBatches(const std::vector<DistributedDB::Entry> &entries,
+    const std::function<bool(const std::vector<DistributedDB::Entry> &)> &processBatch,
+    const char *batchName)
+{
+    size_t totalBatches = (entries.size() + MAX_RUNTIME_ENTRIES - 1) / MAX_RUNTIME_ENTRIES;
+    for (size_t begin = 0; begin < entries.size(); begin += MAX_RUNTIME_ENTRIES) {
+        size_t end = std::min(begin + MAX_RUNTIME_ENTRIES, entries.size());
+        std::vector<DistributedDB::Entry> batchEntries(entries.begin() + begin, entries.begin() + end);
+        if (!processBatch(batchEntries)) {
+            ZLOGE("%{public}s batch %{public}zu/%{public}zu failed, %{public}zu entries skipped",
+                batchName, begin / MAX_RUNTIME_ENTRIES + 1, totalBatches, entries.size() - end);
+            return;
+        }
     }
 }
 
