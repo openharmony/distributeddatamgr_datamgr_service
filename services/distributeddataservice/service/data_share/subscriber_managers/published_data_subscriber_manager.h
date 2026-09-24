@@ -27,16 +27,18 @@
 namespace OHOS::DataShare {
 struct PublishedDataKey {
     PublishedDataKey(const std::string &key, const std::string &bundle,
-        int64_t subscriberId);
+        int64_t subscriberId, uint32_t tokenId = 0);
     bool operator<(const PublishedDataKey &rhs) const;
     bool operator>(const PublishedDataKey &rhs) const;
     bool operator<=(const PublishedDataKey &rhs) const;
     bool operator>=(const PublishedDataKey &rhs) const;
     bool operator==(const PublishedDataKey &rhs) const;
     bool operator!=(const PublishedDataKey &rhs) const;
+    bool IsSameData(const PublishedDataKey &rhs) const;
     std::string key;
     std::string bundleName;
     int64_t subscriberId;
+    uint32_t tokenId;
 };
 
 class PublishedDataSubscriberManager {

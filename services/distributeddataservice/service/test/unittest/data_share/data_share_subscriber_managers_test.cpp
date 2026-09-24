@@ -644,4 +644,85 @@ HWTEST_F(DataShareSubscriberManagersTest, EmitAbortedWhenLoadDataInfoFailed, Tes
     // Emit should abort before SchedulerManager::Start, so the key is never registered.
     EXPECT_FALSE(SchedulerManager::GetInstance().GetSchedulerStatus(key));
 }
+
+/**
+* @tc.name: PublishedDataKeyIsSameDataDiffTokenId
+* @tc.desc: IsSameData returns true for same data fields but different tokenId, operator== returns false
+* @tc.type: FUNC
+* @tc.require: tokenId is part of PublishedDataKey identity but IsSameData ignores it
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, PublishedDataKeyIsSameDataDiffTokenId, TestSize.Level1)
+{
+    DataShare::PublishedDataKey key1(DATA_SHARE_URI_TEST, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2001);
+    DataShare::PublishedDataKey key2(DATA_SHARE_URI_TEST, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2002);
+    EXPECT_TRUE(key1.IsSameData(key2));
+    EXPECT_FALSE(key1 == key2);
+    EXPECT_TRUE(key1 != key2);
+    EXPECT_TRUE(key1 < key2);
+    EXPECT_FALSE(key2 < key1);
+}
+
+/**
+* @tc.name: GetCountAcrossTokenIds
+* @tc.desc: GetCount sums observers across different tokenId entries sharing the same published data
+* @tc.type: FUNC
+* @tc.require: GetCount uses IsSameData to count subscribers across callers
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, GetCountAcrossTokenIds, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest GetCountAcrossTokenIds start");
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    PublishedDataKey key1(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2001);
+    PublishedDataKey key2(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2002);
+    sptr<PublishedDataObserverMockTest> observer1 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer1, nullptr);
+    sptr<PublishedDataObserverMockTest> observer2 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer2, nullptr);
+
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(key1, observer1, 0x2001, USER_TEST), DataShare::E_OK);
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key1), 1);
+
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(key2, observer2, 0x2002, USER_TEST), DataShare::E_OK);
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key1), 2);
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key2), 2);
+
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest GetCountAcrossTokenIds end");
+}
+
+/**
+* @tc.name: SetObserversNotifiedOnEnabledAcrossTokenIds
+* @tc.desc: SetObserversNotifiedOnEnabled marks disabled observers across tokenId entries via IsSameData
+* @tc.type: FUNC
+* @tc.require: SetObserversNotifiedOnEnabled matches by IsSameData across callers
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, SetObserversNotifiedOnEnabledAcrossTokenIds, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest SetObserversNotifiedOnEnabledAcrossTokenIds start");
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    PublishedDataKey key1(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2001);
+    PublishedDataKey key2(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2002);
+    sptr<PublishedDataObserverMockTest> observer1 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer1, nullptr);
+    sptr<PublishedDataObserverMockTest> observer2 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer2, nullptr);
+
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(key1, observer1, 0x2001, USER_TEST), DataShare::E_OK);
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(key2, observer2, 0x2002, USER_TEST), DataShare::E_OK);
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Disable(key1, 0x2001), DataShare::E_OK);
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Disable(key2, 0x2002), DataShare::E_OK);
+
+    std::vector<PublishedDataKey> publishedKeys;
+    publishedKeys.emplace_back(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID);
+    PublishedDataSubscriberManager::GetInstance().SetObserversNotifiedOnEnabled(publishedKeys);
+
+    EXPECT_TRUE(PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(key1, 0x2001));
+    EXPECT_TRUE(PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(key2, 0x2002));
+
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest SetObserversNotifiedOnEnabledAcrossTokenIds end");
+}
 } // namespace OHOS::Test
