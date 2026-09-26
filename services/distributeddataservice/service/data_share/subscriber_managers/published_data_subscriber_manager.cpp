@@ -232,14 +232,11 @@ void PublishedDataSubscriberManager::SetObserversNotifiedOnEnabled(const std::ve
         return;
     }
     publishedDataCache_.ForEach([&keys](const auto &key, std::vector<ObserverNode> &value) {
-        for (const auto &pkey : keys) {
-            if (key.IsSameData(pkey)) {
-                for (auto it = value.begin(); it != value.end(); it++) {
-                    if (!it->enabled) {
-                        it->isNotifyOnEnabled = true;
-                    }
+        if (std::any_of(keys.begin(), keys.end(), [&key](const auto &pkey) { return key.IsSameData(pkey); })) {
+            for (auto &node : value) {
+                if (!node.enabled) {
+                    node.isNotifyOnEnabled = true;
                 }
-                break;
             }
         }
         return false;
