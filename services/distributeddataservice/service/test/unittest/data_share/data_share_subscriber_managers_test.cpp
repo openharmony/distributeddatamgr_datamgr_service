@@ -839,7 +839,8 @@ HWTEST_F(DataShareSubscriberManagersTest, EmitPublishedDataWithCache, TestSize.L
     PublishedDataKey cacheKey(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2001);
     sptr<PublishedDataObserverMockTest> observer = new (std::nothrow) PublishedDataObserverMockTest();
     ASSERT_NE(observer, nullptr);
-    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(cacheKey, observer, 0x2001, USER_TEST), DataShare::E_OK);
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(cacheKey, observer, 0x2001, USER_TEST),
+        DataShare::E_OK);
 
     // keys vector contains a non-matching key first, then the matching key
     std::vector<PublishedDataKey> keys;
