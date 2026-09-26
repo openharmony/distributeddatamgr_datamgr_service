@@ -725,4 +725,136 @@ HWTEST_F(DataShareSubscriberManagersTest, SetObserversNotifiedOnEnabledAcrossTok
     PublishedDataSubscriberManager::GetInstance().Clear();
     ZLOGI("DataShareSubscriberManagersTest SetObserversNotifiedOnEnabledAcrossTokenIds end");
 }
+
+/**
+* @tc.name: PublishedDataKeyOperatorLessDiffSubscriberId
+* @tc.desc: test PublishedDataKey operator< with different subscriberId to cover subscriberId comparison branches
+* @tc.type: FUNC
+* @tc.require: cover operator< subscriberId < and rhs.subscriberId < true branches
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, PublishedDataKeyOperatorLessDiffSubscriberId, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest PublishedDataKeyOperatorLessDiffSubscriberId start");
+    constexpr int64_t lowSubId = 50;
+    constexpr int64_t highSubId = 100;
+    DataShare::PublishedDataKey keyLow(DATA_SHARE_URI_TEST, BUNDLE_NAME_TEST, lowSubId);
+    DataShare::PublishedDataKey keyHigh(DATA_SHARE_URI_TEST, BUNDLE_NAME_TEST, highSubId);
+
+    // keyLow.subscriberId < keyHigh.subscriberId → true
+    EXPECT_TRUE(keyLow < keyHigh);
+    // keyHigh.subscriberId > keyLow.subscriberId → rhs.subscriberId < subscriberId is true → returns false
+    EXPECT_FALSE(keyHigh < keyLow);
+
+    // Verify consistency of relational operators
+    EXPECT_TRUE(keyHigh > keyLow);
+    EXPECT_FALSE(keyLow > keyHigh);
+    EXPECT_TRUE(keyLow <= keyHigh);
+    EXPECT_TRUE(keyHigh >= keyLow);
+    EXPECT_FALSE(keyLow == keyHigh);
+    EXPECT_TRUE(keyLow != keyHigh);
+    ZLOGI("DataShareSubscriberManagersTest PublishedDataKeyOperatorLessDiffSubscriberId end");
+}
+
+/**
+* @tc.name: GetCountWithNonMatchingSubscriber
+* @tc.desc: GetCount with a non-matching cache entry to cover IsSameData false branch
+* @tc.type: FUNC
+* @tc.require: cover GetCount if (cacheKey.IsSameData(key)) false branch
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, GetCountWithNonMatchingSubscriber, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest GetCountWithNonMatchingSubscriber start");
+    PublishedDataSubscriberManager::GetInstance().Clear();
+
+    PublishedDataKey key1(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2001);
+    PublishedDataKey key2("datashareproxy://com.acts.ohos.data.other/test", "ohos.other.demo", 200, 0x2002);
+    sptr<PublishedDataObserverMockTest> observer1 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer1, nullptr);
+    sptr<PublishedDataObserverMockTest> observer2 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer2, nullptr);
+
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(key1, observer1, 0x2001, USER_TEST), DataShare::E_OK);
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(key2, observer2, 0x2002, USER_TEST), DataShare::E_OK);
+
+    // ForEach iterates both cache entries; key2 does not match key1 via IsSameData (covers false branch)
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key1), 1);
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(key2), 1);
+
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest GetCountWithNonMatchingSubscriber end");
+}
+
+/**
+* @tc.name: SetObserversNotifiedOnEnabledNonMatchingAndDisabled
+* @tc.desc: SetObserversNotifiedOnEnabled with a non-matching cache entry and a disabled node
+* @tc.type: FUNC
+* @tc.require: cover std::any_of false branch and !node.enabled true branch
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, SetObserversNotifiedOnEnabledNonMatchingAndDisabled, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest SetObserversNotifiedOnEnabledNonMatchingAndDisabled start");
+    PublishedDataSubscriberManager::GetInstance().Clear();
+
+    PublishedDataKey key1(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2001);
+    PublishedDataKey key2("datashareproxy://com.acts.ohos.data.other/test", "ohos.other.demo", 200, 0x2002);
+    sptr<PublishedDataObserverMockTest> observer1 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer1, nullptr);
+    sptr<PublishedDataObserverMockTest> observer2 = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer2, nullptr);
+
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(key1, observer1, 0x2001, USER_TEST), DataShare::E_OK);
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(key2, observer2, 0x2002, USER_TEST), DataShare::E_OK);
+    // Disable key1 so that !node.enabled is true when SetObserversNotifiedOnEnabled iterates
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Disable(key1, 0x2001), DataShare::E_OK);
+
+    // keys vector only matches key1, not key2
+    std::vector<PublishedDataKey> publishedKeys;
+    publishedKeys.emplace_back(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID);
+    PublishedDataSubscriberManager::GetInstance().SetObserversNotifiedOnEnabled(publishedKeys);
+
+    // key1 was disabled and matched → isNotifyOnEnabled set to true (covers line 237 true branch)
+    EXPECT_TRUE(PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(key1, 0x2001));
+    // key2 was not matched by any_of → isNotifyOnEnabled not set (covers line 235 false branch)
+    EXPECT_FALSE(PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(key2, 0x2002));
+
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest SetObserversNotifiedOnEnabledNonMatchingAndDisabled end");
+}
+
+/**
+* @tc.name: EmitPublishedDataWithCache
+* @tc.desc: Emit with subscribers in cache to cover ForEach lambda branches in Emit
+* @tc.type: FUNC
+* @tc.require: cover Emit if (!key.IsSameData(data) || publishedResult.count(key) != 0) branches
+* @tc.author: agent
+*/
+HWTEST_F(DataShareSubscriberManagersTest, EmitPublishedDataWithCache, TestSize.Level1)
+{
+    ZLOGI("DataShareSubscriberManagersTest EmitPublishedDataWithCache start");
+    PublishedDataSubscriberManager::GetInstance().Clear();
+
+    PublishedDataKey cacheKey(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID, 0x2001);
+    sptr<PublishedDataObserverMockTest> observer = new (std::nothrow) PublishedDataObserverMockTest();
+    ASSERT_NE(observer, nullptr);
+    ASSERT_EQ(PublishedDataSubscriberManager::GetInstance().Add(cacheKey, observer, 0x2001, USER_TEST), DataShare::E_OK);
+
+    // keys vector contains a non-matching key first, then the matching key
+    std::vector<PublishedDataKey> keys;
+    keys.emplace_back("datashareproxy://com.acts.ohos.data.other/test", "ohos.other.demo", 200);
+    keys.emplace_back(DATA_SHARE_SUBSCRIBE_TEST_URI, BUNDLE_NAME_TEST, TEST_SUB_ID);
+
+    // Emit iterates cache; for cacheKey, inner loop:
+    //   - nonMatchingKey: !IsSameData true → continue (covers branch 1)
+    //   - matchingKey: both conditions false → proceed to Query (covers branch 2 false + branch 4)
+    PublishedDataSubscriberManager::GetInstance().Emit(keys, USER_TEST, BUNDLE_NAME_TEST);
+
+    // Subscriber should still be in cache after Emit
+    EXPECT_EQ(PublishedDataSubscriberManager::GetInstance().GetCount(cacheKey), 1);
+
+    PublishedDataSubscriberManager::GetInstance().Clear();
+    ZLOGI("DataShareSubscriberManagersTest EmitPublishedDataWithCache end");
+}
 } // namespace OHOS::Test
