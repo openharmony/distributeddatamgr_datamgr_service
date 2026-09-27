@@ -143,7 +143,7 @@ void PublishedDataSubscriberManager::Emit(const std::vector<PublishedDataKey> &k
     publishedDataCache_.ForEach([&keys, &status, &observer, &publishedResult, &callbacks, &userId, this](
         const PublishedDataKey &key, std::vector<ObserverNode> &val) {
         for (auto &data : keys) {
-            if (key != data || publishedResult.count(key) != 0) {
+            if (!key.IsSameData(data) || publishedResult.count(key) != 0) {
                 continue;
             }
             status = PublishedData::Query(
@@ -203,9 +203,11 @@ void PublishedDataSubscriberManager::Clear()
 int PublishedDataSubscriberManager::GetCount(const PublishedDataKey &key)
 {
     int count = 0;
-    publishedDataCache_.ComputeIfPresent(key, [&count](const auto &key, std::vector<ObserverNode> &value) {
-        count = static_cast<int>(value.size());
-        return true;
+    publishedDataCache_.ForEach([&key, &count](const auto &cacheKey, std::vector<ObserverNode> &value) {
+        if (cacheKey.IsSameData(key)) {
+            count += static_cast<int>(value.size());
+        }
+        return false;
     });
     return count;
 }
@@ -226,20 +228,24 @@ bool PublishedDataSubscriberManager::IsNotifyOnEnabled(const PublishedDataKey &k
 
 void PublishedDataSubscriberManager::SetObserversNotifiedOnEnabled(const std::vector<PublishedDataKey> &keys)
 {
-    for (const auto &pkey : keys) {
-        publishedDataCache_.ComputeIfPresent(pkey, [](const auto &key, std::vector<ObserverNode> &value) {
-            for (auto it = value.begin(); it != value.end(); it++) {
-                if (!it->enabled) {
-                    it->isNotifyOnEnabled = true;
+    if (keys.empty()) {
+        return;
+    }
+    publishedDataCache_.ForEach([&keys](const auto &key, std::vector<ObserverNode> &value) {
+        if (std::any_of(keys.begin(), keys.end(), [&key](const auto &pkey) { return key.IsSameData(pkey); })) {
+            for (auto &node : value) {
+                if (!node.enabled) {
+                    node.isNotifyOnEnabled = true;
                 }
             }
-            return true;
-        });
-    }
+        }
+        return false;
+    });
 }
 
-PublishedDataKey::PublishedDataKey(const std::string &key, const std::string &bundle, const int64_t subscriberId)
-    : key(key), bundleName(bundle), subscriberId(subscriberId)
+PublishedDataKey::PublishedDataKey(const std::string &key, const std::string &bundle, const int64_t subscriberId,
+    uint32_t tokenId)
+    : key(key), bundleName(bundle), subscriberId(subscriberId), tokenId(tokenId)
 {
     /* private published data can use key as simple uri */
     /* etc: datashareproxy://{bundleName}/meeting can use meeting replaced */
@@ -263,7 +269,13 @@ bool PublishedDataKey::operator<(const PublishedDataKey &rhs) const
     if (rhs.bundleName < bundleName) {
         return false;
     }
-    return subscriberId < rhs.subscriberId;
+    if (subscriberId < rhs.subscriberId) {
+        return true;
+    }
+    if (rhs.subscriberId < subscriberId) {
+        return false;
+    }
+    return tokenId < rhs.tokenId;
 }
 
 bool PublishedDataKey::operator>(const PublishedDataKey &rhs) const
@@ -283,12 +295,18 @@ bool PublishedDataKey::operator>=(const PublishedDataKey &rhs) const
 
 bool PublishedDataKey::operator==(const PublishedDataKey &rhs) const
 {
-    return key == rhs.key && bundleName == rhs.bundleName && subscriberId == rhs.subscriberId;
+    return key == rhs.key && bundleName == rhs.bundleName && subscriberId == rhs.subscriberId &&
+        tokenId == rhs.tokenId;
 }
 
 bool PublishedDataKey::operator!=(const PublishedDataKey &rhs) const
 {
     return !(rhs == *this);
+}
+
+bool PublishedDataKey::IsSameData(const PublishedDataKey &rhs) const
+{
+    return key == rhs.key && bundleName == rhs.bundleName && subscriberId == rhs.subscriberId;
 }
 
 PublishedDataSubscriberManager::ObserverNode::ObserverNode(const sptr<IDataProxyPublishedDataObserver> &observer,

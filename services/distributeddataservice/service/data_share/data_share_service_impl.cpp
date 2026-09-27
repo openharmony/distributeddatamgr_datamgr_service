@@ -531,6 +531,7 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
         ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
         return results;
     }
+    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     std::vector<PublishedDataKey> publishedKeys;
     int32_t result;
     int32_t userId;
@@ -539,14 +540,15 @@ std::vector<OperationResult> DataShareServiceImpl::SubscribePublishedData(const 
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        result = subscribeStrategy_.Execute(context, [&subscriberId, &observer, &context]() {
+        result = subscribeStrategy_.Execute(context, [&subscriberId, &observer, &context, callingTokenId]() {
             return PublishedDataSubscriberManager::GetInstance().Add(
-                PublishedDataKey(context->uri, context->callerBundleName, subscriberId), observer,
-                context->callerTokenId, context->visitedUserId);
+                PublishedDataKey(context->uri, context->callerBundleName, subscriberId, callingTokenId),
+                observer, context->callerTokenId, context->visitedUserId);
         });
         results.emplace_back(uri, result);
         if (result == E_OK) {
-            publishedKeys.emplace_back(context->uri, context->callerBundleName, subscriberId);
+            publishedKeys.emplace_back(context->uri, context->callerBundleName, subscriberId,
+                callingTokenId);
             if (binderInfo_.executors != nullptr) {
                 binderInfo_.executors->Execute([context, subscriberId]() {
                     PublishedData::UpdateTimestamp(
@@ -571,14 +573,17 @@ std::vector<OperationResult> DataShareServiceImpl::UnsubscribePublishedData(cons
         ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
         return results;
     }
+    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        results.emplace_back(uri, unsubscribeStrategy_.Execute(context, [&subscriberId, &context, this]() {
+        results.emplace_back(uri, unsubscribeStrategy_.Execute(context, [&subscriberId, &context, this,
+            callingTokenId]() {
             auto result = PublishedDataSubscriberManager::GetInstance().Delete(
-                PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
+                PublishedDataKey(context->uri, context->callerBundleName, subscriberId, callingTokenId),
+                context->callerTokenId);
             if (result == E_OK && binderInfo_.executors != nullptr) {
                 binderInfo_.executors->Execute([context, subscriberId]() {
                     PublishedData::UpdateTimestamp(
@@ -600,6 +605,7 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
         ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
         return results;
     }
+    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     std::vector<PublishedDataKey> publishedKeys;
     int32_t result;
     int32_t userId = -1;
@@ -608,9 +614,10 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        result = subscribeStrategy_.Execute(context, [&subscriberId, &context]() {
+        result = subscribeStrategy_.Execute(context, [&subscriberId, &context, callingTokenId]() {
             return PublishedDataSubscriberManager::GetInstance().Enable(
-                PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
+                PublishedDataKey(context->uri, context->callerBundleName, subscriberId, callingTokenId),
+                context->callerTokenId);
         });
         if (result == E_OK && binderInfo_.executors != nullptr) {
             binderInfo_.executors->Execute([context, subscriberId]() {
@@ -620,7 +627,7 @@ std::vector<OperationResult> DataShareServiceImpl::EnablePubSubs(const std::vect
         }
         results.emplace_back(uri, result);
         if (result == E_OK) {
-            PublishedDataKey pKey(context->uri, context->callerBundleName, subscriberId);
+            PublishedDataKey pKey(context->uri, context->callerBundleName, subscriberId, callingTokenId);
             if (PublishedDataSubscriberManager::GetInstance().IsNotifyOnEnabled(pKey, context->callerTokenId)) {
                 publishedKeys.emplace_back(pKey);
             }
@@ -642,14 +649,17 @@ std::vector<OperationResult> DataShareServiceImpl::DisablePubSubs(const std::vec
         ZLOGE("get bundleName error, %{public}s", callerBundleName.c_str());
         return results;
     }
+    uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     for (const auto &uri : uris) {
         auto context = std::make_shared<Context>(uri);
         PublishedDataKey key(uri, callerBundleName, subscriberId);
         context->callerBundleName = callerBundleName;
         context->calledBundleName = key.bundleName;
-        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&subscriberId, &context, this]() {
+        results.emplace_back(uri, subscribeStrategy_.Execute(context, [&subscriberId, &context, this,
+            callingTokenId]() {
             auto result =  PublishedDataSubscriberManager::GetInstance().Disable(
-                PublishedDataKey(context->uri, context->callerBundleName, subscriberId), context->callerTokenId);
+                PublishedDataKey(context->uri, context->callerBundleName, subscriberId, callingTokenId),
+                context->callerTokenId);
             if (result == E_OK && binderInfo_.executors != nullptr) {
                 binderInfo_.executors->Execute([context, subscriberId]() {
                     PublishedData::UpdateTimestamp(
