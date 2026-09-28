@@ -19,6 +19,7 @@
 #include <mutex>
 
 #include "app_device_change_listener.h"
+#include "concurrent_map.h"
 #include "executor_pool.h"
 #include "kv_store_delegate.h"
 #include "kv_store_delegate_manager.h"
@@ -122,7 +123,7 @@ private:
 
         // Database change callback
         void OnChange(const DistributedDB::KvStoreChangedData &data) override;
-        std::map<std::string, ChangeObserver> handlerMap_;
+        ConcurrentMap<std::string, ChangeObserver> handlerMap_;
     private:
         void HandleChanges(CHANGE_FLAG flag, const std::list<DistributedDB::Entry> &entries);
     };

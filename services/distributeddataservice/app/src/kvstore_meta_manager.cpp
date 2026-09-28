@@ -95,7 +95,7 @@ void KvStoreMetaManager::SubscribeMeta(const std::string &keyPrefix, const Chang
     if (metaObserver_ == nullptr) {
         return;
     }
-    metaObserver_->handlerMap_[keyPrefix] = observer;
+    metaObserver_->handlerMap_.InsertOrAssign(keyPrefix, observer);
 }
 
 void KvStoreMetaManager::InitMetaListener()
@@ -548,12 +548,13 @@ void KvStoreMetaManager::KvStoreMetaObserver::HandleChanges(CHANGE_FLAG flag,
 {
     for (const auto &entry : entries) {
         std::string key(entry.key.begin(), entry.key.end());
-        for (const auto &item : handlerMap_) {
+        handlerMap_.ForEachCopies([&key, &entry, flag](const std::string &prefix, ChangeObserver &observer) {
             ZLOGI("flag:%{public}d, key:%{public}s", flag, Anonymous::Change(key).c_str());
-            if (key.find(item.first) == 0) {
-                item.second(entry.key, entry.value, flag);
+            if (key.find(prefix) == 0) {
+                observer(entry.key, entry.value, flag);
             }
-        }
+            return false;
+        });
     }
 }
 
