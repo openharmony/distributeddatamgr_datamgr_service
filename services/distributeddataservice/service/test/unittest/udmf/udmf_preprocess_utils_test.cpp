@@ -15,6 +15,7 @@
 
 #include "preprocess_utils.h"
 #include "gtest/gtest.h"
+#include <algorithm>
 #include "remote_file_share.h"
 #include "text.h"
 #include "unified_html_record_process.h"
@@ -542,7 +543,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, FillUris004, TestSize.Level1)
 
 /**
 * @tc.name: MatchImgExtension001
-* @tc.desc: Normal testcase of MatchImgExtension with URIs and physical paths
+* @tc.desc: Normal testcase of MatchImgExtension
 * @tc.type: FUNC
 */
 HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension001, TestSize.Level1)
@@ -569,7 +570,7 @@ HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension001, TestSize.Level1)
 
 /**
 * @tc.name: MatchImgExtension002
-* @tc.desc: Abnormal testcase of MatchImgExtension with URIs and physical paths
+* @tc.desc: Abnormal testcase of MatchImgExtension
 * @tc.type: FUNC
 */
 HWTEST_F(UdmfPreProcessUtilsTest, MatchImgExtension002, TestSize.Level1)
@@ -825,6 +826,51 @@ HWTEST_F(UdmfPreProcessUtilsTest, SetRemoteData005, TestSize.Level1)
     PreProcessUtils::SetRemoteData(data);
     auto detailGet = std::get<std::shared_ptr<Object>>(obj->value_[DETAILS]);
     EXPECT_TRUE(detailGet == nullptr);
+}
+
+/**
+ * @tc.name: GetSummaryFromLoadInfo001
+ * @tc.desc: Normal test of GetSummaryFromLoadInfo, filename extensions derived from types
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromLoadInfo001, TestSize.Level1)
+{
+    DataLoadInfo dataLoadInfo;
+    dataLoadInfo.recordCount = 10;
+    dataLoadInfo.types = { "general.png", "general.jpeg" };
+    Summary summary;
+    PreProcessUtils::GetSummaryFromLoadInfo(dataLoadInfo, summary);
+    EXPECT_EQ(summary.totalSize, 10);
+    EXPECT_EQ(summary.summary.size(), 2);
+    ASSERT_EQ(summary.filenameExtensions.size(), 4);
+    std::vector<std::string> expectedExtensions = { ".png", ".jpg", ".jpeg", ".jpe" };
+    std::sort(expectedExtensions.begin(), expectedExtensions.end());
+    std::sort(summary.filenameExtensions.begin(), summary.filenameExtensions.end());
+    EXPECT_EQ(summary.filenameExtensions, expectedExtensions);
+    EXPECT_EQ(summary.version, CURRENT_SUMMARY_VERSION);
+}
+
+/**
+ * @tc.name: GetSummaryFromLoadInfo002
+ * @tc.desc: Test GetSummaryFromLoadInfo with base type that has no direct extensions,
+ *           verifying subtype extensions are collected (e.g. general.video -> .mp4)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromLoadInfo002, TestSize.Level1)
+{
+    DataLoadInfo dataLoadInfo;
+    dataLoadInfo.recordCount = 3;
+    dataLoadInfo.types = { "general.video" };
+    Summary summary;
+    PreProcessUtils::GetSummaryFromLoadInfo(dataLoadInfo, summary);
+    EXPECT_EQ(summary.totalSize, 3);
+    EXPECT_EQ(summary.summary.size(), 1);
+    // general.video has no direct filenameExtensions, but its subtype general.mpeg-4 has .mp4
+    EXPECT_NE(std::find(summary.filenameExtensions.begin(), summary.filenameExtensions.end(), ".mp4"),
+        summary.filenameExtensions.end());
+    EXPECT_EQ(summary.version, CURRENT_SUMMARY_VERSION);
 }
 
 /**

@@ -166,10 +166,7 @@ Status RuntimeStore::PutSummary(const UnifiedData &data, Summary &summary, std::
         Summary summaryFromDetails;
         PreProcessUtils::GetSummaryFromDetails(details, summaryFromDetails);
         summary = std::move(summaryFromDetails);
-    } else {
-        summary.filenameExtensions = CollectFilenameExtensions(data);
     }
-    summary.version = CURRENT_SUMMARY_VERSION;
     auto propertyKey = data.GetRuntime()->key.GetKeyCommonPrefix();
     Value value;
     auto status = DataHandler::MarshalToEntries(summary, value, TAG::TAG_SUMMARY);
@@ -217,10 +214,7 @@ Status RuntimeStore::GetSummary(UnifiedKey &key, Summary &summary)
             if (status != E_OK) {
                 return status;
             }
-        } else {
-            summary.filenameExtensions = CollectFilenameExtensions(unifiedData);
         }
-        summary.version = CURRENT_SUMMARY_VERSION;
         return E_OK;
     }
     auto status = DataHandler::UnmarshalEntries(value, summary, TAG::TAG_SUMMARY);
