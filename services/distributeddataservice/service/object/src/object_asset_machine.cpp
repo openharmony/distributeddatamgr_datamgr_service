@@ -206,6 +206,10 @@ static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBin
     Values args;
     VBuckets vBuckets;
     auto sql = BuildSql(assetBindInfo, args);
+    if (sql.empty()) {
+        ZLOGE("build sql failed, table:%{public}s", Anonymous::Change(assetBindInfo.tableName).c_str());
+        return vBuckets;
+    }
     auto [errCode, cursor] = store->Query(assetBindInfo.tableName, sql, std::move(args));
     if (errCode != E_OK || cursor == nullptr) {
         return vBuckets;
@@ -230,11 +234,69 @@ static VBuckets GetMigratedData(AutoCache::Store& store, AssetBindInfo& assetBin
     return vBuckets;
 }
 
+static bool IsValidIdentifier(const std::string& name)
+{
+    if (name.empty()) {
+        return false;
+    }
+    for (size_t i = 0; i < name.size(); i++) {
+        char c = name[i];
+        bool isAlpha = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+        bool isDigit = (c >= '0' && c <= '9');
+        bool isUnderscore = (c == '_');
+        if (i == 0) {
+            if (!isAlpha && !isUnderscore) {
+                return false;
+            }
+        } else {
+            if (!isAlpha && !isDigit && !isUnderscore) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool IsValidQualifiedName(const std::string& name)
+{
+    if (name.empty()) {
+        return false;
+    }
+    size_t start = 0;
+    size_t pos;
+    while ((pos = name.find('.', start)) != std::string::npos) {
+        if (pos == start) {
+            return false;
+        }
+        if (!IsValidIdentifier(name.substr(start, pos - start))) {
+            return false;
+        }
+        start = pos + 1;
+    }
+    if (start >= name.size()) {
+        return false;
+    }
+    return IsValidIdentifier(name.substr(start));
+}
+
 static std::string BuildSql(const AssetBindInfo& bindInfo, Values& args)
 {
+    if (!IsValidQualifiedName(bindInfo.field) || !IsValidIdentifier(bindInfo.tableName)) {
+        ZLOGE("invalid sql identifier, field:%{public}s, table:%{public}s",
+            Anonymous::Change(bindInfo.field).c_str(), Anonymous::Change(bindInfo.tableName).c_str());
+        return "";
+    }
+    if (bindInfo.primaryKey.empty()) {
+        ZLOGE("empty primary key, table:%{public}s", Anonymous::Change(bindInfo.tableName).c_str());
+        return "";
+    }
     std::string sql;
     sql.append("SELECT ").append(bindInfo.field).append(" FROM ").append(bindInfo.tableName).append(" WHERE ");
     for (auto const& [key, value] : bindInfo.primaryKey) {
+        if (!IsValidQualifiedName(key)) {
+            ZLOGE("invalid primary key column:%{public}s", Anonymous::Change(key).c_str());
+            return "";
+        }
         sql.append(key).append(SQL_AND);
         args.emplace_back(value);
     }

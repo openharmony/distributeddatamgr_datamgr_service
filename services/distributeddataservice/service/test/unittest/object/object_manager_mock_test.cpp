@@ -486,6 +486,94 @@ HWTEST_F(ObjectManagerMockTest, BindAsset002, TestSize.Level1)
 }
 
 /**
+* @tc.name: BindAsset003
+* @tc.desc: Test BindAsset when GetHapTokenInfo fails (TOKEN_HAP but token info retrieval fails).
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(ObjectManagerMockTest, BindAsset003, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "BindAsset003";
+    std::string sessionId = "session003";
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillOnce(Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(_, _))
+        .Times(1)
+        .WillOnce(Return(1));
+    auto result = manager.BindAsset(tokenId, bundleName, sessionId, assetValue_, assetBindInfo_);
+    EXPECT_EQ(result, DistributedObject::OBJECT_DBSTATUS_ERROR);
+}
+
+/**
+* @tc.name: BindAsset004_NoSnapshotWhenTokenInvalid
+* @tc.desc: Verify that snapshots_ and bindSnapshots_ are NOT modified when token type is not TOKEN_HAP,
+*          confirming the token validation is performed before any state mutation (PR reordering).
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(ObjectManagerMockTest, BindAsset004_NoSnapshotWhenTokenInvalid, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "BindAsset004";
+    std::string sessionId = "session004";
+    std::string storeName = "store004";
+    assetBindInfo_.storeName = storeName;
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillOnce(Return(ATokenTypeEnum::TOKEN_NATIVE));
+    auto result = manager.BindAsset(tokenId, bundleName, sessionId, assetValue_, assetBindInfo_);
+    EXPECT_EQ(result, DistributedObject::OBJECT_DBSTATUS_ERROR);
+
+    auto snapshotKey = bundleName + "_" + sessionId;
+    auto snap = manager.snapshots_.Find(snapshotKey);
+    EXPECT_EQ(snap.second, nullptr);
+
+    auto storeKey = bundleName + "_" + storeName;
+    auto bind = manager.bindSnapshots_.Find(storeKey);
+    EXPECT_EQ(bind.second, nullptr);
+}
+
+/**
+* @tc.name: BindAsset005_NoSnapshotWhenHapTokenInfoFails
+* @tc.desc: Verify that snapshots_ and bindSnapshots_ are NOT modified when GetHapTokenInfo fails,
+*          confirming the token validation is performed before any state mutation (PR reordering).
+* @tc.type: FUNC
+* @tc.require:
+* @tc.author: agent
+*/
+HWTEST_F(ObjectManagerMockTest, BindAsset005_NoSnapshotWhenHapTokenInfoFails, TestSize.Level1)
+{
+    auto &manager = ObjectStoreManager::GetInstance();
+    std::string bundleName = "BindAsset005";
+    std::string sessionId = "session005";
+    std::string storeName = "store005";
+    assetBindInfo_.storeName = storeName;
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    EXPECT_CALL(*accTokenMock, GetTokenTypeFlag(_))
+        .Times(1)
+        .WillOnce(Return(ATokenTypeEnum::TOKEN_HAP));
+    EXPECT_CALL(*accTokenMock, GetHapTokenInfo(_, _))
+        .Times(1)
+        .WillOnce(Return(-1));
+    auto result = manager.BindAsset(tokenId, bundleName, sessionId, assetValue_, assetBindInfo_);
+    EXPECT_EQ(result, DistributedObject::OBJECT_DBSTATUS_ERROR);
+
+    auto snapshotKey = bundleName + "_" + sessionId;
+    auto snap = manager.snapshots_.Find(snapshotKey);
+    EXPECT_EQ(snap.second, nullptr);
+
+    auto storeKey = bundleName + "_" + storeName;
+    auto bind = manager.bindSnapshots_.Find(storeKey);
+    EXPECT_EQ(bind.second, nullptr);
+}
+
+/**
 * @tc.name: IsContinue001
 * @tc.desc: Test IsContinue function when GetTokenTypeFlag is not TOKEN_HAP.
 * @tc.type: FUNC
