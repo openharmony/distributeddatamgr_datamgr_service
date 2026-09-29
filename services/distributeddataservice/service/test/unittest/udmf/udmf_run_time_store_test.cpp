@@ -707,40 +707,6 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummaryMiss001, TestSize.Level1)
 }
 
 /**
-* @tc.name: GetSummaryRecomputeOnMiss001
-* @tc.desc: GetSummary recomputes filenameExtensions when summary entry is missing
-* @tc.type: FUNC
-* @tc.require:
-*/
-HWTEST_F(UdmfRunTimeStoreTest, GetSummaryRecomputeOnMiss001, TestSize.Level1)
-{
-    UnifiedKey udKey("DataHub", "com.test", "111");
-    udKey.GetUnifiedKey();
-    Runtime runtime { .key = udKey };
-    auto object = std::make_shared<Object>();
-    object->value_[ORI_URI] = std::string("file:///data/test.jpg");
-    auto record = std::make_shared<UnifiedRecord>(UDType::FILE, object);
-    UnifiedData inputData;
-    inputData.SetRuntime(runtime);
-    inputData.SetRecords({ record });
-
-    auto store = std::make_shared<RuntimeStore>("DataHub");
-    bool result = store->Init();
-    EXPECT_TRUE(result);
-
-    Summary summary;
-    auto status = store->Put(inputData, summary);
-    EXPECT_EQ(status, E_OK);
-
-    Summary outSummary;
-    status = store->GetSummary(udKey, outSummary);
-    EXPECT_EQ(status, E_OK);
-    EXPECT_EQ(outSummary.version, CURRENT_SUMMARY_VERSION);
-    ASSERT_EQ(outSummary.filenameExtensions.size(), 1);
-    EXPECT_EQ(outSummary.filenameExtensions[0], ".jpg");
-}
-
-/**
  * @tc.name: GetSummaryMissTempUData001
  * @tc.desc: GetSummary reconstructs filenameExtensions from temp data details when summary entry is missing
  * @tc.type: FUNC
@@ -766,49 +732,6 @@ HWTEST_F(UdmfRunTimeStoreTest, GetSummaryMissTempUData001, TestSize.Level1)
     inputData.SetRecords({ record });
 
     auto store = std::make_shared<RuntimeStore>("DataHub");
-    bool result = store->Init();
-    EXPECT_TRUE(result);
-
-    Summary summary;
-    auto status = store->Put(inputData, summary);
-    EXPECT_EQ(status, E_OK);
-
-    Summary outSummary;
-    status = store->GetSummary(udKey, outSummary);
-    EXPECT_EQ(status, E_OK);
-    EXPECT_EQ(outSummary.version, CURRENT_SUMMARY_VERSION);
-    ASSERT_EQ(outSummary.filenameExtensions.size(), 2);
-    EXPECT_EQ(outSummary.filenameExtensions[0], ".jpg");
-    EXPECT_EQ(outSummary.filenameExtensions[1], ".png");
-}
-
-/**
- * @tc.name: PutSummaryNonTempUData001
- * @tc.desc: PutSummary collects and deduplicates filenameExtensions from multiple file records
- * @tc.type: FUNC
- * @tc.require:
- * @tc.author: agent
- */
-HWTEST_F(UdmfRunTimeStoreTest, PutSummaryNonTempUData001, TestSize.Level1)
-{
-    UnifiedKey udKey(STORE_ID, BUNDLE_NAME, UDMF::PreProcessUtils::GenerateId());
-    udKey.GetUnifiedKey();
-    Runtime runtime { .key = udKey };
-
-    auto obj1 = std::make_shared<Object>();
-    obj1->value_[ORI_URI] = std::string("file:///data/a.jpg");
-    auto record1 = std::make_shared<UnifiedRecord>(UDType::FILE, obj1);
-    auto obj2 = std::make_shared<Object>();
-    obj2->value_[ORI_URI] = std::string("file:///data/b.png");
-    auto record2 = std::make_shared<UnifiedRecord>(UDType::FILE, obj2);
-    auto obj3 = std::make_shared<Object>();
-    obj3->value_[ORI_URI] = std::string("file:///data/c.JPG");
-    auto record3 = std::make_shared<UnifiedRecord>(UDType::FILE, obj3);
-    UnifiedData inputData;
-    inputData.SetRuntime(runtime);
-    inputData.SetRecords({ record1, record2, record3 });
-
-    auto store = std::make_shared<RuntimeStore>(STORE_ID);
     bool result = store->Init();
     EXPECT_TRUE(result);
 

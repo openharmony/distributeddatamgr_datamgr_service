@@ -862,14 +862,14 @@ HWTEST_F(UdmfPreProcessUtilsTest, GetSummaryFromLoadInfo002, TestSize.Level1)
 {
     DataLoadInfo dataLoadInfo;
     dataLoadInfo.recordCount = 3;
-    dataLoadInfo.types = { "general.video" };
+    dataLoadInfo.types = { "general.jpeg" };
     Summary summary;
     PreProcessUtils::GetSummaryFromLoadInfo(dataLoadInfo, summary);
     EXPECT_EQ(summary.totalSize, 3);
     EXPECT_EQ(summary.summary.size(), 1);
-    // general.video has no direct filenameExtensions, but its subtype general.mpeg-4 has .mp4
-    EXPECT_NE(std::find(summary.filenameExtensions.begin(), summary.filenameExtensions.end(), ".mp4"),
-        summary.filenameExtensions.end());
+    EXPECT_EQ(summary.filenameExtensions[0], ".jpg");
+    EXPECT_EQ(summary.filenameExtensions[1], ".jpeg");
+    EXPECT_EQ(summary.filenameExtensions[2], ".jpe");
     EXPECT_EQ(summary.version, CURRENT_SUMMARY_VERSION);
 }
 
