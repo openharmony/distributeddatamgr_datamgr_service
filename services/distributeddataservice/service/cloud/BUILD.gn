@@ -73,6 +73,7 @@ ohos_source_set("distributeddata_cloud") {
 
   external_deps = [
     "access_token:libtokenid_sdk",
+    "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
     "json:nlohmann_json_static",
