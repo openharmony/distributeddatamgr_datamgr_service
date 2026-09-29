@@ -1257,7 +1257,7 @@ int32_t ObjectStoreManager::SetSyncStatus(bool status)
 int32_t ObjectStoreManager::RevokeSaveToStore(const std::string &prefix)
 {
     std::vector<DistributedDB::Entry> entries;
-    std::shared_lock<decltype(rwMutex_)> lock(rwMutex_);
+    std::unique_lock<decltype(rwMutex_)> lock(rwMutex_);
     if (delegate_ == nullptr) {
         ZLOGE("db store was closed.");
         return E_DB_ERROR;
@@ -1510,6 +1510,16 @@ SequenceSyncManager::Result SequenceSyncManager::DeleteNotifierNoLock(uint64_t s
 int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string& appId, const std::string& sessionId,
     ObjectStore::Asset& asset, ObjectStore::AssetBindInfo& bindInfo)
 {
+    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
+        ZLOGE("TokenType is not TOKEN_HAP, token:0x%{public}x, bundleName:%{public}s", tokenId, appId.c_str());
+        return GeneralError::E_ERROR;
+    }
+    HapTokenInfo tokenInfo;
+    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
+    if (status != RET_SUCCESS) {
+        ZLOGE("token:0x%{public}x, result:%{public}d, bundleName:%{public}s", tokenId, status, appId.c_str());
+        return GeneralError::E_ERROR;
+    }
     auto snapshotKey = appId + SEPERATOR + sessionId;
     snapshots_.ComputeIfAbsent(
         snapshotKey, [](const std::string& key) -> auto {
@@ -1526,16 +1536,6 @@ int32_t ObjectStoreManager::BindAsset(const uint32_t tokenId, const std::string&
         return true;
     });
 
-    if (AccessTokenKit::GetTokenTypeFlag(tokenId) != TOKEN_HAP) {
-        ZLOGE("TokenType is not TOKEN_HAP, token:0x%{public}x, bundleName:%{public}s", tokenId, appId.c_str());
-        return GeneralError::E_ERROR;
-    }
-    HapTokenInfo tokenInfo;
-    auto status = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (status != RET_SUCCESS) {
-        ZLOGE("token:0x%{public}x, result:%{public}d, bundleName:%{public}s", tokenId, status, appId.c_str());
-        return GeneralError::E_ERROR;
-    }
     StoreInfo storeInfo;
     storeInfo.bundleName = appId;
     storeInfo.tokenId = tokenId;
