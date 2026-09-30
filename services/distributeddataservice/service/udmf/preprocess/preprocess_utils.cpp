@@ -18,7 +18,6 @@
 
 #include <sstream>
 #include <sys/stat.h>
-#include <unordered_set>
 
 #include "bundle_info.h"
 #include "dds_trace.h"
@@ -869,7 +868,7 @@ void PreProcessUtils::GetSummaryFromLoadInfo(const DataLoadInfo &dataLoadInfo, S
     for (const auto &type : dataLoadInfo.types) {
         summary.summary.emplace(type, 0);
     }
-    summary.filenameExtensions = CollectFilenameExtensionsByTypesWithSubtypes(dataLoadInfo.types);
+    summary.filenameExtensions = CollectFilenameExtensionsByTypes(dataLoadInfo.types);
     summary.version = CURRENT_SUMMARY_VERSION;
 }
 
